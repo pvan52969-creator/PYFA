@@ -2725,6 +2725,7 @@ function openModal(id) {
       onStudyTypeChange();
       onCategoryLevelChange();
       if (editingCategoryId) loadElectiveMatrixForCategory(editingCategoryId);
+      updateElectiveMatrixHint();
     } else if (categoryFormMode === 'add-l3' || categoryFormMode === 'edit-l3') {
       onCategoryLevelChange();
     }
@@ -3039,6 +3040,7 @@ function addElectiveMatrixRow(data = {}) {
   if (data.semester) sel.value = data.semester;
   refreshElectiveSemesterOptions();
   updateElectiveMatrixEmptyState();
+  updateElectiveMatrixHint();
 }
 
 function removeElectiveMatrixRow(link) {
@@ -3051,6 +3053,7 @@ function removeElectiveMatrixRow(link) {
       row.remove();
       refreshElectiveSemesterOptions();
       updateElectiveMatrixEmptyState();
+      updateElectiveMatrixHint();
     }
   });
 }
@@ -5762,6 +5765,33 @@ function getL2CreditsMaxLimit(l2) {
   return null;
 }
 
+function sumL3CreditsMinUnderL2(l2, excludeL3Id = null) {
+  if (!l2?.children?.length) return 0;
+  return l2.children.reduce((sum, l3) => {
+    if (excludeL3Id && l3.id === excludeL3Id) return sum;
+    normalizeNodeCredits(l3);
+    return sum + (Number(l3.creditsMin) || 0);
+  }, 0);
+}
+
+function validateL3CreditsMinAgainstL2(l2, creditsMin, { excludeL3Id = null } = {}) {
+  if (!l2) return { ok: true };
+  const l2Max = getL2CreditsMaxLimit(l2);
+  if (l2Max == null) return { ok: true };
+  const existingSum = sumL3CreditsMinUnderL2(l2, excludeL3Id);
+  const total = existingSum + creditsMin;
+  if (total > l2Max) {
+    const l2Name = l2.name ? `「${l2.name}」` : '所属二级分类';
+    const action = excludeL3Id ? '修改后' : '新增后';
+    return {
+      ok: false,
+      message: `${action}三级分类最低学分合计（${total}）将超过${l2Name}最高学分（${l2Max}）；` +
+        `当前${excludeL3Id ? '其他' : '已有'}子级合计 ${existingSum}，本次填写 ${creditsMin}`
+    };
+  }
+  return { ok: true };
+}
+
 function getCategoryFormStudyType() {
   if (isCategoryL3Mode()) {
     return getCategoryL3ParentL2()?.studyType || 'compulsory';
@@ -5813,9 +5843,30 @@ function updateCategoryCreditsFieldsUI() {
 
 function bindCategoryCreditsInputs() {
   const minEl = document.getElementById('category-credits-min');
-  if (!minEl || minEl.dataset.bound) return;
-  minEl.dataset.bound = '1';
-  minEl.addEventListener('input', syncCategoryCreditsMaxFromMin);
+  const maxEl = document.getElementById('category-credits-max');
+  if (minEl && !minEl.dataset.bound) {
+    minEl.dataset.bound = '1';
+    minEl.addEventListener('input', () => {
+      syncCategoryCreditsMaxFromMin();
+      updateElectiveMatrixHint();
+      if (isCategoryL3Mode()) onCategoryLevelChange();
+    });
+  }
+  if (maxEl && !maxEl.dataset.bound) {
+    maxEl.dataset.bound = '1';
+    maxEl.addEventListener('input', updateElectiveMatrixHint);
+  }
+}
+
+function bindElectiveMatrixInputs() {
+  const tbody = document.getElementById('elective-matrix-tbody');
+  if (!tbody || tbody.dataset.bound) return;
+  tbody.dataset.bound = '1';
+  tbody.addEventListener('input', e => {
+    if (e.target.matches('.matrix-credit-min, .matrix-credit-max, .matrix-count')) {
+      updateElectiveMatrixHint();
+    }
+  });
 }
 
 function applyCategoryFormMode() {
@@ -5864,9 +5915,37 @@ function loadElectiveMatrixForCategory(categoryId) {
       count: req.count
     });
   });
+  updateElectiveMatrixHint();
 }
 
-function validateElectiveMatrixRequired() {
+function sumElectiveMatrixCreditsMin() {
+  let sum = 0;
+  document.querySelectorAll('#elective-matrix-tbody tr[data-row]').forEach(row => {
+    const raw = row.querySelector('.matrix-credit-min')?.value.trim();
+    if (raw !== '') sum += Number(raw) || 0;
+  });
+  return sum;
+}
+
+function updateElectiveMatrixHint() {
+  const hint = document.getElementById('elective-matrix-hint');
+  if (!hint) return;
+  const base = '请手动添加需要限制的学期，选择学期并填写该学期的最低/最高学分要求及课程数量（Y1S1 ~ Y4S3）';
+  if (!isElectiveStudyType() || isCategoryL3Mode()) {
+    hint.textContent = `${base}。`;
+    return;
+  }
+  const maxRaw = document.getElementById('category-credits-max')?.value.trim();
+  const l2Max = maxRaw !== '' && !Number.isNaN(Number(maxRaw)) ? Number(maxRaw) : null;
+  const sumMin = sumElectiveMatrixCreditsMin();
+  let capHint = '；各学期最低学分要求之和不得超过二级分类最高学分';
+  if (l2Max != null) {
+    capHint += `（当前合计 ${sumMin} / 上限 ${l2Max}）`;
+  }
+  hint.textContent = `${base}${capHint}。`;
+}
+
+function validateElectiveMatrixRequired(l2CreditsMax) {
   const rows = document.querySelectorAll('#elective-matrix-tbody tr[data-row]');
   if (!rows.length) {
     alert('修读类型为选修时，请至少添加一条学期修读要求');
@@ -5886,6 +5965,11 @@ function validateElectiveMatrixRequired() {
   }
   if (!valid) {
     alert('请至少填写一条学期要求的最低/最高学分或课程数量');
+    return false;
+  }
+  const sumMin = sumElectiveMatrixCreditsMin();
+  if (l2CreditsMax != null && !Number.isNaN(l2CreditsMax) && sumMin > l2CreditsMax) {
+    alert(`各学期最低学分要求之和（${sumMin}）不能超过二级分类最高学分限制（${l2CreditsMax}）`);
     return false;
   }
   return true;
@@ -5936,11 +6020,10 @@ function readCategoryCreditsFromForm() {
     const creditsMin = Number(minRaw);
     if (Number.isNaN(creditsMin) || creditsMin < 0) return { error: '学分须为非负数字' };
     const l2 = getCategoryL3ParentL2();
-    const l2Max = getL2CreditsMaxLimit(l2);
-    if (l2Max != null && creditsMin > l2Max) {
-      const l2Name = l2?.name ? `「${l2.name}」` : '所属二级分类';
-      return { error: `最低学分不能超过${l2Name}的最高学分（${l2Max}）` };
-    }
+    const sumCheck = validateL3CreditsMinAgainstL2(l2, creditsMin, {
+      excludeL3Id: categoryFormMode === 'edit-l3' ? editingCategoryId : null
+    });
+    if (!sumCheck.ok) return { error: sumCheck.message };
     return { creditsMin, creditsMax: null };
   }
   const isRange = isCategoryCreditsRangeMode();
@@ -6267,9 +6350,15 @@ function onCategoryLevelChange() {
   if (categoryFormMode === 'add-l3' || categoryFormMode === 'edit-l3') {
     const l2 = getCategoryL3ParentL2();
     const l2Max = getL2CreditsMaxLimit(l2);
-    const capHint = l2Max != null
-      ? `，不得超过所属二级分类${l2?.name ? `「${l2.name}」` : ''}最高学分 ${l2Max}`
-      : '';
+    const excludeId = categoryFormMode === 'edit-l3' ? editingCategoryId : null;
+    const siblingSum = sumL3CreditsMinUnderL2(l2, excludeId);
+    const remain = l2Max != null ? Math.max(0, l2Max - siblingSum) : null;
+    let capHint = '';
+    if (l2Max != null) {
+      capHint = `；${categoryFormMode === 'edit-l3' ? '修改后' : '新增后'}同级最低学分合计不得超过` +
+        `${l2?.name ? `「${l2.name}」` : '二级分类'}最高学分 ${l2Max}` +
+        `（当前${excludeId ? '其他' : '已有'}子级合计 ${siblingSum}，剩余可分配 ${remain}）`;
+    }
     hint.textContent = categoryFormMode === 'edit-l3'
       ? `可修改三级分类名称与最低学分（三级不设最高学分${capHint}）`
       : `请填写该三级分类的最低学分（三级不设最高学分${capHint}）`;
@@ -6295,6 +6384,7 @@ function isElectiveStudyType() {
 function onStudyTypeChange() {
   applyCategoryFormMode();
   onCategoryLevelChange();
+  updateElectiveMatrixHint();
 }
 
 function saveCategory() {
@@ -6308,7 +6398,10 @@ function saveCategory() {
   if (categoryFormMode === 'edit-l3' || categoryFormMode === 'edit-l2') {
     const node = findClassificationNode(editingCategoryId);
     if (!node) return;
-    if (categoryFormMode === 'edit-l2' && node.studyType === 'elective' && !validateElectiveMatrixRequired()) return;
+    if (categoryFormMode === 'edit-l2') {
+      const newStudyType = document.getElementById('study-type-select')?.value;
+      if (newStudyType === 'elective' && !validateElectiveMatrixRequired(creditsMax)) return;
+    }
     node.creditsMin = creditsMin;
     if (categoryFormMode === 'edit-l3') {
       const name = document.getElementById('category-l3-name')?.value.trim();
@@ -6386,7 +6479,7 @@ function saveCategory() {
     alert('请选择二级分类');
     return;
   }
-  if (studyType === 'elective' && !validateElectiveMatrixRequired()) return;
+  if (studyType === 'elective' && !validateElectiveMatrixRequired(creditsMax)) return;
 
   const l1 = findOrCreateL1(h1Key);
   if (!l1) return;
@@ -6646,6 +6739,7 @@ function renderProgrammeStructure(containerId, data) {
 // ── Init ──
 syncAllVersionEndBatches();
 bindCategoryCreditsInputs();
+bindElectiveMatrixInputs();
 onH1Change();
 onStudyTypeChange();
 onCategoryLevelChange();

@@ -1,0 +1,11 @@
+{
+  "name": "xmum-pyfa-prototype",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 3000",
+    "export:workflow-pdf": "node scripts/export-workflow-pdf.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.43.1"
+  }
+}

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>XMUM 培养方案管理 · 操作流程</title>
+<style>
+  @page { size: A3 landscape; margin: 8mm; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    background: #f8fafc; color: #0f172a;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  body { overflow: auto; }
+  .sheet {
+    max-width: 920px; margin: 0 auto;
+    padding: 14px 16px 18px;
+    display: flex; flex-direction: column;
+    background: #f8fafc;
+  }
+  .header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px; flex-shrink: 0; margin-bottom: 10px;
+  }
+  .header-left h1 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+  .header-left p { margin: 0; font-size: 11px; color: #64748b; line-height: 1.4; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .legend-item {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 999px; font-size: 10px; color: #475569; border: 1px solid #e2e8f0;
+  }
+  .legend-dot { width: 7px; height: 7px; border-radius: 999px; flex-shrink: 0; }
+  .diagram-area {
+    flex-shrink: 0;
+    display: flex; align-items: stretch; justify-content: center;
+    border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; padding: 6px;
+    overflow: hidden;
+  }
+  .diagram-area svg { display: block; width: 100%; max-width: 960px; height: auto; margin: 0 auto; }
+  .node {
+    width: 100%; height: 100%;
+    padding: 6px 8px; border-radius: 8px;
+    border: 1px solid; border-left-width: 3px;
+    display: flex; flex-direction: column; justify-content: center; gap: 1px;
+    box-sizing: border-box; overflow: hidden;
+  }
+  .node-title { font-size: 11px; font-weight: 600; line-height: 14px; color: #0f172a; }
+  .node-sub { font-size: 9px; line-height: 12px; color: #64748b; }
+  .tab-note {
+    width: 100%; height: 100%;
+    padding: 6px 8px; border-radius: 8px;
+    border: 1px solid; border-left-width: 3px;
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    box-sizing: border-box; overflow: hidden;
+  }
+  .tab-note-title { font-size: 10px; font-weight: 700; line-height: 1.25; }
+  .tab-note-desc { font-size: 8px; line-height: 1.35; color: #64748b; }
+  .footer {
+    flex-shrink: 0; margin-top: 10px;
+    display: grid; grid-template-columns: 1fr; gap: 8px;
+    font-size: 10px; line-height: 1.45; color: #475569;
+  }
+  @media (min-width: 700px) { .footer { grid-template-columns: 1fr 1fr 1fr; } }
+  .footer-item {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px;
+  }
+  .footer-item strong { color: #0f172a; font-weight: 600; }
+  .workflow-phases {
+    flex-shrink: 0; margin-top: 10px;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 10px 12px; font-size: 11px; line-height: 1.55; color: #475569;
+  }
+  .workflow-phases-title { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 6px; }
+  .workflow-phases p { margin: 0 0 6px; }
+  .workflow-phases p:last-child { margin-bottom: 0; }
+  .meta { margin-top: 8px; text-align: right; font-size: 10px; color: #94a3b8; flex-shrink: 0; }
+  @media print {
+    html, body { overflow: hidden; height: 100%; }
+    .sheet {
+      width: 1500px; height: 980px; max-width: none;
+      padding: 16px 20px 12px;
+      page-break-after: avoid; page-break-inside: avoid;
+    }
+    .header-left { display: block; }
+    .diagram-area { height: 856px; flex: 1; min-height: 0; }
+    .diagram-area svg { max-width: none; width: 100%; height: 100%; }
+    .node-title { font-size: 11px; line-height: 14px; }
+    .node-sub { font-size: 9px; line-height: 12px; }
+    .footer { font-size: 9px; }
+    .workflow-phases { font-size: 9px; }
+    .meta { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="header">
+    <div class="header-left">
+      <h1>XMUM 培养方案管理 · 操作流程</h1>
+      <p>主路径：版本制定与审批 → 通过后分流至执行计划、方案变更或只读查询</p>
+    </div>
+    <div class="legend">
+    <span class="legend-item" style="background:#eff6ff">
+      <span class="legend-dot" style="background:#2563eb"></span>方案版本
+    </span>
+    <span class="legend-item" style="background:#f0fdf4">
+      <span class="legend-dot" style="background:#16a34a"></span>执行计划
+    </span>
+    <span class="legend-item" style="background:#fffbeb">
+      <span class="legend-dot" style="background:#d97706"></span>方案变更
+    </span>
+    <span class="legend-item" style="background:#f1f5f9">
+      <span class="legend-dot" style="background:#64748b"></span>只读查询
+    </span></div>
+  </div>
+  <div class="diagram-area">
+    <svg viewBox="0 0 872 931" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="flow-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/>
+        </marker>
+        <marker id="flow-arrow-branch" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#93c5fd"/>
+        </marker>
+      </defs>
+      
+    <rect x="22" y="22" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="116" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="281" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="375" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="469" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="563" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="657" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="751" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="22" y="845" width="572" height="64" rx="8"
+      fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <path d="M 308 80 C 308 101, 308 101, 308 122"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 308 174 C 308 230.5, 308 230.5, 308 287"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 308 339 C 308 360, 308 360, 308 381"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 308 433 C 308 454, 308 454, 308 475"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 308 527 C 308 548, 112 548, 112 569"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 112 621 C 112 642, 210 642, 210 663"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 210 715 C 210 736, 210 736, 210 757"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 210 809 C 210 830, 308 830, 308 851"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 308 527 C 308 548, 308 548, 308 569"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 308 621 C 308 642, 406 642, 406 663"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 406 715 C 406 736, 406 736, 406 757"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <path d="M 308 527 C 308 548, 504 548, 504 569"
+      fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#flow-arrow)"/>
+    <foreignObject x="224" y="28" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+        <div class="node-title">方案版本管理</div>
+        <div class="node-sub">新增版本 · 编辑草稿</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="224" y="122" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+        <div class="node-title">三 TAB 制定</div>
+        <div class="node-sub">分类 → 课程 → 进程表</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="224" y="287" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+        <div class="node-title">提交审批</div>
+        <div class="node-sub">校验学分后进入审批流</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="224" y="381" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+        <div class="node-title">版本审批</div>
+        <div class="node-sub">Pending / In Progress / History</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="224" y="475" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+        <div class="node-title">版本已通过</div>
+        <div class="node-sub">生效 · 回填截止批次</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="28" y="569" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+        <div class="node-title">生成执行计划</div>
+        <div class="node-sub">选专业 + 未生成批次</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="224" y="569" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fffbeb;border-color:#d97706">
+        <div class="node-title">方案变更申请</div>
+        <div class="node-sub">选已通过版本 · 修改</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="420" y="569" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f1f5f9;border-color:#64748b">
+        <div class="node-title">版本查询</div>
+        <div class="node-sub">只读查看已通过版本</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="126" y="663" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+        <div class="node-title">编辑执行计划</div>
+        <div class="node-sub">版本模板复制 · 可改差异</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="322" y="663" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fffbeb;border-color:#d97706">
+        <div class="node-title">方案变更审核</div>
+        <div class="node-sub">三级审批</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="126" y="757" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+        <div class="node-title">提交执行计划</div>
+        <div class="node-sub">提交后不可编辑</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="322" y="757" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fffbeb;border-color:#d97706">
+        <div class="node-title">覆盖原版本</div>
+        <div class="node-sub">不影响已生成执行计划</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="224" y="851" width="168" height="52">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+        <div class="node-title">开课</div>
+        <div class="node-sub">已开课须先删开课任务</div>
+      </div>
+    </foreignObject><line x1="628" y1="66" x2="628" y2="230" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="6 5"/><path d="M 392 148 L 412 148" fill="none" stroke="#93c5fd" stroke-width="1.25" stroke-dasharray="5 4"/><path d="M 412 78 L 412 218" fill="none" stroke="#93c5fd" stroke-width="1.25" stroke-dasharray="5 4"/><path d="M 412 78 L 640 78" fill="none" stroke="#93c5fd" stroke-width="1.25" marker-end="url(#flow-arrow-branch)"/><path d="M 412 148 L 640 148" fill="none" stroke="#93c5fd" stroke-width="1.25" marker-end="url(#flow-arrow-branch)"/><path d="M 412 218 L 640 218" fill="none" stroke="#93c5fd" stroke-width="1.25" marker-end="url(#flow-arrow-branch)"/>
+    <foreignObject x="640" y="51" width="204" height="54">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="tab-note" style="background:#f5f3ff;border-color:#7c5cbf">
+        <div class="tab-note-title" style="color:#7c5cbf">TAB1 课程分类</div>
+        <div class="tab-note-desc">二级/三级分类 · 最低/最高学分 · 选修课学期修读矩阵</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="640" y="121" width="204" height="54">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="tab-note" style="background:#eff6ff;border-color:#2563eb">
+        <div class="tab-note-title" style="color:#2563eb">TAB2 课程设置</div>
+        <div class="tab-note-desc">课程库选课 · 分类与开课学期 · CLO · SLT 学时</div>
+      </div>
+    </foreignObject>
+    <foreignObject x="640" y="191" width="204" height="54">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="tab-note" style="background:#f0fdfa;border-color:#0d9488">
+        <div class="tab-note-title" style="color:#0d9488">TAB3 方案进程表</div>
+        <div class="tab-note-desc">由 TAB1+TAB2 自动生成 · 只读预览与学分校验</div>
+      </div>
+    </foreignObject>
+    </svg>
+  </div>
+  <div class="footer">
+    <div class="footer-item"><strong>版本链</strong> 新版本开始批次须晚于上一版本；审批通过后自动回填上一版本截止批次。</div>
+    <div class="footer-item"><strong>执行计划</strong> 按入学批次匹配已审批版本；未提交可编辑/删除；已提交未开课可撤回；已开课须删开课任务。</div>
+    <div class="footer-item"><strong>方案变更</strong> 审批通过后覆盖原版本内容；已生成执行计划不变；未生成批次引用最新版本。</div>
+  </div>
+  <div class="workflow-phases">
+    <div class="workflow-phases-title">阶段说明</div>
+    <p><strong>① 方案版本制定与审批</strong> 在方案版本管理中新建或编辑草稿，完成 TAB1 分类、TAB2 课程、TAB3 进程表后提交。版本审批按三级节点流转，通过后版本生效。</p>
+    <p><strong>② 批次执行计划</strong> 从已通过版本为尚未生成的入学批次生成执行计划，编辑后可提交；提交后方可进入开课流程。</p>
+    <p><strong>③ 方案版本变更</strong> 对已审批版本发起变更申请，走变更审核；通过后更新版本模板，不影响既有执行计划副本。</p>
+  </div>
+  <div class="meta">XMUM Curriculum Management · 2026-06-09</div>
+</div>
+</body>
+</html>

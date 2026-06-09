@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XMUM 培养方案管理 — 原型</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">XM</div>
+      <div>
+        <div class="brand-title">培养方案管理</div>
+        <div class="brand-sub">Curriculum Management</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">概览</div>
+      <a href="#" class="nav-item" data-page="workflow">操作流程图</a>
+      <div class="nav-group">方案版本</div>
+      <a href="#" class="nav-item active" data-page="version-list">方案版本管理</a>
+      <a href="#" class="nav-item" data-page="approval-list">版本审批</a>
+      <a href="#" class="nav-item" data-page="version-query">版本查询</a>
+      <div class="nav-group">方案版本变更</div>
+      <a href="#" class="nav-item" data-page="change-apply">方案变更申请</a>
+      <a href="#" class="nav-item" data-page="change-review">方案变更审核</a>
+      <div class="nav-group">执行计划</div>
+      <a href="#" class="nav-item" data-page="exec-list">批次执行计划</a>
+      <div class="nav-group">数据统计</div>
+      <a href="#" class="nav-item" data-page="stats-bloom">Bloom's Taxonomy Charts</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="batch-tag b02">02</span>
+      <span class="batch-tag b04">04</span>
+      <span class="batch-tag b09">09</span>
+      <span style="font-size:11px;color:#94a3b8;margin-left:4px">入学批次</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ═══ 操作流程图 ═══ -->
+    <section class="page" id="page-workflow">
+      <div class="page-header workflow-page-header">
+        <div class="workflow-page-title">
+          <h1>培养方案管理 · 操作流程</h1>
+          <p class="subtitle">主路径：版本制定与审批 → 通过后分流至执行计划、方案变更或只读查询</p>
+        </div>
+        <div class="workflow-zoom-toolbar">
+          <button type="button" class="btn btn-ghost btn-sm workflow-zoom-btn" onclick="workflowZoomStep(-0.1)" title="缩小" aria-label="缩小">−</button>
+          <span class="workflow-zoom-label" id="workflow-zoom-label">100%</span>
+          <button type="button" class="btn btn-ghost btn-sm workflow-zoom-btn" onclick="workflowZoomStep(0.1)" title="放大" aria-label="放大">+</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="workflowZoomReset()">重置</button>
+        </div>
+      </div>
+      <div class="workflow-viewport" id="workflow-viewport">
+        <div class="workflow-zoom-stage" id="workflow-zoom-stage">
+          <div class="card workflow-doc" id="workflow-doc-mount">
+            <p class="workflow-loading">加载流程图…</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 方案版本管理 ═══ -->
+    <section class="page active" id="page-version-list">
+      <div class="page-header">
+        <div>
+          <h1>培养方案版本管理</h1>
+          <p class="subtitle">同一专业多版本按批次链衔接：上一版本截止批次 = 下一版本开始批次的前一批次，区间互不重合</p>
+        </div>
+        <button class="btn btn-primary" onclick="openNewVersionModal()">+ 新增版本</button>
+      </div>
+
+      <div class="toolbar-row">
+        <div class="filter-bar inline">
+          <span class="filter-label">过滤</span>
+          <select class="input input-sm" id="filter-major" onchange="filterVersions()">
+            <option value="">全部专业</option>
+            <option value="finance">Finance 金融学</option>
+            <option value="chinese">Chinese Studies 中国研究</option>
+            <option value="accounting">Accounting 会计学</option>
+          </select>
+          <select class="input input-sm" id="filter-version">
+            <option value="">全部版本</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="filterVersions()">查询</button>
+        </div>
+      </div>
+
+      <div class="legend-bar">
+        <span class="legend-item text-muted">区间不重合：上一版本截止批次 = 下一版本开始批次的前一批次（如 2025/04 → 2025/09）</span>
+      </div>
+
+      <div class="card">
+        <div class="panel-toolbar version-list-toolbar">
+          <button class="btn btn-primary btn-sm" id="btn-batch-submit-version" onclick="openBatchSubmitVersion()" disabled>提交审批</button>
+          <span class="hint">勾选版本后可批量提交；所选须均为草稿或已驳回，含已通过/待审批等状态时按钮不可用</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table version-table" id="version-table">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" id="version-check-all" aria-label="全选" onchange="toggleVersionCheckAll(this.checked)"></th>
+                <th class="col-name">培养方案版本</th>
+                <th>审批状态</th>
+                <th>专业代码</th>
+                <th>学制</th>
+                <th>版本</th>
+                <th>开始批次</th>
+                <th>截止批次</th>
+                <th>授予学位</th>
+                <th>版本引用情况</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="version-table-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination">
+            <span class="page-info">共 <strong id="version-count">0</strong> 条</span>
+            <button class="page-btn" disabled>«</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">»</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 版本编辑（三 TAB）═══ -->
+    <section class="page" id="page-version-edit">
+      <div class="page-header compact">
+        <div class="breadcrumb">
+          <a href="#" id="version-edit-breadcrumb" onclick="goVersionEditReturn();return false">方案版本管理</a>
+          <span>/</span>
+          <span id="edit-title">Finance (202509 Version)</span>
+        </div>
+        <div class="header-actions">
+          <span class="status draft" id="edit-status">草稿</span>
+          <button class="btn btn-ghost" onclick="goVersionEditReturn()">返回</button>
+          <button class="btn btn-outline" id="btn-save" onclick="alert('保存成功（原型）')">保存</button>
+          <button class="btn btn-primary" id="btn-submit" onclick="submitCurrentVersionForApproval()">提交审批</button>
+        </div>
+      </div>
+      <div class="info-strip" id="edit-info-strip">
+        <span><label>专业</label><span id="info-major">Finance 金融学</span></span>
+        <span><label>版本</label><strong id="info-version">2025/09</strong></span>
+        <span><label>开始批次</label><code id="info-start-batch">2025/09</code></span>
+        <span><label>截止批次</label><code id="info-end-batch" class="text-muted">—（当前有效版本）</code></span>
+        <span><label>学制</label>4 年</span>
+        <span><label>授予学位</label>经济学学士</span>
+        <span><label>毕业总学分</label><strong class="text-blue">130</strong></span>
+      </div>
+      <div class="alert-info version-readonly-banner" id="version-readonly-banner" style="display:none;margin-bottom:12px;font-size:12px">
+        当前为<strong>查看模式</strong>，培养方案内容不可编辑。
+      </div>
+      <div class="alert-info exec-edit-banner" id="exec-edit-banner" style="display:none;margin-bottom:12px;font-size:12px">
+        执行计划由已审批版本模板复制生成，编辑界面与版本管理一致；可调整开课学期等批次差异，不影响原版本模板。
+      </div>
+      <div class="alert-info change-edit-banner" id="change-edit-banner" style="display:none;margin-bottom:12px;font-size:12px">
+        <strong>方案变更：</strong>审批通过后将覆盖「方案版本管理」中对应版本的内容；<strong>已生成的执行计划</strong>保持独立副本不受影响；<strong>尚未生成执行计划</strong>的入学批次，生成时将引用最新版本内容。
+      </div>
+      <div class="tab-bar">
+        <button class="tab active" data-tab="tab-classification">TAB1 课程分类</button>
+        <button class="tab" data-tab="tab-courses">TAB2 课程设置</button>
+        <button class="tab" data-tab="tab-structure">TAB3 方案进程表</button>
+      </div>
+
+      <!-- TAB1 -->
+      <div class="tab-panel active" id="tab-classification">
+        <div class="panel-toolbar">
+          <button class="btn btn-primary btn-sm" onclick="openAddCategoryModal()">+ 新增分类</button>
+          <div class="summary-chips" id="classification-summary-chips">
+            <span class="chip">必修合计 <strong id="sum-compulsory">—</strong> 学分</span>
+            <span class="chip">选修合计 <strong id="sum-elective">—</strong> 学分</span>
+            <span class="chip ok" id="sum-total-chip">毕业总学分 <strong id="sum-total">—</strong></span>
+          </div>
+        </div>
+        <div class="alert-info" style="margin-bottom:12px;font-size:12px">
+          <strong>汇总规则：</strong>一级最低/最高学分 = 各二级之和；二级与三级学分要求分别维护，有三级子分类时二级仍可编辑。顶部「+ 新增分类」仅新增<strong>二级分类</strong>；三级请在二级行点击「+子级」。一级不可编辑/删除。
+        </div>
+        <div class="card">
+          <table class="data-table tree-table">
+            <thead>
+              <tr>
+                <th style="width:28%">课程分类</th><th>课程性质</th>
+                <th>最低学分</th><th>最高学分</th><th>课程数</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="classification-tree-body"></tbody>
+          </table>
+        </div>
+        <div class="card card-sub">
+          <div class="card-head">选修课学期修读要求 <span class="hint">（选修类分类 · 4学年×3学期）</span></div>
+          <div class="table-scroll">
+            <table class="data-table compact semester-matrix-table">
+              <thead>
+                <tr>
+                  <th class="sticky-col-cat">课程分类</th>
+                  <th class="sticky-col-req">要求</th>
+                  <th>Y1S1</th><th>Y1S2</th><th>Y1S3</th>
+                  <th>Y2S1</th><th>Y2S2</th><th>Y2S3</th>
+                  <th>Y3S1</th><th>Y3S2</th><th>Y3S3</th>
+                  <th>Y4S1</th><th>Y4S2</th><th>Y4S3</th>
+                </tr>
+              </thead>
+              <tbody id="semester-matrix-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB2 -->
+      <div class="tab-panel" id="tab-courses">
+        <div class="panel-toolbar">
+          <button class="btn btn-primary btn-sm" onclick="openAddCourseModal()">+ 新增课程</button>
+          <button class="btn btn-outline btn-sm" onclick="openBatchAddCourseModal()">批量新增</button>
+          <select class="input input-sm"><option>全部分类</option><option>Compulsory Courses</option><option>Core/Major/Specialisation</option><option>Optional/Elective Courses</option></select>
+          <input class="input input-sm" placeholder="搜索课号/课名" style="width:180px">
+        </div>
+        <div class="card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>课号</th><th>课名</th><th>Classification(H1)</th><th>Classification(H2)</th><th>Classification(H3)</th><th>学分</th>
+                <th>开课学期</th><th>修读类型</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="program-courses-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB3 -->
+      <div class="tab-panel" id="tab-structure">
+        <div class="panel-toolbar">
+          <span class="hint">由 TAB1 + TAB2 自动生成 · 只读预览 · 可导出 PDF</span>
+          <button class="btn btn-outline btn-sm">导出 PDF</button>
+          <button class="btn btn-ghost btn-sm">打印</button>
+        </div>
+        <div class="card ps-card">
+          <div id="programme-structure-root"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 审批列表 ═══ -->
+    <section class="page" id="page-approval-list">
+      <div class="page-header">
+        <div>
+          <h1>培养方案版本审批</h1>
+          <p class="subtitle">按审批节点查看待办、进行中与历史记录；全部节点统一展示</p>
+        </div>
+      </div>
+      <div class="approval-tab-bar" id="approval-tab-bar"></div>
+      <div class="panel-toolbar approval-list-toolbar" id="approval-list-toolbar">
+        <button class="btn btn-primary btn-sm" id="btn-batch-approval-review" onclick="openBatchApprovalReview()" disabled>Review</button>
+        <span class="form-hint" id="approval-selection-hint">Pending 页勾选待办后可批量 Review</span>
+      </div>
+      <div class="card">
+        <table class="data-table approval-table">
+          <thead>
+            <tr id="approval-table-head-row">
+              <th class="col-check" id="approval-check-col"><input type="checkbox" id="approval-check-all" aria-label="全选" onchange="toggleApprovalCheckAll(this.checked)"></th>
+              <th>培养方案</th><th>Status</th><th>Stage</th>
+              <th>专业</th><th>开始批次</th>
+              <th>总学分</th><th>提交人</th><th>提交时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="approval-list-body"></tbody>
+        </table>
+        <div class="table-empty" id="approval-list-empty" style="display:none">暂无记录</div>
+      </div>
+    </section>
+
+    <!-- ═══ 版本查询 ═══ -->
+    <section class="page" id="page-version-query">
+      <div class="page-header">
+        <div><h1>培养方案版本查询</h1><p class="subtitle">只读查看已制定/已审批的版本方案</p></div>
+      </div>
+      <div class="filter-bar">
+        <select class="input" id="query-major"><option value="">全部专业</option></select>
+        <select class="input"><option value="">全部版本</option></select>
+        <input class="input" placeholder="按开始批次查询，如 2025/09" style="width:160px">
+        <button class="btn btn-outline" onclick="filterVersions();goPage('version-query')">查询</button>
+      </div>
+      <div class="card">
+        <table class="data-table version-table">
+          <thead>
+            <tr>
+              <th>培养方案版本</th><th>审批状态</th><th>专业代码</th><th>学制</th><th>版本</th>
+              <th>开始批次</th><th>截止批次</th><th>授予学位</th><th>版本引用情况</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="version-query-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ 方案变更申请 ═══ -->
+    <section class="page" id="page-change-apply">
+      <div class="page-header">
+        <div>
+          <h1>方案变更申请</h1>
+          <p class="subtitle">选择已审批通过的培养方案版本发起变更；审批通过后覆盖原版本内容，不影响已生成执行计划</p>
+        </div>
+        <button class="btn btn-primary" onclick="openNewChangeApplyModal()">+ 新建申请</button>
+      </div>
+      <div class="filter-bar">
+        <select class="input" id="change-apply-filter-major" onchange="renderChangeApplyList()">
+          <option value="">全部专业</option>
+          <option value="finance">Finance 金融学</option>
+          <option value="chinese">Chinese Studies 中国研究</option>
+          <option value="accounting">Accounting 会计学</option>
+        </select>
+        <select class="input" id="change-apply-filter-status" onchange="renderChangeApplyList()">
+          <option value="">全部状态</option>
+          <option value="draft">草稿</option>
+          <option value="pending">进行中</option>
+          <option value="approved">已通过</option>
+          <option value="rejected">已驳回</option>
+        </select>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>目标培养方案版本</th><th>专业</th><th>版本</th><th>状态</th>
+              <th>提交人</th><th>提交时间</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="change-apply-list-body"></tbody>
+        </table>
+        <div class="table-empty" id="change-apply-list-empty" style="display:none">暂无变更申请记录</div>
+      </div>
+    </section>
+
+    <!-- ═══ 方案变更审核 ═══ -->
+    <section class="page" id="page-change-review">
+      <div class="page-header">
+        <div>
+          <h1>方案变更审核</h1>
+          <p class="subtitle">按审批节点查看待办、进行中与历史记录；全部节点统一展示</p>
+        </div>
+      </div>
+      <div class="approval-tab-bar" id="change-review-tab-bar"></div>
+      <div class="panel-toolbar approval-list-toolbar" id="change-review-list-toolbar">
+        <button class="btn btn-primary btn-sm" id="btn-batch-change-review" onclick="openBatchChangeReview()" disabled>Review</button>
+        <span class="form-hint" id="change-review-selection-hint">Pending 页勾选待办后可批量 Review</span>
+      </div>
+      <div class="card">
+        <table class="data-table approval-table change-review-table">
+          <thead>
+            <tr id="change-review-table-head-row">
+              <th class="col-check" id="change-review-check-col"><input type="checkbox" id="change-review-check-all" aria-label="全选" onchange="toggleChangeReviewCheckAll(this.checked)"></th>
+              <th>培养方案</th><th>Status</th><th>Stage</th>
+              <th>专业</th><th>版本</th><th>开始批次</th>
+              <th>总学分</th><th>提交人</th><th>提交时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="change-review-list-body"></tbody>
+        </table>
+        <div class="table-empty" id="change-review-list-empty" style="display:none">暂无记录</div>
+      </div>
+    </section>
+
+    <!-- ═══ 执行计划 ═══ -->
+    <section class="page" id="page-exec-list">
+      <div class="page-header">
+        <div><h1>专业批次培养方案执行计划</h1><p class="subtitle">从已审批版本生成批次执行计划，支持独立编辑；执行计划为下一步开课的数据来源</p></div>
+        <button class="btn btn-primary" onclick="openModal('modal-gen-exec')">+ 生成执行计划</button>
+      </div>
+      <div class="filter-bar">
+        <select class="input"><option>全部学院</option></select>
+        <select class="input"><option>全部专业</option></select>
+        <select class="input"><option>全部批次</option></select>
+        <select class="input"><option>全部状态</option><option>草稿</option><option>已发布</option></select>
+        <button class="btn btn-outline">查询</button>
+      </div>
+      <div class="card">
+        <div class="panel-toolbar exec-list-toolbar">
+          <button class="btn btn-outline btn-sm" id="btn-exec-lock" onclick="requestLockSelectedExecPlans()" disabled>提交</button>
+          <button class="btn btn-outline btn-sm" id="btn-exec-unlock" onclick="requestUnlockSelectedExecPlans()" disabled>撤回</button>
+          <button class="btn btn-outline btn-sm btn-danger-outline" id="btn-exec-delete" onclick="requestDeleteSelectedExecPlans()" disabled>删除</button>
+          <span class="hint">勾选未提交的执行计划后可批量提交或删除；提交后不可编辑，未开课前可撤回，已开课须先删除开课任务</span>
+        </div>
+        <table class="data-table exec-list-table">
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="exec-check-all" aria-label="全选" onchange="toggleExecCheckAll(this.checked)"></th>
+              <th>专业代码</th><th>专业</th><th>专业批次</th><th>学院（School）</th><th>入学批次</th><th>开课状态</th><th>是否提交</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="exec-list-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ 数据统计 · Alignment Charts ═══ -->
+    <section class="page" id="page-stats-alignment">
+      <div class="stats-shell">
+        <aside class="stats-tree-panel">
+          <input class="input stats-tree-search" id="stats-tree-search-alignment" placeholder="Search..." oninput="filterStatsTree('alignment')">
+          <div class="stats-tree" id="stats-tree-alignment"></div>
+        </aside>
+        <div class="stats-main">
+          <div class="stats-toolbar">
+            <button class="btn btn-outline btn-sm" type="button" onclick="exportStatsPage('alignment')">Export</button>
+            <div class="stats-context" id="stats-alignment-context"></div>
+          </div>
+          <div class="stats-scroll" id="stats-alignment-content"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 数据统计 · Bloom's Taxonomy Charts ═══ -->
+    <section class="page" id="page-stats-bloom">
+      <div class="stats-shell">
+        <aside class="stats-tree-panel">
+          <input class="input stats-tree-search" id="stats-tree-search-bloom" placeholder="Search..." oninput="filterStatsTree('bloom')">
+          <div class="stats-tree" id="stats-tree-bloom"></div>
+        </aside>
+        <div class="stats-main">
+          <div class="stats-toolbar">
+            <button class="btn btn-outline btn-sm" type="button" onclick="exportStatsPage('bloom')">Export</button>
+            <div class="stats-context" id="stats-bloom-context"></div>
+          </div>
+          <div class="stats-scroll" id="stats-bloom-content"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 执行计划编辑 ═══ -->
+    <section class="page" id="page-exec-edit">
+      <div class="page-header compact">
+        <div class="breadcrumb">
+          <a href="#" onclick="goPage('exec-list');return false">执行计划</a><span>/</span>
+          <span>EP-Finance-202509</span>
+        </div>
+        <div class="header-actions">
+          <span class="badge-info">执行计划副本 · 可编辑</span>
+          <button class="btn btn-ghost" onclick="goPage('exec-list')">返回</button>
+          <button class="btn btn-outline">保存</button>
+          <button class="btn btn-primary">发布</button>
+        </div>
+      </div>
+      <div class="info-strip">
+        <span><label>专业</label>Finance 金融学</span>
+        <span><label>入学批次</label><code>2025/09</code></span>
+        <span><label>关联版本</label><code>2025/09</code> <span class="lock-icon" title="按批次自动匹配，不可切换">🔒</span></span>
+        <span><label>版本区间</label><code>2025/09</code> ~ 至今</span>
+      </div>
+      <div class="alert-info">执行计划从已审批版本复制生成。可调整开课学期等批次差异，课号/课名不可修改，不影响原版本。</div>
+      <div class="tab-bar">
+        <button class="tab active" data-tab-exec="exec-tab1">课程分类</button>
+        <button class="tab" data-tab-exec="exec-tab2">课程列表</button>
+        <button class="tab" data-tab-exec="exec-tab3">方案进程表</button>
+      </div>
+      <div class="tab-panel active" id="exec-tab1">
+        <div class="card"><p style="padding:20px;color:var(--text-3);font-size:13px">与版本 TAB1 结构相同，允许微调分类学分上限等批次级配置。（原型复用版本编辑视图）</p></div>
+      </div>
+      <div class="tab-panel" id="exec-tab2">
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>课号</th><th>课名</th><th>分类</th><th>学分</th><th>开课学期</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>EEE101</code></td><td>Circuit Analysis</td><td>Engineering Core 1</td><td>4</td>
+                <td><select class="input input-sm semester-select"></select></td>
+                <td class="actions"><a href="#">编辑</a></td>
+              </tr>
+              <tr>
+                <td><code>EEE201</code></td><td>Digital Electronics</td><td>Engineering Core 2</td><td>4</td>
+                <td><select class="input input-sm semester-select"></select></td>
+                <td class="actions"><a href="#">编辑</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tab-panel" id="exec-tab3">
+        <div class="card ps-card"><div id="programme-structure-exec"></div></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ═══ 弹窗：新增版本 ═══ -->
+<div class="modal-overlay" id="modal-new-version">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3>新增培养方案版本</h3><button class="modal-close" onclick="closeModal('modal-new-version')">×</button></div>
+    <div class="modal-body">
+      <div class="alert-info" style="margin-top:0">
+        同一专业可存在多个版本。新版本开始批次<strong>不得早于当前有效版本的下一批次</strong>（如当前 2025/09 → 最早只能选 2026/02）。保存后上一版本截止批次自动设为前一批次（2025/09）。
+      </div>
+      <div class="form-grid">
+        <div class="form-item"><label class="req">专业</label>
+          <select class="input" id="new-major" onchange="onNewMajorChange()">
+            <option value="">请选择</option>
+            <option value="finance">Finance 金融学</option>
+            <option value="chinese">Chinese Studies 中国研究</option>
+            <option value="accounting">Accounting 会计学</option>
+          </select>
+        </div>
+        <div class="form-item"><label class="req">学制（年）</label>
+          <input class="input readonly" id="new-duration" type="text" readonly placeholder="选择专业后自动带出">
+        </div>
+        <div class="form-item"><label class="req">授予学位</label>
+          <input class="input readonly" id="new-degree" type="text" readonly placeholder="选择专业后自动带出">
+        </div>
+        <div class="form-item"><label class="req">版本号</label>
+          <input class="input" id="new-version-code" placeholder="通常与开始批次一致，如 2025/09" readonly>
+        </div>
+        <div class="form-item"><label class="req">开始批次</label>
+          <select class="input" id="new-start-batch" onchange="onStartBatchChange()"></select>
+          <p class="form-hint" id="min-batch-hint" style="margin-top:4px"></p>
+        </div>
+        <div class="form-item full"><label>培养方案名称</label>
+          <input class="input" id="new-programme-name" readonly placeholder="选择专业后自动生成">
+        </div>
+      </div>
+
+      <div class="cascade-preview" id="cascade-preview" style="display:none">
+        <h4>批次衔接预览</h4>
+        <div class="cascade-row prev">
+          <span class="cascade-label">上一版本</span>
+          <span id="prev-version-label">—</span>
+          <span class="cascade-arrow">截止批次 →</span>
+          <code id="prev-end-batch" class="batch-code highlight">—</code>
+          <span class="cascade-note">（新版本审批通过后生效）</span>
+        </div>
+        <div class="cascade-row curr">
+          <span class="cascade-label">新版本</span>
+          <span id="curr-version-label">—</span>
+          <span class="cascade-arrow">开始批次</span>
+          <code id="curr-start-batch" class="batch-code">—</code>
+          <span class="cascade-arrow">截止批次</span>
+          <code class="batch-code muted">—（当前有效，留空）</code>
+        </div>
+        <p class="form-hint" id="batch-cascade-hint" style="margin-top:10px;margin-bottom:0"></p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-version')">取消</button>
+      <button class="btn btn-primary" onclick="confirmNewVersion()">进入制定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：新增分类 ═══ -->
+<div class="modal-overlay" id="modal-add-category">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3 id="modal-category-title">新增课程分类</h3><button class="modal-close" onclick="closeModal('modal-add-category')">×</button></div>
+    <div class="modal-body">
+      <div class="category-form-panel mode-l2" id="category-form-panel">
+        <div id="category-l2-fields">
+          <div class="form-item field-h1"><label class="req">Heading 1（一级分类）</label>
+            <select class="input" id="h1-select" onchange="onH1Change()">
+              <option value="">请选择</option>
+              <option value="compulsory">Compulsory Courses</option>
+              <option value="core">Core/Major/Specialisation</option>
+              <option value="elective">Optional/Elective Courses</option>
+              <option value="minor">Minor Courses</option>
+              <option value="training">Industrial Training/Practicum</option>
+              <option value="others">Others</option>
+            </select>
+          </div>
+          <div class="form-item field-h2"><label class="req">Heading 2（二级分类）</label>
+            <select class="input" id="h2-select">
+              <option value="">请选择</option>
+            </select>
+          </div>
+          <div class="form-item field-study"><label class="req">修读类型</label>
+            <select class="input" id="study-type-select" onchange="onStudyTypeChange()">
+              <option value="compulsory">必修 Compulsory</option>
+              <option value="elective">选修 Elective</option>
+            </select>
+          </div>
+        </div>
+        <div id="category-l3-fields">
+          <div class="form-item field-l3-parent"><label>所属二级分类</label>
+            <input class="input readonly" id="category-l3-parent-display" type="text" readonly>
+          </div>
+          <div class="form-item field-l3-name"><label class="req">三级分类名称</label>
+            <input class="input" id="category-l3-name" placeholder="如 Arts / Business / Science">
+          </div>
+          <p class="form-hint field-l3-hint" id="category-l3-hint">修读类型继承所属二级分类，无需填写。</p>
+        </div>
+        <div class="category-credits-range" id="category-credits-wrap">
+          <div class="form-item field-credits-min">
+            <label class="req" id="category-credits-min-label">最低学分</label>
+            <input class="input" type="number" id="category-credits-min" value="" min="0" placeholder="最低">
+          </div>
+          <div class="form-item field-credits-max">
+            <label class="req" id="category-credits-max-label">最高学分</label>
+            <input class="input" type="number" id="category-credits-max" value="" min="0" placeholder="最高">
+          </div>
+          <p class="form-hint" id="category-credits-hint"></p>
+        </div>
+      </div>
+      <div class="form-section" id="elective-matrix-section">
+        <h4>选修课学期修读要求 <span class="req-tag">必填</span></h4>
+        <p class="form-hint" id="elective-matrix-hint">请手动添加需要限制的学期，选择学期并填写该学期的最低/最高学分要求及课程数量（Y1S1 ~ Y4S3）。</p>
+        <table class="data-table compact editable elective-matrix-form">
+          <thead><tr><th style="width:140px">学期</th><th>最低学分要求</th><th>最高学分限制</th><th>要求课程数</th><th style="width:56px">操作</th></tr></thead>
+          <tbody id="elective-matrix-tbody">
+            <tr id="elective-matrix-empty"><td colspan="5" class="matrix-empty">暂无数据，请点击下方「+ 添加学期要求」</td></tr>
+          </tbody>
+        </table>
+        <button type="button" class="btn btn-outline btn-sm" style="margin-top:10px" onclick="addElectiveMatrixRow()">+ 添加学期要求</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-category')">取消</button>
+      <button class="btn btn-primary" onclick="saveCategory()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：删除分类确认 ═══ -->
+<div class="modal-overlay" id="modal-delete-category">
+  <div class="modal">
+    <div class="modal-head"><h3>删除课程分类</h3><button class="modal-close" onclick="cancelDeleteCategory()">×</button></div>
+    <div class="modal-body">
+      <p id="delete-category-msg">确定删除该分类吗？此操作不可撤销。</p>
+      <p class="form-hint" id="delete-category-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelDeleteCategory()">取消</button>
+      <button class="btn btn-danger" onclick="confirmDeleteCategory()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：版本引用情况 ═══ -->
+<div class="modal-overlay" id="modal-version-refs">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3 id="version-ref-title">版本引用情况</h3><button class="modal-close" onclick="closeModal('modal-version-refs')">×</button></div>
+    <div class="modal-body">
+      <p class="form-hint" id="version-ref-summary"></p>
+      <table class="data-table compact">
+        <thead><tr><th>执行计划</th><th>专业</th><th>入学批次</th><th>状态</th></tr></thead>
+        <tbody id="version-ref-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-version-refs')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：提交版本确认 ═══ -->
+<div class="modal-overlay" id="modal-submit-version">
+  <div class="modal">
+    <div class="modal-head"><h3>提交审批</h3><button class="modal-close" onclick="cancelSubmitVersion()">×</button></div>
+    <div class="modal-body">
+      <p id="submit-version-msg">确定提交该培养方案版本进行审批吗？</p>
+      <p class="form-hint" id="submit-version-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelSubmitVersion()">取消</button>
+      <button class="btn btn-primary" onclick="confirmSubmitVersion()">确认提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：批量提交审批 ═══ -->
+<div class="modal-overlay" id="modal-batch-submit-version">
+  <div class="modal">
+    <div class="modal-head"><h3>批量提交审批</h3><button class="modal-close" onclick="cancelBatchSubmitVersion()">×</button></div>
+    <div class="modal-body">
+      <p id="batch-submit-version-msg">确定提交所选培养方案版本进行审批吗？</p>
+      <p class="form-hint" id="batch-submit-version-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelBatchSubmitVersion()">取消</button>
+      <button class="btn btn-primary" onclick="confirmBatchSubmitVersion()">确认提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：删除版本确认 ═══ -->
+<div class="modal-overlay" id="modal-delete-version">
+  <div class="modal">
+    <div class="modal-head"><h3>删除培养方案版本</h3><button class="modal-close" onclick="cancelDeleteVersion()">×</button></div>
+    <div class="modal-body">
+      <p id="delete-version-msg">确定删除该培养方案版本吗？此操作不可撤销。</p>
+      <p class="form-hint" id="delete-version-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelDeleteVersion()">取消</button>
+      <button class="btn btn-danger" onclick="confirmDeleteVersion()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：通用删除确认 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-delete-confirm">
+  <div class="modal">
+    <div class="modal-head"><h3 id="delete-confirm-title">确认删除</h3><button class="modal-close" onclick="cancelDeleteConfirm()">×</button></div>
+    <div class="modal-body">
+      <p id="delete-confirm-msg">确定删除吗？此操作不可撤销。</p>
+      <p class="form-hint" id="delete-confirm-hint" style="display:none"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="cancelDeleteConfirm()">取消</button>
+      <button class="btn btn-danger" type="button" onclick="confirmDeleteConfirm()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：执行计划提交确认 ═══ -->
+<div class="modal-overlay" id="modal-exec-lock">
+  <div class="modal">
+    <div class="modal-head"><h3>提交执行计划</h3><button class="modal-close" onclick="cancelExecLockConfirm()">×</button></div>
+    <div class="modal-body">
+      <p id="exec-lock-msg">确定提交所选执行计划吗？</p>
+      <p class="form-hint" id="exec-lock-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelExecLockConfirm()">取消</button>
+      <button class="btn btn-primary" onclick="confirmLockSelectedExecPlans()">确认提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：执行计划撤回确认 ═══ -->
+<div class="modal-overlay" id="modal-exec-unlock">
+  <div class="modal">
+    <div class="modal-head"><h3>撤回执行计划</h3><button class="modal-close" onclick="cancelExecUnlockConfirm()">×</button></div>
+    <div class="modal-body">
+      <p id="exec-unlock-msg">确定撤回所选执行计划吗？</p>
+      <p class="form-hint" id="exec-unlock-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelExecUnlockConfirm()">取消</button>
+      <button class="btn btn-primary" onclick="confirmUnlockSelectedExecPlans()">确认撤回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：执行计划删除确认 ═══ -->
+<div class="modal-overlay" id="modal-exec-delete">
+  <div class="modal">
+    <div class="modal-head"><h3>删除执行计划</h3><button class="modal-close" onclick="cancelExecDeleteConfirm()">×</button></div>
+    <div class="modal-body">
+      <p id="exec-delete-msg">确定删除所选执行计划吗？</p>
+      <p class="form-hint" id="exec-delete-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelExecDeleteConfirm()">取消</button>
+      <button class="btn btn-danger" onclick="confirmDeleteSelectedExecPlans()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：执行计划操作提示 ═══ -->
+<div class="modal-overlay" id="modal-exec-notice">
+  <div class="modal modal-sm">
+    <div class="modal-head"><h3 id="exec-notice-title">提示</h3><button class="modal-close" onclick="closeModal('modal-exec-notice')">×</button></div>
+    <div class="modal-body">
+      <div class="alert-warn" id="exec-notice-msg">当前计划已开课，无法撤回，需先删除开课任务</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="closeModal('modal-exec-notice')">知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：批量新增课程 ═══ -->
+<div class="modal-overlay" id="modal-batch-add-course">
+  <div class="modal modal-xl">
+    <div class="modal-head"><h3>批量新增课程</h3><button class="modal-close" onclick="closeModal('modal-batch-add-course')">×</button></div>
+    <div class="modal-body">
+      <div class="alert-info" style="margin-bottom:14px;font-size:12px">
+        批量添加时<strong>仅设置课程分类与可选的开课学期</strong>，课程信息取自课程库；添加完成后可在列表中逐门「编辑」完善先修、简介等。
+      </div>
+      <h4 class="course-picker-title">统一设置</h4>
+      <div class="form-grid batch-course-settings">
+        <div class="form-item"><label class="req">课程分类 H1</label>
+          <select class="input" id="batch-course-h1-select" onchange="onBatchCourseH1Change()"></select>
+        </div>
+        <div class="form-item"><label class="req">H2</label>
+          <select class="input" id="batch-course-h2-select" onchange="onBatchCourseH2Change()"></select>
+        </div>
+        <div class="form-item" id="batch-course-h3-wrap">
+          <label id="batch-course-h3-label">H3</label>
+          <select class="input" id="batch-course-h3-select" onchange="updateBatchAddButtonState()"></select>
+          <p class="form-hint" id="batch-course-h3-hint"></p>
+        </div>
+        <div class="form-item" id="batch-offering-semester-wrap">
+          <div class="field-label-row">
+            <label id="batch-offering-semester-label">开课学期</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="batch-offering-semester-enabled" onchange="onOfferingSemesterToggleChange('batch')">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span class="toggle-label">指定学期</span>
+            </label>
+          </div>
+          <select class="input" id="batch-offering-semester-select" disabled onchange="updateBatchAddButtonState()"></select>
+          <p class="form-hint" id="batch-offering-semester-hint">必修须指定学期；选修可手动开关</p>
+        </div>
+      </div>
+      <h4 class="course-picker-title" style="margin-top:16px">选择课程 <span class="req-tag">可多选</span></h4>
+      <div class="form-item full">
+        <label class="req">课程选择器</label>
+        <div class="input-group course-picker-display">
+          <input class="input readonly" id="batch-course-picker-display" type="text" readonly placeholder="请点击「选择」从课程库挑选课程（可多选）">
+          <button class="btn btn-outline btn-sm" type="button" onclick="openBatchCoursePickerModal()">选择</button>
+        </div>
+        <p class="form-hint" id="batch-course-picker-hint">须从教务课程库选择课程；已添加至本方案的课程不可重复选择。</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-batch-add-course')">取消</button>
+      <button class="btn btn-primary" id="btn-batch-add-course" onclick="confirmBatchAddCourses()" disabled>确认添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：新增/编辑课程 ═══ -->
+<div class="modal-overlay" id="modal-add-course">
+  <div class="modal modal-xl">
+    <div class="modal-head"><h3 id="modal-course-title">课程设置</h3><button class="modal-close" onclick="closeModal('modal-add-course')">×</button></div>
+    <div class="step-bar" id="course-modal-step-bar">
+      <div class="step active" data-step="1" onclick="courseModalGoToStep(1)"><span class="step-num">1</span> General Information</div>
+      <div class="step" data-step="2" onclick="courseModalGoToStep(2)"><span class="step-num">2</span> Course Learning Outcome</div>
+      <div class="step" data-step="3" onclick="courseModalGoToStep(3)"><span class="step-num">3</span> Student Learning Time</div>
+    </div>
+    <div class="modal-body course-modal-body">
+      <!-- Step 1 -->
+      <div class="course-step-panel" id="course-step-panel-1">
+      <div class="course-picker-section" id="course-picker-section">
+        <h4 class="course-picker-title">选择课程 <span class="req-tag">第一步</span></h4>
+        <div class="form-item full">
+          <label class="req">课程选择器</label>
+          <div class="input-group course-picker-display">
+            <input class="input readonly" id="course-picker-display" type="text" readonly placeholder="请点击「选择」从课程库挑选课程">
+            <button class="btn btn-outline btn-sm" type="button" onclick="openCoursePickerModal()">选择</button>
+          </div>
+          <p class="form-hint" id="course-picker-hint">须先从教务课程库选择一门课程；选定后自动带出课号、课名、开课单位与负责人。</p>
+        </div>
+      </div>
+      <div class="alert-info" id="course-classification-hint" style="margin-bottom:12px;font-size:12px">
+        课程分类选项来自 TAB1 已建设的分类树；若尚未建设分类，则无法新增课程。
+      </div>
+      <div class="course-form-details" id="course-form-details">
+        <div class="course-form-section">
+          <h4 class="course-form-section-title">分类与开课</h4>
+          <div class="form-grid">
+            <div class="form-item"><label class="req">课程分类 H1</label>
+              <select class="input" id="course-h1-select" onchange="onCourseH1Change()"></select>
+            </div>
+            <div class="form-item"><label class="req">H2</label>
+              <select class="input" id="course-h2-select" onchange="onCourseH2Change()"></select>
+            </div>
+            <div class="form-item" id="course-h3-wrap">
+              <label id="course-h3-label">H3</label>
+              <select class="input" id="course-h3-select" onchange="updateCourseSaveButtonState()"></select>
+              <p class="form-hint" id="course-h3-hint"></p>
+            </div>
+            <div class="form-item" id="course-study-type-wrap">
+              <label>课程性质</label>
+              <input class="input readonly" id="course-study-type-display" type="text" readonly value="—">
+              <p class="form-hint" id="course-study-type-hint">根据 H1 分类自动判定</p>
+            </div>
+            <div class="form-item" id="offering-semester-wrap">
+              <div class="field-label-row">
+                <label id="offering-semester-label">开课学期</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="offering-semester-enabled" onchange="onOfferingSemesterToggleChange()">
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  <span class="toggle-label">指定学期</span>
+                </label>
+              </div>
+              <select class="input" id="offering-semester-select" disabled onchange="updateCourseSaveButtonState()"></select>
+              <p class="form-hint" id="offering-semester-hint">必修须指定学期；选修可手动开关</p>
+            </div>
+          </div>
+        </div>
+        <div class="course-form-section">
+          <h4 class="course-form-section-title">课程信息</h4>
+          <div class="form-grid">
+            <div class="form-item course-catalog-field"><label class="req">课号</label><input class="input readonly" id="course-code-input" value="" readonly placeholder="选择课程后自动带出"></div>
+            <div class="form-item course-catalog-field"><label class="req">课名</label><input class="input readonly" id="course-name-input" value="" readonly placeholder="选择课程后自动带出"></div>
+            <div class="form-item course-catalog-field"><label class="req">开课单位</label><input class="input readonly" id="course-dept-input" value="" readonly placeholder="选择课程后自动带出"></div>
+            <div class="form-item course-catalog-field"><label class="req">课程负责人</label><input class="input readonly" id="course-coordinator-input" value="" readonly placeholder="选择课程后自动带出"></div>
+            <div class="form-item course-catalog-field"><label class="req">学分</label><input class="input" id="course-credits-input" type="number" min="0" value=""></div>
+            <div class="form-item course-catalog-field"><label class="req">授课语言</label><select class="input" id="course-language-select"><option value="English">English</option><option value="Chinese">Chinese</option></select></div>
+            <div class="form-item full course-catalog-field"><label>先修课程</label>
+              <div class="input-group course-picker-display">
+                <input class="input readonly" id="course-prereq-input" type="text" readonly placeholder="请点击「选择」挑选先修课程（可多选）">
+                <button class="btn btn-outline btn-sm" type="button" onclick="openPrereqCoursePickerModal()">选择</button>
+              </div>
+            </div>
+            <div class="form-item full course-catalog-field"><label>课程简介 Synopsis <span class="char-count" id="course-synopsis-count">0/500</span></label>
+              <textarea class="input textarea" id="course-synopsis-input" rows="3" placeholder="选择课程后自动带出，可在此方案内调整"></textarea>
+            </div>
+            <div class="form-item full course-catalog-field"><label>参考书 References <span class="char-count" id="course-refs-count">0/500</span></label>
+              <textarea class="input textarea" id="course-refs-input" rows="2" placeholder="选择课程后自动带出，可在此方案内调整"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Step 2: CLO -->
+      <div class="course-step-panel" id="course-step-panel-2" hidden>
+        <div class="course-step-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openCloModal()">Create</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-clo-delete" disabled onclick="deleteSelectedClos()">Delete</button>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table compact clo-table">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" id="clo-check-all" onchange="toggleAllCloCheck(this.checked)"></th>
+                <th>No.</th><th>CLO</th><th>Outcome</th><th>Bloom's Taxonomy Level</th>
+                <th>Teaching Methods</th><th>Assessment Methods</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="clo-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Step 3: SLT -->
+      <div class="course-step-panel" id="course-step-panel-3" hidden>
+        <div class="slt-summary-bar" id="slt-summary-bar">
+          <span class="slt-chip primary">Total <strong id="slt-total">0</strong> SLT</span>
+          <span class="slt-chip primary">Assessment <strong id="slt-assessment-total">0</strong> SLT</span>
+          <span class="slt-chip">Online+Indep. <strong id="slt-online-pct">0%</strong></span>
+          <span class="slt-chip">Physical <strong id="slt-physical-pct">0%</strong></span>
+          <div class="slt-info-tip">
+            <button type="button" class="slt-info-btn" aria-label="SLT percentage formulas" onclick="toggleSltInfoTip(event)">i</button>
+            <div class="slt-info-popover" id="slt-info-popover">
+              <p class="slt-info-item"><strong>1. % SLT for F2F Physical Component:</strong></p>
+              <p class="slt-info-formula">[Total F2F Physical / (Total F2F Physical + Total F2F Online + Total Independent Learning) × 100]</p>
+              <p class="slt-info-item"><strong>2. % SLT for Online &amp; Independent Learning Component:</strong></p>
+              <p class="slt-info-formula">[(Total F2F Online + Total Independent Learning) / (Total F2F Physical + Total F2F Online + Total Independent Learning) × 100]</p>
+            </div>
+          </div>
+        </div>
+        <div class="slt-section open" id="slt-section-outline">
+          <div class="slt-section-head" onclick="toggleSltSection('outline')">
+            <span class="slt-toggle">▼</span>
+            <span class="slt-section-title">Course Content Outline and Subtopics</span>
+            <div class="slt-section-actions" onclick="event.stopPropagation()">
+              <button class="btn btn-outline btn-sm" type="button">Import</button>
+              <button class="btn btn-primary btn-sm" type="button" onclick="openSltOutlineModal()">Create</button>
+            </div>
+          </div>
+          <div class="slt-section-body">
+            <div class="table-scroll">
+              <table class="data-table compact slt-outline-table">
+                <colgroup>
+                  <col class="col-no">
+                  <col class="col-outline">
+                  <col class="col-clo">
+                  <col span="4" class="col-num">
+                  <col span="4" class="col-num">
+                  <col class="col-nf2f">
+                  <col class="col-slt-total">
+                  <col class="col-actions">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th rowspan="2">No.</th>
+                    <th rowspan="2">Course Content Outline and Subtopics</th>
+                    <th rowspan="2">CLO</th>
+                    <th colspan="4">Face-to-Face (F2F) · Physical</th>
+                    <th colspan="4">Online/Technology-mediated</th>
+                    <th rowspan="2">NF2F<br>Independent Learning<br>(Asynchronous)</th>
+                    <th rowspan="2">Total<br>SLT</th>
+                    <th rowspan="2">操作</th>
+                  </tr>
+                  <tr>
+                    <th>L</th><th>T</th><th>P</th><th>O</th>
+                    <th>L</th><th>T</th><th>P</th><th>O</th>
+                  </tr>
+                </thead>
+                <tbody id="slt-outline-body"></tbody>
+                <tfoot id="slt-outline-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="slt-section open" id="slt-section-continuous">
+          <div class="slt-section-head" onclick="toggleSltSection('continuous')">
+            <span class="slt-toggle">▼</span>
+            <span class="slt-section-title">Continuous Assessment</span>
+            <div class="slt-section-actions" onclick="event.stopPropagation()">
+              <button class="btn btn-outline btn-sm" type="button">Import</button>
+              <button class="btn btn-primary btn-sm" type="button" onclick="openSltAssessmentModal('continuous')">Create</button>
+            </div>
+          </div>
+          <div class="slt-section-body">
+            <div class="table-scroll">
+              <table class="data-table compact slt-assessment-table">
+                <colgroup>
+                  <col class="col-no">
+                  <col class="col-name">
+                  <col class="col-pct">
+                  <col class="col-f2f">
+                  <col class="col-f2f">
+                  <col class="col-nf2f">
+                  <col class="col-slt-total">
+                  <col class="col-actions">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th rowspan="2">No.</th>
+                    <th rowspan="2">Continuous Assessment</th>
+                    <th rowspan="2">%</th>
+                    <th colspan="2">Face-to-Face (F2F)</th>
+                    <th rowspan="2">NF2F<br>Independent Learning<br>(Asynchronous)</th>
+                    <th rowspan="2">Total<br>SLT</th>
+                    <th rowspan="2">操作</th>
+                  </tr>
+                  <tr>
+                    <th>Physical</th>
+                    <th>Online/Technology-mediated<br>(Synchronous)</th>
+                  </tr>
+                </thead>
+                <tbody id="slt-continuous-body"></tbody>
+                <tfoot id="slt-continuous-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="slt-section open" id="slt-section-final">
+          <div class="slt-section-head" onclick="toggleSltSection('final')">
+            <span class="slt-toggle">▼</span>
+            <span class="slt-section-title">Final Assessment</span>
+            <div class="slt-section-actions" onclick="event.stopPropagation()">
+              <button class="btn btn-outline btn-sm" type="button">Import</button>
+              <button class="btn btn-primary btn-sm" type="button" onclick="openSltAssessmentModal('final')">Create</button>
+            </div>
+          </div>
+          <div class="slt-section-body">
+            <div class="table-scroll">
+              <table class="data-table compact slt-assessment-table">
+                <colgroup>
+                  <col class="col-no">
+                  <col class="col-name">
+                  <col class="col-pct">
+                  <col class="col-f2f">
+                  <col class="col-f2f">
+                  <col class="col-nf2f">
+                  <col class="col-slt-total">
+                  <col class="col-actions">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th rowspan="2">No.</th>
+                    <th rowspan="2">Final Assessment</th>
+                    <th rowspan="2">%</th>
+                    <th colspan="2">Face-to-Face (F2F)</th>
+                    <th rowspan="2">NF2F<br>Independent Learning<br>(Asynchronous)</th>
+                    <th rowspan="2">Total<br>SLT</th>
+                    <th rowspan="2">操作</th>
+                  </tr>
+                  <tr>
+                    <th>Physical</th>
+                    <th>Online/Technology-mediated<br>(Synchronous)</th>
+                  </tr>
+                </thead>
+                <tbody id="slt-final-body"></tbody>
+                <tfoot id="slt-final-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-course')">取消</button>
+      <button class="btn btn-outline" id="btn-course-prev" style="display:none" onclick="courseModalPrevStep()">上一步</button>
+      <button class="btn btn-outline" id="btn-course-next" onclick="courseModalNextStep()">下一步：CLO →</button>
+      <button class="btn btn-primary" id="btn-save-course" onclick="saveCourse()">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：CLO 创建/编辑 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-clo-form">
+  <div class="modal modal-md">
+    <div class="modal-head"><h3 id="clo-form-title">Create</h3><button class="modal-close" onclick="closeModal('modal-clo-form')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid clo-form-grid">
+        <div class="form-item"><label class="req">CLO</label><input class="input" id="clo-code-input" readonly></div>
+        <div class="form-item full"><label class="req">Outcome</label>
+          <textarea class="input textarea" id="clo-outcome-input" rows="3" maxlength="100" placeholder="please input" oninput="updateCloOutcomeCount()"></textarea>
+          <span class="char-count" id="clo-outcome-count">0/100</span>
+        </div>
+        <div class="form-item"><label class="req">Bloom's Taxonomy Level</label>
+          <select class="input" id="clo-bloom-select"><option value="">please select</option></select>
+        </div>
+        <div class="form-item"><label class="req">Teaching Methods</label>
+          <select class="input" id="clo-teaching-select"><option value="">please select</option></select>
+        </div>
+        <div class="form-item full"><label class="req">Assessment Methods</label>
+          <select class="input" id="clo-assessment-select"><option value="">please select</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-clo-form')">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="confirmCloForm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：SLT 大纲 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-slt-outline-form">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3 id="slt-outline-form-title">Create Course Content Outline and Subtopics</h3><button class="modal-close" onclick="closeModal('modal-slt-outline-form')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-item full"><label class="req">Course Content</label>
+          <textarea class="input textarea" id="slt-outline-content" rows="2" maxlength="100" placeholder="please input" oninput="updateSltOutlineContentCount()"></textarea>
+          <span class="char-count" id="slt-outline-content-count">0/100</span>
+        </div>
+        <div class="form-item full"><label class="req">Subtopics</label>
+          <textarea class="input textarea" id="slt-outline-subtopics" rows="3" placeholder="每行一条子主题"></textarea>
+        </div>
+        <div class="form-item full"><label class="req">CLO</label>
+          <div class="clo-multiselect" id="slt-outline-clo-multiselect">
+            <button type="button" class="clo-multiselect-trigger input" onclick="toggleSltOutlineCloDropdown(event)">
+              <span class="clo-multiselect-display placeholder" id="slt-outline-clo-display">please select</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="slt-outline-clo-dropdown" hidden>
+              <div class="clo-multiselect-empty" id="slt-outline-clo-empty" hidden>请先在 Step 2 创建 CLO</div>
+              <div class="clo-multiselect-options" id="slt-outline-clo-options"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="learning-time-block">
+        <div class="learning-time-head"><span class="lt-bar">|</span> Learning Time <span class="lt-total">Total SLT: <strong id="slt-outline-lt-total">0</strong></span></div>
+        <div class="f2f-block">
+          <div class="f2f-label">F2F</div>
+          <div class="f2f-grid">
+            <div class="f2f-group"><div class="f2f-group-title">Physical</div>
+              <div class="lt-fields"><label>Lecture<input class="input input-sm lt-num" type="number" min="0" data-lt="phys-L" oninput="updateSltOutlineLtTotal()"></label>
+              <label>Tutorial<input class="input input-sm lt-num" type="number" min="0" data-lt="phys-T" oninput="updateSltOutlineLtTotal()"></label>
+              <label>Practical<input class="input input-sm lt-num" type="number" min="0" data-lt="phys-P" oninput="updateSltOutlineLtTotal()"></label>
+              <label>Others<input class="input input-sm lt-num" type="number" min="0" data-lt="phys-O" oninput="updateSltOutlineLtTotal()"></label></div>
+            </div>
+            <div class="f2f-group"><div class="f2f-group-title">Online/ Technology-mediated</div>
+              <div class="lt-fields"><label>Lecture<input class="input input-sm lt-num" type="number" min="0" data-lt="online-L" oninput="updateSltOutlineLtTotal()"></label>
+              <label>Tutorial<input class="input input-sm lt-num" type="number" min="0" data-lt="online-T" oninput="updateSltOutlineLtTotal()"></label>
+              <label>Practical<input class="input input-sm lt-num" type="number" min="0" data-lt="online-P" oninput="updateSltOutlineLtTotal()"></label>
+              <label>Others<input class="input input-sm lt-num" type="number" min="0" data-lt="online-O" oninput="updateSltOutlineLtTotal()"></label></div>
+            </div>
+          </div>
+        </div>
+        <div class="f2f-block nf2f-inline">
+          <div class="f2f-label">NF2F:</div>
+          <input class="input input-sm lt-num" type="number" min="0" id="slt-outline-nf2f" value="0" oninput="updateSltOutlineLtTotal()">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-slt-outline-form')">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSltOutlineForm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：SLT 考核 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-slt-assessment-form">
+  <div class="modal modal-md">
+    <div class="modal-head"><h3 id="slt-assessment-form-title">Create Continuous Assessment</h3><button class="modal-close" onclick="closeModal('modal-slt-assessment-form')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-item"><label class="req" id="slt-assessment-type-label">Continuous Assessment</label>
+          <select class="input" id="slt-assessment-type-select"><option value="">please select</option></select>
+        </div>
+        <div class="form-item"><label class="req">Percentage</label>
+          <div class="pct-input-wrap"><input class="input" type="number" min="0" max="100" id="slt-assessment-pct" value="0" oninput="updateSltAssessmentPctHint()"><span>%</span></div>
+          <p class="form-hint pct-hint" id="slt-assessment-pct-hint"></p>
+        </div>
+      </div>
+      <div class="learning-time-block">
+        <div class="learning-time-head"><span class="lt-bar">|</span> Learning Time <span class="lt-total">Total SLT: <strong id="slt-assessment-lt-total">0</strong></span></div>
+        <div class="lt-assessment-rows">
+          <label class="lt-side-label">F2F:</label>
+          <div class="f2f-block compact">
+            <div class="f2f-simple">
+              <label>Physical<input class="input input-sm lt-num" type="number" min="0" id="slt-assessment-phys" value="0" oninput="updateSltAssessmentLtTotal()"></label>
+              <label>Online/ Technology-mediated<input class="input input-sm lt-num" type="number" min="0" id="slt-assessment-online" value="0" oninput="updateSltAssessmentLtTotal()"></label>
+            </div>
+          </div>
+          <label class="lt-side-label">NF2F:</label>
+          <input class="input input-sm lt-num lt-nf2f-input" type="number" min="0" id="slt-assessment-nf2f" value="0" oninput="updateSltAssessmentLtTotal()">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-slt-assessment-form')">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSltAssessmentForm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：课程库选择器 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-course-picker">
+  <div class="modal modal-lg course-picker-modal">
+    <div class="modal-head"><h3 id="course-picker-title">选择课程</h3><button class="modal-close" onclick="cancelCoursePicker()">×</button></div>
+    <div class="modal-body">
+      <div class="picker-filter-grid">
+        <div class="form-item"><label>课名 Course Name</label><input class="input input-sm" id="picker-filter-name" placeholder="please input"></div>
+        <div class="form-item"><label>课号 Course Code</label><input class="input input-sm" id="picker-filter-code" placeholder="please input"></div>
+        <div class="form-item"><label>开课单位 Offering</label>
+          <select class="input input-sm" id="picker-filter-offering">
+            <option value="">please select</option>
+          </select>
+        </div>
+        <div class="picker-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="searchCourseCatalog()">Search</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetCoursePickerSearch()">Reset</button>
+        </div>
+      </div>
+      <div class="picker-table-wrap">
+        <table class="data-table compact picker-course-table">
+          <thead>
+            <tr>
+              <th class="col-radio"></th>
+              <th>No.</th>
+              <th>Course Code</th>
+              <th>Course Name</th>
+              <th>Offering Unit</th>
+              <th>Credit Value</th>
+              <th>Course Classification</th>
+            </tr>
+          </thead>
+          <tbody id="course-picker-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="course-picker-count">Total 0 records</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="cancelCoursePicker()">Cancel</button>
+      <button class="btn btn-primary" type="button" onclick="confirmCoursePicker()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：审批（仅作决定） ═══ -->
+<div class="modal-overlay" id="modal-approval-review">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3 id="approval-review-title">Review — 培养方案</h3><button class="modal-close" onclick="closeModal('modal-approval-review')">×</button></div>
+    <div class="modal-body">
+      <div class="approval-stage-panel" id="approval-review-stage-info"></div>
+      <p class="form-hint" style="margin-bottom:12px">请查阅方案详情后给出审批决定。完整内容请使用 View 打开方案详情页。</p>
+      <div class="form-item"><label class="req">审批意见</label><textarea class="input textarea" id="approval-review-comment" rows="3" placeholder="填写审批意见..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-approval-review')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitApprovalDecision('rejected')">Reject</button>
+      <button class="btn btn-purple" onclick="submitApprovalDecision('update_required')">Update Required</button>
+      <button class="btn btn-primary" onclick="submitApprovalDecision('approved')">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：批量审批 ═══ -->
+<div class="modal-overlay" id="modal-batch-approval-review">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3>Batch Review</h3><button class="modal-close" onclick="closeModal('modal-batch-approval-review')">×</button></div>
+    <div class="modal-body">
+      <p class="form-hint" id="batch-approval-review-summary" style="margin-bottom:12px"></p>
+      <ul class="batch-approval-list" id="batch-approval-review-list"></ul>
+      <div class="form-item" style="margin-top:16px"><label class="req">审批意见</label><textarea class="input textarea" id="batch-approval-review-comment" rows="3" placeholder="批量审批共用意见..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-batch-approval-review')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitBatchApprovalDecision('rejected')">Reject All</button>
+      <button class="btn btn-primary" onclick="submitBatchApprovalDecision('approved')">Approve All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：审批日志 ═══ -->
+<div class="modal-overlay" id="modal-approval-log">
+  <div class="modal modal-md">
+    <div class="modal-head"><h3 id="approval-log-title">Approval Log</h3><button class="modal-close" onclick="closeModal('modal-approval-log')">×</button></div>
+    <div class="modal-body">
+      <div class="approval-log-list" id="approval-log-body"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-approval-log')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：新建方案变更申请 ═══ -->
+<div class="modal-overlay" id="modal-new-change-apply">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3>新建方案变更申请</h3><button class="modal-close" onclick="closeModal('modal-new-change-apply')">×</button></div>
+    <div class="modal-body">
+      <div class="alert-info" style="margin-top:0">
+        请选择<strong>已审批通过</strong>的培养方案版本作为变更目标。变更审批通过后，将覆盖原版本在「方案版本管理」中的方案内容；已生成的执行计划不受影响，未生成执行计划的批次在生成时将引用最新版本内容。
+      </div>
+      <div class="form-grid">
+        <div class="form-item"><label class="req">专业</label>
+          <select class="input" id="change-apply-major" onchange="onChangeApplyMajorChange()">
+            <option value="">请选择</option>
+            <option value="finance">Finance 金融学</option>
+            <option value="chinese">Chinese Studies 中国研究</option>
+            <option value="accounting">Accounting 会计学</option>
+          </select>
+        </div>
+        <div class="form-item full"><label class="req">目标培养方案版本</label>
+          <select class="input" id="change-apply-version" onchange="onChangeApplyVersionChange()"></select>
+          <p class="form-hint" id="change-apply-version-hint">请先选择专业</p>
+        </div>
+      </div>
+      <div class="cascade-preview" id="change-apply-preview" style="display:none">
+        <h4>变更影响说明</h4>
+        <div class="cascade-row prev">
+          <span class="cascade-label">目标版本</span>
+          <span id="change-preview-version-name">—</span>
+          <span class="cascade-arrow">生效区间</span>
+          <code id="change-preview-version-range" class="batch-code">—</code>
+        </div>
+        <div class="cascade-row curr">
+          <span class="cascade-label">已生成执行计划</span>
+          <span id="change-preview-exec-count">—</span>
+          <span class="cascade-note">（审批通过后<strong>不受影响</strong>，仍保留生成时的方案副本）</span>
+        </div>
+        <p class="form-hint" id="change-preview-future-hint" style="margin-top:10px;margin-bottom:0"></p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-change-apply')">取消</button>
+      <button class="btn btn-primary" id="btn-confirm-new-change-apply" onclick="confirmNewChangeApply()">进入修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：提交变更审批 ═══ -->
+<div class="modal-overlay" id="modal-submit-change">
+  <div class="modal">
+    <div class="modal-head"><h3>提交变更审批</h3><button class="modal-close" onclick="cancelSubmitChange()">×</button></div>
+    <div class="modal-body">
+      <p id="submit-change-msg">确定提交该方案变更申请吗？</p>
+      <p class="form-hint" id="submit-change-hint"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelSubmitChange()">取消</button>
+      <button class="btn btn-primary" onclick="confirmSubmitChange()">确认提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：变更审核（仅作决定） ═══ -->
+<div class="modal-overlay" id="modal-change-review">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3 id="change-review-title">Review — 方案变更</h3><button class="modal-close" onclick="cancelChangeReview()">×</button></div>
+    <div class="modal-body">
+      <div class="approval-stage-panel" id="change-review-stage-info"></div>
+      <p class="form-hint" style="margin-bottom:12px">请查阅变更内容后给出审批决定。完整内容请使用 View 打开变更详情页。审批通过后将覆盖原培养方案版本内容，已生成执行计划不受影响。</p>
+      <div class="form-item"><label class="req">审批意见</label><textarea class="input textarea" id="change-review-comment" rows="3" placeholder="填写审批意见..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelChangeReview()">Cancel</button>
+      <button class="btn btn-danger" onclick="submitChangeReviewDecision('rejected')">Reject</button>
+      <button class="btn btn-purple" onclick="submitChangeReviewDecision('update_required')">Update Required</button>
+      <button class="btn btn-primary" onclick="submitChangeReviewDecision('approved')">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：批量变更审核 ═══ -->
+<div class="modal-overlay" id="modal-batch-change-review">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3>Batch Review</h3><button class="modal-close" onclick="closeModal('modal-batch-change-review')">×</button></div>
+    <div class="modal-body">
+      <p class="form-hint" id="batch-change-review-summary" style="margin-bottom:12px"></p>
+      <ul class="batch-approval-list" id="batch-change-review-list"></ul>
+      <div class="form-item" style="margin-top:16px"><label class="req">审批意见</label><textarea class="input textarea" id="batch-change-review-comment" rows="3" placeholder="批量审批共用意见..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-batch-change-review')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitBatchChangeReviewDecision('rejected')">Reject All</button>
+      <button class="btn btn-primary" onclick="submitBatchChangeReviewDecision('approved')">Approve All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：变更审核日志 ═══ -->
+<div class="modal-overlay" id="modal-change-review-log">
+  <div class="modal modal-md">
+    <div class="modal-head"><h3 id="change-review-log-title">Approval Log</h3><button class="modal-close" onclick="closeModal('modal-change-review-log')">×</button></div>
+    <div class="modal-body">
+      <div class="approval-log-list" id="change-review-log-body"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-change-review-log')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：生成执行计划 ═══ -->
+<div class="modal-overlay" id="modal-gen-exec">
+  <div class="modal">
+    <div class="modal-head"><h3>生成批次执行计划</h3><button class="modal-close" onclick="closeModal('modal-gen-exec')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-item"><label class="req">专业</label><select class="input" id="exec-major" onchange="onExecMajorChange()"></select></div>
+        <div class="form-item"><label class="req">入学批次</label>
+          <select class="input" id="exec-intake-batch" onchange="onExecBatchInput()"></select>
+          <p class="form-hint" id="exec-intake-batch-hint">仅显示尚未生成执行计划、且可匹配已审批版本的入学批次</p>
+        </div>
+        <div class="form-item full">
+          <label class="req">自动匹配培养方案版本</label>
+          <div class="version-lock-box" id="exec-version-match">
+            <strong id="exec-matched-version">2025/09</strong>
+            <span class="status approved" id="exec-match-status">已通过</span>
+            <span id="exec-match-range">生效区间：2025/09 ~ 至今</span>
+            <span class="lock-icon">🔒 仅可引用已审批通过版本 · 按入学批次自动匹配</span>
+          </div>
+          <p class="form-hint" id="exec-match-hint">规则：入学批次须落在已审批版本的 [开始批次, 截止批次] 区间内；待审批/草稿/已驳回版本不可引用。</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-gen-exec')">取消</button>
+      <button class="btn btn-primary" id="btn-gen-exec-submit" onclick="confirmGenerateExecPlan()">生成并编辑</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

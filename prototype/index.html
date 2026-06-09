@@ -890,7 +890,7 @@
             <div class="form-item course-catalog-field"><label class="req">课名</label><input class="input readonly" id="course-name-input" value="" readonly placeholder="选择课程后自动带出"></div>
             <div class="form-item course-catalog-field"><label class="req">开课单位</label><input class="input readonly" id="course-dept-input" value="" readonly placeholder="选择课程后自动带出"></div>
             <div class="form-item course-catalog-field"><label class="req">课程负责人</label><input class="input readonly" id="course-coordinator-input" value="" readonly placeholder="选择课程后自动带出"></div>
-            <div class="form-item course-catalog-field"><label class="req">学分</label><input class="input" id="course-credits-input" type="number" min="0" value=""></div>
+            <div class="form-item course-catalog-field"><label class="req">学分</label><input class="input" id="course-credits-input" type="number" min="0" value="" oninput="updateCourseSaveButtonState()"></div>
             <div class="form-item course-catalog-field"><label class="req">授课语言</label><select class="input" id="course-language-select"><option value="English">English</option><option value="Chinese">Chinese</option></select></div>
             <div class="form-item full course-catalog-field"><label>先修课程</label>
               <div class="input-group course-picker-display">
@@ -951,7 +951,6 @@
             <span class="slt-toggle">▼</span>
             <span class="slt-section-title">Course Content Outline and Subtopics</span>
             <div class="slt-section-actions" onclick="event.stopPropagation()">
-              <button class="btn btn-outline btn-sm" type="button">Import</button>
               <button class="btn btn-primary btn-sm" type="button" onclick="openSltOutlineModal()">Create</button>
             </div>
           </div>
@@ -995,7 +994,6 @@
             <span class="slt-toggle">▼</span>
             <span class="slt-section-title">Continuous Assessment</span>
             <div class="slt-section-actions" onclick="event.stopPropagation()">
-              <button class="btn btn-outline btn-sm" type="button">Import</button>
               <button class="btn btn-primary btn-sm" type="button" onclick="openSltAssessmentModal('continuous')">Create</button>
             </div>
           </div>
@@ -1038,7 +1036,6 @@
             <span class="slt-toggle">▼</span>
             <span class="slt-section-title">Final Assessment</span>
             <div class="slt-section-actions" onclick="event.stopPropagation()">
-              <button class="btn btn-outline btn-sm" type="button">Import</button>
               <button class="btn btn-primary btn-sm" type="button" onclick="openSltAssessmentModal('final')">Create</button>
             </div>
           </div>

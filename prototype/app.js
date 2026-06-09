@@ -2725,6 +2725,8 @@ function openModal(id) {
       onStudyTypeChange();
       onCategoryLevelChange();
       if (editingCategoryId) loadElectiveMatrixForCategory(editingCategoryId);
+    } else if (categoryFormMode === 'add-l3' || categoryFormMode === 'edit-l3') {
+      onCategoryLevelChange();
     }
     applyCategoryFormMode();
   }
@@ -2864,6 +2866,19 @@ function isOfferingSemesterEnabled(prefix = '') {
 function getCourseFormH1Id(prefix = '') {
   const id = prefix ? `${prefix}-course-h1-select` : 'course-h1-select';
   return document.getElementById(id)?.value || '';
+}
+
+function getCourseFormH2Id(prefix = '') {
+  const id = prefix ? `${prefix}-course-h2-select` : 'course-h2-select';
+  return document.getElementById(id)?.value || '';
+}
+
+/** 当前二级分类下是否存在三级分类（有则 H3 必填，无则跳过） */
+function isCourseH3Required(prefix = '') {
+  const h2Id = getCourseFormH2Id(prefix);
+  if (!h2Id) return false;
+  const l2 = findClassificationNode(h2Id);
+  return Boolean(l2?.children?.length);
 }
 
 function isCourseFormCompulsory(prefix = '') {
@@ -3450,6 +3465,7 @@ function createProgramCourseFromCatalog(catalogId, { h1Id, h2Id, h3Id, semester 
   const catalog = COURSE_CATALOG.find(c => c.id === catalogId);
   if (!catalog) return null;
   const l1 = findClassificationNode(h1Id);
+  const { clos, slt } = getCatalogCourseCloSlt(catalogId);
   return {
     id: `pc-${catalogId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     catalogId,
@@ -3462,7 +3478,9 @@ function createProgramCourseFromCatalog(catalogId, { h1Id, h2Id, h3Id, semester 
     credits: catalog.credits,
     prereqIds: [],
     synopsis: catalog.synopsis || '',
-    references: catalog.references || ''
+    references: catalog.references || '',
+    clos: cloneJson(clos),
+    slt: cloneJson(slt)
   };
 }
 
@@ -3892,7 +3910,7 @@ function readCourseFormIntoProgramCourse(pc) {
   const refs = document.getElementById('course-refs-input');
   if (h1?.value) pc.h1Id = h1.value;
   if (h2?.value) pc.h2Id = h2.value;
-  pc.h3Id = h3 && !h3.disabled && h3.value ? h3.value : null;
+  pc.h3Id = isCourseH3Required() && h3?.value ? h3.value : null;
   if (isCourseFormCompulsory() || isOfferingSemesterEnabled()) {
     pc.semester = offering?.value || null;
   } else {
@@ -4113,8 +4131,13 @@ function applySelectedCourse(course) {
   if (display) display.value = `${course.code} — ${course.name}`;
   updateCourseCharCounts();
   const hint = document.getElementById('course-picker-hint');
-  if (hint) hint.textContent = `已选择：${course.code} ${course.name}。请继续填写方案内分类与开课学期。`;
+  if (hint) {
+    hint.textContent = `已选择：${course.code} ${course.name}。课程库 CLO / SLT 已带入，可在 Step 2、3 中编辑；请继续填写方案内分类与开课学期。`;
+  }
+  initCourseModalDraftFromCatalog(course.id);
   syncOfferingSemesterControl();
+  if (courseModalStep === 2) renderCloTable();
+  if (courseModalStep === 3) renderSltAll();
   updateCourseSaveButtonState();
 }
 
@@ -4254,15 +4277,18 @@ function onCourseH2Change() {
   if (!h3) return;
 
   const hasL3 = l3List.length > 0;
+  const prevH3 = h3.value;
   updateCourseH3FieldState(hasL3);
 
   if (!hasL3) {
     h3.innerHTML = '<option value="">—</option>';
+    h3.value = '';
     h3.disabled = true;
   } else {
     h3.disabled = false;
     h3.innerHTML = '<option value="">请选择</option>' +
       l3List.map(l3 => `<option value="${l3.id}">${escapeHtml(l3.name)}</option>`).join('');
+    h3.value = l3List.some(l3 => l3.id === prevH3) ? prevH3 : '';
   }
   updateCourseSaveButtonState();
 }
@@ -4287,8 +4313,8 @@ function validateCourseSubmit() {
   if (!h2?.value || h2.disabled) {
     return { ok: false, message: '请选择二级分类（H2）' };
   }
-  if (h3 && !h3.disabled && !h3.value) {
-    return { ok: false, message: '请选择三级分类（H3）' };
+  if (isCourseH3Required() && !h3?.value) {
+    return { ok: false, message: '该二级分类下有三级分类，请选择三级分类（H3）' };
   }
 
   if (isCourseFormCompulsory() || isOfferingSemesterEnabled()) {
@@ -4310,7 +4336,7 @@ function validateCourseSubmit() {
 
   const h1Id = h1.value;
   const h2Id = h2.value;
-  const h3Id = h3 && !h3.disabled && h3.value ? h3.value : null;
+  const h3Id = isCourseH3Required() && h3?.value ? h3.value : null;
   const credits = Number(creditsRaw);
 
   const maxCheck = validateCompulsoryCourseMaxCredits({
@@ -4329,9 +4355,49 @@ function canSaveCourse() {
   return validateCourseSubmit().ok;
 }
 
+function validateCourseCloStep() {
+  const clos = courseModalDraft?.clos || [];
+  if (!clos.length) {
+    return {
+      ok: false,
+      message: '请先在 Step 2 创建至少一条 Course Learning Outcome（CLO），再进入 Student Learning Time（SLT）'
+    };
+  }
+  return { ok: true };
+}
+
+function canProceedCourseModalNext() {
+  if (courseModalStep === 1) return validateCourseSubmit().ok;
+  if (courseModalStep === 2) return validateCourseCloStep().ok;
+  return true;
+}
+
+function syncCourseModalStepBarState() {
+  const step3 = document.querySelector('#course-modal-step-bar .step[data-step="3"]');
+  if (!step3) return;
+  if (courseModalReadonly) {
+    step3.classList.remove('step-locked');
+    step3.removeAttribute('title');
+    return;
+  }
+  const blockStep3 = !validateCourseCloStep().ok && courseModalStep < 3;
+  step3.classList.toggle('step-locked', blockStep3);
+  if (blockStep3) {
+    step3.title = '请先完成 Step 2（CLO），SLT 大纲须关联 CLO';
+  } else {
+    step3.removeAttribute('title');
+  }
+}
+
 function updateCourseSaveButtonState() {
-  const btn = document.getElementById('btn-save-course');
-  if (btn) btn.disabled = false;
+  const canProceed = courseModalReadonly || canProceedCourseModalNext();
+  const nextBtn = document.getElementById('btn-course-next');
+  if (nextBtn && !courseModalReadonly && courseModalStep < 3) {
+    nextBtn.disabled = !canProceed;
+  } else if (nextBtn) {
+    nextBtn.disabled = false;
+  }
+  syncCourseModalStepBarState();
 }
 
 /* ── Course modal Step 2 CLO / Step 3 SLT ── */
@@ -4391,14 +4457,221 @@ function getDefaultCourseSlt() {
   };
 }
 
-function initCourseModalDraft(pc) {
-  courseModalDraft = pc
-    ? {
-        clos: JSON.parse(JSON.stringify(pc.clos || getDefaultCourseClos())),
-        slt: JSON.parse(JSON.stringify(pc.slt || getDefaultCourseSlt()))
-      }
-    : { clos: [], slt: { outlines: [], continuous: [], final: [] } };
+function catalogSltOutline(content, subtopics, cloCodes, f2fPhysical, nf2f) {
+  return {
+    content,
+    subtopics,
+    cloCodes,
+    f2fPhysical,
+    f2fOnline: { L: 0, T: 0, P: 0, O: 0 },
+    nf2f
+  };
 }
+
+function catalogStandardSlt(outlines) {
+  return {
+    outlines,
+    continuous: [
+      { type: 'Coursework', percent: 30, f2fPhysical: 0, f2fOnline: 0, nf2f: 18 },
+      { type: 'Midterm Examination', percent: 30, f2fPhysical: 2, f2fOnline: 0, nf2f: 8 }
+    ],
+    final: [
+      { type: 'Final Examination', percent: 40, f2fPhysical: 2, f2fOnline: 0, nf2f: 10 }
+    ]
+  };
+}
+
+/** 教务课程库预置 CLO / SLT（选课后带入方案，可在弹窗内编辑） */
+const COURSE_CATALOG_CLO_SLT = {
+  mpu3123: {
+    clos: [
+      { code: 'CLO1', outcome: 'Explain key milestones in Malaysian history and nation-building', bloom: 'C1', teaching: 'Lecture', assessment: 'Coursework' },
+      { code: 'CLO2', outcome: 'Analyze political and social structures in contemporary Malaysia', bloom: 'A3', teaching: 'Seminar', assessment: 'Presentation' },
+      { code: 'CLO3', outcome: 'Evaluate current issues affecting Malaysian society and governance', bloom: 'C4', teaching: 'Lecture', assessment: 'Examination' }
+    ],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Pre-independence Malaysia', ['Colonial period', 'Independence movement'], ['CLO1'], { L: 4, T: 1, P: 0, O: 0 }, 6),
+      catalogSltOutline('2. Nation-building & Constitution', ['Federal system', 'Social contract'], ['CLO1', 'CLO2'], { L: 4, T: 1, P: 0, O: 0 }, 6),
+      catalogSltOutline('3. Contemporary Malaysia', ['Economy', 'Multicultural society', 'Public policy'], ['CLO2', 'CLO3'], { L: 3, T: 1, P: 0, O: 0 }, 5)
+    ])
+  },
+  fin101: {
+    clos: [
+      { code: 'CLO1', outcome: 'Explain the role of financial markets and institutions', bloom: 'C1', teaching: 'Lecture', assessment: 'Quiz' },
+      { code: 'CLO2', outcome: 'Apply time value of money techniques to financial problems', bloom: 'C3', teaching: 'Tutorial', assessment: 'Assignments' },
+      { code: 'CLO3', outcome: 'Analyze risk and return trade-offs for basic securities', bloom: 'A3', teaching: 'Lecture', assessment: 'Coursework' },
+      { code: 'CLO4', outcome: 'Evaluate personal and corporate financing decisions at an introductory level', bloom: 'C4', teaching: 'Seminar', assessment: 'Examination' }
+    ],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Introduction to Finance', ['Financial system', 'Careers in finance'], ['CLO1'], { L: 3, T: 1, P: 0, O: 0 }, 5),
+      catalogSltOutline('2. Time Value of Money', ['PV/FV', 'Annuities', 'Loan amortization'], ['CLO2'], { L: 4, T: 2, P: 0, O: 0 }, 8),
+      catalogSltOutline('3. Risk & Return', ['Bonds', 'Stocks', 'Diversification'], ['CLO3', 'CLO4'], { L: 4, T: 1, P: 0, O: 0 }, 7)
+    ])
+  },
+  fin201: {
+    clos: [
+      { code: 'CLO1', outcome: 'Explain the goals of corporate financial management and agency theory', bloom: 'C2', teaching: 'Lecture', assessment: 'Coursework' },
+      { code: 'CLO2', outcome: 'Apply valuation techniques to stocks, bonds and investment projects', bloom: 'C3', teaching: 'Tutorial', assessment: 'Assignments' },
+      { code: 'CLO3', outcome: 'Analyze capital structure and dividend policy decisions', bloom: 'A3', teaching: 'Lecture', assessment: 'Mid-term Examination' },
+      { code: 'CLO4', outcome: 'Evaluate working capital and short-term financing strategies', bloom: 'C4', teaching: 'Seminar', assessment: 'Coursework' },
+      { code: 'CLO5', outcome: 'Design capital budgeting analyses under uncertainty', bloom: 'P2', teaching: 'Workshop', assessment: 'Project' }
+    ],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Corporate Finance Overview', ['Agency theory', 'Financial markets'], ['CLO1'], { L: 4, T: 1, P: 0, O: 0 }, 6),
+      catalogSltOutline('2. Valuation & Capital Budgeting', ['DCF', 'NPV/IRR', 'Risk analysis'], ['CLO2', 'CLO5'], { L: 5, T: 2, P: 0, O: 0 }, 10),
+      catalogSltOutline('3. Capital Structure & Dividends', ['Leverage', 'Payout policy'], ['CLO3'], { L: 4, T: 1, P: 0, O: 0 }, 7),
+      catalogSltOutline('4. Working Capital Management', ['Cash cycle', 'Credit policy'], ['CLO4'], { L: 3, T: 1, P: 0, O: 0 }, 5)
+    ])
+  },
+  eng101: {
+    clos: [
+      { code: 'CLO1', outcome: 'Produce well-structured academic paragraphs and essays', bloom: 'C3', teaching: 'Tutorial', assessment: 'Assignments' },
+      { code: 'CLO2', outcome: 'Analyze academic texts and integrate sources with proper citation', bloom: 'A3', teaching: 'Lecture', assessment: 'Coursework' },
+      { code: 'CLO3', outcome: 'Present ideas clearly in written academic English', bloom: 'C2', teaching: 'Workshop', assessment: 'Examination' }
+    ],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Academic Writing Foundations', ['Paragraph structure', 'Thesis statements'], ['CLO1'], { L: 2, T: 2, P: 0, O: 0 }, 8),
+      catalogSltOutline('2. Reading & Synthesis', ['Summary', 'Paraphrasing', 'APA citation'], ['CLO2'], { L: 2, T: 2, P: 0, O: 0 }, 10),
+      catalogSltOutline('3. Essay & Examination Skills', ['Argumentation', 'Editing'], ['CLO1', 'CLO3'], { L: 2, T: 1, P: 0, O: 0 }, 6)
+    ])
+  },
+  phy101: {
+    clos: getDefaultCourseClos(),
+    slt: getDefaultCourseSlt()
+  },
+  phy102: {
+    clos: [
+      { code: 'CLO1', outcome: 'Explain core concepts in data collection and exploratory analysis', bloom: 'C1', teaching: 'Lecture', assessment: 'Quiz' },
+      { code: 'CLO2', outcome: 'Apply Python tools to clean and visualize datasets', bloom: 'C3', teaching: 'Practical', assessment: 'Lab Report' },
+      { code: 'CLO3', outcome: 'Analyze simple predictive models and their limitations', bloom: 'A3', teaching: 'Tutorial', assessment: 'Coursework' },
+      { code: 'CLO4', outcome: 'Evaluate ethical issues in data science applications', bloom: 'C4', teaching: 'Seminar', assessment: 'Presentation' }
+    ],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Data Science Workflow', ['Data types', 'Ethics'], ['CLO1', 'CLO4'], { L: 3, T: 1, P: 0, O: 0 }, 6),
+      catalogSltOutline('2. Python for Data Analysis', ['Pandas', 'Visualization'], ['CLO2'], { L: 2, T: 0, P: 2, O: 0 }, 10),
+      catalogSltOutline('3. Introductory Modelling', ['Regression basics', 'Model evaluation'], ['CLO3'], { L: 3, T: 1, P: 1, O: 0 }, 8)
+    ])
+  },
+  csc201: {
+    clos: [
+      { code: 'CLO1', outcome: 'Explain fundamental programming concepts and Python syntax', bloom: 'C1', teaching: 'Lecture', assessment: 'Quiz' },
+      { code: 'CLO2', outcome: 'Apply control structures and functions to solve computational problems', bloom: 'C3', teaching: 'Tutorial', assessment: 'Assignments' },
+      { code: 'CLO3', outcome: 'Analyze algorithms using basic complexity reasoning', bloom: 'A3', teaching: 'Lecture', assessment: 'Coursework' },
+      { code: 'CLO4', outcome: 'Design small programs using modular decomposition', bloom: 'P2', teaching: 'Practical', assessment: 'Project' },
+      { code: 'CLO5', outcome: 'Evaluate program correctness through testing and debugging', bloom: 'C4', teaching: 'Practical', assessment: 'Lab Report' }
+    ],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Programming Basics', ['Variables', 'Data types', 'I/O'], ['CLO1'], { L: 4, T: 1, P: 1, O: 0 }, 8),
+      catalogSltOutline('2. Control Flow & Functions', ['Loops', 'Functions', 'Scope'], ['CLO2', 'CLO4'], { L: 3, T: 1, P: 2, O: 0 }, 10),
+      catalogSltOutline('3. Data Structures & Testing', ['Lists', 'Dictionaries', 'Debugging'], ['CLO3', 'CLO5'], { L: 3, T: 1, P: 1, O: 0 }, 8)
+    ])
+  },
+  fin301: {
+    clos: [
+      { code: 'CLO1', outcome: 'Explain portfolio theory and asset pricing foundations', bloom: 'C2', teaching: 'Lecture', assessment: 'Coursework' },
+      { code: 'CLO2', outcome: 'Apply valuation models to equity and fixed-income securities', bloom: 'C3', teaching: 'Tutorial', assessment: 'Assignments' },
+      { code: 'CLO3', outcome: 'Analyze investment strategies using risk-return metrics', bloom: 'A3', teaching: 'Seminar', assessment: 'Project' },
+      { code: 'CLO4', outcome: 'Evaluate portfolio performance and market efficiency evidence', bloom: 'C4', teaching: 'Lecture', assessment: 'Examination' }
+    ],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Portfolio Theory', ['Mean-variance', 'CAPM'], ['CLO1'], { L: 4, T: 1, P: 0, O: 0 }, 7),
+      catalogSltOutline('2. Security Analysis', ['Equity valuation', 'Bond pricing'], ['CLO2'], { L: 4, T: 2, P: 0, O: 0 }, 9),
+      catalogSltOutline('3. Investment Practice', ['Performance evaluation', 'Behavioral finance'], ['CLO3', 'CLO4'], { L: 3, T: 1, P: 0, O: 0 }, 6)
+    ])
+  },
+  int401: {
+    clos: [
+      { code: 'CLO1', outcome: 'Apply professional skills in an industry workplace setting', bloom: 'P2', teaching: 'Others', assessment: 'Project' },
+      { code: 'CLO2', outcome: 'Evaluate learning outcomes and career readiness through reflective practice', bloom: 'C4', teaching: 'Seminar', assessment: 'Presentation' }
+    ],
+    slt: {
+      outlines: [
+        catalogSltOutline('1. Industrial Placement', ['On-site training', 'Supervisor meetings'], ['CLO1'], { L: 0, T: 0, P: 0, O: 0 }, 120),
+        catalogSltOutline('2. Reflection & Reporting', ['Logbook', 'Final report'], ['CLO1', 'CLO2'], { L: 1, T: 1, P: 0, O: 0 }, 20)
+      ],
+      continuous: [
+        { type: 'Assignment', percent: 40, f2fPhysical: 0, f2fOnline: 0, nf2f: 80 },
+        { type: 'Presentation', percent: 20, f2fPhysical: 1, f2fOnline: 0, nf2f: 10 }
+      ],
+      final: [
+        { type: 'Project', percent: 40, f2fPhysical: 0, f2fOnline: 0, nf2f: 50 }
+      ]
+    }
+  }
+};
+
+function rekeyCloSltForCatalog(catalogId, { clos, slt }) {
+  return {
+    clos: (clos || []).map((c, i) => ({ ...cloneJson(c), id: `clo-${catalogId}-${i + 1}` })),
+    slt: {
+      outlines: (slt?.outlines || []).map((o, i) => ({ ...cloneJson(o), id: `slt-${catalogId}-o${i + 1}` })),
+      continuous: (slt?.continuous || []).map((c, i) => ({ ...cloneJson(c), id: `slt-${catalogId}-c${i + 1}` })),
+      final: (slt?.final || []).map((c, i) => ({ ...cloneJson(c), id: `slt-${catalogId}-f${i + 1}` }))
+    }
+  };
+}
+
+function buildFallbackCatalogCloSlt(catalog) {
+  const synopsis = catalog?.synopsis || 'Students will achieve the stated course learning outcomes.';
+  return rekeyCloSltForCatalog(catalog?.id || 'unknown', {
+    clos: [{
+      code: 'CLO1',
+      outcome: synopsis.slice(0, 120),
+      bloom: 'C2',
+      teaching: 'Lecture',
+      assessment: 'Examination'
+    }],
+    slt: catalogStandardSlt([
+      catalogSltOutline('1. Course Content', ['Core topics'], ['CLO1'], { L: 3, T: 1, P: 0, O: 0 }, 6)
+    ])
+  });
+}
+
+function getCatalogCourseCloSlt(catalogId) {
+  const catalog = COURSE_CATALOG.find(c => c.id === catalogId);
+  if (catalog?.clos?.length) {
+    return {
+      clos: cloneJson(catalog.clos),
+      slt: cloneJson(catalog.slt || { outlines: [], continuous: [], final: [] })
+    };
+  }
+  const preset = COURSE_CATALOG_CLO_SLT[catalogId];
+  if (preset) return rekeyCloSltForCatalog(catalogId, preset);
+  return buildFallbackCatalogCloSlt(catalog);
+}
+
+function enrichCourseCatalogCloSlt() {
+  COURSE_CATALOG.forEach(c => {
+    if (c.clos?.length) return;
+    const { clos, slt } = getCatalogCourseCloSlt(c.id);
+    c.clos = clos;
+    c.slt = slt;
+  });
+}
+
+function initCourseModalDraftFromCatalog(catalogId) {
+  courseModalDraft = cloneJson(getCatalogCourseCloSlt(catalogId));
+}
+
+function initCourseModalDraft(pc) {
+  if (pc) {
+    const fromCatalog = getCatalogCourseCloSlt(pc.catalogId);
+    const hasPcClos = Array.isArray(pc.clos) && pc.clos.length > 0;
+    const hasPcSlt = pc.slt && (
+      (pc.slt.outlines || []).length > 0 ||
+      (pc.slt.continuous || []).length > 0 ||
+      (pc.slt.final || []).length > 0
+    );
+    courseModalDraft = {
+      clos: cloneJson(hasPcClos ? pc.clos : fromCatalog.clos),
+      slt: cloneJson(hasPcSlt ? pc.slt : fromCatalog.slt)
+    };
+  } else {
+    courseModalDraft = { clos: [], slt: { outlines: [], continuous: [], final: [] } };
+  }
+}
+
+enrichCourseCatalogCloSlt();
 
 function persistCourseDraftTo(pc) {
   if (!courseModalDraft) return;
@@ -4425,14 +4698,23 @@ function setCourseModalStep(step) {
   if (next && step < 3) next.style.display = '';
   if (step === 2) renderCloTable();
   if (step === 3) renderSltAll();
+  updateCourseSaveButtonState();
 }
 
 function courseModalNextStep() {
-  if (courseModalStep === 1 && !courseModalReadonly) {
-    const check = validateCourseSubmit();
-    if (!check.ok) {
-      alert(check.message);
-      return;
+  if (!courseModalReadonly) {
+    if (courseModalStep === 1) {
+      const check = validateCourseSubmit();
+      if (!check.ok) {
+        alert(check.message);
+        return;
+      }
+    } else if (courseModalStep === 2) {
+      const cloCheck = validateCourseCloStep();
+      if (!cloCheck.ok) {
+        alert(cloCheck.message);
+        return;
+      }
     }
   }
   if (courseModalStep < 3) setCourseModalStep(courseModalStep + 1);
@@ -4448,6 +4730,13 @@ function courseModalGoToStep(step) {
     const check = validateCourseSubmit();
     if (!check.ok) {
       alert(check.message);
+      return;
+    }
+  }
+  if (step === 3) {
+    const cloCheck = validateCourseCloStep();
+    if (!cloCheck.ok) {
+      alert(cloCheck.message);
       return;
     }
   }
@@ -4577,6 +4866,7 @@ function confirmCloForm() {
   closeModal('modal-clo-form');
   renderCloTable();
   if (courseModalStep === 3) renderSltAll();
+  updateCourseSaveButtonState();
 }
 
 function deleteClo(id) {
@@ -4590,6 +4880,7 @@ function deleteClo(id) {
       courseModalDraft.clos = courseModalDraft.clos.filter(x => x.id !== id);
       renderCloTable();
       if (courseModalStep === 3) renderSltAll();
+      updateCourseSaveButtonState();
     }
   });
 }
@@ -4605,6 +4896,7 @@ function deleteSelectedClos() {
       courseModalDraft.clos = courseModalDraft.clos.filter(c => !ids.includes(c.id));
       renderCloTable();
       if (courseModalStep === 3) renderSltAll();
+      updateCourseSaveButtonState();
     }
   });
 }
@@ -5143,6 +5435,11 @@ function applyCourseModalReadonly(readonly) {
   modal?.querySelectorAll('#course-picker-section button, #course-form-details .input-group button').forEach(btn => {
     btn.style.display = readonly ? 'none' : '';
   });
+  if (!readonly) {
+    onCourseH2Change();
+    syncOfferingSemesterControl();
+    updateCourseSaveButtonState();
+  }
   if (courseModalDraft) {
     if (courseModalStep === 2) renderCloTable();
     if (courseModalStep === 3) renderSltAll();
@@ -5259,15 +5556,18 @@ function onBatchCourseH2Change() {
   if (!h3) return;
 
   const hasL3 = l3List.length > 0;
+  const prevH3 = h3.value;
   updateBatchCourseH3FieldState(hasL3);
 
   if (!hasL3) {
     h3.innerHTML = '<option value="">—</option>';
+    h3.value = '';
     h3.disabled = true;
   } else {
     h3.disabled = false;
     h3.innerHTML = '<option value="">请选择</option>' +
       l3List.map(l3 => `<option value="${l3.id}">${escapeHtml(l3.name)}</option>`).join('');
+    h3.value = l3List.some(l3 => l3.id === prevH3) ? prevH3 : '';
   }
   updateBatchAddButtonState();
 }
@@ -5305,7 +5605,7 @@ function canBatchAddCourses() {
   const h3 = document.getElementById('batch-course-h3-select');
   if (!h1?.value || h1.disabled) return false;
   if (!h2?.value || h2.disabled) return false;
-  if (h3 && !h3.disabled && !h3.value) return false;
+  if (isCourseH3Required('batch') && !h3?.value) return false;
   if (isCourseFormCompulsory('batch') || isOfferingSemesterEnabled('batch')) {
     const semester = document.getElementById('batch-offering-semester-select');
     if (!semester?.value || semester.value === '—') return false;
@@ -5340,8 +5640,7 @@ function openBatchAddCourseModal() {
 
 function confirmBatchAddCourses() {
   if (!canBatchAddCourses()) {
-    const h3 = document.getElementById('batch-course-h3-select');
-    const needH3 = h3 && !h3.disabled;
+    const needH3 = isCourseH3Required('batch');
     if (!batchSelectedCatalogIds.length) {
       alert('请至少选择一门课程');
     } else if (isCourseFormCompulsory('batch')) {
@@ -5357,7 +5656,7 @@ function confirmBatchAddCourses() {
   const h1Id = document.getElementById('batch-course-h1-select')?.value;
   const h2Id = document.getElementById('batch-course-h2-select')?.value;
   const h3 = document.getElementById('batch-course-h3-select');
-  const h3Id = h3 && !h3.disabled && h3.value ? h3.value : null;
+  const h3Id = isCourseH3Required('batch') && h3?.value ? h3.value : null;
   const semester = (isCourseFormCompulsory('batch') || isOfferingSemesterEnabled('batch'))
     ? document.getElementById('batch-offering-semester-select')?.value
     : null;
@@ -5448,12 +5747,24 @@ function isCategoryL3Mode() {
   return categoryFormMode === 'add-l3' || categoryFormMode === 'edit-l3';
 }
 
+function getCategoryL3ParentL2() {
+  if (!isCategoryL3Mode()) return null;
+  if (parentL2CategoryId) return findClassificationNode(parentL2CategoryId);
+  if (editingCategoryId) return findL2Parent(editingCategoryId);
+  return null;
+}
+
+function getL2CreditsMaxLimit(l2) {
+  if (!l2) return null;
+  normalizeNodeCredits(l2);
+  if (l2.creditsMax != null && l2.creditsMax !== '') return Number(l2.creditsMax);
+  if (l2.creditsMin != null && l2.creditsMin !== '') return Number(l2.creditsMin);
+  return null;
+}
+
 function getCategoryFormStudyType() {
   if (isCategoryL3Mode()) {
-    const l2 = parentL2CategoryId
-      ? findClassificationNode(parentL2CategoryId)
-      : (editingCategoryId ? findL2Parent(editingCategoryId) : null);
-    return l2?.studyType || 'compulsory';
+    return getCategoryL3ParentL2()?.studyType || 'compulsory';
   }
   return document.getElementById('study-type-select')?.value || 'compulsory';
 }
@@ -5486,7 +5797,12 @@ function updateCategoryCreditsFieldsUI() {
   }
   if (minLabel) minLabel.textContent = '最低学分';
   if (maxLabel) maxLabel.textContent = '最高学分';
-  if (minEl) minEl.placeholder = '最低';
+  if (minEl) {
+    minEl.placeholder = '最低';
+    const l2Max = isL3 ? getL2CreditsMaxLimit(getCategoryL3ParentL2()) : null;
+    if (l2Max != null) minEl.max = String(l2Max);
+    else minEl.removeAttribute('max');
+  }
   if (maxEl) {
     maxEl.placeholder = '最高';
     maxEl.disabled = lockMax;
@@ -5619,6 +5935,12 @@ function readCategoryCreditsFromForm() {
     if (minRaw === '') return { error: '请填写最低学分' };
     const creditsMin = Number(minRaw);
     if (Number.isNaN(creditsMin) || creditsMin < 0) return { error: '学分须为非负数字' };
+    const l2 = getCategoryL3ParentL2();
+    const l2Max = getL2CreditsMaxLimit(l2);
+    if (l2Max != null && creditsMin > l2Max) {
+      const l2Name = l2?.name ? `「${l2.name}」` : '所属二级分类';
+      return { error: `最低学分不能超过${l2Name}的最高学分（${l2Max}）` };
+    }
     return { creditsMin, creditsMax: null };
   }
   const isRange = isCategoryCreditsRangeMode();
@@ -5943,9 +6265,14 @@ function onCategoryLevelChange() {
   const isRange = isCategoryCreditsRangeMode();
   if (!hint) return;
   if (categoryFormMode === 'add-l3' || categoryFormMode === 'edit-l3') {
+    const l2 = getCategoryL3ParentL2();
+    const l2Max = getL2CreditsMaxLimit(l2);
+    const capHint = l2Max != null
+      ? `，不得超过所属二级分类${l2?.name ? `「${l2.name}」` : ''}最高学分 ${l2Max}`
+      : '';
     hint.textContent = categoryFormMode === 'edit-l3'
-      ? '可修改三级分类名称与最低学分（不设最高学分限制）'
-      : '请填写该三级分类的最低学分（不设最高学分限制）';
+      ? `可修改三级分类名称与最低学分（三级不设最高学分${capHint}）`
+      : `请填写该三级分类的最低学分（三级不设最高学分${capHint}）`;
     if (wrap) wrap.style.display = '';
     return;
   }

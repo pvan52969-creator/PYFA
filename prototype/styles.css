@@ -1030,6 +1030,11 @@ body {
 .step.active .step-num { background: var(--blue-700); color: #fff; }
 .step { cursor: pointer; user-select: none; }
 .step:hover:not(.active) { color: var(--text-2); }
+.step.step-locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.step.step-locked:hover { color: var(--text-3); }
 
 .course-modal-body { padding-top: 16px; }
 .course-step-panel { min-height: 200px; }

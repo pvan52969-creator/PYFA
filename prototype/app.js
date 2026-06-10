@@ -2596,7 +2596,6 @@ function goPage(id) {
   if (id === 'exec-list') renderExecList();
   if (id === 'change-apply') renderChangeApplyList();
   if (id === 'change-review') renderChangeReviewList();
-  if (id === 'stats-alignment') renderStatsAlignmentPage();
   if (id === 'stats-bloom') renderStatsBloomPage();
   if (id === 'workflow') renderWorkflowPage();
 }
@@ -3159,16 +3158,16 @@ const SEED_CLASSIFICATION_TREE = [
 /** 选修课学期修读要求（TAB1 矩阵 · 按二级分类 × 学期） */
 const SEED_ELECTIVE_SEMESTER_REQUIREMENTS = {
   'l2-ge': {
-    Y1S2: { creditsMin: 4, creditsMax: 6, count: 1 },
-    Y2S1: { creditsMin: 4, creditsMax: 6, count: 1 },
-    Y1S3: { creditsMin: 2, creditsMax: 4, count: 1 },
-    Y3S1: { creditsMin: 4, creditsMax: 6, count: 1 },
-    Y4S1: { creditsMin: 3, creditsMax: 5, count: 1 }
+    Y1S2: { creditsMin: 3, creditsMax: 4, count: 1 },
+    Y2S1: { creditsMin: 3, creditsMax: 4, count: 1 },
+    Y1S3: { creditsMin: 2, creditsMax: 3, count: 1 },
+    Y3S1: { creditsMin: 3, creditsMax: 4, count: 1 },
+    Y4S1: { creditsMin: 2, creditsMax: 3, count: 1 }
   },
   'l2-me': {
-    Y2S2: { creditsMin: 4, creditsMax: 6, count: 1 },
-    Y3S2: { creditsMin: 4, creditsMax: 6, count: 1 },
-    Y4S2: { creditsMin: 4, creditsMax: 6, count: 1 }
+    Y2S2: { creditsMin: 5, creditsMax: 6, count: 1 },
+    Y3S2: { creditsMin: 5, creditsMax: 6, count: 1 },
+    Y4S2: { creditsMin: 5, creditsMax: 5, count: 1 }
   }
 };
 
@@ -3405,67 +3404,85 @@ const COURSE_CATALOG = [
   { id: 'phy102', code: 'PHY102', name: 'Data Science Fundamentals', department: 'School of Science', coordinator: 'Dr. Lee Ming', credits: 2, language: 'English', classification: 'Common Core', synopsis: 'Introduction to data science concepts and tools.', references: '—' },
   { id: 'csc201', code: 'CSC201', name: 'Introduction to Programming', department: 'School of Computing', coordinator: 'Dr. Kumar Raj', credits: 3, language: 'English', classification: 'Common Core', synopsis: 'Programming fundamentals using Python.', references: '—' },
   { id: 'fin301', code: 'FIN301', name: 'Investment Analysis', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Portfolio theory and security analysis.', references: 'Bodie, Kane & Marcus, Investments.' },
-  { id: 'int401', code: 'INT401', name: 'Industrial Training', department: 'School of Economics & Management', coordinator: 'Ms. Ooi Lay Kuan', credits: 6, language: 'English', classification: 'Industrial Training', synopsis: 'Supervised industrial placement.', references: '—' }
+  { id: 'int401', code: 'INT401', name: 'Industrial Training', department: 'School of Economics & Management', coordinator: 'Ms. Ooi Lay Kuan', credits: 6, language: 'English', classification: 'Industrial Training', synopsis: 'Supervised industrial placement.', references: '—' },
+  { id: 'mpu3113', code: 'MPU3113', name: 'Ethnic Relations', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Ahmad Rahman', credits: 3, language: 'English', classification: 'Compulsory', synopsis: 'Ethnic relations in Malaysia.', references: '—' },
+  { id: 'mpu3143', code: 'MPU3143', name: 'Islamic Civilisation and Asian Civilisation', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Ahmad Rahman', credits: 3, language: 'English', classification: 'Compulsory', synopsis: 'Islamic and Asian civilisation.', references: '—' },
+  { id: 'mpu3173', code: 'MPU3173', name: 'Malay Communication 3', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Siti Aminah', credits: 3, language: 'Malay', classification: 'Compulsory', synopsis: 'Malay language communication.', references: '—' },
+  { id: 'mpu3183', code: 'MPU3183', name: 'Leadership and Teambuilding', department: 'Student Affairs', coordinator: 'Ms. Nurul Huda', credits: 3, language: 'English', classification: 'Compulsory', synopsis: 'Leadership and teamwork skills.', references: '—' },
+  { id: 'mpu3193', code: 'MPU3193', name: 'Community Service', department: 'Student Affairs', coordinator: 'Ms. Nurul Huda', credits: 4, language: 'English', classification: 'Compulsory', synopsis: 'Community engagement project.', references: '—' },
+  { id: 'uni101', code: 'UNI101', name: 'University English I', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Sarah Chen', credits: 4, language: 'English', classification: 'University Course', synopsis: 'Academic English foundation.', references: '—' },
+  { id: 'uni102', code: 'UNI102', name: 'University English II', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Sarah Chen', credits: 4, language: 'English', classification: 'University Course', synopsis: 'Advanced academic English.', references: '—' },
+  { id: 'uni103', code: 'UNI103', name: 'Critical Thinking', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Sarah Chen', credits: 4, language: 'English', classification: 'University Course', synopsis: 'Logic and critical reasoning.', references: '—' },
+  { id: 'uni104', code: 'UNI104', name: 'Digital Literacy', department: 'School of Computing', coordinator: 'Dr. Kumar Raj', credits: 3, language: 'English', classification: 'University Course', synopsis: 'Digital tools and information literacy.', references: '—' },
+  { id: 'acc101', code: 'ACC101', name: 'Principles of Accounting', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Fundamentals of financial accounting.', references: '—' },
+  { id: 'acc201', code: 'ACC201', name: 'Financial Accounting', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Financial reporting standards.', references: '—' },
+  { id: 'acc301', code: 'ACC301', name: 'Cost Accounting', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Cost measurement and control.', references: '—' },
+  { id: 'acc302', code: 'ACC302', name: 'Management Accounting', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Managerial decision support.', references: '—' },
+  { id: 'acc303', code: 'ACC303', name: 'Auditing I', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Audit process and assurance.', references: '—' },
+  { id: 'acc304', code: 'ACC304', name: 'Taxation I', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Malaysian taxation principles.', references: '—' },
+  { id: 'eco101', code: 'ECO101', name: 'Microeconomics', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Microeconomic theory.', references: '—' },
+  { id: 'eco201', code: 'ECO201', name: 'Macroeconomics', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Macroeconomic analysis.', references: '—' },
+  { id: 'mat101', code: 'MAT101', name: 'Business Mathematics', department: 'School of Science', coordinator: 'Dr. Wong Kai', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Mathematics for business.', references: '—' },
+  { id: 'sta101', code: 'STA101', name: 'Business Statistics', department: 'School of Science', coordinator: 'Dr. Wong Kai', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Statistics for business analysis.', references: '—' },
+  { id: 'art201', code: 'ART201', name: 'Introduction to Art History', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Sarah Chen', credits: 3, language: 'English', classification: 'General Elective', synopsis: 'Survey of art history.', references: '—' },
+  { id: 'bus201', code: 'BUS201', name: 'International Business', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 3, language: 'English', classification: 'General Elective', synopsis: 'Global business environment.', references: '—' },
+  { id: 'mkt201', code: 'MKT201', name: 'Marketing Principles', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 4, language: 'English', classification: 'General Elective', synopsis: 'Introduction to marketing.', references: '—' },
+  { id: 'fin401', code: 'FIN401', name: 'Derivative Markets', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Derivatives pricing and use.', references: '—' },
+  { id: 'fin402', code: 'FIN402', name: 'Risk Management', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Financial risk management.', references: '—' },
+  { id: 'fin403', code: 'FIN403', name: 'International Finance', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'International financial markets.', references: '—' },
+  { id: 'fin404', code: 'FIN404', name: 'Financial Modelling', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 3, language: 'English', classification: 'Major Elective', synopsis: 'Spreadsheet-based financial models.', references: '—' }
 ];
 
-/** 培养方案内已配置课程（TAB2 列表数据源） */
+function seedProgramCourse(id, catalogId, h1Id, h2Id, h3Id, semester, studyType, prereqIds = []) {
+  const cat = COURSE_CATALOG.find(c => c.id === catalogId);
+  return {
+    id,
+    catalogId,
+    h1Id,
+    h2Id,
+    h3Id: h3Id || null,
+    semester,
+    studyType,
+    language: cat?.language || 'English',
+    credits: cat?.credits,
+    prereqIds,
+    synopsis: cat?.synopsis || '',
+    references: cat?.references || ''
+  };
+}
+
+/** 培养方案内已配置课程（TAB2 · 学分校验达标示例数据） */
 const SEED_PROGRAM_COURSES = [
-  {
-    id: 'pc-mpu3123', catalogId: 'mpu3123',
-    h1Id: 'l1-comp', h2Id: 'l2-mpu', h3Id: null,
-    semester: 'Y1S1', studyType: 'compulsory', language: 'English', credits: 3,
-    prereqIds: [],
-    synopsis: 'An overview of Malaysian history, politics and society.',
-    references: 'Malaysia: History and Heritage.'
-  },
-  {
-    id: 'pc-fin101', catalogId: 'fin101',
-    h1Id: 'l1-core', h2Id: 'l2-major', h3Id: null,
-    semester: 'Y1S1', studyType: 'compulsory', language: 'English', credits: 4,
-    prereqIds: [],
-    synopsis: 'Fundamentals of finance and financial markets.',
-    references: 'Berk & DeMarzo, Corporate Finance.'
-  },
-  {
-    id: 'pc-fin201', catalogId: 'fin201',
-    h1Id: 'l1-core', h2Id: 'l2-major', h3Id: null,
-    semester: 'Y2S1', studyType: 'compulsory', language: 'English', credits: 4,
-    prereqIds: ['fin101'],
-    synopsis: 'This course introduces students to the principles of corporate finance, including valuation, capital budgeting, and risk management.',
-    references: 'Berk & DeMarzo, Corporate Finance, 5th Ed.'
-  },
-  {
-    id: 'pc-fin301', catalogId: 'fin301',
-    h1Id: 'l1-elec', h2Id: 'l2-me', h3Id: null,
-    semester: 'Y3S1', studyType: 'elective', language: 'English', credits: 4,
-    prereqIds: ['fin201'],
-    synopsis: 'Portfolio theory and security analysis.',
-    references: 'Bodie, Kane & Marcus, Investments.'
-  },
-  {
-    id: 'pc-csc201', catalogId: 'csc201',
-    h1Id: 'l1-elec', h2Id: 'l2-ge', h3Id: 'l3-sci',
-    semester: 'Y2S2', studyType: 'elective', language: 'English', credits: 3,
-    prereqIds: [],
-    synopsis: 'Programming fundamentals using Python.',
-    references: '—'
-  },
-  {
-    id: 'pc-eng101', catalogId: 'eng101',
-    h1Id: 'l1-elec', h2Id: 'l2-ge', h3Id: 'l3-arts',
-    semester: 'Y1S2', studyType: 'elective', language: 'English', credits: 3,
-    prereqIds: [],
-    synopsis: 'Academic writing skills for undergraduate students.',
-    references: '—'
-  },
-  {
-    id: 'pc-phy102', catalogId: 'phy102',
-    h1Id: 'l1-elec', h2Id: 'l2-ge', h3Id: 'l3-sci',
-    semester: 'Y3S2', studyType: 'elective', language: 'English', credits: 2,
-    prereqIds: [],
-    synopsis: 'Introduction to data science concepts and tools.',
-    references: '—'
-  }
+  // MPU 必修 19 学分
+  ...['mpu3123', 'mpu3113', 'mpu3143', 'mpu3173', 'mpu3183', 'mpu3193'].map((cid, i) =>
+    seedProgramCourse(`pc-mpu-${i}`, cid, 'l1-comp', 'l2-mpu', null, `Y1S${(i % 2) + 1}`, 'compulsory')
+  ),
+  // University 必修 15 学分
+  ...['uni101', 'uni102', 'uni103', 'uni104'].map((cid, i) =>
+    seedProgramCourse(`pc-uni-${i}`, cid, 'l1-comp', 'l2-uni', null, `Y1S${i + 1}`, 'compulsory')
+  ),
+  // Major Core 必修 54 学分
+  seedProgramCourse('pc-mc-fin101', 'fin101', 'l1-core', 'l2-major', null, 'Y1S1', 'compulsory'),
+  seedProgramCourse('pc-mc-fin201', 'fin201', 'l1-core', 'l2-major', null, 'Y2S1', 'compulsory', ['fin101']),
+  ...['acc101', 'acc201', 'acc301', 'acc302', 'acc303', 'acc304', 'eco101', 'eco201', 'mat101', 'sta101'].map((cid, i) =>
+    seedProgramCourse(`pc-mc-${i}`, cid, 'l1-core', 'l2-major', null, `Y${2 + Math.floor(i / 3)}S${(i % 3) + 1}`, 'compulsory')
+  ),
+  seedProgramCourse('pc-mc-int401', 'int401', 'l1-core', 'l2-major', null, 'Y4S2', 'compulsory'),
+  // General Elective · Arts ≥4
+  seedProgramCourse('pc-ge-arts-1', 'eng101', 'l1-elec', 'l2-ge', 'l3-arts', 'Y1S2', 'elective'),
+  seedProgramCourse('pc-ge-arts-2', 'art201', 'l1-elec', 'l2-ge', 'l3-arts', 'Y2S1', 'elective'),
+  // General Elective · Business ≥4
+  seedProgramCourse('pc-ge-biz-1', 'bus201', 'l1-elec', 'l2-ge', 'l3-biz', 'Y2S2', 'elective'),
+  seedProgramCourse('pc-ge-biz-2', 'mkt201', 'l1-elec', 'l2-ge', 'l3-biz', 'Y3S1', 'elective'),
+  // General Elective · Science ≥4
+  seedProgramCourse('pc-ge-sci-1', 'csc201', 'l1-elec', 'l2-ge', 'l3-sci', 'Y1S3', 'elective'),
+  seedProgramCourse('pc-ge-sci-2', 'phy101', 'l1-elec', 'l2-ge', 'l3-sci', 'Y3S2', 'elective'),
+  // Major Elective ≥15
+  seedProgramCourse('pc-me-1', 'fin301', 'l1-elec', 'l2-me', null, 'Y3S1', 'elective', ['fin201']),
+  seedProgramCourse('pc-me-2', 'fin401', 'l1-elec', 'l2-me', null, 'Y2S2', 'elective'),
+  seedProgramCourse('pc-me-3', 'fin402', 'l1-elec', 'l2-me', null, 'Y3S2', 'elective'),
+  seedProgramCourse('pc-me-4', 'fin403', 'l1-elec', 'l2-me', null, 'Y4S1', 'elective'),
+  seedProgramCourse('pc-me-5', 'fin404', 'l1-elec', 'l2-me', null, 'Y4S2', 'elective')
 ];
 
 const PROGRAM_COURSES = JSON.parse(JSON.stringify(SEED_PROGRAM_COURSES));
@@ -3490,6 +3507,14 @@ function getSeedVersionContent() {
   };
 }
 
+/** 为各版本预置达标示例数据（已通过/草稿等打开即可查看或编辑） */
+function initVersionContentStore() {
+  const seed = getSeedVersionContent();
+  VERSIONS.forEach(v => {
+    VERSION_CONTENT_STORE[v.id] = cloneJson(seed);
+  });
+}
+
 function applyVersionContent(content) {
   CLASSIFICATION_TREE.length = 0;
   CLASSIFICATION_TREE.push(...cloneJson(content.classificationTree));
@@ -3503,10 +3528,7 @@ function getVersionContentSnapshot(versionId) {
   if (VERSION_CONTENT_STORE[versionId]) {
     return cloneJson(VERSION_CONTENT_STORE[versionId]);
   }
-  const v = findVersionById(versionId);
-  return (v?.status === 'draft' || v?.status === 'rejected')
-    ? getEmptyVersionContent()
-    : getSeedVersionContent();
+  return getSeedVersionContent();
 }
 
 function saveCurrentEditContent() {
@@ -3620,12 +3642,99 @@ function courseBelongsToClassificationNode(pc, node) {
   return false;
 }
 
-function sumCompulsoryCreditsForNode(nodeId, excludeCourseId = null) {
+function courseBelongsToClassificationNodeAny(pc, node) {
+  if (!pc || !node) return false;
+  if (node.level === 1) return pc.h1Id === node.id;
+  if (node.level === 2) return pc.h2Id === node.id;
+  if (node.level === 3) return pc.h3Id === node.id;
+  return false;
+}
+
+function sumCourseCreditsForNode(nodeId, excludeCourseId = null) {
   const node = findClassificationNode(nodeId);
   if (!node) return 0;
   return PROGRAM_COURSES
-    .filter(pc => pc.id !== excludeCourseId && courseBelongsToClassificationNode(pc, node))
+    .filter(pc => pc.id !== excludeCourseId && courseBelongsToClassificationNodeAny(pc, node))
     .reduce((sum, pc) => sum + getProgramCourseCredits(pc), 0);
+}
+
+function sumCompulsoryCreditsForNode(nodeId, excludeCourseId = null) {
+  return sumCourseCreditsForNode(nodeId, excludeCourseId);
+}
+
+function validateL2L3CreditsConsistency(l2) {
+  if (!l2?.children?.length) return { ok: true };
+  normalizeNodeCredits(l2);
+  const l2Min = Number(l2.creditsMin) || 0;
+  const l2Max = getClassificationMaxCredits(l2);
+  const l3Sum = sumL3CreditsMinUnderL2(l2);
+  const issues = [];
+  const l2Label = `二级分类「${l2.name}」`;
+
+  if (l2.studyType === 'elective') {
+    if (l3Sum > l2Min) {
+      issues.push(
+        `${l2Label}（选修）三级最低学分合计 ${l3Sum} 超过二级最低学分 ${l2Min}` +
+        '（须：三级最低合计≤二级最低）'
+      );
+    }
+    if (l2Max != null && l2Min > l2Max) {
+      issues.push(
+        `${l2Label}（选修）二级最低学分 ${l2Min} 超过二级最高学分 ${l2Max}` +
+        '（须：二级最低≤二级最高）'
+      );
+    }
+  } else {
+    if (l2Max != null && l2Min !== l2Max) {
+      issues.push(
+        `${l2Label}（必修）最低学分 ${l2Min} 须等于最高学分 ${l2Max}` +
+        '（须：二级最低=二级最高）'
+      );
+    }
+    const target = l2Max != null ? l2Max : l2Min;
+    if (l3Sum !== target) {
+      issues.push(
+        `${l2Label}（必修）三级最低学分合计 ${l3Sum} 须等于二级最低/最高学分 ${target}` +
+        '（须：三级最低合计=二级最低=二级最高）'
+      );
+    }
+  }
+
+  if (issues.length) return { ok: false, message: issues.join('\n') };
+  return { ok: true };
+}
+
+function sumElectiveMatrixCreditsMax() {
+  let sum = 0;
+  document.querySelectorAll('#elective-matrix-tbody tr[data-row]').forEach(row => {
+    const raw = row.querySelector('.matrix-credit-max')?.value.trim();
+    if (raw !== '') sum += Number(raw) || 0;
+  });
+  return sum;
+}
+
+function validateStoredElectiveMatrix(l2) {
+  const issues = [];
+  const reqs = ELECTIVE_SEMESTER_REQUIREMENTS[l2.id];
+  if (!reqs) return issues;
+  normalizeNodeCredits(l2);
+  const l2Max = getClassificationMaxCredits(l2);
+  let sumMax = 0;
+  Object.entries(reqs).forEach(([semester, req]) => {
+    normalizeElectiveSemesterReq(req);
+    const min = req.creditsMin !== '' && req.creditsMin != null ? Number(req.creditsMin) : null;
+    const max = req.creditsMax !== '' && req.creditsMax != null ? Number(req.creditsMax) : null;
+    if (min != null && max != null && !Number.isNaN(min) && !Number.isNaN(max) && max < min) {
+      issues.push(`「${l2.name}」${semester} 最高学分须≥最低学分`);
+    }
+    if (max != null && !Number.isNaN(max)) sumMax += max;
+  });
+  if (l2Max != null && sumMax > l2Max) {
+    issues.push(
+      `「${l2.name}」各学期最高学分之和（${sumMax}）超过二级分类最高学分限制（${l2Max}）`
+    );
+  }
+  return issues;
 }
 
 function getClassificationLevelLabel(level) {
@@ -3662,80 +3771,99 @@ function isCompulsoryCourseClassification(h1Id) {
   return l1?.studyType !== 'elective';
 }
 
-function validateCompulsoryCourseMaxCredits({ h1Id, h2Id, h3Id, credits, excludeCourseId = null }) {
+function isElectiveClassificationNode(node) {
+  if (!node) return false;
+  if (node.studyType === 'elective') return true;
+  if (node.level === 3) {
+    const l2 = findL2Parent(node.id);
+    return l2?.studyType === 'elective';
+  }
+  return false;
+}
+
+function validateCourseCreditsOnAdd({ h2Id, credits, excludeCourseId = null }) {
   const addCredits = Number(credits) || 0;
-  if (addCredits <= 0) return { ok: true };
+  if (addCredits <= 0 || !h2Id) return { ok: true };
 
-  const violations = [];
-  const isCompulsory = isCompulsoryCourseClassification(h1Id);
-  const targetId = h3Id || h2Id;
+  const l2 = findClassificationNode(h2Id);
+  if (!l2 || l2.level !== 2) return { ok: true };
+  if (isElectiveClassificationNode(l2)) return { ok: true };
 
-  if (targetId) {
-    const target = findClassificationNode(targetId);
-    const cap = getEffectiveCourseCreditCap(target);
-    if (cap != null && addCredits > cap) {
-      violations.push(
-        `当前课程学分 ${addCredits} 已超过「${target.name}」（${getClassificationLevelLabel(target.level)}）最高学分限制 ${cap}`
-      );
-    }
-  }
+  normalizeNodeCredits(l2);
+  const l2Max = getClassificationMaxCredits(l2);
+  if (l2Max == null) return { ok: true };
 
-  if (isCompulsory) {
-    [h1Id, h2Id, h3Id].filter(Boolean).forEach(nodeId => {
-      const node = findClassificationNode(nodeId);
-      if (!node || node.studyType !== 'compulsory') return;
-      const maxLimit = getClassificationMaxCredits(node);
-      if (maxLimit == null) return;
-      const current = sumCompulsoryCreditsForNode(nodeId, excludeCourseId);
-      const after = current + addCredits;
-      if (after > maxLimit && !(nodeId === targetId && addCredits > maxLimit)) {
-        violations.push(
-          `「${node.name}」（${getClassificationLevelLabel(node.level)}）最高学分 ${maxLimit}，` +
-          `当前已配置 ${current}，保存后将为 ${after}`
-        );
-      }
-    });
-  }
-
-  if (violations.length) {
+  const current = sumCourseCreditsForNode(l2.id, excludeCourseId);
+  const after = current + addCredits;
+  if (after > l2Max) {
     return {
       ok: false,
-      message: `超出课程分类最高学分限制，无法提交：\n${violations.join('\n')}`
+      message: `课程学分之和超过「${l2.name}」二级分类的最高学分限制（${l2Max}）；当前已配置 ${current}，添加后为 ${after}`
+    };
+  }
+  return { ok: true };
+}
+
+function validateCompulsoryCourseMaxCredits(params) {
+  return validateCourseCreditsOnAdd(params);
+}
+
+function validateCreditsForVersionSubmit() {
+  const shortcomings = [];
+
+  CLASSIFICATION_TREE.forEach(l1 => {
+    (l1.children || []).forEach(l2 => {
+      normalizeNodeCredits(l2);
+      const l2Min = Number(l2.creditsMin) || 0;
+      const l2Max = getClassificationMaxCredits(l2);
+      const l2Configured = sumCourseCreditsForNode(l2.id);
+
+      if (l2.children?.length) {
+        const structure = validateL2L3CreditsConsistency(l2);
+        if (!structure.ok) shortcomings.push(structure.message);
+      }
+
+      if (l2Min > 0 && l2Configured < l2Min) {
+        shortcomings.push(
+          `「${l2.name}」（二级${l2.studyType === 'elective' ? '·选修' : ''}）` +
+          `课程学分之和 ${l2Configured} 小于最低学分要求 ${l2Min}`
+        );
+      }
+      if (l2.studyType !== 'elective' && l2Max != null && l2Configured > l2Max) {
+        shortcomings.push(
+          `「${l2.name}」（二级）最高学分 ${l2Max}，当前已配置课程学分 ${l2Configured}`
+        );
+      }
+
+      if (l2.studyType === 'elective') {
+        shortcomings.push(...validateStoredElectiveMatrix(l2));
+      }
+
+      (l2.children || []).forEach(l3 => {
+        normalizeNodeCredits(l3);
+        const l3Min = Number(l3.creditsMin) || 0;
+        const l3Configured = sumCourseCreditsForNode(l3.id);
+        if (l3Min > 0 && l3Configured < l3Min) {
+          shortcomings.push(
+            `「${l3.name}」（三级${l3.studyType === 'elective' ? '·选修' : ''}）` +
+            `课程学分之和 ${l3Configured} 小于最低学分要求 ${l3Min}`
+          );
+        }
+      });
+    });
+  });
+
+  if (shortcomings.length) {
+    return {
+      ok: false,
+      message: `学分校验未通过，无法提交审批：\n${shortcomings.join('\n')}`
     };
   }
   return { ok: true };
 }
 
 function validateCompulsoryMinCreditsForSubmit() {
-  const shortcomings = [];
-
-  function walk(nodes) {
-    (nodes || []).forEach(node => {
-      if (node.studyType === 'compulsory') {
-        const minRequired = calcNodeCreditsMin(node);
-        if (minRequired > 0) {
-          const current = sumCompulsoryCreditsForNode(node.id);
-          if (current < minRequired) {
-            shortcomings.push(
-              `「${node.name}」（${getClassificationLevelLabel(node.level)}）` +
-              `最低学分 ${minRequired}，当前已配置 ${current}`
-            );
-          }
-        }
-      }
-      walk(node.children);
-    });
-  }
-
-  walk(CLASSIFICATION_TREE);
-
-  if (shortcomings.length) {
-    return {
-      ok: false,
-      message: `以下必修课程分类未达到最低学分要求，无法提交审批：\n${shortcomings.join('\n')}`
-    };
-  }
-  return { ok: true };
+  return validateCreditsForVersionSubmit();
 }
 
 function submitCurrentVersionForApproval() {
@@ -3934,27 +4062,194 @@ function refreshProgrammeStructureIfVisible() {
   }
 }
 
+function getCourseCreditsStatusClass(configured, min, max, { enforceMax = true } = {}) {
+  if (min > 0 && configured < min) return 'warn';
+  if (enforceMax && max != null && configured > max) return 'warn';
+  if (min > 0 && configured >= min && (!enforceMax || max == null || configured <= max)) return 'ok';
+  if (!enforceMax && min <= 0) return '';
+  if (!enforceMax && configured > 0) return 'ok';
+  return '';
+}
+
+function getCourseCreditsStatusMeta(configured, min, max, options = {}) {
+  const cls = getCourseCreditsStatusClass(configured, min, max, options);
+  if (cls === 'warn') return { cls, text: '不足' };
+  if (cls === 'ok') return { cls, text: '达标' };
+  return { cls: 'neutral', text: '—' };
+}
+
+function formatCourseCreditsRequirement(min, max, isElective = false) {
+  if (isElective) {
+    return min > 0 ? `≥ ${min}` : '—';
+  }
+  if (max != null) return min === max ? `${min}` : `${min} ~ ${max}`;
+  if (min > 0) return `≥ ${min}`;
+  return '—';
+}
+
+function renderCourseCreditsSummaryRow({ name, level, configured, min, max, isElective = false }) {
+  const status = getCourseCreditsStatusMeta(configured, min, max, { enforceMax: false });
+  const isL3 = level === 3;
+  const rowCls = isL3 ? 'row-l3' : 'row-l2';
+  const indentCls = isL3 ? 'indent-2' : 'indent-1';
+  const prefix = isL3 ? '└' : '├';
+  return `<tr class="${rowCls} credits-summary-row status-${status.cls}">` +
+    `<td class="col-name ${indentCls}">${prefix} ${escapeHtml(name)}</td>` +
+    `<td class="col-num"><strong>${configured}</strong></td>` +
+    `<td class="col-req">${formatCourseCreditsRequirement(min, max, isElective)}</td>` +
+    `<td class="col-status"><span class="status-badge ${status.cls}">${status.text}</span></td>` +
+    `</tr>`;
+}
+
+let courseCreditsSummaryExpanded = true;
+
+function toggleCourseCreditsSummary() {
+  courseCreditsSummaryExpanded = !courseCreditsSummaryExpanded;
+  const el = document.getElementById('course-credits-summary');
+  if (el) el.classList.toggle('is-collapsed', !courseCreditsSummaryExpanded);
+}
+
+function syncProgramCourseFilterOptions() {
+  const sel = document.getElementById('program-course-h1-filter');
+  if (!sel) return;
+  const current = sel.value;
+  const options = ['<option value="">全部分类</option>']
+    .concat(CLASSIFICATION_TREE.map(l1 =>
+      `<option value="${l1.id}">${escapeHtml(l1.name)}</option>`
+    ));
+  sel.innerHTML = options.join('');
+  if ([...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+function bindProgramCourseFilters() {
+  const sel = document.getElementById('program-course-h1-filter');
+  const search = document.getElementById('program-course-search');
+  if (sel && !sel.dataset.bound) {
+    sel.dataset.bound = '1';
+    sel.addEventListener('change', () => renderProgramCoursesTable());
+  }
+  if (search && !search.dataset.bound) {
+    search.dataset.bound = '1';
+    search.addEventListener('input', () => renderProgramCoursesTable());
+  }
+}
+
+function getProgramCourseFilters() {
+  return {
+    h1Id: document.getElementById('program-course-h1-filter')?.value || '',
+    query: document.getElementById('program-course-search')?.value.trim().toLowerCase() || ''
+  };
+}
+
+function matchesProgramCourseFilters(pc, cat, { h1Id, query }) {
+  if (h1Id && pc.h1Id !== h1Id) return false;
+  if (query) {
+    const haystack = `${cat.code} ${cat.name}`.toLowerCase();
+    if (!haystack.includes(query)) return false;
+  }
+  return true;
+}
+
+function renderCourseCreditsSummary() {
+  const el = document.getElementById('course-credits-summary');
+  if (!el) return;
+  if (!CLASSIFICATION_TREE.length) {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+  const groups = [];
+  CLASSIFICATION_TREE.forEach(l1 => {
+    const rows = [];
+    (l1.children || []).forEach(l2 => {
+      normalizeNodeCredits(l2);
+      const l2Min = Number(l2.creditsMin) || 0;
+      const l2Max = getClassificationMaxCredits(l2);
+      const l2Sum = sumCourseCreditsForNode(l2.id);
+      rows.push(renderCourseCreditsSummaryRow({
+        name: l2.name,
+        level: 2,
+        configured: l2Sum,
+        min: l2Min,
+        max: l2Max,
+        isElective: isElectiveClassificationNode(l2)
+      }));
+      (l2.children || []).forEach(l3 => {
+        normalizeNodeCredits(l3);
+        const l3Min = Number(l3.creditsMin) || 0;
+        const l3Sum = sumCourseCreditsForNode(l3.id);
+        rows.push(renderCourseCreditsSummaryRow({
+          name: l3.name,
+          level: 3,
+          configured: l3Sum,
+          min: l3Min,
+          max: null,
+          isElective: isElectiveClassificationNode(l3)
+        }));
+      });
+    });
+    if (rows.length) {
+      groups.push(
+        `<tr class="row-l1${l1.highlight ? ' highlight' : ''}">` +
+        `<td colspan="4" class="col-name">` +
+        `<span class="tree-toggle">▼</span> ${escapeHtml(l1.name)}</td></tr>` +
+        rows.join('')
+      );
+    }
+  });
+  if (!groups.length) {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+  el.classList.toggle('is-collapsed', !courseCreditsSummaryExpanded);
+  el.innerHTML =
+    `<div class="credits-summary-head" onclick="toggleCourseCreditsSummary()" role="button" tabindex="0"` +
+    ` onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCourseCreditsSummary();}">` +
+    `<span class="credits-summary-title">` +
+    `<span class="credits-summary-chevron" aria-hidden="true">▼</span>分类课程学分配置情况</span>` +
+    `</div>` +
+    `<div class="credits-summary-body">` +
+    `<table class="credits-summary-table tree-table">` +
+    `<thead><tr>` +
+    `<th class="col-name">分类</th>` +
+    `<th class="col-num">已配置学分</th>` +
+    `<th class="col-req">学分要求</th>` +
+    `<th class="col-status">状态</th>` +
+    `</tr></thead>` +
+    `<tbody>${groups.join('')}</tbody></table></div>`;
+}
+
 function renderProgramCoursesTable() {
   const tbody = document.getElementById('program-courses-tbody');
   if (!tbody) return;
-  tbody.innerHTML = PROGRAM_COURSES.map(pc => {
-    const cat = COURSE_CATALOG.find(c => c.id === pc.catalogId);
-    if (!cat) return '';
-    const actions = versionEditReadonly
-      ? `<a href="#" class="view-link" onclick="openViewProgramCourse('${pc.id}');return false">查看</a>`
-      : `<a href="#" onclick="openEditProgramCourse('${pc.id}');return false">编辑</a><a href="#" class="danger">移除</a>`;
-    return `<tr>
-      <td><code>${escapeHtml(cat.code)}</code></td>
-      <td>${escapeHtml(cat.name)}</td>
-      <td>${escapeHtml(getCourseClassificationL1(pc.h1Id))}</td>
-      <td>${escapeHtml(getCourseClassificationL2(pc.h2Id))}</td>
-      <td>${escapeHtml(getCourseClassificationL3(pc.h3Id))}</td>
-      <td>${pc.credits ?? cat.credits}</td>
-      <td>${escapeHtml(pc.semester || '—')}</td>
-      <td>${studyTypeTag(pc.studyType)}</td>
-      <td class="actions">${actions}</td>
-    </tr>`;
-  }).join('');
+  syncProgramCourseFilterOptions();
+  renderCourseCreditsSummary();
+  const filters = getProgramCourseFilters();
+  const rows = PROGRAM_COURSES
+    .map(pc => {
+      const cat = COURSE_CATALOG.find(c => c.id === pc.catalogId);
+      if (!cat || !matchesProgramCourseFilters(pc, cat, filters)) return '';
+      const actions = versionEditReadonly
+        ? `<a href="#" class="view-link" onclick="openViewProgramCourse('${pc.id}');return false">查看</a>`
+        : `<a href="#" onclick="openEditProgramCourse('${pc.id}');return false">编辑</a><a href="#" class="danger">移除</a>`;
+      return `<tr>
+        <td><code>${escapeHtml(cat.code)}</code></td>
+        <td>${escapeHtml(cat.name)}</td>
+        <td>${escapeHtml(getCourseClassificationL1(pc.h1Id))}</td>
+        <td>${escapeHtml(getCourseClassificationL2(pc.h2Id))}</td>
+        <td>${escapeHtml(getCourseClassificationL3(pc.h3Id))}</td>
+        <td>${pc.credits ?? cat.credits}</td>
+        <td>${escapeHtml(pc.semester || '—')}</td>
+        <td>${studyTypeTag(pc.studyType)}</td>
+        <td class="actions">${actions}</td>
+      </tr>`;
+    })
+    .filter(Boolean);
+  tbody.innerHTML = rows.length
+    ? rows.join('')
+    : '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">暂无匹配课程</td></tr>';
   refreshProgrammeStructureIfVisible();
 }
 
@@ -4443,10 +4738,8 @@ function validateCourseSubmit() {
   const h3Id = isCourseH3Required() && h3?.value ? h3.value : null;
   const credits = Number(creditsRaw);
 
-  const maxCheck = validateCompulsoryCourseMaxCredits({
-    h1Id,
+  const maxCheck = validateCourseCreditsOnAdd({
     h2Id,
-    h3Id,
     credits,
     excludeCourseId: editing?.id || null
   });
@@ -5775,10 +6068,8 @@ function confirmBatchAddCourses() {
     const cat = COURSE_CATALOG.find(c => c.id === catalogId);
     return sum + (Number(cat?.credits) || 0);
   }, 0);
-  const maxCheck = validateCompulsoryCourseMaxCredits({
-    h1Id,
+  const maxCheck = validateCourseCreditsOnAdd({
     h2Id,
-    h3Id,
     credits: batchCredits,
     excludeCourseId: null
   });
@@ -5877,17 +6168,34 @@ function sumL3CreditsMinUnderL2(l2, excludeL3Id = null) {
 
 function validateL3CreditsMinAgainstL2(l2, creditsMin, { excludeL3Id = null } = {}) {
   if (!l2) return { ok: true };
-  const l2Max = getL2CreditsMaxLimit(l2);
-  if (l2Max == null) return { ok: true };
   const existingSum = sumL3CreditsMinUnderL2(l2, excludeL3Id);
   const total = existingSum + creditsMin;
+  const l2Name = l2.name ? `「${l2.name}」` : '所属二级分类';
+  const action = excludeL3Id ? '修改后' : '新增后';
+  const siblingLabel = excludeL3Id ? '其他' : '已有';
+
+  if (l2.studyType === 'elective') {
+    normalizeNodeCredits(l2);
+    const l2Min = Number(l2.creditsMin) || 0;
+    if (l2Min > 0 && total > l2Min) {
+      return {
+        ok: false,
+        message: `${action}三级分类最低学分合计（${total}）将超过${l2Name}二级最低学分（${l2Min}）；` +
+          `当前${siblingLabel}子级合计 ${existingSum}，本次填写 ${creditsMin}` +
+          '（选修须：三级最低合计≤二级最低）'
+      };
+    }
+    return { ok: true };
+  }
+
+  const l2Max = getL2CreditsMaxLimit(l2);
+  if (l2Max == null) return { ok: true };
   if (total > l2Max) {
-    const l2Name = l2.name ? `「${l2.name}」` : '所属二级分类';
-    const action = excludeL3Id ? '修改后' : '新增后';
     return {
       ok: false,
-      message: `${action}三级分类最低学分合计（${total}）将超过${l2Name}最高学分（${l2Max}）；` +
-        `当前${excludeL3Id ? '其他' : '已有'}子级合计 ${existingSum}，本次填写 ${creditsMin}`
+      message: `${action}三级分类最低学分合计（${total}）将超过${l2Name}学分上限（${l2Max}）；` +
+        `当前${siblingLabel}子级合计 ${existingSum}，本次填写 ${creditsMin}` +
+        '（必修须：三级最低合计=二级最低=二级最高）'
     };
   }
   return { ok: true };
@@ -6039,9 +6347,10 @@ function updateElectiveMatrixHint() {
   const maxRaw = document.getElementById('category-credits-max')?.value.trim();
   const l2Max = maxRaw !== '' && !Number.isNaN(Number(maxRaw)) ? Number(maxRaw) : null;
   const sumMin = sumElectiveMatrixCreditsMin();
-  let capHint = '；各学期最低学分要求之和不得超过二级分类最高学分';
+  const sumMax = sumElectiveMatrixCreditsMax();
+  let capHint = '；各学期最低/最高学分要求均须满足：最高≥最低，且各学期最高学分之和≤二级最高学分';
   if (l2Max != null) {
-    capHint += `（当前合计 ${sumMin} / 上限 ${l2Max}）`;
+    capHint += `（最低合计 ${sumMin}，最高合计 ${sumMax} / 二级上限 ${l2Max}）`;
   }
   hint.textContent = `${base}${capHint}。`;
 }
@@ -6053,16 +6362,28 @@ function validateElectiveMatrixRequired(l2CreditsMax) {
     return false;
   }
   let valid = false;
+  let sumMax = 0;
   for (const row of rows) {
     const semester = row.querySelector('.semester-row-select')?.value;
-    const creditsMin = row.querySelector('.matrix-credit-min')?.value.trim();
-    const creditsMax = row.querySelector('.matrix-credit-max')?.value.trim();
+    const creditsMinRaw = row.querySelector('.matrix-credit-min')?.value.trim();
+    const creditsMaxRaw = row.querySelector('.matrix-credit-max')?.value.trim();
     const count = row.querySelector('.matrix-count')?.value.trim();
     if (!semester) {
       alert('请为每条学期要求选择对应学期');
       return false;
     }
-    if (creditsMin || creditsMax || count) valid = true;
+    if (creditsMinRaw || creditsMaxRaw || count) valid = true;
+    if (creditsMinRaw !== '' && creditsMaxRaw !== '') {
+      const creditsMin = Number(creditsMinRaw);
+      const creditsMax = Number(creditsMaxRaw);
+      if (!Number.isNaN(creditsMin) && !Number.isNaN(creditsMax) && creditsMax < creditsMin) {
+        alert(`${semester} 最高学分限制须大于等于最低学分要求`);
+        return false;
+      }
+      if (!Number.isNaN(creditsMax)) sumMax += creditsMax;
+    } else if (creditsMaxRaw !== '') {
+      sumMax += Number(creditsMaxRaw) || 0;
+    }
   }
   if (!valid) {
     alert('请至少填写一条学期要求的最低/最高学分或课程数量');
@@ -6071,6 +6392,10 @@ function validateElectiveMatrixRequired(l2CreditsMax) {
   const sumMin = sumElectiveMatrixCreditsMin();
   if (l2CreditsMax != null && !Number.isNaN(l2CreditsMax) && sumMin > l2CreditsMax) {
     alert(`各学期最低学分要求之和（${sumMin}）不能超过二级分类最高学分限制（${l2CreditsMax}）`);
+    return false;
+  }
+  if (l2CreditsMax != null && !Number.isNaN(l2CreditsMax) && sumMax > l2CreditsMax) {
+    alert(`各学期最高学分限制之和（${sumMax}）不能超过二级分类最高学分限制（${l2CreditsMax}）`);
     return false;
   }
   return true;
@@ -6140,6 +6465,14 @@ function readCategoryCreditsFromForm() {
   }
   if (creditsMin > creditsMax) {
     return { error: '最低学分不能大于最高学分' };
+  }
+  if (categoryFormMode === 'edit-l2' && editingCategoryId) {
+    const l2 = findClassificationNode(editingCategoryId);
+    if (l2?.children?.length) {
+      const tempL2 = { ...l2, creditsMin, creditsMax };
+      const check = validateL2L3CreditsConsistency(tempL2);
+      if (!check.ok) return { error: check.message };
+    }
   }
   return { creditsMin, creditsMax };
 }
@@ -6439,6 +6772,7 @@ function renderClassificationTree() {
   if (se) se.textContent = totalElective;
   if (st) st.textContent = totalMin;
   renderSemesterMatrixTable();
+  renderCourseCreditsSummary();
   refreshProgrammeStructureIfVisible();
   updateVersionEditTabStates();
 }
@@ -6450,32 +6784,53 @@ function onCategoryLevelChange() {
   if (!hint) return;
   if (categoryFormMode === 'add-l3' || categoryFormMode === 'edit-l3') {
     const l2 = getCategoryL3ParentL2();
-    const l2Max = getL2CreditsMaxLimit(l2);
     const excludeId = categoryFormMode === 'edit-l3' ? editingCategoryId : null;
     const siblingSum = sumL3CreditsMinUnderL2(l2, excludeId);
-    const remain = l2Max != null ? Math.max(0, l2Max - siblingSum) : null;
+    const isElectiveL2 = l2?.studyType === 'elective';
     let capHint = '';
-    if (l2Max != null) {
-      capHint = `；${categoryFormMode === 'edit-l3' ? '修改后' : '新增后'}同级最低学分合计不得超过` +
-        `${l2?.name ? `「${l2.name}」` : '二级分类'}最高学分 ${l2Max}` +
-        `（当前${excludeId ? '其他' : '已有'}子级合计 ${siblingSum}，剩余可分配 ${remain}）`;
+    if (isElectiveL2) {
+      normalizeNodeCredits(l2);
+      const l2Min = Number(l2.creditsMin) || 0;
+      const remain = l2Min > 0 ? Math.max(0, l2Min - siblingSum) : null;
+      if (l2Min > 0) {
+        capHint = `；${categoryFormMode === 'edit-l3' ? '修改后' : '新增后'}三级最低合计不得超过` +
+          `${l2?.name ? `「${l2.name}」` : '二级分类'}最低学分 ${l2Min}` +
+          `（当前${excludeId ? '其他' : '已有'}子级合计 ${siblingSum}，剩余可分配 ${remain}）`;
+      }
+    } else {
+      const l2Cap = getL2CreditsMaxLimit(l2);
+      const remain = l2Cap != null ? Math.max(0, l2Cap - siblingSum) : null;
+      if (l2Cap != null) {
+        capHint = `；${categoryFormMode === 'edit-l3' ? '修改后' : '新增后'}三级最低合计须等于二级学分 ${l2Cap}` +
+          `（当前${excludeId ? '其他' : '已有'}子级合计 ${siblingSum}，剩余可分配 ${remain}）`;
+      }
     }
+    const ruleHint = isElectiveL2
+      ? '选修规则：三级最低合计≤二级最低'
+      : '必修规则：三级最低合计=二级最低=二级最高';
     hint.textContent = categoryFormMode === 'edit-l3'
-      ? `可修改三级分类名称与最低学分（三级不设最高学分${capHint}）`
-      : `请填写该三级分类的最低学分（三级不设最高学分${capHint}）`;
+      ? `可修改三级分类名称与最低学分（三级不设最高学分；${ruleHint}${capHint}）`
+      : `请填写该三级分类的最低学分（三级不设最高学分；${ruleHint}${capHint}）`;
     if (wrap) wrap.style.display = '';
     return;
   }
   if (editingCategoryId) {
+    const editingL2 = findClassificationNode(editingCategoryId);
+    const hasL3 = editingL2?.children?.length > 0;
+    const structureHint = hasL3
+      ? (isRange
+        ? '；有三级子分类时须满足：三级最低合计≤二级最低≤二级最高'
+        : '；有三级子分类时须满足：三级最低合计=二级最低=二级最高')
+      : '';
     hint.textContent = isRange
-      ? '通过本弹窗修改最低/最高学分；分类名称与层级不可变更'
-      : '通过本弹窗修改最低学分；最高学分自动等于最低学分，不可单独修改';
+      ? `选修二级：通过本弹窗修改最低/最高学分；分类名称与层级不可变更${structureHint}`
+      : `必修二级：通过本弹窗修改最低学分；最高学分自动等于最低学分${structureHint}`;
     if (wrap) wrap.style.display = '';
     return;
   }
   hint.textContent = isRange
-    ? '二级分类：请填写最低/最高学分；有三级子分类时，二级与三级学分要求分别维护，互不自动汇总'
-    : '二级分类：请填写最低学分，最高学分自动同步；有三级子分类时，二级与三级学分要求分别维护';
+    ? '选修二级：请填写最低/最高学分（有三级子分类时须满足：三级最低合计≤二级最低≤二级最高）'
+    : '必修二级：请填写最低学分，最高学分自动同步（有三级子分类时须满足：三级最低合计=二级最低=二级最高）';
 }
 
 function isElectiveStudyType() {
@@ -6502,6 +6857,14 @@ function saveCategory() {
     if (categoryFormMode === 'edit-l2') {
       const newStudyType = document.getElementById('study-type-select')?.value;
       if (newStudyType === 'elective' && !validateElectiveMatrixRequired(creditsMax)) return;
+      if (node.children?.length) {
+        const tempNode = { ...node, creditsMin, creditsMax };
+        const structure = validateL2L3CreditsConsistency(tempNode);
+        if (!structure.ok) {
+          alert(structure.message);
+          return;
+        }
+      }
     }
     node.creditsMin = creditsMin;
     if (categoryFormMode === 'edit-l3') {
@@ -6838,8 +7201,10 @@ function renderProgrammeStructure(containerId, data) {
 }
 
 // ── Init ──
+initVersionContentStore();
 initExecContentStore();
 syncAllVersionEndBatches();
+bindProgramCourseFilters();
 bindCategoryCreditsInputs();
 bindElectiveMatrixInputs();
 onH1Change();
@@ -6858,21 +7223,7 @@ rebuildExecIntakeBatchSelect('finance');
 onExecBatchInput();
 renderProgrammeStructure('programme-structure-root');
 
-// ── Data Statistics (Alignment / Bloom's Taxonomy Charts) ──
-const STATS_PLO_HEADERS = [
-  { code: 'PLO1', desc: 'Knowledge and Understanding' },
-  { code: 'PLO2', desc: 'Cognitive Skills' },
-  { code: 'PLO3', desc: 'Practical Skills' },
-  { code: 'PLO4', desc: 'Interpersonal Skills' },
-  { code: 'PLO5', desc: 'Communication Skills' },
-  { code: 'PLO6', desc: 'Ethics and Professionalism' },
-  { code: 'PLO7', desc: 'Personal Skills' },
-  { code: 'PLO8', desc: 'Leadership Skills' },
-  { code: 'PLO9', desc: 'Entrepreneurial skills' },
-  { code: 'PLO10', desc: 'Digital Literacy' },
-  { code: 'PLO11', desc: 'Teamwork skills' }
-];
-
+// ── Data Statistics (Bloom's Taxonomy Charts) ──
 const STATS_TREE = [
   {
     id: 'school-comm',
@@ -6958,10 +7309,6 @@ const STATS_TREE = [
 
 const STATS_DATA = {
   'phy-202502': {
-    alignment: {
-      contribution: [35, 59, 10, 9, 9, 12, 12, 8, 13, 12, 8],
-      domains: ['C', 'C', 'P', 'A', 'A', 'P', 'C', 'P', 'A', 'A', 'A']
-    },
     bloom: {
       matrix: {
         cognitive: [4, 31, 37, 58, 41, 37, null, 228],
@@ -6983,10 +7330,6 @@ const STATS_DATA = {
     }
   },
   'phy-202402': {
-    alignment: {
-      contribution: [32, 54, 12, 8, 10, 11, 10, 9, 11, 10, 9],
-      domains: ['C', 'C', 'P', 'A', 'A', 'P', 'C', 'P', 'A', 'A', 'C']
-    },
     bloom: {
       matrix: {
         cognitive: [3, 28, 35, 55, 38, 35, null, 214],
@@ -7010,7 +7353,7 @@ const STATS_DATA = {
 };
 
 let statsSelectedLeafId = 'phy-202502';
-let statsTreeFilter = { alignment: '', bloom: '' };
+let statsTreeFilter = { bloom: '' };
 let statsTreeExpanded = new Set(['school-comm', 'school-arts', 'phy', 'phy-2025']);
 
 function findStatsLeafNode(id, nodes = STATS_TREE) {
@@ -7081,10 +7424,8 @@ function renderStatsTree(mode) {
 function onStatsTreeNodeClick(nodeId, hasChildren, isLeaf, mode) {
   if (isLeaf) {
     statsSelectedLeafId = nodeId;
-    renderStatsTree('alignment');
     renderStatsTree('bloom');
-    if (mode === 'alignment') renderStatsAlignmentPage(false);
-    else renderStatsBloomPage(false);
+    renderStatsBloomPage(false);
     return;
   }
   if (hasChildren) {
@@ -7100,8 +7441,8 @@ function filterStatsTree(mode) {
   renderStatsTree(mode);
 }
 
-function exportStatsPage(mode) {
-  alert(`Export ${mode === 'alignment' ? 'Alignment Charts' : "Bloom's Taxonomy Charts"}（原型）`);
+function exportStatsPage() {
+  alert("Export Bloom's Taxonomy Charts（原型）");
 }
 
 function renderStatsLineChart(values, { width = 720, height = 220, yMax = 70, xLabels = null } = {}) {
@@ -7130,42 +7471,6 @@ function renderStatsLineChart(values, { width = 720, height = 220, yMax = 70, xL
     <path d="${path}" class="stats-chart-line"/>
     ${dots}
   </svg>`;
-}
-
-function renderAlignmentContent(leafId) {
-  const data = getStatsDataset(leafId).alignment;
-  const ploHeads = STATS_PLO_HEADERS.map(h =>
-    `<th class="plo-head"><div class="plo-desc">${escapeHtml(h.desc)}</div><div>${h.code}</div></th>`
-  ).join('');
-  const contributionCells = data.contribution.map(v => `<td>${v}</td>`).join('');
-  const domainCells = data.domains.map(v => `<td class="domain-cell">${v}</td>`).join('');
-
-  return `
-    <div class="stats-section">
-      <div class="alignment-wrap">
-        <table class="alignment-table">
-          <thead>
-            <tr><th class="row-label"></th>${ploHeads}</tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="row-label">Contribution of CLO to PLO</td>
-              ${contributionCells}
-            </tr>
-            <tr>
-              <td class="row-label">Bloom's Taxonomy Domain</td>
-              ${domainCells}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="stats-section">
-      <div class="stats-chart-card">
-        <div class="stats-chart-title">Contribution of CLO to PLO</div>
-        ${renderStatsLineChart(data.contribution, { yMax: 70 })}
-      </div>
-    </div>`;
 }
 
 function renderBloomMatrixCell(value) {
@@ -7326,14 +7631,6 @@ function renderBloomContent(leafId) {
       <div class="stats-section-head"><span class="stats-section-icon">▦</span> Summary by Year [PSYCHOMOTOR]</div>
       <div class="stats-table-pair">${renderYearSummaryPair(psychomotorRows, ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'], 'P')}</div>
     </div>`;
-}
-
-function renderStatsAlignmentPage(renderTree = true) {
-  if (renderTree) renderStatsTree('alignment');
-  const ctx = document.getElementById('stats-alignment-context');
-  const content = document.getElementById('stats-alignment-content');
-  if (ctx) ctx.innerHTML = getStatsContextHtml(statsSelectedLeafId);
-  if (content) content.innerHTML = renderAlignmentContent(statsSelectedLeafId);
 }
 
 function renderStatsBloomPage(renderTree = true) {

@@ -218,9 +218,12 @@
         <div class="panel-toolbar">
           <button class="btn btn-primary btn-sm" onclick="openAddCourseModal()">+ 新增课程</button>
           <button class="btn btn-outline btn-sm" onclick="openBatchAddCourseModal()">批量新增</button>
-          <select class="input input-sm"><option>全部分类</option><option>Compulsory Courses</option><option>Core/Major/Specialisation</option><option>Optional/Elective Courses</option></select>
-          <input class="input input-sm" placeholder="搜索课号/课名" style="width:180px">
+          <select class="input input-sm" id="program-course-h1-filter" style="width:auto;min-width:200px">
+            <option value="">全部分类</option>
+          </select>
+          <input class="input input-sm" id="program-course-search" placeholder="搜索课号/课名" style="width:180px">
         </div>
+        <div class="course-credits-summary" id="course-credits-summary"></div>
         <div class="card">
           <table class="data-table">
             <thead>
@@ -404,23 +407,6 @@
       </div>
     </section>
 
-    <!-- ═══ 数据统计 · Alignment Charts ═══ -->
-    <section class="page" id="page-stats-alignment">
-      <div class="stats-shell">
-        <aside class="stats-tree-panel">
-          <input class="input stats-tree-search" id="stats-tree-search-alignment" placeholder="Search..." oninput="filterStatsTree('alignment')">
-          <div class="stats-tree" id="stats-tree-alignment"></div>
-        </aside>
-        <div class="stats-main">
-          <div class="stats-toolbar">
-            <button class="btn btn-outline btn-sm" type="button" onclick="exportStatsPage('alignment')">Export</button>
-            <div class="stats-context" id="stats-alignment-context"></div>
-          </div>
-          <div class="stats-scroll" id="stats-alignment-content"></div>
-        </div>
-      </div>
-    </section>
-
     <!-- ═══ 数据统计 · Bloom's Taxonomy Charts ═══ -->
     <section class="page" id="page-stats-bloom">
       <div class="stats-shell">
@@ -430,7 +416,7 @@
         </aside>
         <div class="stats-main">
           <div class="stats-toolbar">
-            <button class="btn btn-outline btn-sm" type="button" onclick="exportStatsPage('bloom')">Export</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="exportStatsPage()">Export</button>
             <div class="stats-context" id="stats-bloom-context"></div>
           </div>
           <div class="stats-scroll" id="stats-bloom-content"></div>

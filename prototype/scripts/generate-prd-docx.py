@@ -159,8 +159,9 @@ def build():
     sec.right_margin = Cm(2.5)
 
     add_heading(doc, "厦大马来分校本科教务系统产品需求文档", 0)
-    add_para(doc, "文档版本：V1.0")
-    add_para(doc, "创建日期：2026 年 6 月 9 日")
+    add_para(doc, "文档版本：V1.1")
+    add_para(doc, "创建日期：2026 年 6 月 10 日")
+    add_para(doc, "修订说明：依据调整后的可交互原型同步更新（菜单命名、数据隔离、总学分取值、保存确认、移除 Alignment Charts 等）")
     add_para(doc, "模块范围：培养方案管理（Curriculum Management）")
     add_para(doc, "对应原型：prototype/index.html、prototype/app.js")
     doc.add_paragraph()
@@ -189,9 +190,8 @@ def build():
             ["方案版本", "Programme Version", "版本编辑（共用）", "Programme Structure Editing", "TAB1/TAB2/TAB3", "制定/查看/变更/执行计划共用"],
             ["方案版本变更", "Programme Change", "方案版本变更申请", "Change Application", "—", "对已审批版本发起变更"],
             ["方案版本变更", "Programme Change", "方案版本变更审核", "Change Review", "—", "变更三级审批"],
-            ["执行计划", "Execution Plan", "批次执行计划", "Programme Intake Execution Plan", "—", "从已审批版本生成批次计划"],
+            ["专业批次执行计划", "Programme Intake Execution Plan", "专业批次执行计划", "Programme Intake Execution Plan", "—", "按入学批次独立生成/编辑，不回写版本"],
             ["数据统计", "Statistics", "Bloom's Taxonomy Charts", "Bloom's Taxonomy Charts", "—", "Bloom 分布统计"],
-            ["数据统计", "Statistics", "Alignment Charts", "Alignment Charts", "—", "CLO→PLO 对齐（侧栏暂未挂菜单）"],
         ],
         col_widths=[2.0, 2.5, 2.5, 3.2, 2.0, 4.3])
 
@@ -207,8 +207,8 @@ def build():
         search_fields="专业（Major）、版本（Version）。",
         flow_rel="用户在列表页发起增删改查、提交、导出；新增时校验批次链后创建草稿并进入三 TAB 编辑；提交时校验必修最低学分后写入审批队列；审批通过后 status=approved 并回填上一版本截止批次；导出汇总所选版本方案内容（模板待确认）。",
         flow_pre="已维护专业主数据（代码、学制、学位）；已维护入学批次代码集（02/04/09）；课程库可用于 TAB2 选课。",
-        flow_out="已通过版本供执行计划生成、方案版本变更申请、版本查询、Bloom/Alignment 统计；引用数关联 EXEC_PLANS。",
-        biz_flow="操作流程：进入【方案版本管理】→ 过滤查询 → 新增版本 → TAB1 分类 → TAB2 课程 → TAB3 进程表 → 保存 → 提交审批 → 【版本审批】三级流程 → 通过后查询/执行计划/变更。",
+        flow_out="已通过版本供专业批次执行计划生成、方案版本变更申请、版本查询、Bloom 统计；引用数关联 EXEC_PLANS。",
+        biz_flow="操作流程：进入【方案版本管理】→ 过滤查询 → 新增版本 → TAB1 分类 → TAB2 课程 → TAB3 进程表 → 保存（二次确认后返回列表）→ 提交审批 → 【版本审批】三级流程 → 通过后查询/执行计划/变更。",
         proto_link="prototype/index.html#page-version-list",
         field_tables=[
             ("新增/查看版本——弹窗（新增培养方案版本）", [
@@ -264,6 +264,14 @@ def build():
                 ["2", "占比", "Percentage", "数值框", "是", "0~100；合计≤100%", "—", "否", "40"],
                 ["3", "实地/在线/自主学时", "SLT", "数值框", "是", "非负整数", "—", "否", ""],
             ]),
+            ("版本编辑——信息条（edit-info-strip，不含毕业总学分）", [
+                ["1", "专业", "Major", "只读", "—", "—", "—", "否", "Finance 金融学"],
+                ["2", "版本", "Version", "只读", "—", "—", "—", "否", "2025/09"],
+                ["3", "开始批次", "Start Intake", "只读", "—", "—", "—", "否", "2025/09"],
+                ["4", "截止批次", "End Intake", "只读", "—", "—", "当前有效版本为空", "否", "—"],
+                ["5", "学制", "Duration", "只读", "—", "—", "—", "否", "4 年"],
+                ["6", "授予学位", "Degree Awarded", "只读", "—", "—", "—", "是", "经济学学士"],
+            ]),
         ],
         functions=[
             ("1", "新增版本", "Create Version",
@@ -291,6 +299,11 @@ def build():
              "点击引用数量 → 弹窗展示 EXEC_PLANS 关联记录。",
              "无引用时显示 0。",
              "弹窗 modal-version-refs。"),
+            ("6", "保存", "Save",
+             "保存当前三 TAB 编辑内容，需二次确认后返回来源列表。",
+             "编辑页点击「保存」→ modal-save-version 确认 → 写入对应 Store → 返回列表。",
+             "版本/变更/执行计划按场景区分提示文案；顶栏信息条不含毕业总学分（毕业总学分仅在 TAB1 chips 展示）。",
+             "弹窗 modal-save-version；确认后 goPage(versionEditReturnPage)。"),
         ],
     )
 
@@ -300,7 +313,7 @@ def build():
         intro="按审批节点统一管理培养方案版本三级审批待办、进行中与历史；支持单条 Review、批量 Review、Approval Log 及只读 View。",
         list_fields="勾选框（Pending 可审项）、培养方案、Status、Stage、专业、开始批次、总学分、提交人、提交时间、操作。",
         search_fields="Tab 分桶：Pending / In Progress / History（Pending 显示 badge）。",
-        flow_rel="提交后写入 APPROVAL_QUEUE；Review 更新 stages；末级 Approve → status=approved 并 syncVersionEndBatches；Reject/Update Required → status=rejected。",
+        flow_rel="提交后写入 APPROVAL_QUEUE；Review 更新 stages；末级 Approve → status=approved 并 syncVersionEndBatches；Reject/Update Required → status=rejected。总学分列动态取 VERSION_CONTENT_STORE 分类树一级最低学分合计（同 TAB1「毕业总学分」chip）。",
         flow_pre="版本已提交且 status=pending。",
         flow_out="审批通过 → 版本查询、执行计划、变更申请；日志供 Audit。",
         biz_flow="进入【版本审批】→ Pending 勾选 → Review → 审批意见 → Approve/Reject/Update Required → 逐级至 Senate。",
@@ -392,7 +405,7 @@ def build():
         intro="与版本审批结构一致，数据源 CHANGE_APPLICATIONS；Pending/In Progress/History；单条/批量 Review。",
         list_fields="勾选框、培养方案、Status、Stage、专业、开始批次、总学分、提交人、提交时间、操作。",
         search_fields="Tab：Pending / In Progress / History。",
-        flow_rel="变更提交后进入审批队列；Approve 通过后覆盖版本内容；Reject/Update Required 退回。",
+        flow_rel="变更提交后进入审批队列；Approve 通过后覆盖版本内容；Reject/Update Required 退回。总学分列取 CHANGE_CONTENT_STORE 或目标版本快照的分类树毕业总学分。",
         flow_pre="变更申请 status=pending。",
         flow_out="通过后更新 VERSION_CONTENT_STORE。",
         biz_flow="【方案版本变更审核】→ Pending Review → 三级审批。",
@@ -404,18 +417,18 @@ def build():
         ],
     )
 
-    add_heading(doc, "2.2.3 执行计划（英文名称：Execution Plan）（需求确认状态：已确认）", 3)
-    add_para(doc, "模块介绍：基于已审批版本，按专业+入学批次生成执行计划副本；微调开课学期；提交后锁定；已开课不可撤回。")
+    add_heading(doc, "2.2.3 专业批次执行计划（英文名称：Programme Intake Execution Plan）（需求确认状态：已确认）", 3)
+    add_para(doc, "模块介绍：按入学批次从已审批方案版本复制生成独立执行计划；各批次单独编辑保存，不回写方案版本管理；方案版本变更审批通过后不影响已生成副本；提交后锁定，已开课不可撤回。")
 
     add_menu_block(
-        doc, "2.2.3.1 ", "批次执行计划（英文名称：Programme Intake Execution Plan）", "已确认",
-        intro="管理各专业入学批次执行计划；从 approved 版本自动匹配复制；支持生成、编辑、提交、撤回、删除及批量操作。",
-        list_fields="勾选框、专业代码、专业、专业批次、学院、入学批次、开课状态、是否提交、操作。",
+        doc, "2.2.3.1 ", "专业批次执行计划（英文名称：Programme Intake Execution Plan）", "已确认",
+        intro="管理各专业入学批次执行计划；从 approved 版本自动匹配并深拷贝至 EXEC_CONTENT_STORE；各批次数据独立（如编辑 2026/02 不影响 2025/09）；支持生成、编辑、提交、撤回、删除及批量操作。",
+        list_fields="勾选框、专业代码、专业、专业批次、学院（School）、入学批次、总学分、开课状态、是否提交、操作。",
         search_fields="学院、专业、批次、状态（原型 UI 占位，逻辑待接）。",
-        flow_rel="选专业+入学批次 → 自动匹配 approved 版本 → 复制 EXEC_CONTENT_STORE → draft → 提交 isLocked=true。",
-        flow_pre="存在覆盖批次的 approved 版本；同专业同批次不可重复。",
-        flow_out="执行计划独立副本；版本引用数来源。",
-        biz_flow="【批次执行计划】→ 生成 → 编辑三 TAB → 提交 → 开课。",
+        flow_rel="选专业+入学批次 → 自动匹配 approved 版本 → initExecContentStore 深拷贝至 EXEC_CONTENT_STORE[planId] → 编辑仅写入当前 planId，不回写 VERSION_CONTENT_STORE → 提交 isLocked=true。总学分列取当前批次 EXEC_CONTENT_STORE 分类树毕业总学分。",
+        flow_pre="存在覆盖批次的 approved 版本；同专业同入学批次不可重复生成。",
+        flow_out="执行计划独立副本，不受后续版本变更影响；版本引用数统计来源；开课数据来源。",
+        biz_flow="【专业批次执行计划】→ 生成 → 编辑三 TAB → 保存（确认返回）→ 提交 → 开课。",
         proto_link="prototype/index.html#page-exec-list",
         field_tables=[
             ("生成批次执行计划——弹窗", [
@@ -429,11 +442,16 @@ def build():
             ("2", "提交", "Submit", "锁定执行计划。", "批量/行内提交。", "提交后不可编辑。", "modal-exec-lock。"),
             ("3", "撤回", "Withdraw", "未开课前撤回。", "已提交且未开课可撤回。", "—", "modal-exec-unlock。"),
             ("4", "删除", "Delete", "删除未提交计划。", "未提交且未开课。", "已开课须先删开课任务。", "modal-exec-delete。"),
+            ("5", "编辑/查看", "Edit / View",
+             "进入三 TAB 编辑或只读查看当前批次执行计划副本。",
+             "行内「编辑」/「查看」→ page-version-edit 执行计划模式。",
+             "保存不回写方案版本管理；横幅说明数据隔离规则。",
+             "共用 page-version-edit；横幅 exec-edit-banner。"),
         ],
     )
 
     add_heading(doc, "2.2.4 数据统计（英文名称：Statistics）（需求确认状态：已确认）", 3)
-    add_para(doc, "模块介绍：按学院→专业→年份→入学批次统计 CLO 的 Bloom 分布及 CLO→PLO 对齐贡献。")
+    add_para(doc, "模块介绍：按学院→专业→年份→入学批次统计 CLO 的 Bloom 分布。（Alignment Charts 已移除，暂不提供）")
 
     add_menu_block(
         doc, "2.2.4.1 ", "Bloom's Taxonomy Charts（英文名：Bloom's Taxonomy Charts）", "已确认",
@@ -447,21 +465,6 @@ def build():
         proto_link="prototype/index.html#page-stats-bloom",
         functions=[
             ("1", "Export", "Export", "导出图表数据/图片。", "点击 Export。", "原型 alert 占位。", "无下钻页面。"),
-        ],
-    )
-
-    add_menu_block(
-        doc, "2.2.4.2 ", "Alignment Charts（英文名：Alignment Charts）", "已确认",
-        intro="CLO→PLO 贡献表（PLO1–PLO11）、Bloom Domain 行、贡献折线图。",
-        list_fields="PLO 贡献矩阵、Domain 行、折线图。",
-        search_fields="左侧树 Search。",
-        flow_rel="读取 CLO 与 PLO 对齐关系聚合。",
-        flow_pre="同 Bloom 统计。",
-        flow_out="Export（待实现）。",
-        biz_flow="进入页面 → 选树节点 → 查看对齐表。",
-        proto_link="prototype/index.html#page-stats-alignment（侧栏暂未挂菜单，待确认）",
-        functions=[
-            ("1", "Export", "Export", "导出对齐数据。", "点击 Export。", "原型占位。", "无下钻页面。"),
         ],
     )
 
@@ -487,20 +490,36 @@ def build():
         ["VERSION_CONTENT_STORE", "classificationTree, programCourses, electiveSemesterRequirements", "版本方案内容"],
         ["COURSE_CATALOG", "code, name, credits, clos, slt…", "教务课程库"],
         ["PROGRAM_COURSES", "catalogId, h1/h2/h3Id, semester, studyType, clos, slt", "方案内课程"],
-        ["EXEC_PLANS", "planCode, majorKey, intakeBatch, versionId, isLocked, isOffering", "执行计划"],
+        ["EXEC_PLANS", "planCode, majorKey, intakeBatch, versionId, isLocked, isOffering", "专业批次执行计划"],
+        ["EXEC_CONTENT_STORE", "classificationTree, programCourses, electiveSemesterRequirements", "各批次执行计划独立副本"],
         ["CHANGE_APPLICATIONS", "versionId, status, stages[], currentStageLevel", "变更申请"],
         ["APPROVAL_QUEUE", "versionId, stages[], cancelled", "版本审批实例"],
     ], col_widths=[3.5, 6.5, 6.0])
 
-    add_heading(doc, "附录 B：原型占位功能（正式开发需实现）", 2)
+    add_heading(doc, "附录 B：数据隔离规则", 2)
+    add_grid_table(doc, ["场景", "写入 Store", "是否影响其他数据"], [
+        ["编辑方案版本并保存", "VERSION_CONTENT_STORE[versionId]", "不影响已有 EXEC_CONTENT_STORE"],
+        ["编辑专业批次执行计划并保存", "EXEC_CONTENT_STORE[planId]", "不回写 VERSION_CONTENT_STORE；不影响其他 planId"],
+        ["方案版本变更审批通过", "VERSION_CONTENT_STORE[versionId]", "已生成 EXEC_CONTENT_STORE 副本保持不变"],
+        ["新建执行计划（未生成批次）", "新建 EXEC_CONTENT_STORE[planId]", "引用当时最新版本快照"],
+    ], col_widths=[4.5, 5.5, 5.0])
+
+    add_heading(doc, "附录 C：总学分取值规则", 2)
+    add_kv_table(doc, [
+        ("计算规则", "TAB1 分类树各一级分类最低学分之和（calcGraduationTotalCredits），与 chips「毕业总学分」一致"),
+        ("版本审批列表", "getApprovalItemTotalCredits ← VERSION_CONTENT_STORE / 版本快照"),
+        ("方案版本变更审核列表", "getChangeApplicationTotalCredits ← CHANGE_CONTENT_STORE / 版本快照"),
+        ("专业批次执行计划列表", "getExecPlanTotalCredits ← EXEC_CONTENT_STORE[planId]"),
+        ("顶栏信息条", "不展示毕业总学分（已移除）"),
+    ], col_widths=(3.5, 12.5))
+
+    add_heading(doc, "附录 D：原型占位功能（正式开发需实现）", 2)
     add_grid_table(doc, ["功能", "当前原型行为", "优先级"], [
         ["版本导出", "alert 占位，模板待定", "高"],
-        ["保存", "alert('保存成功（原型）')", "高"],
         ["TAB3 导出 PDF/打印", "按钮占位", "中"],
         ["统计 Export", "alert 占位", "中"],
         ["执行计划列表过滤器", "UI 存在，逻辑未接", "中"],
         ["TAB2 分类筛选/搜索/移除", "部分 UI 占位", "中"],
-        ["Alignment Charts 侧栏入口", "页面存在，菜单未挂", "低"],
         ["用户认证与角色路由", "无", "高"],
     ], col_widths=[4.0, 7.0, 2.0])
 

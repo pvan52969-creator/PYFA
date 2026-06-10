@@ -2117,9 +2117,9 @@ function updateVersionEditBreadcrumb() {
   if (!crumb) return;
   const labels = {
     'approval-list': '培养方案版本审批',
-    'exec-list': '批次执行计划',
-    'change-apply': '方案变更申请',
-    'change-review': '方案变更审核'
+    'exec-list': '专业批次执行计划',
+    'change-apply': '方案版本变更申请',
+    'change-review': '方案版本变更审核'
   };
   crumb.textContent = labels[versionEditReturnPage] || '方案版本管理';
 }

@@ -24,10 +24,10 @@
       <a href="#" class="nav-item" data-page="approval-list">版本审批</a>
       <a href="#" class="nav-item" data-page="version-query">版本查询</a>
       <div class="nav-group">方案版本变更</div>
-      <a href="#" class="nav-item" data-page="change-apply">方案变更申请</a>
-      <a href="#" class="nav-item" data-page="change-review">方案变更审核</a>
-      <div class="nav-group">执行计划</div>
-      <a href="#" class="nav-item" data-page="exec-list">批次执行计划</a>
+      <a href="#" class="nav-item" data-page="change-apply">方案版本变更申请</a>
+      <a href="#" class="nav-item" data-page="change-review">方案版本变更审核</a>
+      <div class="nav-group">专业批次执行计划</div>
+      <a href="#" class="nav-item" data-page="exec-list">专业批次执行计划</a>
       <div class="nav-group">数据统计</div>
       <a href="#" class="nav-item" data-page="stats-bloom">Bloom's Taxonomy Charts</a>
     </nav>
@@ -301,11 +301,11 @@
       </div>
     </section>
 
-    <!-- ═══ 方案变更申请 ═══ -->
+    <!-- ═══ 方案版本变更申请 ═══ -->
     <section class="page" id="page-change-apply">
       <div class="page-header">
         <div>
-          <h1>方案变更申请</h1>
+          <h1>方案版本变更申请</h1>
           <p class="subtitle">选择已审批通过的培养方案版本发起变更；审批通过后覆盖原版本内容，不影响已生成执行计划</p>
         </div>
         <button class="btn btn-primary" onclick="openNewChangeApplyModal()">+ 新建申请</button>
@@ -339,11 +339,11 @@
       </div>
     </section>
 
-    <!-- ═══ 方案变更审核 ═══ -->
+    <!-- ═══ 方案版本变更审核 ═══ -->
     <section class="page" id="page-change-review">
       <div class="page-header">
         <div>
-          <h1>方案变更审核</h1>
+          <h1>方案版本变更审核</h1>
           <p class="subtitle">按审批节点查看待办、进行中与历史记录；全部节点统一展示</p>
         </div>
       </div>
@@ -1300,10 +1300,10 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：新建方案变更申请 ═══ -->
+<!-- ═══ 弹窗：新建方案版本变更申请 ═══ -->
 <div class="modal-overlay" id="modal-new-change-apply">
   <div class="modal modal-lg">
-    <div class="modal-head"><h3>新建方案变更申请</h3><button class="modal-close" onclick="closeModal('modal-new-change-apply')">×</button></div>
+    <div class="modal-head"><h3>新建方案版本变更申请</h3><button class="modal-close" onclick="closeModal('modal-new-change-apply')">×</button></div>
     <div class="modal-body">
       <div class="alert-info" style="margin-top:0">
         请选择<strong>已审批通过</strong>的培养方案版本作为变更目标。变更审批通过后，将覆盖原版本在「方案版本管理」中的方案内容；已生成的执行计划不受影响，未生成执行计划的批次在生成时将引用最新版本内容。
@@ -1350,7 +1350,7 @@
   <div class="modal">
     <div class="modal-head"><h3>提交变更审批</h3><button class="modal-close" onclick="cancelSubmitChange()">×</button></div>
     <div class="modal-body">
-      <p id="submit-change-msg">确定提交该方案变更申请吗？</p>
+      <p id="submit-change-msg">确定提交该方案版本变更申请吗？</p>
       <p class="form-hint" id="submit-change-hint"></p>
     </div>
     <div class="modal-foot">

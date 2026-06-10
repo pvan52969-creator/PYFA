@@ -708,6 +708,8 @@ function updateVersionSelection() {
   );
   const btn = document.getElementById('btn-batch-submit-version');
   if (btn) btn.disabled = !canBatchSubmitSelectedVersions();
+  const btnExport = document.getElementById('btn-batch-export-version');
+  if (btnExport) btnExport.disabled = selectedVersionIds.size === 0;
   const checkAll = document.getElementById('version-check-all');
   const selectable = document.querySelectorAll('.version-row-check');
   if (checkAll && selectable.length) {
@@ -719,6 +721,16 @@ function updateVersionSelection() {
 function toggleVersionCheckAll(checked) {
   document.querySelectorAll('.version-row-check').forEach(el => { el.checked = checked; });
   updateVersionSelection();
+}
+
+function openBatchExportVersion() {
+  if (!selectedVersionIds.size) {
+    alert('请先勾选要导出的培养方案版本');
+    return;
+  }
+  const ids = Array.from(selectedVersionIds);
+  const names = ids.map(id => findVersionById(id)?.name).filter(Boolean);
+  alert(`版本导出（原型）：导出模板待定\n\n已选 ${ids.length} 个版本：\n${names.join('\n')}`);
 }
 
 function openBatchSubmitVersion() {
@@ -2141,8 +2153,7 @@ function restoreVersionInfoStrip(v) {
     <span><label>开始批次</label><code id="info-start-batch">${formatBatchDisplay(v.startBatch)}</code></span>
     <span><label>截止批次</label><code id="info-end-batch" class="${v.endBatch ? '' : 'text-muted'}">${v.endBatch ? formatBatchDisplay(v.endBatch) : '—（当前有效版本）'}</code></span>
     <span><label>学制</label>${v.duration} 年</span>
-    <span><label>授予学位</label>${escapeHtml(v.degree)}</span>
-    <span><label>毕业总学分</label><strong class="text-blue">130</strong></span>`;
+    <span><label>授予学位</label>${escapeHtml(v.degree)}</span>`;
 }
 
 function renderExecInfoStrip(ep, version) {

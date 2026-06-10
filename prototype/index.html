@@ -96,7 +96,8 @@
       <div class="card">
         <div class="panel-toolbar version-list-toolbar">
           <button class="btn btn-primary btn-sm" id="btn-batch-submit-version" onclick="openBatchSubmitVersion()" disabled>提交审批</button>
-          <span class="hint">勾选版本后可批量提交；所选须均为草稿或已驳回，含已通过/待审批等状态时按钮不可用</span>
+          <button class="btn btn-outline btn-sm" id="btn-batch-export-version" onclick="openBatchExportVersion()" disabled>版本导出</button>
+          <span class="hint">勾选版本后可批量提交或导出；提交须均为草稿或已驳回，含已通过/待审批等状态时提交按钮不可用</span>
         </div>
         <div class="table-scroll">
           <table class="data-table version-table" id="version-table">
@@ -152,7 +153,6 @@
         <span><label>截止批次</label><code id="info-end-batch" class="text-muted">—（当前有效版本）</code></span>
         <span><label>学制</label>4 年</span>
         <span><label>授予学位</label>经济学学士</span>
-        <span><label>毕业总学分</label><strong class="text-blue">130</strong></span>
       </div>
       <div class="alert-info version-readonly-banner" id="version-readonly-banner" style="display:none;margin-bottom:12px;font-size:12px">
         当前为<strong>查看模式</strong>，培养方案内容不可编辑。

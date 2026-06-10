@@ -4233,7 +4233,8 @@ function renderProgramCoursesTable() {
       if (!cat || !matchesProgramCourseFilters(pc, cat, filters)) return '';
       const actions = versionEditReadonly
         ? `<a href="#" class="view-link" onclick="openViewProgramCourse('${pc.id}');return false">查看</a>`
-        : `<a href="#" onclick="openEditProgramCourse('${pc.id}');return false">编辑</a><a href="#" class="danger">移除</a>`;
+        : `<a href="#" onclick="openEditProgramCourse('${pc.id}');return false">编辑</a>` +
+          `<a href="#" class="danger" onclick="requestRemoveProgramCourse('${pc.id}');return false">移除</a>`;
       return `<tr>
         <td><code>${escapeHtml(cat.code)}</code></td>
         <td>${escapeHtml(cat.name)}</td>
@@ -4251,6 +4252,30 @@ function renderProgramCoursesTable() {
     ? rows.join('')
     : '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">暂无匹配课程</td></tr>';
   refreshProgrammeStructureIfVisible();
+}
+
+function requestRemoveProgramCourse(pcId) {
+  if (versionEditReadonly) return;
+  const pc = findProgramCourse(pcId);
+  if (!pc) return;
+  const cat = COURSE_CATALOG.find(c => c.id === pc.catalogId);
+  const code = cat?.code || '—';
+  const name = cat?.name || '该课程';
+  const classification = getCourseClassificationDisplay(pc);
+  openDeleteConfirm({
+    title: '确认移除课程',
+    message: `确定从本方案中移除课程「<strong>${escapeHtml(code)} ${escapeHtml(name)}</strong>」吗？此操作不可撤销。`,
+    hint: classification !== '—' ? `分类：${classification}` : '',
+    onConfirm: () => removeProgramCourse(pcId)
+  });
+}
+
+function removeProgramCourse(pcId) {
+  const idx = PROGRAM_COURSES.findIndex(pc => pc.id === pcId);
+  if (idx < 0) return;
+  PROGRAM_COURSES.splice(idx, 1);
+  renderProgramCoursesTable();
+  updateVersionEditTabStates();
 }
 
 function setCoursePickerSectionVisible(visible) {

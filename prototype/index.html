@@ -142,7 +142,7 @@
         <div class="header-actions">
           <span class="status draft" id="edit-status">草稿</span>
           <button class="btn btn-ghost" onclick="goVersionEditReturn()">返回</button>
-          <button class="btn btn-outline" id="btn-save" onclick="alert('保存成功（原型）')">保存</button>
+          <button class="btn btn-outline" id="btn-save" onclick="requestSaveVersionEdit()">保存</button>
           <button class="btn btn-primary" id="btn-submit" onclick="submitCurrentVersionForApproval()">提交审批</button>
         </div>
       </div>
@@ -158,10 +158,10 @@
         当前为<strong>查看模式</strong>，培养方案内容不可编辑。
       </div>
       <div class="alert-info exec-edit-banner" id="exec-edit-banner" style="display:none;margin-bottom:12px;font-size:12px">
-        执行计划由已审批版本模板复制生成，编辑界面与版本管理一致；可调整开课学期等批次差异，不影响原版本模板。
+        <strong>专业批次执行计划：</strong>由「方案版本管理」中已审批版本复制生成<strong>独立副本</strong>；可针对本入学批次调整开课学期等。保存仅写入当前批次执行计划，<strong>不回写方案版本管理</strong>，亦<strong>不影响其他入学批次</strong>（如编辑 2026/02 不会改变 2025/09 的数据）。
       </div>
       <div class="alert-info change-edit-banner" id="change-edit-banner" style="display:none;margin-bottom:12px;font-size:12px">
-        <strong>方案变更：</strong>审批通过后将覆盖「方案版本管理」中对应版本的内容；<strong>已生成的执行计划</strong>保持独立副本不受影响；<strong>尚未生成执行计划</strong>的入学批次，生成时将引用最新版本内容。
+        <strong>方案版本变更：</strong>审批通过后将覆盖「方案版本管理」中对应版本的内容；<strong>已生成的专业批次执行计划</strong>保持独立副本不受影响；<strong>尚未生成执行计划</strong>的入学批次，新建时将引用最新版本内容。
       </div>
       <div class="tab-bar">
         <button class="tab active" data-tab="tab-classification">TAB1 课程分类</button>
@@ -372,8 +372,11 @@
     <!-- ═══ 执行计划 ═══ -->
     <section class="page" id="page-exec-list">
       <div class="page-header">
-        <div><h1>专业批次培养方案执行计划</h1><p class="subtitle">从已审批版本生成批次执行计划，支持独立编辑；执行计划为下一步开课的数据来源</p></div>
+        <div><h1>专业批次培养方案执行计划</h1><p class="subtitle">按入学批次从已审批方案版本复制生成独立执行计划；各批次单独编辑，不回写方案版本管理</p></div>
         <button class="btn btn-primary" onclick="openModal('modal-gen-exec')">+ 生成执行计划</button>
+      </div>
+      <div class="legend-bar">
+        <span class="legend-item text-muted">数据隔离：每个入学批次独立生成、独立保存；编辑执行计划<strong>不影响</strong>「方案版本管理」中的版本内容；「方案版本变更」审批通过后<strong>不影响</strong>已生成的执行计划副本（未生成批次在新建时引用最新版本）。</span>
       </div>
       <div class="filter-bar">
         <select class="input"><option>全部学院</option></select>
@@ -387,13 +390,13 @@
           <button class="btn btn-outline btn-sm" id="btn-exec-lock" onclick="requestLockSelectedExecPlans()" disabled>提交</button>
           <button class="btn btn-outline btn-sm" id="btn-exec-unlock" onclick="requestUnlockSelectedExecPlans()" disabled>撤回</button>
           <button class="btn btn-outline btn-sm btn-danger-outline" id="btn-exec-delete" onclick="requestDeleteSelectedExecPlans()" disabled>删除</button>
-          <span class="hint">勾选未提交的执行计划后可批量提交或删除；提交后不可编辑，未开课前可撤回，已开课须先删除开课任务</span>
+          <span class="hint">各批次执行计划数据独立；勾选未提交的可批量提交或删除；提交后不可编辑，未开课前可撤回，已开课须先删除开课任务</span>
         </div>
         <table class="data-table exec-list-table">
           <thead>
             <tr>
               <th class="col-check"><input type="checkbox" id="exec-check-all" aria-label="全选" onchange="toggleExecCheckAll(this.checked)"></th>
-              <th>专业代码</th><th>专业</th><th>专业批次</th><th>学院（School）</th><th>入学批次</th><th>开课状态</th><th>是否提交</th><th>操作</th>
+              <th>专业代码</th><th>专业</th><th>专业批次</th><th>学院（School）</th><th>入学批次</th><th>总学分</th><th>开课状态</th><th>是否提交</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="exec-list-tbody"></tbody>
@@ -650,6 +653,21 @@
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal('modal-version-refs')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：保存确认 ═══ -->
+<div class="modal-overlay" id="modal-save-version">
+  <div class="modal">
+    <div class="modal-head"><h3>保存</h3><button class="modal-close" onclick="cancelSaveVersionEdit()">×</button></div>
+    <div class="modal-body">
+      <p id="save-version-msg">确定保存当前内容吗？</p>
+      <p class="form-hint" id="save-version-hint">保存后将返回列表页面。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cancelSaveVersionEdit()">取消</button>
+      <button class="btn btn-primary" onclick="confirmSaveVersionEdit()">确认保存</button>
     </div>
   </div>
 </div>
@@ -1428,6 +1446,7 @@
             <span class="lock-icon">🔒 仅可引用已审批通过版本 · 按入学批次自动匹配</span>
           </div>
           <p class="form-hint" id="exec-match-hint">规则：入学批次须落在已审批版本的 [开始批次, 截止批次] 区间内；待审批/草稿/已驳回版本不可引用。</p>
+          <p class="form-hint">生成后为该入学批次创建独立副本；后续编辑执行计划或方案版本变更，均不会相互覆盖已保存的批次数据。</p>
         </div>
       </div>
     </div>

@@ -569,6 +569,7 @@ function renderExecPlanRow(ep) {
     <td>${escapeHtml(formatMajorBatchCode(ep.majorKey, ep.intakeBatch))}</td>
     <td>${escapeHtml(major?.school || '—')}</td>
     <td>${formatBatchDisplay(ep.intakeBatch)}</td>
+    <td>${getExecPlanTotalCredits(ep)}</td>
     <td>${renderExecOfferingStatusLabel(!!ep.isOffering)}</td>
     <td>${renderExecLockStatus(!!ep.isLocked)}</td>
     <td class="actions">${renderExecPlanActions(ep)}</td>
@@ -1215,7 +1216,10 @@ function confirmGenerateExecPlan() {
       isOffering: false
     };
     EXEC_PLANS.push(ep);
+    ensureExecPlanContentStore(ep);
     renderExecList();
+  } else {
+    ensureExecPlanContentStore(ep);
   }
   goExecEdit(ep.id, true);
 }
@@ -1624,7 +1628,7 @@ function renderChangeReviewList() {
       <td>${escapeHtml(major?.name || '—')}</td>
       <td><code>${formatBatchDisplay(ca.version)}</code></td>
       <td><code>${formatBatchDisplay(ca.startBatch || ca.version)}</code></td>
-      <td>${ca.totalCredits || '—'}</td>
+      <td>${getChangeApplicationTotalCredits(ca)}</td>
       <td>${escapeHtml(ca.submitter || '—')}</td>
       <td>${escapeHtml(ca.submitTime || '—')}</td>
       <td class="actions">${renderChangeReviewActions(ca, changeReviewActiveTab)}</td>
@@ -1930,6 +1934,7 @@ function finalizeChangeApplicationApproval(changeId) {
   if (!ca) return;
   const content = CHANGE_CONTENT_STORE[changeId] || getVersionContentSnapshot(ca.versionId);
   VERSION_CONTENT_STORE[ca.versionId] = cloneJson(content);
+  // 已生成的 EXEC_CONTENT_STORE 副本保持不变，专业批次执行计划不受版本变更影响
   ca.status = 'approved';
 }
 
@@ -2170,8 +2175,44 @@ function renderExecInfoStrip(ep, version) {
     <span><label>开课状态</label>${ep.isOffering ? '已开课' : '未开课'}</span>`;
 }
 
+function requestSaveVersionEdit() {
+  if (versionEditReadonly) return;
+  const msg = document.getElementById('save-version-msg');
+  const hint = document.getElementById('save-version-hint');
+  if (currentExecPlan) {
+    if (msg) {
+      msg.textContent = `确定保存专业批次执行计划（入学批次 ${formatBatchDisplay(currentExecPlan.intakeBatch)}）吗？`;
+    }
+    if (hint) {
+      hint.textContent = '保存后将返回执行计划列表；仅更新当前批次执行计划，不回写方案版本管理，其他入学批次互不影响。';
+    }
+  } else if (currentChangeApplication) {
+    if (msg) msg.textContent = '确定保存方案版本变更内容吗？';
+    if (hint) hint.textContent = '保存后将返回变更申请列表。';
+  } else {
+    if (msg) msg.textContent = '确定保存当前培养方案版本内容吗？';
+    if (hint) hint.textContent = '保存后将返回方案版本管理列表。';
+  }
+  openModal('modal-save-version');
+}
+
+function cancelSaveVersionEdit() {
+  closeModal('modal-save-version');
+}
+
+function confirmSaveVersionEdit() {
+  if (versionEditReadonly) return;
+  closeModal('modal-save-version');
+  saveCurrentEditContent();
+  const returnPage = versionEditReturnPage || 'version-list';
+  currentExecPlan = null;
+  currentChangeApplication = null;
+  goPage(returnPage);
+}
+
 function goVersionEditReturn() {
   saveCurrentEditContent();
+  if (currentExecPlan) renderExecList();
   currentExecPlan = null;
   currentChangeApplication = null;
   goPage(versionEditReturnPage || 'version-list');
@@ -2420,7 +2461,7 @@ function renderApprovalList() {
       <td>${escapeHtml(getApprovalStageDisplay(item))}</td>
       <td>${escapeHtml(item.major)}</td>
       <td><code>${formatBatchDisplay(item.startBatch)}</code></td>
-      <td>${item.totalCredits}</td>
+      <td>${getApprovalItemTotalCredits(item)}</td>
       <td>${escapeHtml(item.submitter)}</td>
       <td>${escapeHtml(item.submitTime)}</td>
       <td class="actions">${renderApprovalActions(item, approvalActiveTab)}</td>
@@ -3186,6 +3227,47 @@ function calcNodeCredits(node) {
   return calcNodeCreditsMin(node);
 }
 
+/** 与 TAB1「毕业总学分」chip（sum-total）一致：各一级分类最低学分之和 */
+function calcGraduationTotalCredits(classificationTree) {
+  if (!Array.isArray(classificationTree) || !classificationTree.length) return null;
+  const tree = cloneJson(classificationTree);
+  return tree.reduce((sum, l1) => sum + calcNodeCreditsMin(l1), 0);
+}
+
+function getChangeApplicationContent(ca) {
+  return CHANGE_CONTENT_STORE[ca.id] || getVersionContentSnapshot(ca.versionId);
+}
+
+function getChangeApplicationTotalCredits(ca) {
+  const total = calcGraduationTotalCredits(getChangeApplicationContent(ca)?.classificationTree);
+  return total != null ? total : (ca.totalCredits || '—');
+}
+
+function ensureExecPlanContentStore(ep) {
+  if (ep && !EXEC_CONTENT_STORE[ep.id]) {
+    EXEC_CONTENT_STORE[ep.id] = cloneJson(getVersionContentSnapshot(ep.versionId));
+  }
+}
+
+function initExecContentStore() {
+  EXEC_PLANS.forEach(ensureExecPlanContentStore);
+}
+
+function getExecPlanContent(ep) {
+  ensureExecPlanContentStore(ep);
+  return EXEC_CONTENT_STORE[ep.id];
+}
+
+function getExecPlanTotalCredits(ep) {
+  const total = calcGraduationTotalCredits(getExecPlanContent(ep)?.classificationTree);
+  return total != null ? total : '—';
+}
+
+function getApprovalItemTotalCredits(item) {
+  const total = calcGraduationTotalCredits(getVersionContentSnapshot(item.versionId)?.classificationTree);
+  return total != null ? total : (item.totalCredits || '—');
+}
+
 function calcNodeCourseCount(node) {
   if (node.level === 3) return Number(node.courseCount) || 0;
   if (node.level === 2) {
@@ -3435,14 +3517,26 @@ function saveCurrentEditContent() {
   };
   if (currentChangeApplication?.id) {
     CHANGE_CONTENT_STORE[currentChangeApplication.id] = payload;
+    const ca = findChangeApplication(currentChangeApplication.id);
+    if (ca) {
+      const total = calcGraduationTotalCredits(payload.classificationTree);
+      if (total != null) ca.totalCredits = total;
+    }
     return;
   }
   if (currentExecPlan?.id) {
     EXEC_CONTENT_STORE[currentExecPlan.id] = payload;
+    // 仅写入当前批次执行计划，不回写 VERSION_CONTENT_STORE（与方案版本管理隔离）
     return;
   }
   if (currentEditVersion?.id) {
     VERSION_CONTENT_STORE[currentEditVersion.id] = payload;
+    const total = calcGraduationTotalCredits(payload.classificationTree);
+    if (total != null) {
+      APPROVAL_QUEUE.forEach(ap => {
+        if (ap.versionId === currentEditVersion.id) ap.totalCredits = total;
+      });
+    }
   }
 }
 
@@ -3453,12 +3547,8 @@ function loadVersionContent(versionId) {
 function loadExecContent(execPlanId) {
   const ep = findExecPlanById(execPlanId);
   if (!ep) return;
-  let content = EXEC_CONTENT_STORE[execPlanId];
-  if (!content) {
-    content = cloneJson(getVersionContentSnapshot(ep.versionId));
-    EXEC_CONTENT_STORE[execPlanId] = cloneJson(content);
-  }
-  applyVersionContent(content);
+  ensureExecPlanContentStore(ep);
+  applyVersionContent(EXEC_CONTENT_STORE[execPlanId]);
 }
 
 let selectedCatalogCourseId = null;
@@ -6748,6 +6838,7 @@ function renderProgrammeStructure(containerId, data) {
 }
 
 // ── Init ──
+initExecContentStore();
 syncAllVersionEndBatches();
 bindCategoryCreditsInputs();
 bindElectiveMatrixInputs();

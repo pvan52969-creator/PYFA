@@ -158,7 +158,7 @@
         当前为<strong>查看模式</strong>，培养方案内容不可编辑。
       </div>
       <div class="alert-info exec-edit-banner" id="exec-edit-banner" style="display:none;margin-bottom:12px;font-size:12px">
-        <strong>专业批次执行计划：</strong>由「方案版本管理」中已审批版本复制生成<strong>独立副本</strong>；可针对本入学批次调整开课学期等。保存仅写入当前批次执行计划，<strong>不回写方案版本管理</strong>，亦<strong>不影响其他入学批次</strong>（如编辑 2026/02 不会改变 2025/09 的数据）。
+        <strong>专业批次执行计划：</strong>方案版本仅定义<strong>不含具体年月</strong>的 Y1S1～YnS3 课程安排（Y 为<strong>学年</strong>，非自然年；如 2023/04 版本：Y1S1=Y1/04，Y1S2=Y1/09，Y1S3=Y1/02）。生成执行计划后，<strong>开课学期</strong>按本入学批次旋转槽位；<strong>实际开课学期</strong>给出明确年月（如 2029/09）。保存仅写入当前批次，不回写方案版本。
       </div>
       <div class="alert-info change-edit-banner" id="change-edit-banner" style="display:none;margin-bottom:12px;font-size:12px">
         <strong>方案版本变更：</strong>审批通过后将覆盖「方案版本管理」中对应版本的内容；<strong>已生成的专业批次执行计划</strong>保持独立副本不受影响；<strong>尚未生成执行计划</strong>的入学批次，新建时将引用最新版本内容。
@@ -1432,7 +1432,7 @@
             <span class="lock-icon">🔒 仅可引用已审批通过版本 · 按入学批次自动匹配</span>
           </div>
           <p class="form-hint" id="exec-match-hint">规则：入学批次须落在已审批版本的 [开始批次, 截止批次] 区间内；待审批/草稿/已驳回版本不可引用。</p>
-          <p class="form-hint">生成后为该入学批次创建独立副本；后续编辑执行计划或方案版本变更，均不会相互覆盖已保存的批次数据。</p>
+          <p class="form-hint">方案版本为不含具体年份的 Y1S1～YnS3 模板；生成后课程按本批次起始学期类型（02/04/09）旋转槽位，并同步计算实际开课学年学期。</p>
         </div>
       </div>
     </div>

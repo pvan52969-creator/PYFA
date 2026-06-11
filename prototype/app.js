@@ -313,6 +313,133 @@ function formatMajorBatchCode(majorKey, intakeBatch) {
   return `${major.code}-${formatBatchDisplay(intakeBatch)}`;
 }
 
+/**
+ * 将执行计划结构学期（Y1S1…）按入学批次映射为实际开课学年学期（如 2025/02）。
+ * Y{n} 为培养方案学年（非自然年）；Y1S1～Y1S3 均属第一学年，如 04 起版：Y1S1=Y1/04，Y1S2=Y1/09，Y1S3=Y1/02。
+ */
+function getIntakeTypeIndex(batch) {
+  const intake = parseIntakeBatch(normalizeBatchCode(batch));
+  if (!intake) return -1;
+  return INTAKE_BATCH_TYPES.indexOf(intake.type);
+}
+
+function getActualOfferingSemester(structuralCode, intakeBatch) {
+  if (!structuralCode || !intakeBatch) return null;
+  const parsed = parseSemesterCode(structuralCode);
+  const intake = parseIntakeBatch(normalizeBatchCode(intakeBatch));
+  if (!parsed || !intake) return null;
+  const startTypeIdx = getIntakeTypeIndex(intakeBatch);
+  if (startTypeIdx < 0) return null;
+  const semIndex = (parsed.year - 1) * INTAKE_BATCH_TYPES.length + (parsed.sem - 1);
+  const typeIdx = (startTypeIdx + semIndex) % INTAKE_BATCH_TYPES.length;
+  const yearDelta = Math.floor((startTypeIdx + semIndex) / INTAKE_BATCH_TYPES.length);
+  return formatBatchDisplay(formatIntakeBatch(intake.year + yearDelta, INTAKE_BATCH_TYPES[typeIdx]));
+}
+
+/**
+ * 版本内 Y{n}S{s} → 执行计划 Y{n}S{s'}（同一年级，按起始批次类型旋转槽位）
+ * 例：版本 2023/02（S1=02,S2=04,S3=09），批次 2029/09（S1=09,S2=02,S3=04）
+ *     版本 Y1S3 课程 → 执行 Y1S1
+ */
+function getExecStructuralFromVersion(versionStructural, versionStartBatch, execIntakeBatch) {
+  const parsed = parseSemesterCode(versionStructural);
+  if (!parsed) return null;
+  const vIdx = getIntakeTypeIndex(versionStartBatch);
+  const eIdx = getIntakeTypeIndex(execIntakeBatch);
+  if (vIdx < 0 || eIdx < 0) return null;
+  const execSlot = ((vIdx + parsed.sem - 1 - eIdx + INTAKE_BATCH_TYPES.length * 100) % INTAKE_BATCH_TYPES.length) + 1;
+  return `Y${parsed.year}S${execSlot}`;
+}
+
+function syncProgramCourseActualSemester(pc, intakeBatch) {
+  if (!pc) return;
+  if (!pc.semester || !intakeBatch) {
+    delete pc.actualSemester;
+    return;
+  }
+  pc.actualSemester = getActualOfferingSemester(pc.semester, intakeBatch);
+}
+
+/** 执行计划结构学期对应的学年/学期槽位标签，如 Y1S1 + 2029/04 → Y1/04 */
+function formatStructuralSemesterSlot(structuralCode, intakeBatch) {
+  const parsed = parseSemesterCode(structuralCode);
+  const startTypeIdx = getIntakeTypeIndex(intakeBatch);
+  if (!parsed || startTypeIdx < 0) return null;
+  const typeIdx = (startTypeIdx + parsed.sem - 1) % INTAKE_BATCH_TYPES.length;
+  return `Y${parsed.year}/${INTAKE_BATCH_TYPES[typeIdx]}`;
+}
+
+function remapElectiveSemesterRequirements(requirements, versionStartBatch, execIntakeBatch) {
+  if (!requirements) return {};
+  const normVersion = normalizeBatchCode(versionStartBatch);
+  const normExec = normalizeBatchCode(execIntakeBatch);
+  if (normVersion === normExec) return cloneJson(requirements);
+  const remapped = {};
+  Object.entries(requirements).forEach(([l2Id, semReqs]) => {
+    const next = {};
+    Object.entries(semReqs || {}).forEach(([versionSem, req]) => {
+      const execSem = getExecStructuralFromVersion(versionSem, normVersion, normExec);
+      if (execSem) next[execSem] = cloneJson(req);
+    });
+    if (Object.keys(next).length) remapped[l2Id] = next;
+  });
+  return remapped;
+}
+
+const EXEC_SEMESTER_REMAP_VERSION = 3;
+
+/** 按版本起始批次 → 执行批次槽位旋转，重算执行计划全部学期字段 */
+function remapExecPlanContent(content, versionStartBatch, execIntakeBatch, versionId) {
+  if (!content || !versionStartBatch || !execIntakeBatch) return content;
+  const normVersion = normalizeBatchCode(versionStartBatch);
+  const normExec = normalizeBatchCode(execIntakeBatch);
+  const versionSnapshot = versionId != null ? getVersionContentSnapshot(versionId) : null;
+  const versionCourseById = new Map((versionSnapshot?.programCourses || []).map(pc => [pc.id, pc]));
+
+  (content.programCourses || []).forEach(pc => {
+    if (!pc.semester) return;
+    const orig = versionCourseById.get(pc.id);
+    if (orig?.semester) {
+      pc.versionSemester = orig.semester;
+      if (normVersion === normExec) {
+        pc.semester = pc.versionSemester;
+      } else {
+        pc.semester = getExecStructuralFromVersion(pc.versionSemester, normVersion, normExec) || pc.versionSemester;
+      }
+    } else if (!pc.versionSemester) {
+      // 执行计划内新增课程：学期已是本批次视角，仅同步实际学期
+    } else if (normVersion !== normExec) {
+      pc.semester = getExecStructuralFromVersion(pc.versionSemester, normVersion, normExec) || pc.semester;
+    }
+    syncProgramCourseActualSemester(pc, normExec);
+  });
+
+  if (versionSnapshot?.electiveSemesterRequirements) {
+    content.electiveSemesterRequirements = remapElectiveSemesterRequirements(
+      versionSnapshot.electiveSemesterRequirements,
+      versionStartBatch,
+      execIntakeBatch
+    );
+  }
+
+  content._semesterRemapVersion = EXEC_SEMESTER_REMAP_VERSION;
+  return content;
+}
+
+function syncExecPlanContentSemesters(content, execIntakeBatch) {
+  (content?.programCourses || []).forEach(pc => syncProgramCourseActualSemester(pc, execIntakeBatch));
+}
+
+function isExecPlanEditMode() {
+  return Boolean(currentExecPlan);
+}
+
+function finalizeProgramCourseForContext(pc) {
+  if (currentExecPlan) syncProgramCourseActualSemester(pc, currentExecPlan.intakeBatch);
+  else delete pc.actualSemester;
+  return pc;
+}
+
 function findExecPlanById(id) {
   return EXEC_PLANS.find(ep => ep.id === Number(id));
 }
@@ -2135,6 +2262,7 @@ function applyEditPageChrome(mode = 'version') {
   const btnSubmit = document.getElementById('btn-submit');
   if (execBanner) execBanner.style.display = mode === 'exec' ? 'block' : 'none';
   if (changeBanner) changeBanner.style.display = mode === 'change' ? 'block' : 'none';
+  renderProgramCourseTableHeader();
   if (btnSubmit) {
     if (mode === 'exec') {
       btnSubmit.style.display = 'none';
@@ -3022,6 +3150,7 @@ function syncOfferingSemesterControl(prefix = '') {
 }
 
 function onOfferingSemesterToggleChange(prefix = '') {
+  if (courseModalReadonly) return;
   if (isCourseFormCompulsory(prefix)) {
     syncOfferingSemesterControl(prefix);
     return;
@@ -3243,8 +3372,17 @@ function getChangeApplicationTotalCredits(ca) {
 }
 
 function ensureExecPlanContentStore(ep) {
-  if (ep && !EXEC_CONTENT_STORE[ep.id]) {
-    EXEC_CONTENT_STORE[ep.id] = cloneJson(getVersionContentSnapshot(ep.versionId));
+  if (!ep) return;
+  const version = findVersionById(ep.versionId);
+  const versionStart = version?.startBatch;
+  if (!EXEC_CONTENT_STORE[ep.id]) {
+    const content = cloneJson(getVersionContentSnapshot(ep.versionId));
+    remapExecPlanContent(content, versionStart, ep.intakeBatch, ep.versionId);
+    EXEC_CONTENT_STORE[ep.id] = content;
+  } else if (EXEC_CONTENT_STORE[ep.id]._semesterRemapVersion !== EXEC_SEMESTER_REMAP_VERSION) {
+    remapExecPlanContent(EXEC_CONTENT_STORE[ep.id], versionStart, ep.intakeBatch, ep.versionId);
+  } else {
+    syncExecPlanContentSemesters(EXEC_CONTENT_STORE[ep.id], ep.intakeBatch);
   }
 }
 
@@ -3532,6 +3670,9 @@ function getVersionContentSnapshot(versionId) {
 }
 
 function saveCurrentEditContent() {
+  if (currentExecPlan?.id) {
+    PROGRAM_COURSES.forEach(pc => finalizeProgramCourseForContext(pc));
+  }
   const payload = {
     classificationTree: cloneJson(CLASSIFICATION_TREE),
     programCourses: cloneJson(PROGRAM_COURSES),
@@ -4224,9 +4365,12 @@ function renderCourseCreditsSummary() {
 function renderProgramCoursesTable() {
   const tbody = document.getElementById('program-courses-tbody');
   if (!tbody) return;
+  renderProgramCourseTableHeader();
   syncProgramCourseFilterOptions();
   renderCourseCreditsSummary();
   const filters = getProgramCourseFilters();
+  const execMode = isExecPlanEditMode();
+  const colSpan = execMode ? 10 : 9;
   const rows = PROGRAM_COURSES
     .map(pc => {
       const cat = COURSE_CATALOG.find(c => c.id === pc.catalogId);
@@ -4235,6 +4379,9 @@ function renderProgramCoursesTable() {
         ? `<a href="#" class="view-link" onclick="openViewProgramCourse('${pc.id}');return false">查看</a>`
         : `<a href="#" onclick="openEditProgramCourse('${pc.id}');return false">编辑</a>` +
           `<a href="#" class="danger" onclick="requestRemoveProgramCourse('${pc.id}');return false">移除</a>`;
+      const actualSemesterCell = execMode
+        ? `<td><code>${escapeHtml(pc.actualSemester || getActualOfferingSemester(pc.semester, currentExecPlan?.intakeBatch) || '—')}</code></td>`
+        : '';
       return `<tr>
         <td><code>${escapeHtml(cat.code)}</code></td>
         <td>${escapeHtml(cat.name)}</td>
@@ -4243,6 +4390,7 @@ function renderProgramCoursesTable() {
         <td>${escapeHtml(getCourseClassificationL3(pc.h3Id))}</td>
         <td>${pc.credits ?? cat.credits}</td>
         <td>${escapeHtml(pc.semester || '—')}</td>
+        ${actualSemesterCell}
         <td>${studyTypeTag(pc.studyType)}</td>
         <td class="actions">${actions}</td>
       </tr>`;
@@ -4250,7 +4398,7 @@ function renderProgramCoursesTable() {
     .filter(Boolean);
   tbody.innerHTML = rows.length
     ? rows.join('')
-    : '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">暂无匹配课程</td></tr>';
+    : `<tr><td colspan="${colSpan}" class="text-muted" style="text-align:center;padding:24px">暂无匹配课程</td></tr>`;
   refreshProgrammeStructureIfVisible();
 }
 
@@ -4347,6 +4495,18 @@ function readCourseFormIntoProgramCourse(pc) {
   if (refs) pc.references = refs.value;
   const l1 = findClassificationNode(pc.h1Id);
   pc.studyType = l1?.studyType === 'elective' ? 'elective' : 'compulsory';
+  finalizeProgramCourseForContext(pc);
+}
+
+function renderProgramCourseTableHeader() {
+  const thead = document.querySelector('#tab-courses .data-table thead tr');
+  if (!thead) return;
+  const execMode = isExecPlanEditMode();
+  thead.innerHTML = execMode
+    ? '<th>课号</th><th>课名</th><th>Classification(H1)</th><th>Classification(H2)</th>' +
+      '<th>Classification(H3)</th><th>学分</th><th>开课学期</th><th>实际开课学期</th><th>修读类型</th><th>操作</th>'
+    : '<th>课号</th><th>课名</th><th>Classification(H1)</th><th>Classification(H2)</th>' +
+      '<th>Classification(H3)</th><th>学分</th><th>开课学期</th><th>修读类型</th><th>操作</th>';
 }
 
 function formatPrereqDisplay(ids) {
@@ -5855,7 +6015,18 @@ function applyCourseModalReadonly(readonly) {
     el.disabled = readonly;
   });
   const offeringToggle = document.getElementById('offering-semester-enabled');
+  const offeringWrap = document.getElementById('offering-semester-wrap');
   if (offeringToggle) offeringToggle.disabled = readonly;
+  const offeringToggleSwitch = offeringToggle?.closest('.toggle-switch');
+  if (offeringToggleSwitch) {
+    offeringToggleSwitch.classList.toggle('is-readonly', readonly);
+    offeringToggleSwitch.setAttribute('aria-disabled', readonly ? 'true' : 'false');
+  }
+  if (offeringWrap) {
+    offeringWrap.classList.toggle('is-view-readonly', readonly);
+    if (readonly) offeringWrap.setAttribute('title', '查看模式下不可修改');
+    else offeringWrap.removeAttribute('title');
+  }
   const offeringSelect = document.getElementById('offering-semester-select');
   if (offeringSelect && readonly) offeringSelect.disabled = true;
   modal?.querySelectorAll('#course-picker-section button, #course-form-details .input-group button').forEach(btn => {
@@ -5915,6 +6086,7 @@ function saveCourse() {
     const creditsInput = document.getElementById('course-credits-input')?.value;
     if (creditsInput !== '') pc.credits = Number(creditsInput);
     persistCourseDraftTo(pc);
+    finalizeProgramCourseForContext(pc);
     PROGRAM_COURSES.push(pc);
     renderProgramCoursesTable();
   }
@@ -6112,6 +6284,7 @@ function confirmBatchAddCourses() {
   toAdd.forEach(catalogId => {
     const pc = createProgramCourseFromCatalog(catalogId, { h1Id, h2Id, h3Id, semester });
     if (!pc) return;
+    finalizeProgramCourseForContext(pc);
     PROGRAM_COURSES.push(pc);
     existing.add(catalogId);
     added++;
@@ -7147,6 +7320,12 @@ function getProgrammeStructureCourseCodeDisplay(code, { isPool = false } = {}) {
 
 function renderSemesterTable(sem, year, semIndex) {
   const code = semesterCode(year, semIndex);
+  const slotLabel = currentExecPlan?.intakeBatch
+    ? formatStructuralSemesterSlot(code, currentExecPlan.intakeBatch)
+    : null;
+  const actualLabel = currentExecPlan?.intakeBatch
+    ? getActualOfferingSemester(code, currentExecPlan.intakeBatch)
+    : null;
   const total = sumCredits(sem.courses);
   const rows = sem.courses.length
     ? sem.courses.map(c => `
@@ -7162,7 +7341,7 @@ function renderSemesterTable(sem, year, semIndex) {
 
   return `
     <div class="ps-semester">
-      <div class="ps-sem-header">${code}<br><small>Sem ${semIndex} · ${weeks} weeks</small></div>
+      <div class="ps-sem-header">${code}${slotLabel ? `<br><small>${escapeHtml(slotLabel)}</small>` : ''}${actualLabel ? `<br><small>${escapeHtml(actualLabel)}</small>` : ''}<br><small>Sem ${semIndex} · ${weeks} weeks</small></div>
       <table class="ps-course-table">
         <colgroup>
           <col class="col-name">

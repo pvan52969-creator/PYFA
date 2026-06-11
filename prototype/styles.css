@@ -961,6 +961,16 @@ body {
   pointer-events: none;
   background: #f8fafc;
 }
+.course-modal-readonly .toggle-switch,
+.course-modal-readonly .form-item.is-view-readonly .toggle-switch {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.course-modal-readonly .toggle-switch .toggle-track,
+.course-modal-readonly .toggle-switch .toggle-label,
+.course-modal-readonly .form-item.is-view-readonly .toggle-switch .toggle-track {
+  cursor: not-allowed;
+}
 
 .batch-course-settings {
   margin-bottom: 4px;

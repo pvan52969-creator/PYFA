@@ -172,10 +172,10 @@ body {
 .workflow-doc .header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   margin-bottom: 0;
 }
-.workflow-doc .legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.workflow-doc .legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
 .workflow-doc .legend-item {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 10px; border-radius: 999px; font-size: 10px; color: #475569;

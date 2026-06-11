@@ -177,9 +177,9 @@ def build():
     set_document_landscape(doc)
 
     add_heading(doc, "厦大马来分校本科教务系统产品需求文档", 0)
-    add_para(doc, "文档版本：V1.2")
+    add_para(doc, "文档版本：V1.3")
     add_para(doc, "创建日期：2026 年 6 月 10 日")
-    add_para(doc, "修订说明：V1.2 同步原型规则——开课学期/实际学期映射、学分校验、筛选条件、Bloom 统计、执行计划 TAB2 实际开课学期列等")
+    add_para(doc, "修订说明：V1.3 同步当前原型——列表列对齐、状态英文化；术语「专业」= Programme、「入学批次」= Intake；底层 programmeKey/intake/startIntake/endIntake 等")
     add_para(doc, "模块范围：培养方案管理（Curriculum Management）")
     add_para(doc, "对应原型：prototype/index.html、prototype/app.js")
     doc.add_paragraph()
@@ -221,8 +221,8 @@ def build():
     add_menu_block(
         doc, "2.2.1.1 ", "方案版本管理（英文名称：Programme Version Management）", "已确认",
         intro="用于管理各专业培养方案版本的创建、编辑、删除、提交审批、批量导出及版本引用查询。同一专业可存在多个按批次链衔接的版本；支持按专业、版本过滤；列表展示审批状态、批次区间、引用情况。",
-        list_fields="勾选框、培养方案版本、审批状态、专业代码、学制、版本、开始批次、截止批次、授予学位、版本引用情况、操作。",
-        search_fields="专业（Major）、审批状态（draft/pending/approved/rejected）。",
+        list_fields="勾选框、培养方案版本、审批状态、专业代码、学制、版本、开始批次、截止批次、授予学位、版本引用情况、操作。列对齐：审批状态/专业代码/学制/版本/开始批次/截止批次/授予学位/版本引用情况居中；当前有效版本行绿底高亮。状态标签英文：Draft / In Progress / Approved / Rejected。",
+        search_fields="专业（Programme）、审批状态（draft/pending/approved/rejected）；过滤栏标签「过滤」。",
         flow_rel="用户在列表页发起增删改查、提交、导出；新增时校验批次链后创建草稿并进入三 TAB 编辑；提交时校验必修最低学分后写入审批队列；审批通过后 status=approved 并回填上一版本截止批次；导出汇总所选版本方案内容（模板待确认）。",
         flow_pre="已维护专业主数据（代码、学制、学位）；已维护入学批次代码集（02/04/09）；课程库可用于 TAB2 选课。",
         flow_out="已通过版本供专业批次执行计划生成、方案版本变更申请、版本查询、Bloom 统计；引用数关联 EXEC_PLANS。",
@@ -230,7 +230,7 @@ def build():
         proto_link="prototype/index.html#page-version-list",
         field_tables=[
             ("新增/查看版本——弹窗（新增培养方案版本）", [
-                ["1", "专业", "Major", "下拉框", "是", "从专业主数据选择", "选择后自动带出学制、学位", "是", "Finance 金融学"],
+                ["1", "专业", "Programme", "下拉框", "是", "从专业主数据选择", "选择后自动带出学制、学位", "是", "Finance 金融学"],
                 ["2", "学制（年）", "Duration", "只读输入框", "是", "正整数", "随专业自动带出", "否", "4"],
                 ["3", "授予学位", "Degree Awarded", "只读输入框", "是", "—", "随专业自动带出", "是", "经济学学士"],
                 ["4", "版本号", "Version Code", "只读输入框", "是", "通常与开始批次一致", "随开始批次自动生成", "否", "202509"],
@@ -240,7 +240,7 @@ def build():
             ("版本编辑——TAB1（课程分类、英文名：Course Classification）", [
                 ["1", "Heading 1（一级分类）", "Classification H1", "下拉框", "是", "预设枚举", "一级不可编辑/删除", "是", "Compulsory Courses"],
                 ["2", "Heading 2（二级分类）", "Classification H2", "下拉框", "是", "随 H1 联动", "顶部「+ 新增分类」仅新增二级", "是", "University Core"],
-                ["3", "修读类型", "Study Type", "下拉框", "是", "compulsory/elective", "必修/选修", "是", "必修 Compulsory"],
+                ["3", "课程性质", "Course Nature / Study Type", "下拉框", "是", "compulsory/elective", "分类树表头显示「课程性质」；新增分类弹窗字段仍为修读类型", "是", "必修 Compulsory"],
                 ["4", "三级分类名称", "Classification H3", "输入框", "条件", "L2 有子级时必填", "二级行点击「+子级」", "否", "Arts"],
                 ["5", "最低学分", "Credits Min", "数值框", "是", "非负整数", "必修 L2：min=max", "否", "30"],
                 ["6", "最高学分", "Credits Max", "数值框", "是", "≥ min", "选修 L2 可设区间", "否", "45"],
@@ -295,9 +295,11 @@ def build():
                 ["3", "分类筛选", "H1 Filter", "下拉框", "否", "—", "已生效", "是", ""],
                 ["4", "课程搜索", "Search", "输入框", "否", "—", "已生效", "否", ""],
                 ["5", "移除课程", "Remove", "按钮", "—", "—", "二次确认 modal-delete-confirm", "否", ""],
+                ["6", "TAB2 列对齐", "—", "—", "—", "—", "学分/开课学期/课程性质居中；执行计划另加实际开课学期居中", "否", ""],
+                ["7", "指定学期（查看模式）", "Offering Semester Toggle", "开关", "—", "—", "查看模式下开关与下拉不可操作（not-allowed）", "否", ""],
             ]),
             ("版本编辑——信息条（edit-info-strip，不含毕业总学分）", [
-                ["1", "专业", "Major", "只读", "—", "—", "—", "否", "Finance 金融学"],
+                ["1", "专业", "Programme", "只读", "—", "—", "—", "否", "Finance 金融学"],
                 ["2", "版本", "Version", "只读", "—", "—", "—", "否", "2025/09"],
                 ["3", "开始批次", "Start Intake", "只读", "—", "—", "—", "否", "2025/09"],
                 ["4", "截止批次", "End Intake", "只读", "—", "—", "当前有效版本为空", "否", "—"],
@@ -343,7 +345,7 @@ def build():
     add_menu_block(
         doc, "2.2.1.2 ", "版本审批（英文名称：Programme Version Approval）", "已确认",
         intro="按审批节点统一管理培养方案版本三级审批待办、进行中与历史；支持单条 Review、批量 Review、Approval Log 及只读 View。",
-        list_fields="勾选框（Pending 可审项）、培养方案、Status、Stage、专业、开始批次、总学分、提交人、提交时间、操作。",
+        list_fields="勾选框（Pending 可审项）、培养方案、Status、Stage、专业、开始批次、总学分、提交人、提交时间、操作。列对齐：Status/开始批次/总学分居中；Stage/专业靠左。Status 标签：Approved / Rejected / In Progress / Update Required / Cancelled；Approved 绿底白字、Rejected 红底白字、Cancelled 灰底白字。",
         search_fields="Tab 分桶：Pending / In Progress / History（Pending 显示 badge）。",
         flow_rel="提交后写入 APPROVAL_QUEUE；Review 更新 stages；末级 Approve → status=approved 并 syncVersionEndBatches；Reject/Update Required → status=rejected。总学分列动态取 VERSION_CONTENT_STORE 分类树一级最低学分合计（同 TAB1「毕业总学分」chip）。",
         flow_pre="版本已提交且 status=pending。",
@@ -380,8 +382,8 @@ def build():
     add_menu_block(
         doc, "2.2.1.3 ", "版本查询（英文名称：Programme Version Query）", "已确认",
         intro="只读查看已审批通过（approved）的培养方案版本，支持按专业过滤，进入三 TAB 详情但不可编辑。",
-        list_fields="培养方案版本、审批状态、专业代码、学制、版本、开始批次、截止批次、授予学位、版本引用情况、操作（查看）。",
-        search_fields="专业（Major）；列表固定仅展示 approved 版本。",
+        list_fields="培养方案版本、审批状态、专业代码、学制、版本、开始批次、截止批次、授予学位、版本引用情况、操作（查看）。列对齐同方案版本管理（无勾选列）。",
+        search_fields="专业（Programme）；列表固定仅展示 approved 版本。",
         flow_rel="只展示 status=approved；查看进入只读编辑视图。",
         flow_pre="版本已通过审批。",
         flow_out="无写入，纯查询。",
@@ -401,7 +403,7 @@ def build():
     add_menu_block(
         doc, "2.2.2.1 ", "方案版本变更申请（英文名称：Change Application）", "已确认",
         intro="选择已审批版本作为变更目标，复制内容到变更工作区修改；支持草稿、提交、删除；同一版本仅一个 draft/pending 变更。",
-        list_fields="目标培养方案版本、专业、版本、状态、提交人、提交时间、操作。",
+        list_fields="目标培养方案版本、专业、版本、状态、提交人、提交时间、操作。列对齐：专业靠左；版本/状态居中。状态标签：Draft / In Progress / Approved / Rejected；只读草稿显示 View Mode。",
         search_fields="专业、状态（draft/pending/approved/rejected）。",
         flow_rel="新建 → 选 approved 版本 → 复制到 CHANGE_CONTENT_STORE → 三 TAB 编辑 → 提交写入变更审批队列。",
         flow_pre="目标 status=approved；无并发 draft/pending 变更。",
@@ -410,7 +412,7 @@ def build():
         proto_link="prototype/index.html#page-change-apply",
         field_tables=[
             ("新建方案版本变更申请——弹窗", [
-                ["1", "专业", "Major", "下拉框", "是", "—", "过滤可选版本", "是", "Finance 金融学"],
+                ["1", "专业", "Programme", "下拉框", "是", "—", "过滤可选版本", "是", "Finance 金融学"],
                 ["2", "目标培养方案版本", "Target Programme Version", "下拉框", "是", "须 approved；有进行中变更禁用", "展示影响预览", "是", ""],
             ]),
         ],
@@ -435,7 +437,7 @@ def build():
     add_menu_block(
         doc, "2.2.2.2 ", "方案版本变更审核（英文名称：Change Review）", "已确认",
         intro="与版本审批结构一致，数据源 CHANGE_APPLICATIONS；Pending/In Progress/History；单条/批量 Review。",
-        list_fields="勾选框、培养方案、Status、Stage、专业、开始批次、总学分、提交人、提交时间、操作。",
+        list_fields="勾选框、培养方案、Status、Stage、专业、版本、开始批次、总学分、提交人、提交时间、操作。列对齐：Status/版本/开始批次/总学分居中；Stage/专业靠左。Status 标签 In Progress（无连字符）。",
         search_fields="Tab：Pending / In Progress / History。",
         flow_rel="变更提交后进入审批队列；Approve 通过后覆盖版本内容；Reject/Update Required 退回。总学分列取 CHANGE_CONTENT_STORE 或目标版本快照的分类树毕业总学分。",
         flow_pre="变更申请 status=pending。",
@@ -455,7 +457,7 @@ def build():
     add_menu_block(
         doc, "2.2.3.1 ", "专业批次执行计划（英文名称：Programme Intake Execution Plan）", "已确认",
         intro="管理各专业入学批次执行计划；从 approved 版本自动匹配并深拷贝至 EXEC_CONTENT_STORE；生成时重算开课学期与实际开课学期；各批次数据独立；支持生成、编辑、提交、撤回、删除及批量操作。",
-        list_fields="勾选框、专业代码、专业、专业批次、学院（School）、入学批次、总学分、开课状态、是否提交、操作。",
+        list_fields="勾选框、专业代码、专业、专业批次、学院（School）、入学批次、总学分、开课状态、是否提交、操作。列对齐：专业代码/总学分/开课状态/是否提交居中。legend-bar 左对齐展示数据隔离说明。",
         search_fields="专业、入学批次、开课状态（未开课/已开课）、是否提交（未提交/已提交）。",
         flow_rel="选专业+入学批次 → 自动匹配 approved 版本 → 深拷贝至 EXEC_CONTENT_STORE[planId] → remapExecPlanContent 旋转开课学期并写入 actualSemester → 编辑仅写入当前 planId → 提交 isLocked=true。总学分列取当前批次 EXEC_CONTENT_STORE 分类树毕业总学分。",
         flow_pre="存在覆盖批次的 approved 版本；同专业同入学批次不可重复生成。",
@@ -464,8 +466,8 @@ def build():
         proto_link="prototype/index.html#page-exec-list",
         field_tables=[
             ("生成批次执行计划——弹窗", [
-                ["1", "专业", "Major", "下拉框", "是", "—", "—", "是", "Finance 金融学"],
-                ["2", "入学批次", "Intake Batch", "下拉框", "是", "02/04/09", "仅显示尚未生成且可匹配版本的批次", "是", "2025/02"],
+                ["1", "专业", "Programme", "下拉框", "是", "—", "—", "是", "Finance 金融学"],
+                ["2", "入学批次", "Intake", "下拉框", "是", "02/04/09", "仅显示尚未生成且可匹配版本的 Intake", "是", "2025/02"],
                 ["3", "匹配培养方案版本", "Matched Programme Version", "只读", "是", "自动匹配锁定", "入学批次须落在版本生效区间内", "否", "2024/09"],
             ]),
             ("执行计划编辑——TAB2 课程设置（相对版本增加列）", [
@@ -580,12 +582,12 @@ def build():
 
     add_heading(doc, "附录 A：核心数据实体", 2)
     add_grid_table(doc, ["实体", "关键字段", "说明"], [
-        ["MAJORS", "code, name, nameZh, school, degree, duration", "专业主数据"],
-        ["VERSIONS", "id, majorKey, name, version, startBatch, endBatch, status", "draft/pending/approved/rejected"],
+        ["PROGRAMMES", "code, name, nameZh, school, degree, duration", "专业（Programme）主数据"],
+        ["VERSIONS", "id, programmeKey, name, version, startIntake, endIntake, status", "draft/pending/approved/rejected"],
         ["VERSION_CONTENT_STORE", "classificationTree, programCourses, electiveSemesterRequirements", "版本方案内容"],
         ["COURSE_CATALOG", "code, name, credits, clos, slt…", "教务课程库"],
         ["PROGRAM_COURSES", "catalogId, h1/h2/h3Id, semester, actualSemester, versionSemester, studyType", "方案/执行计划内课程；actualSemester 仅执行计划"],
-        ["EXEC_PLANS", "planCode, majorKey, intakeBatch, versionId, isLocked, isOffering", "专业批次执行计划"],
+        ["EXEC_PLANS", "planCode, programmeKey, intake, versionId, isLocked, isOffering", "专业批次执行计划"],
         ["EXEC_CONTENT_STORE", "classificationTree, programCourses, electiveSemesterRequirements", "各批次执行计划独立副本"],
         ["CHANGE_APPLICATIONS", "versionId, status, stages[], currentStageLevel", "变更申请"],
         ["APPROVAL_QUEUE", "versionId, stages[], cancelled", "版本审批实例"],
@@ -608,7 +610,26 @@ def build():
         ("顶栏信息条", "不展示毕业总学分（已移除）"),
     ], col_widths=scale_widths((3.5, 12.5)))
 
-    add_heading(doc, "附录 D：原型占位功能（正式开发需实现）", 2)
+    add_heading(doc, "附录 D：列表列对齐规范（V1.3）", 2)
+    add_grid_table(doc, ["页面", "居中列", "靠左列（其余默认）"], [
+        ["方案版本管理 / 版本查询", "审批状态、专业代码、学制、版本、开始批次、截止批次、授予学位、版本引用情况", "培养方案版本、操作"],
+        ["版本审批", "Status、开始批次、总学分", "培养方案、Stage、专业、提交人、提交时间、操作"],
+        ["变更申请", "版本、状态", "目标培养方案版本、专业、提交人、提交时间、操作"],
+        ["变更审核", "Status、版本、开始批次、总学分", "培养方案、Stage、专业、提交人、提交时间、操作"],
+        ["执行计划列表", "专业代码、总学分、开课状态、是否提交", "专业、专业批次、学院、入学批次、操作"],
+        ["TAB1 分类树", "课程性质", "课程分类、最低/最高学分、课程数、操作"],
+        ["TAB2 课程表", "学分、开课学期、课程性质（执行计划加实际开课学期）", "课号、课名、Classification 列、操作"],
+    ], col_widths=scale_widths([3.5, 6.5, 5.0]))
+
+    add_heading(doc, "附录 E：状态标签与样式（V1.3）", 2)
+    add_grid_table(doc, ["场景", "标签", "说明"], [
+        ["版本列表 statusLabel", "Draft / In Progress / Approved / Rejected", "方案版本管理、版本查询"],
+        ["变更申请 getChangeApplicationStatusLabel", "Draft / In Progress / Approved / Rejected / View Mode", "只读草稿为 View Mode"],
+        ["审批/变更审核 Status", "Approved / Rejected / In Progress / Update Required / Cancelled", "getApprovalOverallStatus / getChangeReviewOverallStatus"],
+        ["Status 徽章配色", "approved 绿底白字；rejected 红底白字；cancelled 灰底白字", "作用域：.approval-table、.change-review-table、.approval-log-list"],
+    ], col_widths=scale_widths([4.0, 5.5, 5.5]))
+
+    add_heading(doc, "附录 F：原型占位功能（正式开发需实现）", 2)
     add_grid_table(doc, ["功能", "当前原型行为", "优先级"], [
         ["版本导出", "alert 占位，模板待定", "高"],
         ["TAB3 导出 PDF/打印", "按钮占位", "中"],

@@ -1,92 +1,92 @@
 // ── Version data：截止批次 = 下一版本开始批次的前一批次，区间不重合 ──
-const MAJORS = {
+const PROGRAMMES = {
   finance:    { code: 'FIN', name: 'Finance', nameZh: '金融学', school: 'School of Economics & Management', degree: '经济学学士', duration: 4 },
   chinese:    { code: 'CHS', name: 'Chinese Studies', nameZh: '中国研究', school: 'School of Humanities and Social Sciences', degree: '文学学士', duration: 3 },
   accounting: { code: 'ACC', name: 'Accounting', nameZh: '会计学', school: 'School of Economics & Management', degree: '管理学学士', duration: 4 }
 };
 
 /** 入学批次顺序：每年 02 → 04 → 09 */
-const INTAKE_BATCH_TYPES = ['02', '04', '09'];
+const INTAKE_TYPES = ['02', '04', '09'];
 
-function parseIntakeBatch(code) {
+function parseIntake(code) {
   if (!code || code.length < 6) return null;
   return { year: parseInt(code.slice(0, 4), 10), type: code.slice(4) };
 }
 
-function formatIntakeBatch(year, type) {
+function formatIntake(year, type) {
   return `${year}${type}`;
 }
 
 /** 展示格式：201602 → 2016/02 */
-function formatBatchDisplay(batchCode) {
-  if (!batchCode) return '—';
-  const p = parseIntakeBatch(String(batchCode).replace(/\//g, ''));
-  if (!p) return batchCode;
+function formatIntakeDisplay(intakeCode) {
+  if (!intakeCode) return '—';
+  const p = parseIntake(String(intakeCode).replace(/\//g, ''));
+  if (!p) return intakeCode;
   return `${p.year}/${p.type}`;
 }
 
 /** 输入归一化：2025/09 → 202509 */
-function normalizeBatchCode(input) {
+function normalizeIntakeCode(input) {
   if (!input) return '';
   return String(input).trim().replace(/\//g, '');
 }
 
 /** 前一个入学批次，如 202602 → 202509 */
-function getPreviousIntakeBatch(batchCode) {
-  const p = parseIntakeBatch(batchCode);
+function getPreviousIntake(intakeCode) {
+  const p = parseIntake(intakeCode);
   if (!p) return '';
-  const idx = INTAKE_BATCH_TYPES.indexOf(p.type);
+  const idx = INTAKE_TYPES.indexOf(p.type);
   if (idx > 0) {
-    return formatIntakeBatch(p.year, INTAKE_BATCH_TYPES[idx - 1]);
+    return formatIntake(p.year, INTAKE_TYPES[idx - 1]);
   }
-  return formatIntakeBatch(p.year - 1, INTAKE_BATCH_TYPES[INTAKE_BATCH_TYPES.length - 1]);
+  return formatIntake(p.year - 1, INTAKE_TYPES[INTAKE_TYPES.length - 1]);
 }
 
 /** 下一个入学批次，如 202509 → 202602 */
-function getNextIntakeBatch(batchCode) {
-  const p = parseIntakeBatch(batchCode);
+function getNextIntake(intakeCode) {
+  const p = parseIntake(intakeCode);
   if (!p) return '';
-  const idx = INTAKE_BATCH_TYPES.indexOf(p.type);
-  if (idx >= 0 && idx < INTAKE_BATCH_TYPES.length - 1) {
-    return formatIntakeBatch(p.year, INTAKE_BATCH_TYPES[idx + 1]);
+  const idx = INTAKE_TYPES.indexOf(p.type);
+  if (idx >= 0 && idx < INTAKE_TYPES.length - 1) {
+    return formatIntake(p.year, INTAKE_TYPES[idx + 1]);
   }
-  return formatIntakeBatch(p.year + 1, INTAKE_BATCH_TYPES[0]);
+  return formatIntake(p.year + 1, INTAKE_TYPES[0]);
 }
 
 /** 新版本保存时：上一版本截止批次 = 新版本开始批次的前一批次 */
-function getPreviousVersionEndBatch(newStartBatch) {
-  return getPreviousIntakeBatch(newStartBatch);
+function getPreviousVersionEndIntake(newStartIntake) {
+  return getPreviousIntake(newStartIntake);
 }
 
 const VERSIONS = [
-  { id: 1, majorKey: 'chinese', name: 'Course Structure of Chinese Studies (201602 Version)', version: '201602', startBatch: '201602', endBatch: '201809', duration: 3, degree: '文学学士', disabled: true, locked: true, status: 'approved' },
-  { id: 2, majorKey: 'chinese', name: 'Course Structure of Chinese Studies (201902 Version)', version: '201902', startBatch: '201902', endBatch: '202204', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 3, majorKey: 'chinese', name: 'Course Structure of Chinese Studies (202209 Version)', version: '202209', startBatch: '202209', endBatch: '202404', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 4, majorKey: 'chinese', name: 'Course Structure of Chinese Studies (202409 Version)', version: '202409', startBatch: '202409', endBatch: '202504', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 5, majorKey: 'chinese', name: 'Course Structure of Chinese Studies (202509 Version)', version: '202509', startBatch: '202509', endBatch: '', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 1, programmeKey: 'chinese', name: 'Course Structure of Chinese Studies (201602 Version)', version: '201602', startIntake: '201602', endIntake: '201809', duration: 3, degree: '文学学士', disabled: true, locked: true, status: 'approved' },
+  { id: 2, programmeKey: 'chinese', name: 'Course Structure of Chinese Studies (201902 Version)', version: '201902', startIntake: '201902', endIntake: '202204', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 3, programmeKey: 'chinese', name: 'Course Structure of Chinese Studies (202209 Version)', version: '202209', startIntake: '202209', endIntake: '202404', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 4, programmeKey: 'chinese', name: 'Course Structure of Chinese Studies (202409 Version)', version: '202409', startIntake: '202409', endIntake: '202504', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 5, programmeKey: 'chinese', name: 'Course Structure of Chinese Studies (202509 Version)', version: '202509', startIntake: '202509', endIntake: '', duration: 3, degree: '文学学士', disabled: false, locked: false, status: 'approved' },
 
-  { id: 10, majorKey: 'finance', name: 'Course Structure of Finance (201602 Version)', version: '201602', startBatch: '201602', endBatch: '201809', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 11, majorKey: 'finance', name: 'Course Structure of Finance (201902 Version)', version: '201902', startBatch: '201902', endBatch: '202204', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 12, majorKey: 'finance', name: 'Course Structure of Finance (202209 Version)', version: '202209', startBatch: '202209', endBatch: '202404', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 13, majorKey: 'finance', name: 'Course Structure of Finance (202409 Version)', version: '202409', startBatch: '202409', endBatch: '', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 14, majorKey: 'finance', name: 'Course Structure of Finance (202509 Version)', version: '202509', startBatch: '202509', endBatch: '', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'pending' },
+  { id: 10, programmeKey: 'finance', name: 'Course Structure of Finance (201602 Version)', version: '201602', startIntake: '201602', endIntake: '201809', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 11, programmeKey: 'finance', name: 'Course Structure of Finance (201902 Version)', version: '201902', startIntake: '201902', endIntake: '202204', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 12, programmeKey: 'finance', name: 'Course Structure of Finance (202209 Version)', version: '202209', startIntake: '202209', endIntake: '202404', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 13, programmeKey: 'finance', name: 'Course Structure of Finance (202409 Version)', version: '202409', startIntake: '202409', endIntake: '', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 14, programmeKey: 'finance', name: 'Course Structure of Finance (202509 Version)', version: '202509', startIntake: '202509', endIntake: '', duration: 4, degree: '经济学学士', disabled: false, locked: false, status: 'pending' },
 
-  { id: 20, majorKey: 'accounting', name: 'Course Structure of Accounting (201602 Version)', version: '201602', startBatch: '201602', endBatch: '201809', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 21, majorKey: 'accounting', name: 'Course Structure of Accounting (201902 Version)', version: '201902', startBatch: '201902', endBatch: '202204', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 22, majorKey: 'accounting', name: 'Course Structure of Accounting (202209 Version)', version: '202209', startBatch: '202209', endBatch: '202404', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 23, majorKey: 'accounting', name: 'Course Structure of Accounting (202409 Version)', version: '202409', startBatch: '202409', endBatch: '202504', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 24, majorKey: 'accounting', name: 'Course Structure of Accounting (202509 Version)', version: '202509', startBatch: '202509', endBatch: '', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
-  { id: 25, majorKey: 'accounting', name: 'Course Structure of Accounting (202602 Version)', version: '202602', startBatch: '202602', endBatch: '', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'draft' }
+  { id: 20, programmeKey: 'accounting', name: 'Course Structure of Accounting (201602 Version)', version: '201602', startIntake: '201602', endIntake: '201809', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 21, programmeKey: 'accounting', name: 'Course Structure of Accounting (201902 Version)', version: '201902', startIntake: '201902', endIntake: '202204', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 22, programmeKey: 'accounting', name: 'Course Structure of Accounting (202209 Version)', version: '202209', startIntake: '202209', endIntake: '202404', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 23, programmeKey: 'accounting', name: 'Course Structure of Accounting (202409 Version)', version: '202409', startIntake: '202409', endIntake: '202504', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 24, programmeKey: 'accounting', name: 'Course Structure of Accounting (202509 Version)', version: '202509', startIntake: '202509', endIntake: '', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'approved' },
+  { id: 25, programmeKey: 'accounting', name: 'Course Structure of Accounting (202602 Version)', version: '202602', startIntake: '202602', endIntake: '', duration: 4, degree: '管理学学士', disabled: false, locked: false, status: 'draft' }
 ];
 
 /** 批次执行计划：关联已审批培养方案版本（versionId） */
 const EXEC_PLANS = [
-  { id: 1, planCode: 'EP-Finance-202502', majorKey: 'finance', intakeBatch: '202502', versionId: 13, status: 'published', isLocked: true, isOffering: true },
-  { id: 3, planCode: 'EP-ChineseStudies-202409', majorKey: 'chinese', intakeBatch: '202409', versionId: 4, status: 'published', isLocked: true, isOffering: true },
-  { id: 4, planCode: 'EP-ChineseStudies-202502', majorKey: 'chinese', intakeBatch: '202502', versionId: 4, status: 'published', isLocked: true, isOffering: true },
-  { id: 5, planCode: 'EP-ChineseStudies-202509', majorKey: 'chinese', intakeBatch: '202509', versionId: 5, status: 'published', isLocked: true, isOffering: false },
-  { id: 6, planCode: 'EP-Accounting-202509', majorKey: 'accounting', intakeBatch: '202509', versionId: 24, status: 'published', isLocked: true, isOffering: true },
-  { id: 7, planCode: 'EP-Accounting-202602', majorKey: 'accounting', intakeBatch: '202602', versionId: 24, status: 'draft', isLocked: false, isOffering: false }
+  { id: 1, planCode: 'EP-Finance-202502', programmeKey: 'finance', intake: '202502', versionId: 13, status: 'published', isLocked: true, isOffering: true },
+  { id: 3, planCode: 'EP-ChineseStudies-202409', programmeKey: 'chinese', intake: '202409', versionId: 4, status: 'published', isLocked: true, isOffering: true },
+  { id: 4, planCode: 'EP-ChineseStudies-202502', programmeKey: 'chinese', intake: '202502', versionId: 4, status: 'published', isLocked: true, isOffering: true },
+  { id: 5, planCode: 'EP-ChineseStudies-202509', programmeKey: 'chinese', intake: '202509', versionId: 5, status: 'published', isLocked: true, isOffering: false },
+  { id: 6, planCode: 'EP-Accounting-202509', programmeKey: 'accounting', intake: '202509', versionId: 24, status: 'published', isLocked: true, isOffering: true },
+  { id: 7, planCode: 'EP-Accounting-202602', programmeKey: 'accounting', intake: '202602', versionId: 24, status: 'draft', isLocked: false, isOffering: false }
 ];
 
 /** 各执行计划独立的分类树 / 课程 / 选修矩阵（由关联版本模板复制） */
@@ -99,10 +99,10 @@ const CHANGE_APPLICATIONS = [
   {
     id: 'ca-fin-13-pending',
     versionId: 13,
-    majorKey: 'finance',
+    programmeKey: 'finance',
     name: 'Course Structure of Finance (202409 Version)',
     version: '202409',
-    startBatch: '202409',
+    startIntake: '202409',
     totalCredits: 125,
     status: 'pending',
     submitter: '张老师',
@@ -119,10 +119,10 @@ const CHANGE_APPLICATIONS = [
   {
     id: 'ca-acc-24-progress',
     versionId: 24,
-    majorKey: 'accounting',
+    programmeKey: 'accounting',
     name: 'Course Structure of Accounting (202509 Version)',
     version: '202509',
-    startBatch: '202509',
+    startIntake: '202509',
     totalCredits: 128,
     status: 'pending',
     submitter: '王老师',
@@ -139,10 +139,10 @@ const CHANGE_APPLICATIONS = [
   {
     id: 'ca-chs-5-history',
     versionId: 5,
-    majorKey: 'chinese',
+    programmeKey: 'chinese',
     name: 'Course Structure of Chinese Studies (202509 Version)',
     version: '202509',
-    startBatch: '202509',
+    startIntake: '202509',
     totalCredits: 120,
     status: 'approved',
     submitter: '陈老师',
@@ -210,62 +210,62 @@ function statusClass(s) {
   }[s] || 'draft-solid';
 }
 
-function getVersionsByMajor(majorKey) {
+function getVersionsByProgramme(programmeKey) {
   return VERSIONS
-    .filter(v => v.majorKey === majorKey)
-    .sort((a, b) => a.startBatch.localeCompare(b.startBatch));
+    .filter(v => v.programmeKey === programmeKey)
+    .sort((a, b) => a.startIntake.localeCompare(b.startIntake));
 }
 
 /** 按开始批次排序后，仅根据已审批通过的下一版回填截止批次 */
-function syncVersionEndBatches(majorKey) {
-  const list = getVersionsByMajor(majorKey);
+function syncVersionEndIntakes(programmeKey) {
+  const list = getVersionsByProgramme(programmeKey);
   const approved = list.filter(v => v.status === 'approved');
 
   list.forEach(v => {
-    if (v.status !== 'approved') v.endBatch = '';
+    if (v.status !== 'approved') v.endIntake = '';
   });
 
   approved.forEach((v, i) => {
     const nextApproved = approved[i + 1];
-    v.endBatch = nextApproved
-      ? getPreviousVersionEndBatch(nextApproved.startBatch)
+    v.endIntake = nextApproved
+      ? getPreviousVersionEndIntake(nextApproved.startIntake)
       : '';
   });
 }
 
-function syncAllVersionEndBatches() {
-  Object.keys(MAJORS).forEach(syncVersionEndBatches);
+function syncAllVersionEndIntakes() {
+  Object.keys(PROGRAMMES).forEach(syncVersionEndIntakes);
 }
 
-function isVersionChainValid(majorKey) {
-  const approved = getVersionsByMajor(majorKey).filter(v => v.status === 'approved');
+function isVersionChainValid(programmeKey) {
+  const approved = getVersionsByProgramme(programmeKey).filter(v => v.status === 'approved');
   for (let i = 0; i < approved.length - 1; i++) {
     const cur = approved[i];
     const next = approved[i + 1];
-    const expectedEnd = getPreviousVersionEndBatch(next.startBatch);
-    if (cur.endBatch !== expectedEnd) return false;
-    if (cur.endBatch >= next.startBatch) return false;
-    if (getNextIntakeBatch(cur.endBatch) !== next.startBatch) return false;
+    const expectedEnd = getPreviousVersionEndIntake(next.startIntake);
+    if (cur.endIntake !== expectedEnd) return false;
+    if (cur.endIntake >= next.startIntake) return false;
+    if (getNextIntake(cur.endIntake) !== next.startIntake) return false;
   }
   return true;
 }
 
-function versionCoversBatch(version, intakeBatch) {
-  if (intakeBatch < version.startBatch) return false;
-  if (version.endBatch && intakeBatch > version.endBatch) return false;
+function versionCoversIntake(version, intake) {
+  if (intake < version.startIntake) return false;
+  if (version.endIntake && intake > version.endIntake) return false;
   return true;
 }
 
-function getCurrentVersion(majorKey) {
-  const approved = getVersionsByMajor(majorKey).filter(v => v.status === 'approved');
-  return approved.filter(v => !v.endBatch).sort((a, b) => b.startBatch.localeCompare(a.startBatch))[0]
+function getCurrentVersion(programmeKey) {
+  const approved = getVersionsByProgramme(programmeKey).filter(v => v.status === 'approved');
+  return approved.filter(v => !v.endIntake).sort((a, b) => b.startIntake.localeCompare(a.startIntake))[0]
     || approved[approved.length - 1]
     || null;
 }
 
 function isCurrentEffectiveVersion(v) {
-  if (v.status !== 'approved' || v.endBatch) return false;
-  const current = getCurrentVersion(v.majorKey);
+  if (v.status !== 'approved' || v.endIntake) return false;
+  const current = getCurrentVersion(v.programmeKey);
   return current?.id === v.id;
 }
 
@@ -273,20 +273,20 @@ function finalizeProgrammeVersionApproval(versionId) {
   const v = findVersionById(versionId);
   if (!v || v.status === 'approved') return;
   v.status = 'approved';
-  syncVersionEndBatches(v.majorKey);
+  syncVersionEndIntakes(v.programmeKey);
   filterVersions();
 }
 
-function matchVersionByIntake(majorKey, intakeBatch, { approvedOnly = false } = {}) {
-  return getVersionsByMajor(majorKey).find(v => {
+function matchVersionByIntake(programmeKey, intake, { approvedOnly = false } = {}) {
+  return getVersionsByProgramme(programmeKey).find(v => {
     if (approvedOnly && v.status !== 'approved') return false;
-    return versionCoversBatch(v, intakeBatch);
+    return versionCoversIntake(v, intake);
   });
 }
 
-function resolveExecVersionMatch(majorKey, intakeBatch) {
-  if (!intakeBatch) return { ok: false, reason: 'empty' };
-  const matched = matchVersionByIntake(majorKey, intakeBatch);
+function resolveExecVersionMatch(programmeKey, intake) {
+  if (!intake) return { ok: false, reason: 'empty' };
+  const matched = matchVersionByIntake(programmeKey, intake);
   if (!matched) return { ok: false, reason: 'no-match' };
   if (matched.status !== 'approved') {
     return { ok: false, reason: 'not-approved', version: matched };
@@ -299,41 +299,41 @@ function isVersionReferencableByExecPlan(v) {
 }
 
 function formatVersionRange(v) {
-  if (!v.endBatch) return `${formatBatchDisplay(v.startBatch)} ~ 至今`;
-  return `${formatBatchDisplay(v.startBatch)} ~ ${formatBatchDisplay(v.endBatch)}`;
+  if (!v.endIntake) return `${formatIntakeDisplay(v.startIntake)} ~ 至今`;
+  return `${formatIntakeDisplay(v.startIntake)} ~ ${formatIntakeDisplay(v.endIntake)}`;
 }
 
 function getExecPlansByVersionId(versionId) {
   return EXEC_PLANS.filter(ep => ep.versionId === versionId);
 }
 
-function formatMajorBatchCode(majorKey, intakeBatch) {
-  const major = MAJORS[majorKey];
-  if (!major || !intakeBatch) return '—';
-  return `${major.code}-${formatBatchDisplay(intakeBatch)}`;
+function formatProgrammeIntakeCode(programmeKey, intake) {
+  const programme = PROGRAMMES[programmeKey];
+  if (!programme || !intake) return '—';
+  return `${programme.code}-${formatIntakeDisplay(intake)}`;
 }
 
 /**
  * 将执行计划结构学期（Y1S1…）按入学批次映射为实际开课学年学期（如 2025/02）。
  * Y{n} 为培养方案学年（非自然年）；Y1S1～Y1S3 均属第一学年，如 04 起版：Y1S1=Y1/04，Y1S2=Y1/09，Y1S3=Y1/02。
  */
-function getIntakeTypeIndex(batch) {
-  const intake = parseIntakeBatch(normalizeBatchCode(batch));
-  if (!intake) return -1;
-  return INTAKE_BATCH_TYPES.indexOf(intake.type);
+function getIntakeTypeIndex(intakeCode) {
+  const parsedIntake = parseIntake(normalizeIntakeCode(intakeCode));
+  if (!parsedIntake) return -1;
+  return INTAKE_TYPES.indexOf(parsedIntake.type);
 }
 
-function getActualOfferingSemester(structuralCode, intakeBatch) {
-  if (!structuralCode || !intakeBatch) return null;
+function getActualOfferingSemester(structuralCode, intakeCode) {
+  if (!structuralCode || !intakeCode) return null;
   const parsed = parseSemesterCode(structuralCode);
-  const intake = parseIntakeBatch(normalizeBatchCode(intakeBatch));
-  if (!parsed || !intake) return null;
-  const startTypeIdx = getIntakeTypeIndex(intakeBatch);
+  const parsedIntake = parseIntake(normalizeIntakeCode(intakeCode));
+  if (!parsed || !parsedIntake) return null;
+  const startTypeIdx = getIntakeTypeIndex(intakeCode);
   if (startTypeIdx < 0) return null;
-  const semIndex = (parsed.year - 1) * INTAKE_BATCH_TYPES.length + (parsed.sem - 1);
-  const typeIdx = (startTypeIdx + semIndex) % INTAKE_BATCH_TYPES.length;
-  const yearDelta = Math.floor((startTypeIdx + semIndex) / INTAKE_BATCH_TYPES.length);
-  return formatBatchDisplay(formatIntakeBatch(intake.year + yearDelta, INTAKE_BATCH_TYPES[typeIdx]));
+  const semIndex = (parsed.year - 1) * INTAKE_TYPES.length + (parsed.sem - 1);
+  const typeIdx = (startTypeIdx + semIndex) % INTAKE_TYPES.length;
+  const yearDelta = Math.floor((startTypeIdx + semIndex) / INTAKE_TYPES.length);
+  return formatIntakeDisplay(formatIntake(parsedIntake.year + yearDelta, INTAKE_TYPES[typeIdx]));
 }
 
 /**
@@ -341,38 +341,38 @@ function getActualOfferingSemester(structuralCode, intakeBatch) {
  * 例：版本 2023/02（S1=02,S2=04,S3=09），批次 2029/09（S1=09,S2=02,S3=04）
  *     版本 Y1S3 课程 → 执行 Y1S1
  */
-function getExecStructuralFromVersion(versionStructural, versionStartBatch, execIntakeBatch) {
+function getExecStructuralFromVersion(versionStructural, versionStartIntake, execIntake) {
   const parsed = parseSemesterCode(versionStructural);
   if (!parsed) return null;
-  const vIdx = getIntakeTypeIndex(versionStartBatch);
-  const eIdx = getIntakeTypeIndex(execIntakeBatch);
+  const vIdx = getIntakeTypeIndex(versionStartIntake);
+  const eIdx = getIntakeTypeIndex(execIntake);
   if (vIdx < 0 || eIdx < 0) return null;
-  const execSlot = ((vIdx + parsed.sem - 1 - eIdx + INTAKE_BATCH_TYPES.length * 100) % INTAKE_BATCH_TYPES.length) + 1;
+  const execSlot = ((vIdx + parsed.sem - 1 - eIdx + INTAKE_TYPES.length * 100) % INTAKE_TYPES.length) + 1;
   return `Y${parsed.year}S${execSlot}`;
 }
 
-function syncProgramCourseActualSemester(pc, intakeBatch) {
+function syncProgramCourseActualSemester(pc, intakeCode) {
   if (!pc) return;
-  if (!pc.semester || !intakeBatch) {
+  if (!pc.semester || !intakeCode) {
     delete pc.actualSemester;
     return;
   }
-  pc.actualSemester = getActualOfferingSemester(pc.semester, intakeBatch);
+  pc.actualSemester = getActualOfferingSemester(pc.semester, intakeCode);
 }
 
 /** 执行计划结构学期对应的学年/学期槽位标签，如 Y1S1 + 2029/04 → Y1/04 */
-function formatStructuralSemesterSlot(structuralCode, intakeBatch) {
+function formatStructuralSemesterSlot(structuralCode, intakeCode) {
   const parsed = parseSemesterCode(structuralCode);
-  const startTypeIdx = getIntakeTypeIndex(intakeBatch);
+  const startTypeIdx = getIntakeTypeIndex(intakeCode);
   if (!parsed || startTypeIdx < 0) return null;
-  const typeIdx = (startTypeIdx + parsed.sem - 1) % INTAKE_BATCH_TYPES.length;
-  return `Y${parsed.year}/${INTAKE_BATCH_TYPES[typeIdx]}`;
+  const typeIdx = (startTypeIdx + parsed.sem - 1) % INTAKE_TYPES.length;
+  return `Y${parsed.year}/${INTAKE_TYPES[typeIdx]}`;
 }
 
-function remapElectiveSemesterRequirements(requirements, versionStartBatch, execIntakeBatch) {
+function remapElectiveSemesterRequirements(requirements, versionStartIntake, execIntake) {
   if (!requirements) return {};
-  const normVersion = normalizeBatchCode(versionStartBatch);
-  const normExec = normalizeBatchCode(execIntakeBatch);
+  const normVersion = normalizeIntakeCode(versionStartIntake);
+  const normExec = normalizeIntakeCode(execIntake);
   if (normVersion === normExec) return cloneJson(requirements);
   const remapped = {};
   Object.entries(requirements).forEach(([l2Id, semReqs]) => {
@@ -389,10 +389,10 @@ function remapElectiveSemesterRequirements(requirements, versionStartBatch, exec
 const EXEC_SEMESTER_REMAP_VERSION = 3;
 
 /** 按版本起始批次 → 执行批次槽位旋转，重算执行计划全部学期字段 */
-function remapExecPlanContent(content, versionStartBatch, execIntakeBatch, versionId) {
-  if (!content || !versionStartBatch || !execIntakeBatch) return content;
-  const normVersion = normalizeBatchCode(versionStartBatch);
-  const normExec = normalizeBatchCode(execIntakeBatch);
+function remapExecPlanContent(content, versionStartIntake, execIntake, versionId) {
+  if (!content || !versionStartIntake || !execIntake) return content;
+  const normVersion = normalizeIntakeCode(versionStartIntake);
+  const normExec = normalizeIntakeCode(execIntake);
   const versionSnapshot = versionId != null ? getVersionContentSnapshot(versionId) : null;
   const versionCourseById = new Map((versionSnapshot?.programCourses || []).map(pc => [pc.id, pc]));
 
@@ -417,8 +417,8 @@ function remapExecPlanContent(content, versionStartBatch, execIntakeBatch, versi
   if (versionSnapshot?.electiveSemesterRequirements) {
     content.electiveSemesterRequirements = remapElectiveSemesterRequirements(
       versionSnapshot.electiveSemesterRequirements,
-      versionStartBatch,
-      execIntakeBatch
+      versionStartIntake,
+      execIntake
     );
   }
 
@@ -426,8 +426,8 @@ function remapExecPlanContent(content, versionStartBatch, execIntakeBatch, versi
   return content;
 }
 
-function syncExecPlanContentSemesters(content, execIntakeBatch) {
-  (content?.programCourses || []).forEach(pc => syncProgramCourseActualSemester(pc, execIntakeBatch));
+function syncExecPlanContentSemesters(content, execIntake) {
+  (content?.programCourses || []).forEach(pc => syncProgramCourseActualSemester(pc, execIntake));
 }
 
 function isExecPlanEditMode() {
@@ -435,7 +435,7 @@ function isExecPlanEditMode() {
 }
 
 function finalizeProgramCourseForContext(pc) {
-  if (currentExecPlan) syncProgramCourseActualSemester(pc, currentExecPlan.intakeBatch);
+  if (currentExecPlan) syncProgramCourseActualSemester(pc, currentExecPlan.intake);
   else delete pc.actualSemester;
   return pc;
 }
@@ -529,7 +529,7 @@ function requestLockSelectedExecPlans() {
     msg.innerHTML = `确定提交 <strong>${lockable.length}</strong> 条执行计划吗？`;
   }
   if (hint) {
-    hint.textContent = lockable.map(ep => formatMajorBatchCode(ep.majorKey, ep.intakeBatch)).join('；')
+    hint.textContent = lockable.map(ep => formatProgrammeIntakeCode(ep.programmeKey, ep.intake)).join('；')
       + '。提交后不可编辑，提交后方可进行开课。';
   }
   openModal('modal-exec-lock');
@@ -550,7 +550,7 @@ function confirmLockSelectedExecPlans() {
   });
   selectedExecPlanIds.clear();
   renderExecList();
-  rebuildExecListBatchFilterOptions();
+  rebuildExecListIntakeFilterOptions();
   if (locked) {
     alert(`已提交 ${locked} 条执行计划。提交后方可进行开课。`);
   }
@@ -565,7 +565,7 @@ function requestUnlockSelectedExecPlans() {
   }
   const offeringPlans = selected.filter(ep => ep.isOffering);
   if (offeringPlans.length) {
-    const names = offeringPlans.map(ep => formatMajorBatchCode(ep.majorKey, ep.intakeBatch)).join('、');
+    const names = offeringPlans.map(ep => formatProgrammeIntakeCode(ep.programmeKey, ep.intake)).join('、');
     showExecNotice(
       '无法撤回',
       offeringPlans.length === selected.length
@@ -585,7 +585,7 @@ function requestUnlockSelectedExecPlans() {
     msg.innerHTML = `确定撤回 <strong>${unlockable.length}</strong> 条执行计划吗？`;
   }
   if (hint) {
-    hint.textContent = unlockable.map(ep => formatMajorBatchCode(ep.majorKey, ep.intakeBatch)).join('；')
+    hint.textContent = unlockable.map(ep => formatProgrammeIntakeCode(ep.programmeKey, ep.intake)).join('；')
       + '。撤回后可重新编辑执行计划。';
   }
   openModal('modal-exec-unlock');
@@ -610,7 +610,7 @@ function confirmUnlockSelectedExecPlans() {
     unlocked += 1;
   });
   selectedExecPlanIds.clear();
-  rebuildExecListBatchFilterOptions();
+  rebuildExecListIntakeFilterOptions();
   renderExecList();
   if (unlocked) {
     alert(`已撤回 ${unlocked} 条执行计划。`);
@@ -635,7 +635,7 @@ function requestDeleteSelectedExecPlans() {
   }
   if (deletable.length < selected.length) {
     const blocked = selected.filter(ep => !canDeleteExecPlan(ep));
-    const names = blocked.map(ep => formatMajorBatchCode(ep.majorKey, ep.intakeBatch)).join('、');
+    const names = blocked.map(ep => formatProgrammeIntakeCode(ep.programmeKey, ep.intake)).join('、');
     showExecNotice(
       '部分计划不可删除',
       `${names} 已提交或已开课，无法删除。请取消勾选后再试，或仅删除未提交且未开课的计划。`
@@ -648,7 +648,7 @@ function requestDeleteSelectedExecPlans() {
     msg.innerHTML = `确定删除 <strong>${deletable.length}</strong> 条执行计划吗？此操作不可撤销。`;
   }
   if (hint) {
-    hint.textContent = deletable.map(ep => formatMajorBatchCode(ep.majorKey, ep.intakeBatch)).join('；')
+    hint.textContent = deletable.map(ep => formatProgrammeIntakeCode(ep.programmeKey, ep.intake)).join('；')
       + '。仅未提交且未开课的执行计划可删除。';
   }
   openModal('modal-exec-delete');
@@ -677,7 +677,7 @@ function confirmDeleteSelectedExecPlans() {
     currentExecPlan = null;
   }
   selectedExecPlanIds.clear();
-  rebuildExecListBatchFilterOptions();
+  rebuildExecListIntakeFilterOptions();
   renderExecList();
   alert(`已删除 ${deletableIds.size} 条执行计划。`);
 }
@@ -691,14 +691,14 @@ function renderExecPlanActions(ep) {
 }
 
 function renderExecPlanRow(ep) {
-  const major = MAJORS[ep.majorKey];
+  const programme = PROGRAMMES[ep.programmeKey];
   return `<tr>
     <td class="col-check"><input type="checkbox" class="exec-row-check" value="${ep.id}" onchange="updateExecSelection()"></td>
-    <td class="col-center">${escapeHtml(major?.code || '—')}</td>
-    <td>${escapeHtml(major?.name || '—')}</td>
-    <td>${escapeHtml(formatMajorBatchCode(ep.majorKey, ep.intakeBatch))}</td>
-    <td>${escapeHtml(major?.school || '—')}</td>
-    <td>${formatBatchDisplay(ep.intakeBatch)}</td>
+    <td class="col-center">${escapeHtml(programme?.code || '—')}</td>
+    <td>${escapeHtml(programme?.name || '—')}</td>
+    <td>${escapeHtml(formatProgrammeIntakeCode(ep.programmeKey, ep.intake))}</td>
+    <td>${escapeHtml(programme?.school || '—')}</td>
+    <td>${formatIntakeDisplay(ep.intake)}</td>
     <td class="col-center">${getExecPlanTotalCredits(ep)}</td>
     <td class="col-center">${renderExecOfferingStatusLabel(!!ep.isOffering)}</td>
     <td class="col-center">${renderExecLockStatus(!!ep.isLocked)}</td>
@@ -707,13 +707,13 @@ function renderExecPlanRow(ep) {
 }
 
 function getFilteredExecPlans() {
-  const major = document.getElementById('filter-exec-major')?.value || '';
-  const batch = document.getElementById('filter-exec-batch')?.value || '';
+  const programmeKey = document.getElementById('filter-exec-programme')?.value || '';
+  const intakeFilter = document.getElementById('filter-exec-intake')?.value || '';
   const offering = document.getElementById('filter-exec-offering')?.value || '';
   const submitted = document.getElementById('filter-exec-submitted')?.value || '';
   return EXEC_PLANS.filter(ep => {
-    if (major && ep.majorKey !== major) return false;
-    if (batch && ep.intakeBatch !== batch) return false;
+    if (programmeKey && ep.programmeKey !== programmeKey) return false;
+    if (intakeFilter && ep.intake !== intakeFilter) return false;
     if (offering === 'yes' && !ep.isOffering) return false;
     if (offering === 'no' && ep.isOffering) return false;
     if (submitted === 'yes' && !ep.isLocked) return false;
@@ -722,14 +722,14 @@ function getFilteredExecPlans() {
   });
 }
 
-function rebuildExecListBatchFilterOptions() {
-  const sel = document.getElementById('filter-exec-batch');
+function rebuildExecListIntakeFilterOptions() {
+  const sel = document.getElementById('filter-exec-intake');
   if (!sel) return;
   const cur = sel.value;
-  const batches = [...new Set(EXEC_PLANS.map(ep => ep.intakeBatch))].sort();
-  sel.innerHTML = '<option value="">全部批次</option>' +
-    batches.map(b => `<option value="${b}">${formatBatchDisplay(b)}</option>`).join('');
-  if (cur && batches.includes(cur)) sel.value = cur;
+  const intakes = [...new Set(EXEC_PLANS.map(ep => ep.intake))].sort();
+  sel.innerHTML = '<option value="">全部入学批次</option>' +
+    intakes.map(code => `<option value="${code}">${formatIntakeDisplay(code)}</option>`).join('');
+  if (cur && intakes.includes(cur)) sel.value = cur;
 }
 
 function filterExecList() {
@@ -764,7 +764,7 @@ function openVersionRefModal(versionId) {
   const v = findVersionById(versionId);
   if (!v) return;
   const refs = getExecPlansByVersionId(versionId);
-  const major = MAJORS[v.majorKey];
+  const programme = PROGRAMMES[v.programmeKey];
   const title = document.getElementById('version-ref-title');
   const summary = document.getElementById('version-ref-summary');
   const tbody = document.getElementById('version-ref-tbody');
@@ -773,7 +773,7 @@ function openVersionRefModal(versionId) {
     const refNote = isVersionReferencableByExecPlan(v)
       ? `共 ${refs.length} 个批次执行计划引用`
       : '该版本尚未审批通过，不可被批次执行计划引用';
-    summary.textContent = `${major.name} ${major.nameZh} · 版本 ${formatBatchDisplay(v.version)} · ${refNote}`;
+    summary.textContent = `${programme.name} ${programme.nameZh} · 版本 ${formatIntakeDisplay(v.version)} · ${refNote}`;
   }
   if (tbody) {
     if (!isVersionReferencableByExecPlan(v)) {
@@ -782,13 +782,13 @@ function openVersionRefModal(versionId) {
       tbody.innerHTML = '<tr><td colspan="4" class="matrix-empty">暂无引用该版本的批次执行计划</td></tr>';
     } else {
       tbody.innerHTML = refs.map(ep => {
-        const m = MAJORS[ep.majorKey];
+        const m = PROGRAMMES[ep.programmeKey];
         const st = ep.status === 'published' ? 'approved' : 'draft';
         const stLabel = ep.status === 'published' ? '已发布' : '草稿';
         return `<tr>
           <td><strong>${escapeHtml(ep.planCode)}</strong></td>
           <td>${escapeHtml(m.name)} ${escapeHtml(m.nameZh)}</td>
-          <td><code>${formatBatchDisplay(ep.intakeBatch)}</code></td>
+          <td><code>${formatIntakeDisplay(ep.intake)}</code></td>
           <td><span class="status ${st}">${stLabel}</span></td>
         </tr>`;
       }).join('');
@@ -802,7 +802,7 @@ function canSubmitVersion(v) {
 }
 
 function renderVersionRow(v, { showActions = true, showCheckbox = false } = {}) {
-  const major = MAJORS[v.majorKey];
+  const programme = PROGRAMMES[v.programmeKey];
   const canEdit = v.status === 'draft' || v.status === 'rejected';
 
   let actions = '';
@@ -824,15 +824,15 @@ function renderVersionRow(v, { showActions = true, showCheckbox = false } = {}) 
     ? `<td class="col-check"><input type="checkbox" class="version-row-check" value="${v.id}" onchange="updateVersionSelection()"></td>`
     : '';
 
-  return `<tr data-major="${v.majorKey}" data-version="${v.version}" class="${isCurrentEffectiveVersion(v) ? 'row-current' : ''}">
+  return `<tr data-programme="${v.programmeKey}" data-version="${v.version}" class="${isCurrentEffectiveVersion(v) ? 'row-current' : ''}">
     ${checkCell}
     <td class="col-name"><a href="#" class="link-name" onclick="goEditVersion(${v.id}, ${!canEdit});return false">${v.name}</a></td>
     <td class="col-center"><span class="status ${statusClass(v.status)}">${statusLabel(v.status)}</span></td>
-    <td class="col-center"><code>${major.code}</code></td>
+    <td class="col-center"><code>${programme.code}</code></td>
     <td class="col-center">${v.duration}</td>
-    <td class="col-center"><code>${formatBatchDisplay(v.version)}</code></td>
-    <td class="col-center"><code class="batch-code batch-start">${formatBatchDisplay(v.startBatch)}</code></td>
-    <td class="col-center">${v.endBatch ? `<code class="batch-code batch-end">${formatBatchDisplay(v.endBatch)}</code>` : '<span class="text-muted">—</span>'}</td>
+    <td class="col-center"><code>${formatIntakeDisplay(v.version)}</code></td>
+    <td class="col-center"><code class="batch-code batch-start">${formatIntakeDisplay(v.startIntake)}</code></td>
+    <td class="col-center">${v.endIntake ? `<code class="batch-code batch-end">${formatIntakeDisplay(v.endIntake)}</code>` : '<span class="text-muted">—</span>'}</td>
     <td class="col-center">${v.degree}</td>
     ${renderVersionRefCell(v)}
     <td class="actions">${actions}</td>
@@ -959,14 +959,14 @@ function requestSubmitVersion(id) {
   const v = findVersionById(id);
   if (!v || (v.status !== 'draft' && v.status !== 'rejected') || v.disabled) return;
   pendingSubmitVersionId = id;
-  const major = MAJORS[v.majorKey];
+  const programme = PROGRAMMES[v.programmeKey];
   const msg = document.getElementById('submit-version-msg');
   const hint = document.getElementById('submit-version-hint');
   if (msg) {
     msg.innerHTML = `确定提交培养方案「<strong>${escapeHtml(v.name)}</strong>」进行审批吗？`;
   }
   if (hint) {
-    hint.textContent = `${major?.nameZh || ''} · 版本 ${formatBatchDisplay(v.version)} · 开始批次 ${formatBatchDisplay(v.startBatch)}。提交后将进入审批流程，待审批期间不可编辑。`;
+    hint.textContent = `${programme?.nameZh || ''} · 版本 ${formatIntakeDisplay(v.version)} · 开始批次 ${formatIntakeDisplay(v.startIntake)}。提交后将进入审批流程，待审批期间不可编辑。`;
   }
   openModal('modal-submit-version');
 }
@@ -999,14 +999,14 @@ function requestDeleteVersion(id) {
   const v = findVersionById(id);
   if (!v || (v.status !== 'draft' && v.status !== 'rejected')) return;
   pendingDeleteVersionId = id;
-  const major = MAJORS[v.majorKey];
+  const programme = PROGRAMMES[v.programmeKey];
   const msg = document.getElementById('delete-version-msg');
   const hint = document.getElementById('delete-version-hint');
   if (msg) {
     msg.innerHTML = `确定删除培养方案「<strong>${escapeHtml(v.name)}</strong>」吗？此操作不可撤销。`;
   }
   if (hint) {
-    hint.textContent = `${major?.nameZh || ''} · 版本 ${formatBatchDisplay(v.version)} · 开始批次 ${formatBatchDisplay(v.startBatch)}。`;
+    hint.textContent = `${programme?.nameZh || ''} · 版本 ${formatIntakeDisplay(v.version)} · 开始批次 ${formatIntakeDisplay(v.startIntake)}。`;
   }
   openModal('modal-delete-version');
 }
@@ -1029,14 +1029,14 @@ function confirmDeleteVersion() {
 }
 
 function filterVersions() {
-  syncAllVersionEndBatches();
-  const major = document.getElementById('filter-major')?.value || '';
+  syncAllVersionEndIntakes();
+  const programmeKey = document.getElementById('filter-programme')?.value || '';
   const status = document.getElementById('filter-status')?.value || '';
   let list = [...VERSIONS].sort((a, b) => {
-    if (a.majorKey !== b.majorKey) return a.majorKey.localeCompare(b.majorKey);
-    return a.startBatch.localeCompare(b.startBatch);
+    if (a.programmeKey !== b.programmeKey) return a.programmeKey.localeCompare(b.programmeKey);
+    return a.startIntake.localeCompare(b.startIntake);
   });
-  if (major) list = list.filter(v => v.majorKey === major);
+  if (programmeKey) list = list.filter(v => v.programmeKey === programmeKey);
   if (status) list = list.filter(v => v.status === status);
 
   const tbody = document.getElementById('version-table-body');
@@ -1054,12 +1054,12 @@ function filterVersions() {
 
   const queryBody = document.getElementById('version-query-body');
   if (queryBody) {
-    const queryMajorKey = document.getElementById('query-major')?.value || '';
+    const queryProgrammeKey = document.getElementById('query-programme')?.value || '';
     let queryList = VERSIONS.filter(v => v.status === 'approved');
-    if (queryMajorKey) queryList = queryList.filter(v => v.majorKey === queryMajorKey);
+    if (queryProgrammeKey) queryList = queryList.filter(v => v.programmeKey === queryProgrammeKey);
     queryList.sort((a, b) => {
-      if (a.majorKey !== b.majorKey) return a.majorKey.localeCompare(b.majorKey);
-      return a.startBatch.localeCompare(b.startBatch);
+      if (a.programmeKey !== b.programmeKey) return a.programmeKey.localeCompare(b.programmeKey);
+      return a.startIntake.localeCompare(b.startIntake);
     });
     queryBody.innerHTML = queryList.length
       ? queryList.map(v => renderVersionRow(v, { showActions: false })).join('')
@@ -1068,121 +1068,121 @@ function filterVersions() {
 }
 
 // ── New version modal ──
-function getMinimumNewStartBatch(majorKey) {
-  const list = getVersionsByMajor(majorKey);
+function getMinimumNewStartIntake(programmeKey) {
+  const list = getVersionsByProgramme(programmeKey);
   if (!list.length) return null;
   const latest = list[list.length - 1];
-  const anchorBatch = latest.endBatch || latest.startBatch;
-  return getNextIntakeBatch(anchorBatch);
+  const anchorBatch = latest.endIntake || latest.startIntake;
+  return getNextIntake(anchorBatch);
 }
 
-function isValidNewVersionStartBatch(majorKey, startBatch) {
-  const min = getMinimumNewStartBatch(majorKey);
+function isValidNewVersionStartIntake(programmeKey, startIntake) {
+  const min = getMinimumNewStartIntake(programmeKey);
   if (!min) return true;
-  return startBatch >= min;
+  return startIntake >= min;
 }
 
 /** 新增版本可选的开始批次（不早于当前有效版本的下一批次） */
-function getAllowedNewStartBatches(majorKey, yearsAhead = 3) {
-  const min = getMinimumNewStartBatch(majorKey);
+function getAllowedNewStartIntakes(programmeKey, yearsAhead = 3) {
+  const min = getMinimumNewStartIntake(programmeKey);
   const startYear = min ? parseInt(min.slice(0, 4), 10) : new Date().getFullYear();
   const endYear = startYear + yearsAhead;
   const all = [];
   for (let y = startYear; y <= endYear; y++) {
-    INTAKE_BATCH_TYPES.forEach(t => all.push(formatIntakeBatch(y, t)));
+    INTAKE_TYPES.forEach(t => all.push(formatIntake(y, t)));
   }
   if (!min) return all;
   return all.filter(b => b >= min);
 }
 
-function rebuildStartBatchSelect(majorKey) {
-  const sel = document.getElementById('new-start-batch');
-  const hintEl = document.getElementById('min-batch-hint');
+function rebuildStartIntakeSelect(programmeKey) {
+  const sel = document.getElementById('new-start-intake');
+  const hintEl = document.getElementById('min-intake-hint');
   if (!sel) return;
 
-  const current = getCurrentVersion(majorKey);
-  const min = getMinimumNewStartBatch(majorKey);
-  const allowed = getAllowedNewStartBatches(majorKey);
-  const latest = getVersionsByMajor(majorKey).slice(-1)[0];
+  const current = getCurrentVersion(programmeKey);
+  const min = getMinimumNewStartIntake(programmeKey);
+  const allowed = getAllowedNewStartIntakes(programmeKey);
+  const latest = getVersionsByProgramme(programmeKey).slice(-1)[0];
 
   sel.innerHTML = allowed.map(b =>
-    `<option value="${b}">${formatBatchDisplay(b)}</option>`
+    `<option value="${b}">${formatIntakeDisplay(b)}</option>`
   ).join('');
 
   if (hintEl) {
     if (!latest) {
       hintEl.textContent = '暂无历史版本，可选择任意开始批次';
-    } else if (latest.endBatch) {
-      hintEl.textContent = `上一版本 ${formatBatchDisplay(latest.version)} 截止批次 ${formatBatchDisplay(latest.endBatch)}，新版本开始批次最早为 ${formatBatchDisplay(min)}`;
+    } else if (latest.endIntake) {
+      hintEl.textContent = `上一版本 ${formatIntakeDisplay(latest.version)} 截止批次 ${formatIntakeDisplay(latest.endIntake)}，新版本开始批次最早为 ${formatIntakeDisplay(min)}`;
     } else {
-      hintEl.textContent = `当前有效版本 ${formatBatchDisplay(current?.version || latest.version)}（${formatBatchDisplay(latest.startBatch)} 起），新版本开始批次最早为 ${formatBatchDisplay(min)}`;
+      hintEl.textContent = `当前有效版本 ${formatIntakeDisplay(current?.version || latest.version)}（${formatIntakeDisplay(latest.startIntake)} 起），新版本开始批次最早为 ${formatIntakeDisplay(min)}`;
     }
   }
 }
 
 function openNewVersionModal() {
-  document.getElementById('new-major').value = '';
+  document.getElementById('new-programme').value = '';
   document.getElementById('new-duration').value = '';
   document.getElementById('new-degree').value = '';
   document.getElementById('cascade-preview').style.display = 'none';
   document.getElementById('new-programme-name').value = '';
   document.getElementById('new-version-code').value = '';
-  document.getElementById('min-batch-hint').textContent = '';
-  const batchSel = document.getElementById('new-start-batch');
+  document.getElementById('min-intake-hint').textContent = '';
+  const batchSel = document.getElementById('new-start-intake');
   if (batchSel) batchSel.innerHTML = '';
   openModal('modal-new-version');
 }
 
-function onNewMajorChange() {
-  const majorKey = document.getElementById('new-major').value;
+function onNewProgrammeChange() {
+  const programmeKey = document.getElementById('new-programme').value;
   const durationEl = document.getElementById('new-duration');
   const degreeEl = document.getElementById('new-degree');
-  if (!majorKey) {
+  if (!programmeKey) {
     document.getElementById('cascade-preview').style.display = 'none';
-    document.getElementById('min-batch-hint').textContent = '';
+    document.getElementById('min-intake-hint').textContent = '';
     if (durationEl) durationEl.value = '';
     if (degreeEl) degreeEl.value = '';
     return;
   }
-  const major = MAJORS[majorKey];
-  if (durationEl) durationEl.value = major.duration;
-  if (degreeEl) degreeEl.value = major.degree;
-  rebuildStartBatchSelect(majorKey);
-  onStartBatchChange();
+  const programme = PROGRAMMES[programmeKey];
+  if (durationEl) durationEl.value = programme.duration;
+  if (degreeEl) degreeEl.value = programme.degree;
+  rebuildStartIntakeSelect(programmeKey);
+  onStartIntakeChange();
 }
 
-function onStartBatchChange() {
-  const majorKey = document.getElementById('new-major').value;
-  if (!majorKey) return;
+function onStartIntakeChange() {
+  const programmeKey = document.getElementById('new-programme').value;
+  if (!programmeKey) return;
 
-  const startBatch = document.getElementById('new-start-batch')?.value;
-  if (!startBatch) return;
+  const startIntake = document.getElementById('new-start-intake')?.value;
+  if (!startIntake) return;
 
-  const min = getMinimumNewStartBatch(majorKey);
-  if (min && startBatch < min) {
-    rebuildStartBatchSelect(majorKey);
+  const min = getMinimumNewStartIntake(programmeKey);
+  if (min && startIntake < min) {
+    rebuildStartIntakeSelect(programmeKey);
     return;
   }
 
-  const prevEndBatch = getPreviousVersionEndBatch(startBatch);
-  const major = MAJORS[majorKey];
-  const prev = getCurrentVersion(majorKey);
+  const prevEndBatch = getPreviousVersionEndIntake(startIntake);
+  const programme = PROGRAMMES[programmeKey];
+  const prev = getCurrentVersion(programmeKey);
 
-  document.getElementById('new-version-code').value = formatBatchDisplay(startBatch);
+  document.getElementById('new-version-code').value = formatIntakeDisplay(startIntake);
   document.getElementById('new-programme-name').value =
-    `Course Structure of ${major.name} (${formatBatchDisplay(startBatch)} Version)`;
+    `Course Structure of ${programme.name} (${formatIntakeDisplay(startIntake)} Version)`;
 
   document.getElementById('cascade-preview').style.display = 'block';
   document.getElementById('prev-version-label').textContent =
-    prev ? `${formatBatchDisplay(prev.version)} (${prev.name.split('(')[1]?.replace(')', '') || ''})` : '（无上一版本）';
-  document.getElementById('prev-end-batch').textContent = prev ? formatBatchDisplay(prevEndBatch) : '—';
-  document.getElementById('curr-version-label').textContent = `${formatBatchDisplay(startBatch)} Version`;
-  document.getElementById('curr-start-batch').textContent = formatBatchDisplay(startBatch);
+    prev ? `${formatIntakeDisplay(prev.version)} (${prev.name.split('(')[1]?.replace(')', '') || ''})` : '（无上一版本）';
+  document.getElementById('prev-end-intake').textContent = prev ? formatIntakeDisplay(prevEndBatch) : '—';
+  document.getElementById('curr-version-label').textContent = `${formatIntakeDisplay(startIntake)} Version`;
+  document.getElementById('curr-start-intake').textContent = formatIntakeDisplay(startIntake);
 
-  const hint = document.getElementById('batch-cascade-hint');
+  const hint = document.getElementById('intake-cascade-hint');
   if (hint) {
     hint.textContent = prevEndBatch
-      ? `新版本审批通过后，上一版本截止批次将设为 ${formatBatchDisplay(prevEndBatch)}（当前保持不变）；${formatBatchDisplay(startBatch)} 起启用新版本`
+      ? `新版本审批通过后，上一版本截止批次将设为 ${formatIntakeDisplay(prevEndBatch)}（当前保持不变）；${formatIntakeDisplay(startIntake)} 起启用新版本`
       : '';
   }
 }
@@ -1192,30 +1192,30 @@ function nextVersionId() {
 }
 
 function confirmNewVersion() {
-  const majorKey = document.getElementById('new-major').value;
-  if (!majorKey) { alert('请选择专业'); return; }
-  const startBatch = document.getElementById('new-start-batch')?.value;
-  if (!startBatch) { alert('请选择开始批次'); return; }
-  const min = getMinimumNewStartBatch(majorKey);
-  const current = getCurrentVersion(majorKey);
-  const latest = getVersionsByMajor(majorKey).slice(-1)[0];
-  if (min && startBatch < min) {
-    const prevEnd = latest?.endBatch ? formatBatchDisplay(latest.endBatch) : formatBatchDisplay(getPreviousVersionEndBatch(min));
-    alert(`新版本开始批次须晚于上一版本截止批次。最早可选 ${formatBatchDisplay(min)}（上一版本截止 ${prevEnd}）`);
+  const programmeKey = document.getElementById('new-programme').value;
+  if (!programmeKey) { alert('请选择专业'); return; }
+  const startIntake = document.getElementById('new-start-intake')?.value;
+  if (!startIntake) { alert('请选择开始批次'); return; }
+  const min = getMinimumNewStartIntake(programmeKey);
+  const current = getCurrentVersion(programmeKey);
+  const latest = getVersionsByProgramme(programmeKey).slice(-1)[0];
+  if (min && startIntake < min) {
+    const prevEnd = latest?.endIntake ? formatIntakeDisplay(latest.endIntake) : formatIntakeDisplay(getPreviousVersionEndIntake(min));
+    alert(`新版本开始批次须晚于上一版本截止批次。最早可选 ${formatIntakeDisplay(min)}（上一版本截止 ${prevEnd}）`);
     return;
   }
-  const major = MAJORS[majorKey];
+  const programme = PROGRAMMES[programmeKey];
   const prev = current;
   const newId = nextVersionId();
   const newVersion = {
     id: newId,
-    majorKey,
+    programmeKey,
     name: document.getElementById('new-programme-name').value,
-    version: startBatch,
-    startBatch,
-    endBatch: '',
-    duration: major.duration,
-    degree: major.degree,
+    version: startIntake,
+    startIntake,
+    endIntake: '',
+    duration: programme.duration,
+    degree: programme.degree,
     disabled: false,
     locked: false,
     status: 'draft'
@@ -1225,56 +1225,56 @@ function confirmNewVersion() {
   closeModal('modal-new-version');
   filterVersions();
   goEdit('draft', newVersion);
-  const prevEnd = getPreviousVersionEndBatch(startBatch);
-  alert(`已创建新版本 ${formatBatchDisplay(startBatch)}（待审批通过后生效）\n上一版本 ${prev ? formatBatchDisplay(prev.version) : '—'} 的截止批次将在新版本审批通过后设为 ${formatBatchDisplay(prevEnd)}（当前保持不变）`);
+  const prevEnd = getPreviousVersionEndIntake(startIntake);
+  alert(`已创建新版本 ${formatIntakeDisplay(startIntake)}（待审批通过后生效）\n上一版本 ${prev ? formatIntakeDisplay(prev.version) : '—'} 的截止批次将在新版本审批通过后设为 ${formatIntakeDisplay(prevEnd)}（当前保持不变）`);
 }
 
 // ── Exec plan version match ──
-function getExistingExecPlanBatchSet(majorKey) {
+function getExistingExecPlanIntakeSet(programmeKey) {
   return new Set(
-    EXEC_PLANS.filter(ep => ep.majorKey === majorKey).map(ep => ep.intakeBatch)
+    EXEC_PLANS.filter(ep => ep.programmeKey === programmeKey).map(ep => ep.intake)
   );
 }
 
-function getAvailableExecIntakeBatches(majorKey) {
-  const existing = getExistingExecPlanBatchSet(majorKey);
-  const approved = getVersionsByMajor(majorKey).filter(v => v.status === 'approved');
+function getAvailableExecIntakes(programmeKey) {
+  const existing = getExistingExecPlanIntakeSet(programmeKey);
+  const approved = getVersionsByProgramme(programmeKey).filter(v => v.status === 'approved');
   if (!approved.length) return [];
 
-  const minStart = approved[0].startBatch;
-  const openVersion = approved.find(v => !v.endBatch);
+  const minStart = approved[0].startIntake;
+  const openVersion = approved.find(v => !v.endIntake);
   const startYear = parseInt(minStart.slice(0, 4), 10);
   const endYear = openVersion
     ? startYear + 6
-    : parseInt((approved[approved.length - 1].endBatch || approved[approved.length - 1].startBatch).slice(0, 4), 10) + 1;
+    : parseInt((approved[approved.length - 1].endIntake || approved[approved.length - 1].startIntake).slice(0, 4), 10) + 1;
 
   const batches = [];
   for (let y = startYear; y <= endYear; y += 1) {
-    INTAKE_BATCH_TYPES.forEach(t => {
-      const batch = formatIntakeBatch(y, t);
+    INTAKE_TYPES.forEach(t => {
+      const batch = formatIntake(y, t);
       if (batch < minStart) return;
       if (existing.has(batch)) return;
-      if (!resolveExecVersionMatch(majorKey, batch).ok) return;
+      if (!resolveExecVersionMatch(programmeKey, batch).ok) return;
       batches.push(batch);
     });
   }
   return batches.sort();
 }
 
-function initExecMajorSelect() {
-  const sel = document.getElementById('exec-major');
+function initExecProgrammeSelect() {
+  const sel = document.getElementById('exec-programme');
   if (!sel) return;
-  sel.innerHTML = Object.entries(MAJORS).map(([key, major]) =>
-    `<option value="${key}">${escapeHtml(major.name)} ${escapeHtml(major.nameZh)}</option>`
+  sel.innerHTML = Object.entries(PROGRAMMES).map(([key, programme]) =>
+    `<option value="${key}">${escapeHtml(programme.name)} ${escapeHtml(programme.nameZh)}</option>`
   ).join('');
 }
 
-function rebuildExecIntakeBatchSelect(majorKey) {
-  const sel = document.getElementById('exec-intake-batch');
-  const hintEl = document.getElementById('exec-intake-batch-hint');
+function rebuildExecIntakeSelect(programmeKey) {
+  const sel = document.getElementById('exec-intake');
+  const hintEl = document.getElementById('exec-intake-hint');
   if (!sel) return;
 
-  const batches = getAvailableExecIntakeBatches(majorKey);
+  const batches = getAvailableExecIntakes(programmeKey);
   if (!batches.length) {
     sel.innerHTML = '<option value="">暂无可选批次</option>';
     sel.disabled = true;
@@ -1286,23 +1286,23 @@ function rebuildExecIntakeBatchSelect(majorKey) {
 
   sel.disabled = false;
   sel.innerHTML = batches.map(batch =>
-    `<option value="${batch}">${formatBatchDisplay(batch)}</option>`
+    `<option value="${batch}">${formatIntakeDisplay(batch)}</option>`
   ).join('');
   if (hintEl) {
     hintEl.textContent = `共 ${batches.length} 个可选批次，均为尚未生成执行计划的入学批次`;
   }
 }
 
-function onExecMajorChange() {
-  const majorKey = document.getElementById('exec-major')?.value || 'finance';
-  rebuildExecIntakeBatchSelect(majorKey);
-  onExecBatchInput();
+function onExecProgrammeChange() {
+  const programmeKey = document.getElementById('exec-programme')?.value || 'finance';
+  rebuildExecIntakeSelect(programmeKey);
+  onExecIntakeInput();
 }
 
-function onExecBatchInput() {
-  const majorKey = document.getElementById('exec-major')?.value || 'finance';
-  const batch = normalizeBatchCode(document.getElementById('exec-intake-batch')?.value);
-  const result = batch ? resolveExecVersionMatch(majorKey, batch) : { ok: false, reason: 'empty' };
+function onExecIntakeInput() {
+  const programmeKey = document.getElementById('exec-programme')?.value || 'finance';
+  const intakeCode = normalizeIntakeCode(document.getElementById('exec-intake')?.value);
+  const result = intakeCode ? resolveExecVersionMatch(programmeKey, intakeCode) : { ok: false, reason: 'empty' };
   const el = document.getElementById('exec-matched-version');
   const range = document.getElementById('exec-match-range');
   const hint = document.getElementById('exec-match-hint');
@@ -1315,18 +1315,18 @@ function onExecBatchInput() {
 
   if (result.ok) {
     const matched = result.version;
-    el.textContent = formatBatchDisplay(matched.version);
+    el.textContent = formatIntakeDisplay(matched.version);
     if (range) range.textContent = `生效区间：${formatVersionRange(matched)}`;
     if (statusEl) {
       statusEl.className = 'status approved';
       statusEl.textContent = statusLabel('approved');
     }
     if (box) box.classList.add('is-ok');
-    const nextStart = matched.endBatch ? getNextIntakeBatch(matched.endBatch) : null;
+    const nextStart = matched.endIntake ? getNextIntake(matched.endIntake) : null;
     if (hint) {
       hint.textContent = nextStart
-        ? `入学批次 ${formatBatchDisplay(batch)} 匹配已审批版本 ${formatBatchDisplay(matched.version)}；下一版本从 ${formatBatchDisplay(nextStart)} 起`
-        : `入学批次 ${formatBatchDisplay(batch)} 匹配已审批版本 ${formatBatchDisplay(matched.version)}（${formatVersionRange(matched)}）`;
+        ? `入学批次 ${formatIntakeDisplay(intakeCode)} 匹配已审批版本 ${formatIntakeDisplay(matched.version)}；下一版本从 ${formatIntakeDisplay(nextStart)} 起`
+        : `入学批次 ${formatIntakeDisplay(intakeCode)} 匹配已审批版本 ${formatIntakeDisplay(matched.version)}（${formatVersionRange(matched)}）`;
     }
     if (submitBtn) submitBtn.disabled = false;
     return;
@@ -1336,7 +1336,7 @@ function onExecBatchInput() {
 
   if (result.reason === 'not-approved') {
     const v = result.version;
-    el.textContent = formatBatchDisplay(v.version);
+    el.textContent = formatIntakeDisplay(v.version);
     if (range) range.textContent = `生效区间：${formatVersionRange(v)}`;
     if (statusEl) {
       statusEl.className = `status ${statusClass(v.status)}`;
@@ -1344,7 +1344,7 @@ function onExecBatchInput() {
     }
     if (box) box.classList.add('is-error');
     if (hint) {
-      hint.textContent = `入学批次 ${formatBatchDisplay(batch)} 虽匹配版本 ${formatBatchDisplay(v.version)}，但该版本为「${statusLabel(v.status)}」，尚未审批通过，无法生成批次执行计划。`;
+      hint.textContent = `入学批次 ${formatIntakeDisplay(intakeCode)} 虽匹配版本 ${formatIntakeDisplay(v.version)}，但该版本为「${statusLabel(v.status)}」，尚未审批通过，无法生成批次执行计划。`;
     }
     return;
   }
@@ -1356,19 +1356,19 @@ function onExecBatchInput() {
     statusEl.textContent = '—';
   }
   if (hint) {
-    hint.textContent = batch
-      ? `入学批次 ${formatBatchDisplay(batch)} 未落在任何已审批版本的生效区间内`
+    hint.textContent = intakeCode
+      ? `入学批次 ${formatIntakeDisplay(intakeCode)} 未落在任何已审批版本的生效区间内`
       : '请选择入学批次';
   }
 }
 
 function confirmGenerateExecPlan() {
-  const majorKey = document.getElementById('exec-major')?.value || 'finance';
-  const batch = normalizeBatchCode(document.getElementById('exec-intake-batch')?.value);
-  const result = resolveExecVersionMatch(majorKey, batch);
+  const programmeKey = document.getElementById('exec-programme')?.value || 'finance';
+  const intakeCode = normalizeIntakeCode(document.getElementById('exec-intake')?.value);
+  const result = resolveExecVersionMatch(programmeKey, intakeCode);
   if (!result.ok) {
     if (result.reason === 'not-approved') {
-      alert(`培养方案版本 ${formatBatchDisplay(result.version.version)} 尚未审批通过（${statusLabel(result.version.status)}），无法被批次执行计划引用。`);
+      alert(`培养方案版本 ${formatIntakeDisplay(result.version.version)} 尚未审批通过（${statusLabel(result.version.status)}），无法被批次执行计划引用。`);
     } else if (result.reason === 'no-match') {
       alert('未匹配到已审批通过的有效培养方案版本，请调整入学批次或等待版本审批完成。');
     } else {
@@ -1377,13 +1377,13 @@ function confirmGenerateExecPlan() {
     return;
   }
   closeModal('modal-gen-exec');
-  let ep = EXEC_PLANS.find(p => p.majorKey === majorKey && p.intakeBatch === batch);
+  let ep = EXEC_PLANS.find(p => p.programmeKey === programmeKey && p.intake === intakeCode);
   if (!ep) {
     ep = {
       id: Date.now(),
-      planCode: `EP-${majorKey}-${batch}`,
-      majorKey,
-      intakeBatch: batch,
+      planCode: `EP-${programmeKey}-${intakeCode}`,
+      programmeKey,
+      intake: intakeCode,
       versionId: result.version.id,
       status: 'draft',
       isLocked: false,
@@ -1391,7 +1391,7 @@ function confirmGenerateExecPlan() {
     };
     EXEC_PLANS.push(ep);
     ensureExecPlanContentStore(ep);
-    rebuildExecListBatchFilterOptions();
+    rebuildExecListIntakeFilterOptions();
     renderExecList();
   } else {
     ensureExecPlanContentStore(ep);
@@ -1431,17 +1431,17 @@ function hasActiveChangeForVersion(versionId) {
   );
 }
 
-function getApprovedVersionsForChangeApply(majorKey) {
-  if (!majorKey) return [];
-  return getVersionsByMajor(majorKey).filter(v => v.status === 'approved');
+function getApprovedVersionsForChangeApply(programmeKey) {
+  if (!programmeKey) return [];
+  return getVersionsByProgramme(programmeKey).filter(v => v.status === 'approved');
 }
 
 function openNewChangeApplyModal() {
-  const majorSel = document.getElementById('change-apply-major');
+  const programmeSel = document.getElementById('change-apply-programme');
   const versionSel = document.getElementById('change-apply-version');
   const hint = document.getElementById('change-apply-version-hint');
   const preview = document.getElementById('change-apply-preview');
-  if (majorSel) majorSel.value = '';
+  if (programmeSel) programmeSel.value = '';
   if (versionSel) {
     versionSel.innerHTML = '<option value="">请先选择专业</option>';
     versionSel.disabled = true;
@@ -1451,25 +1451,25 @@ function openNewChangeApplyModal() {
   openModal('modal-new-change-apply');
 }
 
-function onChangeApplyMajorChange() {
+function onChangeApplyProgrammeChange() {
   rebuildChangeApplyVersionSelect();
   onChangeApplyVersionChange();
 }
 
 function rebuildChangeApplyVersionSelect() {
-  const majorKey = document.getElementById('change-apply-major')?.value || '';
+  const programmeKey = document.getElementById('change-apply-programme')?.value || '';
   const sel = document.getElementById('change-apply-version');
   const hint = document.getElementById('change-apply-version-hint');
   if (!sel) return;
 
-  if (!majorKey) {
+  if (!programmeKey) {
     sel.innerHTML = '<option value="">请先选择专业</option>';
     sel.disabled = true;
     if (hint) hint.textContent = '请先选择专业';
     return;
   }
 
-  const versions = getApprovedVersionsForChangeApply(majorKey);
+  const versions = getApprovedVersionsForChangeApply(programmeKey);
   if (!versions.length) {
     sel.innerHTML = '<option value="">暂无已审批版本</option>';
     sel.disabled = true;
@@ -1500,11 +1500,11 @@ function onChangeApplyVersionChange() {
   if (!v || !preview) return;
 
   const execPlans = getExecPlansByVersionId(v.id);
-  const futureBatches = getAvailableExecIntakeBatches(v.majorKey).length;
+  const futureBatches = getAvailableExecIntakes(v.programmeKey).length;
   document.getElementById('change-preview-version-name').textContent = v.name;
   document.getElementById('change-preview-version-range').textContent = formatVersionRange(v);
   document.getElementById('change-preview-exec-count').textContent = execPlans.length
-    ? `${execPlans.length} 个（${execPlans.map(ep => formatBatchDisplay(ep.intakeBatch)).join('、')}）`
+    ? `${execPlans.length} 个（${execPlans.map(ep => formatIntakeDisplay(ep.intake)).join('、')}）`
     : '无';
   document.getElementById('change-preview-future-hint').textContent = futureBatches
     ? `尚有 ${futureBatches} 个入学批次未生成执行计划；变更审批通过后，这些批次生成时将引用最新版本内容。`
@@ -1513,9 +1513,9 @@ function onChangeApplyVersionChange() {
 }
 
 function confirmNewChangeApply() {
-  const majorKey = document.getElementById('change-apply-major')?.value;
+  const programmeKey = document.getElementById('change-apply-programme')?.value;
   const versionId = Number(document.getElementById('change-apply-version')?.value);
-  if (!majorKey) { alert('请选择专业'); return; }
+  if (!programmeKey) { alert('请选择专业'); return; }
   if (!versionId) { alert('请选择目标培养方案版本'); return; }
   const v = findVersionById(versionId);
   if (!v || v.status !== 'approved') {
@@ -1530,10 +1530,10 @@ function confirmNewChangeApply() {
   const change = {
     id: nextChangeApplicationId(),
     versionId: v.id,
-    majorKey: v.majorKey,
+    programmeKey: v.programmeKey,
     name: v.name,
     version: v.version,
-    startBatch: v.startBatch,
+    startIntake: v.startIntake,
     totalCredits: 130,
     status: 'draft',
     submitter: '当前用户',
@@ -1553,10 +1553,10 @@ function renderChangeApplyList() {
   const empty = document.getElementById('change-apply-list-empty');
   if (!tbody) return;
 
-  const majorFilter = document.getElementById('change-apply-filter-major')?.value || '';
+  const programmeFilter = document.getElementById('change-apply-filter-programme')?.value || '';
   const statusFilter = document.getElementById('change-apply-filter-status')?.value || '';
   const items = CHANGE_APPLICATIONS.filter(ca => {
-    if (majorFilter && ca.majorKey !== majorFilter) return false;
+    if (programmeFilter && ca.programmeKey !== programmeFilter) return false;
     if (statusFilter && ca.status !== statusFilter) return false;
     return true;
   });
@@ -1569,7 +1569,7 @@ function renderChangeApplyList() {
   if (empty) empty.style.display = 'none';
 
   tbody.innerHTML = items.map(ca => {
-    const major = MAJORS[ca.majorKey];
+    const programme = PROGRAMMES[ca.programmeKey];
     const actions = [];
     if (ca.status === 'draft' || ca.status === 'rejected') {
       actions.push(`<a href="#" onclick="goChangeEdit('${ca.id}');return false">编辑</a>`);
@@ -1584,8 +1584,8 @@ function renderChangeApplyList() {
     }
     return `<tr>
       <td><a href="#" class="link-name" onclick="goChangeEdit('${ca.id}', ${ca.status !== 'draft' && ca.status !== 'rejected'});return false">${escapeHtml(ca.name)}</a></td>
-      <td>${escapeHtml(major?.name || '—')}</td>
-      <td class="col-center"><code>${formatBatchDisplay(ca.version)}</code></td>
+      <td>${escapeHtml(programme?.name || '—')}</td>
+      <td class="col-center"><code>${formatIntakeDisplay(ca.version)}</code></td>
       <td class="col-center"><span class="status ${changeApplicationStatusClass(ca.status)}">${getChangeApplicationStatusLabel(ca.status)}</span></td>
       <td>${escapeHtml(ca.submitter || '—')}</td>
       <td>${escapeHtml(ca.submitTime || '—')}</td>
@@ -1746,8 +1746,8 @@ function openBatchChangeReview() {
     list.innerHTML = batchChangeReviewIds.map(id => {
       const ca = findChangeApplication(id);
       if (!ca) return '';
-      const major = MAJORS[ca.majorKey];
-      return `<li><strong>${escapeHtml(ca.name)}</strong><div class="item-meta">${escapeHtml(major?.name || '—')} · ${formatBatchDisplay(ca.version)} · ${escapeHtml(ca.submitter)}</div></li>`;
+      const programme = PROGRAMMES[ca.programmeKey];
+      return `<li><strong>${escapeHtml(ca.name)}</strong><div class="item-meta">${escapeHtml(programme?.name || '—')} · ${formatIntakeDisplay(ca.version)} · ${escapeHtml(ca.submitter)}</div></li>`;
     }).join('');
   }
   if (comment) comment.value = '';
@@ -1789,7 +1789,7 @@ function renderChangeReviewList() {
   if (empty) empty.style.display = 'none';
 
   tbody.innerHTML = items.map(ca => {
-    const major = MAJORS[ca.majorKey];
+    const programme = PROGRAMMES[ca.programmeKey];
     const st = getChangeReviewOverallStatus(ca);
     const canReview = canReviewChangeItem(ca, changeReviewActiveTab);
     const checkCell = showBatch && canReview
@@ -1800,9 +1800,9 @@ function renderChangeReviewList() {
       <td><a href="#" class="link-name" onclick="openChangeReviewView('${ca.id}');return false">${escapeHtml(ca.name)}</a></td>
       <td class="col-center"><span class="status ${st.cls}">${st.label}</span></td>
       <td>${escapeHtml(getChangeReviewStageDisplay(ca))}</td>
-      <td>${escapeHtml(major?.name || '—')}</td>
-      <td class="col-center"><code>${formatBatchDisplay(ca.version)}</code></td>
-      <td class="col-center"><code>${formatBatchDisplay(ca.startBatch || ca.version)}</code></td>
+      <td>${escapeHtml(programme?.name || '—')}</td>
+      <td class="col-center"><code>${formatIntakeDisplay(ca.version)}</code></td>
+      <td class="col-center"><code>${formatIntakeDisplay(ca.startIntake || ca.version)}</code></td>
       <td class="col-center">${getChangeApplicationTotalCredits(ca)}</td>
       <td>${escapeHtml(ca.submitter || '—')}</td>
       <td>${escapeHtml(ca.submitTime || '—')}</td>
@@ -1835,7 +1835,7 @@ function goChangeEdit(changeId, readonly = false, returnPage = 'change-apply') {
     statusEl.textContent = getChangeApplicationStatusLabel(ca.status, isReadonly);
   }
   document.getElementById('edit-title').textContent =
-    `变更 · ${MAJORS[v.majorKey].name} (${formatBatchDisplay(v.version)})`;
+    `变更 · ${PROGRAMMES[v.programmeKey].name} (${formatIntakeDisplay(v.version)})`;
   renderChangeInfoStrip(v, ca);
   updateVersionEditBreadcrumb();
   loadChangeContent(changeId);
@@ -1846,12 +1846,12 @@ function goChangeEdit(changeId, readonly = false, returnPage = 'change-apply') {
 function renderChangeInfoStrip(v, ca) {
   const strip = document.getElementById('edit-info-strip');
   if (!strip || !v) return;
-  const major = MAJORS[v.majorKey];
+  const programme = PROGRAMMES[v.programmeKey];
   const execCount = getExecPlansByVersionId(v.id).length;
   strip.innerHTML = `
     <span><label>变更目标</label><strong>${escapeHtml(v.name)}</strong></span>
-    <span><label>专业</label>${escapeHtml(major.name)} ${escapeHtml(major.nameZh)}</span>
-    <span><label>版本</label><strong>${formatBatchDisplay(v.version)}</strong></span>
+    <span><label>专业</label>${escapeHtml(programme.name)} ${escapeHtml(programme.nameZh)}</span>
+    <span><label>版本</label><strong>${formatIntakeDisplay(v.version)}</strong></span>
     <span><label>生效区间</label>${formatVersionRange(v)}</span>
     <span><label>已生成执行计划</label>${execCount ? `${execCount} 个（不受影响）` : '无'}</span>
     <span><label>申请状态</label>${escapeHtml(getChangeApplicationStatusLabel(ca.status))}</span>`;
@@ -1899,13 +1899,13 @@ function requestSubmitChangeApplication(id) {
   pendingSubmitChangeId = ca.id;
   const msg = document.getElementById('submit-change-msg');
   const hint = document.getElementById('submit-change-hint');
-  const major = MAJORS[ca.majorKey];
+  const programme = PROGRAMMES[ca.programmeKey];
   if (msg) {
     msg.innerHTML = `确定提交方案变更「<strong>${escapeHtml(ca.name)}</strong>」进行审批吗？`;
   }
   if (hint) {
     const execCount = getExecPlansByVersionId(ca.versionId).length;
-    hint.textContent = `${major?.nameZh || ''} · 版本 ${formatBatchDisplay(ca.version)}。审批通过后将覆盖原版本内容；${execCount ? `已有 ${execCount} 个执行计划不受影响` : '尚无执行计划'}；未生成执行计划的批次生成时将引用最新内容。`;
+    hint.textContent = `${programme?.nameZh || ''} · 版本 ${formatIntakeDisplay(ca.version)}。审批通过后将覆盖原版本内容；${execCount ? `已有 ${execCount} 个执行计划不受影响` : '尚无执行计划'}；未生成执行计划的批次生成时将引用最新内容。`;
   }
   openModal('modal-submit-change');
 }
@@ -2129,11 +2129,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-fin-2509',
     versionId: 14,
-    majorKey: 'finance',
+    programmeKey: 'finance',
     name: 'Course Structure of Finance (202509 Version)',
-    major: 'Finance',
+    programme: 'Finance',
     version: '202509',
-    startBatch: '202509',
+    startIntake: '202509',
     totalCredits: 130,
     submitter: '张老师',
     submitTime: '2025-05-28 10:15',
@@ -2148,11 +2148,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-acc-2504',
     versionId: 23,
-    majorKey: 'accounting',
+    programmeKey: 'accounting',
     name: 'Course Structure of Accounting (202504 Version)',
-    major: 'Accounting',
+    programme: 'Accounting',
     version: '202504',
-    startBatch: '202504',
+    startIntake: '202504',
     totalCredits: 128,
     submitter: '王老师',
     submitTime: '2025-04-12 09:40',
@@ -2167,11 +2167,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-chs-2509',
     versionId: 5,
-    majorKey: 'chinese',
+    programmeKey: 'chinese',
     name: 'Course Structure of Chinese Studies (202509 Version)',
-    major: 'Chinese Studies',
+    programme: 'Chinese Studies',
     version: '202509',
-    startBatch: '202509',
+    startIntake: '202509',
     totalCredits: 120,
     submitter: '陈老师',
     submitTime: '2025-05-30 11:05',
@@ -2186,11 +2186,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-fin-2502',
     versionId: 13,
-    majorKey: 'finance',
+    programmeKey: 'finance',
     name: 'Course Structure of Finance (202502 Version)',
-    major: 'Finance',
+    programme: 'Finance',
     version: '202502',
-    startBatch: '202502',
+    startIntake: '202502',
     totalCredits: 125,
     submitter: '张老师',
     submitTime: '2025-02-18 08:50',
@@ -2205,11 +2205,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-acc-2502',
     versionId: 23,
-    majorKey: 'accounting',
+    programmeKey: 'accounting',
     name: 'Course Structure of Accounting (202502 Version)',
-    major: 'Accounting',
+    programme: 'Accounting',
     version: '202502',
-    startBatch: '202502',
+    startIntake: '202502',
     totalCredits: 126,
     submitter: '赵老师',
     submitTime: '2025-02-10 15:22',
@@ -2224,11 +2224,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-fin-2409',
     versionId: 13,
-    majorKey: 'finance',
+    programmeKey: 'finance',
     name: 'Course Structure of Finance (202409 Version)',
-    major: 'Finance',
+    programme: 'Finance',
     version: '202409',
-    startBatch: '202409',
+    startIntake: '202409',
     totalCredits: 130,
     submitter: '张老师',
     submitTime: '2024-08-20 09:00',
@@ -2243,11 +2243,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-chs-2404',
     versionId: 4,
-    majorKey: 'chinese',
+    programmeKey: 'chinese',
     name: 'Course Structure of Chinese Studies (202404 Version)',
-    major: 'Chinese Studies',
+    programme: 'Chinese Studies',
     version: '202404',
-    startBatch: '202404',
+    startIntake: '202404',
     totalCredits: 118,
     submitter: '陈老师',
     submitTime: '2024-03-15 13:40',
@@ -2262,11 +2262,11 @@ const APPROVAL_QUEUE = [
   {
     id: 'ap-acc-2409',
     versionId: 23,
-    majorKey: 'accounting',
+    programmeKey: 'accounting',
     name: 'Course Structure of Accounting (202409 Version)',
-    major: 'Accounting',
+    programme: 'Accounting',
     version: '202409',
-    startBatch: '202409',
+    startIntake: '202409',
     totalCredits: 128,
     submitter: '王老师',
     submitTime: '2024-07-08 10:30',
@@ -2286,10 +2286,10 @@ function findApprovalItem(id) {
 function resolveApprovalVersionId(item) {
   if (!item) return null;
   if (item.versionId) return item.versionId;
-  const majorKey = item.majorKey
-    || Object.entries(MAJORS).find(([, m]) => m.name === item.major)?.[0];
-  if (!majorKey) return null;
-  return VERSIONS.find(v => v.majorKey === majorKey && v.version === item.version)?.id ?? null;
+  const programmeKey = item.programmeKey
+    || Object.entries(PROGRAMMES).find(([, m]) => m.name === item.programme)?.[0];
+  if (!programmeKey) return null;
+  return VERSIONS.find(v => v.programmeKey === programmeKey && v.version === item.version)?.id ?? null;
 }
 
 function updateVersionEditBreadcrumb() {
@@ -2327,12 +2327,12 @@ function applyEditPageChrome(mode = 'version') {
 function restoreVersionInfoStrip(v) {
   const strip = document.getElementById('edit-info-strip');
   if (!strip || !v) return;
-  const major = MAJORS[v.majorKey];
+  const programme = PROGRAMMES[v.programmeKey];
   strip.innerHTML = `
-    <span><label>专业</label><span id="info-major">${escapeHtml(major.name)} ${escapeHtml(major.nameZh)}</span></span>
-    <span><label>版本</label><strong id="info-version">${formatBatchDisplay(v.version)}</strong></span>
-    <span><label>开始批次</label><code id="info-start-batch">${formatBatchDisplay(v.startBatch)}</code></span>
-    <span><label>截止批次</label><code id="info-end-batch" class="${v.endBatch ? '' : 'text-muted'}">${v.endBatch ? formatBatchDisplay(v.endBatch) : '—（当前有效版本）'}</code></span>
+    <span><label>专业</label><span id="info-programme">${escapeHtml(programme.name)} ${escapeHtml(programme.nameZh)}</span></span>
+    <span><label>版本</label><strong id="info-version">${formatIntakeDisplay(v.version)}</strong></span>
+    <span><label>开始批次</label><code id="info-start-intake">${formatIntakeDisplay(v.startIntake)}</code></span>
+    <span><label>截止批次</label><code id="info-end-intake" class="${v.endIntake ? '' : 'text-muted'}">${v.endIntake ? formatIntakeDisplay(v.endIntake) : '—（当前有效版本）'}</code></span>
     <span><label>学制</label>${v.duration} 年</span>
     <span><label>授予学位</label>${escapeHtml(v.degree)}</span>`;
 }
@@ -2340,13 +2340,13 @@ function restoreVersionInfoStrip(v) {
 function renderExecInfoStrip(ep, version) {
   const strip = document.getElementById('edit-info-strip');
   if (!strip) return;
-  const major = MAJORS[ep.majorKey];
+  const programme = PROGRAMMES[ep.programmeKey];
   strip.innerHTML = `
-    <span><label>专业</label>${escapeHtml(major.name)} ${escapeHtml(major.nameZh)}</span>
-    <span><label>专业代码</label>${escapeHtml(major.code)}</span>
-    <span><label>专业批次</label>${escapeHtml(formatMajorBatchCode(ep.majorKey, ep.intakeBatch))}</span>
-    <span><label>入学批次</label>${formatBatchDisplay(ep.intakeBatch)}</span>
-    <span><label>关联版本</label>${version ? formatBatchDisplay(version.version) : '—'} <span class="lock-icon" title="按批次自动匹配，不可切换">🔒</span></span>
+    <span><label>专业</label>${escapeHtml(programme.name)} ${escapeHtml(programme.nameZh)}</span>
+    <span><label>专业代码</label>${escapeHtml(programme.code)}</span>
+    <span><label>专业批次</label>${escapeHtml(formatProgrammeIntakeCode(ep.programmeKey, ep.intake))}</span>
+    <span><label>入学批次</label>${formatIntakeDisplay(ep.intake)}</span>
+    <span><label>关联版本</label>${version ? formatIntakeDisplay(version.version) : '—'} <span class="lock-icon" title="按批次自动匹配，不可切换">🔒</span></span>
     <span><label>是否提交</label>${renderExecLockStatus(!!ep.isLocked)}</span>
     <span><label>开课状态</label>${ep.isOffering ? '已开课' : '未开课'}</span>`;
 }
@@ -2357,7 +2357,7 @@ function requestSaveVersionEdit() {
   const hint = document.getElementById('save-version-hint');
   if (currentExecPlan) {
     if (msg) {
-      msg.textContent = `确定保存专业批次执行计划（入学批次 ${formatBatchDisplay(currentExecPlan.intakeBatch)}）吗？`;
+      msg.textContent = `确定保存专业批次执行计划（入学批次 ${formatIntakeDisplay(currentExecPlan.intake)}）吗？`;
     }
     if (hint) {
       hint.textContent = '保存后将返回执行计划列表；仅更新当前批次执行计划，不回写方案版本管理，其他入学批次互不影响。';
@@ -2524,7 +2524,7 @@ function openBatchApprovalReview() {
     list.innerHTML = batchApprovalReviewIds.map(id => {
       const item = findApprovalItem(id);
       if (!item) return '';
-      return `<li><strong>${escapeHtml(item.name)}</strong><div class="item-meta">${escapeHtml(item.major)} · ${formatBatchDisplay(item.version)} · ${escapeHtml(item.submitter)}</div></li>`;
+      return `<li><strong>${escapeHtml(item.name)}</strong><div class="item-meta">${escapeHtml(item.programme)} · ${formatIntakeDisplay(item.version)} · ${escapeHtml(item.submitter)}</div></li>`;
     }).join('');
   }
   if (comment) comment.value = '';
@@ -2635,8 +2635,8 @@ function renderApprovalList() {
       <td><a href="#" class="link-name" onclick="openApprovalView('${item.id}');return false">${escapeHtml(item.name)}</a></td>
       <td class="col-center"><span class="status ${st.cls}">${st.label}</span></td>
       <td>${escapeHtml(getApprovalStageDisplay(item))}</td>
-      <td>${escapeHtml(item.major)}</td>
-      <td class="col-center"><code>${formatBatchDisplay(item.startBatch)}</code></td>
+      <td>${escapeHtml(item.programme)}</td>
+      <td class="col-center"><code>${formatIntakeDisplay(item.startIntake)}</code></td>
       <td class="col-center">${getApprovalItemTotalCredits(item)}</td>
       <td>${escapeHtml(item.submitter)}</td>
       <td>${escapeHtml(item.submitTime)}</td>
@@ -2770,7 +2770,7 @@ function goPage(id) {
   if (id === 'version-list' || id === 'version-query') filterVersions();
   if (id === 'approval-list') renderApprovalList();
   if (id === 'exec-list') {
-    rebuildExecListBatchFilterOptions();
+    rebuildExecListIntakeFilterOptions();
     renderExecList();
   }
   if (id === 'change-apply') renderChangeApplyList();
@@ -2851,7 +2851,7 @@ function goEdit(mode, versionData) {
   currentExecPlan = null;
   currentChangeApplication = null;
   goPage('version-edit');
-  const v = versionData || currentEditVersion || VERSIONS.find(x => x.version === '202509' && x.majorKey === 'finance');
+  const v = versionData || currentEditVersion || VERSIONS.find(x => x.version === '202509' && x.programmeKey === 'finance');
   currentEditVersion = v;
   const readonly = mode === 'locked' || v.status === 'approved' || v.status === 'pending';
   applyVersionEditReadonly(readonly);
@@ -2862,7 +2862,7 @@ function goEdit(mode, versionData) {
     statusEl.className = 'status ' + statusClass(v.status);
     statusEl.textContent = readonly ? getVersionReadonlyStatusLabel(v.status) : statusLabel(v.status);
   }
-  document.getElementById('edit-title').textContent = `${MAJORS[v.majorKey].name} (${formatBatchDisplay(v.version)} Version)`;
+  document.getElementById('edit-title').textContent = `${PROGRAMMES[v.programmeKey].name} (${formatIntakeDisplay(v.version)} Version)`;
   restoreVersionInfoStrip(v);
   updateVersionEditBreadcrumb();
   loadVersionContent(v.id);
@@ -2892,10 +2892,10 @@ function goExecEdit(execPlanId, editable = true) {
   applyVersionEditReadonly(readonly);
   applyEditPageChrome('exec');
 
-  const major = MAJORS[ep.majorKey];
+  const programme = PROGRAMMES[ep.programmeKey];
   const version = currentEditVersion;
   document.getElementById('edit-title').textContent =
-    `${major.name} · ${formatMajorBatchCode(ep.majorKey, ep.intakeBatch)}`;
+    `${programme.name} · ${formatProgrammeIntakeCode(ep.programmeKey, ep.intake)}`;
 
   const statusEl = document.getElementById('edit-status');
   if (statusEl) {
@@ -2962,10 +2962,10 @@ function openModal(id) {
     applyCategoryFormMode();
   }
   if (id === 'modal-gen-exec') {
-    initExecMajorSelect();
-    const majorKey = document.getElementById('exec-major')?.value || 'finance';
-    rebuildExecIntakeBatchSelect(majorKey);
-    onExecBatchInput();
+    initExecProgrammeSelect();
+    const programmeKey = document.getElementById('exec-programme')?.value || 'finance';
+    rebuildExecIntakeSelect(programmeKey);
+    onExecIntakeInput();
   }
 }
 function closeModal(id) {
@@ -3425,15 +3425,15 @@ function getChangeApplicationTotalCredits(ca) {
 function ensureExecPlanContentStore(ep) {
   if (!ep) return;
   const version = findVersionById(ep.versionId);
-  const versionStart = version?.startBatch;
+  const versionStart = version?.startIntake;
   if (!EXEC_CONTENT_STORE[ep.id]) {
     const content = cloneJson(getVersionContentSnapshot(ep.versionId));
-    remapExecPlanContent(content, versionStart, ep.intakeBatch, ep.versionId);
+    remapExecPlanContent(content, versionStart, ep.intake, ep.versionId);
     EXEC_CONTENT_STORE[ep.id] = content;
   } else if (EXEC_CONTENT_STORE[ep.id]._semesterRemapVersion !== EXEC_SEMESTER_REMAP_VERSION) {
-    remapExecPlanContent(EXEC_CONTENT_STORE[ep.id], versionStart, ep.intakeBatch, ep.versionId);
+    remapExecPlanContent(EXEC_CONTENT_STORE[ep.id], versionStart, ep.intake, ep.versionId);
   } else {
-    syncExecPlanContentSemesters(EXEC_CONTENT_STORE[ep.id], ep.intakeBatch);
+    syncExecPlanContentSemesters(EXEC_CONTENT_STORE[ep.id], ep.intake);
   }
 }
 
@@ -4183,9 +4183,9 @@ function parseSemesterCode(code) {
 
 function buildProgrammeStructureFromCourses() {
   const v = currentEditVersion;
-  const majorKey = v?.majorKey || 'finance';
-  const major = MAJORS[majorKey];
-  const programmeName = major ? `${major.name} (${major.nameZh})` : 'Programme';
+  const programmeKey = v?.programmeKey || 'finance';
+  const programme = PROGRAMMES[programmeKey];
+  const programmeName = programme ? `${programme.name} (${programme.nameZh})` : 'Programme';
 
   const bySemester = {};
   PROGRAM_COURSES.forEach(pc => {
@@ -4431,7 +4431,7 @@ function renderProgramCoursesTable() {
         : `<a href="#" onclick="openEditProgramCourse('${pc.id}');return false">编辑</a>` +
           `<a href="#" class="danger" onclick="requestRemoveProgramCourse('${pc.id}');return false">移除</a>`;
       const actualSemesterCell = execMode
-        ? `<td class="col-center"><code>${escapeHtml(pc.actualSemester || getActualOfferingSemester(pc.semester, currentExecPlan?.intakeBatch) || '—')}</code></td>`
+        ? `<td class="col-center"><code>${escapeHtml(pc.actualSemester || getActualOfferingSemester(pc.semester, currentExecPlan?.intake) || '—')}</code></td>`
         : '';
       return `<tr>
         <td><code>${escapeHtml(cat.code)}</code></td>
@@ -7373,12 +7373,6 @@ function getProgrammeStructureCourseCodeDisplay(code, { isPool = false } = {}) {
 
 function renderSemesterTable(sem, year, semIndex) {
   const code = semesterCode(year, semIndex);
-  const slotLabel = currentExecPlan?.intakeBatch
-    ? formatStructuralSemesterSlot(code, currentExecPlan.intakeBatch)
-    : null;
-  const actualLabel = currentExecPlan?.intakeBatch
-    ? getActualOfferingSemester(code, currentExecPlan.intakeBatch)
-    : null;
   const total = sumCredits(sem.courses);
   const rows = sem.courses.length
     ? sem.courses.map(c => `
@@ -7394,7 +7388,7 @@ function renderSemesterTable(sem, year, semIndex) {
 
   return `
     <div class="ps-semester">
-      <div class="ps-sem-header">${code}${slotLabel ? `<br><small>${escapeHtml(slotLabel)}</small>` : ''}${actualLabel ? `<br><small>${escapeHtml(actualLabel)}</small>` : ''}<br><small>Sem ${semIndex} · ${weeks} weeks</small></div>
+      <div class="ps-sem-header">${code}<br><small>Sem ${semIndex} · ${weeks} weeks</small></div>
       <table class="ps-course-table">
         <colgroup>
           <col class="col-name">
@@ -7464,7 +7458,7 @@ function renderProgrammeStructure(containerId, data) {
 // ── Init ──
 initVersionContentStore();
 initExecContentStore();
-syncAllVersionEndBatches();
+syncAllVersionEndIntakes();
 bindProgramCourseFilters();
 bindCategoryCreditsInputs();
 bindElectiveMatrixInputs();
@@ -7476,13 +7470,13 @@ initSemesterSelects();
 renderClassificationTree();
 renderProgramCoursesTable();
 filterVersions();
-rebuildExecListBatchFilterOptions();
+rebuildExecListIntakeFilterOptions();
 renderExecList();
 renderApprovalList();
 renderChangeReviewList();
-initExecMajorSelect();
-rebuildExecIntakeBatchSelect('finance');
-onExecBatchInput();
+initExecProgrammeSelect();
+rebuildExecIntakeSelect('finance');
+onExecIntakeInput();
 renderProgrammeStructure('programme-structure-root');
 
 // ── Data Statistics (Bloom's Taxonomy Charts) ──
@@ -7493,27 +7487,27 @@ function slugifyStatsId(text) {
 }
 
 function buildStatsTreeFromExecPlans() {
-  const majorGroups = new Map();
+  const programmeGroups = new Map();
   EXEC_PLANS
     .filter(ep => ep.status === 'published')
     .forEach(ep => {
-      const major = MAJORS[ep.majorKey];
-      if (!major) return;
-      const parsed = parseIntakeBatch(ep.intakeBatch);
+      const programme = PROGRAMMES[ep.programmeKey];
+      if (!programme) return;
+      const parsed = parseIntake(ep.intake);
       if (!parsed) return;
       const yearKey = String(parsed.year);
 
-      if (!majorGroups.has(ep.majorKey)) {
-        majorGroups.set(ep.majorKey, {
-          id: `major-${ep.majorKey}`,
-          label: `${major.name} (${major.nameZh})`,
+      if (!programmeGroups.has(ep.programmeKey)) {
+        programmeGroups.set(ep.programmeKey, {
+          id: `programme-${ep.programmeKey}`,
+          label: `${programme.name} (${programme.nameZh})`,
           years: new Map()
         });
       }
-      const mg = majorGroups.get(ep.majorKey);
+      const mg = programmeGroups.get(ep.programmeKey);
       if (!mg.years.has(yearKey)) {
         mg.years.set(yearKey, {
-          id: `major-${ep.majorKey}-year-${yearKey}`,
+          id: `programme-${ep.programmeKey}-year-${yearKey}`,
           label: yearKey,
           plans: []
         });
@@ -7522,24 +7516,24 @@ function buildStatsTreeFromExecPlans() {
         id: `ep-${ep.id}`,
         leaf: true,
         epId: ep.id,
-        batchCode: ep.intakeBatch,
-        programme: `${major.name} (${major.nameZh})`,
-        label: formatBatchDisplay(ep.intakeBatch),
+        intakeCode: ep.intake,
+        programme: `${programme.name} (${programme.nameZh})`,
+        label: formatIntakeDisplay(ep.intake),
         planCode: ep.planCode
       });
     });
 
-  return [...majorGroups.values()]
+  return [...programmeGroups.values()]
     .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
-    .map(major => ({
-      id: major.id,
-      label: major.label,
-      children: [...major.years.values()]
+    .map(progGroup => ({
+      id: progGroup.id,
+      label: progGroup.label,
+      children: [...progGroup.years.values()]
         .sort((a, b) => Number(b.label) - Number(a.label))
         .map(year => ({
           id: year.id,
           label: year.label,
-          children: year.plans.sort((a, b) => String(b.batchCode).localeCompare(String(a.batchCode)))
+          children: year.plans.sort((a, b) => String(b.intakeCode).localeCompare(String(a.intakeCode)))
         }))
     }));
 }
@@ -7566,7 +7560,7 @@ function initStatsTree() {
     statsSelectedLeafId = findFirstStatsLeafId() || 'ep-1';
   }
   statsTreeExpanded = new Set();
-  STATS_TREE.forEach(major => statsTreeExpanded.add(major.id));
+  STATS_TREE.forEach(prog => statsTreeExpanded.add(prog.id));
 }
 
 function resolveExecPlanFromStatsLeaf(leafId) {
@@ -7640,7 +7634,7 @@ function computeBloomStatsForLeaf(leafId) {
   const content = getExecPlanContent(ep);
   const programCourses = content.programCourses || [];
   const version = findVersionById(ep.versionId);
-  const duration = version?.duration || MAJORS[ep.majorKey]?.duration || 4;
+  const duration = version?.duration || PROGRAMMES[ep.programmeKey]?.duration || 4;
 
   const counts = {
     cognitive: Array(BLOOM_DOMAIN_SIZES.cognitive).fill(0),
@@ -7675,7 +7669,7 @@ function computeBloomStatsForLeaf(leafId) {
 }
 
 function getStatsNodeLabel(node) {
-  if (node.batchCode) return formatBatchDisplay(node.batchCode);
+  if (node.intakeCode) return formatIntakeDisplay(node.intakeCode);
   return node.label || '';
 }
 
@@ -7697,18 +7691,18 @@ function getStatsDataset(leafId) {
 function getStatsContextHtml(leafId) {
   const ep = resolveExecPlanFromStatsLeaf(leafId);
   if (ep) {
-    const major = MAJORS[ep.majorKey];
+    const programme = PROGRAMMES[ep.programmeKey];
     const version = findVersionById(ep.versionId);
-    const duration = version?.duration || major?.duration || '—';
-    return `<strong>Programme:</strong> ${escapeHtml(major?.name || '—')} (${escapeHtml(major?.nameZh || '')})` +
-      ` &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(formatBatchDisplay(ep.intakeBatch))}` +
+    const duration = version?.duration || programme?.duration || '—';
+    return `<strong>Programme:</strong> ${escapeHtml(programme?.name || '—')} (${escapeHtml(programme?.nameZh || '')})` +
+      ` &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(formatIntakeDisplay(ep.intake))}` +
       ` &nbsp;&nbsp; <strong>执行计划:</strong> ${escapeHtml(ep.planCode)}` +
       ` &nbsp;&nbsp; <strong>学制:</strong> ${duration} 年`;
   }
   const leaf = findStatsLeafNode(leafId);
   if (!leaf) return '';
-  const batch = formatBatchDisplay(leaf.batchCode);
-  return `<strong>Programme:</strong> ${escapeHtml(leaf.programme || '—')} &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(batch)}`;
+  const intakeLabel = formatIntakeDisplay(leaf.intakeCode);
+  return `<strong>Programme:</strong> ${escapeHtml(leaf.programme || '—')} &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(intakeLabel)}`;
 }
 
 function renderStatsTree(mode) {
@@ -7982,9 +7976,9 @@ function renderStatsBloomPage(renderTree = true) {
 
 initStatsTree();
 
-const queryMajor = document.getElementById('query-major');
-if (queryMajor) {
-  Object.entries(MAJORS).forEach(([key, m]) => {
-    queryMajor.innerHTML += `<option value="${key}">${m.name} ${m.nameZh}</option>`;
+const queryProgramme = document.getElementById('query-programme');
+if (queryProgramme) {
+  Object.entries(PROGRAMMES).forEach(([key, m]) => {
+    queryProgramme.innerHTML += `<option value="${key}">${m.name} ${m.nameZh}</option>`;
   });
 }

@@ -76,7 +76,7 @@
       <div class="toolbar-row">
         <div class="filter-bar inline">
           <span class="filter-label">过滤</span>
-          <select class="input input-sm" id="filter-major" onchange="filterVersions()">
+          <select class="input input-sm" id="filter-programme" onchange="filterVersions()">
             <option value="">全部专业</option>
             <option value="finance">Finance 金融学</option>
             <option value="chinese">Chinese Studies 中国研究</option>
@@ -151,10 +151,10 @@
         </div>
       </div>
       <div class="info-strip" id="edit-info-strip">
-        <span><label>专业</label><span id="info-major">Finance 金融学</span></span>
+        <span><label>专业</label><span id="info-programme">Finance 金融学</span></span>
         <span><label>版本</label><strong id="info-version">2025/09</strong></span>
-        <span><label>开始批次</label><code id="info-start-batch">2025/09</code></span>
-        <span><label>截止批次</label><code id="info-end-batch" class="text-muted">—（当前有效版本）</code></span>
+        <span><label>开始批次</label><code id="info-start-intake">2025/09</code></span>
+        <span><label>截止批次</label><code id="info-end-intake" class="text-muted">—（当前有效版本）</code></span>
         <span><label>学制</label>4 年</span>
         <span><label>授予学位</label>经济学学士</span>
       </div>
@@ -290,7 +290,7 @@
         <div><h1>培养方案版本查询</h1><p class="subtitle">只读查看已审批通过的培养方案版本</p></div>
       </div>
       <div class="filter-bar">
-        <select class="input" id="query-major" onchange="filterVersions()">
+        <select class="input" id="query-programme" onchange="filterVersions()">
           <option value="">全部专业</option>
         </select>
       </div>
@@ -317,7 +317,7 @@
         <button class="btn btn-primary" onclick="openNewChangeApplyModal()">+ 新建申请</button>
       </div>
       <div class="filter-bar">
-        <select class="input" id="change-apply-filter-major" onchange="renderChangeApplyList()">
+        <select class="input" id="change-apply-filter-programme" onchange="renderChangeApplyList()">
           <option value="">全部专业</option>
           <option value="finance">Finance 金融学</option>
           <option value="chinese">Chinese Studies 中国研究</option>
@@ -385,14 +385,14 @@
         <span class="legend-item text-muted">数据隔离：每个入学批次独立生成、独立保存；编辑执行计划<strong>不影响</strong>「方案版本管理」中的版本内容；「方案版本变更」审批通过后<strong>不影响</strong>已生成的执行计划副本（未生成批次在新建时引用最新版本）。</span>
       </div>
       <div class="filter-bar">
-        <select class="input input-sm" id="filter-exec-major" onchange="filterExecList()">
+        <select class="input input-sm" id="filter-exec-programme" onchange="filterExecList()">
           <option value="">全部专业</option>
           <option value="finance">Finance 金融学</option>
           <option value="chinese">Chinese Studies 中国研究</option>
           <option value="accounting">Accounting 会计学</option>
         </select>
-        <select class="input input-sm" id="filter-exec-batch" onchange="filterExecList()">
-          <option value="">全部批次</option>
+        <select class="input input-sm" id="filter-exec-intake" onchange="filterExecList()">
+          <option value="">全部入学批次</option>
         </select>
         <select class="input input-sm" id="filter-exec-offering" onchange="filterExecList()">
           <option value="">全部开课状态</option>
@@ -507,7 +507,7 @@
       </div>
       <div class="form-grid">
         <div class="form-item"><label class="req">专业</label>
-          <select class="input" id="new-major" onchange="onNewMajorChange()">
+          <select class="input" id="new-programme" onchange="onNewProgrammeChange()">
             <option value="">请选择</option>
             <option value="finance">Finance 金融学</option>
             <option value="chinese">Chinese Studies 中国研究</option>
@@ -524,8 +524,8 @@
           <input class="input" id="new-version-code" placeholder="通常与开始批次一致，如 2025/09" readonly>
         </div>
         <div class="form-item"><label class="req">开始批次</label>
-          <select class="input" id="new-start-batch" onchange="onStartBatchChange()"></select>
-          <p class="form-hint" id="min-batch-hint" style="margin-top:4px"></p>
+          <select class="input" id="new-start-intake" onchange="onStartIntakeChange()"></select>
+          <p class="form-hint" id="min-intake-hint" style="margin-top:4px"></p>
         </div>
         <div class="form-item full"><label>培养方案名称</label>
           <input class="input" id="new-programme-name" readonly placeholder="选择专业后自动生成">
@@ -538,18 +538,18 @@
           <span class="cascade-label">上一版本</span>
           <span id="prev-version-label">—</span>
           <span class="cascade-arrow">截止批次 →</span>
-          <code id="prev-end-batch" class="batch-code highlight">—</code>
+          <code id="prev-end-intake" class="batch-code highlight">—</code>
           <span class="cascade-note">（新版本审批通过后生效）</span>
         </div>
         <div class="cascade-row curr">
           <span class="cascade-label">新版本</span>
           <span id="curr-version-label">—</span>
           <span class="cascade-arrow">开始批次</span>
-          <code id="curr-start-batch" class="batch-code">—</code>
+          <code id="curr-start-intake" class="batch-code">—</code>
           <span class="cascade-arrow">截止批次</span>
           <code class="batch-code muted">—（当前有效，留空）</code>
         </div>
-        <p class="form-hint" id="batch-cascade-hint" style="margin-top:10px;margin-bottom:0"></p>
+        <p class="form-hint" id="intake-cascade-hint" style="margin-top:10px;margin-bottom:0"></p>
       </div>
     </div>
     <div class="modal-foot">
@@ -1332,7 +1332,7 @@
       </div>
       <div class="form-grid">
         <div class="form-item"><label class="req">专业</label>
-          <select class="input" id="change-apply-major" onchange="onChangeApplyMajorChange()">
+          <select class="input" id="change-apply-programme" onchange="onChangeApplyProgrammeChange()">
             <option value="">请选择</option>
             <option value="finance">Finance 金融学</option>
             <option value="chinese">Chinese Studies 中国研究</option>
@@ -1436,10 +1436,10 @@
     <div class="modal-head"><h3>生成批次执行计划</h3><button class="modal-close" onclick="closeModal('modal-gen-exec')">×</button></div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="form-item"><label class="req">专业</label><select class="input" id="exec-major" onchange="onExecMajorChange()"></select></div>
+        <div class="form-item"><label class="req">专业</label><select class="input" id="exec-programme" onchange="onExecProgrammeChange()"></select></div>
         <div class="form-item"><label class="req">入学批次</label>
-          <select class="input" id="exec-intake-batch" onchange="onExecBatchInput()"></select>
-          <p class="form-hint" id="exec-intake-batch-hint">仅显示尚未生成执行计划、且可匹配已审批版本的入学批次</p>
+          <select class="input" id="exec-intake" onchange="onExecIntakeInput()"></select>
+          <p class="form-hint" id="exec-intake-hint">仅显示尚未生成执行计划、且可匹配已审批版本的入学批次</p>
         </div>
         <div class="form-item full">
           <label class="req">自动匹配培养方案版本</label>

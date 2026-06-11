@@ -4823,7 +4823,11 @@ function updateCourseSaveButtonState() {
 }
 
 /* ── Course modal Step 2 CLO / Step 3 SLT ── */
-const BLOOM_LEVELS = ['C1', 'C2', 'C3', 'C4', 'A1', 'A2', 'A3', 'P1', 'P2'];
+const BLOOM_LEVELS = [
+  'C1', 'C2', 'C3', 'C4', 'C5', 'C6',
+  'A1', 'A2', 'A3', 'A4', 'A5',
+  'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7'
+];
 const TEACHING_METHODS = ['Lecture', 'Tutorial', 'Practical', 'Seminar', 'Workshop', 'Others'];
 const ASSESSMENT_METHODS = [
   'Assignments', 'Quiz', 'Mid-term Examination', 'Practical Test',
@@ -7249,137 +7253,198 @@ onExecBatchInput();
 renderProgrammeStructure('programme-structure-root');
 
 // ── Data Statistics (Bloom's Taxonomy Charts) ──
-const STATS_TREE = [
-  {
-    id: 'school-comm',
-    label: 'School of Communication',
-    children: [
-      {
-        id: 'ibu',
-        label: 'IBU',
-        children: [
-          {
-            id: 'ibu-2025',
-            label: '2025',
-            children: INTAKE_BATCH_TYPES.map(type => ({
-              id: `ibu-2025${type}`,
-              batchCode: formatIntakeBatch(2025, type),
-              leaf: true,
-              programme: 'Bachelor of Communication (Honours)',
-            }))
-          },
-          {
-            id: 'ibu-2024',
-            label: '2024',
-            children: INTAKE_BATCH_TYPES.map(type => ({
-              id: `ibu-2024${type}`,
-              batchCode: formatIntakeBatch(2024, type),
-              leaf: true,
-              programme: 'Bachelor of Communication (Honours)',
-            }))
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'school-arts',
-    label: 'School of Arts',
-    children: [
-      {
-        id: 'mct',
-        label: 'MCT',
-        children: [
-          {
-            id: 'mct-2025',
-            label: '2025',
-            children: INTAKE_BATCH_TYPES.map(type => ({
-              id: `mct-2025${type}`,
-              batchCode: formatIntakeBatch(2025, type),
-              leaf: true,
-              programme: 'Bachelor of Media Arts (Honours)',
-            }))
-          }
-        ]
-      },
-      {
-        id: 'phy',
-        label: 'Physics (Honours)',
-        children: [
-          {
-            id: 'phy-2025',
-            label: '2025',
-            children: INTAKE_BATCH_TYPES.map(type => ({
-              id: `phy-2025${type}`,
-              batchCode: formatIntakeBatch(2025, type),
-              leaf: true,
-              programme: 'Bachelor of Science in Physics (Honours)',
-            }))
-          },
-          {
-            id: 'phy-2024',
-            label: '2024',
-            children: INTAKE_BATCH_TYPES.map(type => ({
-              id: `phy-2024${type}`,
-              batchCode: formatIntakeBatch(2024, type),
-              leaf: true,
-              programme: 'Bachelor of Science in Physics (Honours)',
-            }))
-          }
-        ]
-      }
-    ]
-  }
-];
+const BLOOM_DOMAIN_SIZES = { cognitive: 6, affective: 5, psychomotor: 7 };
 
-const STATS_DATA = {
-  'phy-202502': {
-    bloom: {
-      matrix: {
-        cognitive: [4, 31, 37, 58, 41, 37, null, 228],
-        affective: [25, 36, 0, 29, 39, null, null, 119],
-        psychomotor: [12, 24, 23, 32, 50, 20, 17, 228]
-      },
-      summary: {
-        cognitive: [4, 31, 37, 58, 41, 37],
-        affective: [25, 36, 0, 29, 39],
-        psychomotor: [12, 24, 23, 32, 50, 20, 17]
-      },
-      byYear: [
-        { year: 1, cognitive: 25, affective: 17, psychomotor: 17, cLevels: [4, 8, 5, 4, 2, 2], aLevels: [5, 4, 3, 2, 3], pLevels: [2, 3, 4, 3, 2, 2, 1] },
-        { year: 2, cognitive: 33, affective: 22, psychomotor: 31, cLevels: [5, 10, 6, 5, 4, 3], aLevels: [6, 5, 4, 3, 4], pLevels: [3, 4, 5, 4, 5, 5, 5] },
-        { year: 3, cognitive: 41, affective: 28, psychomotor: 38, cLevels: [6, 12, 8, 6, 5, 4], aLevels: [7, 6, 5, 4, 6], pLevels: [4, 5, 6, 5, 6, 6, 6] },
-        { year: 4, cognitive: 48, affective: 32, psychomotor: 45, cLevels: [7, 14, 9, 8, 6, 4], aLevels: [8, 7, 6, 5, 6], pLevels: [5, 6, 7, 6, 7, 7, 7] },
-        { year: 5, cognitive: 52, affective: 35, psychomotor: 48, cLevels: [8, 15, 10, 9, 6, 4], aLevels: [9, 8, 6, 6, 6], pLevels: [5, 6, 7, 7, 8, 7, 8] }
-      ]
-    }
-  },
-  'phy-202402': {
-    bloom: {
-      matrix: {
-        cognitive: [3, 28, 35, 55, 38, 35, null, 214],
-        affective: [22, 34, 0, 27, 36, null, null, 112],
-        psychomotor: [10, 22, 21, 30, 48, 18, 16, 215]
-      },
-      summary: {
-        cognitive: [3, 28, 35, 55, 38, 35],
-        affective: [22, 34, 0, 27, 36],
-        psychomotor: [10, 22, 21, 30, 48, 18, 16]
-      },
-      byYear: [
-        { year: 1, cognitive: 22, affective: 15, psychomotor: 15, cLevels: [3, 7, 4, 3, 2, 3], aLevels: [4, 3, 3, 2, 3], pLevels: [2, 2, 3, 2, 2, 2, 2] },
-        { year: 2, cognitive: 30, affective: 20, psychomotor: 28, cLevels: [4, 9, 5, 4, 4, 4], aLevels: [5, 4, 4, 3, 4], pLevels: [3, 3, 4, 4, 4, 5, 5] },
-        { year: 3, cognitive: 38, affective: 26, psychomotor: 35, cLevels: [5, 11, 7, 5, 5, 5], aLevels: [6, 5, 5, 4, 6], pLevels: [4, 4, 5, 5, 5, 6, 6] },
-        { year: 4, cognitive: 45, affective: 30, psychomotor: 42, cLevels: [6, 13, 8, 7, 6, 5], aLevels: [7, 6, 5, 5, 7], pLevels: [4, 5, 6, 6, 7, 7, 7] },
-        { year: 5, cognitive: 49, affective: 33, psychomotor: 45, cLevels: [7, 14, 9, 8, 6, 5], aLevels: [8, 7, 6, 5, 7], pLevels: [5, 6, 6, 7, 8, 7, 6] }
-      ]
-    }
-  }
-};
+function slugifyStatsId(text) {
+  return String(text || '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+}
 
-let statsSelectedLeafId = 'phy-202502';
+function buildStatsTreeFromExecPlans() {
+  const majorGroups = new Map();
+  EXEC_PLANS
+    .filter(ep => ep.status === 'published')
+    .forEach(ep => {
+      const major = MAJORS[ep.majorKey];
+      if (!major) return;
+      const parsed = parseIntakeBatch(ep.intakeBatch);
+      if (!parsed) return;
+      const yearKey = String(parsed.year);
+
+      if (!majorGroups.has(ep.majorKey)) {
+        majorGroups.set(ep.majorKey, {
+          id: `major-${ep.majorKey}`,
+          label: `${major.name} (${major.nameZh})`,
+          years: new Map()
+        });
+      }
+      const mg = majorGroups.get(ep.majorKey);
+      if (!mg.years.has(yearKey)) {
+        mg.years.set(yearKey, {
+          id: `major-${ep.majorKey}-year-${yearKey}`,
+          label: yearKey,
+          plans: []
+        });
+      }
+      mg.years.get(yearKey).plans.push({
+        id: `ep-${ep.id}`,
+        leaf: true,
+        epId: ep.id,
+        batchCode: ep.intakeBatch,
+        programme: `${major.name} (${major.nameZh})`,
+        label: formatBatchDisplay(ep.intakeBatch),
+        planCode: ep.planCode
+      });
+    });
+
+  return [...majorGroups.values()]
+    .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
+    .map(major => ({
+      id: major.id,
+      label: major.label,
+      children: [...major.years.values()]
+        .sort((a, b) => Number(b.label) - Number(a.label))
+        .map(year => ({
+          id: year.id,
+          label: year.label,
+          children: year.plans.sort((a, b) => String(b.batchCode).localeCompare(String(a.batchCode)))
+        }))
+    }));
+}
+
+let STATS_TREE = [];
+let statsSelectedLeafId = null;
 let statsTreeFilter = { bloom: '' };
-let statsTreeExpanded = new Set(['school-comm', 'school-arts', 'phy', 'phy-2025']);
+let statsTreeExpanded = new Set();
+
+function findFirstStatsLeafId(nodes = STATS_TREE) {
+  for (const node of nodes) {
+    if (node.leaf) return node.id;
+    if (node.children?.length) {
+      const found = findFirstStatsLeafId(node.children);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function initStatsTree() {
+  STATS_TREE = buildStatsTreeFromExecPlans();
+  if (!statsSelectedLeafId || !findStatsLeafNode(statsSelectedLeafId)) {
+    statsSelectedLeafId = findFirstStatsLeafId() || 'ep-1';
+  }
+  statsTreeExpanded = new Set();
+  STATS_TREE.forEach(major => statsTreeExpanded.add(major.id));
+}
+
+function resolveExecPlanFromStatsLeaf(leafId) {
+  if (String(leafId || '').startsWith('ep-')) {
+    const id = Number(leafId.slice(3));
+    return EXEC_PLANS.find(ep => ep.id === id) || null;
+  }
+  return null;
+}
+
+function getProgramCourseClosForStats(pc) {
+  if (Array.isArray(pc?.clos) && pc.clos.length) return pc.clos;
+  return getCatalogCourseCloSlt(pc.catalogId).clos || [];
+}
+
+function parseBloomLevelCode(code) {
+  const m = /^([CAP])(\d+)$/i.exec(String(code || '').trim());
+  if (!m) return null;
+  const domain = m[1].toUpperCase() === 'C'
+    ? 'cognitive'
+    : m[1].toUpperCase() === 'A'
+      ? 'affective'
+      : 'psychomotor';
+  const index = Number(m[2]) - 1;
+  const size = BLOOM_DOMAIN_SIZES[domain];
+  if (index < 0 || index >= size) return null;
+  return { domain, index };
+}
+
+function createEmptyBloomByYear(duration) {
+  return Array.from({ length: duration }, (_, i) => ({
+    year: i + 1,
+    cognitive: 0,
+    affective: 0,
+    psychomotor: 0,
+    cLevels: Array(BLOOM_DOMAIN_SIZES.cognitive).fill(0),
+    aLevels: Array(BLOOM_DOMAIN_SIZES.affective).fill(0),
+    pLevels: Array(BLOOM_DOMAIN_SIZES.psychomotor).fill(0)
+  }));
+}
+
+function buildBloomDatasetFromCounts(counts, byYear) {
+  const cTotal = counts.cognitive.reduce((a, b) => a + b, 0);
+  const aTotal = counts.affective.reduce((a, b) => a + b, 0);
+  const pTotal = counts.psychomotor.reduce((a, b) => a + b, 0);
+  return {
+    matrix: {
+      cognitive: [...counts.cognitive, null, cTotal],
+      affective: [...counts.affective, null, null, aTotal],
+      psychomotor: [...counts.psychomotor, pTotal]
+    },
+    summary: {
+      cognitive: [...counts.cognitive],
+      affective: [...counts.affective],
+      psychomotor: [...counts.psychomotor]
+    },
+    byYear,
+    totals: { cognitive: cTotal, affective: aTotal, psychomotor: pTotal, all: cTotal + aTotal + pTotal }
+  };
+}
+
+function computeBloomStatsForLeaf(leafId) {
+  const ep = resolveExecPlanFromStatsLeaf(leafId);
+  if (!ep) return buildBloomDatasetFromCounts({
+    cognitive: Array(BLOOM_DOMAIN_SIZES.cognitive).fill(0),
+    affective: Array(BLOOM_DOMAIN_SIZES.affective).fill(0),
+    psychomotor: Array(BLOOM_DOMAIN_SIZES.psychomotor).fill(0)
+  }, createEmptyBloomByYear(4));
+
+  ensureExecPlanContentStore(ep);
+  const content = getExecPlanContent(ep);
+  const programCourses = content.programCourses || [];
+  const version = findVersionById(ep.versionId);
+  const duration = version?.duration || MAJORS[ep.majorKey]?.duration || 4;
+
+  const counts = {
+    cognitive: Array(BLOOM_DOMAIN_SIZES.cognitive).fill(0),
+    affective: Array(BLOOM_DOMAIN_SIZES.affective).fill(0),
+    psychomotor: Array(BLOOM_DOMAIN_SIZES.psychomotor).fill(0)
+  };
+  const byYear = createEmptyBloomByYear(duration);
+
+  programCourses.forEach(pc => {
+    const yearNum = parseSemesterCode(pc.semester)?.year;
+    const yearRow = yearNum && yearNum >= 1 && yearNum <= duration ? byYear[yearNum - 1] : null;
+    getProgramCourseClosForStats(pc).forEach(clo => {
+      const parsed = parseBloomLevelCode(clo.bloom);
+      if (!parsed) return;
+      const { domain, index } = parsed;
+      counts[domain][index] += 1;
+      if (!yearRow) return;
+      if (domain === 'cognitive') {
+        yearRow.cLevels[index] += 1;
+        yearRow.cognitive += 1;
+      } else if (domain === 'affective') {
+        yearRow.aLevels[index] += 1;
+        yearRow.affective += 1;
+      } else {
+        yearRow.pLevels[index] += 1;
+        yearRow.psychomotor += 1;
+      }
+    });
+  });
+
+  return buildBloomDatasetFromCounts(counts, byYear);
+}
+
+function getStatsNodeLabel(node) {
+  if (node.batchCode) return formatBatchDisplay(node.batchCode);
+  return node.label || '';
+}
 
 function findStatsLeafNode(id, nodes = STATS_TREE) {
   for (const node of nodes) {
@@ -7393,19 +7458,24 @@ function findStatsLeafNode(id, nodes = STATS_TREE) {
 }
 
 function getStatsDataset(leafId) {
-  return STATS_DATA[leafId] || STATS_DATA['phy-202502'];
-}
-
-function getStatsNodeLabel(node) {
-  if (node.batchCode) return formatBatchDisplay(node.batchCode);
-  return node.label || '';
+  return { bloom: computeBloomStatsForLeaf(leafId) };
 }
 
 function getStatsContextHtml(leafId) {
-  const leaf = findStatsLeafNode(leafId) || findStatsLeafNode('phy-202502');
+  const ep = resolveExecPlanFromStatsLeaf(leafId);
+  if (ep) {
+    const major = MAJORS[ep.majorKey];
+    const version = findVersionById(ep.versionId);
+    const duration = version?.duration || major?.duration || '—';
+    return `<strong>Programme:</strong> ${escapeHtml(major?.name || '—')} (${escapeHtml(major?.nameZh || '')})` +
+      ` &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(formatBatchDisplay(ep.intakeBatch))}` +
+      ` &nbsp;&nbsp; <strong>执行计划:</strong> ${escapeHtml(ep.planCode)}` +
+      ` &nbsp;&nbsp; <strong>学制:</strong> ${duration} 年`;
+  }
+  const leaf = findStatsLeafNode(leafId);
   if (!leaf) return '';
   const batch = formatBatchDisplay(leaf.batchCode);
-  return `<strong>Programme:</strong> ${escapeHtml(leaf.programme)} &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(batch)}`;
+  return `<strong>Programme:</strong> ${escapeHtml(leaf.programme || '—')} &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(batch)}`;
 }
 
 function renderStatsTree(mode) {
@@ -7419,6 +7489,7 @@ function renderStatsTree(mode) {
     if (label.includes(filter)) return true;
     if (node.label?.toLowerCase().includes(filter)) return true;
     if (node.programme?.toLowerCase().includes(filter)) return true;
+    if (node.planCode?.toLowerCase().includes(filter)) return true;
     return node.children?.some(nodeMatches);
   }
 
@@ -7542,14 +7613,18 @@ function renderBloomMatrixTable(matrix) {
 
 function renderYearSummaryPair(rows, levelKeys, levelPrefix) {
   const totals = rows.reduce((acc, r) => {
-    acc.cognitive += r.cognitive;
-    acc.affective += r.affective;
-    acc.psychomotor += r.psychomotor;
+    acc.cognitive += r.cognitive || 0;
+    acc.affective += r.affective || 0;
+    acc.psychomotor += r.psychomotor || 0;
     levelKeys.forEach((k, i) => { acc.levels[i] += r[k] || 0; });
     return acc;
   }, { cognitive: 0, affective: 0, psychomotor: 0, levels: levelKeys.map(() => 0) });
-  const grand = totals.cognitive + totals.affective + totals.psychomotor;
-  const pct = n => grand ? `${Math.round(n / grand * 100)}%` : '0%';
+
+  const levelGrand = totals.levels.reduce((a, b) => a + b, 0);
+  const domainGrand = levelKeys.length
+    ? levelGrand
+    : totals.cognitive + totals.affective + totals.psychomotor;
+  const pct = n => domainGrand ? `${Math.round(n / domainGrand * 100)}%` : '0%';
 
   const countHead = levelKeys.length
     ? `<th>Year</th>${levelKeys.map((_, i) => `<th>${levelPrefix}${i + 1}</th>`).join('')}<th>Total</th>`
@@ -7566,8 +7641,8 @@ function renderYearSummaryPair(rows, levelKeys, levelPrefix) {
   }).join('');
 
   const countFoot = levelKeys.length
-    ? `<tr><td class="year-col">Total</td>${totals.levels.map(v => `<td>${v}</td>`).join('')}<td>${totals.levels.reduce((a, b) => a + b, 0)}</td></tr>`
-    : `<tr><td class="year-col">Total</td><td>${totals.cognitive}</td><td>${totals.affective}</td><td>${totals.psychomotor}</td><td>${grand}</td></tr>`;
+    ? `<tr><td class="year-col">Total</td>${totals.levels.map(v => `<td>${v}</td>`).join('')}<td>${levelGrand}</td></tr>`
+    : `<tr><td class="year-col">Total</td><td>${totals.cognitive}</td><td>${totals.affective}</td><td>${totals.psychomotor}</td><td>${domainGrand}</td></tr>`;
 
   const pctRows = rows.map(r => {
     const rowTotal = levelKeys.length
@@ -7608,6 +7683,10 @@ function renderBloomContent(leafId) {
     pLevels: r.pLevels
   }));
 
+  const emptyHint = bloom.totals?.all === 0
+    ? '<div class="alert-info">当前执行计划暂无 CLO 布鲁姆评级数据。请在执行计划 TAB2 完成课程设置并为各 CLO 指定 A/C/P 级别后查看统计。</div>'
+    : '';
+
   const summaryCharts = [
     { title: 'Cognitive', values: bloom.summary.cognitive },
     { title: 'Affective', values: bloom.summary.affective },
@@ -7635,6 +7714,7 @@ function renderBloomContent(leafId) {
   });
 
   return `
+    ${emptyHint}
     <div class="stats-section">${renderBloomMatrixTable(bloom.matrix)}</div>
     <div class="stats-section">
       <div class="stats-section-head"><span class="stats-section-icon">▦</span> Summary</div>
@@ -7659,12 +7739,15 @@ function renderBloomContent(leafId) {
 }
 
 function renderStatsBloomPage(renderTree = true) {
+  if (!STATS_TREE.length) initStatsTree();
   if (renderTree) renderStatsTree('bloom');
   const ctx = document.getElementById('stats-bloom-context');
   const content = document.getElementById('stats-bloom-content');
   if (ctx) ctx.innerHTML = getStatsContextHtml(statsSelectedLeafId);
   if (content) content.innerHTML = renderBloomContent(statsSelectedLeafId);
 }
+
+initStatsTree();
 
 const queryMajor = document.getElementById('query-major');
 if (queryMajor) {

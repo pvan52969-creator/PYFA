@@ -1940,7 +1940,7 @@ code {
   font-weight: 600;
 }
 .stats-year-table tbody tr:nth-child(even) td { background: #fafbfd; }
-.stats-year-table .year-col { text-align: left; font-weight: 600; }
+.stats-year-table .year-col { text-align: center; font-weight: 600; }
 .stats-year-table tfoot td { background: #f3f7fc; font-weight: 700; }
 @media (max-width: 1200px) {
   .stats-chart-row,

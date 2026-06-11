@@ -189,16 +189,16 @@ function applyVersionEditReadonly(readonly) {
 
 function getVersionReadonlyStatusLabel(status) {
   const map = {
-    approved: '已通过（只读）',
-    pending: '进行中（只读）',
-    draft: '草稿（只读）',
-    rejected: '已驳回（只读）'
+    approved: 'Approved（只读）',
+    pending: 'In Progress（只读）',
+    draft: 'Draft（只读）',
+    rejected: 'Rejected（只读）'
   };
   return map[status] || '只读';
 }
 
 function statusLabel(s) {
-  return { draft: '草稿', pending: '进行中', approved: '已通过', rejected: '已驳回' }[s] || s;
+  return { draft: 'Draft', pending: 'In Progress', approved: 'Approved', rejected: 'Rejected' }[s] || s;
 }
 
 function statusClass(s) {
@@ -694,14 +694,14 @@ function renderExecPlanRow(ep) {
   const major = MAJORS[ep.majorKey];
   return `<tr>
     <td class="col-check"><input type="checkbox" class="exec-row-check" value="${ep.id}" onchange="updateExecSelection()"></td>
-    <td>${escapeHtml(major?.code || '—')}</td>
+    <td class="col-center">${escapeHtml(major?.code || '—')}</td>
     <td>${escapeHtml(major?.name || '—')}</td>
     <td>${escapeHtml(formatMajorBatchCode(ep.majorKey, ep.intakeBatch))}</td>
     <td>${escapeHtml(major?.school || '—')}</td>
     <td>${formatBatchDisplay(ep.intakeBatch)}</td>
-    <td>${getExecPlanTotalCredits(ep)}</td>
-    <td>${renderExecOfferingStatusLabel(!!ep.isOffering)}</td>
-    <td>${renderExecLockStatus(!!ep.isLocked)}</td>
+    <td class="col-center">${getExecPlanTotalCredits(ep)}</td>
+    <td class="col-center">${renderExecOfferingStatusLabel(!!ep.isOffering)}</td>
+    <td class="col-center">${renderExecLockStatus(!!ep.isLocked)}</td>
     <td class="actions">${renderExecPlanActions(ep)}</td>
   </tr>`;
 }
@@ -757,7 +757,7 @@ function renderVersionRefCell(v) {
   const title = isVersionReferencableByExecPlan(v)
     ? ''
     : ' title="版本尚未审批通过，不可被批次执行计划引用"';
-  return `<td class="col-ref"><a href="#" class="ref-count-link${count ? '' : ' ref-count-zero'}"${title} onclick="openVersionRefModal(${v.id});return false">${count}</a></td>`;
+  return `<td class="col-ref col-center"><a href="#" class="ref-count-link${count ? '' : ' ref-count-zero'}"${title} onclick="openVersionRefModal(${v.id});return false">${count}</a></td>`;
 }
 
 function openVersionRefModal(versionId) {
@@ -827,13 +827,13 @@ function renderVersionRow(v, { showActions = true, showCheckbox = false } = {}) 
   return `<tr data-major="${v.majorKey}" data-version="${v.version}" class="${isCurrentEffectiveVersion(v) ? 'row-current' : ''}">
     ${checkCell}
     <td class="col-name"><a href="#" class="link-name" onclick="goEditVersion(${v.id}, ${!canEdit});return false">${v.name}</a></td>
-    <td><span class="status ${statusClass(v.status)}">${statusLabel(v.status)}</span></td>
-    <td><code>${major.code}</code></td>
-    <td>${v.duration}</td>
-    <td><code>${formatBatchDisplay(v.version)}</code></td>
-    <td><code class="batch-code batch-start">${formatBatchDisplay(v.startBatch)}</code></td>
-    <td>${v.endBatch ? `<code class="batch-code batch-end">${formatBatchDisplay(v.endBatch)}</code>` : '<span class="text-muted">—</span>'}</td>
-    <td>${v.degree}</td>
+    <td class="col-center"><span class="status ${statusClass(v.status)}">${statusLabel(v.status)}</span></td>
+    <td class="col-center"><code>${major.code}</code></td>
+    <td class="col-center">${v.duration}</td>
+    <td class="col-center"><code>${formatBatchDisplay(v.version)}</code></td>
+    <td class="col-center"><code class="batch-code batch-start">${formatBatchDisplay(v.startBatch)}</code></td>
+    <td class="col-center">${v.endBatch ? `<code class="batch-code batch-end">${formatBatchDisplay(v.endBatch)}</code>` : '<span class="text-muted">—</span>'}</td>
+    <td class="col-center">${v.degree}</td>
     ${renderVersionRefCell(v)}
     <td class="actions">${actions}</td>
   </tr>`;
@@ -1410,10 +1410,10 @@ function findChangeApplication(id) {
 
 function getChangeApplicationStatusLabel(status, readonly = false) {
   const map = {
-    draft: readonly ? '查看模式' : '变更草稿',
-    pending: '进行中',
-    approved: '已通过',
-    rejected: '已驳回'
+    draft: readonly ? 'View Mode' : 'Draft',
+    pending: 'In Progress',
+    approved: 'Approved',
+    rejected: 'Rejected'
   };
   return map[status] || status;
 }
@@ -1585,8 +1585,8 @@ function renderChangeApplyList() {
     return `<tr>
       <td><a href="#" class="link-name" onclick="goChangeEdit('${ca.id}', ${ca.status !== 'draft' && ca.status !== 'rejected'});return false">${escapeHtml(ca.name)}</a></td>
       <td>${escapeHtml(major?.name || '—')}</td>
-      <td><code>${formatBatchDisplay(ca.version)}</code></td>
-      <td><span class="status ${changeApplicationStatusClass(ca.status)}">${getChangeApplicationStatusLabel(ca.status)}</span></td>
+      <td class="col-center"><code>${formatBatchDisplay(ca.version)}</code></td>
+      <td class="col-center"><span class="status ${changeApplicationStatusClass(ca.status)}">${getChangeApplicationStatusLabel(ca.status)}</span></td>
       <td>${escapeHtml(ca.submitter || '—')}</td>
       <td>${escapeHtml(ca.submitTime || '—')}</td>
       <td class="actions">${actions.join('')}</td>
@@ -1645,7 +1645,7 @@ function getChangeReviewOverallStatus(ca) {
   if (ca.stages?.some(s => s.status === 'update_required')) {
     return { label: 'Update Required', cls: 'pending' };
   }
-  return { label: 'In-Progress', cls: 'in-progress' };
+  return { label: 'In Progress', cls: 'in-progress' };
 }
 
 function getChangeReviewStageDisplay(ca) {
@@ -1798,12 +1798,12 @@ function renderChangeReviewList() {
     return `<tr>
       ${checkCell}
       <td><a href="#" class="link-name" onclick="openChangeReviewView('${ca.id}');return false">${escapeHtml(ca.name)}</a></td>
-      <td><span class="status ${st.cls}">${st.label}</span></td>
+      <td class="col-center"><span class="status ${st.cls}">${st.label}</span></td>
       <td>${escapeHtml(getChangeReviewStageDisplay(ca))}</td>
       <td>${escapeHtml(major?.name || '—')}</td>
-      <td><code>${formatBatchDisplay(ca.version)}</code></td>
-      <td><code>${formatBatchDisplay(ca.startBatch || ca.version)}</code></td>
-      <td>${getChangeApplicationTotalCredits(ca)}</td>
+      <td class="col-center"><code>${formatBatchDisplay(ca.version)}</code></td>
+      <td class="col-center"><code>${formatBatchDisplay(ca.startBatch || ca.version)}</code></td>
+      <td class="col-center">${getChangeApplicationTotalCredits(ca)}</td>
       <td>${escapeHtml(ca.submitter || '—')}</td>
       <td>${escapeHtml(ca.submitTime || '—')}</td>
       <td class="actions">${renderChangeReviewActions(ca, changeReviewActiveTab)}</td>
@@ -2413,7 +2413,7 @@ function getApprovalTabs() {
 }
 
 function getApprovalOverallStatus(item) {
-  if (item.cancelled) return { label: 'Cancelled', cls: 'draft' };
+  if (item.cancelled) return { label: 'Cancelled', cls: 'cancelled' };
   const last = item.stages[item.stages.length - 1];
   if (last?.status === 'approved' && item.currentStageLevel >= last.level) {
     return { label: 'Approved', cls: 'approved' };
@@ -2633,11 +2633,11 @@ function renderApprovalList() {
     return `<tr>
       ${checkCell}
       <td><a href="#" class="link-name" onclick="openApprovalView('${item.id}');return false">${escapeHtml(item.name)}</a></td>
-      <td><span class="status ${st.cls}">${st.label}</span></td>
+      <td class="col-center"><span class="status ${st.cls}">${st.label}</span></td>
       <td>${escapeHtml(getApprovalStageDisplay(item))}</td>
       <td>${escapeHtml(item.major)}</td>
-      <td><code>${formatBatchDisplay(item.startBatch)}</code></td>
-      <td>${getApprovalItemTotalCredits(item)}</td>
+      <td class="col-center"><code>${formatBatchDisplay(item.startBatch)}</code></td>
+      <td class="col-center">${getApprovalItemTotalCredits(item)}</td>
       <td>${escapeHtml(item.submitter)}</td>
       <td>${escapeHtml(item.submitTime)}</td>
       <td class="actions">${renderApprovalActions(item, approvalActiveTab)}</td>
@@ -2710,7 +2710,7 @@ function renderApprovalLogStageStatus(stage) {
     update_required: { label: 'Update Required', cls: 'pending' },
     pending: { label: 'Pending', cls: 'pending' },
     waiting: { label: 'Waiting', cls: 'draft' },
-    cancelled: { label: 'Cancelled', cls: 'draft' }
+    cancelled: { label: 'Cancelled', cls: 'cancelled' }
   };
   return map[stage.status] || { label: stage.status, cls: 'draft' };
 }
@@ -4431,7 +4431,7 @@ function renderProgramCoursesTable() {
         : `<a href="#" onclick="openEditProgramCourse('${pc.id}');return false">编辑</a>` +
           `<a href="#" class="danger" onclick="requestRemoveProgramCourse('${pc.id}');return false">移除</a>`;
       const actualSemesterCell = execMode
-        ? `<td><code>${escapeHtml(pc.actualSemester || getActualOfferingSemester(pc.semester, currentExecPlan?.intakeBatch) || '—')}</code></td>`
+        ? `<td class="col-center"><code>${escapeHtml(pc.actualSemester || getActualOfferingSemester(pc.semester, currentExecPlan?.intakeBatch) || '—')}</code></td>`
         : '';
       return `<tr>
         <td><code>${escapeHtml(cat.code)}</code></td>
@@ -4439,10 +4439,10 @@ function renderProgramCoursesTable() {
         <td>${escapeHtml(getCourseClassificationL1(pc.h1Id))}</td>
         <td>${escapeHtml(getCourseClassificationL2(pc.h2Id))}</td>
         <td>${escapeHtml(getCourseClassificationL3(pc.h3Id))}</td>
-        <td>${pc.credits ?? cat.credits}</td>
-        <td>${escapeHtml(pc.semester || '—')}</td>
+        <td class="col-center">${pc.credits ?? cat.credits}</td>
+        <td class="col-center">${escapeHtml(pc.semester || '—')}</td>
         ${actualSemesterCell}
-        <td>${studyTypeTag(pc.studyType)}</td>
+        <td class="col-center">${studyTypeTag(pc.studyType)}</td>
         <td class="actions">${actions}</td>
       </tr>`;
     })
@@ -4555,9 +4555,11 @@ function renderProgramCourseTableHeader() {
   const execMode = isExecPlanEditMode();
   thead.innerHTML = execMode
     ? '<th>课号</th><th>课名</th><th>Classification(H1)</th><th>Classification(H2)</th>' +
-      '<th>Classification(H3)</th><th>学分</th><th>开课学期</th><th>实际开课学期</th><th>修读类型</th><th>操作</th>'
+      '<th>Classification(H3)</th><th class="col-center">学分</th><th class="col-center">开课学期</th>' +
+      '<th class="col-center">实际开课学期</th><th class="col-center">课程性质</th><th>操作</th>'
     : '<th>课号</th><th>课名</th><th>Classification(H1)</th><th>Classification(H2)</th>' +
-      '<th>Classification(H3)</th><th>学分</th><th>开课学期</th><th>修读类型</th><th>操作</th>';
+      '<th>Classification(H3)</th><th class="col-center">学分</th><th class="col-center">开课学期</th>' +
+      '<th class="col-center">课程性质</th><th>操作</th>';
 }
 
 function formatPrereqDisplay(ids) {
@@ -6962,7 +6964,7 @@ function renderClassificationTree() {
 
     rows.push(`<tr class="row-l1${l1.highlight ? ' highlight' : ''}">
       <td><span class="tree-toggle">▼</span> ${l1.name}</td>
-      <td>${studyTypeTag(l1.studyType)}</td>
+      <td class="col-center">${studyTypeTag(l1.studyType)}</td>
       ${renderCreditCell(l1)}
       ${renderCourseCountCell(l1)}
       <td class="actions">${renderCategoryActions(l1)}</td>
@@ -6972,7 +6974,7 @@ function renderClassificationTree() {
       const hasL3 = !!l2.children?.length;
       rows.push(`<tr class="row-l2${hasL3 ? ' has-l3' : ''}">
         <td class="indent-1">├ ${l2.name}</td>
-        <td>${studyTypeTag(l2.studyType)}</td>
+        <td class="col-center">${studyTypeTag(l2.studyType)}</td>
         ${renderCreditCell(l2)}
         ${renderCourseCountCell(l2)}
         <td class="actions">${renderCategoryActions(l2)}</td>
@@ -6981,7 +6983,7 @@ function renderClassificationTree() {
       (l2.children || []).forEach(l3 => {
         rows.push(`<tr class="row-l3">
           <td class="indent-2">└ ${l3.name}</td>
-          <td>${studyTypeTag(l3.studyType)}</td>
+          <td class="col-center">${studyTypeTag(l3.studyType)}</td>
           ${renderCreditCell(l3)}
           ${renderCourseCountCell(l3)}
           <td class="actions">${renderCategoryActions(l3)}</td>

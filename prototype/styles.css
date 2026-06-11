@@ -358,6 +358,10 @@ body {
   padding: 9px 12px; border-bottom: 1px solid var(--border-light);
   color: var(--text-2); vertical-align: middle;
 }
+#tab-courses .data-table th.col-center,
+#tab-courses .data-table td.col-center {
+  text-align: center;
+}
 .data-table tr:hover td { background: #fafbfc; }
 .data-table.compact th, .data-table.compact td { padding: 6px 10px; font-size: 12px; }
 .data-table.editable td input { width: 80px; }
@@ -631,6 +635,26 @@ body {
 .status.draft-solid { background: #94a3b8; color: #fff; }
 .status.in-progress { background: var(--blue-700); color: #fff; }
 .status.approved-solid { background: #15803d; color: #fff; }
+.status.cancelled { background: #94a3b8; color: #fff; }
+
+.approval-table .status.approved,
+.change-review-table .status.approved,
+.approval-log-list .status.approved {
+  background: #15803d;
+  color: #fff;
+}
+.approval-table .status.rejected,
+.change-review-table .status.rejected,
+.approval-log-list .status.rejected {
+  background: #b91c1c;
+  color: #fff;
+}
+.approval-table .status.cancelled,
+.change-review-table .status.cancelled,
+.approval-log-list .status.cancelled {
+  background: #94a3b8;
+  color: #fff;
+}
 
 .tag {
   display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px;
@@ -1064,9 +1088,11 @@ body {
 .category-form-panel .field-credits-max .input[type="number"] {
   text-align: left;
 }
+.tree-table th:nth-child(2),
 .tree-table th:nth-child(3),
 .tree-table th:nth-child(4),
 .tree-table th:nth-child(5),
+.tree-table td:nth-child(2),
 .tree-table .credit-cell,
 .tree-table .count-cell {
   min-width: 72px;
@@ -1569,7 +1595,9 @@ body {
 .approval-table .actions a + a { margin-left: 8px; }
 .approval-table .col-check { width: 44px; text-align: center; }
 .approval-table td.col-check, .approval-table th.col-check { text-align: center; vertical-align: middle; }
+.approval-table th.col-center, .approval-table td.col-center { text-align: center; }
 .approval-table:not(.batch-mode) .col-check { display: none; }
+.change-apply-table th.col-center, .change-apply-table td.col-center { text-align: center; }
 .approval-list-toolbar {
   margin-top: 4px;
   margin-bottom: 16px;
@@ -1587,6 +1615,7 @@ body {
 .exec-list-toolbar .hint { margin: 0; font-size: 12px; color: var(--text-3); }
 .exec-list-table .col-check { width: 44px; text-align: center; }
 .exec-list-table td.col-check, .exec-list-table th.col-check { text-align: center; vertical-align: middle; }
+.exec-list-table th.col-center, .exec-list-table td.col-center { text-align: center; }
 .exec-status {
   display: inline-block;
   padding: 2px 10px;
@@ -1723,6 +1752,7 @@ code {
 .ref-count-link:hover { text-decoration: underline; }
 .version-table .col-check { width: 44px; text-align: center; }
 .version-table td.col-check, .version-table th.col-check { text-align: center; vertical-align: middle; }
+.version-table th.col-center, .version-table td.col-center { text-align: center; }
 .version-list-toolbar {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-light);

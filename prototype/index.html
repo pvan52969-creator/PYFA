@@ -109,14 +109,14 @@
               <tr>
                 <th class="col-check"><input type="checkbox" id="version-check-all" aria-label="全选" onchange="toggleVersionCheckAll(this.checked)"></th>
                 <th class="col-name">培养方案版本</th>
-                <th>审批状态</th>
-                <th>专业代码</th>
-                <th>学制</th>
-                <th>版本</th>
-                <th>开始批次</th>
-                <th>截止批次</th>
-                <th>授予学位</th>
-                <th>版本引用情况</th>
+                <th class="col-center">审批状态</th>
+                <th class="col-center">专业代码</th>
+                <th class="col-center">学制</th>
+                <th class="col-center">版本</th>
+                <th class="col-center">开始批次</th>
+                <th class="col-center">截止批次</th>
+                <th class="col-center">授予学位</th>
+                <th class="col-center">版本引用情况</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -190,7 +190,7 @@
           <table class="data-table tree-table">
             <thead>
               <tr>
-                <th style="width:28%">课程分类</th><th>课程性质</th>
+                <th style="width:28%">课程分类</th><th class="col-center">课程性质</th>
                 <th>最低学分</th><th>最高学分</th><th>课程数</th><th>操作</th>
               </tr>
             </thead>
@@ -232,8 +232,8 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>课号</th><th>课名</th><th>Classification(H1)</th><th>Classification(H2)</th><th>Classification(H3)</th><th>学分</th>
-                <th>开课学期</th><th>修读类型</th><th>操作</th>
+                <th>课号</th><th>课名</th><th>Classification(H1)</th><th>Classification(H2)</th><th>Classification(H3)</th>
+                <th class="col-center">学分</th><th class="col-center">开课学期</th><th class="col-center">课程性质</th><th>操作</th>
               </tr>
             </thead>
             <tbody id="program-courses-tbody"></tbody>
@@ -272,9 +272,9 @@
           <thead>
             <tr id="approval-table-head-row">
               <th class="col-check" id="approval-check-col"><input type="checkbox" id="approval-check-all" aria-label="全选" onchange="toggleApprovalCheckAll(this.checked)"></th>
-              <th>培养方案</th><th>Status</th><th>Stage</th>
-              <th>专业</th><th>开始批次</th>
-              <th>总学分</th><th>提交人</th><th>提交时间</th>
+              <th>培养方案</th><th class="col-center">Status</th><th>Stage</th>
+              <th>专业</th><th class="col-center">开始批次</th>
+              <th class="col-center">总学分</th><th>提交人</th><th>提交时间</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -298,8 +298,8 @@
         <table class="data-table version-table">
           <thead>
             <tr>
-              <th>培养方案版本</th><th>审批状态</th><th>专业代码</th><th>学制</th><th>版本</th>
-              <th>开始批次</th><th>截止批次</th><th>授予学位</th><th>版本引用情况</th><th>操作</th>
+              <th>培养方案版本</th><th class="col-center">审批状态</th><th class="col-center">专业代码</th><th class="col-center">学制</th><th class="col-center">版本</th>
+              <th class="col-center">开始批次</th><th class="col-center">截止批次</th><th class="col-center">授予学位</th><th class="col-center">版本引用情况</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="version-query-body"></tbody>
@@ -332,10 +332,10 @@
         </select>
       </div>
       <div class="card">
-        <table class="data-table">
+        <table class="data-table change-apply-table">
           <thead>
             <tr>
-              <th>目标培养方案版本</th><th>专业</th><th>版本</th><th>状态</th>
+              <th>目标培养方案版本</th><th>专业</th><th class="col-center">版本</th><th class="col-center">状态</th>
               <th>提交人</th><th>提交时间</th><th>操作</th>
             </tr>
           </thead>
@@ -363,9 +363,9 @@
           <thead>
             <tr id="change-review-table-head-row">
               <th class="col-check" id="change-review-check-col"><input type="checkbox" id="change-review-check-all" aria-label="全选" onchange="toggleChangeReviewCheckAll(this.checked)"></th>
-              <th>培养方案</th><th>Status</th><th>Stage</th>
-              <th>专业</th><th>版本</th><th>开始批次</th>
-              <th>总学分</th><th>提交人</th><th>提交时间</th>
+              <th>培养方案</th><th class="col-center">Status</th><th>Stage</th>
+              <th>专业</th><th class="col-center">版本</th><th class="col-center">开始批次</th>
+              <th class="col-center">总学分</th><th>提交人</th><th>提交时间</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -417,7 +417,7 @@
           <thead>
             <tr>
               <th class="col-check"><input type="checkbox" id="exec-check-all" aria-label="全选" onchange="toggleExecCheckAll(this.checked)"></th>
-              <th>专业代码</th><th>专业</th><th>专业批次</th><th>学院（School）</th><th>入学批次</th><th>总学分</th><th>开课状态</th><th>是否提交</th><th>操作</th>
+              <th class="col-center">专业代码</th><th>专业</th><th>专业批次</th><th>学院（School）</th><th>入学批次</th><th class="col-center">总学分</th><th class="col-center">开课状态</th><th class="col-center">是否提交</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="exec-list-tbody"></tbody>

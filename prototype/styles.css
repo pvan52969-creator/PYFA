@@ -1706,7 +1706,11 @@ code {
   background: #fff; border: 1px solid var(--border-light);
   border-radius: var(--radius); font-size: 11.5px; color: var(--text-2);
 }
-.legend-bar .text-muted { color: var(--text-3); margin-left: auto; }
+.legend-bar .text-muted { color: var(--text-3); }
+.legend-bar .legend-item {
+  margin-left: 0;
+  text-align: left;
+}
 
 .table-scroll { overflow-x: auto; }
 .version-table .col-name { min-width: 280px; }

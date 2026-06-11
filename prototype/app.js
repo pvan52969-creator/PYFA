@@ -550,6 +550,7 @@ function confirmLockSelectedExecPlans() {
   });
   selectedExecPlanIds.clear();
   renderExecList();
+  rebuildExecListBatchFilterOptions();
   if (locked) {
     alert(`已提交 ${locked} 条执行计划。提交后方可进行开课。`);
   }
@@ -609,6 +610,7 @@ function confirmUnlockSelectedExecPlans() {
     unlocked += 1;
   });
   selectedExecPlanIds.clear();
+  rebuildExecListBatchFilterOptions();
   renderExecList();
   if (unlocked) {
     alert(`已撤回 ${unlocked} 条执行计划。`);
@@ -675,6 +677,7 @@ function confirmDeleteSelectedExecPlans() {
     currentExecPlan = null;
   }
   selectedExecPlanIds.clear();
+  rebuildExecListBatchFilterOptions();
   renderExecList();
   alert(`已删除 ${deletableIds.size} 条执行计划。`);
 }
@@ -703,10 +706,43 @@ function renderExecPlanRow(ep) {
   </tr>`;
 }
 
+function getFilteredExecPlans() {
+  const major = document.getElementById('filter-exec-major')?.value || '';
+  const batch = document.getElementById('filter-exec-batch')?.value || '';
+  const offering = document.getElementById('filter-exec-offering')?.value || '';
+  const submitted = document.getElementById('filter-exec-submitted')?.value || '';
+  return EXEC_PLANS.filter(ep => {
+    if (major && ep.majorKey !== major) return false;
+    if (batch && ep.intakeBatch !== batch) return false;
+    if (offering === 'yes' && !ep.isOffering) return false;
+    if (offering === 'no' && ep.isOffering) return false;
+    if (submitted === 'yes' && !ep.isLocked) return false;
+    if (submitted === 'no' && ep.isLocked) return false;
+    return true;
+  });
+}
+
+function rebuildExecListBatchFilterOptions() {
+  const sel = document.getElementById('filter-exec-batch');
+  if (!sel) return;
+  const cur = sel.value;
+  const batches = [...new Set(EXEC_PLANS.map(ep => ep.intakeBatch))].sort();
+  sel.innerHTML = '<option value="">全部批次</option>' +
+    batches.map(b => `<option value="${b}">${formatBatchDisplay(b)}</option>`).join('');
+  if (cur && batches.includes(cur)) sel.value = cur;
+}
+
+function filterExecList() {
+  renderExecList();
+}
+
 function renderExecList() {
   const tbody = document.getElementById('exec-list-tbody');
   if (!tbody) return;
-  tbody.innerHTML = EXEC_PLANS.map(renderExecPlanRow).join('');
+  const list = getFilteredExecPlans();
+  tbody.innerHTML = list.length
+    ? list.map(renderExecPlanRow).join('')
+    : '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:24px">暂无匹配的执行计划</td></tr>';
   selectedExecPlanIds.clear();
   const checkAll = document.getElementById('exec-check-all');
   if (checkAll) {
@@ -995,11 +1031,13 @@ function confirmDeleteVersion() {
 function filterVersions() {
   syncAllVersionEndBatches();
   const major = document.getElementById('filter-major')?.value || '';
+  const status = document.getElementById('filter-status')?.value || '';
   let list = [...VERSIONS].sort((a, b) => {
     if (a.majorKey !== b.majorKey) return a.majorKey.localeCompare(b.majorKey);
     return a.startBatch.localeCompare(b.startBatch);
   });
   if (major) list = list.filter(v => v.majorKey === major);
+  if (status) list = list.filter(v => v.status === status);
 
   const tbody = document.getElementById('version-table-body');
   if (tbody) {
@@ -1016,7 +1054,16 @@ function filterVersions() {
 
   const queryBody = document.getElementById('version-query-body');
   if (queryBody) {
-    queryBody.innerHTML = list.filter(v => v.status === 'approved').map(v => renderVersionRow(v, { showActions: false })).join('');
+    const queryMajorKey = document.getElementById('query-major')?.value || '';
+    let queryList = VERSIONS.filter(v => v.status === 'approved');
+    if (queryMajorKey) queryList = queryList.filter(v => v.majorKey === queryMajorKey);
+    queryList.sort((a, b) => {
+      if (a.majorKey !== b.majorKey) return a.majorKey.localeCompare(b.majorKey);
+      return a.startBatch.localeCompare(b.startBatch);
+    });
+    queryBody.innerHTML = queryList.length
+      ? queryList.map(v => renderVersionRow(v, { showActions: false })).join('')
+      : '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:24px">暂无匹配的已通过版本</td></tr>';
   }
 }
 
@@ -1344,6 +1391,7 @@ function confirmGenerateExecPlan() {
     };
     EXEC_PLANS.push(ep);
     ensureExecPlanContentStore(ep);
+    rebuildExecListBatchFilterOptions();
     renderExecList();
   } else {
     ensureExecPlanContentStore(ep);
@@ -2721,7 +2769,10 @@ function goPage(id) {
   });
   if (id === 'version-list' || id === 'version-query') filterVersions();
   if (id === 'approval-list') renderApprovalList();
-  if (id === 'exec-list') renderExecList();
+  if (id === 'exec-list') {
+    rebuildExecListBatchFilterOptions();
+    renderExecList();
+  }
   if (id === 'change-apply') renderChangeApplyList();
   if (id === 'change-review') renderChangeReviewList();
   if (id === 'stats-bloom') renderStatsBloomPage();
@@ -7423,6 +7474,7 @@ initSemesterSelects();
 renderClassificationTree();
 renderProgramCoursesTable();
 filterVersions();
+rebuildExecListBatchFilterOptions();
 renderExecList();
 renderApprovalList();
 renderChangeReviewList();

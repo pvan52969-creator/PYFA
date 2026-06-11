@@ -82,8 +82,12 @@
             <option value="chinese">Chinese Studies 中国研究</option>
             <option value="accounting">Accounting 会计学</option>
           </select>
-          <select class="input input-sm" id="filter-version">
-            <option value="">全部版本</option>
+          <select class="input input-sm" id="filter-status" onchange="filterVersions()">
+            <option value="">全部状态</option>
+            <option value="draft">草稿</option>
+            <option value="pending">进行中</option>
+            <option value="approved">已通过</option>
+            <option value="rejected">已驳回</option>
           </select>
           <button class="btn btn-outline btn-sm" onclick="filterVersions()">查询</button>
         </div>
@@ -283,13 +287,12 @@
     <!-- ═══ 版本查询 ═══ -->
     <section class="page" id="page-version-query">
       <div class="page-header">
-        <div><h1>培养方案版本查询</h1><p class="subtitle">只读查看已制定/已审批的版本方案</p></div>
+        <div><h1>培养方案版本查询</h1><p class="subtitle">只读查看已审批通过的培养方案版本</p></div>
       </div>
       <div class="filter-bar">
-        <select class="input" id="query-major"><option value="">全部专业</option></select>
-        <select class="input"><option value="">全部版本</option></select>
-        <input class="input" placeholder="按开始批次查询，如 2025/09" style="width:160px">
-        <button class="btn btn-outline" onclick="filterVersions();goPage('version-query')">查询</button>
+        <select class="input" id="query-major" onchange="filterVersions()">
+          <option value="">全部专业</option>
+        </select>
       </div>
       <div class="card">
         <table class="data-table version-table">
@@ -382,11 +385,26 @@
         <span class="legend-item text-muted">数据隔离：每个入学批次独立生成、独立保存；编辑执行计划<strong>不影响</strong>「方案版本管理」中的版本内容；「方案版本变更」审批通过后<strong>不影响</strong>已生成的执行计划副本（未生成批次在新建时引用最新版本）。</span>
       </div>
       <div class="filter-bar">
-        <select class="input"><option>全部学院</option></select>
-        <select class="input"><option>全部专业</option></select>
-        <select class="input"><option>全部批次</option></select>
-        <select class="input"><option>全部状态</option><option>草稿</option><option>已发布</option></select>
-        <button class="btn btn-outline">查询</button>
+        <select class="input input-sm" id="filter-exec-major" onchange="filterExecList()">
+          <option value="">全部专业</option>
+          <option value="finance">Finance 金融学</option>
+          <option value="chinese">Chinese Studies 中国研究</option>
+          <option value="accounting">Accounting 会计学</option>
+        </select>
+        <select class="input input-sm" id="filter-exec-batch" onchange="filterExecList()">
+          <option value="">全部批次</option>
+        </select>
+        <select class="input input-sm" id="filter-exec-offering" onchange="filterExecList()">
+          <option value="">全部开课状态</option>
+          <option value="no">未开课</option>
+          <option value="yes">已开课</option>
+        </select>
+        <select class="input input-sm" id="filter-exec-submitted" onchange="filterExecList()">
+          <option value="">全部提交状态</option>
+          <option value="no">未提交</option>
+          <option value="yes">已提交</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="filterExecList()">查询</button>
       </div>
       <div class="card">
         <div class="panel-toolbar exec-list-toolbar">

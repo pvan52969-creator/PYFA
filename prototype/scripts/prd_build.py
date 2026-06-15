@@ -1,0 +1,339 @@
+# -*- coding: utf-8 -*-
+"""按参考文档结构生成培养方案管理 PRD。"""
+
+from prd_field_data import VERSION_MGMT_FIELD_TABLES as _VERSION_MGMT_FIELD_TABLES
+
+
+def _patch_field_tables(tables):
+    """在参考字段表基础上补充课程数量/已配置学分列（V1.5+）。"""
+    out = []
+    for title, rows in tables:
+        if "course-credits-summary" in title:
+            rows = list(rows)
+            extra = [
+                ["2", "课程数量", "Course Count", "只读", "—", "—",
+                 "按二级/三级分类统计已配置课程数；增删课程后同步刷新标签页一课程数", "否", "6"],
+                ["3", "已配置学分", "Configured Credits", "只读", "—", "—",
+                 "同分类已配课程学分合计", "否", "54"],
+                ["4", "学分要求", "Credits Requirement", "只读", "—", "—",
+                 "展示最低/最高学分要求", "否", ""],
+            ]
+            # 重排：层级展示 + 课程数量/已配置学分/学分要求 + 原状态等
+            new_rows = [rows[0]] + extra + rows[1:]
+            rows = []
+            for i, r in enumerate(new_rows, 1):
+                r = list(r)
+                r[0] = str(i)
+                rows.append(r)
+        out.append((title, rows))
+    return out
+
+
+VERSION_MGMT_FIELD_TABLES = _patch_field_tables(_VERSION_MGMT_FIELD_TABLES)
+from prd_function_data import (
+    APPROVAL_FUNCTIONS,
+    CHANGE_APPLY_FUNCTIONS,
+    CHANGE_REVIEW_FUNCTIONS,
+    EXEC_FUNCTIONS,
+    STATS_FUNCTIONS,
+    VERSION_MGMT_FUNCTIONS,
+    VERSION_QUERY_FUNCTIONS,
+    WORKFLOW_FUNCTIONS,
+)
+
+
+def build_document(add_heading, add_para, add_kv_table, add_grid_table, add_field_table,
+                   add_menu_block, scale_widths, VALIDATION_PROMPTS, OUT, Document,
+                   set_document_landscape):
+    doc = Document()
+    set_document_landscape(doc)
+
+    add_heading(doc, "厦大马来分校本科教务系统产品需求文档", 0)
+    add_para(doc, "文档版本：V1.9")
+    add_para(doc, "创建日期：2026 年 6 月 10 日")
+    add_para(doc, "修订说明：V1.9 对齐参考文档版式与章节顺序；功能按钮保留「英文名称」子标题；业务说明纯中文；技术标识统一后置至 b 节「下钻页面说明」圆括号中")
+    add_para(doc, "模块范围：培养方案管理（Curriculum Management）")
+    add_para(doc, "对应原型：prototype/index.html、prototype/app.js")
+    doc.add_paragraph()
+
+    add_heading(doc, "文档概述", 1)
+    add_heading(doc, "1.1 文档目的", 2)
+    add_para(doc, "本文档为厦大马来分校教务系统「培养方案管理」模块提供标准化需求输入格式，依据已完成的可交互原型整理功能、字段、业务规则与数据流转，确保后续开发符合业务逻辑与本地化要求，可直接用于需求评审。")
+    add_heading(doc, "1.2 开发背景", 2)
+    add_kv_table(doc, [
+        ("开发模式", "边分析边迭代，分模块生成可交互原型"),
+        ("目标用户", "Programme Office、Academic Affairs、Senate 审批人员、培养方案制定人员"),
+        ("覆盖范围", "本科生培养方案版本制定、审批、变更、执行计划及数据统计"),
+    ], col_widths=scale_widths((3, 13)))
+    add_heading(doc, "1.3 文档说明", 2)
+    add_para(doc, "本文档依据现有原型逆向整理；已确认需求标记为「已确认」；导出模板等待补充标记为「待确认」。入学批次编码：每年 02→04→09。专业（Programme）、入学批次（Intake）等业务英文名称见附录 F。")
+
+    add_heading(doc, "系统分析", 1)
+    add_heading(doc, "2.1 应用目录——培养方案管理", 2)
+    add_grid_table(doc,
+        ["一级目录", "一级目录英文名称", "二级目录", "二级目录英文名称", "三级目录", "备注说明"],
+        [
+            ["概览", "Overview", "操作流程图", "Workflow Diagram", "—", "嵌入主业务流程图，支持缩放；图例靠左"],
+            ["方案版本", "Programme Version", "方案版本管理", "Programme Version Management", "—", "多版本增删改查、批量提交/导出"],
+            ["方案版本", "Programme Version", "版本审批", "Programme Version Approval", "—", "三级审批待办/进行中/历史"],
+            ["方案版本", "Programme Version", "版本查询", "Programme Version Query", "—", "只读查看已通过版本"],
+            ["方案版本", "Programme Version", "版本编辑（共用）", "Programme Structure Editing", "TAB1/TAB2/TAB3", "制定/查看/变更/执行计划共用"],
+            ["方案版本变更", "Programme Change", "方案版本变更申请", "Change Application", "—", "对已审批版本发起变更"],
+            ["方案版本变更", "Programme Change", "方案版本变更审核", "Change Review", "—", "变更三级审批"],
+            ["专业批次执行计划", "Programme Intake Execution Plan", "专业批次执行计划", "Programme Intake Execution Plan", "—", "按入学批次独立生成/编辑，不回写版本"],
+            ["数据统计", "Statistics", "Bloom's Taxonomy Charts", "Bloom's Taxonomy Charts", "—", "布鲁姆分布统计"],
+        ],
+        col_widths=scale_widths([2.0, 2.5, 2.5, 3.2, 2.0, 4.3]))
+
+    add_heading(doc, "2.2 培养方案管理——系统需求", 2)
+    add_heading(doc, "2.2.1 方案版本（英文名称：Programme Version）（需求确认状态：已确认）", 3)
+    add_para(doc, "模块介绍：管理各专业不同入学批次的培养方案版本全生命周期，包括版本制定、三级审批、只读查询、版本导出及批次链衔接；是执行计划与方案版本变更的上游数据源。")
+
+    add_menu_block(
+        doc, "2.2.1.1 ", "方案版本管理（英文名称：Programme Version Management）", "已确认",
+        intro="用于管理各专业培养方案版本的创建、编辑、删除、提交审批、批量导出及版本引用查询。同一专业可存在多个按批次链衔接的版本；支持按专业、版本过滤；列表展示审批状态、批次区间、引用情况。",
+        list_fields="页面展示字段信息：勾选框、培养方案版本、审批状态、专业代码、学制、版本、开始入学批次、截止入学批次、授予学位、版本引用情况、操作。\n列对齐：审批状态/专业代码/学制/版本/开始入学批次/截止入学批次/授予学位/版本引用情况居中；\n当前有效版本行绿底高亮（审批状态：草稿/审批中/已通过/已驳回）。",
+        search_fields="专业、审批状态（草稿/审批中/已通过/已驳回）；过滤栏「过滤」+「查询」。",
+        flow_rel="用户在列表页发起增删改查、提交、导出；新增时校验批次链后创建草稿并进入三标签页编辑；提交时校验必修最低学分后写入审批队列；审批通过后状态变为已通过并回填上一版本截止入学批次；导出汇总所选版本方案内容（模板待确认）。",
+        flow_pre="已维护专业主数据（代码、学制、学位）；已维护入学批次代码集（02/04/09）；课程库可用于标签页二选课。",
+        flow_out="已通过版本供专业批次执行计划生成、方案版本变更申请、版本查询、布鲁姆统计；引用数关联执行计划。",
+        biz_flow="操作流程：进入【方案版本管理】→ 过滤查询 → 新增版本 → 标签页一分类 → 标签页二课程 → 标签页三进程表 → 保存（二次确认后返回列表）→ 提交审批 → 【版本审批】三级流程 → 通过后查询/执行计划/变更。",
+        proto_link="prototype/index.html#page-version-list",
+        field_tables=VERSION_MGMT_FIELD_TABLES,
+        functions=VERSION_MGMT_FUNCTIONS,
+    )
+
+    add_menu_block(
+        doc, "2.2.1.2 ", "版本审批（英文名称：Programme Version Approval）", "已确认",
+        intro="按审批节点统一管理培养方案版本三级审批：待办、进行中与历史；支持单条审批、批量审批、审批日志及只读查看。",
+        list_fields="勾选框（待办可审项）、培养方案、审批状态、当前节点、专业、开始入学批次、总学分、提交人、提交时间、操作。居中：审批状态、开始入学批次、总学分。状态：已通过、已驳回、审批中、需修改、已取消。",
+        search_fields="标签页：待办、进行中、历史。",
+        flow_rel="版本提交后进入审批队列；逐级审批更新节点记录；终审通过后版本变为已通过并回填上一版本截止入学批次；驳回或需修改则版本变为已驳回。",
+        flow_pre="版本处于审批中状态。",
+        flow_out="通过后可供查询、执行计划与变更引用；审批日志供审计。",
+        biz_flow="进入【版本审批】→ 待办页勾选 → 审批 → 填写意见 → 通过/驳回/需修改 → 逐级至教务委员会。",
+        proto_link="prototype/index.html#page-approval-list",
+        field_tables=[
+            ("Review 弹窗——审批决策", [
+                ["1", "当前节点", "Current Stage", "只读", "—", "—", "Programme Office 等", "否", ""],
+                ["2", "审批意见", "Review Comment", "文本域", "否", "—", "—", "否", ""],
+                ["3", "决策", "Decision", "按钮组", "是", "通过/驳回/需修改", "—", "是", ""],
+            ]),
+            ("审批节点配置", [
+                ["1", "一级审批", "Programme Office", "—", "—", "—", "Level 1", "否", ""],
+                ["2", "二级审批", "Academic Affairs", "—", "—", "—", "Level 2", "否", ""],
+                ["3", "三级审批", "Senate", "—", "—", "—", "Level 3 终审", "否", ""],
+            ]),
+        ],
+        functions=APPROVAL_FUNCTIONS,
+    )
+
+    add_menu_block(
+        doc, "2.2.1.3 ", "版本查询（英文名称：Programme Version Query）", "已确认",
+        intro="只读查看已审批通过的培养方案版本；支持按专业过滤；可进入三标签页详情但不可编辑。",
+        list_fields="同方案版本管理列表（无勾选列）；仅展示已通过版本。",
+        search_fields="专业；列表固定仅展示已通过记录。",
+        flow_rel="只读展示；查看进入只读编辑视图。",
+        flow_pre="版本已通过审批。",
+        flow_out="无数据写入。",
+        biz_flow="进入【版本查询】→ 选择专业（可选）→ 查看 → 只读三标签页。",
+        proto_link="prototype/index.html#page-version-query",
+        functions=VERSION_QUERY_FUNCTIONS,
+    )
+
+    add_heading(doc, "2.2.2 方案版本变更（英文名称：Programme Change）（需求确认状态：已确认）", 3)
+    add_para(doc, "模块介绍：对已审批版本发起内容变更，走三级审批；通过后覆盖原版本内容，已生成执行计划保持独立副本。")
+
+    add_menu_block(
+        doc, "2.2.2.1 ", "方案版本变更申请（英文名称：Change Application）", "已确认",
+        intro="选择已审批通过的版本作为变更目标，复制内容到变更工作区修改；支持草稿、提交、删除；同一版本同时仅允许一条草稿或审批中的变更。",
+        list_fields="目标培养方案版本、专业、版本、状态、提交人、提交时间、操作。专业靠左；版本/状态居中。状态：草稿、审批中、已通过、已驳回；只读草稿显示「查看模式」。",
+        search_fields="专业、审批状态。",
+        flow_rel="新建并选择目标版本 → 复制内容 → 三标签页编辑 → 提交进入变更审批。",
+        flow_pre="目标版本已通过；无并发的草稿或审批中变更。",
+        flow_out="变更通过后覆盖原版本内容；已生成执行计划不受影响。",
+        biz_flow="【变更申请】→ 新建 → 选专业与版本 → 进入修改 → 提交 → 【变更审核】。",
+        proto_link="prototype/index.html#page-change-apply",
+        field_tables=[
+            ("新建方案版本变更申请——弹窗", [
+                ["1", "专业", "Programme", "下拉框", "是", "—", "过滤可选版本", "是", "Finance 金融学"],
+                ["2", "目标培养方案版本", "Target Programme Version", "下拉框", "是", "须已通过审批；有进行中变更时不可选", "展示影响预览", "是", ""],
+            ]),
+        ],
+        functions=CHANGE_APPLY_FUNCTIONS,
+    )
+
+    add_menu_block(
+        doc, "2.2.2.2 ", "方案版本变更审核（英文名称：Change Review）", "已确认",
+        intro="与版本审批结构一致；数据源为变更申请；支持待办、进行中、历史及单条/批量审批。",
+        list_fields="勾选框、培养方案、审批状态、当前节点、专业、版本、开始入学批次、总学分、提交人、提交时间、操作。居中：审批状态、版本、开始入学批次、总学分。",
+        search_fields="标签页：待办、进行中、历史。",
+        flow_rel="变更提交后进入审批；通过后覆盖原版本内容；驳回或需修改则退回申请人。",
+        flow_pre="变更申请处于审批中。",
+        flow_out="通过后更新方案版本内容。",
+        biz_flow="【变更审核】→ 待办审批 → 三级流程。",
+        proto_link="prototype/index.html#page-change-review",
+        functions=CHANGE_REVIEW_FUNCTIONS,
+    )
+
+    add_heading(doc, "2.2.3 专业批次执行计划（英文名称：Programme Intake Execution Plan）（需求确认状态：已确认）", 3)
+    add_para(doc, "模块介绍：按入学批次从已审批方案版本复制生成独立执行计划；各批次单独编辑保存，不回写方案版本管理；方案版本变更审批通过后不影响已生成副本；提交后锁定，已开课不可撤回。生成时按「版本起始批次类型 ↔ 执行入学批次类型」旋转学期槽位，并计算实际开课学年学期。")
+
+    add_menu_block(
+        doc, "2.2.3.1 ", "专业批次执行计划（英文名称：Programme Intake Execution Plan）", "已确认",
+        intro="管理各专业各入学批次的执行计划；从已通过版本自动匹配并复制内容；生成时重算开课学期与实际开课学期；各批次数据独立，不回写方案版本。",
+        list_fields="勾选框、专业代码、专业、专业批次、学院、入学批次、总学分、开课状态、是否提交、操作。居中：专业代码、总学分、开课状态、是否提交。页内说明条左对齐展示数据隔离规则。",
+        search_fields="专业、入学批次、开课状态、是否提交。",
+        flow_rel="选择专业与入学批次 → 自动匹配已通过版本并复制 → 旋转开课学期并计算实际开课学期 → 编辑仅影响当前批次 → 提交后锁定。",
+        flow_pre="存在可覆盖该批次的已通过版本；同专业同入学批次不可重复生成。",
+        flow_out="独立执行计划副本；实际开课学期供开课模块使用。",
+        biz_flow="【执行计划】→ 生成 → 编辑三标签页 → 保存 → 提交 → 开课。",
+        proto_link="prototype/index.html#page-exec-list",
+        field_tables=[
+            ("生成批次执行计划——弹窗", [
+                ["1", "专业", "Programme", "下拉框", "是", "—", "—", "是", "Finance 金融学"],
+                ["2", "入学批次", "Intake", "下拉框", "是", "02/04/09", "仅显示尚未生成且可匹配版本的入学批次", "是", "2025/02"],
+                ["3", "匹配培养方案版本", "Matched Programme Version", "只读", "是", "自动匹配锁定", "入学批次须落在版本生效区间内", "否", "2024/09"],
+            ]),
+            ("执行计划编辑——标签页二课程设置（相对版本增加列）", [
+                ["1", "课号/课名/分类/学分", "—", "—", "—", "同版本标签页二", "—", "—", ""],
+                ["2", "开课学期", "Offering Semester", "只读/下拉", "条件", "本批次视角 Y1S1~YnS3", "由版本学期按槽位旋转重算", "是", "Y1S1"],
+                ["3", "实际开课学期", "Actual Offering Semester", "只读", "—", "—", "明确年月如 2029/09；仅执行计划展示", "否", "2029/09"],
+                ["4", "课程性质", "Course Nature", "只读", "—", "必修/选修", "—", "是", "必修"],
+            ]),
+        ],
+        functions=EXEC_FUNCTIONS,
+    )
+
+    add_heading(doc, "2.2.3.2 开课学期与执行计划学期映射规则（需求确认状态：已确认）", 4)
+    add_para(doc, "方案版本定义不含具体年月的 Y1S1~YnS3 课程安排模板；执行计划按本批次入学类型旋转槽位，并给出实际开课学年学期（供开课模块使用）。Y 表示培养方案学年（非自然年）。")
+    add_para(doc, "表 1  一年三学期类型与入学批次对应关系", bold=True)
+    add_grid_table(doc,
+        ["入学批次类型", "第 1 学期（S1）", "第 2 学期（S2）", "第 3 学期（S3）", "说明"],
+        [
+            ["02 入学（短学期起）", "02 短学期", "04 长学期", "09 长学期", "均在同一学年 Y1 内"],
+            ["04 入学（长学期起）", "04 长学期", "09 长学期", "02 短学期", "Y1S3 仍为 Y1/02，非 Y2"],
+            ["09 入学（长学期起）", "09 长学期", "02 短学期", "04 长学期", "02 可能落在下一自然年"],
+        ],
+        col_widths=scale_widths([2.8, 2.2, 2.2, 2.2, 5.6]))
+    add_para(doc, "表 2  三类学期概念对照", bold=True)
+    add_grid_table(doc,
+        ["概念", "出现位置", "含义", "示例"],
+        [
+            ["版本开课学期", "方案版本、方案变更", "相对版本起始批次的 Y1S1~YnS3 模板", "2023/02 版本：Y1S1=Y1/02"],
+            ["执行计划开课学期", "专业批次执行计划 TAB2", "相对本入学批次的 Y1S1~YnS3", "2029/09 批次：Y1S1"],
+            ["实际开课学期", "仅执行计划 TAB2", "明确开课年月，供开课模块", "2029/09"],
+        ],
+        col_widths=scale_widths([3.0, 3.5, 5.0, 3.5]))
+    add_para(doc, "表 3  生成执行计划时的换算规则", bold=True)
+    add_kv_table(doc, [
+        ("步骤 1", "保留版本内原始结构学期编号（如第一年第三学期）"),
+        ("步骤 2", "按版本起始批次类型与执行入学批次类型，在同一年级内旋转学期槽位，得到执行计划开课学期"),
+        ("步骤 3", "由执行计划开课学期与执行入学批次，计算实际开课学年学期（如 2029/09）"),
+        ("步骤 4", "选修课学期修读要求矩阵同步旋转；方案版本与变更不展示实际开课学期列"),
+        ("批次相同", "版本起始批次与执行入学批次相同时，开课学期一一对应，仅补充实际年月"),
+    ], col_widths=scale_widths((2.5, 13.5)))
+    add_para(doc, "技术备注：版本原始结构学期（versionSemester）；实际开课学年学期（actualSemester）。")
+
+    add_heading(doc, "2.2.4 数据统计（英文名称：Statistics）（需求确认状态：已确认）", 3)
+    add_para(doc, "模块介绍：布鲁姆分类统计图按已发布执行计划统计课程学习成果的布鲁姆层级分布；左侧树为专业→年份→入学批次。")
+    add_menu_block(
+        doc, "2.2.4.1 ", "Bloom's Taxonomy Charts（英文名：Bloom's Taxonomy Charts）", "已确认",
+        intro="左侧树展示已发布执行计划；选中叶子节点后展示布鲁姆矩阵、汇总折线图与按年分布表。",
+        list_fields="布鲁姆矩阵表、汇总图、按年分布表。",
+        search_fields="左侧树搜索过滤专业、年份、入学批次。",
+        flow_rel="聚合已发布执行计划中课程学习成果的布鲁姆评级并展示。",
+        flow_pre="存在已发布执行计划且课程含学习成果数据。",
+        flow_out="导出功能待实现。",
+        biz_flow="进入统计页 → 选择树节点 → 查看图表 → 导出。",
+        proto_link="prototype/index.html#page-stats-bloom",
+        functions=STATS_FUNCTIONS,
+    )
+
+    add_menu_block(
+        doc, "2.2.5 ", "操作流程图（英文名称：Workflow Diagram）", "已确认",
+        intro="嵌入主业务流程图：版本制定与审批、执行计划、方案变更、只读查询；图例靠左排列。",
+        list_fields="流程图节点与连线；顶部四色图例靠左。",
+        search_fields="无。",
+        flow_rel="只读展示，无数据写入。",
+        flow_pre="无。",
+        flow_out="无。",
+        biz_flow="概览 → 操作流程图 → 缩放查看。",
+        proto_link="prototype/docs/pyfa-workflow.html",
+        functions=WORKFLOW_FUNCTIONS,
+    )
+
+    # 附录 A–G（与参考文档一致）
+    add_heading(doc, "附录 A：核心数据实体", 2)
+    add_grid_table(doc, ["实体", "关键字段", "说明"], [
+        ["专业主数据（PROGRAMMES）", "code, name, nameZh, school, degree, duration", "专业 Programme 主数据"],
+        ["培养方案版本（VERSIONS）", "id, programmeKey, name, version, startIntake, endIntake, status", "审批状态：草稿/审批中/已通过/已驳回（draft/pending/approved/rejected）"],
+        ["方案版本内容（VERSION_CONTENT_STORE）", "classificationTree, programCourses, electiveSemesters", "版本方案内容"],
+        ["教务课程库（COURSE_CATALOG）", "code, name, credits, clos, slt…", "全校课程主数据"],
+        ["专业批次执行计划（EXEC_PLANS）", "planId, programmeKey, intake, versionId…", "各批次执行副本索引"],
+        ["执行计划内容（EXEC_CONTENT_STORE）", "同版本内容结构", "各批次独立副本"],
+        ["变更申请（CHANGE_APPLICATIONS）", "id, targetVersionId, status…", "变更及审批状态"],
+        ["审批队列（APPROVAL_QUEUE）", "versionId, stage, decision…", "版本三级审批实例"],
+    ], col_widths=scale_widths([4.0, 5.5, 6.5]))
+
+    add_heading(doc, "附录 B：数据隔离规则", 2)
+    add_grid_table(doc, ["场景", "写入范围", "是否影响其他数据"], [
+        ["编辑方案版本并保存", "方案版本内容存储（VERSION_CONTENT_STORE）", "不影响已有执行计划副本（EXEC_CONTENT_STORE）"],
+        ["编辑专业批次执行计划并保存", "执行计划内容存储（EXEC_CONTENT_STORE）", "不回写方案版本内容；不影响其他批次"],
+        ["方案版本变更审批通过", "方案版本内容存储（VERSION_CONTENT_STORE）", "已生成执行计划副本保持不变"],
+        ["新建执行计划", "新建执行计划内容存储（EXEC_CONTENT_STORE）", "引用生成时版本快照"],
+    ], col_widths=scale_widths([4.5, 5.0, 6.5]))
+
+    add_heading(doc, "附录 C：总学分取值规则", 2)
+    add_kv_table(doc, [
+        ("计算规则", "标签页一分类树各一级分类最低学分之和，与毕业总学分汇总一致；统计函数（calcGraduationTotalCredits）"),
+        ("版本审批列表总学分", "取对应版本内容中分类树毕业总学分；函数（getApprovalItemTotalCredits）"),
+        ("变更审核列表总学分", "取变更内容或目标版本快照的毕业总学分；函数（getChangeApplicationTotalCredits）"),
+        ("执行计划列表总学分", "取当前批次执行计划内容的毕业总学分；函数（getExecPlanTotalCredits）"),
+        ("顶栏信息条", "不展示毕业总学分"),
+    ], col_widths=scale_widths((3.5, 12.5)))
+
+    add_heading(doc, "附录 D：列表列对齐规范（V1.4）", 2)
+    add_grid_table(doc, ["页面", "居中列", "靠左列（其余默认）"], [
+        ["方案版本管理 / 版本查询", "审批状态、专业代码、学制、版本、开始 Intake、截止 Intake、授予学位、版本引用情况", "培养方案版本、操作"],
+        ["版本审批", "Status、开始 Intake、总学分", "培养方案、Stage、专业、提交人、提交时间、操作"],
+        ["变更申请", "版本、状态", "目标培养方案版本、专业、提交人、提交时间、操作"],
+        ["变更审核", "Status、版本、开始 Intake、总学分", "培养方案、Stage、专业、提交人、提交时间、操作"],
+        ["执行计划列表", "专业代码、总学分、开课状态、是否提交", "专业、专业批次、学院、入学批次、操作"],
+        ["标签页一分类树", "课程性质、课程数", "课程分类、最低/最高学分、操作"],
+        ["标签页二配置面板", "课程数量、已配置学分、学分要求、状态", "分类"],
+        ["标签页二课程表", "学分、开课学期、课程性质（执行计划加实际开课学期）", "课号、课名、分类列、操作"],
+    ], col_widths=scale_widths([3.5, 6.5, 5.0]))
+
+    add_heading(doc, "附录 E：状态标签与样式（V1.4）", 2)
+    add_grid_table(doc, ["场景", "标签", "说明"], [
+        ["版本列表", "草稿 / 审批中 / 已通过 / 已驳回", "方案版本管理、版本查询；底层 draft/pending/approved/rejected"],
+        ["变更申请", "草稿 / 审批中 / 已通过 / 已驳回 / 查看模式", "只读草稿为查看模式；函数 getChangeApplicationStatusLabel"],
+        ["审批/变更审核 Status", "已通过 / 已驳回 / 审批中 / 需修改 / 已取消", "getApprovalOverallStatus / getChangeReviewOverallStatus"],
+        ["Status 徽章配色", "已通过绿底白字；已驳回红底白字；已取消灰底白字", "审批与变更审核列表"],
+    ], col_widths=scale_widths([4.0, 5.5, 5.5]))
+
+    add_heading(doc, "附录 F：核心术语与底层字段（V1.4）", 2)
+    add_grid_table(doc, ["中文", "英文", "底层字段/函数"], [
+        ["专业", "Programme（非 Major）", "PROGRAMMES、programmeKey"],
+        ["入学批次", "Intake（非 Batch）", "intake、startIntake、endIntake、INTAKE_TYPES"],
+        ["Intake 显示", "—", "formatIntakeDisplay()、formatIntake()、parseIntake()"],
+        ["Programme 批次码", "—", "formatProgrammeIntakeCode()"],
+        ["课程数统计", "—", "countProgramCoursesForNode()、calcNodeCourseCount()"],
+    ], col_widths=scale_widths([3.0, 4.5, 8.5]))
+
+    add_heading(doc, "附录 G：原型占位功能（正式开发需实现）", 2)
+    add_grid_table(doc, ["功能", "当前原型行为", "优先级"], [
+        ["版本导出", "轻提示占位，模板待定", "高"],
+        ["TAB3 导出 PDF/打印", "按钮占位", "中"],
+        ["统计 Export", "轻提示占位", "中"],
+        ["用户认证与角色路由", "无", "高"],
+    ], col_widths=scale_widths([4.0, 7.0, 2.0]))
+
+    add_heading(doc, "附录 H：校验与提示汇总", 2)
+    add_para(doc, "正式开发建议统一消息组件；下表为业务文案摘要。")
+    add_grid_table(doc, ["来源模块", "触发条件", "提示方式", "提示内容摘要"], VALIDATION_PROMPTS,
+                   col_widths=scale_widths([2.0, 4.5, 1.5, 8.0]))
+
+    doc.save(OUT)
+    print(f"Generated: {OUT}")

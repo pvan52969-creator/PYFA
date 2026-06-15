@@ -184,14 +184,14 @@
           </div>
         </div>
         <div class="alert-info" style="margin-bottom:12px;font-size:12px">
-          <strong>汇总规则：</strong>一级最低/最高学分 = 各二级之和；二级与三级学分要求分别维护，有三级子分类时二级仍可编辑。顶部「+ 新增分类」仅新增<strong>二级分类</strong>；三级请在二级行点击「+子级」。一级不可编辑/删除。
+          <strong>汇总规则：</strong>一级最低/最高学分 = 各二级之和；二级与三级学分要求分别维护，有三级子分类时二级仍可编辑。分类树「课程数」<strong>不在 TAB1 编辑</strong>，由 TAB2 课程设置按分类自动统计。顶部「+ 新增分类」仅新增<strong>二级分类</strong>；三级请在二级行点击「+子级」。一级不可编辑/删除。
         </div>
         <div class="card">
           <table class="data-table tree-table">
             <thead>
               <tr>
                 <th style="width:28%">课程分类</th><th class="col-center">课程性质</th>
-                <th>最低学分</th><th>最高学分</th><th>课程数</th><th>操作</th>
+                <th>最低学分</th><th>最高学分</th><th class="col-center">课程数</th><th>操作</th>
               </tr>
             </thead>
             <tbody id="classification-tree-body"></tbody>
@@ -991,14 +991,17 @@
                 </colgroup>
                 <thead>
                   <tr>
-                    <th rowspan="2">No.</th>
-                    <th rowspan="2">Course Content Outline and Subtopics</th>
-                    <th rowspan="2">CLO</th>
-                    <th colspan="4">Face-to-Face (F2F) · Physical</th>
-                    <th colspan="4">Online/Technology-mediated</th>
-                    <th rowspan="2">NF2F<br>Independent Learning<br>(Asynchronous)</th>
-                    <th rowspan="2">Total<br>SLT</th>
-                    <th rowspan="2">操作</th>
+                    <th rowspan="3">No.</th>
+                    <th rowspan="3">Course Content Outline and Subtopics</th>
+                    <th rowspan="3">CLO</th>
+                    <th colspan="8">Face-to-Face (F2F)</th>
+                    <th rowspan="3">NF2F<br>Independent Learning<br>(Asynchronous)</th>
+                    <th rowspan="3">Total<br>SLT</th>
+                    <th rowspan="3">操作</th>
+                  </tr>
+                  <tr>
+                    <th colspan="4">Physical</th>
+                    <th colspan="4">Online/Technology-mediated<br>(Synchronous)</th>
                   </tr>
                   <tr>
                     <th>L</th><th>T</th><th>P</th><th>O</th>

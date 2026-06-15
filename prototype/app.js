@@ -2312,7 +2312,7 @@ function applyEditPageChrome(mode = 'version') {
   if (changeBanner) changeBanner.style.display = mode === 'change' ? 'block' : 'none';
   renderProgramCourseTableHeader();
   if (btnSubmit) {
-    if (mode === 'exec') {
+    if (mode === 'exec' || versionEditReadonly) {
       btnSubmit.style.display = 'none';
     } else if (mode === 'change') {
       btnSubmit.textContent = '提交变更审批';
@@ -3303,19 +3303,19 @@ function onH1Change() {
   h2.value = '';
 }
 
-// ── Course Classification Tree（学分/课程数：L1/L2(有L3) 自动汇总，L2/L3 可填）──
+// ── Course Classification Tree（学分：L1/L2(有L3) 自动汇总；课程数由 TAB2 课程设置反馈）──
 const SEED_CLASSIFICATION_TREE = [
   {
     id: 'l1-comp', level: 1, name: 'Compulsory Courses', studyType: 'compulsory',
     children: [
-      { id: 'l2-mpu', level: 2, name: 'Mata Pelajaran Umum (MPU)', studyType: 'compulsory', creditsMin: 19, creditsMax: 19, courseCount: 5 },
-      { id: 'l2-uni', level: 2, name: 'University Course', studyType: 'compulsory', creditsMin: 15, creditsMax: 15, courseCount: 4 }
+      { id: 'l2-mpu', level: 2, name: 'Mata Pelajaran Umum (MPU)', studyType: 'compulsory', creditsMin: 19, creditsMax: 19 },
+      { id: 'l2-uni', level: 2, name: 'University Course', studyType: 'compulsory', creditsMin: 15, creditsMax: 15 }
     ]
   },
   {
     id: 'l1-core', level: 1, name: 'Core/Major/Specialisation', studyType: 'compulsory',
     children: [
-      { id: 'l2-major', level: 2, name: 'Major Core', studyType: 'compulsory', creditsMin: 54, creditsMax: 54, courseCount: 14 }
+      { id: 'l2-major', level: 2, name: 'Major Core', studyType: 'compulsory', creditsMin: 54, creditsMax: 54 }
     ]
   },
   {
@@ -3325,12 +3325,12 @@ const SEED_CLASSIFICATION_TREE = [
         id: 'l2-ge', level: 2, name: 'General Elective', studyType: 'elective',
         creditsMin: 12, creditsMax: 20,
         children: [
-          { id: 'l3-arts', level: 3, name: 'Arts', studyType: 'elective', creditsMin: 4, courseCount: 2 },
-          { id: 'l3-biz', level: 3, name: 'Business', studyType: 'elective', creditsMin: 4, courseCount: 2 },
-          { id: 'l3-sci', level: 3, name: 'Science', studyType: 'elective', creditsMin: 4, courseCount: 2 }
+          { id: 'l3-arts', level: 3, name: 'Arts', studyType: 'elective', creditsMin: 4 },
+          { id: 'l3-biz', level: 3, name: 'Business', studyType: 'elective', creditsMin: 4 },
+          { id: 'l3-sci', level: 3, name: 'Science', studyType: 'elective', creditsMin: 4 }
         ]
       },
-      { id: 'l2-me', level: 2, name: 'Major Elective', studyType: 'elective', creditsMin: 15, creditsMax: 17, courseCount: 5 }
+      { id: 'l2-me', level: 2, name: 'Major Elective', studyType: 'elective', creditsMin: 15, creditsMax: 17 }
     ]
   }
 ];
@@ -3456,18 +3456,24 @@ function getApprovalItemTotalCredits(item) {
   return total != null ? total : (item.totalCredits || '—');
 }
 
+function countProgramCoursesForNode(node) {
+  if (!node) return 0;
+  return PROGRAM_COURSES.filter(pc => courseBelongsToClassificationNodeAny(pc, node)).length;
+}
+
 function calcNodeCourseCount(node) {
-  if (node.level === 3) return Number(node.courseCount) || 0;
+  if (!node) return 0;
+  if (node.level === 3) return countProgramCoursesForNode(node);
   if (node.level === 2) {
     if (node.children?.length) {
       return node.children.reduce((sum, child) => sum + calcNodeCourseCount(child), 0);
     }
-    return Number(node.courseCount) || 0;
+    return countProgramCoursesForNode(node);
   }
   if (node.level === 1) {
     return (node.children || []).reduce((sum, child) => sum + calcNodeCourseCount(child), 0);
   }
-  return Number(node.courseCount) || 0;
+  return countProgramCoursesForNode(node);
 }
 
 function isAggregatedCreditNode(node) {
@@ -3476,13 +3482,17 @@ function isAggregatedCreditNode(node) {
 
 function syncClassificationStoredCredits() {
   CLASSIFICATION_TREE.forEach(l1 => {
+    delete l1.courseCount;
     normalizeNodeCredits(l1);
     (l1.children || []).forEach(l2 => {
+      delete l2.courseCount;
       normalizeNodeCredits(l2);
       if (l2.children?.length) {
         delete l2.credits;
-        delete l2.courseCount;
-        (l2.children || []).forEach(normalizeNodeCredits);
+        (l2.children || []).forEach(l3 => {
+          delete l3.courseCount;
+          normalizeNodeCredits(l3);
+        });
       }
     });
   });
@@ -4279,7 +4289,7 @@ function formatCourseCreditsRequirement(min, max, isElective = false) {
   return '—';
 }
 
-function renderCourseCreditsSummaryRow({ name, level, configured, min, max, isElective = false }) {
+function renderCourseCreditsSummaryRow({ name, level, courseCount, configured, min, max, isElective = false }) {
   const status = getCourseCreditsStatusMeta(configured, min, max, { enforceMax: false });
   const isL3 = level === 3;
   const rowCls = isL3 ? 'row-l3' : 'row-l2';
@@ -4287,6 +4297,7 @@ function renderCourseCreditsSummaryRow({ name, level, configured, min, max, isEl
   const prefix = isL3 ? '└' : '├';
   return `<tr class="${rowCls} credits-summary-row status-${status.cls}">` +
     `<td class="col-name ${indentCls}">${prefix} ${escapeHtml(name)}</td>` +
+    `<td class="col-course-count"><strong>${courseCount}</strong></td>` +
     `<td class="col-num"><strong>${configured}</strong></td>` +
     `<td class="col-req">${formatCourseCreditsRequirement(min, max, isElective)}</td>` +
     `<td class="col-status"><span class="status-badge ${status.cls}">${status.text}</span></td>` +
@@ -4358,9 +4369,11 @@ function renderCourseCreditsSummary() {
       const l2Min = Number(l2.creditsMin) || 0;
       const l2Max = getClassificationMaxCredits(l2);
       const l2Sum = sumCourseCreditsForNode(l2.id);
+      const l2CourseCount = countProgramCoursesForNode(l2);
       rows.push(renderCourseCreditsSummaryRow({
         name: l2.name,
         level: 2,
+        courseCount: l2CourseCount,
         configured: l2Sum,
         min: l2Min,
         max: l2Max,
@@ -4370,9 +4383,11 @@ function renderCourseCreditsSummary() {
         normalizeNodeCredits(l3);
         const l3Min = Number(l3.creditsMin) || 0;
         const l3Sum = sumCourseCreditsForNode(l3.id);
+        const l3CourseCount = countProgramCoursesForNode(l3);
         rows.push(renderCourseCreditsSummaryRow({
           name: l3.name,
           level: 3,
+          courseCount: l3CourseCount,
           configured: l3Sum,
           min: l3Min,
           max: null,
@@ -4383,7 +4398,7 @@ function renderCourseCreditsSummary() {
     if (rows.length) {
       groups.push(
         `<tr class="row-l1${l1.highlight ? ' highlight' : ''}">` +
-        `<td colspan="4" class="col-name">` +
+        `<td colspan="5" class="col-name">` +
         `<span class="tree-toggle">▼</span> ${escapeHtml(l1.name)}</td></tr>` +
         rows.join('')
       );
@@ -4406,6 +4421,7 @@ function renderCourseCreditsSummary() {
     `<table class="credits-summary-table tree-table">` +
     `<thead><tr>` +
     `<th class="col-name">分类</th>` +
+    `<th class="col-course-count">课程数量</th>` +
     `<th class="col-num">已配置学分</th>` +
     `<th class="col-req">学分要求</th>` +
     `<th class="col-status">状态</th>` +
@@ -4474,6 +4490,7 @@ function removeProgramCourse(pcId) {
   if (idx < 0) return;
   PROGRAM_COURSES.splice(idx, 1);
   renderProgramCoursesTable();
+  refreshTab1CourseCountsFromProgramCourses();
   updateVersionEditTabStates();
 }
 
@@ -6122,6 +6139,7 @@ function saveCourse() {
     readCourseFormIntoProgramCourse(editing);
     persistCourseDraftTo(editing);
     renderProgramCoursesTable();
+    refreshTab1CourseCountsFromProgramCourses();
   } else {
     const pc = createProgramCourseFromCatalog(selectedCatalogCourseId, {
       h1Id,
@@ -6142,6 +6160,7 @@ function saveCourse() {
     finalizeProgramCourseForContext(pc);
     PROGRAM_COURSES.push(pc);
     renderProgramCoursesTable();
+    refreshTab1CourseCountsFromProgramCourses();
   }
   editingProgramCourseId = null;
   closeModal('modal-add-course');
@@ -6344,6 +6363,7 @@ function confirmBatchAddCourses() {
   });
 
   renderProgramCoursesTable();
+  refreshTab1CourseCountsFromProgramCourses();
   closeModal('modal-batch-add-course');
   alert(added ? `已批量添加 ${added} 门课程，可在列表中逐门编辑完善信息。` : '所选课程均已存在于本方案中。');
 }
@@ -6656,12 +6676,18 @@ function validateElectiveMatrixRequired(l2CreditsMax) {
   return true;
 }
 
+function refreshTab1CourseCountsFromProgramCourses() {
+  const tbody = document.getElementById('classification-tree-body');
+  if (!tbody?.rows.length) return;
+  renderClassificationTree();
+}
+
 function renderCourseCountCell(node) {
   const count = calcNodeCourseCount(node);
-  const aggregated = isAggregatedCreditNode(node);
-  const cls = aggregated ? 'credit-auto' : 'credit-value';
-  const extra = node.level === 1 ? ' l1' : '';
-  return `<td class="count-cell"><span class="${cls}${extra}">${count}</span></td>`;
+  const aggregated = node.level === 1;
+  const cls = aggregated ? 'credit-auto l1' : 'credit-value';
+  const title = aggregated ? ' title="自动汇总：各二级课程数之和"' : '';
+  return `<td class="count-cell"><span class="${cls}"${title}>${count}</span></td>`;
 }
 
 function renderCreditCell(node) {
@@ -7175,8 +7201,7 @@ function saveCategory() {
       level: 3,
       name,
       studyType: l2.studyType,
-      creditsMin,
-      courseCount: 0
+      creditsMin
     });
     delete l2.courseCount;
     parentL2CategoryId = null;
@@ -7213,8 +7238,7 @@ function saveCategory() {
     name: h2Name,
     studyType,
     creditsMin,
-    creditsMax,
-    courseCount: 0
+    creditsMax
   };
   if (!l1.children) l1.children = [];
   l1.children.push(l2);

@@ -776,11 +776,16 @@ body {
   font-weight: 400; color: var(--text-2);
 }
 .credits-summary-table .col-name { text-align: left; }
+.credits-summary-table .col-course-count,
 .credits-summary-table .col-num,
 .credits-summary-table .col-req,
 .credits-summary-table .col-status {
   text-align: center; white-space: nowrap;
 }
+.credits-summary-table .col-course-count {
+  width: 88px; padding-left: 12px; padding-right: 12px;
+}
+.credits-summary-table .col-course-count strong { color: var(--text); font-weight: 600; }
 .credits-summary-table .col-num {
   width: 104px; padding-left: 16px; padding-right: 16px;
 }
@@ -791,6 +796,7 @@ body {
 .credits-summary-table .col-status {
   width: 84px; padding-left: 12px; padding-right: 12px;
 }
+.credits-summary-table th.col-course-count,
 .credits-summary-table th.col-num,
 .credits-summary-table th.col-req,
 .credits-summary-table th.col-status {
@@ -806,6 +812,7 @@ body {
 .chip.ok { border-color: #86efac; background: var(--green-bg); color: #15803d; }
 .chip.warn { border-color: #fcd34d; background: #fffbeb; color: #b45309; }
 .hint { font-size: 12px; color: var(--text-3); }
+.th-hint { display: block; font-size: 10px; font-weight: 400; color: var(--text-3); line-height: 1.2; margin-top: 2px; }
 
 /* ── Alerts ── */
 .alert-info {
@@ -1249,6 +1256,8 @@ body {
 .slt-assessment-table thead tr:first-child th { vertical-align: middle; }
 .slt-assessment-table thead tr:last-child th { font-size: 10px; font-weight: 600; }
 .slt-outline-table thead tr:first-child th { vertical-align: middle; font-size: 10px; }
+.slt-outline-table thead tr:nth-child(2) th,
+.slt-outline-table thead tr:nth-child(3) th { font-size: 10px; }
 
 .slt-outline-table th,
 .slt-outline-table td,

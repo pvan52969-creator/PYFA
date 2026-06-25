@@ -1080,6 +1080,9 @@ body {
 .form-item.offering-semester-locked .field-label-row .toggle-switch {
   cursor: not-allowed;
 }
+#delayed-offering-wrap[hidden] {
+  display: none !important;
+}
 .delayed-offering-field {
   align-self: flex-start;
   margin-top: 2px;

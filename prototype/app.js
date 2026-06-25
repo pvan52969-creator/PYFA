@@ -6420,14 +6420,18 @@ function onOfferingSemesterToggleChange(prefix = '') {
 }
 
 function isDelayedOfferingFormVisible() {
-  return Boolean(currentExecPlan);
+  // 仅专业批次执行计划 TAB2 编辑已有课程时显示；方案版本/变更无实际开课学期
+  return Boolean(currentExecPlan) && courseModalExecLimited && !courseModalReadonly;
 }
 
 function syncDelayedOfferingFieldState() {
   const wrap = document.getElementById('delayed-offering-wrap');
   const toggle = document.getElementById('delayed-offering-enabled');
   const visible = isDelayedOfferingFormVisible();
-  if (wrap) wrap.hidden = !visible;
+  if (wrap) {
+    wrap.hidden = !visible;
+    wrap.style.display = visible ? '' : 'none';
+  }
   if (!visible && toggle) toggle.checked = false;
 }
 
@@ -6447,7 +6451,7 @@ function readDelayedOfferingFromForm(pc) {
 }
 
 function onDelayedOfferingToggleChange() {
-  if (courseModalReadonly || !currentExecPlan) return;
+  if (courseModalReadonly || !currentExecPlan || !courseModalExecLimited) return;
   updateCourseSaveButtonState();
 }
 
@@ -7307,13 +7311,15 @@ function setMergeCourseFormVisible(visible) {
 }
 
 function applyMergeCourseFormState() {
-  const hidden = courseModalExecLimited || Boolean(currentExecPlan);
-  const readonly = courseModalReadonly || hidden;
-  setMergeCourseFormVisible(!hidden);
+  const execLimited = courseModalExecLimited;
+  const readonly = courseModalReadonly || execLimited;
+  setMergeCourseFormVisible(true);
   const pickBtn = document.getElementById('btn-merge-course-pick');
   const clearBtn = document.getElementById('btn-merge-course-clear');
   if (pickBtn) pickBtn.style.display = readonly ? 'none' : '';
   if (clearBtn) clearBtn.style.display = readonly ? 'none' : '';
+  const mergeWrap = document.getElementById('merge-course-wrap');
+  if (mergeWrap) mergeWrap.classList.toggle('is-field-locked', readonly);
 }
 
 function onOfferingSemesterChange() {
@@ -8754,8 +8760,8 @@ function fillCourseFormFromProgramCourse(pc) {
   applyMergeCourseFormState();
   updateCourseCharCounts();
   applyCourseCatalogLockedFields();
-  setDelayedOfferingFormValue(pc.isDelayedOffering);
   syncDelayedOfferingFieldState();
+  if (isDelayedOfferingFormVisible()) setDelayedOfferingFormValue(pc.isDelayedOffering);
 }
 
 function readCourseFormIntoProgramCourse(pc) {
@@ -10371,6 +10377,7 @@ function applyCourseModalExecLimited(limited) {
   });
 
   if (!limited || courseModalReadonly) {
+    syncDelayedOfferingFieldState();
     updateCourseSaveButtonState();
     if (limited === false && courseModalStep === 2) renderCloTable();
     if (limited === false && courseModalStep === 3) renderSltAll();
@@ -10387,6 +10394,7 @@ function applyCourseModalExecLimited(limited) {
     if (!allowed) el.disabled = true;
   });
   formDetails.querySelectorAll('button').forEach(btn => {
+    if (btn.closest('#merge-course-wrap')) return;
     btn.style.display = btn.closest('.course-picker-display') ? '' : 'none';
   });
 

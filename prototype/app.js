@@ -7271,21 +7271,16 @@ function selectMergeCoursePickerRow(pcId) {
 function openMergeCoursePickerModal() {
   if (courseModalReadonly || courseModalExecLimited || currentExecPlan) return;
   const ctx = getCurrentCourseMergeContext();
-  if (!ctx.h2Id || !ctx.semester || Number.isNaN(ctx.credits)) {
-    alert('请先完整填写二级分类、开课学期与学分，再选择合并课程。');
-    return;
-  }
-  const list = getEligibleMergeProgramCourses(ctx);
-  if (!list.length) {
-    alert('暂无可合并课程。须存在开课学期、二级分类、学分均相同的其他方案课程。');
-    return;
-  }
   pendingMergeProgramCourseId = selectedMergeProgramCourseId;
   const hint = document.getElementById('merge-course-picker-hint');
   if (hint) {
-    hint.textContent = `开课学期 ${ctx.semester} · ${getCourseClassificationL2(ctx.h2Id)} · ${ctx.credits} 学分 · 单选`;
+    if (!ctx.h2Id || !ctx.semester || Number.isNaN(ctx.credits)) {
+      hint.textContent = '须与开课学期、二级分类、学分相同的其他方案课程（单选）；填全上述字段后将列出可选项。';
+    } else {
+      hint.textContent = `开课学期 ${ctx.semester} · ${getCourseClassificationL2(ctx.h2Id)} · ${ctx.credits} 学分 · 单选`;
+    }
   }
-  renderMergeCoursePickerTable(list);
+  renderMergeCoursePickerTable(getEligibleMergeProgramCourses(ctx));
   openModal('modal-merge-course-picker');
 }
 

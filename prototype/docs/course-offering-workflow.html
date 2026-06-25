@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>XMUM 开课管理 · 操作流程</title>
+<style>
+  @page { size: A3 landscape; margin: 8mm; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+    background: #f8fafc; color: #0f172a;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .sheet { max-width: 980px; margin: 0 auto; padding: 14px 16px 18px; display: flex; flex-direction: column; background: #f8fafc; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .header-left h1 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+  .header-left p { margin: 0; font-size: 11px; color: #64748b; line-height: 1.45; max-width: 520px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; }
+  .legend-item { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; font-size: 10px; color: #475569; border: 1px solid #e2e8f0; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 999px; }
+  .diagram-area { border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; padding: 6px; overflow: hidden; }
+  .diagram-area svg { display: block; width: 100%; max-width: 960px; height: auto; margin: 0 auto; }
+  .node { width: 100%; height: 100%; padding: 5px 7px; border-radius: 8px; border: 1px solid; border-left-width: 3px; display: flex; flex-direction: column; justify-content: center; gap: 1px; box-sizing: border-box; overflow: hidden; }
+  .node-title { font-size: 10px; font-weight: 600; line-height: 1.3; color: #0f172a; }
+  .node-sub { font-size: 8px; line-height: 1.3; color: #64748b; }
+  .workflow-phases { margin-top: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 11px; line-height: 1.55; color: #475569; }
+  .workflow-phases-title { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 6px; }
+  .workflow-phases p { margin: 0 0 6px; }
+  .footer { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 10px; line-height: 1.45; color: #475569; }
+  .footer-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px; }
+  .footer-item strong { color: #0f172a; }
+  .meta { margin-top: 8px; text-align: right; font-size: 10px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="header">
+    <div class="header-left">
+      <h1>XMUM 开课管理 · 操作流程</h1>
+      <p>参考教务系统：正常开课、合班、分班、合分班。主路径：时间设置 → 生成计划 → 合分班 → 明细安排（学生 / 教师 / 地点 / 周次）</p>
+    </div>
+    <div class="legend">
+      <span class="legend-item" style="background:#eff6ff"><span class="legend-dot" style="background:#2563eb"></span>准备</span>
+      <span class="legend-item" style="background:#f0fdf4"><span class="legend-dot" style="background:#16a34a"></span>生成计划</span>
+      <span class="legend-item" style="background:#fff7ed"><span class="legend-dot" style="background:#ea580c"></span>合分班</span>
+      <span class="legend-item" style="background:#faf5ff"><span class="legend-dot" style="background:#9333ea"></span>明细安排</span>
+    </div>
+  </div>
+  <div class="diagram-area">
+    <svg viewBox="0 0 1000 960" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/></marker>
+        <marker id="arr-g" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/></marker>
+        <marker id="arr-o" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#ea580c"/></marker>
+        <marker id="arr-p" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#9333ea"/></marker>
+      </defs>
+
+      <!-- 阶段一：主路径 -->
+      <path d="M 500 76 C 500 98, 500 98, 500 120" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
+      <path d="M 500 172 C 500 194, 500 194, 500 216" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
+
+      <!-- 生成计划 → 三类开课（连续竖线至分支总线） -->
+      <path d="M 500 268 C 500 330, 500 330, 500 402" fill="none" stroke="#16a34a" stroke-width="1.1"/>
+      <path d="M 140 402 L 860 402" fill="none" stroke="#16a34a" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 140 402 C 140 414, 140 414, 140 426" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+      <path d="M 500 402 C 500 414, 500 414, 500 426" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+      <path d="M 860 402 C 860 414, 860 414, 860 426" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+
+      <!-- 三类开课 → 合分班 hub -->
+      <path d="M 140 478 C 140 496, 140 496, 140 512" fill="none" stroke="#16a34a" stroke-width="1.1"/>
+      <path d="M 500 478 C 500 496, 500 496, 500 512" fill="none" stroke="#16a34a" stroke-width="1.1"/>
+      <path d="M 860 478 C 860 496, 860 496, 860 512" fill="none" stroke="#16a34a" stroke-width="1.1"/>
+      <path d="M 140 512 L 860 512" fill="none" stroke="#16a34a" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 500 512 C 500 524, 500 524, 500 540" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+
+      <!-- 合分班 hub → 四场景 -->
+      <path d="M 500 592 C 500 614, 500 614, 500 630" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 120 630 L 840 630" fill="none" stroke="#ea580c" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 120 630 C 120 642, 120 642, 120 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+      <path d="M 360 630 C 360 642, 360 642, 360 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+      <path d="M 600 630 C 600 642, 600 642, 600 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+      <path d="M 840 630 C 840 642, 840 642, 840 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+
+      <!-- 四场景 → 确定教学班 -->
+      <path d="M 120 706 C 120 724, 120 724, 120 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 360 706 C 360 724, 360 724, 360 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 600 706 C 600 724, 600 724, 600 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 840 706 C 840 724, 840 724, 840 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 120 740 L 840 740" fill="none" stroke="#ea580c" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 500 740 C 500 752, 500 752, 500 768" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+
+      <!-- 确定教学班 → 明细四步 -->
+      <path d="M 500 820 C 500 842, 500 842, 500 858" fill="none" stroke="#9333ea" stroke-width="1.1"/>
+      <path d="M 120 858 L 840 858" fill="none" stroke="#9333ea" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 120 858 C 120 870, 120 870, 120 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+      <path d="M 360 858 C 360 870, 360 870, 360 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+      <path d="M 600 858 C 600 870, 600 870, 600 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+      <path d="M 840 858 C 840 870, 840 870, 840 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+
+      <!-- 节点：准备 -->
+      <foreignObject x="420" y="24" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+          <div class="node-title">开课时间设置</div>
+          <div class="node-sub">指定当前开课学期（是/否）</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="420" y="120" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+          <div class="node-title">执行计划已提交</div>
+          <div class="node-sub">专业批次执行计划 · 已锁定</div>
+        </div>
+      </foreignObject>
+
+      <!-- 节点：生成计划 -->
+      <foreignObject x="420" y="216" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">生成开课计划</div>
+          <div class="node-sub">专业批次 + 课程号 · 一条数据</div>
+        </div>
+      </foreignObject>
+
+      <!-- 节点：三类开课 -->
+      <foreignObject x="60" y="426" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">专业开课</div>
+          <div class="node-sub">必修 / 专业选修 / 基础课</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="420" y="426" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">通识选修开课</div>
+          <div class="node-sub">General Elective</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="780" y="426" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">其他开课</div>
+          <div class="node-sub">重修 / 补修 · 人工新增</div>
+        </div>
+      </foreignObject>
+
+      <!-- 节点：合分班 hub -->
+      <foreignObject x="420" y="540" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">按课程号合分班</div>
+          <div class="node-sub">同一课程号下操作</div>
+        </div>
+      </foreignObject>
+
+      <!-- 节点：四场景 -->
+      <foreignObject x="40" y="654" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">正常开课</div>
+          <div class="node-sub">一批次一课一班</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="280" y="654" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">合班</div>
+          <div class="node-sub">多批次 → 一个教学班</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="520" y="654" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">分班</div>
+          <div class="node-sub">一批次 → 多个教学班</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="760" y="654" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">合分班</div>
+          <div class="node-sub">先合班再分班调整</div>
+        </div>
+      </foreignObject>
+
+      <!-- 节点：确定分组 -->
+      <foreignObject x="420" y="768" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">确定教学班分组</div>
+          <div class="node-sub">分班名单锁定后进入明细</div>
+        </div>
+      </foreignObject>
+
+      <!-- 节点：明细四步 -->
+      <foreignObject x="40" y="882" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">学生名单导入</div>
+          <div class="node-sub">按教学班维护</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="280" y="882" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">教师安排</div>
+          <div class="node-sub">主讲 / 辅导教师</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="520" y="882" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">地点安排</div>
+          <div class="node-sub">教室 / 实验室</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="760" y="882" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">上课周次</div>
+          <div class="node-sub">周次 / 节次模式</div>
+        </div>
+      </foreignObject>
+    </svg>
+  </div>
+
+  <div class="workflow-phases">
+    <div class="workflow-phases-title">三阶段说明（对照参考视频）</div>
+    <p><strong>阶段一 · 生成开课计划：</strong>依据已提交的专业批次执行计划，按「专业批次 + 课程号」生成明细行。必修课、专业选修、MPU、大学课等归入<strong>专业开课</strong>；General Elective 归入<strong>通识选修开课</strong>；挂科重修等额外需求在<strong>其他开课</strong>人工维护。仅当前「开课学期 = 是」的学年学期可生成。</p>
+    <p><strong>阶段二 · 合分班：</strong>在<strong>同一课程号</strong>下对计划行操作。<em>正常</em>：一行一班；<em>合班</em>：多行合并为一个教学班；<em>分班</em>：拆成多个教学班；<em>合分班</em>：先合后分，灵活调整容量与批次组合。</p>
+    <p><strong>阶段三 · 开课明细：</strong>教学班分组确定后，为每个班维护学生名单、任课教师、上课地点与上课周次，完成本学期排课前置数据。</p>
+  </div>
+
+  <div class="footer">
+    <div class="footer-item"><strong>数据粒度</strong><br>计划行 = 1 专业批次 × 1 课程号；教学班 = 合分班后的上课班组</div>
+    <div class="footer-item"><strong>前置依赖</strong><br>培养方案执行计划已提交 · 开课时间窗口内操作</div>
+    <div class="footer-item"><strong>参考视频</strong><br>正常.mp4 · 合班.mp4 · 分班.mp4 · 合分班.mp4</div>
+  </div>
+  <div class="meta">开课管理原型流程图 · XMUM</div>
+</div>
+</body>
+</html>

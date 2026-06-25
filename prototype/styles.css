@@ -268,6 +268,26 @@ body {
 }
 .workflow-doc .workflow-phases p { margin: 0 0 10px; }
 .workflow-doc .workflow-phases p:last-child { margin-bottom: 0; }
+.workflow-doc .workflow-modules {
+  margin-top: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 11px;
+  line-height: 1.65;
+  color: #475569;
+}
+.workflow-doc .workflow-modules-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+.workflow-doc .workflow-modules dl { margin: 0; }
+.workflow-doc .workflow-modules dt { font-weight: 600; color: #0f172a; display: inline; }
+.workflow-doc .workflow-modules dt::after { content: '：'; }
+.workflow-doc .workflow-modules dd { margin: 0 0 6px 0; display: inline; }
 .workflow-doc .meta {
   margin-top: 0;
   text-align: center;
@@ -1264,9 +1284,6 @@ body {
   color: var(--text-2);
   font-weight: 400;
 }
-.category-form-panel .form-item.is-field-locked > label.req::after {
-  content: none;
-}
 .category-form-panel .form-item.is-field-locked select.input,
 .category-form-panel .form-item.is-field-locked select.input:disabled,
 .category-form-panel .form-item.is-field-locked .input.readonly,
@@ -1871,7 +1888,7 @@ body {
 .data-table tr.row-course-delayed td:first-child {
   box-shadow: inset 3px 0 0 #b45309;
 }
-.exec-status-lock-yes { background: #475569; }
+.exec-status-lock-yes { background: var(--green, #16a34a); color: #fff; }
 .exec-status-lock-no { background: #b0bac7; }
 .batch-approval-list {
   margin: 0;

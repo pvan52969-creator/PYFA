@@ -102,7 +102,7 @@
       <div class="page-header workflow-page-header">
         <div class="workflow-page-title">
           <h1>培养方案管理 · 操作流程</h1>
-          <p class="subtitle">主路径：版本制定与审批 → 通过后分流至执行计划、方案变更或只读查询</p>
+          <p class="subtitle">主路径：四 TAB 制定与四级审批 → 通过后分流至执行计划、方案变更、只读查询与数据统计</p>
         </div>
         <div class="workflow-zoom-toolbar">
           <button type="button" class="btn btn-ghost btn-sm workflow-zoom-btn" onclick="workflowZoomStep(-0.1)" title="缩小" aria-label="缩小">−</button>
@@ -950,9 +950,6 @@
         <div class="form-item"><label class="req">专业</label>
           <select class="input" id="new-programme" onchange="onNewProgrammeChange()">
             <option value="">请选择</option>
-            <option value="finance">Finance 金融学</option>
-            <option value="chinese">Chinese Studies 中国研究</option>
-            <option value="accounting">Accounting 会计学</option>
           </select>
         </div>
         <div class="form-item"><label class="req">开始批次</label>
@@ -1013,9 +1010,6 @@
         <div class="form-item"><label class="req">复制专业</label>
           <select class="input" id="copy-src-programme" onchange="onCopySrcProgrammeChange()">
             <option value="">请选择</option>
-            <option value="finance">Finance 金融学</option>
-            <option value="chinese">Chinese Studies 中国研究</option>
-            <option value="accounting">Accounting 会计学</option>
           </select>
         </div>
         <div class="form-item field-disabled" id="copy-src-version-wrap"><label class="req">复制方案版本</label>
@@ -1029,9 +1023,6 @@
         <div class="form-item"><label class="req">新的专业</label>
           <select class="input" id="copy-target-programme" onchange="onCopyTargetProgrammeChange()">
             <option value="">请选择</option>
-            <option value="finance">Finance 金融学</option>
-            <option value="chinese">Chinese Studies 中国研究</option>
-            <option value="accounting">Accounting 会计学</option>
           </select>
         </div>
         <div class="form-item field-disabled" id="copy-target-start-wrap"><label class="req">方案版本开始批次</label>
@@ -2168,9 +2159,6 @@
         <div class="form-item"><label class="req">专业</label>
           <select class="input" id="change-apply-programme" onchange="onChangeApplyProgrammeChange()">
             <option value="">请选择</option>
-            <option value="finance">Finance 金融学</option>
-            <option value="chinese">Chinese Studies 中国研究</option>
-            <option value="accounting">Accounting 会计学</option>
           </select>
         </div>
         <div class="form-item full"><label class="req">目标培养方案版本</label>

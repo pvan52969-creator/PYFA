@@ -11993,24 +11993,37 @@ function slugifyStatsId(text) {
 }
 
 function buildStatsTreeFromExecPlans() {
-  const programmeGroups = new Map();
+  const schoolGroups = new Map();
   EXEC_PLANS
     .filter(ep => ep.status === 'published')
     .forEach(ep => {
       const programme = PROGRAMMES[ep.programmeKey];
       if (!programme) return;
+      const schoolCode = getProgrammeSchoolCode(ep.programmeKey);
+      if (!schoolCode || schoolCode === '—') return;
       const parsed = parseIntake(ep.intake);
       if (!parsed) return;
       const yearKey = String(parsed.year);
 
-      if (!programmeGroups.has(ep.programmeKey)) {
-        programmeGroups.set(ep.programmeKey, {
+      if (!schoolGroups.has(schoolCode)) {
+        schoolGroups.set(schoolCode, {
+          id: `school-${slugifyStatsId(schoolCode)}`,
+          schoolCode,
+          label: schoolCode,
+          programmes: new Map()
+        });
+      }
+      const sg = schoolGroups.get(schoolCode);
+
+      if (!sg.programmes.has(ep.programmeKey)) {
+        sg.programmes.set(ep.programmeKey, {
           id: `programme-${ep.programmeKey}`,
-          label: `${programme.name} (${programme.nameZh})`,
+          programmeKey: ep.programmeKey,
+          label: programme.code || getProgrammeCode(ep.programmeKey),
           years: new Map()
         });
       }
-      const mg = programmeGroups.get(ep.programmeKey);
+      const mg = sg.programmes.get(ep.programmeKey);
       if (!mg.years.has(yearKey)) {
         mg.years.set(yearKey, {
           id: `programme-${ep.programmeKey}-year-${yearKey}`,
@@ -12023,6 +12036,7 @@ function buildStatsTreeFromExecPlans() {
         leaf: true,
         epId: ep.id,
         programmeKey: ep.programmeKey,
+        schoolCode,
         intakeCode: ep.intake,
         programme: `${programme.name} (${programme.nameZh})`,
         label: formatProgrammeIntakeCode(ep.programmeKey, ep.intake),
@@ -12030,17 +12044,26 @@ function buildStatsTreeFromExecPlans() {
       });
     });
 
-  return [...programmeGroups.values()]
-    .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
-    .map(progGroup => ({
-      id: progGroup.id,
-      label: progGroup.label,
-      children: [...progGroup.years.values()]
-        .sort((a, b) => Number(b.label) - Number(a.label))
-        .map(year => ({
-          id: year.id,
-          label: year.label,
-          children: year.plans.sort((a, b) => String(b.intakeCode).localeCompare(String(a.intakeCode)))
+  return [...schoolGroups.values()]
+    .sort((a, b) => a.label.localeCompare(b.label, 'en'))
+    .map(school => ({
+      id: school.id,
+      schoolCode: school.schoolCode,
+      label: school.label,
+      children: [...school.programmes.values()]
+        .sort((a, b) => a.label.localeCompare(b.label, 'en'))
+        .map(progGroup => ({
+          id: progGroup.id,
+          programmeKey: progGroup.programmeKey,
+          schoolCode: school.schoolCode,
+          label: progGroup.label,
+          children: [...progGroup.years.values()]
+            .sort((a, b) => Number(b.label) - Number(a.label))
+            .map(year => ({
+              id: year.id,
+              label: year.label,
+              children: year.plans.sort((a, b) => String(b.intakeCode).localeCompare(String(a.intakeCode)))
+            }))
         }))
     }));
 }
@@ -12203,15 +12226,17 @@ function getStatsContextHtml(leafId) {
     const programme = PROGRAMMES[ep.programmeKey];
     const version = findVersionById(ep.versionId);
     const duration = version?.duration || programme?.duration || '—';
-    return `<strong>Programme:</strong> ${escapeHtml(programme?.name || '—')} (${escapeHtml(programme?.nameZh || '')})` +
-      ` &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(formatIntakeDisplay(ep.intake))}` +
-      ` &nbsp;&nbsp; <strong>执行计划:</strong> ${escapeHtml(ep.planCode)}` +
+    return `<strong>学院:</strong> ${escapeHtml(getProgrammeSchoolCode(ep.programmeKey))}` +
+      ` &nbsp;&nbsp; <strong>专业:</strong> ${escapeHtml(programme?.code || '—')} (${escapeHtml(programme?.name || '—')})` +
+      ` &nbsp;&nbsp; <strong>专业批次:</strong> ${escapeHtml(formatProgrammeIntakeCode(ep.programmeKey, ep.intake))}` +
       ` &nbsp;&nbsp; <strong>学制:</strong> ${duration} 年`;
   }
   const leaf = findStatsLeafNode(leafId);
   if (!leaf) return '';
-  const intakeLabel = formatIntakeDisplay(leaf.intakeCode);
-  return `<strong>Programme:</strong> ${escapeHtml(leaf.programme || '—')} &nbsp;&nbsp; <strong>Intake:</strong> ${escapeHtml(intakeLabel)}`;
+  const intakeLabel = formatProgrammeIntakeCode(leaf.programmeKey, leaf.intakeCode);
+  return `<strong>学院:</strong> ${escapeHtml(leaf.schoolCode || '—')}` +
+    ` &nbsp;&nbsp; <strong>专业:</strong> ${escapeHtml(leaf.programme || '—')}` +
+    ` &nbsp;&nbsp; <strong>专业批次:</strong> ${escapeHtml(intakeLabel)}`;
 }
 
 function renderStatsTree(mode) {
@@ -12225,6 +12250,7 @@ function renderStatsTree(mode) {
     if (label.includes(filter)) return true;
     if (node.label?.toLowerCase().includes(filter)) return true;
     if (node.programme?.toLowerCase().includes(filter)) return true;
+    if (node.schoolCode?.toLowerCase().includes(filter)) return true;
     if (node.planCode?.toLowerCase().includes(filter)) return true;
     return node.children?.some(nodeMatches);
   }

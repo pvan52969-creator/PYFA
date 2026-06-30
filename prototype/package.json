@@ -6,6 +6,7 @@
     "export:workflow-pdf": "node scripts/export-workflow-pdf.mjs"
   },
   "devDependencies": {
+    "@fission-ai/openspec": "^1.4.1",
     "puppeteer-core": "^24.43.1"
   }
 }

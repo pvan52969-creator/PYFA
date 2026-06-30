@@ -2,6 +2,15 @@
 """按参考文档结构生成培养方案管理 PRD。"""
 
 from prd_field_data import VERSION_MGMT_FIELD_TABLES as _VERSION_MGMT_FIELD_TABLES
+from prd_logic_rules import (
+    APPROVAL_VERSION_LOGIC,
+    COURSE_FIELD_CROSS_LOGIC,
+    COURSE_GROUP_FIELD_TABLES_V22,
+    COURSE_GROUP_LOGIC,
+    CREDIT_VALIDATION_LOGIC,
+    TAB_EDIT_PERMISSION_MATRIX,
+    TAB_UNLOCK_LOGIC,
+)
 
 
 def _patch_field_tables(tables):
@@ -27,7 +36,7 @@ def _patch_field_tables(tables):
         if "TAB2 Step1" in title:
             insert = [
                 ["6", "合并课程选择", "Merged Course", "选择器", "否",
-                 "须与开课学期、二级分类、学分相同", "仅影响 TAB3 课程组与 TAB4 进程表展示；执行计划编辑只读展示", "否", ""],
+                 "须与开课学期、二级分类、学分相同", "仅影响 TAB3/TAB4 展示；点击选择直接打开弹窗，无前置强校验，无候选时列表空态；执行计划只读展示", "否", ""],
                 ["7", "授课对象范围", "Teaching Audience", "下拉框", "否", "—",
                  "Chinese / Local / International", "是", "Chinese"],
                 ["8", "延迟开课", "Delayed Offering", "开关", "否", "—",
@@ -60,20 +69,14 @@ def _patch_field_tables(tables):
             ["1", "开课学期", "Offering Semester", "只读", "—", "—", "来自 TAB2 选修已指定学期", "是", "Y2S2"],
             ["2", "一级分类", "Classification H1", "只读", "—", "—", "须为选修类", "是", ""],
             ["3", "二级分类", "Classification H2", "只读", "—", "—", "—", "是", ""],
-            ["4", "须选课程数", "Pick Count", "只读", "—", "≥1", "—", "否", "2"],
+            ["4", "须选课程数", "Pick Count", "只读", "—", "须<组内课程数",
+             "列表展示配置值；保存时至少 2 门组内课", "否", "2"],
             ["5", "合计学分要求", "Total Credits Required", "只读", "否", "—", "可选字段", "否", "6"],
             ["6", "组内课程数", "Member Count", "只读", "—", "—", "—", "否", "4"],
             ["7", "必选项", "Mandatory Picks", "只读", "—", "—", "展示必选课程课号", "否", "EGE411"],
             ["8", "备注", "Note", "只读", "否", "—", "TAB4 展示", "否", ""],
-        ]),
-        ("版本编辑——TAB3 课程组弹窗", [
-            ["1", "开课学期", "Offering Semester", "下拉框", "是", "—", "TAB2 选修已指定学期", "是", "Y2S2"],
-            ["2", "一级分类", "Classification H1", "下拉框", "是", "—", "级联；须选修类", "是", ""],
-            ["3", "二级分类", "Classification H2", "下拉框", "是", "—", "级联", "是", ""],
-            ["4", "须选课程数", "Pick Count", "数值框", "是", "≥1", "—", "否", "2"],
-            ["5", "合计学分要求", "Total Credits Required", "数值框", "否", "非负整数", "可选", "否", "6"],
-            ["6", "备注", "Note", "输入框", "否", "—", "TAB4 展示", "否", ""],
-            ["7", "组内课程", "Group Members", "多选表", "是", "至少一门", "勾选纳入；可标记必选，但不能全部设为必选", "否", ""],
+            ["9", "操作", "Actions", "按钮", "—", "—",
+             "版本/变更：查看+编辑+删除；执行计划/只读：仅查看", "否", ""],
         ]),
         ("执行计划编辑——TAB2 增量字段", [
             ["1", "实际开课学期", "Actual Offering Semester", "只读", "—", "—", "明确年月如 2029/09；仅执行计划展示", "否", "2029/09"],
@@ -82,6 +85,7 @@ def _patch_field_tables(tables):
             ["4", "先修课程", "Prerequisites", "选择器", "条件", "—", "执行计划可编辑", "否", ""],
         ]),
     ])
+    out.extend(COURSE_GROUP_FIELD_TABLES_V22)
     return out
 
 
@@ -106,9 +110,9 @@ def build_document(add_heading, add_para, add_kv_table, add_grid_table, add_fiel
     set_document_landscape(doc)
 
     add_heading(doc, "厦大马来分校本科教务系统产品需求文档", 0)
-    add_para(doc, "文档版本：V2.0")
-    add_para(doc, "创建日期：2026 年 6 月 10 日")
-    add_para(doc, "修订说明：V2.0 依据当前原型全面更新：四标签页（TAB3 课程组 + TAB4 方案进程表）、四级审批流、学院级联筛选与列表排序分页、复制版本、变更申请批量操作、执行计划统计、布鲁姆统计学院层级、25 专业/9 学院主数据对齐对照表；不含开课模块需求")
+    add_para(doc, "文档版本：V2.2")
+    add_para(doc, "创建日期：2026 年 6 月 9 日")
+    add_para(doc, "修订说明：V2.2 在 V2.1 基础上补充字段/功能逻辑关系：四标签页编辑权限矩阵、标签页解锁联动、课程组「课程选择」子弹窗与保存校验（≥2 门、须选数<组内数）、TAB2 与课程组学期冲突拦截、执行计划 TAB3 只读；新增附录 I–N 逻辑关系专章")
     add_para(doc, "模块范围：培养方案管理（Curriculum Management）")
     add_para(doc, "对应原型：prototype/index.html、prototype/app.js")
     doc.add_paragraph()
@@ -146,6 +150,9 @@ def build_document(add_heading, add_para, add_kv_table, add_grid_table, add_fiel
     add_heading(doc, "2.2 培养方案管理——系统需求", 2)
     add_heading(doc, "2.2.1 方案版本（英文名称：Programme Version）（需求确认状态：已确认）", 3)
     add_para(doc, "模块介绍：管理各专业不同入学批次的培养方案版本全生命周期，包括版本制定、四级审批、只读查询、版本复制/导出及批次链衔接；是执行计划与方案版本变更的上游数据源。")
+    add_heading(doc, "2.2.1.0 版本编辑四标签页（共用逻辑）（需求确认状态：已确认）", 4)
+    add_para(doc, "制定、变更、执行计划、只读查看共用 page-version-edit 四标签页骨架；各入口在 TAB1~TAB4 的增删改权限不同，详见附录 I。标签页解锁顺序：须先完成 TAB1 分类建设方可进入 TAB2/3/4（附录 J）。TAB1 课程数由 TAB2 自动汇总；TAB3 课程组候选来自 TAB2 已录入选修课；TAB4 方案进程表由 TAB1+2+3 自动生成。")
+    add_para(doc, "课程组（TAB3）：主弹窗通过「课程选择」按钮打开子弹窗多选组内课；保存须至少 2 门、须选课程数小于组内课程数、不能全部设为必选；已入课程组的课在 TAB2 不可改开课学期（附录 K）。合并课程与延迟开课规则见附录 L；提交审批学分校验见附录 M。")
 
     add_menu_block(
         doc, "2.2.1.1 ", "方案版本管理（英文名称：Programme Version Management）", "已确认",
@@ -243,7 +250,7 @@ def build_document(add_heading, add_para, add_kv_table, add_grid_table, add_fiel
         intro="管理各专业各入学批次的执行计划；从已通过版本自动匹配并复制内容；生成时重算开课学期与实际开课学期；各批次数据独立，不回写方案版本；支持是否调整追踪与修改日志。",
         list_fields="勾选框、专业代码、专业、专业批次、学院代码、入学批次、总学分、是否提交、是否调整、AC、操作。居中：专业代码、总学分、是否提交（已提交绿底白字）。页内说明条左对齐展示数据隔离规则。",
         search_fields="学院代码（级联）、专业代码、入学批次、是否提交；点击「查询」生效；支持排序与分页。",
-        flow_rel="选择专业与入学批次 → 自动匹配已通过版本并复制 → 旋转开课学期并计算实际开课学期 → 四标签页编辑（TAB1 只读、TAB2 限改、TAB3 可编辑课程组、TAB4 只读）→ 保存仅影响当前批次 → 提交后锁定。",
+        flow_rel="选择专业与入学批次 → 自动匹配已通过版本并复制 → 旋转开课学期并计算实际开课学期 → 四标签页编辑（TAB1 只读、TAB2 限改、TAB3 只读仅查看、TAB4 只读）→ 保存仅影响当前批次 → 提交后锁定。",
         flow_pre="存在可覆盖该批次的已通过版本；同专业同入学批次不可重复生成。",
         flow_out="独立执行计划副本；实际开课学期字段供下游开课模块引用（开课模块不在本文档范围）。",
         biz_flow="【执行计划】→ 生成 → 编辑四标签页 → 保存 → 提交锁定 →（下游开课模块，本文档不含）。",
@@ -423,6 +430,32 @@ def build_document(add_heading, add_para, add_kv_table, add_grid_table, add_fiel
         ["用户认证与角色路由", "无", "高"],
         ["开课模块", "不在培养方案 PRD 范围", "—"],
     ], col_widths=scale_widths([4.0, 7.0, 2.0]))
+
+    add_heading(doc, "附录 I：四标签页编辑权限矩阵（V2.2）", 2)
+    add_para(doc, "同一 page-version-edit 页面在不同业务入口下的 TAB1~TAB4 增删改权限对照；执行计划 TAB3 不可维护课程组，仅可查看。")
+    add_grid_table(doc, ["入口场景", "TAB1 分类", "TAB2 课程", "TAB3 课程组", "TAB4 进程表"],
+                   TAB_EDIT_PERMISSION_MATRIX, col_widths=scale_widths([3.5, 3.5, 4.0, 3.5, 2.5]))
+
+    add_heading(doc, "附录 J：标签页解锁与数据联动（V2.2）", 2)
+    add_grid_table(doc, ["联动关系", "规则", "不满足时行为"],
+                   TAB_UNLOCK_LOGIC, col_widths=scale_widths([3.0, 6.5, 6.5]))
+
+    add_heading(doc, "附录 K：课程组字段与校验逻辑（V2.2）", 2)
+    add_grid_table(doc, ["逻辑项", "规则", "说明/拦截"],
+                   COURSE_GROUP_LOGIC, col_widths=scale_widths([2.5, 4.5, 9.0]))
+
+    add_heading(doc, "附录 L：课程设置交叉字段逻辑（V2.2）", 2)
+    add_grid_table(doc, ["字段/功能", "规则", "说明"],
+                   COURSE_FIELD_CROSS_LOGIC, col_widths=scale_widths([2.8, 4.2, 9.0]))
+
+    add_heading(doc, "附录 M：学分校验逻辑（V2.2）", 2)
+    add_para(doc, "以下规则在分类保存、课程添加及版本/变更提交审批时触发；执行计划保存不重复校验版本级结构（TAB1 只读）。")
+    add_grid_table(doc, ["场景", "校验规则", "触发时机"],
+                   CREDIT_VALIDATION_LOGIC, col_widths=scale_widths([2.5, 6.0, 7.5]))
+
+    add_heading(doc, "附录 N：审批与版本链逻辑（V2.2）", 2)
+    add_grid_table(doc, ["逻辑项", "规则", "说明"],
+                   APPROVAL_VERSION_LOGIC, col_widths=scale_widths([2.8, 5.0, 8.2]))
 
     add_heading(doc, "附录 H：校验与提示汇总", 2)
     add_para(doc, "正式开发建议统一消息组件；下表为业务文案摘要。")

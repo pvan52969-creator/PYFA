@@ -270,7 +270,13 @@ const LIST_SORT_REFRESH = {
   statsExec: () => renderExecPlanStatsTable(),
   gmotPicker: () => renderGenerateMajorOfferingTaskPicker(),
   courseMajorOffering: () => renderCourseOfferingMajorPage(),
-  majorOfferingStudentRoster: () => renderMajorOfferingStudentRosterDrawer()
+  courseMajorOfferingTask: () => renderCourseMajorOfferingTaskPage(),
+  courseGeOfferingTask: () => renderCourseGeOfferingTaskPage(),
+  courseMajorOfferingRoster: () => renderCourseMajorOfferingRosterPage(),
+  courseSpecialOfferingTask: () => renderCourseSpecialOfferingTaskPage(),
+  courseSpecialOfferingRoster: () => renderCourseSpecialOfferingRosterPage(),
+  majorOfferingStudentRoster: () => renderMajorOfferingStudentRosterDrawer(),
+  offeringGroupingStudent: () => renderOfferingGroupingStudentPanel()
 };
 
 function toggleListSort(listKey, key) {
@@ -324,8 +330,16 @@ const LIST_PAGE_REFRESH = {
   execList: () => renderExecList(),
   statsExec: () => renderExecPlanStatsTable(),
   courseMajorOffering: () => renderCourseOfferingMajorPage(),
+  courseMajorOfferingTask: () => renderCourseMajorOfferingTaskPage(),
+  courseGeOfferingTask: () => renderCourseGeOfferingTaskPage(),
+  courseMajorOfferingRoster: () => renderCourseMajorOfferingRosterPage(),
+  courseSpecialOfferingTask: () => renderCourseSpecialOfferingTaskPage(),
+  courseSpecialOfferingRoster: () => renderCourseSpecialOfferingRosterPage(),
+  schoolElectiveCourses: () => renderSchoolElectiveCoursePage(),
   majorOfferingStudentRoster: () => renderMajorOfferingStudentRosterDrawer(),
+  offeringGroupingStudent: () => renderOfferingGroupingStudentPanel(),
   majorOfferingStudentPicker: () => renderMajorOfferingStudentPicker(),
+  presetRosterGrouping: () => renderPresetRosterGroupingDrawer(),
   majorOfferingStudentRemovalLog: () => renderMajorOfferingStudentRemovalLogDrawer(),
   majorOfferingTeacherPicker: () => renderMajorOfferingTeacherPickerModal()
 };
@@ -1938,18 +1952,153 @@ function renderExecList() {
 
 const COURSE_TIME_SETTINGS = [
   // 2 月学期：注册约 2/20 前开放；4 月学期：注册约 4/3 前；9 月学期：注册约 9/25 前（参照 2026 校历推算）
-  { id: 1, termCode: '202402', startAt: '2024-01-15 08:00:00', endAt: '2024-02-18 18:00:00', isOfferingTerm: false, remark: '' },
-  { id: 2, termCode: '202404', startAt: '2024-03-01 08:00:00', endAt: '2024-04-02 18:00:00', isOfferingTerm: false, remark: '' },
-  { id: 3, termCode: '202409', startAt: '2024-08-20 08:00:00', endAt: '2024-09-24 18:00:00', isOfferingTerm: false, remark: '' },
-  { id: 4, termCode: '202502', startAt: '2025-01-20 08:00:00', endAt: '2025-02-19 18:00:00', isOfferingTerm: false, remark: '' },
-  { id: 5, termCode: '202504', startAt: '2025-03-03 08:00:00', endAt: '2025-04-02 18:00:00', isOfferingTerm: false, remark: '' },
-  { id: 6, termCode: '202509', startAt: '2025-08-25 08:00:00', endAt: '2025-09-24 18:00:00', isOfferingTerm: false, remark: '' },
-  { id: 7, termCode: '202602', startAt: '2026-01-20 08:00:00', endAt: '2026-02-19 18:00:00', isOfferingTerm: false, remark: '' },
-  { id: 8, termCode: '202604', startAt: '2026-03-02 08:00:00', endAt: '2026-04-02 18:00:00', isOfferingTerm: true, remark: '' },
-  { id: 9, termCode: '202609', startAt: '2026-08-25 08:00:00', endAt: '2026-09-24 18:00:00', isOfferingTerm: false, remark: '' }
+  // teachingWeeks：按学期类型固定，不在开课时间设置中维护（2 月 6 周，4/9 月 17 周）
+  { id: 1, termCode: '202402', startAt: '2024-01-15 08:00:00', endAt: '2024-02-18 18:00:00', teachingWeeks: 6, isOfferingTerm: false, remark: '' },
+  { id: 2, termCode: '202404', startAt: '2024-03-01 08:00:00', endAt: '2024-04-02 18:00:00', teachingWeeks: 17, isOfferingTerm: false, remark: '' }, // teachingWeeks: 6 // 原短学期误配
+  { id: 3, termCode: '202409', startAt: '2024-08-20 08:00:00', endAt: '2024-09-24 18:00:00', teachingWeeks: 17, isOfferingTerm: false, remark: '' }, // teachingWeeks: 14 // 原 14 周
+  { id: 4, termCode: '202502', startAt: '2025-01-20 08:00:00', endAt: '2025-02-19 18:00:00', teachingWeeks: 6, isOfferingTerm: false, remark: '' },
+  { id: 5, termCode: '202504', startAt: '2025-03-03 08:00:00', endAt: '2025-04-02 18:00:00', teachingWeeks: 17, isOfferingTerm: false, remark: '' }, // teachingWeeks: 6
+  { id: 6, termCode: '202509', startAt: '2025-08-25 08:00:00', endAt: '2025-09-24 18:00:00', teachingWeeks: 17, isOfferingTerm: false, remark: '' }, // teachingWeeks: 14
+  { id: 7, termCode: '202602', startAt: '2026-01-20 08:00:00', endAt: '2026-02-19 18:00:00', teachingWeeks: 6, isOfferingTerm: false, remark: '' },
+  { id: 8, termCode: '202604', startAt: '2026-03-02 08:00:00', endAt: '2026-04-02 18:00:00', teachingWeeks: 17, isOfferingTerm: true, remark: '' }, // teachingWeeks: 6 // 原短学期误配
+  { id: 9, termCode: '202609', startAt: '2026-08-25 08:00:00', endAt: '2026-09-24 18:00:00', teachingWeeks: 17, isOfferingTerm: false, remark: '' } // teachingWeeks: 14
+  // teachingWeeks: 12 / 16 // 原短学期 12 周、长学期 16 周
+  // teachingWeeks：本学期教学周数（长学期 14 周、短学期 6 周），起止周默认 1-N // 原注释
 ];
 
 let courseTimeSelectedIds = new Set();
+let courseTimeEditId = null;
+
+function formatDatetimeDisplayDdMmYyyyHm(str) {
+  const d = parseCourseTimeDatetime(str);
+  if (!d) return '';
+  const datePart = formatDateDisplayDdMmYyyy(toDateInputValue(str));
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${datePart} ${h}:${m}`;
+}
+
+function extractTimeHmFromCourseDatetime(str, fallback = '08:00') {
+  const full = extractTimeFromCourseDatetime(str, `${fallback}:00`);
+  return full.slice(0, 5);
+}
+
+function formatCourseTimeRangeDisplay(row) {
+  if (!row?.startAt && !row?.endAt) return '—';
+  const start = formatDatetimeDisplayDdMmYyyyHm(row.startAt);
+  const end = formatDatetimeDisplayDdMmYyyyHm(row.endAt);
+  return `${start || '—'} ~ ${end || '—'}`;
+}
+
+function formatDatetimeInputDisplay(isoDate, hm) {
+  if (!isoDate || !hm) return '';
+  return `${formatDateDisplayDdMmYyyy(isoDate)} ${hm}`;
+}
+
+function setCourseDatetimeInputValue(el, isoDate, hm) {
+  if (!el) return;
+  el.dataset.isoValue = isoDate || '';
+  el.dataset.hmValue = hm || '';
+  el.value = isoDate && hm ? formatDatetimeInputDisplay(isoDate, hm) : '';
+}
+
+function getCourseDatetimeInputValue(el) {
+  if (!el) return '';
+  const iso = el.dataset.isoValue || '';
+  const hm = el.dataset.hmValue || '';
+  if (!iso || !hm) return '';
+  return fromDateInputValue(iso, `${hm}:00`);
+}
+
+function parseDatetimeInputDisplay(str) {
+  const raw = String(str || '').trim();
+  const m = raw.match(/^(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}:\d{2})$/);
+  if (!m) return null;
+  const iso = parseDateDisplayDdMmYyyy(m[1]);
+  const hm = parseCourseTimeHmInput(m[2]);
+  if (!iso || !hm) return null;
+  return { iso, hm };
+}
+
+function openCourseTimeSettingEditModal(id) {
+  const row = getCourseTimeSettingById(id);
+  if (!row) return;
+  courseTimeEditId = id;
+  const termEl = document.getElementById('cts-edit-term');
+  if (termEl) {
+    termEl.textContent = `${formatCourseTermDisplay(row.termCode)}（${getOfferingTermTeachingWeeks(row.termCode)} 周）`;
+  }
+  setCourseDatetimeInputValue(
+    document.getElementById('cts-edit-start'),
+    toDateInputValue(row.startAt),
+    extractTimeHmFromCourseDatetime(row.startAt, '08:00')
+  );
+  setCourseDatetimeInputValue(
+    document.getElementById('cts-edit-end'),
+    toDateInputValue(row.endAt),
+    extractTimeHmFromCourseDatetime(row.endAt, '18:00')
+  );
+  // const startDateEl = document.getElementById('cts-edit-start-date'); // 原 date/time 分开
+  document.getElementById('cts-edit-remark').value = row.remark || '';
+  syncCourseTimeSettingEditEndMin();
+  openModal('modal-course-time-setting-edit');
+}
+
+function closeCourseTimeSettingEditModal() {
+  closeCuotDatePicker();
+  closeModal('modal-course-time-setting-edit');
+  courseTimeEditId = null;
+}
+
+function syncCourseTimeSettingEditEndMin() {
+  const startEl = document.getElementById('cts-edit-start');
+  const endEl = document.getElementById('cts-edit-end');
+  if (!startEl || !endEl) return;
+  const startIso = startEl.dataset.isoValue || '';
+  if (startIso) endEl.dataset.min = startIso;
+  const startAt = getCourseDatetimeInputValue(startEl);
+  const endAt = getCourseDatetimeInputValue(endEl);
+  if (startAt && endAt && parseCourseTimeDatetime(startAt)?.getTime() >= parseCourseTimeDatetime(endAt)?.getTime()) {
+    setCourseDatetimeInputValue(endEl, startIso, startEl.dataset.hmValue || '08:00');
+  }
+}
+// function syncCourseTimeSettingEditEndDateMin() { ... } // 原仅比较日期
+
+// function normalizeCourseTimeSettingDateInput(el) { ... } // 原分开输入校验，改融合选择器
+
+function parseCourseTimeHmInput(str) {
+  const m = String(str || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
+function saveCourseTimeSettingEditModal() {
+  const row = getCourseTimeSettingById(courseTimeEditId);
+  if (!row) return;
+  const startAt = getCourseDatetimeInputValue(document.getElementById('cts-edit-start'));
+  const endAt = getCourseDatetimeInputValue(document.getElementById('cts-edit-end'));
+  // const startDateEl = document.getElementById('cts-edit-start-date'); // 原分开取值
+  if (!startAt || !endAt) {
+    alert('请选择开课开始与截止时间。');
+    return;
+  }
+  const start = parseCourseTimeDatetime(startAt);
+  const end = parseCourseTimeDatetime(endAt);
+  if (!start || !end || start.getTime() >= end.getTime()) {
+    alert('开课开始时间须早于截止时间。');
+    return;
+  }
+  row.startAt = startAt;
+  row.endAt = endAt;
+  row.remark = document.getElementById('cts-edit-remark')?.value.trim() || '';
+  row.teachingWeeks = getOfferingTermTeachingWeeks(row.termCode);
+  // row.teachingWeeks = teachingWeeks; // 原弹窗录入
+  closeCourseTimeSettingEditModal();
+  renderCourseTimeSettingList();
+}
 
 function formatCourseTermDisplay(termCode) {
   return formatIntakeDisplay(termCode);
@@ -2056,25 +2205,1576 @@ function renderCourseTimeSettingList() {
   const list = getFilteredCourseTimeSettings();
   tbody.innerHTML = list.length
     ? list.map((row, idx) => {
-        const range = `${row.startAt} ~ ${row.endAt}`;
+        const range = formatCourseTimeRangeDisplay(row);
+        // const range = `${row.startAt} ~ ${row.endAt}`; // 原 yyyy-mm-dd HH:mm:ss 展示
         return `<tr>
           <td class="col-check"><input type="checkbox" class="course-time-row-check" value="${row.id}" ${courseTimeSelectedIds.has(row.id) ? 'checked' : ''} onchange="updateCourseTimeSelection()"></td>
           <td class="col-index">${idx + 1}</td>
           <td>${escapeHtml(formatCourseTermDisplay(row.termCode))}</td>
+          <td class="col-center">${getOfferingTermTeachingWeeks(row.termCode)}</td>
+          <!-- row.teachingWeeks ?? getOfferingTermTeachingWeeks(row.termCode) 原读记录字段 -->
           <td>${escapeHtml(range)}</td>
           <td class="col-center">${renderCourseTimeOfferingSwitch(row)}</td>
           <td>${escapeHtml(row.remark) || ''}</td>
           <td class="actions">
-            <a href="#" onclick="alert('修改（原型占位）');return false">修改</a>
+            <a href="#" onclick="openCourseTimeSettingEditModal(${row.id});return false">修改</a>
+            <!-- onclick="alert('修改（原型占位）');return false" 原占位无反应 -->
+            <a href="#" onclick="openCourseUnitOfferingTimeDrawer(${row.id});return false">单位开课时间设置</a>
           </td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">暂无记录</td></tr>';
+    : '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">暂无记录</td></tr>';
   updateCourseTimeSelection();
+}
+
+/** 各单位开课模块开放操作时间：{ [settingId]: { [unitCode]: { startAt, endAt } } } */
+let COURSE_UNIT_OFFERING_TIMES = {};
+let courseUnitOfferingTimeSettingId = null;
+// const OFFERING_MODULE_DEFINITIONS = [ ... ]; // 原按专业/通识/特殊等细分模块，改各单位统一一段开放时间
+// let COURSE_UNIT_OFFERING_MODULE_TIMES = {}; // 原 nested moduleKey 结构
+// let courseUnitOfferingTimeSelectedUnit = null; // 原左侧选中单位
+
+function parseCourseTimeDatetime(str) {
+  if (!str) return null;
+  const d = new Date(String(str).trim().replace(' ', 'T'));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function toDatetimeLocalValue(str) {
+  if (!str) return '';
+  return String(str).trim().replace(' ', 'T').slice(0, 16);
+}
+
+function extractTimeFromCourseDatetime(str, fallback = '00:00:00') {
+  if (!str) return fallback;
+  const m = String(str).trim().match(/(\d{1,2}:\d{2})(:\d{2})?/);
+  if (!m) return fallback;
+  return m[2] ? `${m[1]}${m[2]}` : `${m[1]}:00`;
+}
+
+function toDateInputValue(str) {
+  if (!str) return '';
+  const d = parseCourseTimeDatetime(str);
+  if (!d) return '';
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${day}`;
+}
+
+function formatDateDisplayDdMmYyyy(isoOrDatetime) {
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(String(isoOrDatetime || '').trim())
+    ? String(isoOrDatetime).trim()
+    : toDateInputValue(isoOrDatetime);
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function parseDateDisplayDdMmYyyy(str) {
+  const raw = String(str || '').trim();
+  const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return '';
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return '';
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return '';
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function getCuotDateInputIso(unitCode, kind) {
+  const el = document.getElementById(`cuot-${kind}-${unitCode}`);
+  if (!el) return '';
+  return el.dataset.isoValue || parseDateDisplayDdMmYyyy(el.value) || '';
+}
+
+function getCuotDatetimeInputValue(unitCode, kind) {
+  const el = document.getElementById(`cuot-${kind}-${unitCode}`);
+  return getCourseDatetimeInputValue(el);
+}
+
+function formatCuotSlotDatetimeFields(slotAt, defaultHm = '08:00') {
+  const iso = toDateInputValue(slotAt);
+  const hm = extractTimeHmFromCourseDatetime(slotAt, defaultHm);
+  return {
+    iso,
+    hm,
+    display: iso && hm ? formatDatetimeInputDisplay(iso, hm) : ''
+  };
+}
+
+let cuotDatePickerState = null;
+let cuotDatePickerDocListenerBound = false;
+let cuotDatePickerSuppressOpenUntil = 0;
+
+function ensureCuotDatePickerDocListener() {
+  if (cuotDatePickerDocListenerBound) return;
+  cuotDatePickerDocListenerBound = true;
+  // document.addEventListener('click', () => closeCuotDatePicker()); // 原任意 document 点击即关，与工具栏取消/确定及 stopPropagation 冲突
+  document.addEventListener('click', ev => {
+    const pop = document.getElementById('cuot-date-picker-popover');
+    if (!pop || pop.hidden || !cuotDatePickerState) return;
+    if (pop.contains(ev.target)) return;
+    closeCuotDatePicker();
+  });
+}
+
+function suppressCuotDatePickerReopen() {
+  cuotDatePickerSuppressOpenUntil = Date.now() + 320;
+}
+
+function shouldSuppressCuotDatePickerOpen() {
+  return Date.now() < cuotDatePickerSuppressOpenUntil;
+}
+
+function closeCuotDatePicker() {
+  const pop = document.getElementById('cuot-date-picker-popover');
+  if (pop) {
+    pop.hidden = true;
+    pop.classList.remove('is-datetime-mode');
+  }
+  if (cuotDatePickerState) cuotDatePickerState.ymPanel = null;
+  cuotDatePickerState = null;
+  suppressCuotDatePickerReopen();
+}
+
+function closeCuotDatePickerYmPanel() {
+  if (!cuotDatePickerState) return;
+  cuotDatePickerState.ymPanel = null;
+  const panel = document.getElementById('cuot-date-picker-ym-panel');
+  if (panel) {
+    panel.hidden = true;
+    panel.innerHTML = '';
+  }
+  document.getElementById('cuot-date-picker-year-trigger')?.classList.remove('is-open');
+  document.getElementById('cuot-date-picker-month-trigger')?.classList.remove('is-open');
+  // 原年月 trigger 按钮 is-open 态，改只读 label 后 id 已移除
+}
+
+function syncCuotDatePickerChrome() {
+  const pop = document.getElementById('cuot-date-picker-popover');
+  const toolbar = document.getElementById('cuot-date-picker-toolbar');
+  const timePanel = document.getElementById('cuot-date-picker-time-panel');
+  const isDatetime = cuotDatePickerState?.mode === 'datetime';
+  if (pop) pop.classList.toggle('is-datetime-mode', isDatetime);
+  if (toolbar) toolbar.hidden = !isDatetime;
+  if (timePanel) timePanel.hidden = !isDatetime;
+  const titleEl = document.getElementById('cuot-date-picker-toolbar-title');
+  if (titleEl && isDatetime) {
+    titleEl.textContent = cuotDatePickerState?.anchor?.dataset?.pickerTitle || '选择日期时间';
+  }
+  const wheel = document.getElementById('cuot-date-picker-time-wheel');
+  const chevron = document.getElementById('cuot-date-picker-time-chevron');
+  if (wheel) wheel.hidden = !isDatetime || !cuotDatePickerState?.timeWheelOpen;
+  if (chevron) chevron.classList.toggle('is-open', !!cuotDatePickerState?.timeWheelOpen);
+}
+
+function getCuotMinuteWheelValues() {
+  return [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+}
+
+function snapMinuteToWheel(m) {
+  const values = getCuotMinuteWheelValues();
+  return values.reduce((best, v) => Math.abs(v - m) < Math.abs(best - m) ? v : best, values[0]);
+}
+
+function renderCuotDatePickerPopover() {
+  syncCuotDatePickerChrome();
+  const grid = document.getElementById('cuot-date-picker-grid');
+  if (!grid || !cuotDatePickerState) return;
+  renderCuotDatePickerMonthBar();
+  const { viewYear, viewMonth, minIso, maxIso, anchor, mode, pendingIso } = cuotDatePickerState;
+  const selectedIso = mode === 'datetime'
+    ? (pendingIso || anchor?.dataset?.isoValue || '')
+    : (anchor?.dataset?.isoValue || '');
+  // if (titleEl) titleEl.textContent = `${viewYear}年${viewMonth}月`; // 原静态标题，改 renderCuotDatePickerMonthBar 下拉
+  const todayIso = toDateInputValue(new Date().toISOString());
+  const firstDay = new Date(viewYear, viewMonth - 1, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) {
+    cells.push('<span class="cuot-date-picker-day is-empty"></span>');
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const disabled = (minIso && iso < minIso) || (maxIso && iso > maxIso);
+    const isToday = iso === todayIso;
+    const selected = iso === selectedIso ? ' is-selected' : '';
+    const todayClass = isToday ? ' is-today' : '';
+    const disabledClass = disabled ? ' is-disabled' : '';
+    const inner = isToday && iso === selectedIso
+      ? `<span class="cuot-date-picker-day-tag">今天</span>${day}`
+      : `${day}`;
+    cells.push(disabled
+      ? `<span class="cuot-date-picker-day${disabledClass}">${day}</span>`
+      : `<button type="button" class="cuot-date-picker-day${selected}${todayClass}" data-iso="${iso}" onclick="selectCuotDatePickerDay('${iso}', event)">${inner}</button>`);
+  }
+  grid.innerHTML = cells.join('');
+  if (mode === 'datetime') renderCuotDatetimeTimePanel();
+}
+
+function renderCuotWheelColumn(listEl, values, selected, kind) {
+  if (!listEl) return;
+  listEl.innerHTML = `<div class="cuot-time-wheel-spacer"></div>${values.map(v => {
+    const label = String(v).padStart(2, '0');
+    const isSel = v === selected ? ' is-selected' : '';
+    return `<button type="button" class="cuot-time-wheel-item${isSel}" data-kind="${kind}" data-value="${v}" onclick="selectCuotTimeWheelItem('${kind}', ${v}, event)">${label}</button>`;
+  }).join('')}<div class="cuot-time-wheel-spacer"></div>`;
+  const selectedEl = listEl.querySelector('.cuot-time-wheel-item.is-selected');
+  if (selectedEl) {
+    selectedEl.scrollIntoView({ block: 'center', behavior: 'instant' in window ? 'instant' : 'auto' });
+  }
+}
+
+function renderCuotDatetimeTimePanel() {
+  const display = document.getElementById('cuot-date-picker-time-display');
+  const hourWheel = document.getElementById('cuot-hour-wheel');
+  const minuteWheel = document.getElementById('cuot-minute-wheel');
+  if (!cuotDatePickerState) return;
+  const [h, mRaw] = (cuotDatePickerState.pendingHm || '08:00').split(':').map(Number);
+  const m = snapMinuteToWheel(mRaw || 0);
+  cuotDatePickerState.pendingHm = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  if (display) display.textContent = cuotDatePickerState.pendingHm;
+  renderCuotWheelColumn(hourWheel, Array.from({ length: 24 }, (_, i) => i), h, 'hour');
+  renderCuotWheelColumn(minuteWheel, getCuotMinuteWheelValues(), m, 'minute');
+}
+
+function positionCuotDatePickerPopover(anchor) {
+  const pop = document.getElementById('cuot-date-picker-popover');
+  if (!pop || !anchor) return;
+  pop.hidden = false;
+  renderCuotDatePickerPopover();
+  const rect = anchor.getBoundingClientRect();
+  const margin = 8;
+  let left = rect.left;
+  let top = rect.bottom + 6;
+  const popRect = pop.getBoundingClientRect();
+  if (left + popRect.width > window.innerWidth - margin) {
+    left = Math.max(margin, window.innerWidth - popRect.width - margin);
+  }
+  if (top + popRect.height > window.innerHeight - margin) {
+    top = Math.max(margin, rect.top - popRect.height - 6);
+  }
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
+}
+
+function openCuotDatePicker(inputEl, ev) {
+  ev?.stopPropagation();
+  if (shouldSuppressCuotDatePickerOpen()) return;
+  if (!inputEl || inputEl.dataset.locked === '1') return;
+  ensureCuotDatePickerDocListener();
+  const iso = inputEl.dataset.isoValue || parseDateDisplayDdMmYyyy(inputEl.value);
+  const base = iso ? parseCourseTimeDatetime(`${iso}T12:00:00`) : new Date();
+  cuotDatePickerState = {
+    anchor: inputEl,
+    mode: 'date',
+    pendingIso: '',
+    pendingHm: '',
+    viewYear: base?.getFullYear() || new Date().getFullYear(),
+    viewMonth: (base?.getMonth() ?? new Date().getMonth()) + 1,
+    minIso: inputEl.dataset.min || '',
+    maxIso: inputEl.dataset.max || ''
+  };
+  clampCuotDatePickerViewToBounds();
+  positionCuotDatePickerPopover(inputEl);
+  inputEl.focus();
+}
+
+function openCourseDatetimePicker(inputEl, ev) {
+  ev?.stopPropagation();
+  if (shouldSuppressCuotDatePickerOpen()) return;
+  if (!inputEl) return;
+  ensureCuotDatePickerDocListener();
+  const parsed = parseDatetimeInputDisplay(inputEl.value);
+  const iso = inputEl.dataset.isoValue || parsed?.iso || '';
+  const hm = inputEl.dataset.hmValue || parsed?.hm || '08:00';
+  const base = iso ? parseCourseTimeDatetime(`${iso}T12:00:00`) : new Date();
+  cuotDatePickerState = {
+    anchor: inputEl,
+    mode: 'datetime',
+    pendingIso: iso,
+    pendingHm: hm,
+    timeWheelOpen: true,
+    viewYear: base?.getFullYear() || new Date().getFullYear(),
+    viewMonth: (base?.getMonth() ?? new Date().getMonth()) + 1,
+    minIso: inputEl.dataset.min || '',
+    maxIso: inputEl.dataset.max || ''
+  };
+  clampCuotDatePickerViewToBounds();
+  positionCuotDatePickerPopover(inputEl);
+  inputEl.focus();
+}
+
+function cancelCuotDatePicker(ev) {
+  ev?.preventDefault();
+  ev?.stopPropagation();
+  // cuotDatePickerState 丢弃 pending 修改，不写入 anchor
+  closeCuotDatePicker();
+}
+
+function confirmCuotDatePicker(ev) {
+  ev?.preventDefault();
+  ev?.stopPropagation();
+  if (!cuotDatePickerState || cuotDatePickerState.mode !== 'datetime') return;
+  const { anchor, pendingIso, pendingHm } = cuotDatePickerState;
+  if (!pendingIso) {
+    alert('请选择日期。');
+    return;
+  }
+  setCourseDatetimeInputValue(anchor, pendingIso, pendingHm || '08:00');
+  closeCuotDatePicker();
+  if (anchor?.id === 'cts-edit-start') syncCourseTimeSettingEditEndMin();
+  if (anchor?.dataset?.unitCode) syncCourseUnitOfferingTimeRowDateBounds(anchor.dataset.unitCode);
+}
+
+function toggleCuotTimeWheel(ev) {
+  ev?.stopPropagation();
+  if (!cuotDatePickerState || cuotDatePickerState.mode !== 'datetime') return;
+  cuotDatePickerState.timeWheelOpen = !cuotDatePickerState.timeWheelOpen;
+  syncCuotDatePickerChrome();
+  if (cuotDatePickerState.timeWheelOpen) renderCuotDatetimeTimePanel();
+  if (cuotDatePickerState.anchor) positionCuotDatePickerPopover(cuotDatePickerState.anchor);
+}
+
+function selectCuotTimeWheelItem(kind, value, ev) {
+  ev?.stopPropagation();
+  if (!cuotDatePickerState) return;
+  const [h, m] = (cuotDatePickerState.pendingHm || '08:00').split(':').map(Number);
+  if (kind === 'hour') {
+    cuotDatePickerState.pendingHm = `${String(value).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  } else {
+    cuotDatePickerState.pendingHm = `${String(h).padStart(2, '0')}:${String(value).padStart(2, '0')}`;
+  }
+  renderCuotDatetimeTimePanel();
+}
+
+function shiftCuotDatePickerMonth(delta, ev) {
+  ev?.stopPropagation();
+  if (!cuotDatePickerState) return;
+  closeCuotDatePickerYmPanel();
+  let { viewYear, viewMonth } = cuotDatePickerState;
+  viewMonth += delta;
+  if (viewMonth < 1) {
+    viewMonth = 12;
+    viewYear -= 1;
+  } else if (viewMonth > 12) {
+    viewMonth = 1;
+    viewYear += 1;
+  }
+  cuotDatePickerState.viewYear = viewYear;
+  cuotDatePickerState.viewMonth = viewMonth;
+  clampCuotDatePickerViewToBounds();
+  renderCuotDatePickerPopover();
+}
+
+function shiftCuotDatePickerYear(delta, ev) {
+  ev?.stopPropagation();
+  if (!cuotDatePickerState) return;
+  closeCuotDatePickerYmPanel();
+  cuotDatePickerState.viewYear += delta;
+  clampCuotDatePickerViewToBounds();
+  renderCuotDatePickerPopover();
+}
+
+function getCuotDatePickerYearBounds() {
+  const { minIso, maxIso } = cuotDatePickerState || {};
+  const today = new Date().getFullYear();
+  let minYear = minIso ? parseInt(minIso.slice(0, 4), 10) : today - 10;
+  let maxYear = maxIso ? parseInt(maxIso.slice(0, 4), 10) : today + 10;
+  if (!Number.isFinite(minYear)) minYear = today - 10;
+  if (!Number.isFinite(maxYear)) maxYear = today + 10;
+  if (minYear > maxYear) {
+    const swap = minYear;
+    minYear = maxYear;
+    maxYear = swap;
+  }
+  return { minYear, maxYear };
+}
+
+function isCuotDatePickerMonthOutOfRange(year, month, minIso, maxIso) {
+  const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDayNum = new Date(year, month, 0).getDate();
+  const lastDay = `${year}-${String(month).padStart(2, '0')}-${String(lastDayNum).padStart(2, '0')}`;
+  if (minIso && lastDay < minIso) return true;
+  if (maxIso && firstDay > maxIso) return true;
+  return false;
+}
+
+function findCuotDatePickerNearestMonth(year, month, minIso, maxIso, preferForward = true) {
+  if (!isCuotDatePickerMonthOutOfRange(year, month, minIso, maxIso)) {
+    return { year, month };
+  }
+  for (let offset = 1; offset <= 12; offset++) {
+    const next = preferForward ? month + offset : month - offset;
+    if (next >= 1 && next <= 12 && !isCuotDatePickerMonthOutOfRange(year, next, minIso, maxIso)) {
+      return { year, month: next };
+    }
+    const prev = preferForward ? month - offset : month + offset;
+    if (prev >= 1 && prev <= 12 && !isCuotDatePickerMonthOutOfRange(year, prev, minIso, maxIso)) {
+      return { year, month: prev };
+    }
+  }
+  return { year, month };
+}
+
+function clampCuotDatePickerViewToBounds() {
+  if (!cuotDatePickerState) return;
+  const { minIso, maxIso } = cuotDatePickerState;
+  const { minYear, maxYear } = getCuotDatePickerYearBounds();
+  let { viewYear, viewMonth } = cuotDatePickerState;
+  if (viewYear < minYear) {
+    viewYear = minYear;
+    viewMonth = 1;
+  } else if (viewYear > maxYear) {
+    viewYear = maxYear;
+    viewMonth = 12;
+  }
+  if (isCuotDatePickerMonthOutOfRange(viewYear, viewMonth, minIso, maxIso)) {
+    const nearest = findCuotDatePickerNearestMonth(viewYear, viewMonth, minIso, maxIso);
+    viewYear = nearest.year;
+    viewMonth = nearest.month;
+  }
+  cuotDatePickerState.viewYear = viewYear;
+  cuotDatePickerState.viewMonth = viewMonth;
+}
+
+function renderCuotDatePickerMonthBar() {
+  if (!cuotDatePickerState) return;
+  const { viewYear, viewMonth } = cuotDatePickerState;
+  const yearLabel = document.getElementById('cuot-date-picker-year-label');
+  const monthLabel = document.getElementById('cuot-date-picker-month-label');
+  if (yearLabel) yearLabel.textContent = String(viewYear);
+  if (monthLabel) monthLabel.textContent = String(viewMonth);
+  // document.getElementById('cuot-date-picker-year-trigger')?.classList.toggle('is-open', cuotDatePickerState.ymPanel === 'year');
+  // document.getElementById('cuot-date-picker-month-trigger')?.classList.toggle('is-open', cuotDatePickerState.ymPanel === 'month');
+  // renderCuotDatePickerYmPanel(); // 原点击年/月展开面板，改只读展示
+  closeCuotDatePickerYmPanel();
+  // const yearSel = document.getElementById('cuot-date-picker-year'); // 原 native select 填充选项
+  // const monthSel = document.getElementById('cuot-date-picker-month');
+}
+
+function toggleCuotDatePickerYmPanel(kind, ev) {
+  // ev?.preventDefault();
+  // ev?.stopPropagation();
+  // if (!cuotDatePickerState) return;
+  // cuotDatePickerState.ymPanel = cuotDatePickerState.ymPanel === kind ? null : kind;
+  // renderCuotDatePickerMonthBar();
+  // if (cuotDatePickerState.anchor) positionCuotDatePickerPopover(cuotDatePickerState.anchor);
+  // 原点击年/月按钮展开选择面板，改只读展示，请用 shiftCuotDatePickerMonth/Year 导航
+}
+
+function renderCuotDatePickerYmPanel() {
+  const panel = document.getElementById('cuot-date-picker-ym-panel');
+  if (!panel || !cuotDatePickerState?.ymPanel) {
+    if (panel) {
+      panel.hidden = true;
+      panel.innerHTML = '';
+    }
+    return;
+  }
+  const { viewYear, viewMonth, minIso, maxIso, ymPanel } = cuotDatePickerState;
+  panel.hidden = false;
+  if (ymPanel === 'year') {
+    const { minYear, maxYear } = getCuotDatePickerYearBounds();
+    panel.innerHTML = `<div class="cuot-date-picker-ym-grid is-year">${Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
+      const y = minYear + i;
+      const selected = y === viewYear ? ' is-selected' : '';
+      return `<button type="button" class="cuot-date-picker-ym-item${selected}" onclick="selectCuotDatePickerYear(${y}, event)">${y}</button>`;
+    }).join('')}</div>`;
+    return;
+  }
+  panel.innerHTML = `<div class="cuot-date-picker-ym-grid is-month">${Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1;
+    const disabled = isCuotDatePickerMonthOutOfRange(viewYear, m, minIso, maxIso);
+    const selected = m === viewMonth ? ' is-selected' : '';
+    const disabledClass = disabled ? ' is-disabled' : '';
+    return disabled
+      ? `<span class="cuot-date-picker-ym-item${disabledClass}">${m}月</span>`
+      : `<button type="button" class="cuot-date-picker-ym-item${selected}" onclick="selectCuotDatePickerMonth(${m}, event)">${m}月</button>`;
+  }).join('')}</div>`;
+}
+
+function selectCuotDatePickerYear(year, ev) {
+  ev?.stopPropagation();
+  if (!cuotDatePickerState) return;
+  cuotDatePickerState.viewYear = year;
+  clampCuotDatePickerViewToBounds();
+  closeCuotDatePickerYmPanel();
+  renderCuotDatePickerPopover();
+  if (cuotDatePickerState?.anchor) positionCuotDatePickerPopover(cuotDatePickerState.anchor);
+}
+
+function selectCuotDatePickerMonth(month, ev) {
+  ev?.stopPropagation();
+  if (!cuotDatePickerState) return;
+  cuotDatePickerState.viewMonth = month;
+  clampCuotDatePickerViewToBounds();
+  closeCuotDatePickerYmPanel();
+  renderCuotDatePickerPopover();
+  if (cuotDatePickerState?.anchor) positionCuotDatePickerPopover(cuotDatePickerState.anchor);
+}
+
+// function changeCuotDatePickerYearMonth(ev) { ... } // 原 native select onchange，改自定义面板
+
+// function backCuotDatePickerToDateStep(ev) { ... } // 原分步选时间返回日期，改日期与时间同屏
+
+function selectCuotDatePickerDay(iso, ev) {
+  ev?.stopPropagation();
+  closeCuotDatePickerYmPanel();
+  const anchor = cuotDatePickerState?.anchor;
+  if (!anchor || !iso) return;
+  if (cuotDatePickerState.mode === 'datetime') {
+    cuotDatePickerState.pendingIso = iso;
+    renderCuotDatePickerPopover();
+    return;
+  }
+  anchor.dataset.isoValue = iso;
+  anchor.value = formatDateDisplayDdMmYyyy(iso);
+  const unitCode = anchor.dataset.unitCode;
+  closeCuotDatePicker();
+  if (unitCode) syncCourseUnitOfferingTimeRowDateBounds(unitCode);
+}
+
+// function selectCuotDatePickerHour / selectCuotDatePickerMinute / selectCuotDatePickerTime
+// 原网格选时间后立即关闭，改底部时间行 + 滚轮 + 顶部确定
+
+function normalizeCuotDateInput(el) {
+  if (!el || el.dataset.locked === '1') return;
+  const trimmed = el.value.trim();
+  if (!trimmed) {
+    el.dataset.isoValue = '';
+    return;
+  }
+  const iso = parseDateDisplayDdMmYyyy(trimmed);
+  if (!iso) {
+    alert('请按 dd/mm/yyyy 格式填写日期，例如 02/03/2026');
+    el.value = formatDateDisplayDdMmYyyy(el.dataset.isoValue);
+    return;
+  }
+  const min = el.dataset.min || '';
+  const max = el.dataset.max || '';
+  if ((min && iso < min) || (max && iso > max)) {
+    alert(`日期须在全校开课时间（${formatDateDisplayDdMmYyyy(min)} ~ ${formatDateDisplayDdMmYyyy(max)}）范围内`);
+    el.value = formatDateDisplayDdMmYyyy(el.dataset.isoValue);
+    return;
+  }
+  el.dataset.isoValue = iso;
+  el.value = formatDateDisplayDdMmYyyy(iso);
+  if (el.dataset.unitCode) syncCourseUnitOfferingTimeRowDateBounds(el.dataset.unitCode);
+}
+
+function normalizeCuotDatetimeInput(el) {
+  if (!el || el.dataset.locked === '1') return;
+  const trimmed = el.value.trim();
+  if (!trimmed) {
+    el.dataset.isoValue = '';
+    el.dataset.hmValue = '';
+    el.value = '';
+    return;
+  }
+  const parsed = parseDatetimeInputDisplay(trimmed);
+  if (!parsed) {
+    alert('请按 dd/mm/yyyy HH:mm 格式填写，例如 02/03/2026 08:00');
+    setCourseDatetimeInputValue(el, el.dataset.isoValue, el.dataset.hmValue || '08:00');
+    return;
+  }
+  const min = el.dataset.min || '';
+  const max = el.dataset.max || '';
+  if ((min && parsed.iso < min) || (max && parsed.iso > max)) {
+    alert(`日期须在全校开课时间（${formatDateDisplayDdMmYyyy(min)} ~ ${formatDateDisplayDdMmYyyy(max)}）范围内`);
+    setCourseDatetimeInputValue(el, el.dataset.isoValue, el.dataset.hmValue || '08:00');
+    return;
+  }
+  setCourseDatetimeInputValue(el, parsed.iso, parsed.hm);
+  if (el.dataset.unitCode) syncCourseUnitOfferingTimeRowDateBounds(el.dataset.unitCode);
+}
+
+function fromDateInputValue(dateVal, timePart = '00:00:00') {
+  if (!dateVal) return '';
+  const t = String(timePart || '00:00:00').trim();
+  const normalized = t.length === 5 ? `${t}:00` : t;
+  return `${dateVal} ${normalized}`;
+}
+
+function getCourseTimeSettingDateBounds(row) {
+  return {
+    minDate: toDateInputValue(row?.startAt),
+    maxDate: toDateInputValue(row?.endAt),
+    startTime: extractTimeFromCourseDatetime(row?.startAt, '08:00:00'),
+    endTime: extractTimeFromCourseDatetime(row?.endAt, '18:00:00')
+  };
+}
+
+function isCourseUnitOfferingSlotWithinSchoolRange(row, startAt, endAt) {
+  if (!row?.startAt || !row?.endAt) return true;
+  const schoolStart = parseCourseTimeDatetime(row.startAt);
+  const schoolEnd = parseCourseTimeDatetime(row.endAt);
+  const slotStart = parseCourseTimeDatetime(startAt);
+  const slotEnd = parseCourseTimeDatetime(endAt);
+  if (!schoolStart || !schoolEnd || !slotStart || !slotEnd) return false;
+  return slotStart.getTime() >= schoolStart.getTime() && slotEnd.getTime() <= schoolEnd.getTime();
+}
+
+function syncCourseUnitOfferingTimeRowDateBounds(unitCode) {
+  const startEl = document.getElementById(`cuot-start-${unitCode}`);
+  const endEl = document.getElementById(`cuot-end-${unitCode}`);
+  if (!startEl || !endEl || endEl.dataset.locked === '1') return;
+  const startIso = startEl.dataset.isoValue || '';
+  if (startIso) endEl.dataset.min = startIso;
+  const startAt = getCourseDatetimeInputValue(startEl);
+  const endAt = getCourseDatetimeInputValue(endEl);
+  if (startAt && endAt && parseCourseTimeDatetime(startAt)?.getTime() >= parseCourseTimeDatetime(endAt)?.getTime()) {
+    setCourseDatetimeInputValue(endEl, startIso, startEl.dataset.hmValue || '08:00');
+  }
+  // const startIso = getCuotDateInputIso(unitCode, 'start'); // 原仅日期比较
+  // if (startIso && endIso && endIso < startIso) { endEl.value = formatDateDisplayDdMmYyyy(startIso); }
+}
+
+function fromDatetimeLocalValue(val) {
+  if (!val) return '';
+  const normalized = String(val).trim();
+  if (normalized.length === 16) return `${normalized.replace('T', ' ')}:00`;
+  return normalized.replace('T', ' ');
+}
+
+function isCourseUnitOfferingModuleTimeExpired(endAt) {
+  const end = parseCourseTimeDatetime(endAt);
+  if (!end) return false;
+  return Date.now() > end.getTime();
+}
+
+function getCourseTimeSettingById(id) {
+  return COURSE_TIME_SETTINGS.find(r => r.id === id) || null;
+}
+
+function ensureCourseUnitOfferingTimes(settingId) {
+  const row = getCourseTimeSettingById(settingId);
+  if (!row) return null;
+  if (!COURSE_UNIT_OFFERING_TIMES[settingId]) {
+    COURSE_UNIT_OFFERING_TIMES[settingId] = {};
+  }
+  // const store = COURSE_UNIT_OFFERING_TIMES[settingId];
+  // const defaultStart = row.startAt || '';
+  // const defaultEnd = row.endAt || '';
+  // [...SCHOOL_CODES].sort().forEach(unitCode => {
+  //   if (!store[unitCode]) {
+  //     store[unitCode] = { startAt: defaultStart, endAt: defaultEnd };
+  //   }
+  // }); // 原默认预置全部开课单位，改仅保存手动新增的单位
+  seedDemoCourseUnitOfferingTimes(settingId);
+  return COURSE_UNIT_OFFERING_TIMES[settingId];
+}
+
+function getCourseUnitOfferingConfiguredUnitCodes(settingId) {
+  const store = COURSE_UNIT_OFFERING_TIMES[settingId];
+  if (!store) return [];
+  return Object.keys(store)
+    .filter(code => code !== '__demoSeeded' && SCHOOL_CODES.includes(code))
+    .sort();
+}
+
+function getCourseUnitOfferingAddableUnitCodes(settingId) {
+  const configured = new Set(getCourseUnitOfferingConfiguredUnitCodes(settingId));
+  return [...SCHOOL_CODES].filter(code => !configured.has(code)).sort();
+}
+
+function resolveCourseUnitOfferingTimeSlot(settingId, unitCode) {
+  const row = getCourseTimeSettingById(settingId);
+  const custom = COURSE_UNIT_OFFERING_TIMES[settingId]?.[unitCode];
+  if (custom) return custom;
+  return {
+    startAt: row?.startAt || '',
+    endAt: row?.endAt || ''
+  };
+}
+
+function formatCourseUnitOfferingSchoolWideRange(row) {
+  if (!row?.startAt && !row?.endAt) return '—';
+  return formatCourseTimeRangeDisplay(row);
+  // return `${row.startAt || '—'} ~ ${row.endAt || '—'}`; // 原 yyyy-mm-dd HH:mm:ss 展示
+}
+
+function seedDemoCourseUnitOfferingTimes(settingId) {
+  const row = getCourseTimeSettingById(settingId);
+  if (!row || row.termCode !== '202609') return;
+  const store = COURSE_UNIT_OFFERING_TIMES[settingId];
+  if (!store || store.__demoSeeded) return;
+  store.SEM = { startAt: '2026-08-25 08:00:00', endAt: '2026-09-24 18:00:00' };
+  store.SCDS = { startAt: '2026-08-25 08:00:00', endAt: '2026-09-05 18:00:00' };
+  store.__demoSeeded = true;
+}
+
+function isCourseUnitOfferingTimeEditable(settingId, unitCode) {
+  const slot = resolveCourseUnitOfferingTimeSlot(settingId, unitCode);
+  // const slot = COURSE_UNIT_OFFERING_TIMES[settingId]?.[unitCode]; // 原仅判断单独配置
+  if (!slot?.endAt) return true;
+  return !isCourseUnitOfferingModuleTimeExpired(slot.endAt);
+}
+
+function openCourseUnitOfferingTimeDrawer(settingId) {
+  const row = getCourseTimeSettingById(settingId);
+  if (!row) return;
+  courseUnitOfferingTimeSettingId = settingId;
+  ensureCourseUnitOfferingTimes(settingId);
+  renderCourseUnitOfferingTimeDrawer();
+  document.getElementById('drawer-course-unit-offering-time-backdrop')?.classList.add('open');
+  document.getElementById('drawer-course-unit-offering-time')?.classList.add('open');
+}
+
+function closeCourseUnitOfferingTimeDrawer() {
+  closeCuotDatePicker();
+  document.getElementById('drawer-course-unit-offering-time-backdrop')?.classList.remove('open');
+  document.getElementById('drawer-course-unit-offering-time')?.classList.remove('open');
+  courseUnitOfferingTimeSettingId = null;
+}
+
+function renderCourseUnitOfferingTimeDrawer() {
+  const settingId = courseUnitOfferingTimeSettingId;
+  const row = getCourseTimeSettingById(settingId);
+  const titleEl = document.getElementById('course-unit-offering-time-title');
+  if (titleEl && row) {
+    titleEl.textContent = `单位开课时间设置 · ${formatCourseTermDisplay(row.termCode)}`;
+  }
+  syncCourseUnitOfferingTimeAddButton();
+  renderCourseUnitOfferingTimeTable();
+  syncCourseUnitOfferingTimeDrawerFoot();
+}
+
+function syncCourseUnitOfferingTimeAddButton() {
+  const addBtn = document.getElementById('btn-course-unit-offering-time-add');
+  const settingId = courseUnitOfferingTimeSettingId;
+  if (!addBtn || !settingId) return;
+  addBtn.disabled = !getCourseUnitOfferingAddableUnitCodes(settingId).length;
+}
+
+function populateCourseUnitOfferingTimeAddSelect() {
+  const sel = document.getElementById('course-unit-offering-time-add-select');
+  const settingId = courseUnitOfferingTimeSettingId;
+  if (!sel || !settingId) return;
+  const addable = getCourseUnitOfferingAddableUnitCodes(settingId);
+  sel.innerHTML = addable.length
+    ? '<option value="">请选择开课单位</option>' + addable.map(code =>
+      `<option value="${escapeHtml(code)}">${escapeHtml(code)} · ${escapeHtml(SCHOOL_NAME_MAP[code] || code)}</option>`
+    ).join('')
+    : '<option value="">暂无可新增单位</option>';
+}
+
+function openCourseUnitOfferingTimeAddModal() {
+  const settingId = courseUnitOfferingTimeSettingId;
+  if (!settingId) return;
+  const addable = getCourseUnitOfferingAddableUnitCodes(settingId);
+  if (!addable.length) {
+    alert('暂无可新增的开课单位。');
+    return;
+  }
+  populateCourseUnitOfferingTimeAddSelect();
+  const sel = document.getElementById('course-unit-offering-time-add-select');
+  if (sel) sel.value = '';
+  openModal('modal-course-unit-offering-time-add');
+}
+
+function closeCourseUnitOfferingTimeAddModal() {
+  closeModal('modal-course-unit-offering-time-add');
+}
+
+function confirmCourseUnitOfferingTimeAddModal() {
+  const settingId = courseUnitOfferingTimeSettingId;
+  const row = getCourseTimeSettingById(settingId);
+  const unitCode = document.getElementById('course-unit-offering-time-add-select')?.value;
+  if (!unitCode) {
+    alert('请选择开课单位。');
+    return;
+  }
+  const store = ensureCourseUnitOfferingTimes(settingId);
+  if (store?.[unitCode]) {
+    alert('该单位已在列表中。');
+    return;
+  }
+  store[unitCode] = {
+    startAt: row?.startAt || '',
+    endAt: row?.endAt || ''
+  };
+  closeCourseUnitOfferingTimeAddModal();
+  renderCourseUnitOfferingTimeDrawer();
+}
+
+// function addCourseUnitOfferingTimeUnit() { ... } // 原抽屉内直接新增，改弹窗 confirmCourseUnitOfferingTimeAddModal
+// function populateCourseUnitOfferingTimeAddSelect() { const addBtn = ... } // 原同步抽屉内按钮与下拉
+
+function removeCourseUnitOfferingTimeUnit(unitCode) {
+  const settingId = courseUnitOfferingTimeSettingId;
+  const store = COURSE_UNIT_OFFERING_TIMES[settingId];
+  if (!store?.[unitCode]) return;
+  openDeleteConfirm({
+    title: '移除单位设置',
+    message: `确定移除 <strong>${escapeHtml(unitCode)}</strong> 的单独开放时间吗？`,
+    hint: '移除后该单位将按全校开课时间范围操作。',
+    onConfirm: () => {
+      delete store[unitCode];
+      renderCourseUnitOfferingTimeDrawer();
+    }
+  });
+}
+
+function renderCourseUnitOfferingTimeTable() {
+  const tbody = document.getElementById('course-unit-offering-time-body');
+  const hintEl = document.getElementById('course-unit-offering-time-hint');
+  const defaultEl = document.getElementById('course-unit-offering-time-default');
+  const settingId = courseUnitOfferingTimeSettingId;
+  if (!tbody || !settingId) return;
+  const row = getCourseTimeSettingById(settingId);
+  ensureCourseUnitOfferingTimes(settingId);
+  const units = getCourseUnitOfferingConfiguredUnitCodes(settingId);
+  const bounds = getCourseTimeSettingDateBounds(row);
+  const editableCount = units.filter(code => isCourseUnitOfferingTimeEditable(settingId, code)).length;
+  if (defaultEl && row) {
+    defaultEl.innerHTML = `<strong>全校开课时间</strong>：<code>${escapeHtml(formatCourseUnitOfferingSchoolWideRange(row))}</code>（未单独设置的单位默认按此范围操作）`;
+  }
+  if (hintEl) {
+    if (!units.length) {
+      hintEl.hidden = false;
+      hintEl.textContent = '可新增需要单独设置开放时间的开课单位；未新增的单位默认按全校开课时间范围操作。';
+    } else if (!editableCount) {
+      hintEl.hidden = false;
+      hintEl.textContent = '已配置单位的开课模块开放操作时间均已截止，当前为只读查看。';
+    } else if (editableCount < units.length) {
+      hintEl.hidden = false;
+      hintEl.textContent = `已配置 ${units.length} 个开课单位；已截止的单位不可修改。未配置单位仍按全校开课时间范围操作。`;
+    } else {
+      hintEl.hidden = false;
+      hintEl.textContent = '请为已新增的开课单位设置开放起止时间；时间须在全校开课时间范围内，截止后该单位侧开课操作将变为只读。';
+    }
+  }
+  tbody.innerHTML = units.length
+    ? units.map((unitCode, idx) => {
+    const slot = COURSE_UNIT_OFFERING_TIMES[settingId]?.[unitCode] || { startAt: '', endAt: '' };
+    const startDt = formatCuotSlotDatetimeFields(slot.startAt, '08:00');
+    const endDt = formatCuotSlotDatetimeFields(slot.endAt, '18:00');
+    const locked = !isCourseUnitOfferingTimeEditable(settingId, unitCode);
+    const statusLabel = locked ? '已截止' : '开放中';
+    const statusClass = locked ? 'is-closed' : 'is-open';
+    const pickerOpen = locked ? '' : 'onclick="openCourseDatetimePicker(this, event)" onblur="normalizeCuotDatetimeInput(this)"';
+    return `<tr class="${locked ? 'is-readonly-row' : ''}">
+      <td class="col-index col-center">${idx + 1}</td>
+      <td class="col-center"><code>${escapeHtml(unitCode)}</code></td>
+      <td>${escapeHtml(SCHOOL_NAME_MAP[unitCode] || unitCode)}</td>
+      <td class="col-center"><span class="offering-module-time-status ${statusClass}">${statusLabel}</span></td>
+      <td>
+        <input class="input input-sm cuot-date-input course-datetime-input ${locked ? 'readonly' : ''}" type="text"
+          id="cuot-start-${unitCode}"
+          value="${escapeHtml(startDt.display)}"
+          data-iso-value="${escapeHtml(startDt.iso)}"
+          data-hm-value="${escapeHtml(startDt.hm)}"
+          data-min="${escapeHtml(bounds.minDate)}" data-max="${escapeHtml(bounds.maxDate)}"
+          data-unit-code="${escapeHtml(unitCode)}" data-field="start"
+          data-picker-title="开放开始"
+          placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
+          ${locked ? 'tabindex="-1" data-locked="1"' : pickerOpen}>
+        <!-- onclick="openCuotDatePicker(this, event)" placeholder="dd/mm/yyyy" 原仅日期选择 -->
+      </td>
+      <td>
+        <input class="input input-sm cuot-date-input course-datetime-input ${locked ? 'readonly' : ''}" type="text"
+          id="cuot-end-${unitCode}"
+          value="${escapeHtml(endDt.display)}"
+          data-iso-value="${escapeHtml(endDt.iso)}"
+          data-hm-value="${escapeHtml(endDt.hm)}"
+          data-min="${escapeHtml(startDt.iso || bounds.minDate)}" data-max="${escapeHtml(bounds.maxDate)}"
+          data-unit-code="${escapeHtml(unitCode)}" data-field="end"
+          data-picker-title="开放截止"
+          placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
+          ${locked ? 'tabindex="-1" data-locked="1"' : pickerOpen}>
+      </td>
+      <td class="actions"><a href="#" onclick="removeCourseUnitOfferingTimeUnit('${escapeHtml(unitCode)}');return false">移除</a></td>
+    </tr>`;
+  }).join('')
+    : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:20px">暂未单独设置开课单位</td></tr>';
+  // const units = [...SCHOOL_CODES].sort(); // 原展示全部开课单位
+  const drawer = document.getElementById('drawer-course-unit-offering-time');
+  drawer?.classList.toggle('is-readonly', units.length > 0 && editableCount === 0);
+  units.filter(code => isCourseUnitOfferingTimeEditable(settingId, code))
+    .forEach(code => syncCourseUnitOfferingTimeRowDateBounds(code));
+}
+
+function syncCourseUnitOfferingTimeDrawerFoot() {
+  const settingId = courseUnitOfferingTimeSettingId;
+  const saveBtn = document.getElementById('btn-course-unit-offering-time-save');
+  if (!saveBtn || !settingId) return;
+  const units = getCourseUnitOfferingConfiguredUnitCodes(settingId);
+  const hasEditable = units.some(code => isCourseUnitOfferingTimeEditable(settingId, code));
+  // const hasEditable = [...SCHOOL_CODES].some(code => isCourseUnitOfferingTimeEditable(settingId, code)); // 原按全部单位判断
+  saveBtn.hidden = !hasEditable;
+  saveBtn.disabled = !hasEditable;
+}
+
+function saveCourseUnitOfferingTimeDrawer() {
+  const settingId = courseUnitOfferingTimeSettingId;
+  if (!settingId) return;
+  const row = getCourseTimeSettingById(settingId);
+  // const bounds = getCourseTimeSettingDateBounds(row); // 原拼接默认时分，改由输入框 data-hm-value 保存
+  const store = ensureCourseUnitOfferingTimes(settingId);
+  const units = getCourseUnitOfferingConfiguredUnitCodes(settingId);
+  if (!units.length) {
+    alert('请先新增需要单独设置开放时间的开课单位。');
+    return;
+  }
+  let invalid = false;
+  let outOfRange = false;
+  let saved = 0;
+  units.forEach(unitCode => {
+    if (!isCourseUnitOfferingTimeEditable(settingId, unitCode)) return;
+    const startVal = getCuotDatetimeInputValue(unitCode, 'start');
+    const endVal = getCuotDatetimeInputValue(unitCode, 'end');
+    // const startDate = getCuotDateInputIso(unitCode, 'start'); // 原仅日期，改日期+时间
+    // const startVal = fromDateInputValue(startDate, bounds.startTime);
+    if (!startVal || !endVal) {
+      invalid = true;
+      return;
+    }
+    const start = parseCourseTimeDatetime(startVal);
+    const end = parseCourseTimeDatetime(endVal);
+    if (!start || !end || start.getTime() >= end.getTime()) {
+      invalid = true;
+      return;
+    }
+    if (!isCourseUnitOfferingSlotWithinSchoolRange(row, startVal, endVal)) {
+      outOfRange = true;
+      return;
+    }
+    store[unitCode] = { startAt: startVal, endAt: endVal };
+    saved += 1;
+  });
+  // [...SCHOOL_CODES].sort().forEach(unitCode => { ... }); // 原保存全部单位
+  if (outOfRange) {
+    alert(`单位开放时间须在全校开课时间（${formatCourseUnitOfferingSchoolWideRange(row)}）范围内。`);
+    return;
+  }
+  if (invalid) {
+    alert('请为开放期内的单位填写有效的起止时间（开始时间须早于截止时间）。');
+    return;
+  }
+  if (!saved) {
+    alert('当前无可保存的单位（均已截止）。');
+    return;
+  }
+  renderCourseUnitOfferingTimeTable();
+  syncCourseUnitOfferingTimeDrawerFoot();
+  alert(`已保存 ${saved} 个开课单位的开放时间。`);
+}
+
+// function ensureCourseUnitOfferingModuleTimes(settingId) { ... } // 原按模块细分，已改为 ensureCourseUnitOfferingTimes
+// function selectCourseUnitOfferingTimeUnit(unitCode) { ... } // 原左侧选中单位，改表格一览
+// function renderCourseUnitOfferingTimeUnitList() { ... }
+// function renderCourseUnitOfferingTimeModuleTable() { ... }
+
+// ── 校选课程管理 ──
+const SCHOOL_ELECTIVE_CATEGORIES = [
+  { id: 'general', label: '通识选修 General Elective' },
+  { id: 'major', label: '专业选修 Major Elective' },
+  { id: 'open', label: '公共选修 Open Elective' }
+];
+const SCHOOL_ELECTIVE_STUDENT_TYPES = ['Local', 'Chinese', 'International'];
+const SCHOOL_ELECTIVE_ALL_PROGRAMMES = '__all__';
+
+let SCHOOL_ELECTIVE_COURSES = null;
+let schoolElectiveEditId = null;
+let schoolElectiveEditExcludedDraft = [];
+let programmePickerTarget = 'school-elective';
+let geOfferingScopeEditLineId = null;
+let geOfferingScopeExcludedDraft = [];
+let schoolElectiveSelectedIds = new Set();
+
+function buildSchoolElectiveCourseHours(credits, { theory, tutorial = 0, practice, other = 0 } = {}) {
+  const totalHours = theory + tutorial + practice + other;
+  return {
+    credits,
+    totalHours: totalHours || credits * 14,
+    theoryHours: theory ?? Math.round((credits * 14) * 0.67),
+    tutorialHours: tutorial,
+    practiceHours: practice ?? (totalHours ? totalHours - theory - tutorial - other : credits * 14 - Math.round((credits * 14) * 0.67)),
+    otherHours: other
+  };
+}
+
+function resolveSchoolElectiveOfferingUnitAbbr(row) {
+  if (!row) return '—';
+  if (row.offeringUnitAbbr) return row.offeringUnitAbbr;
+  const dept = row.department || '';
+  if (!dept) return '—';
+  if (SCHOOL_CODES?.includes(dept)) return dept;
+  const byName = Object.entries(SCHOOL_NAME_MAP || {}).find(([, name]) => name === dept);
+  if (byName) return byName[0];
+  const catalog = COURSE_CATALOG.find(c => c.code === String(row.code || '').replace('*', ''));
+  if (catalog) return getCatalogOfferingUnitAbbr(catalog.id);
+  return dept.slice(0, 4).toUpperCase();
+}
+
+function getSchoolElectiveAllProgrammeKeys() {
+  return PROGRAMME_CATALOG.map(row => row.code.toLowerCase());
+}
+
+/** 演示数据：每门课仅预置少量不可选专业（1~maxCount 个） */
+function pickSchoolElectiveDemoExcluded(seed, maxCount = 3) {
+  if (!maxCount) return [];
+  const all = getSchoolElectiveAllProgrammeKeys();
+  if (!all.length) return [];
+  let hash = 0;
+  const s = String(seed || '');
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  const count = Math.min(maxCount, 1 + (hash % maxCount));
+  const picked = [];
+  for (let i = 0; picked.length < count && i < all.length * 2; i++) {
+    const key = all[(hash + i * 11) % all.length];
+    if (!picked.includes(key)) picked.push(key);
+  }
+  return picked;
+}
+
+/** 原 eligibleProgrammeKeys 白名单 → excludedProgrammeKeys 黑名单 */
+function schoolElectiveEligibleToExcluded(eligibleKeys = []) {
+  if (!eligibleKeys?.length || eligibleKeys.includes(SCHOOL_ELECTIVE_ALL_PROGRAMMES)) return [];
+  const allow = new Set(eligibleKeys.map(k => String(k).toLowerCase()));
+  return getSchoolElectiveAllProgrammeKeys().filter(k => !allow.has(k));
+}
+
+function getSchoolElectiveExcludedProgrammeKeys(row) {
+  if (Array.isArray(row?.excludedProgrammeKeys)) return row.excludedProgrammeKeys;
+  return schoolElectiveEligibleToExcluded(row?.eligibleProgrammeKeys);
+}
+
+function normalizeSchoolElectiveCourseRow(row) {
+  if (!row) return row;
+  if (!Array.isArray(row.excludedProgrammeKeys)) {
+    row.excludedProgrammeKeys = schoolElectiveEligibleToExcluded(row.eligibleProgrammeKeys);
+  }
+  return row;
+}
+
+function buildSchoolElectiveCourseFromCatalog(cat, overrides = {}) {
+  const meta = getCatalogOfferingMeta(cat.id);
+  return {
+    id: overrides.id || `sec-${cat.id}`,
+    catalogId: cat.id,
+    code: cat.code,
+    name: cat.name,
+    categoryId: overrides.categoryId || (String(cat.classification || '').includes('Major') ? 'major' : 'general'),
+    credits: cat.credits,
+    totalHours: meta.totalHours,
+    theoryHours: meta.theoryHours,
+    tutorialHours: meta.tutorialHours ?? 0,
+    practiceHours: meta.practiceHours,
+    otherHours: meta.otherHours ?? 0,
+    department: cat.department,
+    offeringUnitAbbr: getCatalogOfferingUnitAbbr(cat.id),
+    status: overrides.status || 'active',
+    excludedProgrammeKeys: overrides.excludedProgrammeKeys ?? [],
+    // eligibleProgrammeKeys: overrides.eligibleProgrammeKeys || [SCHOOL_ELECTIVE_ALL_PROGRAMMES], // 原白名单字段，已改为 excludedProgrammeKeys
+    eligibleStudentTypes: overrides.eligibleStudentTypes || [...SCHOOL_ELECTIVE_STUDENT_TYPES],
+    ...overrides
+  };
+}
+
+function seedSchoolElectiveCourses() {
+  const catalogElectives = COURSE_CATALOG.filter(c => /elective/i.test(c.classification || ''));
+  const fromCatalog = catalogElectives.map(cat => buildSchoolElectiveCourseFromCatalog(cat, {
+    excludedProgrammeKeys: cat.classification === 'Major Elective'
+      ? pickSchoolElectiveDemoExcluded(cat.id, 3)
+      : [],
+    // excludedProgrammeKeys: cat.classification === 'Major Elective'
+    //   ? schoolElectiveEligibleToExcluded(['fin', 'acc', 'ibu']) // 原反算黑名单，会排除过多专业
+    //   : [],
+    eligibleStudentTypes: cat.classification === 'Major Elective'
+      ? ['Local', 'Chinese']
+      : [...SCHOOL_ELECTIVE_STUDENT_TYPES]
+  }));
+  const extra = [
+    { id: 'sec-adt016', code: 'ADT016*', name: 'Broadcast Advertising', categoryId: 'open', department: SCHOOL_NAME_MAP.SOC, offeringUnitAbbr: 'SOC', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 42 }), excludedProgrammeKeys: [], eligibleStudentTypes: [...SCHOOL_ELECTIVE_STUDENT_TYPES] },
+    { id: 'sec-adt211', code: 'ADT211', name: 'Broadcast Advertising and Marketing', categoryId: 'open', department: SCHOOL_NAME_MAP.SOC, offeringUnitAbbr: 'SOC', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 42 }), excludedProgrammeKeys: ['fin', 'acc'], eligibleStudentTypes: ['Local', 'International'] },
+    { id: 'sec-ait102', code: 'AIT102', name: 'Discrete Mathematics', categoryId: 'general', department: SCHOOL_NAME_MAP.SEEAI, offeringUnitAbbr: 'SEEAI', status: 'suspended', ...buildSchoolElectiveCourseHours(4, { theory: 56 }), excludedProgrammeKeys: ['jrn', 'tcm'], eligibleStudentTypes: ['Local', 'Chinese', 'International'] },
+    { id: 'sec-ait201', code: 'AIT201', name: 'Python and Tensorflow Programming', categoryId: 'general', department: SCHOOL_NAME_MAP.SEEAI, offeringUnitAbbr: 'SEEAI', status: 'active', ...buildSchoolElectiveCourseHours(4, { theory: 28, practice: 28 }), excludedProgrammeKeys: ['fin', 'ibu', 'ecm'], eligibleStudentTypes: ['Local', 'International'] },
+    { id: 'sec-cst210', code: 'CST210', name: 'Probabilistic Graph and Agents', categoryId: 'general', department: SCHOOL_NAME_MAP.SCDS, offeringUnitAbbr: 'SCDS', status: 'suspended', ...buildSchoolElectiveCourseHours(4, { theory: 42, tutorial: 14 }), excludedProgrammeKeys: ['adt'], eligibleStudentTypes: ['Chinese', 'International'] },
+    { id: 'sec-ecm301', code: 'ECM301', name: 'Digital Marketing Analytics', categoryId: 'major', department: SCHOOL_NAME_MAP.SEM, offeringUnitAbbr: 'SEM', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 28, practice: 14 }), excludedProgrammeKeys: ['ait', 'cst'], eligibleStudentTypes: ['Local', 'Chinese'] },
+    { id: 'sec-eng220', code: 'ENG220', name: 'Creative Writing Workshop', categoryId: 'open', department: SCHOOL_NAME_MAP.SASS, offeringUnitAbbr: 'SASS', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 42 }), excludedProgrammeKeys: [], eligibleStudentTypes: ['Local', 'Chinese', 'International'] },
+    { id: 'sec-mat180', code: 'MAT180', name: 'Mathematics for Data Science', categoryId: 'general', department: SCHOOL_NAME_MAP.SMP, offeringUnitAbbr: 'SMP', status: 'active', ...buildSchoolElectiveCourseHours(4, { theory: 56 }), excludedProgrammeKeys: ['jrn', 'adt', 'cos'], eligibleStudentTypes: [...SCHOOL_ELECTIVE_STUDENT_TYPES] }
+  ];
+  return [...fromCatalog, ...extra].sort((a, b) => a.code.localeCompare(b.code));
+}
+
+function ensureSchoolElectiveCourseStore() {
+  if (!SCHOOL_ELECTIVE_COURSES) SCHOOL_ELECTIVE_COURSES = seedSchoolElectiveCourses();
+  SCHOOL_ELECTIVE_COURSES.forEach(normalizeSchoolElectiveCourseRow);
+  return SCHOOL_ELECTIVE_COURSES;
+}
+
+function getSchoolElectiveCategoryLabel(categoryId) {
+  return SCHOOL_ELECTIVE_CATEGORIES.find(c => c.id === categoryId)?.label || categoryId || '—';
+}
+
+function formatSchoolElectiveProgrammeScope(excludedKeys = []) {
+  if (!excludedKeys.length) return '—';
+  return excludedKeys.map(key => PROGRAMMES[key]?.code || key.toUpperCase()).filter(Boolean).join('、');
+}
+
+function formatSchoolElectiveExcludedProgrammeDisplay(row) {
+  return formatSchoolElectiveProgrammeScope(getSchoolElectiveExcludedProgrammeKeys(row));
+}
+
+function formatSchoolElectiveStudentTypeScope(types = []) {
+  if (!types.length || types.length === SCHOOL_ELECTIVE_STUDENT_TYPES.length) return '全部学生类型';
+  return types.join('、');
+}
+
+function formatSchoolElectiveScopeSummary(row) {
+  const excluded = getSchoolElectiveExcludedProgrammeKeys(row);
+  // return `${formatSchoolElectiveProgrammeScope(excluded)}；${formatSchoolElectiveStudentTypeScope(row.eligibleStudentTypes)}`; // 原含学生类型，列表列已拆分
+  return formatSchoolElectiveProgrammeScope(excluded);
+}
+
+function renderSchoolElectiveStatusTag(status) {
+  if (status === 'suspended') return '<span class="tag tag-danger">停课</span>';
+  return '<span class="tag tag-success">正常</span>';
+}
+
+function ensureSchoolElectiveFilterOptions() {
+  const deptSel = document.getElementById('school-elective-filter-dept');
+  const catSel = document.getElementById('school-elective-filter-category');
+  if (deptSel && deptSel.dataset.built !== '1') {
+    const depts = [...new Set(ensureSchoolElectiveCourseStore().map(r => r.department).filter(Boolean))].sort();
+    deptSel.innerHTML = '<option value="">全部</option>' +
+      depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+    deptSel.dataset.built = '1';
+  }
+  if (catSel && catSel.dataset.built !== '1') {
+    catSel.innerHTML = '<option value="">全部</option>' +
+      SCHOOL_ELECTIVE_CATEGORIES.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)}</option>`).join('');
+    catSel.dataset.built = '1';
+  }
+}
+
+function getFilteredSchoolElectiveCourses() {
+  ensureSchoolElectiveCourseStore();
+  const dept = document.getElementById('school-elective-filter-dept')?.value || '';
+  const category = document.getElementById('school-elective-filter-category')?.value || '';
+  const status = document.getElementById('school-elective-filter-status')?.value || '';
+  const keyword = (document.getElementById('school-elective-filter-keyword')?.value || '').trim().toLowerCase();
+  return SCHOOL_ELECTIVE_COURSES.filter(row => {
+    if (dept && row.department !== dept) return false;
+    if (category && row.categoryId !== category) return false;
+    if (status && row.status !== status) return false;
+    if (keyword) {
+      const hay = `${row.code} ${row.name}`.toLowerCase();
+      if (!hay.includes(keyword)) return false;
+    }
+    return true;
+  });
+}
+
+function resetSchoolElectiveCourseFilters() {
+  const ids = [
+    'school-elective-filter-dept',
+    'school-elective-filter-category',
+    'school-elective-filter-status',
+    'school-elective-filter-keyword'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'SELECT') el.value = '';
+    else el.value = '';
+  });
+  resetListPage('schoolElectiveCourses');
+  renderSchoolElectiveCoursePage();
+}
+
+function invalidateSchoolElectiveFilterOptions() {
+  ['school-elective-filter-dept', 'school-elective-filter-category'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dataset.built = '0';
+  });
+}
+
+function getSchoolElectiveCatalogCandidates() {
+  ensureSchoolElectiveCourseStore();
+  const existingCatalogIds = new Set(SCHOOL_ELECTIVE_COURSES.map(r => r.catalogId).filter(Boolean));
+  const existingCodes = new Set(SCHOOL_ELECTIVE_COURSES.map(r => String(r.code || '').replace('*', '')));
+  return COURSE_CATALOG.filter(cat => {
+    const cls = cat.classification || '';
+    if (!/elective/i.test(cls)) return false;
+    if (existingCatalogIds.has(cat.id)) return false;
+    if (existingCodes.has(cat.code)) return false;
+    return true;
+  }).sort((a, b) => a.code.localeCompare(b.code));
+}
+
+function rebuildSchoolElectiveAddCatalogOptions() {
+  const sel = document.getElementById('school-elective-add-catalog');
+  if (!sel) return;
+  const candidates = getSchoolElectiveCatalogCandidates();
+  sel.innerHTML = '<option value="">请选择</option>' +
+    candidates.map(cat =>
+      `<option value="${escapeHtml(cat.id)}">${escapeHtml(cat.code)} ${escapeHtml(cat.name)}</option>`
+    ).join('');
+}
+
+function openSchoolElectiveCourseAddModal() {
+  rebuildSchoolElectiveAddCatalogOptions();
+  const candidates = getSchoolElectiveCatalogCandidates();
+  if (!candidates.length) {
+    alert('教务课程库中暂无未纳入的选修课程可添加。');
+    return;
+  }
+  openModal('modal-school-elective-add');
+}
+
+function confirmSchoolElectiveCourseAdd() {
+  const catalogId = document.getElementById('school-elective-add-catalog')?.value;
+  if (!catalogId) {
+    alert('请选择要添加的课程。');
+    return;
+  }
+  const cat = COURSE_CATALOG.find(c => c.id === catalogId);
+  if (!cat) return;
+  ensureSchoolElectiveCourseStore();
+  SCHOOL_ELECTIVE_COURSES.push(buildSchoolElectiveCourseFromCatalog(cat));
+  SCHOOL_ELECTIVE_COURSES.sort((a, b) => a.code.localeCompare(b.code));
+  invalidateSchoolElectiveFilterOptions();
+  closeModal('modal-school-elective-add');
+  renderSchoolElectiveCoursePage();
+  alert(`已添加校选课程「${cat.code} ${cat.name}」，可点击「编辑」配置不可选专业与学生类型。`);
+}
+
+function updateSchoolElectiveSelection() {
+  schoolElectiveSelectedIds = new Set(
+    [...document.querySelectorAll('.school-elective-row-check:checked')].map(el => el.value)
+  );
+  const btn = document.getElementById('btn-school-elective-delete');
+  if (btn) btn.disabled = !schoolElectiveSelectedIds.size;
+  const checkAll = document.getElementById('school-elective-check-all');
+  const checks = [...document.querySelectorAll('.school-elective-row-check')];
+  if (checkAll && checks.length) {
+    const checkedCount = checks.filter(el => el.checked).length;
+    checkAll.checked = checkedCount === checks.length;
+    checkAll.indeterminate = checkedCount > 0 && checkedCount < checks.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function toggleSchoolElectiveCheckAll(checked) {
+  document.querySelectorAll('.school-elective-row-check').forEach(el => { el.checked = checked; });
+  updateSchoolElectiveSelection();
+}
+
+function deleteSelectedSchoolElectiveCourses() {
+  if (!schoolElectiveSelectedIds.size) {
+    alert('请先勾选需要删除的校选课程。');
+    return;
+  }
+  const count = schoolElectiveSelectedIds.size;
+  const selectedIds = [...schoolElectiveSelectedIds];
+  openDeleteConfirm({
+    title: '删除校选课程',
+    message: `确定删除选中的 <strong>${count}</strong> 门校选课程吗？`,
+    hint: '删除后将从校选课程列表中移除，不影响教务课程库原始数据。',
+    onConfirm: () => {
+      ensureSchoolElectiveCourseStore();
+      SCHOOL_ELECTIVE_COURSES = SCHOOL_ELECTIVE_COURSES.filter(r => !selectedIds.includes(r.id));
+      schoolElectiveSelectedIds.clear();
+      invalidateSchoolElectiveFilterOptions();
+      renderSchoolElectiveCoursePage();
+    }
+  });
+}
+
+function renderSchoolElectiveCoursePage() {
+  ensureSchoolElectiveFilterOptions();
+  const tbody = document.getElementById('school-elective-course-body');
+  if (!tbody) return;
+  const rows = getFilteredSchoolElectiveCourses();
+  const paged = paginateListItems(rows, 'schoolElectiveCourses');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map((row, idx) => `<tr>
+        <td class="col-check"><input type="checkbox" class="school-elective-row-check" value="${row.id}" ${schoolElectiveSelectedIds.has(row.id) ? 'checked' : ''} onchange="updateSchoolElectiveSelection()"></td>
+        <td class="col-index">${rowOffset + idx + 1}</td>
+        <td><code>${escapeHtml(row.code)}</code></td>
+        <td>${escapeHtml(row.name)}</td>
+        <!-- <td>${escapeHtml(getSchoolElectiveCategoryLabel(row.categoryId))}</td> --> <!-- 原校选课类别列，已移除 -->
+        <td class="col-center">${row.credits ?? '—'}</td>
+        <td class="col-center">${row.totalHours ?? '—'}</td>
+        <!-- <td class="col-center">${row.theoryHours ?? '—'}</td> -->
+        <!-- <td class="col-center">${row.tutorialHours ?? '—'}</td> -->
+        <!-- <td class="col-center">${row.practiceHours ?? '—'}</td> -->
+        <!-- <td class="col-center">${row.otherHours ?? '—'}</td> --> <!-- 原学时细分列，列表仅保留总学时 -->
+        <td class="col-center"><code>${escapeHtml(resolveSchoolElectiveOfferingUnitAbbr(row))}</code></td>
+        <!-- <td>${escapeHtml(row.department || '—')}</td> --> <!-- 原管理单位全称，已改为开课单位代码 -->
+        <td class="col-center">${renderSchoolElectiveStatusTag(row.status)}</td>
+        <td class="school-elective-scope-cell" title="${escapeHtml(formatSchoolElectiveExcludedProgrammeDisplay(row))}">${escapeHtml(formatSchoolElectiveExcludedProgrammeDisplay(row))}</td>
+        <td class="actions col-sticky-actions"><a href="#" onclick="openSchoolElectiveCourseEdit('${row.id}');return false">编辑</a></td>
+        <!-- 原操作文案：维护范围 -->
+      </tr>`).join('')
+    : '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:24px">暂无校选课程</td></tr>';
+  renderListPagination('school-elective-course-pagination', 'schoolElectiveCourses', paged.total);
+  updateSchoolElectiveSelection();
+}
+
+function ensureSchoolElectiveEditCategoryOptions() {
+  const sel = document.getElementById('school-elective-edit-category');
+  if (!sel || sel.dataset.built === '1') return;
+  sel.innerHTML = SCHOOL_ELECTIVE_CATEGORIES
+    .map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)}</option>`).join('');
+  sel.dataset.built = '1';
+}
+
+function renderSchoolElectiveEditProgrammeSummary(excludedKeys = []) {
+  const box = document.getElementById('school-elective-edit-programmes');
+  if (!box) return;
+  schoolElectiveEditExcludedDraft = [...(excludedKeys || [])].map(k => String(k).toLowerCase());
+  const display = formatSchoolElectiveProgrammeScope(schoolElectiveEditExcludedDraft);
+  const empty = !schoolElectiveEditExcludedDraft.length;
+  box.textContent = empty ? '全部专业可选' : display;
+  box.classList.toggle('text-muted', empty);
+}
+
+// function renderSchoolElectiveEditProgrammePicks(excludedKeys = []) {
+//   const box = document.getElementById('school-elective-edit-programmes');
+//   if (!box) return;
+//   const excluded = new Set((excludedKeys || []).map(k => String(k).toLowerCase()));
+//   box.innerHTML = PROGRAMME_CATALOG.map(row => {
+//     const key = row.code.toLowerCase();
+//     const checked = excluded.has(key);
+//     return `<label class="school-elective-pick-option">
+//       <input type="checkbox" class="school-elective-programme-check" value="${escapeHtml(key)}" ${checked ? 'checked' : ''}>
+//       <span><code>${escapeHtml(row.code)}</code> ${escapeHtml(row.nameZh || row.name)}</span>
+//     </label>`;
+//   }).join('');
+// } // 原编辑弹窗内平铺复选框，已改为摘要 + 弹窗选择
+
+function getProgrammePickerExcludedDraft() {
+  return programmePickerTarget === 'ge-offering-scope'
+    ? geOfferingScopeExcludedDraft
+    : schoolElectiveEditExcludedDraft;
+}
+
+function setProgrammePickerExcludedDraft(keys) {
+  const draft = [...(keys || [])];
+  if (programmePickerTarget === 'ge-offering-scope') geOfferingScopeExcludedDraft = draft;
+  else schoolElectiveEditExcludedDraft = draft;
+}
+
+function renderSchoolElectiveProgrammePickerList() {
+  const box = document.getElementById('school-elective-programme-picker-list');
+  if (!box) return;
+  const selected = new Set(getProgrammePickerExcludedDraft().map(k => String(k).toLowerCase()));
+  const keyword = (document.getElementById('school-elective-programme-picker-search')?.value || '').trim().toLowerCase();
+  const rows = PROGRAMME_CATALOG.filter(row => {
+    if (!keyword) return true;
+    const key = row.code.toLowerCase();
+    const label = `${row.code} ${row.nameZh || row.name || ''}`.toLowerCase();
+    return key.includes(keyword) || label.includes(keyword);
+  });
+  box.innerHTML = rows.length
+    ? rows.map(row => {
+      const key = row.code.toLowerCase();
+      const checked = selected.has(key);
+      return `<label class="school-elective-pick-option">
+        <input type="checkbox" class="school-elective-programme-picker-check" value="${escapeHtml(key)}" ${checked ? 'checked' : ''}>
+        <span><code>${escapeHtml(row.code)}</code> ${escapeHtml(row.nameZh || row.name)}</span>
+      </label>`;
+    }).join('')
+    : '<p class="text-muted" style="padding:12px;text-align:center;margin:0">暂无匹配专业</p>';
+}
+
+function openSchoolElectiveProgrammePickerModal() {
+  programmePickerTarget = 'school-elective';
+  const search = document.getElementById('school-elective-programme-picker-search');
+  if (search) search.value = '';
+  renderSchoolElectiveProgrammePickerList();
+  openModal('modal-school-elective-programme-picker');
+}
+
+function confirmSchoolElectiveProgrammePicker() {
+  const visibleChecks = [...document.querySelectorAll('.school-elective-programme-picker-check')];
+  const visibleKeys = new Set(visibleChecks.map(el => el.value));
+  const checkedVisible = visibleChecks.filter(el => el.checked).map(el => el.value);
+  const keptHidden = getProgrammePickerExcludedDraft().filter(k => !visibleKeys.has(k));
+  setProgrammePickerExcludedDraft([...keptHidden, ...checkedVisible]);
+  if (programmePickerTarget === 'ge-offering-scope') {
+    renderGeOfferingScopeProgrammeSummary(getProgrammePickerExcludedDraft());
+  } else {
+    renderSchoolElectiveEditProgrammeSummary(getProgrammePickerExcludedDraft());
+  }
+  closeModal('modal-school-elective-programme-picker');
+}
+
+function renderSchoolElectiveEditStudentTypePicks(selectedTypes = []) {
+  const box = document.getElementById('school-elective-edit-student-types');
+  if (!box) return;
+  const selected = selectedTypes.length ? selectedTypes : [...SCHOOL_ELECTIVE_STUDENT_TYPES];
+  box.innerHTML = SCHOOL_ELECTIVE_STUDENT_TYPES.map(type => `<label class="school-elective-pick-option">
+    <input type="checkbox" class="school-elective-student-type-check" value="${escapeHtml(type)}" ${selected.includes(type) ? 'checked' : ''}>
+    <span>${escapeHtml(type)}</span>
+  </label>`).join('');
+}
+
+// function onSchoolElectiveAllProgrammesToggle() {
+//   const allSelected = document.getElementById('school-elective-edit-all-programmes')?.checked;
+//   document.querySelectorAll('.school-elective-programme-check').forEach(el => {
+//     el.disabled = !!allSelected;
+//     if (allSelected) el.checked = true;
+//   });
+// } // 原白名单「全部专业」切换，已改为黑名单维护
+
+// function onSchoolElectiveProgrammePickChange() {
+//   const allCheck = document.getElementById('school-elective-edit-all-programmes');
+//   if (!allCheck) return;
+//   const checks = [...document.querySelectorAll('.school-elective-programme-check')];
+//   if (checks.every(el => el.checked)) allCheck.checked = true;
+// } // 原白名单联动，已移除
+
+function getSchoolElectiveEditExcludedProgrammeKeys() {
+  return [...schoolElectiveEditExcludedDraft];
+}
+
+// function getSchoolElectiveEditProgrammeKeys() {
+//   const allSelected = document.getElementById('school-elective-edit-all-programmes')?.checked;
+//   if (allSelected) return [SCHOOL_ELECTIVE_ALL_PROGRAMMES];
+//   return [...document.querySelectorAll('.school-elective-programme-check:checked')].map(el => el.value);
+// } // 原白名单取值，已改为 getSchoolElectiveEditExcludedProgrammeKeys
+
+function getSchoolElectiveEditStudentTypes() {
+  return [...document.querySelectorAll('.school-elective-student-type-check:checked')].map(el => el.value);
+}
+
+function openSchoolElectiveCourseEdit(courseId) {
+  const row = ensureSchoolElectiveCourseStore().find(r => r.id === courseId);
+  if (!row) return;
+  schoolElectiveEditId = courseId;
+  // ensureSchoolElectiveEditCategoryOptions(); // 原校选课类别字段，弹窗已移除
+  document.getElementById('school-elective-edit-code').textContent = row.code || '—';
+  document.getElementById('school-elective-edit-name').textContent = row.name || '—';
+  document.getElementById('school-elective-edit-dept').textContent = row.department || '—';
+  // document.getElementById('school-elective-edit-category').value = row.categoryId || 'general'; // 原校选课类别
+  document.getElementById('school-elective-edit-status').value = row.status || 'active';
+  renderSchoolElectiveEditProgrammeSummary(getSchoolElectiveExcludedProgrammeKeys(row));
+  renderSchoolElectiveEditStudentTypePicks(row.eligibleStudentTypes || []);
+  openModal('modal-school-elective-edit');
+}
+
+function saveSchoolElectiveCourseEdit() {
+  const row = ensureSchoolElectiveCourseStore().find(r => r.id === schoolElectiveEditId);
+  if (!row) return;
+  const excludedProgrammeKeys = getSchoolElectiveEditExcludedProgrammeKeys();
+  const studentTypes = getSchoolElectiveEditStudentTypes();
+  if (!studentTypes.length) {
+    alert('请至少选择一种可选学生类型。');
+    return;
+  }
+  // if (!programmeKeys.length) {
+  //   alert('请至少选择一个可选专业，或勾选「全部专业」。');
+  //   return;
+  // } // 原白名单校验；黑名单模式下不勾选表示全部专业可选
+  // row.categoryId = document.getElementById('school-elective-edit-category')?.value || row.categoryId; // 原校选课类别，弹窗已移除
+  row.status = document.getElementById('school-elective-edit-status')?.value || row.status;
+  row.excludedProgrammeKeys = excludedProgrammeKeys;
+  // row.eligibleProgrammeKeys = programmeKeys; // 原白名单字段，已改为 excludedProgrammeKeys
+  row.eligibleStudentTypes = studentTypes;
+  closeModal('modal-school-elective-edit');
+  renderSchoolElectiveCoursePage();
 }
 
 function getActiveOfferingTermSetting() {
   return COURSE_TIME_SETTINGS.find(r => r.isOfferingTerm) || null;
+}
+
+function getCourseTimeSettingByTermCode(termCode) {
+  if (!termCode) return null;
+  return COURSE_TIME_SETTINGS.find(r => r.termCode === termCode) || null;
+}
+
+function resolveTermTypeDefaultTeachingWeeks(termCode) {
+  const suffix = String(termCode || '').slice(-2);
+  if (suffix === '02') return 6;
+  if (suffix === '04' || suffix === '09') return 17;
+  return 17;
+  // return 6; // 原未知学期默认短学期
+}
+
+function getOfferingTermTeachingWeeks(termCode) {
+  // const row = getCourseTimeSettingByTermCode(termCode);
+  // if (row?.teachingWeeks != null) return row.teachingWeeks; // 原从开课时间设置记录读取
+  return resolveTermTypeDefaultTeachingWeeks(termCode);
+  // if (suffix === '09') return 14; // 原长学期 14 周
+  // return 6;
+  // if (suffix === '09') return 16; // 原长学期 16 周
+  // return 12; // 原短学期 12 周
+}
+
+function resolveSectionOfferingTermCode(sec) {
+  if (sec?.termCode) return sec.termCode;
+  if (COURSE_OFFERING_PLAN_STORE?.termCode) return COURSE_OFFERING_PLAN_STORE.termCode;
+  return getDefaultOfferingTermCode();
+}
+
+function getSectionTermTeachingWeeks(sec) {
+  return getOfferingTermTeachingWeeks(resolveSectionOfferingTermCode(sec));
+}
+
+function getDefaultSectionWeekRange(sec) {
+  const weeks = getSectionTermTeachingWeeks(sec);
+  return `1-${weeks}`;
+}
+
+function getDefaultSectionSelectedWeeks(sec) {
+  const termWeeks = getSectionTermTeachingWeeks(sec);
+  return Array.from({ length: termWeeks }, (_, i) => i + 1);
+}
+
+function clampWeeksToAllowed(weeks, allowedSet) {
+  const sorted = [...weeks].sort((a, b) => a - b);
+  if (!allowedSet || !allowedSet.size) return sorted;
+  return sorted.filter(w => allowedSet.has(w));
+}
+
+function ensureSectionWeekRangeFromTerm(sec) {
+  if (!sec) return;
+  if (!sec.termCode && COURSE_OFFERING_PLAN_STORE?.termCode) {
+    sec.termCode = COURSE_OFFERING_PLAN_STORE.termCode;
+  }
+  const termWeeks = getSectionTermTeachingWeeks(sec);
+  const fullWeeks = getDefaultSectionSelectedWeeks(sec);
+  const fullWeekSet = new Set(fullWeeks);
+  const parsed = parseWeekRangeToWeeks(sec.weekRange || sec.weeks, termWeeks);
+  if (!parsed.length) {
+    syncSectionWeekFields(sec, fullWeeks);
+    sec.teachingWeeks = termWeeks;
+    return;
+  }
+  const fromRange = clampWeeksToAllowed(parsed, fullWeekSet);
+  if (sec.weekRange && fromRange.length) {
+    const selected = Array.isArray(sec.selectedWeeks) ? sec.selectedWeeks : [];
+    const sameAsRange = selected.length === fromRange.length
+      && selected.every((w, i) => w === fromRange[i]);
+    if (!sameAsRange) {
+      syncSectionWeekFields(sec, fromRange);
+      if (!sec.teachingWeeks) sec.teachingWeeks = termWeeks;
+      return;
+    }
+  }
+  if (!Array.isArray(sec.selectedWeeks) || !sec.selectedWeeks.length) {
+    syncSectionWeekFields(sec, fromRange.length ? fromRange : parsed);
+  } else {
+    const clamped = clampWeeksToAllowed(sec.selectedWeeks, fullWeekSet);
+    if (!clamped.length || clamped.length !== sec.selectedWeeks.length) {
+      syncSectionWeekFields(sec, clamped.length ? clamped : fullWeeks);
+    }
+  }
+  sec.teachingWeeks = termWeeks;
+  // if (!sec.teachingWeeks) sec.teachingWeeks = termWeeks; // 原仅空值时写入，改始终按学期类型同步
 }
 
 /** 当前开课学期下的开课计划（计划行 + 教学班） */
@@ -2083,6 +3783,9 @@ let COURSE_OFFERING_PLAN_STORE = null;
 let COURSE_OFFERING_PLAN_BY_TERM = {};
 let courseMergeSelectedLineIds = new Set();
 let courseMajorSelectedSectionIds = new Set();
+let courseMajorTaskSelectedSectionIds = new Set();
+let courseMajorRosterSelectedSectionIds = new Set();
+let pendingMajorTaskRevertConfirm = null;
 let majorMergeSplitPendingIds = [];
 let majorMergeSplitMode = 'merge';
 let majorMergeSplitDrawerSectionId = null;
@@ -2155,6 +3858,69 @@ let majorOfferingTeacherHourTypeSelected = [];
 const TEACHER_HOUR_TYPE_OPTIONS = ['Lecture', 'Practical', 'Tutorial', 'Others'];
 let majorOfferingTeacherPickerSelected = new Set();
 let MOCK_TEACHER_PICKER_POOL = null;
+
+const TEACHER_TYPE_CODES = [
+  'AC (CS)', 'AC (F)', 'AC (LH)',
+  'AD (CS)', 'AD (F)', 'AD (LH)',
+  'PT',
+  'RE (LH)', 'RE (F)',
+  'IN (I)', 'IN (E)'
+];
+
+/** 开课学院内教师：由教师类型（teacherType）映射主讲/助教；非开课学院教师为 Support */
+function resolveTeacherTeachingRoleFromType(teacherType) {
+  const code = String(teacherType || '').trim();
+  if (!code) return '主讲';
+  if (code.startsWith('RE')) return '助教';
+  // if (code === 'PT' || code.startsWith('IN')) return 'Support'; // 原仅按类型判 Support，改优先按是否开课学院
+  if (code.startsWith('AC') || code.startsWith('AD')) return '主讲';
+  return '主讲';
+}
+
+function resolveTeacherTeachingRole(staffId, teacherType) {
+  if (teacherType) return resolveTeacherTeachingRoleFromType(teacherType);
+  const pick = buildMockTeacherPickerPool().find(t => t.staffId === staffId);
+  return resolveTeacherTeachingRoleFromType(pick?.teacherType);
+}
+
+function resolveTeacherTeachingRoleForSection(sec, teacher) {
+  const offeringUnit = resolveMajorOfferingSectionOfferingUnit(sec);
+  const poolPick = buildMockTeacherPickerPool().find(p => p.staffId === teacher?.staffId);
+  const departmentCode = teacher?.departmentCode || poolPick?.departmentCode || '';
+  if (offeringUnit && departmentCode && departmentCode !== offeringUnit) {
+    return 'Support';
+  }
+  const teacherType = teacher?.teacherType || poolPick?.teacherType || '';
+  return resolveTeacherTeachingRoleFromType(teacherType);
+}
+
+function enrichGroupAssignFormTeacher(t, sec) {
+  const poolPick = buildMockTeacherPickerPool().find(p => p.staffId === t?.staffId);
+  const teacherType = t?.teacherType || poolPick?.teacherType || '';
+  const departmentCode = t?.departmentCode || poolPick?.departmentCode || '';
+  return {
+    ...t,
+    teacherType,
+    departmentCode,
+    // role: resolveTeacherTeachingRoleFromType(teacherType) // 原仅按教师类型，改结合开课学院
+    role: sec ? resolveTeacherTeachingRoleForSection(sec, { staffId: t?.staffId, teacherType, departmentCode }) : resolveTeacherTeachingRoleFromType(teacherType),
+    isCoordinator: !!t?.isCoordinator
+  };
+}
+
+function getGroupAssignTeacherDisplayRole(t, sec) {
+  if (sec) return resolveTeacherTeachingRoleForSection(sec, t);
+  return t?.role || resolveTeacherTeachingRole(t?.staffId, t?.teacherType) || '—';
+}
+
+function isGroupAssignTeacherSupport(sec, teacher) {
+  if (!sec || !teacher) return false;
+  return resolveTeacherTeachingRoleForSection(sec, teacher) === 'Support';
+}
+
+function formatGroupAssignTeacherSupportDisplay(sec, teacher) {
+  return isGroupAssignTeacherSupport(sec, teacher) ? '是' : '否';
+}
 let majorMergeSplitDrawerLeftLineIds = [];
 let majorMergeSplitDrawerRightLineIds = [];
 let majorMergeSplitDrawerLeftSelected = new Set();
@@ -2166,6 +3932,8 @@ let majorOfferingStudentRosterStore = {};
 let majorOfferingStudentRosterSeq = 1;
 let majorOfferingStudentRosterSelected = new Set();
 let majorOfferingStudentPickerSelected = new Set();
+let presetRosterGroupingSelected = new Set();
+let presetRosterGroupingPreviewRows = [];
 let majorOfferingGroupingSelectedGroups = [];
 let majorOfferingStudentRemovalLogStore = {};
 let majorOfferingStudentRemovalLogSeq = 1;
@@ -2261,6 +4029,71 @@ function getStudentType(stu) {
   return resolveStudentTypeFromNationality(getStudentNationality(stu));
 }
 
+const STUDENT_REGISTRY_STATUS_LABELS = {
+  offered: 'Offered',
+  unregistered: 'Unregistered',
+  deferRegistration: 'Defer Registration',
+  active: 'Active',
+  deferment: 'Deferment',
+  withdrawal: 'Withdrawal',
+  completion: 'Completion',
+  graduated: 'Graduated',
+  completionWithoutGraduation: 'Completion without Graduation',
+  incomplete: 'Incomplete',
+  expel: 'Expel'
+};
+
+const STUDENT_REGISTRY_CATEGORY_LABELS = {
+  normal: 'Normal',
+  programmeTransfer: 'Programme Transfer',
+  inboundMobility: 'Inbound Mobility',
+  outboundMobility: 'Outbound Mobility',
+  iep: 'IEP',
+  completionWithoutGraduation: 'Completion without Graduation'
+};
+
+function ensureStudentRegistryFields(stu, fallbackIndex = 0) {
+  if (!stu) return stu;
+  if (!stu.registryStatus || !stu.registryCategory) {
+    const profile = getMockStudentRegistryProfile(fallbackIndex);
+    if (!stu.registryStatus) stu.registryStatus = profile.registryStatus;
+    if (!stu.registryCategory) stu.registryCategory = profile.registryCategory;
+  }
+  return stu;
+}
+
+function getMockStudentRegistryProfile(index) {
+  const roll = index % 10;
+  if (roll === 7) return { registryStatus: 'deferment', registryCategory: 'normal' };
+  if (roll === 8) return { registryStatus: 'active', registryCategory: 'programmeTransfer' };
+  if (roll === 9) return { registryStatus: 'active', registryCategory: 'inboundMobility' };
+  return { registryStatus: 'active', registryCategory: 'normal' };
+}
+
+function getStudentRegistryStatus(stu) {
+  ensureStudentRegistryFields(stu);
+  return stu.registryStatus || 'active';
+}
+
+function getStudentRegistryCategory(stu) {
+  ensureStudentRegistryFields(stu);
+  return stu.registryCategory || 'normal';
+}
+
+function formatStudentRegistryStatus(stu) {
+  const key = getStudentRegistryStatus(stu);
+  return STUDENT_REGISTRY_STATUS_LABELS[key] || key || '—';
+}
+
+function formatStudentRegistryCategory(stu) {
+  const key = getStudentRegistryCategory(stu);
+  return STUDENT_REGISTRY_CATEGORY_LABELS[key] || key || '—';
+}
+
+function isEligibleMajorOfferingRosterStudent(stu) {
+  return getStudentRegistryStatus(stu) === 'active' && getStudentRegistryCategory(stu) === 'normal';
+}
+
 function ensureStudentNationalityFields(stu, fallbackIndex = 0) {
   if (!stu) return stu;
   if (!stu.nationality) stu.nationality = getMockStudentNationality(fallbackIndex);
@@ -2268,14 +4101,549 @@ function ensureStudentNationalityFields(stu, fallbackIndex = 0) {
   return stu;
 }
 
+function getMockStudentGender(index) {
+  return index % 2 === 0 ? 'Male' : 'Female';
+}
+
+function ensureStudentGenderFields(stu, fallbackIndex = 0) {
+  if (!stu) return stu;
+  if (!stu.gender) {
+    stu.gender = getMockStudentGender(fallbackIndex);
+    return stu;
+  }
+  const g = String(stu.gender).trim().toLowerCase();
+  if (g === 'female' || g === 'f') stu.gender = 'Female';
+  else if (g === 'male' || g === 'm') stu.gender = 'Male';
+  else stu.gender = String(stu.gender).trim();
+  return stu;
+}
+
+function getStudentGender(stu) {
+  return stu?.gender || '';
+}
+
 function ensureMajorOfferingStudentRosterNationality(sectionId) {
   const roster = majorOfferingStudentRosterStore[sectionId];
   if (!roster?.length) return;
-  roster.forEach((stu, idx) => ensureStudentNationalityFields(stu, idx));
+  roster.forEach((stu, idx) => {
+    ensureStudentNationalityFields(stu, idx);
+    ensureStudentGenderFields(stu, idx);
+    ensureStudentRegistryFields(stu, idx);
+  });
 }
 let offeringGroupingSectionId = null;
+let offeringGroupingReturnPage = 'course-major-offering-task';
+let offeringGroupingSelectedGroupId = null;
+let offeringGroupingActiveTab = 'teacher';
+const OFFERING_GROUPING_PANEL_TABS = new Set(['student', 'summary', 'group-status']);
+function normalizeOfferingGroupingTab(tab) {
+  return OFFERING_GROUPING_PANEL_TABS.has(tab) ? tab : 'teacher';
+}
+const OFFERING_GROUP_HOUR_SUMMARY_TYPES = ['理论学时', '辅导学时', '实践学时', '其他学时'];
+const OFFERING_HOUR_SUMMARY_TYPE_META = {
+  '理论学时': { key: 'theory', abbr: '理', tone: 'blue' },
+  '辅导学时': { key: 'tutoring', abbr: '辅', tone: 'teal' },
+  '实践学时': { key: 'practical', abbr: '实', tone: 'orange' },
+  '其他学时': { key: 'other', abbr: '其', tone: 'purple' }
+};
+const OFFERING_HOUR_SUMMARY_TABLE_COLGROUP = `<colgroup>
+  <col class="col-index">
+  <col class="col-teacher">
+  <!-- <col class="col-role"> --> <!-- 原授课角色列，改在详情弹窗展示 -->
+  <col class="col-groups">
+  <col class="col-week">
+  <col class="col-sticky-actions">
+</colgroup>`;
+const OFFERING_HOUR_SUMMARY_TABLE_HEAD = `<thead><tr>
+  <th class="col-index col-center">序号</th>
+  <th class="col-teacher">任课教师</th>
+  <!-- <th class="col-role col-center">授课角色</th> --> <!-- 原授课角色列 -->
+  <th class="col-groups">小组</th>
+  <th class="col-center col-week">起止周</th>
+  <th class="col-sticky-actions">操作</th>
+  <!-- <th class="col-center col-actions">操作</th> --> <!-- 原居中操作列 -->
+</tr></thead>`;
+let offeringGroupingStudentSelected = new Set();
+let offeringGroupingAssignSelected = new Set();
+let offeringGroupingReadOnly = false;
+let offeringGroupingLeaveSnapshot = null;
+let offeringGroupEditIsNew = false;
+let groupAssignFormSelectAll = false;
 let offeringGroupSeq = 1;
 let offeringGroupAssignSeq = 1;
+
+function ensureOfferingGroupFields(group) {
+  if (!group) return group;
+  if (group.studentCount == null) group.studentCount = 0;
+  return group;
+}
+
+function migrateLegacyOfferingGroupCapacity(group) {
+  if (!group || group.capacityLimit != null || group._migratedCapacityLimit) return;
+  const legacy = Number(group.studentCount);
+  if (Number.isFinite(legacy) && legacy > 0) {
+    group.capacityLimit = Math.floor(legacy);
+    group.studentCount = 0;
+  }
+  group._migratedCapacityLimit = true;
+  // 原无 capacityLimit 字段时 studentCount 兼作人数上限展示，迁移后 studentCount 专用于实际名单统计
+}
+
+function formatOfferingGroupCapacityLimit(group) {
+  const limit = Number(group?.capacityLimit);
+  if (!Number.isFinite(limit) || limit <= 0) return '';
+  return `≤${Math.floor(limit)}人`;
+}
+
+function getOfferingGroupCapacityLimitValue(group) {
+  const limit = Number(group?.capacityLimit);
+  if (!Number.isFinite(limit) || limit <= 0) return Infinity;
+  return Math.floor(limit);
+}
+
+function countOfferingGroupRosterStudents(group, sec, sectionId) {
+  if (!group || !sec || !sectionId) return 0;
+  const roster = majorOfferingStudentRosterStore[sectionId] || getMajorOfferingStudentRoster(sectionId);
+  return roster.filter(stu => studentMatchesOfferingGroup(stu, group, sec)).length;
+}
+
+function validateOfferingGroupCanAcceptStudents(sec, group, addCount, { sectionId = sec?.id } = {}) {
+  if (!group || !sec) return { ok: false, message: '未找到目标分组。' };
+  const count = Number(addCount) || 0;
+  if (count <= 0) return { ok: true };
+  const limit = getOfferingGroupCapacityLimitValue(group);
+  if (limit === Infinity) return { ok: true };
+  const current = countOfferingGroupRosterStudents(group, sec, sectionId);
+  if (current + count > limit) {
+    const label = formatMajorOfferingGroupName(sec.name, group.name);
+    const capLabel = formatOfferingGroupCapacityLimit(group) || `≤${limit}人`;
+    return {
+      ok: false,
+      message: `分组「${label}」人数上限为 ${capLabel}，当前已有 ${current} 人，最多还可添加 ${Math.max(0, limit - current)} 人。`
+    };
+  }
+  return { ok: true };
+}
+
+function validateOfferingGroupCanAcceptStudentList(sec, group, students, { sectionId = sec?.id } = {}) {
+  const list = Array.isArray(students) ? students : [];
+  const addCount = list.filter(stu => !studentMatchesOfferingGroup(stu, group, sec)).length;
+  return validateOfferingGroupCanAcceptStudents(sec, group, addCount, { sectionId });
+}
+
+function openOfferingGroupCapacityAlert(message) {
+  openDeleteConfirm({
+    title: '超出人数限制',
+    message: message || '所选学生超过分组人数上限，无法完成分配。',
+    hint: '请减少勾选人数，或联系教务调整该分组的人数上限后重试。',
+    hintWarn: true,
+    confirmLabel: '知道了',
+    hideCancel: true,
+    onConfirm: () => {}
+  });
+}
+
+function findOfferingGroupByShortName(sec, groupName) {
+  const name = String(groupName || '').trim();
+  if (!sec?.groups?.length || !name) return null;
+  return sec.groups.find(g => g.name === name) || null;
+}
+
+function buildPresetRosterGroupAddCounts(sec, presetPool, studentNos, groupByStudentNo, existingByNo) {
+  const addsByGroupId = new Map();
+  presetPool.forEach(preset => {
+    if (studentNos && !studentNos.has(preset.studentNo)) return;
+    const existing = existingByNo.get(preset.studentNo);
+    if (existing && isManualMajorOfferingRosterStudent(existing)) return;
+    const groupId = groupByStudentNo?.get(preset.studentNo);
+    if (!groupId) return;
+    const group = sec.groups.find(g => g.id === groupId);
+    if (existing && group && studentMatchesOfferingGroup(existing, group, sec)) return;
+    addsByGroupId.set(groupId, (addsByGroupId.get(groupId) || 0) + 1);
+  });
+  return addsByGroupId;
+}
+
+function buildDefaultOfferingGroupName(index) {
+  return `Group${Math.max(1, Number(index) || 1)}`;
+}
+
+function getNextDefaultOfferingGroupName(sec) {
+  return buildNextDefaultOfferingGroupNames(sec, 1)[0];
+}
+
+function buildNextDefaultOfferingGroupNames(sec, count) {
+  const names = [];
+  const used = new Set((sec?.groups || []).map(g => (g.name || '').trim()));
+  let n = 1;
+  while (names.length < count) {
+    const candidate = buildDefaultOfferingGroupName(n);
+    if (!used.has(candidate)) {
+      names.push(candidate);
+      used.add(candidate);
+    }
+    n += 1;
+  }
+  return names;
+}
+
+function splitBatchOfferingGroupCapacityLimits(sec, newGroupCount) {
+  const count = Math.max(1, Math.floor(Number(newGroupCount)) || 1);
+  const existingAllocated = getOfferingGroupCapacityAllocated(sec);
+  if (!existingAllocated) {
+    return splitSectionGroupCapacityLimits(sec, count);
+  }
+  const planned = getSectionPlannedStudentCount(sec);
+  const courseLimit = getSectionCapacityLimit(sec);
+  const cap = courseLimit > 0 ? courseLimit : Math.max(planned, count);
+  const remainingLimit = Math.max(0, cap - existingAllocated);
+  if (remainingLimit <= 0) {
+    return Array.from({ length: count }, () => 1);
+  }
+  const gapToPlanned = Math.max(0, planned - existingAllocated);
+  const targetTotal = Math.min(remainingLimit, Math.max(gapToPlanned, count));
+  const perGroup = Math.floor(targetTotal / count);
+  let remainder = targetTotal - perGroup * count;
+  return Array.from({ length: count }, (_, i) => Math.max(1, perGroup + (i < remainder ? 1 : 0)));
+}
+
+function getOfferingGroupCapacityAllocated(sec, excludeGroupId = '') {
+  return (sec?.groups || [])
+    .filter(g => g.id !== excludeGroupId)
+    .reduce((sum, g) => sum + (Number(g.capacityLimit) || 0), 0);
+}
+
+function validateSectionGroupCapacityTotals(sec) {
+  const messages = [];
+  const groups = sec?.groups || [];
+  if (!groups.length) return messages;
+  const total = getOfferingGroupCapacityAllocated(sec);
+  const planned = getSectionPlannedStudentCount(sec);
+  const courseLimit = getSectionCapacityLimit(sec);
+  if (Number.isFinite(courseLimit) && courseLimit > 0 && total > courseLimit) {
+    messages.push(`各分组人数上限合计 ${total} 超过课程人数上限 ${courseLimit}。`);
+  }
+  if (Number.isFinite(planned) && planned > 0 && total < planned) {
+    messages.push(`各分组人数上限合计 ${total} 低于计划人数 ${planned}，无法覆盖计划人数。`);
+  }
+  return messages;
+}
+
+function splitSectionGroupCapacityLimits(sec, groupCount) {
+  const planned = getSectionPlannedStudentCount(sec);
+  const courseLimit = getSectionCapacityLimit(sec);
+  const count = Math.max(1, Math.floor(Number(groupCount)) || 1);
+  // const count = Math.max(1, Math.min(groupCount, 4)); // 原演示最多 4 组，批量新增不受此限
+  const fallback = Math.max(planned, sec?.estimatedStudents || 0, 30);
+  let targetTotal = fallback;
+  if (Number.isFinite(courseLimit) && courseLimit > 0) {
+    targetTotal = Math.min(Math.max(planned, 1), courseLimit);
+  }
+  const perGroup = Math.floor(targetTotal / count);
+  let remainder = targetTotal - perGroup * count;
+  return Array.from({ length: count }, (_, i) => perGroup + (i < remainder ? 1 : 0));
+}
+
+function validateOfferingGroupCapacityWithinSection(sec, groupId, capacityLimit) {
+  const courseLimit = getSectionCapacityLimit(sec);
+  if (!Number.isFinite(courseLimit) || courseLimit <= 0) return true;
+  const otherAllocated = getOfferingGroupCapacityAllocated(sec, groupId);
+  const nextTotal = otherAllocated + Math.floor(capacityLimit);
+  if (nextTotal <= courseLimit) return true;
+  const remaining = Math.max(0, courseLimit - otherAllocated);
+  alert(`各分组人数上限合计不能超过课程人数上限（${courseLimit}）。当前其余分组已占 ${otherAllocated}，本组最多可设 ${remaining}。`);
+  return false;
+}
+
+function seedDemoOfferingGroups(sec) {
+  if (!sec || sec.groups?.length) return;
+  const metas = getSectionLineMetas(sec);
+  const limits = splitSectionGroupCapacityLimits(sec, 1);
+  const defaultLimit = limits[0]
+    || sec.estimatedStudents
+    || (metas.length ? metas.reduce((sum, meta) => sum + (getLineEstimatedStudents(meta.lineId) || 0), 0) : 0)
+    || 60;
+  const batchLabel = metas.length === 1 ? (metas[0].batchLabel || '') : '';
+  sec.groups = [{
+    id: `grp-${offeringGroupSeq++}`,
+    name: buildDefaultOfferingGroupName(1),
+    // name: batchLabel || '小组01', // 原默认批次名，改 Group1/Group2...
+    batchLabel,
+    lineId: metas.length === 1 ? metas[0].lineId : '',
+    remark: '',
+    capacityLimit: defaultLimit,
+    studentCount: 0
+  }];
+  sec.isGrouped = true;
+  // syncSectionGroupsFromProgrammeBatches(sec, { force: true }); // 原按专业批次自动建默认分组，改由手动新增并设置人数上限
+}
+
+function seedDemoOfferingGroupsMulti(sec, groupCount = 2, { force = false } = {}) {
+  if (!sec) return;
+  if (sec.groups?.length && !force) return;
+  const metas = getSectionLineMetas(sec);
+  const count = Math.max(1, Math.min(groupCount, 4));
+  const batchLabel = metas.length === 1 ? (metas[0].batchLabel || '') : '';
+  const groupLimits = splitSectionGroupCapacityLimits(sec, count);
+  // const totalLimit = sec.estimatedStudents ... // 原按预估人数均分，可能超过课程人数上限
+  // const perGroup = Math.max(20, Math.ceil(totalLimit / count));
+  sec.groups = [];
+  for (let i = 0; i < count; i += 1) {
+    const meta = metas[i % Math.max(metas.length, 1)];
+    const groupBatchLabel = meta?.batchLabel || batchLabel;
+    sec.groups.push({
+      id: `grp-${offeringGroupSeq++}`,
+      name: buildDefaultOfferingGroupName(i + 1),
+      // name: count === 1 ? (groupBatchLabel || '小组01') : ... // 原默认批次/小组序号名
+      batchLabel: groupBatchLabel,
+      lineId: meta?.lineId || (metas.length === 1 && i === 0 ? metas[0].lineId : ''),
+      remark: '',
+      capacityLimit: groupLimits[i] || groupLimits[groupLimits.length - 1] || 20,
+      // capacityLimit: isLast ? Math.max(20, totalLimit - perGroup * (count - 1)) : perGroup, // 原可能累计超上限
+      studentCount: 0
+    });
+  }
+  sec.isGrouped = true;
+}
+
+function pickDemoAssignWeeksAndWeekly(sectionWeeks, typeTotal, preferFromStart = true) {
+  if (!sectionWeeks?.length || typeTotal <= 0) {
+    return { weeks: [], weeklyHours: 1 };
+  }
+  const maxWeeks = sectionWeeks.length;
+  for (let weekCount = Math.min(typeTotal, maxWeeks); weekCount >= 1; weekCount -= 1) {
+    if (typeTotal % weekCount !== 0) continue;
+    const weeklyHours = typeTotal / weekCount;
+    const weeks = preferFromStart
+      ? sectionWeeks.slice(0, weekCount)
+      : sectionWeeks.slice(-weekCount);
+    return { weeks, weeklyHours };
+    // const weeklyHours = Math.ceil(typeTotal / weekCount); // 原允许进位导致 recorded > typeTotal
+    // if (weeklyHours * weekCount >= typeTotal) {
+    //   return { weeks, weeklyHours };
+    // }
+  }
+  const weeks = preferFromStart ? sectionWeeks.slice(0, 1) : sectionWeeks.slice(-1);
+  return { weeks, weeklyHours: typeTotal };
+}
+
+function seedCompleteDemoOfferingGroupAssignments(sec) {
+  if (!sec?.groups?.length) return;
+  const groups = sec.groups;
+  const pool = buildMockTeacherPickerPool();
+  ensureSectionWeekRangeFromTerm(sec);
+  const sectionWeekRange = getSectionWeekRangeDisplay(sec);
+  const sectionWeeks = getSectionSelectedWeeks(sec);
+  if (!sectionWeeks.length) return;
+  let teacherIdx = 0;
+
+  function teacherAt(idx, opts = {}) {
+    const t = pool[idx % pool.length];
+    const teacher = {
+      staffId: t.staffId,
+      name: t.name,
+      teacherType: t.teacherType,
+      departmentCode: t.departmentCode,
+      isCoordinator: !!opts.isCoordinator
+    };
+    teacher.role = resolveTeacherTeachingRoleForSection(sec, teacher);
+    return teacher;
+  }
+
+  function buildTeachersPayload(teachers) {
+    return {
+      teachers,
+      staffId: teachers.map(t => t.staffId).filter(Boolean).join('、'),
+      teacher: teachers.map(t => t.name).filter(Boolean).join('、'),
+      role: teachers.map(t => t.role).filter(Boolean).join('、')
+    };
+  }
+
+  function makeAssignment({ deliveryScope, groupIds = [], hourType, weekRange: rowWeekRange, teachers, mergeHours = true, weeklyHours: weeklyHoursOverride }) {
+    const primaryGroup = groupIds.length ? groups.find(g => g.id === groupIds[0]) : null;
+    const weekRangeVal = clampGroupAssignWeekRangeToSection(sec, rowWeekRange || sectionWeekRange);
+    const planWeekly = getGroupAssignPlanWeeklyHours(sec);
+    const weeklyHours = weeklyHoursOverride ?? planWeekly ?? null;
+    const rowHours = weeklyHours && weekRangeVal
+      ? calcGroupAssignRowHours(weeklyHours, weekRangeVal, sec)
+      : null;
+    return {
+      id: `ga-${offeringGroupAssignSeq++}`,
+      deliveryScope,
+      groupId: groupIds[0] || '',
+      groupIds: [...groupIds],
+      groupName: deliveryScope === 'section' ? '全体小组' : (primaryGroup?.name || ''),
+      studentCount: deliveryScope === 'section'
+        ? (sec.estimatedStudents ?? 0)
+        : (primaryGroup?.capacityLimit ?? primaryGroup?.studentCount ?? 0),
+      adminClass: '',
+      programmeBatch: deliveryScope === 'section'
+        ? getSectionMergedBatchLabelDisplayFull(sec)
+        : (primaryGroup?.batchLabel || ''),
+      hourType,
+      mergeHours,
+      weekRange: weekRangeVal,
+      weeklyHours,
+      hours: rowHours,
+      ...buildTeachersPayload(teachers)
+    };
+  }
+
+  const assignments = [];
+  const hourTypePreferStart = new Set(['理论学时', '辅导学时']);
+  getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
+    const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+    if (typeTotal <= 0) return;
+    groups.forEach((g, gi) => {
+      const { weeks, weeklyHours } = pickDemoAssignWeeksAndWeekly(
+        sectionWeeks,
+        typeTotal,
+        hourTypePreferStart.has(hourType)
+      );
+      if (!weeks.length) return;
+      const curTeacherIdx = teacherIdx;
+      teacherIdx += 1;
+      assignments.push(makeAssignment({
+        deliveryScope: 'group',
+        groupIds: [g.id],
+        hourType,
+        weekRange: formatGroupAssignWeekRangeFromSectionWeeks(sec, weeks),
+        weeklyHours,
+        teachers: [teacherAt(curTeacherIdx, { isCoordinator: gi === 0 && curTeacherIdx === 0 })]
+      }));
+    });
+  });
+
+  sec.groupAssignments = assignments;
+  syncSectionCoordinatorsFromAssignments(sec);
+  sanitizeSectionGroupAssignments(sec);
+}
+
+function prepareMajorOfferingTaskDemoSection(sec, { groupCount = 2 } = {}) {
+  if (!sec) return;
+  sec.submitStatus = 'submitted';
+  sec.teachingConfirmStatus = 'pending';
+  sec.schedulingVisible = true;
+  ensureSectionOfferingFields(sec);
+  // sec.groupAssignments = []; // 原 incomplete 演示学时保留；改由 seedComplete 全量覆盖
+  seedDemoOfferingGroupsMulti(sec, groupCount, { force: true });
+  seedCompleteDemoOfferingGroupAssignments(sec);
+}
+
+function mergeDemoOfferingSectionsIntoAnchor(anchorSec, donorSecs) {
+  if (!anchorSec || !donorSecs?.length || !COURSE_OFFERING_PLAN_STORE) return;
+  const donorList = donorSecs.filter(d => d && d.id !== anchorSec.id);
+  if (!donorList.length) return;
+  const allLineIds = [
+    ...(anchorSec.lineIds || []),
+    ...donorList.flatMap(d => d.lineIds || [])
+  ];
+  const catalogLines = allLineIds.map(getOfferingLineById).filter(Boolean);
+  if (catalogLines.length <= 1) return;
+  donorList.forEach(donor => {
+    donor.weekRange = anchorSec.weekRange;
+    donor.teachingWeeks = anchorSec.teachingWeeks;
+    donor.totalHours = anchorSec.totalHours;
+    donor.theoryHours = anchorSec.theoryHours;
+    donor.tutorialHours = anchorSec.tutorialHours;
+    donor.practiceHours = anchorSec.practiceHours;
+    donor.otherHours = anchorSec.otherHours;
+    donor.credits = anchorSec.credits;
+  });
+  applyMergedLinesToSection(anchorSec, catalogLines);
+  anchorSec.estimatedStudents = catalogLines.reduce(
+    (sum, l) => sum + (28 + ((l.id.charCodeAt(l.id.length - 1) || 0) % 25)),
+    0
+  );
+  anchorSec.studentCount = anchorSec.estimatedStudents;
+  anchorSec.reservedSpots = [anchorSec, ...donorList].reduce(
+    (sum, sec) => sum + (Number(sec.reservedSpots) || 5),
+    0
+  );
+  anchorSec.groups = [];
+  anchorSec.isGrouped = false;
+  anchorSec.groupAssignments = [];
+  const removeIds = new Set(donorList.map(d => d.id));
+  COURSE_OFFERING_PLAN_STORE.sections = COURSE_OFFERING_PLAN_STORE.sections.filter(s => !removeIds.has(s.id));
+}
+
+function seedMajorOfferingDemoTaskLayout() {
+  if (!COURSE_OFFERING_PLAN_STORE?.sections?.length) return;
+
+  // if (acc201Secs.length >= 3) {
+  //   mergeDemoOfferingSectionsIntoAnchor(acc201Secs[0], acc201Secs.slice(1, 3));
+  // } ... // 原自动合班演示，改开课计划提交数据保持独立教学班
+  const all = COURSE_OFFERING_PLAN_STORE.sections;
+
+  all.forEach(sec => {
+    sec.submitStatus = 'draft';
+    sec.teachingConfirmStatus = 'pending';
+    sec.schedulingVisible = false;
+    sec.groups = [];
+    sec.isGrouped = false;
+    sec.groupAssignments = [];
+  });
+
+  all.slice(0, 5).forEach((sec, idx) => {
+    prepareMajorOfferingTaskDemoSection(sec, { groupCount: idx < 2 ? 3 : 2 });
+    if (idx === 2) sec.enrollmentType = 'open'; // 演示开放选课：名单不由学生名单管理维护
+  });
+  // mergedSecs.slice(0, 2) ... unmergedSecs.slice(0, 3) // 原区分合班/未合班演示
+}
+
+const MAJOR_OFFERING_TASK_PAGE_DEMO_VERSION = 'v7';
+
+function isMajorOfferingTaskDemoReady(sec) {
+  if (!sec || sec.submitStatus !== 'submitted') return false;
+  if ((sec.groups?.length || 0) < 2) return false;
+  return validateMajorOfferingTaskArrangementSubmit(sec).ok;
+}
+
+function ensureDemoMergedOfferingSections() {
+  // let mergedCreated = 0; ... mergeDemoOfferingSectionsIntoAnchor ... // 原自动合班演示，改由用户手动合拆班
+}
+
+function ensureMajorOfferingTaskPageDemos() {
+  if (!ensureCourseOfferingPlan()) return;
+  if (COURSE_OFFERING_PLAN_STORE._taskPageDemosVersion === MAJOR_OFFERING_TASK_PAGE_DEMO_VERSION) return;
+
+  // ensureDemoMergedOfferingSections(); // 原自动合班，改开课计划数据不合班
+
+  const targetCount = 5;
+  let readyCount = getMajorOfferingSections().filter(isMajorOfferingTaskDemoReady).length;
+
+  getMajorOfferingSections()
+    .filter(s => !isMajorOfferingTaskDemoReady(s))
+    .slice(0, targetCount - readyCount)
+    .forEach(sec => {
+      prepareMajorOfferingTaskDemoSection(sec, { groupCount: 2 });
+      readyCount += 1;
+    });
+
+  if (readyCount < targetCount) {
+    const termDisplay = COURSE_OFFERING_PLAN_STORE.termDisplay || getDefaultOfferingTermDisplay();
+    const candidates = buildMajorOfferingTaskCandidates(termDisplay);
+    const need = targetCount - readyCount;
+    if (candidates.length && need > 0) {
+      const newLines = candidates.slice(0, need).map(buildMajorOfferingLineFromCandidate);
+      const { newSections } = appendMajorOfferingLinesToPlan(newLines);
+      newSections.forEach(sec => {
+        if (readyCount >= targetCount) return;
+        prepareMajorOfferingTaskDemoSection(sec, { groupCount: 2 });
+        readyCount += 1;
+      });
+    }
+  }
+
+  COURSE_OFFERING_PLAN_STORE._taskPageDemosVersion = MAJOR_OFFERING_TASK_PAGE_DEMO_VERSION;
+}
+
+let offeringGroupMergeSelectedIds = [];
+let teacherPickerContext = null;
+let weekRangePickerContext = null;
+let weekRangePickerMaxWeek = MAJOR_OFFERING_MAX_WEEKS;
+let weekRangePickerAllowedWeeks = null;
+let groupAssignFormTeachers = [];
 let courseOfferingLineSeq = 1;
 let courseOfferingSectionSeq = 1;
 let generateMajorOfferingTaskSelectedKeys = new Set();
@@ -2341,6 +4709,14 @@ function applyDefaultOfferingTermToFilters() {
   if (majorTermSel) majorTermSel.value = defaultDisplay;
   const gmotTermSel = document.getElementById('gmot-filter-term');
   if (gmotTermSel) gmotTermSel.value = defaultDisplay;
+  const otherTermSel = document.getElementById('other-offering-filter-term');
+  if (otherTermSel) otherTermSel.value = defaultDisplay;
+  const geTaskTermSel = document.getElementById('ge-offering-task-filter-term');
+  if (geTaskTermSel) geTaskTermSel.value = defaultDisplay;
+  const otherTaskTermSel = document.getElementById('other-offering-task-filter-term');
+  if (otherTaskTermSel) otherTaskTermSel.value = defaultDisplay;
+  const otherRosterTermSel = document.getElementById('other-offering-roster-filter-term');
+  if (otherRosterTermSel) otherRosterTermSel.value = defaultDisplay;
   syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
 }
 
@@ -2351,9 +4727,64 @@ function onMajorOfferingTermFilterChange() {
   renderCourseOfferingMajorPage();
 }
 
+function applyDefaultOfferingCourseHours(sec) {
+  if (!sec) return;
+  Object.assign(sec, DEFAULT_OFFERING_COURSE_HOURS);
+}
+
+function migrateOfferingPlanDefaultCourseHours() {
+  if (!COURSE_OFFERING_PLAN_STORE || COURSE_OFFERING_PLAN_STORE._hoursDefaultMigrated) return;
+  (COURSE_OFFERING_PLAN_STORE.sections || []).forEach(applyDefaultOfferingCourseHours);
+  COURSE_OFFERING_PLAN_STORE._hoursDefaultMigrated = true;
+}
+
+function migrateOfferingPlanDefaultReservedSpots() {
+  if (!COURSE_OFFERING_PLAN_STORE || COURSE_OFFERING_PLAN_STORE._reservedSpotsDefaultMigrated) return;
+  (COURSE_OFFERING_PLAN_STORE.sections || []).forEach(sec => {
+    if (sec.reservedSpots == null || sec.reservedSpots === '') {
+      sec.reservedSpots = DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS;
+    }
+  });
+  COURSE_OFFERING_PLAN_STORE._reservedSpotsDefaultMigrated = true;
+}
+
+function migrateMisclassifiedGeOfferingLines() {
+  Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).forEach(store => {
+    if (!store || store._geLineClassifyMigrated) return;
+    (store.lines || []).forEach(line => {
+      if (line.offeringType === 'major' && isGeneralElectiveCatalogCourse(line.catalogId)) {
+        line.offeringType = 'ge';
+      }
+    });
+    (store.sections || []).forEach(sec => {
+      if (sec.offeringType === 'major' && isGeneralElectiveCatalogCourse(sec.catalogId)) {
+        sec.offeringType = 'ge';
+      }
+    });
+    store._geLineClassifyMigrated = true;
+  });
+}
+
 function initCourseOfferingPlanStore() {
   syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
   seedMajorOfferingDemoTasks();
+  migrateMisclassifiedGeOfferingLines();
+  migrateOfferingPlanDefaultCourseHours();
+  migrateOfferingPlanDefaultReservedSpots();
+  ensureMajorOfferingTaskPageDemos();
+  backfillConfirmedOfferingGroupAssignments();
+}
+
+function backfillConfirmedOfferingGroupAssignments() {
+  if (!COURSE_OFFERING_PLAN_STORE?.sections?.length) return;
+  COURSE_OFFERING_PLAN_STORE.sections.forEach((sec, idx) => {
+    ensureSectionOfferingFields(sec);
+    // syncSectionGroupsFromProgrammeBatches(sec); // 原自动补全分组，改由任务安排环节操作
+    sanitizeSectionGroupAssignments(sec);
+    if (shouldSeedDemoOfferingGroupAssignments(sec, idx) && !(sec.groupAssignments?.length)) {
+      seedDemoOfferingGroupAssignments(sec);
+    }
+  });
 }
 
 function getExistingMajorOfferingLineKeys(termDisplay) {
@@ -2672,16 +5103,28 @@ function seedMajorOfferingDemoTasks() {
   demoLines = appendAcc201MultiIntakeDemoLine(demoLines);
   if (!demoLines.length) return;
 
-  const sections = assignInitialSections(demoLines);
-  sections.forEach((sec, idx) => {
-    sec.submitStatus = idx === 1 ? 'submitted' : 'draft';
-    sec.teachingConfirmStatus = idx % 2 === 0 ? 'pending' : 'confirmed';
-    sec.schedulingVisible = idx === 1;
-    // sec.status = idx % 3 === 2 ? 'pending' : 'offered'; // 原开课状态
+  const sections = [];
+  demoLines.forEach(line => {
+    const catalogId = line.catalogId;
+    const sectionNo = sections.filter(s => s.catalogId === catalogId).length + 1;
+    const sec = buildOfferingSection(line, sectionNo);
+    line.sectionId = sec.id;
+    sections.push(sec);
   });
-
+  // const sections = assignInitialSections(demoLines); // 原按课程号默认合班，计划阶段改为一课一批次一行
+  // 须先将 lines/sections 写入 store，ensureSectionOfferingFields 才能按专业批次生成分组并预置学时
+  // COURSE_OFFERING_PLAN_STORE.lines = demoLines; // 原在 forEach 之后赋值，导致 seed 时分组为空
   COURSE_OFFERING_PLAN_STORE.lines = demoLines;
   COURSE_OFFERING_PLAN_STORE.sections = sections;
+  seedMajorOfferingDemoTaskLayout();
+  // sections.forEach((sec, idx) => {
+  //   const isDemoReady = idx < 4;
+  //   sec.submitStatus = isDemoReady ? 'submitted' : 'draft';
+  //   ...
+  // }); // 原按序号标记演示，改 seedMajorOfferingDemoTaskLayout 区分合班/未合班
+
+  // COURSE_OFFERING_PLAN_STORE.lines = demoLines;
+  // COURSE_OFFERING_PLAN_STORE.sections = sections;
   COURSE_OFFERING_PLAN_STORE.generatedAt = new Date().toISOString();
 }
 
@@ -2706,36 +5149,63 @@ function buildMergedOfferingSection(catalogLines, sectionNo) {
 
 function appendMajorOfferingLinesToPlan(newLines) {
   const newSections = [];
-  let mergedLineCount = 0;
-  const byCatalog = new Map();
-  newLines.forEach(line => {
-    if (!byCatalog.has(line.catalogId)) byCatalog.set(line.catalogId, []);
-    byCatalog.get(line.catalogId).push(line);
-  });
+  // let mergedLineCount = 0; // 原合班计数，生成时不再默认合班
+  // const byCatalog = new Map();
+  // newLines.forEach(line => {
+  //   if (!byCatalog.has(line.catalogId)) byCatalog.set(line.catalogId, []);
+  //   byCatalog.get(line.catalogId).push(line);
+  // });
+  //
+  // byCatalog.forEach(catalogLines => {
+  //   const catalogId = catalogLines[0].catalogId;
+  //   const existingSec = COURSE_OFFERING_PLAN_STORE.sections.find(s =>
+  //     s.catalogId === catalogId && s.offeringType === 'major'
+  //   );
+  //   if (existingSec) {
+  //     catalogLines.forEach(line => {
+  //       if (!existingSec.lineIds.includes(line.id)) {
+  //         existingSec.lineIds.push(line.id);
+  //         line.sectionId = existingSec.id;
+  //         mergedLineCount += 1;
+  //       }
+  //     });
+  //     const allLines = existingSec.lineIds.map(getOfferingLineById).filter(Boolean);
+  //     applyMergedLinesToSection(existingSec, allLines);
+  //   } else {
+  //     const sectionNo = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.catalogId === catalogId).length + 1;
+  //     newSections.push(buildMergedOfferingSection(catalogLines, sectionNo));
+  //   }
+  // }); // 原同课程跨专业/批次默认合班；改由操作列「合拆班」手动合班
 
-  byCatalog.forEach(catalogLines => {
-    const catalogId = catalogLines[0].catalogId;
-    const existingSec = COURSE_OFFERING_PLAN_STORE.sections.find(s =>
-      s.catalogId === catalogId && s.offeringType === 'major'
-    );
-    if (existingSec) {
-      catalogLines.forEach(line => {
-        if (!existingSec.lineIds.includes(line.id)) {
-          existingSec.lineIds.push(line.id);
-          line.sectionId = existingSec.id;
-          mergedLineCount += 1;
-        }
-      });
-      const allLines = existingSec.lineIds.map(getOfferingLineById).filter(Boolean);
-      applyMergedLinesToSection(existingSec, allLines);
-    } else {
-      const sectionNo = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.catalogId === catalogId).length + 1;
-      newSections.push(buildMergedOfferingSection(catalogLines, sectionNo));
-    }
+  newLines.forEach(line => {
+    const catalogId = line.catalogId;
+    const existingCount = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.catalogId === catalogId).length;
+    const pendingCount = newSections.filter(s => s.catalogId === catalogId).length;
+    const sectionNo = existingCount + pendingCount + 1;
+    const sec = buildOfferingSection(line, sectionNo);
+    line.sectionId = sec.id;
+    newSections.push(sec);
   });
 
   COURSE_OFFERING_PLAN_STORE.lines.push(...newLines);
   COURSE_OFFERING_PLAN_STORE.sections.push(...newSections);
+  newSections.forEach(sec => {
+    sec.groups = [];
+    sec.isGrouped = false;
+    if (sec.offeringType === 'ge') ensureGeOfferingSectionFields(sec);
+    else if (sec.offeringType === 'other') ensureOtherOfferingSectionFields(sec);
+    else ensureSectionOfferingFields(sec);
+    // ensureSectionOfferingFields(sec); // 原不区分通识选修，改 GE 默认开放选课
+  });
+  return { newSections, mergedLineCount: 0 };
+}
+
+function appendGeOfferingLinesToPlan(newLines) {
+  const { newSections, mergedLineCount } = appendMajorOfferingLinesToPlan(newLines);
+  newSections.forEach(sec => {
+    const line = newLines.find(l => l.sectionId === sec.id);
+    applyGeOfferingScopeDefaultsToSection(sec, line);
+  });
   return { newSections, mergedLineCount };
 }
 
@@ -2765,15 +5235,15 @@ function confirmGenerateMajorOfferingTask() {
     alert('所选课程已生成或不可用，请刷新后重试。');
     return;
   }
-  const { newSections, mergedLineCount } = appendMajorOfferingLinesToPlan(newLines);
+  const { newSections } = appendMajorOfferingLinesToPlan(newLines);
   COURSE_OFFERING_PLAN_STORE.generatedAt = new Date().toISOString();
   generateMajorOfferingTaskSelectedKeys.clear();
   closeModal('modal-generate-major-offering-task');
   const courseCount = new Set(newLines.map(l => l.catalogId)).size;
-  const mergeNote = mergedLineCount
-    ? `，其中 ${mergedLineCount} 条并入已有同课程教学班`
-    : '';
-  alert(`已生成 ${newLines.length} 条计划行、${newSections.length} 个新教学班（${courseCount} 门课，同课程跨专业/批次默认合班${mergeNote} · ${termDisplay}）。`);
+  // const mergeNote = mergedLineCount
+  //   ? `，其中 ${mergedLineCount} 条并入已有同课程教学班`
+  //   : ''; // 原默认合班提示
+  alert(`已生成 ${newLines.length} 条计划行、${newSections.length} 个教学班（${courseCount} 门课 · ${termDisplay}）；如需合班请使用操作列「合拆班」。`);
   const majorTermSel = document.getElementById('course-major-filter-term');
   if (majorTermSel) majorTermSel.value = termDisplay;
   syncCourseOfferingPlanStoreFromTerm(termCode);
@@ -2785,7 +5255,8 @@ function confirmGenerateMajorOfferingTask() {
 const COURSE_OFFERING_TYPE_LABELS = {
   major: '专业开课',
   ge: '通识选修开课',
-  other: '其他开课'
+  other: '特殊开课'
+  // other: '其他开课' // 原名称
 };
 
 function nextOfferingLineId() {
@@ -2797,7 +5268,25 @@ function nextOfferingSectionId() {
 }
 
 function getOfferingTypeFromPc(pc) {
-  return pc.h2Id === 'l2-ge' ? 'ge' : 'major';
+  if (pc.h2Id === 'l2-ge') return 'ge';
+  if (isGeneralElectiveCatalogCourse(pc.catalogId)) return 'ge'; // 执行计划中误挂非 l2-ge 的通识选修课仍归通识选修开课
+  return 'major';
+}
+
+function isGeneralElectiveCatalogCourse(catalogId) {
+  if (!catalogId) return false;
+  const cat = COURSE_CATALOG.find(c => c.id === catalogId);
+  return /General Elective/i.test(cat?.classification || '');
+}
+
+function isMajorOfferingCatalogLine(line) {
+  if (!line || line.offeringType !== 'major') return false;
+  return !isGeneralElectiveCatalogCourse(line.catalogId);
+}
+
+function isMajorOfferingCatalogSection(sec) {
+  if (!sec || sec.offeringType !== 'major') return false;
+  return !isGeneralElectiveCatalogCourse(sec.catalogId);
 }
 
 function getOfferingLineKey(line) {
@@ -2814,11 +5303,12 @@ function buildOfferingLinesFromExecPlans(termDisplay) {
       if (isExecProgramCourseDelayed(pc)) return;
       const actual = pc.actualSemester || getActualOfferingSemester(pc.semester, ep.intake);
       if (actual !== termDisplay) return;
+      if (getOfferingTypeFromPc(pc) !== 'major') return; // 原含通识选修，改由「校选课程管理」手工维护通识选修开课计划
       const cat = COURSE_CATALOG.find(c => c.id === pc.catalogId);
       if (!cat) return;
       lines.push({
         id: nextOfferingLineId(),
-        offeringType: getOfferingTypeFromPc(pc),
+        offeringType: 'major',
         catalogId: pc.catalogId,
         code: cat.code,
         name: cat.name,
@@ -2843,15 +5333,29 @@ function collectPreservedOfferingTasks(termCode) {
   }
   const lines = [];
   const sections = [];
+  const sectionIds = new Set();
   COURSE_OFFERING_PLAN_STORE.sections.forEach(sec => {
     const line = COURSE_OFFERING_PLAN_STORE.lines.find(l => l.id === sec.lineIds?.[0]);
-    if (!line || line.source !== 'exec' || !line.execPlanId) return;
+    if (!line) return;
+    if (line.offeringType === 'other' || line.source === 'manual') {
+      lines.push(line);
+      sections.push(sec);
+      sectionIds.add(sec.id);
+      return;
+    }
+    if (line.source !== 'exec' || !line.execPlanId) return;
     const pc = findExecProgramCourseInStore(line.execPlanId, line.catalogId);
     if (!isExecProgramCourseOffered(pc)) return;
     lines.push(line);
     sections.push(sec);
+    sectionIds.add(sec.id);
   });
   return { lines, sections };
+  // COURSE_OFFERING_PLAN_STORE.sections.forEach(sec => {
+  //   const line = COURSE_OFFERING_PLAN_STORE.lines.find(l => l.id === sec.lineIds?.[0]);
+  //   if (!line || line.source !== 'exec' || !line.execPlanId) return;
+  //   ...
+  // }); // 原仅保留已开课执行任务，改同时保留特殊开课人工计划
 }
 
 function seedOtherOfferingLines() {
@@ -2881,12 +5385,24 @@ function seedOtherOfferingLines() {
   }).filter(Boolean);
 }
 
+/** 开课计划默认学时（原型演示统一取值） */
+const DEFAULT_OFFERING_COURSE_HOURS = {
+  totalHours: 60,
+  theoryHours: 30,
+  tutorialHours: 10,
+  practiceHours: 10,
+  otherHours: 10
+};
+
+/** 开课计划默认预留名额（生成计划时可修改） */
+const DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS = 5;
+
 function getCatalogOfferingMeta(catalogId) {
   const cat = COURSE_CATALOG.find(c => c.id === catalogId);
   const credits = cat?.credits ?? 3;
-  const totalHours = credits * 16;
-  const theoryHours = Math.round(totalHours * 0.67);
-  const practiceHours = totalHours - theoryHours;
+  // const totalHours = credits * 16; // 原按学分推算总学时
+  // const theoryHours = Math.round(totalHours * 0.67); // 原按 67% 理论学时
+  // const practiceHours = totalHours - theoryHours; // 原其余为实践学时
   const cls = cat?.classification || '';
   let courseNature = '必修';
   if (/elective/i.test(cls)) courseNature = '选修';
@@ -2896,11 +5412,8 @@ function getCatalogOfferingMeta(catalogId) {
     courseNature,
     assessment: /training/i.test(cls) ? '考查' : '考试',
     credits,
-    totalHours,
-    theoryHours,
-    practiceHours,
-    tutorialHours: 0,
-    otherHours: 0,
+    ...DEFAULT_OFFERING_COURSE_HOURS,
+    // totalHours, theoryHours, practiceHours, tutorialHours: 0, otherHours: 0, // 原按学分推算
     teachingWeeks: 12,
     weekRange: '1-12',
     nameEn: cat?.name || '',
@@ -2965,6 +5478,92 @@ function joinUniqueLabels(values, maxCount = 3) {
   // return `${joined.slice(0, maxLen - 3)}...`; // 原按字符长度截断，改为按项数截断
 }
 
+function formatEllipsisTipCell(shortText, fullText, tag = 'code') {
+  const short = shortText || '—';
+  const full = fullText || short;
+  if (short === '—' || full === '—') {
+    return `<${tag}>${escapeHtml(short)}</${tag}>`;
+  }
+  return `<${tag} class="cell-ellipsis-tip" data-tip="${escapeHtml(full)}" tabindex="0">${escapeHtml(short)}</${tag}>`;
+  // return `<${tag} title="${escapeHtml(full)}">${escapeHtml(short)}</${tag}>`; // 原浏览器 title 提示
+}
+
+let cellFloatTipEl = null;
+let cellFloatTipScrollBound = false;
+
+function ensureCellFloatTipEl() {
+  if (cellFloatTipEl) return cellFloatTipEl;
+  cellFloatTipEl = document.createElement('div');
+  cellFloatTipEl.id = 'cell-float-tip';
+  cellFloatTipEl.className = 'cell-float-tip';
+  cellFloatTipEl.hidden = true;
+  document.body.appendChild(cellFloatTipEl);
+  return cellFloatTipEl;
+}
+
+function hideCellFloatTip() {
+  if (cellFloatTipEl) cellFloatTipEl.hidden = true;
+}
+
+function showCellFloatTip(anchor, text) {
+  if (!anchor || !text) return;
+  const tip = ensureCellFloatTipEl();
+  tip.textContent = text;
+  tip.hidden = false;
+  tip.classList.remove('is-above');
+  const rect = anchor.getBoundingClientRect();
+  tip.style.left = '0px';
+  tip.style.top = '0px';
+  const margin = 8;
+  let left = rect.left;
+  let top = rect.bottom + 6;
+  const tipRect = tip.getBoundingClientRect();
+  if (left + tipRect.width > window.innerWidth - margin) {
+    left = Math.max(margin, window.innerWidth - tipRect.width - margin);
+  }
+  if (top + tipRect.height > window.innerHeight - margin) {
+    top = rect.top - tipRect.height - 6;
+    tip.classList.add('is-above');
+  }
+  tip.style.left = `${Math.max(margin, left)}px`;
+  tip.style.top = `${Math.max(margin, top)}px`;
+}
+
+function shouldShowCellFloatTip(node) {
+  const text = node.dataset.tip || '';
+  if (!text) return false;
+  const visible = (node.textContent || '').trim();
+  return text !== visible || visible.endsWith('...') || node.scrollWidth > node.clientWidth;
+}
+
+function ensureCellFloatTipScrollHide() {
+  if (cellFloatTipScrollBound) return;
+  cellFloatTipScrollBound = true;
+  window.addEventListener('scroll', hideCellFloatTip, true);
+}
+
+function bindCellFloatTips(root, selector = '[data-tip]') {
+  if (!root) return;
+  ensureCellFloatTipScrollHide();
+  root.querySelectorAll(selector).forEach(node => {
+    if (node.dataset.tipBound === '1') return;
+    node.dataset.tipBound = '1';
+    const show = () => {
+      const text = node.dataset.tip || '';
+      if (shouldShowCellFloatTip(node)) showCellFloatTip(node, text);
+    };
+    node.addEventListener('mouseenter', show);
+    node.addEventListener('mouseleave', hideCellFloatTip);
+    node.addEventListener('focus', show);
+    node.addEventListener('blur', hideCellFloatTip);
+  });
+  const scrollRoot = root.closest('.table-scroll') || root;
+  if (scrollRoot && scrollRoot.dataset.cellTipScrollBound !== '1') {
+    scrollRoot.dataset.cellTipScrollBound = '1';
+    scrollRoot.addEventListener('scroll', hideCellFloatTip, { passive: true });
+  }
+}
+
 function getSectionMergedSchoolDisplay(sec) {
   return joinUniqueLabels(getSectionLineMetas(sec).map(m => m.schoolCode));
 }
@@ -2989,6 +5588,14 @@ function getSectionMergedIntakeDisplayFull(sec) {
   return joinUniqueLabelsFull(getSectionLineMetas(sec).map(m => m.intakeDisplay));
 }
 
+function getSectionMergedBatchLabelDisplay(sec) {
+  return joinUniqueLabels(getSectionLineMetas(sec).map(m => m.batchLabel));
+}
+
+function getSectionMergedBatchLabelDisplayFull(sec) {
+  return joinUniqueLabelsFull(getSectionLineMetas(sec).map(m => m.batchLabel));
+}
+
 function getOfferingLineById(lineId) {
   return COURSE_OFFERING_PLAN_STORE?.lines.find(l => l.id === lineId) || null;
 }
@@ -3005,27 +5612,165 @@ function getSectionWeeklyHours(sec) {
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
+function getSectionPlanWeeklyHours(sec) {
+  // 计划周学时（仅供参考），默认等于学分
+  return sec?.credits ?? sec?.weeklyHours ?? '—';
+}
+
+function getSectionMergeTeachingSettingsSnapshot(sec) {
+  ensureMajorOfferingSectionEditFields(sec);
+  const venueTypes = [...(sec.venueTypes || [])].map(normalizeMajorOfferingClassroomType).sort();
+  const classroomIds = [...(sec.classroomAssignments || [])].map(c => c.id).sort();
+  return {
+    venueTypesKey: venueTypes.join('|'),
+    classroomIdsKey: classroomIds.join('|'),
+    enrollmentType: sec.enrollmentType || 'closed',
+    isScheduled: sec.isScheduled || 'yes',
+    isVenueScheduled: sec.isVenueScheduled || 'yes',
+    isAttendance: sec.isAttendance || 'yes',
+    isGradeEntry: sec.isGradeEntry || 'yes',
+    isExamScheduled: sec.isExamScheduled || 'yes'
+  };
+}
+
+const MERGE_TEACHING_SETTING_LABELS = {
+  venueTypesKey: '场地类型',
+  classroomIdsKey: '教室安排',
+  enrollmentType: '选课类型',
+  isScheduled: '是否排课',
+  isVenueScheduled: '是否排场地',
+  isAttendance: '是否考勤',
+  isGradeEntry: '是否录入成绩',
+  isExamScheduled: '是否排考'
+};
+
+function formatMergeEnrollmentTypeLabel(value) {
+  return value === 'open' ? '开放选课' : '不开放选课';
+}
+
+function isMajorOfferingOpenEnrollment(sec) {
+  if (!sec) return false;
+  ensureMajorOfferingSectionEditFields(sec);
+  return sec.enrollmentType === 'open';
+}
+
+function renderMajorOfferingEnrollmentTypeDisplay(sec) {
+  ensureMajorOfferingSectionEditFields(sec);
+  if (isMajorOfferingOpenEnrollment(sec)) {
+    return '<span class="offering-status-pill is-warn" title="学生名单由选课应用生成，不在本模块维护">开放选课</span>';
+  }
+  return '<span class="offering-status-pill is-off">不开放选课</span>';
+}
+
+function formatMergeYesNoLabel(value) {
+  return value === 'no' ? '否' : '是';
+}
+
+function formatMergeTeachingSettingDisplay(key, sec) {
+  if (key === 'venueTypesKey') {
+    const types = [...(sec.venueTypes || [])].map(normalizeMajorOfferingClassroomType);
+    return types.length ? types.map(getMajorOfferingClassroomTypeLabel).join('、') : '—';
+  }
+  if (key === 'classroomIdsKey') {
+    return formatClassroomArrangementSummary(sec.classroomAssignments) || '—';
+  }
+  if (key === 'enrollmentType') return formatMergeEnrollmentTypeLabel(sec.enrollmentType);
+  if (key === 'isScheduled') return formatMergeYesNoLabel(sec.isScheduled);
+  if (key === 'isVenueScheduled') return formatMergeYesNoLabel(sec.isVenueScheduled);
+  if (key === 'isAttendance') return formatMergeYesNoLabel(sec.isAttendance);
+  if (key === 'isGradeEntry') return formatMergeYesNoLabel(sec.isGradeEntry);
+  if (key === 'isExamScheduled') return formatMergeYesNoLabel(sec.isExamScheduled);
+  return '—';
+}
+
+function sectionsHaveSameMergeTeachingSettings(a, b) {
+  if (!a || !b) return false;
+  const sa = getSectionMergeTeachingSettingsSnapshot(a);
+  const sb = getSectionMergeTeachingSettingsSnapshot(b);
+  return Object.keys(MERGE_TEACHING_SETTING_LABELS).every(k => sa[k] === sb[k]);
+}
+
+function collectMergeTeachingSettingsDiffLabels(a, b) {
+  const sa = getSectionMergeTeachingSettingsSnapshot(a);
+  const sb = getSectionMergeTeachingSettingsSnapshot(b);
+  return Object.keys(MERGE_TEACHING_SETTING_LABELS)
+    .filter(k => sa[k] !== sb[k])
+    .map(k => MERGE_TEACHING_SETTING_LABELS[k]);
+}
+
+function formatMergeTeachingSettingsDiffAlert(anchor, other, otherLabel) {
+  const diffKeys = Object.keys(MERGE_TEACHING_SETTING_LABELS).filter(k => {
+    const sa = getSectionMergeTeachingSettingsSnapshot(anchor);
+    const sb = getSectionMergeTeachingSettingsSnapshot(other);
+    return sa[k] !== sb[k];
+  });
+  if (!diffKeys.length) return '';
+  const lines = diffKeys.map(key => {
+    const label = MERGE_TEACHING_SETTING_LABELS[key];
+    return `· ${label}：本班 ${formatMergeTeachingSettingDisplay(key, anchor)} / ${otherLabel} ${formatMergeTeachingSettingDisplay(key, other)}`;
+  });
+  return `${otherLabel}\n${lines.join('\n')}`;
+}
+
+function assertMergeTeachingSettingsCompatible(anchor, others, labels = []) {
+  if (!anchor || !others?.length) return true;
+  const blocks = others.map((other, idx) => {
+    if (!other || sectionsHaveSameMergeTeachingSettings(anchor, other)) return '';
+    return formatMergeTeachingSettingsDiffAlert(anchor, other, labels[idx] || '待合入批次');
+  }).filter(Boolean);
+  if (!blocks.length) return true;
+  alert(`以下教学任务设置与本班存在差异，无法合班：\n\n${blocks.join('\n\n')}\n\n请先在「修改教学任务」中统一后再合班。`);
+  return false;
+}
+
 function isMergeCompatibleSection(a, b) {
   if (!a || !b || a.id === b.id) return false;
   return a.offeringType === 'major' && b.offeringType === 'major'
+    && b.submitStatus === 'submitted'
+    && getSectionOfferingTermDisplay(a) === getSectionOfferingTermDisplay(b)
     && a.code === b.code
     && a.weekRange === b.weekRange
     && a.teachingWeeks === b.teachingWeeks
-    && a.totalHours === b.totalHours;
+    && a.totalHours === b.totalHours
+    && sectionsHaveSameMergeTeachingSettings(a, b);
+  // 原未校验 submitStatus，草稿计划也会出现在待合班列表
+  // 原未校验场地类型/教室安排/选课类型等教学任务设置
+}
+
+function getSectionPlanCapacityLimit(sec) {
+  if (!sec) return 0;
+  return (sec.estimatedStudents ?? sec.studentCount ?? 0) + (sec.reservedSpots ?? 0);
+}
+
+function getDonorLineShare(donor, field, fallback = 0) {
+  if (!donor) return fallback;
+  const value = donor[field] ?? fallback;
+  if (donor.lineIds.length <= 1) return Number(value) || fallback;
+  return Math.round((Number(value) || 0) / donor.lineIds.length);
 }
 
 function getLineEstimatedStudents(lineId) {
   const sec = getSectionByLineId(lineId);
   if (!sec) return 0;
-  if (sec.lineIds.length <= 1) return sec.estimatedStudents || 0;
-  return Math.round((sec.estimatedStudents || 0) / sec.lineIds.length);
+  return getDonorLineShare(sec, 'estimatedStudents', 0);
+  // if (sec.lineIds.length <= 1) return sec.estimatedStudents || 0; // 原内联按 line 分摊
+  // return Math.round((sec.estimatedStudents || 0) / sec.lineIds.length);
+}
+
+function getLinePlanCapacityLimit(lineId) {
+  const sec = getSectionByLineId(lineId);
+  if (!sec) return 0;
+  if (sec.lineIds.length <= 1) return getSectionPlanCapacityLimit(sec);
+  return Math.round(getSectionPlanCapacityLimit(sec) / sec.lineIds.length);
 }
 
 function getMergeSplitBatchLabel(lineId) {
   const meta = getSectionLineMetas({ lineIds: [lineId] })[0];
   if (!meta) return lineId;
-  const count = getLineEstimatedStudents(lineId);
-  return `${meta.batchLabel}（${count}人）`;
+  return meta.batchLabel || lineId;
+  // const limit = getLinePlanCapacityLimit(lineId);
+  // return `${meta.batchLabel}（课程名额上限 ${limit}）`; // 原展示课程名额上限，合拆班列表仅显示批次
+  // return `${meta.batchLabel}（${count}人）`; // 原展示人数
 }
 
 function openMajorMergeSplitDrawer() {
@@ -3053,11 +5798,48 @@ function renderMajorMergeSplitDrawerInfo(sec) {
     <div class="merge-split-info-item"><label>课程号</label><span>${escapeHtml(sec.code)}</span></div>
     <div class="merge-split-info-item"><label>课程名称</label><span>${escapeHtml(sec.name)}</span></div>
     <div class="merge-split-info-item"><label>总学时</label><span>${sec.totalHours ?? '—'}</span></div>
-    <div class="merge-split-info-item"><label>周学时</label><span>${getSectionWeeklyHours(sec)}</span></div>
+    <div class="merge-split-info-item"><label>计划周学时</label><span>${getSectionPlanWeeklyHours(sec)}</span></div>
+    <!-- <div class="merge-split-info-item"><label>周学时</label><span>${getSectionWeeklyHours(sec)}</span></div> --> <!-- 原总学时/教学周数，改计划周学时=学分 -->
     <div class="merge-split-info-item"><label>学分</label><span>${sec.credits ?? '—'}</span></div>
     <div class="merge-split-info-item"><label>起止周</label><span>${escapeHtml(sec.weekRange || '—')}</span></div>
     <div class="merge-split-info-item"><label>上课专业</label><span><code>${escapeHtml(getSectionMergedProgrammeDisplayFull(drawerSec))}</code></span></div>
     <div class="merge-split-info-item"><label>上课批次</label><span><code>${escapeHtml(getSectionMergedIntakeDisplayFull(drawerSec))}</code></span></div>`;
+}
+
+function renderMajorMergeSplitDrawerGuide(sec) {
+  const el = document.getElementById('major-merge-split-guide');
+  if (!el || !sec) return;
+  const teachingWeeks = sec.teachingWeeks ?? '—';
+  const weekRange = sec.weekRange || '—';
+  const totalHours = sec.totalHours ?? '—';
+  const pendingLabels = majorMergeSplitDrawerLeftLineIds.map(getMergeSplitBatchLabel);
+  const mergedLabels = majorMergeSplitDrawerRightLineIds.map(getMergeSplitBatchLabel);
+  const pendingHtml = pendingLabels.length
+    ? pendingLabels.map(l => `<code>${escapeHtml(l)}</code>`).join('、')
+    : '<span class="text-muted">暂无（须为已提交计划，且开课参数与当前班一致）</span>';
+  // : '<span class="text-muted">暂无（其他专业批次与当前课程的开课参数不一致，或未生成独立计划行）</span>'; // 原未校验提交状态
+  const mergedHtml = mergedLabels.length
+    ? mergedLabels.map(l => `<code>${escapeHtml(l)}</code>`).join('、')
+    : '—';
+  const termDisplay = getSectionOfferingTermDisplay(sec);
+  el.innerHTML = `
+    <p class="merge-split-guide-title"><strong>合班规则说明</strong></p>
+    <p><strong>同一开课学期</strong>的开课计划方可合并；不同<strong>专业·入学批次</strong>的计划，还须同时满足下列<strong>全部前提</strong>方可合并为同一课程班：</p>
+    <ul class="merge-split-guide-list">
+      <li><strong>开课学期</strong>相同（当前：<code>${escapeHtml(termDisplay)}</code>）</li>
+      <li><strong>课程号</strong>相同（当前：<code>${escapeHtml(sec.code)}</code>）</li>
+      <li><strong>起止周</strong>相同（当前：<code>${escapeHtml(String(weekRange))}</code>）</li>
+      <li><strong>教学周数</strong>相同（当前：${teachingWeeks} 周）</li>
+      <li><strong>总学时</strong>相同（当前：${totalHours} 学时）</li>
+      <li><strong>教学任务设置</strong>一致：场地类型、教室安排、选课类型、是否排课/排场地/考勤/录入成绩/排考</li>
+      <li>均为<strong>专业开课</strong>计划，且<strong>提交状态</strong>为已提交</li>
+    </ul>
+    <p class="merge-split-guide-compat"><strong>当前可合入本班的专业批次（${pendingLabels.length} 项）：</strong>${pendingHtml}</p>
+    <p class="merge-split-guide-compat"><strong>本班已合并的专业批次（${mergedLabels.length} 项）：</strong>${mergedHtml}</p>
+    <p class="merge-split-guide-ops">左侧仅列出<strong>已提交</strong>、符合上述条件且尚未并入本班的批次；右侧为本班当前包含的批次。勾选后点 <strong>&gt;</strong> 合入、<strong>&lt;</strong> 拆出，点击「确定」后生效；已合并至少保留 1 项。</p>`;
+    // <li>均为<strong>专业开课</strong>计划</li> // 原规则未要求已提交
+    // 左侧列出符合上述条件... // 原说明未强调须已提交
+    // ${isMajorOfferingSectionStructureLocked(sec) ? '...' : '...'} 原在说明区写锁定提示，改由 offering-readonly-hint 横幅
 }
 
 function renderMajorMergeSplitDrawerPane(side) {
@@ -3066,6 +5848,8 @@ function renderMajorMergeSplitDrawerPane(side) {
   const countEl = document.getElementById(isLeft ? 'major-merge-split-left-count' : 'major-merge-split-right-count');
   const checkAll = document.getElementById(isLeft ? 'major-merge-split-left-all' : 'major-merge-split-right-all');
   if (!listEl) return;
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === majorMergeSplitDrawerSectionId);
+  const locked = isMajorOfferingSectionStructureLocked(sec);
   const lineIds = isLeft ? majorMergeSplitDrawerLeftLineIds : majorMergeSplitDrawerRightLineIds;
   const selected = isLeft ? majorMergeSplitDrawerLeftSelected : majorMergeSplitDrawerRightSelected;
   const q = (isLeft ? majorMergeSplitDrawerLeftQuery : majorMergeSplitDrawerRightQuery).trim().toLowerCase();
@@ -3076,24 +5860,49 @@ function renderMajorMergeSplitDrawerPane(side) {
   });
   if (countEl) countEl.textContent = `${filtered.length} 项`;
   listEl.innerHTML = filtered.length
-    ? filtered.map(lineId => `<label class="merge-split-list-item">
+    ? filtered.map(lineId => locked
+      ? `<div class="merge-split-list-item merge-split-list-item-readonly"><span>${escapeHtml(getMergeSplitBatchLabel(lineId))}</span></div>`
+      : `<label class="merge-split-list-item">
         <input type="checkbox" value="${escapeHtml(lineId)}" ${selected.has(lineId) ? 'checked' : ''}
           onchange="toggleMajorMergeSplitDrawerItem('${side}', '${lineId}', this.checked)">
         <span>${escapeHtml(getMergeSplitBatchLabel(lineId))}</span>
       </label>`).join('')
     : '<div class="merge-split-empty">暂无数据</div>';
   if (checkAll) {
-    checkAll.checked = filtered.length > 0 && filtered.every(id => selected.has(id));
-    checkAll.indeterminate = filtered.some(id => selected.has(id)) && !checkAll.checked;
+    checkAll.disabled = locked;
+    // checkAll.closest('.merge-split-check-all')?.toggleAttribute('hidden', locked); // 原隐藏全选，改置灰
+    if (!locked) {
+      checkAll.checked = filtered.length > 0 && filtered.every(id => selected.has(id));
+      checkAll.indeterminate = filtered.some(id => selected.has(id)) && !checkAll.checked;
+    }
   }
 }
 
 function renderMajorMergeSplitDrawer() {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === majorMergeSplitDrawerSectionId);
   if (!sec) return;
+  syncMajorMergeSplitDrawerReadOnly(sec);
   renderMajorMergeSplitDrawerInfo(sec);
+  renderMajorMergeSplitDrawerGuide(sec);
   renderMajorMergeSplitDrawerPane('left');
   renderMajorMergeSplitDrawerPane('right');
+}
+
+function syncMajorMergeSplitDrawerReadOnly(sec) {
+  const locked = isMajorOfferingSectionStructureLocked(sec);
+  const drawer = document.getElementById('drawer-major-merge-split');
+  drawer?.classList.toggle('is-readonly', locked);
+  syncMajorOfferingReadonlyHint(drawer?.querySelector('.drawer-body'), sec, 'major-merge-split-readonly-hint');
+  const confirmBtn = drawer?.querySelector('.drawer-foot .btn-primary');
+  if (confirmBtn) {
+    confirmBtn.hidden = false;
+    confirmBtn.disabled = locked;
+  }
+  drawer?.querySelectorAll('.merge-split-actions .btn').forEach(btn => { btn.disabled = locked; });
+  // drawer?.querySelector('.drawer-foot .btn-primary')?.toggleAttribute('hidden', locked); // 原隐藏确定
+  // drawer?.querySelector('.merge-split-actions')?.toggleAttribute('hidden', locked); // 原隐藏穿梭按钮
+  const cancelBtn = drawer?.querySelector('.drawer-foot .btn-ghost');
+  if (cancelBtn) cancelBtn.textContent = '取消';
 }
 
 function toggleMajorMergeSplitDrawerItem(side, lineId, checked) {
@@ -3120,9 +5929,28 @@ function filterMajorMergeSplitDrawerPane(side, value) {
 }
 
 function moveMajorMergeSplitDrawerLines(direction) {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === majorMergeSplitDrawerSectionId);
+  if (!assertMajorOfferingStructureEditable(sec, '合拆班')) return;
   if (direction === 'toRight') {
     if (!majorMergeSplitDrawerLeftSelected.size) return;
     const moving = [...majorMergeSplitDrawerLeftSelected];
+    const unsubmitted = moving.filter(id => {
+      const donor = getSectionByLineId(id);
+      return !donor || donor.submitStatus !== 'submitted';
+    });
+    if (unsubmitted.length) {
+      alert('仅已提交的开课计划方可合班。');
+      return;
+    }
+    const settingsMismatch = moving.map(id => {
+      const donor = getSectionByLineId(id);
+      if (!donor || sectionsHaveSameMergeTeachingSettings(sec, donor)) return '';
+      return formatMergeTeachingSettingsDiffAlert(sec, donor, getMergeSplitBatchLabel(id));
+    }).filter(Boolean);
+    if (settingsMismatch.length) {
+      alert(`待合入批次与本班教学任务设置存在差异，无法合班：\n\n${settingsMismatch.join('\n\n')}\n\n请先在「修改教学任务」中统一后再合班。`);
+      return;
+    }
     majorMergeSplitDrawerLeftLineIds = majorMergeSplitDrawerLeftLineIds.filter(id => !moving.includes(id));
     majorMergeSplitDrawerRightLineIds.push(...moving);
     majorMergeSplitDrawerLeftSelected.clear();
@@ -3140,6 +5968,47 @@ function moveMajorMergeSplitDrawerLines(direction) {
   renderMajorMergeSplitDrawer();
 }
 
+function inheritSectionWorkflowStateFromDonor(sec, donor) {
+  if (!sec || !donor) return;
+  sec.submitStatus = donor.submitStatus || sec.submitStatus;
+  sec.teachingConfirmStatus = donor.teachingConfirmStatus || sec.teachingConfirmStatus;
+  sec.schedulingVisible = donor.schedulingVisible != null
+    ? donor.schedulingVisible
+    : (donor.submitStatus === 'submitted');
+  if (donor.teachingCode) sec.teachingCode = donor.teachingCode;
+  if (donor.teachingClassNo) sec.teachingClassNo = donor.teachingClassNo;
+}
+
+function clearSectionOfferingGrouping(sec) {
+  if (!sec) return;
+  sec.isGrouped = false;
+  sec.groups = [];
+  sec.groupAssignments = [];
+  setSectionCoordinator(sec, '', '');
+}
+
+function cloneSectionOfferingGrouping(source) {
+  if (!source) {
+    return { isGrouped: false, groups: [], groupAssignments: [] };
+  }
+  return {
+    isGrouped: !!source.isGrouped && !!(source.groups?.length),
+    groups: (source.groups || []).map(g => ({ ...g })),
+    groupAssignments: (source.groupAssignments || []).map(row => ({
+      ...row,
+      groupIds: [...(row.groupIds || [])],
+      teachers: getGroupAssignTeachers(row).map(t => ({ ...t }))
+    }))
+  };
+}
+
+function applySectionOfferingGrouping(sec, grouping) {
+  if (!sec || !grouping) return;
+  sec.isGrouped = grouping.isGrouped;
+  sec.groups = grouping.groups;
+  sec.groupAssignments = grouping.groupAssignments;
+}
+
 function applyMajorMergeSplitFromDrawer() {
   const anchorId = majorMergeSplitDrawerSectionId;
   const anchor = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === anchorId);
@@ -3154,6 +6023,9 @@ function applyMajorMergeSplitFromDrawer() {
   const oldSections = COURSE_OFFERING_PLAN_STORE.sections.filter(s =>
     s.lineIds.some(id => affected.has(id))
   );
+  // const anchorSection = oldSections.find(s => s.id === anchorId) || anchor; // 原保留 anchor 分组快照
+  // const anchorGrouping = cloneSectionOfferingGrouping(anchorSection);
+  oldSections.forEach(s => clearSectionOfferingGrouping(s));
   const oldSectionIds = new Set(oldSections.map(s => s.id));
   COURSE_OFFERING_PLAN_STORE.sections = COURSE_OFFERING_PLAN_STORE.sections.filter(s => !oldSectionIds.has(s.id));
 
@@ -3166,14 +6038,23 @@ function applyMajorMergeSplitFromDrawer() {
     sec.weekRange = anchor.weekRange;
     sec.teachingWeeks = anchor.teachingWeeks;
     sec.totalHours = anchor.totalHours;
-    sec.estimatedStudents = (() => {
-      const donor = oldSections.find(s => s.lineIds.includes(lineId)) || anchor;
-      if (!donor) return 30;
-      if (donor.lineIds.length === 1) return donor.estimatedStudents || 30;
-      return Math.round((donor.estimatedStudents || 0) / donor.lineIds.length);
-    })();
+    sec.estimatedStudents = getDonorLineShare(
+      oldSections.find(s => s.lineIds.includes(lineId)) || anchor,
+      'estimatedStudents',
+      30
+    );
     sec.studentCount = sec.estimatedStudents;
+    sec.reservedSpots = getDonorLineShare(
+      oldSections.find(s => s.lineIds.includes(lineId)) || anchor,
+      'reservedSpots',
+      5
+    );
+    // sec.estimatedStudents = (() => { ... })(); // 原内联拆出计划人数
+    clearSectionOfferingGrouping(sec);
+    // sec.groups = []; sec.isGrouped = false; // 原仅清分组，改 clearSectionOfferingGrouping 含学时安排
+    inheritSectionWorkflowStateFromDonor(sec, donor);
     COURSE_OFFERING_PLAN_STORE.sections.push(sec);
+    // syncSectionGroupsFromProgrammeBatches(sec, { force: true }); // 原拆班后自动分组，改由任务安排环节操作
     line.sectionId = sec.id;
   });
 
@@ -3187,29 +6068,94 @@ function applyMajorMergeSplitFromDrawer() {
     merged.totalHours = anchor.totalHours;
     merged.estimatedStudents = rightIds.reduce((sum, id) => {
       const donor = oldSections.find(s => s.lineIds.includes(id));
-      if (!donor) return sum + 30;
-      if (donor.lineIds.length === 1) return sum + (donor.estimatedStudents || 0);
-      return sum + Math.round((donor.estimatedStudents || 0) / donor.lineIds.length);
+      return sum + getDonorLineShare(donor, 'estimatedStudents', 30);
     }, 0);
     merged.studentCount = merged.estimatedStudents;
     merged.className = rightLines.map(l => defaultClassNameForLine(l, 1)).join('、');
-    merged.isGrouped = false;
-    merged.groups = [];
-    merged.groupAssignments = [];
+    clearSectionOfferingGrouping(merged);
+    // applySectionOfferingGrouping(merged, anchorGrouping); // 原合班保留 anchor 分组与学时安排，改合拆班后清空重设
+    // merged.coordinatorStaffId = anchorSection.coordinatorStaffId || ''; ... // 原继承 Coordinator，改随学时安排清空
+    merged.reservedSpots = rightIds.reduce((sum, id) => {
+      const donor = oldSections.find(s => s.lineIds.includes(id));
+      return sum + getDonorLineShare(donor, 'reservedSpots', 5);
+    }, 0);
+    // merged.reservedSpots = Math.max(0, ...rightIds.map(...)); // 原预留名额取最大值，改累加
+    // merged.estimatedStudents = rightIds.reduce((sum, id) => { ... }); // 原内联合班计划人数
+    inheritSectionWorkflowStateFromDonor(merged, anchor);
+    merged.venueTypes = [...(anchor.venueTypes || [])];
+    merged.classroomAssignments = (anchor.classroomAssignments || []).map(c => ({ ...c }));
+    merged.enrollmentType = anchor.enrollmentType;
+    merged.isScheduled = anchor.isScheduled;
+    merged.isVenueScheduled = anchor.isVenueScheduled;
+    merged.isAttendance = anchor.isAttendance;
+    merged.isGradeEntry = anchor.isGradeEntry;
+    merged.isExamScheduled = anchor.isExamScheduled;
     rightLines.forEach(l => { l.sectionId = merged.id; });
     COURSE_OFFERING_PLAN_STORE.sections.push(merged);
+    // sanitizeSectionGroupAssignments(merged); syncSectionCoordinatorsFromAssignments(merged); // 原合班后同步，改已清空无需同步
+    // syncSectionGroupsFromProgrammeBatches(merged, { force: true }); // 原合班后自动分组，改由任务安排环节操作
   }
 
   courseMajorSelectedSectionIds.clear();
   closeMajorMergeSplitDrawer();
   renderCourseOfferingMajorPage();
+  renderCourseMajorOfferingTaskPage();
   renderCourseMergeSplitPage();
   renderCourseSectionArrangePage();
 }
 
+function getMajorMergeSplitChangeSummary(sec) {
+  const original = new Set(sec?.lineIds || []);
+  const current = new Set(majorMergeSplitDrawerRightLineIds);
+  const merged = [...current].filter(id => !original.has(id));
+  const split = [...original].filter(id => !current.has(id));
+  return { merged, split };
+}
+
 function confirmMajorMergeSplitDrawer() {
   if (!ensureCourseOfferingPlan() || !majorMergeSplitDrawerSectionId) return;
-  applyMajorMergeSplitFromDrawer();
+  const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === majorMergeSplitDrawerSectionId);
+  if (!assertMajorOfferingStructureEditable(sec, '合拆班')) return;
+  const donorMap = new Map();
+  majorMergeSplitDrawerRightLineIds.forEach(lineId => {
+    const donor = getSectionByLineId(lineId);
+    if (!donor || donorMap.has(donor.id)) return;
+    donorMap.set(donor.id, getMergeSplitBatchLabel(lineId));
+  });
+  const others = [];
+  const labels = [];
+  donorMap.forEach((label, donorId) => {
+    if (donorId === sec.id) return;
+    const donor = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === donorId);
+    if (!donor) return;
+    others.push(donor);
+    labels.push(label);
+  });
+  if (!assertMergeTeachingSettingsCompatible(sec, others, labels)) return;
+  const { merged, split } = getMajorMergeSplitChangeSummary(sec);
+  let actionLabel = '合拆班';
+  if (merged.length && !split.length) actionLabel = '合班';
+  else if (split.length && !merged.length) actionLabel = '拆班';
+  const detailParts = [];
+  if (merged.length) {
+    detailParts.push(`合入 ${merged.map(id => `<code>${escapeHtml(getMergeSplitBatchLabel(id))}</code>`).join('、')}`);
+  }
+  if (split.length) {
+    detailParts.push(`拆出 ${split.map(id => `<code>${escapeHtml(getMergeSplitBatchLabel(id))}</code>`).join('、')}`);
+  }
+  const detailHtml = detailParts.length
+    ? `<p style="margin:8px 0 0">${detailParts.join('；')}</p>`
+    : '';
+  const hint = '合拆班后，相关教学班的分组与教师/学时安排将被清空，需重新设置。';
+  // let hint = '合拆班后请确认分组与学时安排是否符合预期。'; // 原合班保留本班安排，改一律清空
+  openDeleteConfirm({
+    title: `确认${actionLabel}`,
+    message: `确定${actionLabel}吗？${detailHtml}`,
+    // hint: '合拆班后，本课程已有的分组、教师安排等内容将被清空，需重新安排。', // 原按合班/拆班区分提示
+    hint,
+    onConfirm: () => applyMajorMergeSplitFromDrawer()
+  });
+  // applyMajorMergeSplitFromDrawer(); // 原直接生效，改二次确认
 }
 
 function openMajorMergeSplitModal(sectionId) {
@@ -3273,13 +6219,21 @@ function buildOfferingSection(line, sectionNo) {
     className: defaultClassNameForLine(line, sectionNo),
     grade: p ? String(p.year) : '',
     estimatedStudents: 28 + (secId.charCodeAt(secId.length - 1) % 25),
+    // reservedSpots: 5, // 原写在 meta 展开前，可能被覆盖；改在 meta 之后赋值
     isGrouped: false,
     groups: [],
     groupAssignments: [],
     teachingClassNo: `18${String(Date.now()).slice(-16)}${String(sectionNo).padStart(2, '0')}`,
-    ...meta
+    ...meta,
+    reservedSpots: DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS
   };
   sec.studentCount = sec.estimatedStudents;
+  sec.termCode = COURSE_OFFERING_PLAN_STORE?.termCode || getDefaultOfferingTermCode();
+  // 新建教学班起止周默认本学期 1-N，不用课程目录固定 weekRange
+  sec.weekRange = '';
+  sec.weeks = '';
+  sec.selectedWeeks = [];
+  ensureSectionWeekRangeFromTerm(sec);
   return sec;
 }
 
@@ -3327,8 +6281,9 @@ function generateCourseOfferingPlan(opts = {}) {
   const termDisplay = formatCourseTermDisplay(offering.termCode);
   const execLines = buildOfferingLinesFromExecPlans(termDisplay)
     .filter(line => !preservedKeys.has(getOfferingLineKey(line)));
-  const otherLines = seedOtherOfferingLines();
-  const freshLines = [...execLines, ...otherLines];
+  // const otherLines = seedOtherOfferingLines(); // 原随专业计划一并生成演示数据，特殊开课改由「特殊开课计划」页人工维护
+  const freshLines = [...execLines];
+  // const freshLines = [...execLines, ...otherLines]; // 原含特殊开课演示行
   const freshSections = assignInitialSections(freshLines);
   const lines = [...preserved.lines, ...freshLines];
   const sections = [...preserved.sections, ...freshSections];
@@ -3343,11 +6298,12 @@ function generateCourseOfferingPlan(opts = {}) {
   courseMergeSelectedLineIds.clear();
   if (!opts.silent) {
     const major = lines.filter(l => l.offeringType === 'major').length;
-    const ge = lines.filter(l => l.offeringType === 'ge').length;
-    const other = lines.filter(l => l.offeringType === 'other').length;
+    // const ge = lines.filter(l => l.offeringType === 'ge').length; // 原与专业一并生成，改通识选修独立维护
+    // const other = lines.filter(l => l.offeringType === 'other').length; // 原含特殊开课计数，改由特殊开课计划页人工维护
     const preservedCount = preserved.sections.length;
-    const extra = preservedCount ? `（含已开课保留 ${preservedCount} 个教学班）` : '';
-    alert(`已生成 ${termDisplay} 开课计划：专业 ${major} 条、通识选修 ${ge} 条、其他 ${other} 条；教学班 ${sections.length} 个${extra}。`);
+    const extra = preservedCount ? `（含已保留 ${preservedCount} 个教学班）` : '';
+    alert(`已生成 ${termDisplay} 专业开课计划：${major} 条；教学班 ${sections.length} 个${extra}。通识选修、特殊开课请分别在对应计划页维护。`);
+    // alert(`已生成 ${termDisplay} 专业开课计划：${major} 条、其他 ${other} 条；教学班 ${sections.length} 个${extra}。通识选修课请在「通识选修开课计划」中维护。`); // 原含特殊开课计数
   }
   renderCoursePlanGeneratePage();
   renderCourseOfferingMajorPage();
@@ -3391,10 +6347,22 @@ function renderCoursePlanOfferingHint(targetId) {
     return;
   }
   const s = COURSE_OFFERING_PLAN_STORE;
+  const isMajorPlanHint = targetId === 'course-offering-hint-major' || targetId === 'course-plan-offering-hint';
+  const lineCount = isMajorPlanHint
+    ? s.lines.filter(l => isMajorOfferingCatalogLine(l)).length
+    : s.lines.length;
+  const sectionCount = isMajorPlanHint
+    ? getMajorOfferingSections().length
+    : s.sections.length;
   hint.innerHTML = `<span class="legend-item">当前查看 <strong>${escapeHtml(viewLabel)}</strong>`
     + (viewLabel !== termLabel ? ` · 开课学期 <strong>${escapeHtml(termLabel)}</strong>` : '')
-    + ` · 计划行 ${s.lines.length} 条 · 教学班 ${s.sections.length} 个</span>`
-    + '<span class="legend-item text-muted"> · 候选行来自<strong>已提交</strong>执行计划中本学期<strong>未开课</strong>课程；已开课任务在重新生成时保留</span>';
+    + ` · 计划行 ${lineCount} 条 · 教学班 ${sectionCount} 个</span>`
+    + (isMajorPlanHint
+      ? '<span class="legend-item text-muted"> · 候选行来自<strong>已提交</strong>执行计划中本学期<strong>未开课</strong>专业课程；已开课任务在重新生成时保留</span>'
+        + '<span class="legend-item text-muted"> · <strong>通识选修课</strong>不在本页展示，请至「通识选修开课计划」维护</span>'
+        + '<span class="legend-item text-muted"> · <strong>特殊开课</strong>不在本页展示，请至「特殊开课计划」手动添加</span>'
+      : '<span class="legend-item text-muted"> · 候选行来自<strong>已提交</strong>执行计划中本学期<strong>未开课</strong>课程；已开课任务在重新生成时保留</span>');
+  // hint.innerHTML = ... ` · 计划行 ${s.lines.length} 条 · 教学班 ${s.sections.length} 个</span>` ... // 原含通识选修计划行
 }
 
 function renderCoursePlanGeneratePage() {
@@ -3443,6 +6411,14 @@ function renderSectionLabel(sectionId) {
 }
 
 function renderCourseOfferingTypeList(offeringType) {
+  if (offeringType === 'ge') {
+    renderGeOfferingPlanPage();
+    return;
+  }
+  if (offeringType === 'other') {
+    renderOtherOfferingPlanPage();
+    return;
+  }
   const tbody = document.getElementById(`course-offering-body-${offeringType}`);
   if (!tbody) return;
   renderCoursePlanOfferingHint(`course-offering-hint-${offeringType}`);
@@ -3470,6 +6446,1949 @@ function renderCourseOfferingTypeList(offeringType) {
     : `<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">暂无${COURSE_OFFERING_TYPE_LABELS[offeringType]}数据</td></tr>`;
 }
 
+let otherOfferingAddSelectedCatalogIds = new Set();
+let otherOfferingSelectedSectionIds = new Set();
+let otherOfferingTaskSelectedSectionIds = new Set();
+
+function getOtherOfferingAddTermDisplay() {
+  return document.getElementById('other-offering-add-term')?.value
+    || getOtherOfferingViewTermDisplay()
+    || '';
+}
+
+function getOtherOfferingAddTermCode() {
+  return resolveOfferingTermCodeFromDisplay(getOtherOfferingAddTermDisplay());
+}
+
+function rebuildOtherOfferingAddTermFilterOptions() {
+  rebuildOfferingTermFilterSelect('other-offering-add-term');
+  const pageTerm = document.getElementById('other-offering-filter-term')?.value || '';
+  const addSel = document.getElementById('other-offering-add-term');
+  if (addSel && pageTerm && [...addSel.options].some(o => o.value === pageTerm)) {
+    addSel.value = pageTerm;
+  }
+}
+
+function ensureOtherOfferingAddProgrammeOptions() {
+  const sel = document.getElementById('other-offering-add-programme');
+  if (!sel || sel.dataset.built === '1') return;
+  sel.innerHTML = Object.entries(PROGRAMMES).map(([key, m]) =>
+    `<option value="${escapeHtml(key)}">${escapeHtml(m.name)} ${escapeHtml(m.nameZh)}</option>`
+  ).join('');
+  sel.dataset.built = '1';
+}
+
+function ensureOtherOfferingAddIntakeOptions() {
+  const sel = document.getElementById('other-offering-add-intake');
+  if (!sel || sel.dataset.built === '1') return;
+  const intakes = getGeOfferingIntakeOptions();
+  sel.innerHTML = intakes.map(intake =>
+    `<option value="${escapeHtml(intake)}">${escapeHtml(formatIntakeDisplay(intake))}</option>`
+  ).join('');
+  sel.dataset.built = '1';
+}
+
+function ensureOtherOfferingAddUnitFilterOptions() {
+  const sel = document.getElementById('other-offering-add-unit');
+  if (!sel || sel.dataset.built === '1') return;
+  const units = getCourseCatalogOfferings();
+  sel.innerHTML = '<option value="">全部</option>' + units.map(u =>
+    `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`
+  ).join('');
+  sel.dataset.built = '1';
+}
+
+function getFilteredOtherOfferingAddCourses() {
+  const keyword = (document.getElementById('other-offering-add-keyword')?.value || '').trim().toLowerCase();
+  const unit = document.getElementById('other-offering-add-unit')?.value || '';
+  return COURSE_CATALOG.filter(cat => {
+    if (unit && cat.department !== unit) return false;
+    if (!keyword) return true;
+    return cat.code.toLowerCase().includes(keyword) || cat.name.toLowerCase().includes(keyword);
+  });
+}
+
+function updateOtherOfferingAddSelection() {
+  otherOfferingAddSelectedCatalogIds = new Set(
+    [...document.querySelectorAll('.other-offering-add-row-check:checked')].map(el => el.value)
+  );
+  const checkAll = document.getElementById('other-offering-add-check-all');
+  const rows = document.querySelectorAll('.other-offering-add-row-check');
+  if (checkAll) {
+    checkAll.checked = rows.length > 0 && [...rows].every(el => el.checked);
+    checkAll.indeterminate = !checkAll.checked && [...rows].some(el => el.checked);
+  }
+}
+
+function toggleOtherOfferingAddCheckAll(checked) {
+  document.querySelectorAll('.other-offering-add-row-check').forEach(el => { el.checked = checked; });
+  updateOtherOfferingAddSelection();
+}
+
+function updateOtherOfferingAddTermHint() {
+  const hint = document.getElementById('other-offering-add-term-hint');
+  const termDisplay = getOtherOfferingAddTermDisplay();
+  if (!hint) return;
+  if (!termDisplay) {
+    hint.textContent = '请选择开课学期，并从教务课程库中勾选要特殊开课的课程。';
+    return;
+  }
+  hint.innerHTML = `为 <strong>${escapeHtml(termDisplay)}</strong> 从<strong>教务课程库</strong>中勾选课程；特殊开课不绑定专业批次，添加后在计划页设置预计容量与预留名额。`;
+}
+
+function renderOtherOfferingAddModalPicker() {
+  ensureOtherOfferingAddUnitFilterOptions();
+  const tbody = document.getElementById('other-offering-add-tbody');
+  const countEl = document.getElementById('other-offering-add-count');
+  const termCode = getOtherOfferingAddTermCode();
+  const list = getFilteredOtherOfferingAddCourses();
+  if (tbody) {
+    tbody.innerHTML = !termCode
+      ? '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">请先选择开课学期</td></tr>'
+      : list.length
+        ? list.map((cat, idx) => `<tr>
+            <td class="col-check"><input type="checkbox" class="other-offering-add-row-check" value="${escapeHtml(cat.id)}" ${otherOfferingAddSelectedCatalogIds.has(cat.id) ? 'checked' : ''} onchange="updateOtherOfferingAddSelection()"></td>
+            <td class="col-index">${idx + 1}</td>
+            <td><strong>${escapeHtml(cat.code)}</strong></td>
+            <td>${escapeHtml(cat.name)}</td>
+            <td>${escapeHtml(cat.classification || '—')}</td>
+            <td class="col-center">${cat.credits ?? '—'}</td>
+            <td class="col-center"><code>${escapeHtml(cat.department || '—')}</code></td>
+          </tr>`).join('')
+        : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">未找到匹配课程，请调整筛选条件</td></tr>';
+  }
+  if (countEl) countEl.textContent = `共 ${list.length} 门课程`;
+  updateOtherOfferingAddSelection();
+}
+
+function resetOtherOfferingAddModalFilters() {
+  const keywordEl = document.getElementById('other-offering-add-keyword');
+  const unitEl = document.getElementById('other-offering-add-unit');
+  const remarkEl = document.getElementById('other-offering-add-remark');
+  if (keywordEl) keywordEl.value = '';
+  if (unitEl) unitEl.value = '';
+  if (remarkEl) remarkEl.value = '';
+  rebuildOtherOfferingAddTermFilterOptions();
+  updateOtherOfferingAddTermHint();
+  renderOtherOfferingAddModalPicker();
+}
+
+function onOtherOfferingAddTermFilterChange() {
+  updateOtherOfferingAddTermHint();
+  renderOtherOfferingAddModalPicker();
+}
+
+function buildOtherOfferingLineFromCatalog(cat, { remark } = {}) {
+  return {
+    id: nextOfferingLineId(),
+    offeringType: 'other',
+    catalogId: cat.id,
+    code: cat.code,
+    name: cat.name,
+    programmeKey: '__other__',
+    // programmeKey, intake: 原指定专业批次，特殊开课不绑定执行计划批次
+    intake: null,
+    planCode: '—',
+    execPlanId: null,
+    structuralSemester: '—',
+    credits: cat.credits,
+    totalHours: DEFAULT_OFFERING_COURSE_HOURS.totalHours,
+    offeringUnitAbbr: getCatalogOfferingUnitAbbr(cat.id) || cat.department || '',
+    sectionId: null,
+    source: 'manual',
+    remark: remark || ''
+  };
+}
+
+function appendOtherOfferingLinesToPlan(newLines) {
+  return appendMajorOfferingLinesToPlan(newLines);
+}
+
+function openOtherOfferingAddModal() {
+  if (!COURSE_TIME_SETTINGS.length) {
+    alert('请先在「开课时间设置」中维护学年学期。');
+    return;
+  }
+  rebuildOtherOfferingAddTermFilterOptions();
+  // ensureOtherOfferingAddProgrammeOptions(); // 特殊开课不指定专业
+  // ensureOtherOfferingAddIntakeOptions(); // 特殊开课不指定入学批次
+  otherOfferingAddSelectedCatalogIds.clear();
+  const unitSel = document.getElementById('other-offering-add-unit');
+  if (unitSel) unitSel.dataset.built = '0';
+  resetOtherOfferingAddModalFilters();
+  openModal('modal-other-offering-add');
+}
+
+function confirmOtherOfferingAdd() {
+  const termDisplay = getOtherOfferingAddTermDisplay();
+  const termCode = getOtherOfferingAddTermCode();
+  if (!termCode) {
+    alert('请选择开课学期。');
+    return;
+  }
+  const remark = (document.getElementById('other-offering-add-remark')?.value || '').trim();
+  const catalogIds = [...otherOfferingAddSelectedCatalogIds];
+  // const programmeKey = document.getElementById('other-offering-add-programme')?.value || ''; // 原指定专业，特殊开课不绑定批次
+  // const intake = document.getElementById('other-offering-add-intake')?.value || '';
+  if (!catalogIds.length) {
+    alert('请至少勾选一门课程。');
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  const newLines = catalogIds.map(catalogId => {
+    const cat = COURSE_CATALOG.find(c => c.id === catalogId);
+    if (!cat) return null;
+    return buildOtherOfferingLineFromCatalog(cat, { remark });
+  }).filter(Boolean);
+  if (!newLines.length) {
+    alert('所选课程无效，请重新选择。');
+    return;
+  }
+  appendOtherOfferingLinesToPlan(newLines);
+  COURSE_OFFERING_PLAN_STORE.generatedAt = new Date().toISOString();
+  COURSE_OFFERING_PLAN_BY_TERM[termCode] = COURSE_OFFERING_PLAN_STORE;
+  otherOfferingAddSelectedCatalogIds.clear();
+  closeModal('modal-other-offering-add');
+  const courseCount = new Set(newLines.map(l => l.catalogId)).size;
+  alert(`已添加 ${newLines.length} 条特殊开课计划（${courseCount} 门课 · ${termDisplay}）。`);
+  const pageTermSel = document.getElementById('other-offering-filter-term');
+  if (pageTermSel) pageTermSel.value = termDisplay;
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  renderOtherOfferingPlanPage();
+  renderCourseSpecialOfferingTaskPage();
+  renderCourseSpecialOfferingRosterPage();
+}
+
+function getOtherOfferingViewTermDisplay() {
+  return document.getElementById('other-offering-filter-term')?.value
+    || COURSE_OFFERING_PLAN_STORE?.termDisplay
+    || getDefaultOfferingTermDisplay()
+    || '';
+}
+
+function getOtherOfferingViewTermCode() {
+  return resolveOfferingTermCodeFromDisplay(getOtherOfferingViewTermDisplay());
+}
+
+function rebuildOtherOfferingTermFilterOptions() {
+  rebuildOfferingTermFilterSelect('other-offering-filter-term');
+}
+
+function onOtherOfferingTermFilterChange() {
+  syncCourseOfferingPlanStoreFromTerm(getOtherOfferingViewTermCode());
+  renderOtherOfferingPlanPage();
+}
+
+function getFilteredOtherOfferingLines() {
+  const q = (document.getElementById('course-offering-filter-other')?.value || '').trim().toLowerCase();
+  return (COURSE_OFFERING_PLAN_STORE?.lines || []).filter(line => {
+    if (line.offeringType !== 'other') return false;
+    if (!q) return true;
+    return line.code.toLowerCase().includes(q) || line.name.toLowerCase().includes(q)
+      || (line.remark || '').toLowerCase().includes(q)
+      || (line.offeringUnitAbbr || getCatalogOfferingUnitAbbr(line.catalogId) || '').toLowerCase().includes(q);
+    // || (m?.name || '').toLowerCase().includes(q) ... 原按专业/批次筛选，特殊开课不绑定批次
+  });
+}
+
+function renderOtherOfferingPlanHint() {
+  const hint = document.getElementById('course-offering-hint-other');
+  if (!hint) return;
+  rebuildOtherOfferingTermFilterOptions();
+  const viewLabel = getOtherOfferingViewTermDisplay();
+  const termCode = getOtherOfferingViewTermCode();
+  const offering = getActiveOfferingTermSetting();
+  if (!viewLabel || !termCode) {
+    hint.innerHTML = '<span class="text-muted">请先在「开课时间设置」中维护学年学期。</span>';
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  const otherCount = (COURSE_OFFERING_PLAN_STORE?.lines || []).filter(l => l.offeringType === 'other').length;
+  const offeringLabel = offering ? formatCourseTermDisplay(offering.termCode) : '';
+  hint.innerHTML = `<span class="legend-item">当前查看 <strong>${escapeHtml(viewLabel)}</strong>`
+    + (offeringLabel && offeringLabel !== viewLabel ? ` · 系统开课学期 <strong>${escapeHtml(offeringLabel)}</strong>` : '')
+    + ` · 已计划 <strong>${otherCount}</strong> 条</span>`
+    + '<span class="legend-item text-muted"> · 特殊开课须<strong>手动添加</strong>，不含于专业执行计划与通识选修流程</span>';
+}
+
+function renderOtherOfferingPlanPage() {
+  const tbody = document.getElementById('course-offering-body-other');
+  if (!tbody) return;
+  renderOtherOfferingPlanHint();
+  const termCode = getOtherOfferingViewTermCode();
+  if (!termCode) {
+    tbody.innerHTML = '<tr><td colspan="12" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
+    updateOtherOfferingSelection();
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  const list = getFilteredOtherOfferingLines();
+  tbody.innerHTML = list.length
+    ? list.map((line, idx) => {
+        const sec = ensureOtherOfferingSectionFields(getOtherOfferingSectionForLine(line));
+        const submitted = sec?.submitStatus === 'submitted';
+        const unitAbbr = line.offeringUnitAbbr || sec?.offeringUnitAbbr || getCatalogOfferingUnitAbbr(line.catalogId) || '—';
+        const planned = sec ? getSectionPlannedStudentCount(sec) : '—';
+        const reserved = sec?.reservedSpots ?? '—';
+        const capacityLimit = sec ? getSectionCapacityLimit(sec) : '—';
+        return `<tr>
+          <td class="col-check"><input type="checkbox" class="other-offering-row-check" value="${escapeHtml(sec?.id || line.sectionId || '')}" ${otherOfferingSelectedSectionIds.has(sec?.id || line.sectionId) ? 'checked' : ''} ${sec?.id ? '' : 'disabled'} onchange="updateOtherOfferingSelection()"></td>
+          <td class="col-index">${idx + 1}</td>
+          <td class="col-center">${escapeHtml(sec ? getSectionOfferingTermDisplay(sec) : (COURSE_OFFERING_PLAN_STORE?.termDisplay || '—'))}</td>
+          <td class="col-center">${sec ? renderMajorOfferingSubmitStatus(sec) : '<span class="offering-status-pill is-off">草稿</span>'}</td>
+          <td><strong>${escapeHtml(line.code)}</strong></td>
+          <td>${escapeHtml(line.name)}</td>
+          <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
+          <td class="col-center">${planned}</td>
+          <td class="col-center">${reserved}</td>
+          <td class="col-center">${capacityLimit}</td>
+          <td>${escapeHtml(line.remark) || '—'}</td>
+          <td class="actions col-sticky-actions">${renderOtherOfferingPlanRowActions(line, sec)}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="12" class="text-muted" style="text-align:center;padding:24px">暂无特殊开课计划，请点击「添加开课计划」手动添加（如挂科重修、跨专业补修等）</td></tr>';
+  updateOtherOfferingSelection();
+}
+
+function getOtherOfferingLineById(lineId) {
+  return COURSE_OFFERING_PLAN_STORE?.lines.find(l => l.id === lineId && l.offeringType === 'other') || null;
+}
+
+function renderOtherOfferingPlanRowActions(line, sec) {
+  const parts = [
+    `<a href="#" onclick="openOtherOfferingEditDrawer('${escapeHtml(line.id)}');return false">修改</a>`
+  ];
+  if (sec?.submitStatus === 'reverted') {
+    parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">回退说明</a>`);
+  }
+  if (sec?.submitStatus !== 'submitted') {
+    parts.push(`<a href="#" class="text-danger" onclick="removeOtherOfferingLine('${escapeHtml(line.id)}');return false">删除</a>`);
+  }
+  return parts.join(' · ');
+  // ${submitted ? '' : ` · <a ...>删除</a>`} // 原内联操作列，改统一渲染并支持回退说明
+}
+
+function getOtherOfferingSectionForLine(line) {
+  if (!line?.sectionId) return null;
+  return COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === line.sectionId) || null;
+}
+
+function ensureOtherOfferingSectionFields(sec) {
+  if (!sec || sec.offeringType !== 'other') return sec;
+  ensureSectionOfferingFields(sec);
+  sec.enrollmentType = 'closed';
+  if (!sec.isScheduled) sec.isScheduled = 'yes';
+  if (!sec.isVenueScheduled) sec.isVenueScheduled = 'yes';
+  if (!sec.isAttendance) sec.isAttendance = 'yes';
+  if (!sec.isGradeEntry) sec.isGradeEntry = 'yes';
+  if (!sec.isExamScheduled) sec.isExamScheduled = 'yes';
+  if (!Array.isArray(sec.venueTypes)) sec.venueTypes = [];
+  else sec.venueTypes = sec.venueTypes.map(normalizeMajorOfferingClassroomType);
+  if (!Array.isArray(sec.classroomAssignments)) sec.classroomAssignments = [];
+  else {
+    sec.classroomAssignments = sec.classroomAssignments.map(c => ({
+      ...c,
+      classroomType: normalizeMajorOfferingClassroomType(c.classroomType)
+    }));
+  }
+  if (sec.reservedSpots == null || sec.reservedSpots === '') {
+    sec.reservedSpots = DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS;
+  }
+  if (sec.estimatedStudents == null || sec.estimatedStudents === '') {
+    sec.estimatedStudents = 30;
+  }
+  sec.studentCount = sec.estimatedStudents;
+  return sec;
+}
+
+let otherOfferingEditLineId = null;
+
+function isOtherOfferingEditDrawerOpen() {
+  return document.getElementById('drawer-other-offering-edit')?.classList.contains('open');
+}
+
+function getOtherOfferingEditSection() {
+  return getOtherOfferingSectionForLine(getOtherOfferingLineById(otherOfferingEditLineId));
+}
+
+function ensureOtherOfferingVenueTypeMultiselect() {
+  const options = document.getElementById('other-edit-venue-types-options');
+  if (!options) return;
+  options.innerHTML = MAJOR_OFFERING_CLASSROOM_TYPES.map(type =>
+    `<label class="clo-multiselect-option">
+      <input type="checkbox" class="other-venue-type-check" value="${escapeHtml(type.value)}" onchange="onOtherOfferingVenueTypeToggle(this)">
+      <span>${escapeHtml(getMajorOfferingClassroomTypeLabel(type.value))}</span>
+    </label>`
+  ).join('');
+}
+
+function getOtherOfferingVenueTypeSelected() {
+  return [...document.querySelectorAll('.other-venue-type-check:checked')].map(el => el.value);
+}
+
+function updateOtherOfferingVenueTypeDisplay() {
+  const display = document.getElementById('other-edit-venue-types-display');
+  if (!display) return;
+  const selected = getOtherOfferingVenueTypeSelected();
+  if (selected.length) {
+    display.textContent = selected.map(getMajorOfferingClassroomTypeLabel).join('、');
+    display.classList.remove('placeholder');
+  } else {
+    display.textContent = '请选择';
+    display.classList.add('placeholder');
+  }
+}
+
+function onOtherOfferingVenueTypeToggle() {
+  updateOtherOfferingVenueTypeDisplay();
+}
+
+function toggleOtherOfferingVenueTypeDropdown(event) {
+  event.stopPropagation();
+  const dd = document.getElementById('other-edit-venue-types-dropdown');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeOtherOfferingVenueTypeDropdown();
+  closeGeOfferingVenueTypeDropdown();
+  closeMajorOfferingVenueTypeDropdown();
+  if (willOpen) dd.hidden = false;
+}
+
+function closeOtherOfferingVenueTypeDropdown() {
+  const dd = document.getElementById('other-edit-venue-types-dropdown');
+  if (dd) dd.hidden = true;
+}
+
+function setOtherOfferingVenueTypeSelected(types) {
+  const set = new Set((types || []).map(normalizeMajorOfferingClassroomType));
+  document.querySelectorAll('.other-venue-type-check').forEach(el => { el.checked = set.has(el.value); });
+  updateOtherOfferingVenueTypeDisplay();
+}
+
+function openOtherOfferingClassroomPickerModal() {
+  const sec = getOtherOfferingEditSection();
+  if (!sec) return;
+  majorOfferingClassroomPickerDraft = new Set((sec.classroomAssignments || []).map(c => c.id));
+  resetMajorOfferingClassroomPickerFilters();
+  openModal('modal-major-classroom-picker');
+}
+
+function updateOtherOfferingEditCapacityLimitDisplay() {
+  const planned = Number(document.getElementById('other-edit-student-total')?.value) || 0;
+  const reserved = Number(document.getElementById('other-edit-reserved-spots')?.value) || 0;
+  const el = document.getElementById('other-edit-capacity-limit');
+  if (el) el.value = planned + reserved;
+}
+
+function populateOtherOfferingEditDrawer(line, sec) {
+  ensureOtherOfferingSectionFields(sec);
+  ensureOtherOfferingVenueTypeMultiselect();
+  closeOtherOfferingVenueTypeDropdown();
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? '';
+  };
+  set('other-edit-course-code', line.code || sec.code);
+  set('other-edit-course-name', line.name || sec.name);
+  set('other-edit-credits', line.credits ?? sec.credits);
+  set('other-edit-total-hours', line.totalHours ?? sec.totalHours);
+  set('other-edit-offering-unit', line.offeringUnitAbbr || sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(line.catalogId) || '—');
+  set('other-edit-student-total', sec.estimatedStudents ?? sec.studentCount ?? 0);
+  set('other-edit-reserved-spots', sec.reservedSpots ?? DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS);
+  updateOtherOfferingEditCapacityLimitDisplay();
+  set('other-edit-enrollment-type', '不开放选课');
+  setOtherOfferingVenueTypeSelected(sec.venueTypes || []);
+  set('other-edit-classroom-arrangement', formatClassroomArrangementSummary(sec.classroomAssignments));
+  set('other-edit-is-scheduled', sec.isScheduled || 'yes');
+  set('other-edit-is-venue-scheduled', sec.isVenueScheduled || 'yes');
+  set('other-edit-is-attendance', sec.isAttendance || 'yes');
+  set('other-edit-is-grade-entry', sec.isGradeEntry || 'yes');
+  set('other-edit-is-exam-scheduled', sec.isExamScheduled || 'yes');
+  set('other-edit-remark', line.remark || '');
+}
+
+function syncOtherOfferingEditDrawerReadOnly(readonly) {
+  const drawer = document.getElementById('drawer-other-offering-edit');
+  drawer?.classList.toggle('is-readonly', readonly);
+  const confirmBtn = drawer?.querySelector('.drawer-foot .btn-primary');
+  if (confirmBtn) {
+    confirmBtn.hidden = readonly;
+    confirmBtn.disabled = readonly;
+  }
+  const cancelBtn = drawer?.querySelector('.drawer-foot .btn-ghost');
+  if (cancelBtn) cancelBtn.textContent = readonly ? '关闭' : '取消';
+  const titleEl = drawer?.querySelector('.drawer-head h3');
+  if (titleEl) titleEl.textContent = readonly ? '查看开课计划' : '修改开课计划';
+  drawer?.querySelectorAll('.input:not(.readonly), select, textarea').forEach(el => {
+    el.disabled = !!readonly;
+  });
+  const venueTrigger = drawer?.querySelector('#other-edit-venue-types-multiselect .clo-multiselect-trigger');
+  if (venueTrigger) venueTrigger.disabled = !!readonly;
+  const classroomBtn = drawer?.querySelector('.input-with-btn .btn');
+  if (classroomBtn) classroomBtn.disabled = !!readonly;
+}
+
+function openOtherOfferingEditDrawer(lineId) {
+  const line = getOtherOfferingLineById(lineId);
+  if (!line) return;
+  const sec = getOtherOfferingSectionForLine(line);
+  if (!sec) {
+    alert('未找到关联教学班，无法修改。');
+    return;
+  }
+  otherOfferingEditLineId = lineId;
+  populateOtherOfferingEditDrawer(line, sec);
+  syncOtherOfferingEditDrawerReadOnly(sec.submitStatus === 'submitted');
+  document.getElementById('drawer-other-offering-edit-backdrop')?.classList.add('open');
+  document.getElementById('drawer-other-offering-edit')?.classList.add('open');
+}
+
+function closeOtherOfferingEditDrawer() {
+  document.getElementById('drawer-other-offering-edit-backdrop')?.classList.remove('open');
+  document.getElementById('drawer-other-offering-edit')?.classList.remove('open');
+  closeOtherOfferingVenueTypeDropdown();
+  syncOtherOfferingEditDrawerReadOnly(false);
+  otherOfferingEditLineId = null;
+}
+
+function confirmOtherOfferingEditDrawer() {
+  const line = getOtherOfferingLineById(otherOfferingEditLineId);
+  if (!line) return;
+  const sec = getOtherOfferingSectionForLine(line);
+  if (!sec) return;
+  if (sec.submitStatus === 'submitted') {
+    alert('已提交的开课计划不可修改。');
+    return;
+  }
+  const plannedRaw = document.getElementById('other-edit-student-total')?.value;
+  if (plannedRaw === '' || plannedRaw == null) {
+    alert('请填写预计容量。');
+    return;
+  }
+  const plannedTotal = Number(plannedRaw);
+  if (!Number.isFinite(plannedTotal) || plannedTotal < 0) {
+    alert('请填写有效的预计容量（非负整数）。');
+    return;
+  }
+  const reservedRaw = document.getElementById('other-edit-reserved-spots')?.value;
+  if (reservedRaw === '' || reservedRaw == null) {
+    alert('请填写预留名额。');
+    return;
+  }
+  const reservedSpots = Number(reservedRaw);
+  if (!Number.isFinite(reservedSpots) || reservedSpots < 0) {
+    alert('请填写有效的预留名额（非负整数）。');
+    return;
+  }
+  sec.estimatedStudents = Math.max(0, Math.round(plannedTotal));
+  sec.studentCount = sec.estimatedStudents;
+  sec.reservedSpots = Math.max(0, Math.round(reservedSpots));
+  sec.enrollmentType = 'closed';
+  sec.venueTypes = getOtherOfferingVenueTypeSelected();
+  sec.isScheduled = document.getElementById('other-edit-is-scheduled')?.value || 'yes';
+  sec.isVenueScheduled = document.getElementById('other-edit-is-venue-scheduled')?.value || 'yes';
+  sec.isAttendance = document.getElementById('other-edit-is-attendance')?.value || 'yes';
+  sec.isGradeEntry = document.getElementById('other-edit-is-grade-entry')?.value || 'yes';
+  sec.isExamScheduled = document.getElementById('other-edit-is-exam-scheduled')?.value || 'yes';
+  line.remark = document.getElementById('other-edit-remark')?.value.trim() || '';
+  closeOtherOfferingEditDrawer();
+  renderOtherOfferingPlanPage();
+  renderCourseSpecialOfferingTaskPage();
+}
+
+function getOtherOfferingSections() {
+  if (!ensureCourseOfferingPlan()) return [];
+  return (COURSE_OFFERING_PLAN_STORE?.sections || [])
+    .filter(s => s.offeringType === 'other')
+    .map(ensureOtherOfferingSectionFields)
+    .sort((a, b) => (a.code || '').localeCompare(b.code || '') || (a.id || '').localeCompare(b.id || ''));
+}
+
+function getOtherOfferingLineProgrammeDisplay(line) {
+  const m = PROGRAMMES[line?.programmeKey];
+  return m ? `${m.name} ${m.nameZh}` : '—';
+}
+
+function updateOtherOfferingSelection() {
+  otherOfferingSelectedSectionIds = new Set(
+    [...document.querySelectorAll('.other-offering-row-check:checked')].map(el => el.value).filter(Boolean)
+  );
+  const hasSelection = otherOfferingSelectedSectionIds.size > 0;
+  const btnSubmit = document.getElementById('btn-other-offering-submit');
+  if (btnSubmit) btnSubmit.disabled = !hasSelection;
+  const checkAll = document.getElementById('other-offering-check-all');
+  const selectable = document.querySelectorAll('.other-offering-row-check:not(:disabled)');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function toggleOtherOfferingCheckAll(checked) {
+  document.querySelectorAll('.other-offering-row-check:not(:disabled)').forEach(el => { el.checked = checked; });
+  updateOtherOfferingSelection();
+}
+
+function submitSelectedOtherOfferingTasks() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...otherOfferingSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要提交的开课计划。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'other');
+  const toSubmit = secs.filter(s => s.submitStatus !== 'submitted');
+  if (!toSubmit.length) {
+    alert('所选开课计划均已提交。');
+    return;
+  }
+  openDeleteConfirm({
+    title: '提交开课计划',
+    message: `确定提交选中的 <strong>${toSubmit.length}</strong> 条特殊开课计划吗？`,
+    hint: '提交后可进入「特殊开课任务安排」进行分组与教师安排；完成后在「特殊开课学生名单管理」向各小组添加学生。',
+    onConfirm: () => {
+      toSubmit.forEach(sec => {
+        sec.submitStatus = 'submitted';
+        sec.schedulingVisible = true;
+        sec.submittedAt = new Date().toISOString();
+      });
+      otherOfferingSelectedSectionIds.clear();
+      renderOtherOfferingPlanPage();
+      renderCourseSpecialOfferingTaskPage();
+    }
+  });
+}
+
+function markOtherOfferingSectionRevertedFromTask(sec) {
+  if (!sec) return;
+  sec.submitStatus = 'reverted';
+  sec.schedulingVisible = false;
+  sec.teachingConfirmStatus = 'pending';
+  sec.submittedAt = null;
+  clearMajorOfferingSectionTaskArrangement(sec);
+}
+
+function rebuildOtherOfferingTaskFilterOptions() {
+  rebuildOfferingTermFilterSelect('other-offering-task-filter-term');
+  const progSel = document.getElementById('other-offering-task-filter-prog');
+  if (progSel) {
+    const cur = progSel.value || '';
+    const progKeys = [...new Set(getOtherOfferingSections().flatMap(sec =>
+      getSectionLineMetas(sec).map(m => m.line?.programmeKey).filter(Boolean)
+    ))].sort();
+    progSel.innerHTML = '<option value="">全部专业</option>' + progKeys.map(k => {
+      const m = PROGRAMMES[k];
+      return `<option value="${escapeHtml(k)}">${escapeHtml(m ? `${m.name} ${m.nameZh}` : k)}</option>`;
+    }).join('');
+    if (cur && progKeys.includes(cur)) progSel.value = cur;
+  }
+  const unitSel = document.getElementById('other-offering-task-filter-offering-unit');
+  if (unitSel) {
+    const curUnit = unitSel.value || '';
+    const unitCodes = [...new Set(
+      getOtherOfferingSections().map(sec => resolveMajorOfferingSectionOfferingUnit(sec)).filter(Boolean)
+    )].sort();
+    unitSel.innerHTML = '<option value="">全部开课单位</option>' + unitCodes.map(c =>
+      `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join('');
+    if (curUnit && unitCodes.includes(curUnit)) unitSel.value = curUnit;
+  }
+  const termDisplay = document.getElementById('other-offering-task-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(termDisplay));
+}
+
+function onOtherOfferingTaskTermFilterChange() {
+  const display = document.getElementById('other-offering-task-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(display));
+  resetListPage('courseSpecialOfferingTask');
+  renderCourseSpecialOfferingTaskPage();
+}
+
+function resetOtherOfferingTaskFilters() {
+  ['other-offering-task-filter-prog', 'other-offering-task-filter-offering-unit', 'other-offering-task-filter-name', 'other-offering-task-filter-task-submit'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  rebuildOfferingTermFilterSelect('other-offering-task-filter-term', { preserveValue: false });
+  syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
+  resetListPage('courseSpecialOfferingTask');
+  renderCourseSpecialOfferingTaskPage();
+}
+
+function queryOtherOfferingTaskList() {
+  resetListPage('courseSpecialOfferingTask');
+  renderCourseSpecialOfferingTaskPage();
+}
+
+function getFilteredOtherOfferingTaskSections() {
+  const list = getOtherOfferingSections().filter(sec => sec.submitStatus === 'submitted');
+  const prog = document.getElementById('other-offering-task-filter-prog')?.value || '';
+  const offeringUnit = document.getElementById('other-offering-task-filter-offering-unit')?.value || '';
+  const taskSubmit = document.getElementById('other-offering-task-filter-task-submit')?.value || '';
+  const q = (document.getElementById('other-offering-task-filter-name')?.value || '').trim().toLowerCase();
+  return list.filter(sec => {
+    const metas = getSectionLineMetas(sec);
+    if (prog && !metas.some(m => m.line?.programmeKey === prog)) return false;
+    if (offeringUnit && resolveMajorOfferingSectionOfferingUnit(sec) !== offeringUnit) return false;
+    if (taskSubmit && getMajorOfferingTaskSubmitStatusKey(sec) !== taskSubmit) return false;
+    if (q && !String(sec.code || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function getOtherOfferingTaskPendingSelection() {
+  if (!ensureCourseOfferingPlan() || !otherOfferingTaskSelectedSectionIds.size) return [];
+  return [...otherOfferingTaskSelectedSectionIds]
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'other' && s.teachingConfirmStatus !== 'confirmed');
+}
+
+function updateOtherOfferingTaskSelection() {
+  otherOfferingTaskSelectedSectionIds = new Set(
+    [...document.querySelectorAll('.other-offering-task-row-check:checked')].map(el => el.value)
+  );
+  const hasSelection = otherOfferingTaskSelectedSectionIds.size > 0;
+  const btnTaskSubmit = document.getElementById('btn-other-task-submit');
+  const btnTaskRevert = document.getElementById('btn-other-task-revert');
+  const pending = getOtherOfferingTaskPendingSelection();
+  if (btnTaskSubmit) {
+    btnTaskSubmit.disabled = !hasSelection || !pending.length;
+    btnTaskSubmit.title = hasSelection && !pending.length ? '所选任务均已提交' : '';
+  }
+  if (btnTaskRevert) {
+    const canRevert = hasSelection && ensureCourseOfferingPlan() && [...otherOfferingTaskSelectedSectionIds].some(id => {
+      const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id);
+      return sec
+        && sec.offeringType === 'other'
+        && sec.submitStatus === 'submitted'
+        && sec.teachingConfirmStatus !== 'confirmed';
+    });
+    btnTaskRevert.disabled = !canRevert;
+  }
+  const checkAll = document.getElementById('other-offering-task-check-all');
+  const selectable = document.querySelectorAll('.other-offering-task-row-check');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function toggleOtherOfferingTaskCheckAll(checked) {
+  document.querySelectorAll('.other-offering-task-row-check').forEach(el => { el.checked = checked; });
+  updateOtherOfferingTaskSelection();
+}
+
+function renderOtherOfferingTaskRowActions(sec) {
+  const parts = [
+    `<a href="#" onclick="openOfferingGroupingModal('${sec.id}', { returnPage: 'course-special-offering-task' });return false">分组</a>`
+  ];
+  if ((sec?.taskRevertRemark || '').trim()) {
+    parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">退回说明</a>`);
+  }
+  return parts.join(' · ');
+}
+
+function submitSelectedOtherOfferingTaskArrangements() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...otherOfferingTaskSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要提交的开课任务。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'other');
+  const pending = secs.filter(s => s.teachingConfirmStatus !== 'confirmed');
+  if (!pending.length) {
+    alert('所选开课任务均已提交。');
+    return;
+  }
+  const { allOk, hint } = buildMajorOfferingTaskSubmitConfirm(pending);
+  openDeleteConfirm({
+    title: '确认提交',
+    message: `确定提交选中的 <strong>${pending.length}</strong> 条特殊开课任务安排吗？`,
+    hint: allOk
+      ? '提交后可进入「特殊开课学生名单管理」向各小组添加学生（无预置批次名单）。'
+      : hint,
+    hintWarn: !allOk,
+    confirmLabel: '提交',
+    confirmDisabled: !allOk,
+    onConfirm: allOk
+      ? () => {
+          pending.forEach(sec => {
+            sec.teachingConfirmStatus = 'confirmed';
+            clearMajorOfferingTaskRevertRemark(sec);
+          });
+          otherOfferingTaskSelectedSectionIds.clear();
+          renderCourseSpecialOfferingTaskPage();
+          renderCourseSpecialOfferingRosterPage();
+          updateOtherOfferingTaskSelection();
+          alert(`已提交 ${pending.length} 条任务安排。请前往「特殊开课学生名单管理」向各小组添加学生。`);
+        }
+      : null
+  });
+}
+
+function revertSelectedOtherOfferingTaskArrangements() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...otherOfferingTaskSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要退回的开课任务。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'other');
+  const revertable = secs.filter(s => s.submitStatus === 'submitted' && s.teachingConfirmStatus !== 'confirmed');
+  if (!revertable.length) {
+    alert(secs.some(s => s.teachingConfirmStatus === 'confirmed') ? '所选任务已提交任务安排，无法退回。' : '所选开课任务无法退回。');
+    return;
+  }
+  openMajorOfferingTaskRevertRemarkModal({
+    title: '退回开课任务',
+    message: `确定退回选中的 <strong>${revertable.length}</strong> 条特殊开课任务吗？`,
+    hint: '退回后「特殊开课计划」提交状态显示为回退，可修改后再次提交；分组与教师安排将全部清除。',
+    confirmLabel: '退回',
+    onConfirm: remark => {
+      revertable.forEach(sec => {
+        applyMajorOfferingTaskRevertRemark(sec, remark, 'plan');
+        markOtherOfferingSectionRevertedFromTask(sec);
+      });
+      otherOfferingTaskSelectedSectionIds.clear();
+      renderCourseSpecialOfferingTaskPage();
+      renderOtherOfferingPlanPage();
+      updateOtherOfferingTaskSelection();
+    }
+  });
+}
+
+function rebuildOtherOfferingRosterFilterOptions() {
+  rebuildOfferingTermFilterSelect('other-offering-roster-filter-term');
+  const progSel = document.getElementById('other-offering-roster-filter-prog');
+  if (progSel) {
+    const cur = progSel.value || '';
+    const progKeys = [...new Set(getOtherOfferingSections().flatMap(sec =>
+      getSectionLineMetas(sec).map(m => m.line?.programmeKey).filter(Boolean)
+    ))].sort();
+    progSel.innerHTML = '<option value="">全部专业</option>' + progKeys.map(k => {
+      const m = PROGRAMMES[k];
+      return `<option value="${escapeHtml(k)}">${escapeHtml(m ? `${m.name} ${m.nameZh}` : k)}</option>`;
+    }).join('');
+    if (cur && progKeys.includes(cur)) progSel.value = cur;
+  }
+  const termDisplay = document.getElementById('other-offering-roster-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(termDisplay));
+}
+
+function onOtherOfferingRosterTermFilterChange() {
+  const display = document.getElementById('other-offering-roster-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(display));
+  resetListPage('courseSpecialOfferingRoster');
+  renderCourseSpecialOfferingRosterPage();
+}
+
+function resetOtherOfferingRosterFilters() {
+  ['other-offering-roster-filter-prog', 'other-offering-roster-filter-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  rebuildOfferingTermFilterSelect('other-offering-roster-filter-term', { preserveValue: false });
+  syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
+  resetListPage('courseSpecialOfferingRoster');
+  renderCourseSpecialOfferingRosterPage();
+}
+
+function queryOtherOfferingRosterList() {
+  resetListPage('courseSpecialOfferingRoster');
+  renderCourseSpecialOfferingRosterPage();
+}
+
+function getFilteredOtherOfferingRosterSections() {
+  const list = getOtherOfferingSections().filter(sec =>
+    sec.submitStatus === 'submitted' && isMajorOfferingTaskArrangementSubmitted(sec)
+  );
+  const prog = document.getElementById('other-offering-roster-filter-prog')?.value || '';
+  const q = (document.getElementById('other-offering-roster-filter-name')?.value || '').trim().toLowerCase();
+  return list.filter(sec => {
+    const metas = getSectionLineMetas(sec);
+    if (prog && !metas.some(m => m.line?.programmeKey === prog)) return false;
+    if (q && !String(sec.code || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function openOtherOfferingGroupRosterManage(sectionId) {
+  openOfferingGroupingModal(sectionId, {
+    tab: 'student',
+    returnPage: 'course-special-offering-roster'
+  });
+}
+
+function defaultCourseSpecialOfferingTaskCompare(a, b) {
+  return (a.code || '').localeCompare(b.code || '') || (a.id || '').localeCompare(b.id || '');
+}
+
+const COURSE_SPECIAL_OFFERING_TASK_SORT_COLUMNS = {
+  index: { get: sec => sec.id || '' },
+  taskSubmitStatus: { get: sec => getMajorOfferingTaskSubmitStatusKey(sec) },
+  offeringTerm: { get: sec => getSectionOfferingTermDisplay(sec) },
+  code: { get: sec => sec.code || '' },
+  name: { get: sec => sec.name || '' },
+  programme: { get: sec => getSectionMergedProgrammeDisplayFull(sec) },
+  intake: { get: sec => getSectionMergedIntakeDisplayFull(sec) },
+  credits: { get: sec => sec.credits, type: 'number' },
+  totalHours: { get: sec => sec.totalHours, type: 'number' },
+  offeringUnit: { get: sec => sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId) || '' },
+  weekRange: { get: sec => sec.weekRange || '' },
+  capacityLimit: { get: sec => getSectionCapacityLimit(sec), type: 'number' }
+};
+
+function renderCourseSpecialOfferingTaskTableHeader() {
+  const row = document.querySelector('#page-course-special-offering-task .other-offering-task-table thead tr');
+  if (!row) return;
+  row.innerHTML =
+    '<th class="col-check"><input type="checkbox" id="other-offering-task-check-all" aria-label="全选" onchange="toggleOtherOfferingTaskCheckAll(this.checked)"></th>' +
+    renderListSortTh('courseSpecialOfferingTask', '序号', 'index', { center: true, extraClass: 'col-index' }) +
+    renderListSortTh('courseSpecialOfferingTask', '提交状态', 'taskSubmitStatus', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '开课学期', 'offeringTerm', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '课程号', 'code') +
+    renderListSortTh('courseSpecialOfferingTask', '课程名称', 'name') +
+    renderListSortTh('courseSpecialOfferingTask', '专业', 'programme', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '入学批次', 'intake', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '学分', 'credits', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '总学时', 'totalHours', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '开课单位', 'offeringUnit', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '起止周', 'weekRange', { center: true }) +
+    renderListSortTh('courseSpecialOfferingTask', '课程名额上限', 'capacityLimit', { center: true }) +
+    '<th class="col-sticky-actions">操作</th>';
+}
+
+function renderCourseSpecialOfferingTaskPage() {
+  const tbody = document.getElementById('course-special-offering-task-body');
+  if (!tbody) return;
+  renderCourseSpecialOfferingTaskTableHeader();
+  rebuildOtherOfferingTaskFilterOptions();
+  const termCode = resolveOfferingTermCodeFromDisplay(
+    document.getElementById('other-offering-task-filter-term')?.value || getDefaultOfferingTermDisplay()
+  );
+  if (!termCode) {
+    tbody.innerHTML = '<tr><td colspan="14" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
+    renderListPagination('course-special-offering-task-pagination', 'courseSpecialOfferingTask', 0);
+    updateOtherOfferingTaskSelection();
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  const list = sortListWithState(
+    getFilteredOtherOfferingTaskSections(),
+    'courseSpecialOfferingTask',
+    COURSE_SPECIAL_OFFERING_TASK_SORT_COLUMNS,
+    defaultCourseSpecialOfferingTaskCompare
+  );
+  const paged = paginateListItems(list, 'courseSpecialOfferingTask');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map((sec, idx) => {
+        const unitAbbr = sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId);
+        return `<tr>
+          <td class="col-check"><input type="checkbox" class="other-offering-task-row-check" value="${sec.id}" ${otherOfferingTaskSelectedSectionIds.has(sec.id) ? 'checked' : ''} onchange="updateOtherOfferingTaskSelection()"></td>
+          <td class="col-index">${rowOffset + idx + 1}</td>
+          <td class="col-center">${renderMajorOfferingTaskSubmitDisplay(sec)}</td>
+          <td class="col-center">${escapeHtml(getSectionOfferingTermDisplay(sec))}</td>
+          <td><strong>${escapeHtml(sec.code || '—')}</strong></td>
+          <td>${escapeHtml(sec.name || '—')}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedProgrammeDisplay(sec), getSectionMergedProgrammeDisplayFull(sec))}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedIntakeDisplay(sec), getSectionMergedIntakeDisplayFull(sec))}</td>
+          <td class="col-center">${sec.credits ?? '—'}</td>
+          <td class="col-center">${sec.totalHours ?? '—'}</td>
+          <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
+          <td class="col-center"><code>${escapeHtml(sec.weekRange || '—')}</code></td>
+          <td class="col-center">${getSectionCapacityLimit(sec) || '—'}</td>
+          <td class="actions col-sticky-actions">${renderOtherOfferingTaskRowActions(sec)}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="14" class="text-muted" style="text-align:center;padding:24px">暂无已提交的特殊开课任务，请先在「特殊开课计划」添加并提交课程</td></tr>';
+  renderListPagination('course-special-offering-task-pagination', 'courseSpecialOfferingTask', paged.total);
+  updateOtherOfferingTaskSelection();
+  bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]');
+}
+
+function defaultCourseSpecialOfferingRosterCompare(a, b) {
+  return (a.code || '').localeCompare(b.code || '') || (a.id || '').localeCompare(b.id || '');
+}
+
+const COURSE_SPECIAL_OFFERING_ROSTER_SORT_COLUMNS = {
+  index: { get: sec => sec.id || '' },
+  offeringTerm: { get: sec => getSectionOfferingTermDisplay(sec) },
+  code: { get: sec => sec.code || '' },
+  name: { get: sec => sec.name || '' },
+  programme: { get: sec => getSectionMergedProgrammeDisplayFull(sec) },
+  intake: { get: sec => getSectionMergedIntakeDisplayFull(sec) },
+  groupCount: { get: sec => getMajorOfferingSectionGroupCount(sec), type: 'number' },
+  credits: { get: sec => sec.credits, type: 'number' },
+  totalHours: { get: sec => sec.totalHours, type: 'number' }
+};
+
+function renderCourseSpecialOfferingRosterTableHeader() {
+  const row = document.querySelector('#page-course-special-offering-roster .other-offering-roster-table thead tr');
+  if (!row) return;
+  row.innerHTML =
+    renderListSortTh('courseSpecialOfferingRoster', '序号', 'index', { center: true, extraClass: 'col-index' }) +
+    renderListSortTh('courseSpecialOfferingRoster', '开课学期', 'offeringTerm', { center: true }) +
+    renderListSortTh('courseSpecialOfferingRoster', '课程号', 'code') +
+    renderListSortTh('courseSpecialOfferingRoster', '课程名称', 'name') +
+    renderListSortTh('courseSpecialOfferingRoster', '专业', 'programme', { center: true }) +
+    renderListSortTh('courseSpecialOfferingRoster', '入学批次', 'intake', { center: true }) +
+    renderListSortTh('courseSpecialOfferingRoster', '小组数', 'groupCount', { center: true }) +
+    renderListSortTh('courseSpecialOfferingRoster', '学分', 'credits', { center: true }) +
+    renderListSortTh('courseSpecialOfferingRoster', '总学时', 'totalHours', { center: true }) +
+    '<th class="col-sticky-actions">操作</th>';
+}
+
+function renderCourseSpecialOfferingRosterPage() {
+  const tbody = document.getElementById('course-special-offering-roster-body');
+  if (!tbody) return;
+  renderCourseSpecialOfferingRosterTableHeader();
+  rebuildOtherOfferingRosterFilterOptions();
+  const termCode = resolveOfferingTermCodeFromDisplay(
+    document.getElementById('other-offering-roster-filter-term')?.value || getDefaultOfferingTermDisplay()
+  );
+  if (!termCode) {
+    tbody.innerHTML = '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
+    renderListPagination('course-special-offering-roster-pagination', 'courseSpecialOfferingRoster', 0);
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  const list = sortListWithState(
+    getFilteredOtherOfferingRosterSections(),
+    'courseSpecialOfferingRoster',
+    COURSE_SPECIAL_OFFERING_ROSTER_SORT_COLUMNS,
+    defaultCourseSpecialOfferingRosterCompare
+  );
+  const paged = paginateListItems(list, 'courseSpecialOfferingRoster');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map((sec, idx) => `<tr>
+        <td class="col-index">${rowOffset + idx + 1}</td>
+        <td class="col-center">${escapeHtml(getSectionOfferingTermDisplay(sec))}</td>
+        <td><strong>${escapeHtml(sec.code || '—')}</strong></td>
+        <td>${escapeHtml(sec.name || '—')}</td>
+        <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedProgrammeDisplay(sec), getSectionMergedProgrammeDisplayFull(sec))}</td>
+        <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedIntakeDisplay(sec), getSectionMergedIntakeDisplayFull(sec))}</td>
+        <td class="col-center">${getMajorOfferingSectionGroupCount(sec) || '—'}</td>
+        <td class="col-center">${sec.credits ?? '—'}</td>
+        <td class="col-center">${sec.totalHours ?? '—'}</td>
+        <td class="actions col-sticky-actions"><a href="#" onclick="openOtherOfferingGroupRosterManage('${sec.id}');return false">管理名单</a></td>
+      </tr>`).join('')
+    : '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:24px">暂无已提交任务安排的特殊开课，请先在「特殊开课任务安排」完成分组与教师安排并提交</td></tr>';
+  renderListPagination('course-special-offering-roster-pagination', 'courseSpecialOfferingRoster', paged.total);
+  bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]');
+  // renderCourseOfferingRosterPlaceholder('course-special-offering-roster-body', 'other'); // 原占位列表
+}
+
+// ── 通识选修开课计划（从校选课程手工维护） ──
+/** 暂未指定上课批次时的占位值 */
+const GE_OFFERING_INTAKE_UNSET = '__ge-unset__';
+
+let geOfferingAddSelectedCourseIds = new Set();
+let geOfferingAddSelectedIntakes = new Set();
+let geOfferingSelectedSectionIds = new Set();
+let geOfferingTaskSelectedSectionIds = new Set();
+
+function formatGeOfferingIntakeDisplay(intake) {
+  if (!intake || intake === GE_OFFERING_INTAKE_UNSET) return '—';
+  return formatIntakeDisplay(intake);
+}
+
+function getGeOfferingIntakeOptions() {
+  const year = new Date().getFullYear();
+  const intakes = [];
+  for (let y = year - 2; y <= year + 1; y++) {
+    INTAKE_TYPES.forEach(t => intakes.push(formatIntake(y, t)));
+  }
+  return intakes.reverse();
+}
+
+function getGeOfferingLineKey(catalogId, intake) {
+  return `${catalogId}|${intake}`;
+}
+
+function isGeOfferingLineExists(catalogId, intake) {
+  return (COURSE_OFFERING_PLAN_STORE?.lines || []).some(
+    l => l.offeringType === 'ge' && l.catalogId === catalogId && l.intake === intake
+  );
+}
+
+function isGeOfferingCourseInPlan(catalogId, termCode = getGeOfferingAddTermCode() || getGeOfferingViewTermCode()) {
+  if (!catalogId || !termCode) return false;
+  const store = COURSE_OFFERING_PLAN_BY_TERM[termCode];
+  return (store?.lines || []).some(l => l.offeringType === 'ge' && l.catalogId === catalogId);
+  // return (COURSE_OFFERING_PLAN_STORE?.lines || []).some(
+  //   l => l.offeringType === 'ge' && l.catalogId === catalogId
+  // ); // 原未区分开课学期
+}
+
+function isGeOfferingSchoolElectiveInPlan(course, termCode = getGeOfferingAddTermCode() || getGeOfferingViewTermCode()) {
+  if (!course || !termCode) return false;
+  const store = COURSE_OFFERING_PLAN_BY_TERM[termCode];
+  if (!store?.lines?.length) return false;
+  const schoolElectiveId = course.id || course.schoolElectiveId || '';
+  const catalogId = resolveSchoolElectiveCatalogId(course) || course.catalogId || '';
+  const code = String(course.code || '').replace('*', '');
+  return store.lines.some(line => {
+    if (line.offeringType !== 'ge') return false;
+    if (schoolElectiveId && line.schoolElectiveId === schoolElectiveId) return true;
+    if (catalogId && line.catalogId === catalogId) return true;
+    const lineCode = String(line.code || '').replace('*', '');
+    return code && lineCode && lineCode === code;
+  });
+  // if (!catalogId || !termCode) return false; // 原仅按 catalogId 判重，无 catalog 映射的课程被误禁用
+  // return isGeOfferingCourseInPlan(catalogId, termCode);
+}
+
+function getGeOfferingViewTermDisplay() {
+  return document.getElementById('ge-offering-filter-term')?.value
+    || COURSE_OFFERING_PLAN_STORE?.termDisplay
+    || getDefaultOfferingTermDisplay()
+    || '';
+}
+
+function getGeOfferingViewTermCode() {
+  return resolveOfferingTermCodeFromDisplay(getGeOfferingViewTermDisplay());
+}
+
+function getGeOfferingAddTermDisplay() {
+  return document.getElementById('ge-offering-add-term')?.value || getGeOfferingViewTermDisplay() || '';
+}
+
+function getGeOfferingAddTermCode() {
+  return resolveOfferingTermCodeFromDisplay(getGeOfferingAddTermDisplay());
+}
+
+function rebuildGeOfferingTermFilterOptions() {
+  rebuildOfferingTermFilterSelect('ge-offering-filter-term');
+  const addSel = document.getElementById('ge-offering-add-term');
+  if (addSel) {
+    const pageTerm = document.getElementById('ge-offering-filter-term')?.value || '';
+    rebuildOfferingTermFilterSelect('ge-offering-add-term', { preserveValue: !!pageTerm });
+    if (pageTerm && [...addSel.options].some(o => o.value === pageTerm)) {
+      addSel.value = pageTerm;
+    }
+  }
+}
+
+function onGeOfferingTermFilterChange() {
+  const display = getGeOfferingViewTermDisplay();
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(display));
+  renderGeOfferingPlanPage();
+}
+
+function onGeOfferingAddTermFilterChange() {
+  geOfferingAddSelectedCourseIds.clear();
+  updateGeOfferingAddTermHint();
+  renderGeOfferingAddModalPicker();
+}
+
+function updateGeOfferingAddTermHint() {
+  const hint = document.getElementById('ge-offering-add-term-hint');
+  const termDisplay = getGeOfferingAddTermDisplay();
+  const active = getActiveOfferingTermSetting();
+  const activeLabel = active ? formatCourseTermDisplay(active.termCode) : '';
+  if (!hint) return;
+  if (!termDisplay) {
+    hint.textContent = '请选择开课学期，并从「校选课程管理」校选课程库中勾选要开课的课程。';
+    return;
+  }
+  let html = `为 <strong>${escapeHtml(termDisplay)}</strong> 从「校选课程管理」校选课程库中勾选要加入计划的开课课程（状态正常）；<strong>同一课程每学期仅可开课一次</strong>，已加入计划的课程不可重复勾选。`;
+  if (activeLabel && termDisplay !== activeLabel) {
+    html += ` 当前系统开课学期为 <strong>${escapeHtml(activeLabel)}</strong>。`;
+  }
+  hint.innerHTML = html;
+}
+
+function resolveSchoolElectiveCatalogId(course) {
+  if (!course) return '';
+  if (course.catalogId) return course.catalogId;
+  const code = String(course.code || '').replace('*', '');
+  return COURSE_CATALOG.find(c => c.code.replace('*', '') === code)?.id || '';
+}
+
+function buildGeOfferingLineFromSchoolElective(course, intake, termCode) {
+  const catalogId = resolveSchoolElectiveCatalogId(course) || `se-${course.id}`;
+  // const catalogId = resolveSchoolElectiveCatalogId(course); // 原无 catalog 映射时 catalogId 为空，导致无法添加
+  const resolvedTermCode = termCode || COURSE_OFFERING_PLAN_STORE?.termCode || getDefaultOfferingTermCode();
+  return {
+    id: nextOfferingLineId(),
+    offeringType: 'ge',
+    catalogId,
+    schoolElectiveId: course.id,
+    code: course.code,
+    name: course.name,
+    intake,
+    programmeKey: '__ge__',
+    planCode: '—',
+    execPlanId: null,
+    structuralSemester: '—',
+    credits: course.credits,
+    totalHours: course.totalHours,
+    offeringUnitAbbr: resolveSchoolElectiveOfferingUnitAbbr(course),
+    source: 'school-elective',
+    termCode: resolvedTermCode,
+    termDisplay: formatCourseTermDisplay(resolvedTermCode),
+    remark: '',
+    sectionId: null
+  };
+}
+
+function getSchoolElectiveCoursesForGeOffering() {
+  return ensureSchoolElectiveCourseStore().filter(row => row.status === 'active');
+  // return ensureSchoolElectiveCourseStore().filter(row =>
+  //   row.categoryId === 'general' && row.status === 'active'
+  // ); // 原仅通识选修类别（演示仅约 5 门），改与校选课程库一致展示全部正常状态课程
+}
+
+function getFilteredGeOfferingLines() {
+  const q = (document.getElementById('course-offering-filter-ge')?.value || '').trim().toLowerCase();
+  return (COURSE_OFFERING_PLAN_STORE?.lines || []).filter(line => {
+    if (line.offeringType !== 'ge') return false;
+    if (!q) return true;
+    return line.code.toLowerCase().includes(q)
+      || line.name.toLowerCase().includes(q)
+      || formatGeOfferingIntakeDisplay(line.intake).includes(q)
+      || (line.offeringUnitAbbr || '').toLowerCase().includes(q);
+  });
+}
+
+function renderGeOfferingPlanHint() {
+  const hint = document.getElementById('course-offering-hint-ge');
+  if (!hint) return;
+  rebuildGeOfferingTermFilterOptions();
+  const viewLabel = getGeOfferingViewTermDisplay();
+  const termCode = getGeOfferingViewTermCode();
+  const offering = getActiveOfferingTermSetting();
+  if (!viewLabel || !termCode) {
+    hint.innerHTML = '<span class="text-muted">请先在「开课时间设置」中维护学年学期。</span>';
+    return;
+  }
+  if (termCode) syncCourseOfferingPlanStoreFromTerm(termCode);
+  const geCount = (COURSE_OFFERING_PLAN_STORE?.lines || []).filter(l => l.offeringType === 'ge').length;
+  // const secCount = (COURSE_OFFERING_PLAN_STORE?.sections || []).filter(s => s.offeringType === 'ge').length; // 原教学班统计，通识选修无班概念
+  const offeringLabel = offering ? formatCourseTermDisplay(offering.termCode) : '';
+  hint.innerHTML = `<span class="legend-item">当前查看 <strong>${escapeHtml(viewLabel)}</strong>`
+    + (offeringLabel && offeringLabel !== viewLabel ? ` · 系统开课学期 <strong>${escapeHtml(offeringLabel)}</strong>` : '')
+    + ` · 已计划 <strong>${geCount}</strong> 门</span>`
+    + '<span class="legend-item text-muted"> · 候选课程来自 <a href="#" onclick="goPage(\'school-elective-courses\');return false">校选课程管理</a> 校选课程库中<strong>状态正常</strong>的课程</span>';
+  // + ` · 已计划 <strong>${geCount}</strong> 条 · 教学班 <strong>${secCount}</strong> 个</span>` // 原含教学班统计，通识选修无班概念
+  // ... 校选课程库中的通识选修课 // 原仅 general 类别，改展示全部正常状态校选课程
+}
+
+function renderGeOfferingPlanPage() {
+  const tbody = document.getElementById('course-offering-body-ge');
+  if (!tbody) return;
+  renderGeOfferingPlanHint();
+  const termCode = getGeOfferingViewTermCode();
+  if (!termCode) {
+    tbody.innerHTML = '<tr><td colspan="11" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  // const offering = getActiveOfferingTermSetting(); // 原仅绑定系统开课学期
+  // if (offering) syncCourseOfferingPlanStoreFromTerm(offering.termCode);
+  const list = getFilteredGeOfferingLines();
+  tbody.innerHTML = list.length
+    ? list.map((line, idx) => {
+        const sec = ensureGeOfferingSectionFields(getGeOfferingSectionForLine(line));
+        const submitted = sec?.submitStatus === 'submitted';
+        return `<tr>
+        <td class="col-check"><input type="checkbox" class="ge-offering-row-check" value="${escapeHtml(sec?.id || line.sectionId || '')}" ${geOfferingSelectedSectionIds.has(sec?.id || line.sectionId) ? 'checked' : ''} ${sec?.id ? '' : 'disabled'} onchange="updateGeOfferingSelection()"></td>
+        <td class="col-index">${idx + 1}</td>
+        <td class="col-center">${escapeHtml(sec ? getSectionOfferingTermDisplay(sec) : (COURSE_OFFERING_PLAN_STORE?.termDisplay || '—'))}</td>
+        <td class="col-center">${sec ? renderMajorOfferingSubmitStatus(sec) : '<span class="offering-status-pill is-off">草稿</span>'}</td>
+        <td><strong>${escapeHtml(line.code)}</strong></td>
+        <td>${escapeHtml(line.name)}</td>
+        <td class="col-center"><code>${escapeHtml(line.offeringUnitAbbr || resolveSchoolElectiveOfferingUnitAbbr({ code: line.code, offeringUnitAbbr: line.offeringUnitAbbr }) || '—')}</code></td>
+        <td class="col-center">${line.credits ?? '—'}</td>
+        <td class="col-center">${line.totalHours ?? '—'}</td>
+        <!-- <td class="col-center"><code>${formatGeOfferingIntakeDisplay(line.intake)}</code></td> --> <!-- 暂不支持指定上课批次范围 -->
+        <!-- <td class="col-center">${renderSectionLabel(line.sectionId)}</td> --> <!-- 通识选修无教学班概念 -->
+        <td>${escapeHtml(line.remark) || '—'}</td>
+        <td class="actions col-sticky-actions">
+          <a href="#" onclick="openGeOfferingScopeModal('${escapeHtml(line.id)}');return false">修读范围</a>
+          · <a href="#" onclick="openGeOfferingEditDrawer('${escapeHtml(line.id)}');return false">修改</a>
+          ${submitted ? '' : ` · <a href="#" class="text-danger" onclick="removeGeOfferingLine('${escapeHtml(line.id)}');return false">删除</a>`}
+        </td>
+      </tr>`;
+      }).join('')
+    : '<tr><td colspan="11" class="text-muted" style="text-align:center;padding:24px">暂无通识选修开课计划，请点击「添加开课课程」从校选课程中选择</td></tr>';
+  updateGeOfferingSelection();
+}
+
+function updateGeOfferingSelection() {
+  geOfferingSelectedSectionIds = new Set(
+    [...document.querySelectorAll('.ge-offering-row-check:checked')].map(el => el.value).filter(Boolean)
+  );
+  const hasSelection = geOfferingSelectedSectionIds.size > 0;
+  const btnSubmit = document.getElementById('btn-ge-offering-submit');
+  if (btnSubmit) btnSubmit.disabled = !hasSelection;
+  const checkAll = document.getElementById('ge-offering-check-all');
+  const selectable = document.querySelectorAll('.ge-offering-row-check:not(:disabled)');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function toggleGeOfferingCheckAll(checked) {
+  document.querySelectorAll('.ge-offering-row-check:not(:disabled)').forEach(el => { el.checked = checked; });
+  updateGeOfferingSelection();
+}
+
+function submitSelectedGeOfferingTasks() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...geOfferingSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要提交的开课计划。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'ge');
+  const toSubmit = secs.filter(s => s.submitStatus !== 'submitted');
+  if (!toSubmit.length) {
+    alert('所选开课计划均已提交。');
+    return;
+  }
+  const revertedCount = toSubmit.filter(s => s.submitStatus === 'reverted').length;
+  const resubmitHint = revertedCount
+    ? `含 ${revertedCount} 条回退计划，提交后将重新进入「通识选修开课任务安排」。`
+    : '提交后可进入「通识选修开课任务安排」进行分组与教师安排。';
+  openDeleteConfirm({
+    title: '提交开课计划',
+    message: `确定提交选中的 <strong>${toSubmit.length}</strong> 条通识选修开课计划吗？`,
+    hint: resubmitHint,
+    onConfirm: () => {
+      toSubmit.forEach(sec => {
+        sec.submitStatus = 'submitted';
+        sec.schedulingVisible = true;
+        sec.submittedAt = new Date().toISOString();
+      });
+      geOfferingSelectedSectionIds.clear();
+      renderGeOfferingPlanPage();
+      renderCourseGeOfferingTaskPage();
+    }
+  });
+}
+
+function hasSubmittedGeOfferingTasks() {
+  return Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).some(store =>
+    (store?.sections || []).some(sec => sec.offeringType === 'ge' && sec.submitStatus === 'submitted')
+  );
+}
+
+function ensureGeOfferingAddUnitFilterOptions() {
+  const sel = document.getElementById('ge-offering-add-unit');
+  if (!sel || sel.dataset.built === '1') return;
+  const units = [...new Set(getSchoolElectiveCoursesForGeOffering().map(r => resolveSchoolElectiveOfferingUnitAbbr(r)).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">全部</option>' + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+  sel.dataset.built = '1';
+}
+
+function renderGeOfferingAddIntakeOptions() {
+  const wrap = document.getElementById('ge-offering-add-intakes');
+  if (!wrap) return;
+  wrap.innerHTML = getGeOfferingIntakeOptions().map(intake => {
+    const checked = geOfferingAddSelectedIntakes.has(intake) ? 'checked' : '';
+    return `<label class="checkbox-chip"><input type="checkbox" value="${escapeHtml(intake)}" ${checked} onchange="toggleGeOfferingAddIntake('${escapeHtml(intake)}', this.checked)"><span>${escapeHtml(formatIntakeDisplay(intake))}</span></label>`;
+  }).join('');
+}
+
+function getFilteredGeOfferingAddCourses() {
+  const keyword = (document.getElementById('ge-offering-add-keyword')?.value || '').trim().toLowerCase();
+  const unit = document.getElementById('ge-offering-add-unit')?.value || '';
+  return getSchoolElectiveCoursesForGeOffering().filter(row => {
+    if (unit && resolveSchoolElectiveOfferingUnitAbbr(row) !== unit) return false;
+    if (!keyword) return true;
+    return `${row.code} ${row.name}`.toLowerCase().includes(keyword);
+  });
+}
+
+function updateGeOfferingAddSelection() {
+  geOfferingAddSelectedCourseIds = new Set(
+    [...document.querySelectorAll('.ge-offering-add-row-check:checked')].map(el => el.value)
+  );
+  const checkAll = document.getElementById('ge-offering-add-check-all');
+  const rows = document.querySelectorAll('.ge-offering-add-row-check');
+  if (checkAll) {
+    checkAll.checked = rows.length > 0 && [...rows].every(el => el.checked);
+    checkAll.indeterminate = !checkAll.checked && [...rows].some(el => el.checked);
+  }
+}
+
+function toggleGeOfferingAddCheckAll(checked) {
+  document.querySelectorAll('.ge-offering-add-row-check').forEach(el => { el.checked = checked; });
+  updateGeOfferingAddSelection();
+}
+
+function toggleGeOfferingAddIntake(intake, checked) {
+  if (checked) geOfferingAddSelectedIntakes.add(intake);
+  else geOfferingAddSelectedIntakes.delete(intake);
+}
+
+function renderGeOfferingAddModalPicker() {
+  ensureGeOfferingAddUnitFilterOptions();
+  const tbody = document.getElementById('ge-offering-add-tbody');
+  const countEl = document.getElementById('ge-offering-add-count');
+  const termCode = getGeOfferingAddTermCode();
+  const list = getFilteredGeOfferingAddCourses();
+  if (tbody) {
+    tbody.innerHTML = !termCode
+      ? '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">请先选择开课学期</td></tr>'
+      : list.length
+      ? list.map((row, idx) => {
+          const alreadyAdded = isGeOfferingSchoolElectiveInPlan(row, termCode);
+          const disabled = alreadyAdded;
+          // const catalogId = resolveSchoolElectiveCatalogId(row);
+          // const alreadyAdded = isGeOfferingCourseInPlan(catalogId, termCode);
+          // const disabled = !catalogId || alreadyAdded; // 原无 catalog 映射即禁用，改仅本学期的已添加课程不可选
+          return `<tr class="${disabled ? 'is-disabled' : ''}">
+            <td class="col-check"><input type="checkbox" class="ge-offering-add-row-check" value="${escapeHtml(row.id)}" ${geOfferingAddSelectedCourseIds.has(row.id) ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="updateGeOfferingAddSelection()"></td>
+            <td class="col-index">${idx + 1}</td>
+            <td><strong>${escapeHtml(row.code)}</strong>${alreadyAdded ? ' <span class="text-muted">（已添加）</span>' : ''}</td>
+            <td>${escapeHtml(row.name)}</td>
+            <td>${escapeHtml(getSchoolElectiveCategoryLabel(row.categoryId))}</td>
+            <td class="col-center">${row.credits ?? '—'}</td>
+            <td class="col-center">${row.totalHours ?? '—'}</td>
+            <td class="col-center"><code>${escapeHtml(resolveSchoolElectiveOfferingUnitAbbr(row))}</code></td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">暂无可选校选课程（请先在「校选课程管理」中添加课程，并确保状态为正常）</td></tr>';
+  // : '<tr><td colspan="7" ... 暂无可选通识选修课程（请先在「校选课程管理」中维护 category 为通识选修且状态正常的课程）</td></tr>'; // 原仅 general 类别
+  }
+  if (countEl) countEl.textContent = `共 ${list.length} 门课程`;
+  updateGeOfferingAddSelection();
+}
+
+function resetGeOfferingAddModalFilters() {
+  const keywordEl = document.getElementById('ge-offering-add-keyword');
+  const unitEl = document.getElementById('ge-offering-add-unit');
+  const termEl = document.getElementById('ge-offering-add-term');
+  if (keywordEl) keywordEl.value = '';
+  if (unitEl) unitEl.value = '';
+  if (termEl) {
+    const pageTerm = document.getElementById('ge-offering-filter-term')?.value || getDefaultOfferingTermDisplay();
+    if (pageTerm && [...termEl.options].some(o => o.value === pageTerm)) termEl.value = pageTerm;
+  }
+  updateGeOfferingAddTermHint();
+  renderGeOfferingAddModalPicker();
+}
+
+function openGeOfferingCourseAddModal() {
+  if (!COURSE_TIME_SETTINGS.length) {
+    alert('请先在「开课时间设置」中维护学年学期。');
+    return;
+  }
+  rebuildGeOfferingTermFilterOptions();
+  geOfferingAddSelectedCourseIds.clear();
+  geOfferingAddSelectedIntakes.clear();
+  const unitSel = document.getElementById('ge-offering-add-unit');
+  if (unitSel) unitSel.dataset.built = '0'; // 候选范围变更后重建开课单位筛选项
+  const pageTerm = document.getElementById('ge-offering-filter-term')?.value || getDefaultOfferingTermDisplay();
+  const addTermSel = document.getElementById('ge-offering-add-term');
+  if (addTermSel && pageTerm && [...addTermSel.options].some(o => o.value === pageTerm)) {
+    addTermSel.value = pageTerm;
+  }
+  updateGeOfferingAddTermHint();
+  resetGeOfferingAddModalFilters();
+  // renderGeOfferingAddIntakeOptions(); // 暂不支持指定上课批次范围
+  openModal('modal-ge-offering-add');
+  // const offering = getActiveOfferingTermSetting(); // 原固定系统开课学期
+  // if (!offering) { alert('...'); return; }
+  // syncCourseOfferingPlanStoreFromTerm(offering.termCode);
+}
+
+function confirmGeOfferingCourseAdd() {
+  const termDisplay = getGeOfferingAddTermDisplay();
+  const termCode = getGeOfferingAddTermCode();
+  if (!termCode) {
+    alert('请选择开课学期。');
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  const courseIds = [...geOfferingAddSelectedCourseIds];
+  // const intakes = [...geOfferingAddSelectedIntakes]; // 暂不支持指定上课批次范围
+  if (!courseIds.length) {
+    alert('请至少勾选一门校选课程。');
+    return;
+  }
+  // if (!intakes.length) {
+  //   alert('请至少选择一个上课批次。');
+  //   return;
+  // }
+  const store = ensureSchoolElectiveCourseStore();
+  const newLines = [];
+  courseIds.forEach(courseId => {
+    const course = store.find(r => r.id === courseId);
+    if (!course) return;
+    if (course.status !== 'active') return; // 停课课程不可加入通识选修开课计划
+    // const catalogId = resolveSchoolElectiveCatalogId(course);
+    // if (!catalogId || isGeOfferingCourseInPlan(catalogId, termCode)) return; // 原无 catalog 或已添加则跳过
+    if (isGeOfferingSchoolElectiveInPlan(course, termCode)) return;
+    newLines.push(buildGeOfferingLineFromSchoolElective(course, GE_OFFERING_INTAKE_UNSET, termCode));
+    // intakes.forEach(intake => {
+    //   if (isGeOfferingLineExists(catalogId, intake)) return;
+    //   newLines.push(buildGeOfferingLineFromSchoolElective(course, intake));
+    // });
+  });
+  if (!newLines.length) {
+    alert(`所选课程均已存在于 ${termDisplay} 开课计划中，请调整选择。`);
+    return;
+  }
+  appendGeOfferingLinesToPlan(newLines);
+  // appendMajorOfferingLinesToPlan(newLines); // 原复用专业追加逻辑，改独立命名避免误解
+  COURSE_OFFERING_PLAN_STORE.generatedAt = new Date().toISOString();
+  COURSE_OFFERING_PLAN_BY_TERM[termCode] = COURSE_OFFERING_PLAN_STORE;
+  geOfferingAddSelectedCourseIds.clear();
+  geOfferingAddSelectedIntakes.clear();
+  closeModal('modal-ge-offering-add');
+  const courseCount = new Set(newLines.map(l => l.schoolElectiveId || l.catalogId || l.code)).size;
+  // const courseCount = new Set(newLines.map(l => l.catalogId)).size; // 原仅按 catalogId 去重计数
+  alert(`已添加 ${newLines.length} 条通识选修开课计划（${courseCount} 门课 · ${termDisplay}）。`);
+  const pageTermSel = document.getElementById('ge-offering-filter-term');
+  if (pageTermSel) pageTermSel.value = termDisplay;
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  renderGeOfferingPlanPage();
+  renderCourseGeOfferingTaskPage();
+}
+
+function removeGeOfferingLine(lineId) {
+  if (!COURSE_OFFERING_PLAN_STORE) return;
+  const line = COURSE_OFFERING_PLAN_STORE.lines.find(l => l.id === lineId && l.offeringType === 'ge');
+  if (!line) return;
+  const sec = getGeOfferingSectionForLine(line);
+  if (sec?.submitStatus === 'submitted') {
+    alert('已提交的开课计划不可删除。');
+    return;
+  }
+  openDeleteConfirm({
+    title: '删除计划行',
+    message: `确定删除 <strong>${escapeHtml(line.code)} ${escapeHtml(line.name)}</strong>吗？`,
+    hint: '将同时移除关联的教学班（若该班仅含此计划行）。',
+    confirmLabel: '删除',
+    onConfirm: () => applyRemoveGeOfferingLine(lineId)
+  });
+}
+
+function applyRemoveGeOfferingLine(lineId) {
+  if (!COURSE_OFFERING_PLAN_STORE) return;
+  const line = COURSE_OFFERING_PLAN_STORE.lines.find(l => l.id === lineId);
+  if (!line) return;
+  const secId = line.sectionId;
+  COURSE_OFFERING_PLAN_STORE.lines = COURSE_OFFERING_PLAN_STORE.lines.filter(l => l.id !== lineId);
+  if (secId) {
+    const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === secId);
+    if (sec) {
+      const remainLineIds = sec.lineIds.filter(id => id !== lineId);
+      if (!remainLineIds.length) {
+        COURSE_OFFERING_PLAN_STORE.sections = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.id !== secId);
+        geOfferingSelectedSectionIds.delete(secId);
+      } else {
+        sec.lineIds = remainLineIds;
+        const remainLines = remainLineIds.map(getOfferingLineById).filter(Boolean);
+        applyMergedLinesToSection(sec, remainLines);
+      }
+    }
+  }
+  renderGeOfferingPlanPage();
+  renderCourseGeOfferingTaskPage();
+}
+
+let geOfferingEditLineId = null;
+
+function findSchoolElectiveCourseForGeLine(line) {
+  if (!line) return null;
+  const store = ensureSchoolElectiveCourseStore();
+  if (line.schoolElectiveId) {
+    const hit = store.find(r => r.id === line.schoolElectiveId);
+    if (hit) return hit;
+  }
+  const code = String(line.code || '').replace('*', '');
+  return store.find(r => String(r.code || '').replace('*', '') === code) || null;
+}
+
+function getGeOfferingScopeDefaultsFromSchoolElective(course) {
+  if (!course) {
+    return {
+      excludedProgrammeKeys: [],
+      eligibleStudentTypes: [...SCHOOL_ELECTIVE_STUDENT_TYPES]
+    };
+  }
+  normalizeSchoolElectiveCourseRow(course);
+  return {
+    excludedProgrammeKeys: [...getSchoolElectiveExcludedProgrammeKeys(course)],
+    eligibleStudentTypes: (course.eligibleStudentTypes?.length
+      ? course.eligibleStudentTypes
+      : [...SCHOOL_ELECTIVE_STUDENT_TYPES])
+  };
+}
+
+function applyGeOfferingScopeDefaultsToSection(sec, line) {
+  if (!sec || sec.offeringType !== 'ge') return;
+  const defaults = getGeOfferingScopeDefaultsFromSchoolElective(findSchoolElectiveCourseForGeLine(line));
+  if (!Array.isArray(sec.excludedProgrammeKeys)) {
+    sec.excludedProgrammeKeys = defaults.excludedProgrammeKeys;
+  }
+  if (!Array.isArray(sec.eligibleStudentTypes) || !sec.eligibleStudentTypes.length) {
+    sec.eligibleStudentTypes = [...defaults.eligibleStudentTypes];
+  }
+}
+
+function getGeOfferingLineById(lineId) {
+  return COURSE_OFFERING_PLAN_STORE?.lines.find(l => l.id === lineId && l.offeringType === 'ge') || null;
+}
+
+function getGeOfferingSectionForLine(line) {
+  if (!line?.sectionId) return null;
+  return COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === line.sectionId) || null;
+}
+
+function ensureGeOfferingSectionFields(sec) {
+  if (!sec || sec.offeringType !== 'ge') return sec;
+  ensureSectionOfferingFields(sec);
+  sec.enrollmentType = 'open';
+  if (!sec.isScheduled) sec.isScheduled = 'yes';
+  if (!sec.isVenueScheduled) sec.isVenueScheduled = 'yes';
+  if (!sec.isAttendance) sec.isAttendance = 'yes';
+  if (!sec.isGradeEntry) sec.isGradeEntry = 'yes';
+  if (!sec.isExamScheduled) sec.isExamScheduled = 'yes';
+  if (!Array.isArray(sec.venueTypes)) sec.venueTypes = [];
+  else sec.venueTypes = sec.venueTypes.map(normalizeMajorOfferingClassroomType);
+  if (!Array.isArray(sec.classroomAssignments)) sec.classroomAssignments = [];
+  else {
+    sec.classroomAssignments = sec.classroomAssignments.map(c => ({
+      ...c,
+      classroomType: normalizeMajorOfferingClassroomType(c.classroomType)
+    }));
+  }
+  if (sec.reservedSpots == null || sec.reservedSpots === '') {
+    sec.reservedSpots = DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS;
+  }
+  if (!Array.isArray(sec.excludedProgrammeKeys) || !Array.isArray(sec.eligibleStudentTypes) || !sec.eligibleStudentTypes.length) {
+    const line = (COURSE_OFFERING_PLAN_STORE?.lines || []).find(l => l.sectionId === sec.id && l.offeringType === 'ge');
+    applyGeOfferingScopeDefaultsToSection(sec, line);
+  }
+  return sec;
+}
+
+function renderGeOfferingScopeProgrammeSummary(excludedKeys = []) {
+  const box = document.getElementById('ge-offering-scope-programmes');
+  if (!box) return;
+  geOfferingScopeExcludedDraft = [...(excludedKeys || [])].map(k => String(k).toLowerCase());
+  const empty = !geOfferingScopeExcludedDraft.length;
+  box.textContent = empty ? '全部专业可选' : formatSchoolElectiveProgrammeScope(geOfferingScopeExcludedDraft);
+  box.classList.toggle('text-muted', empty);
+}
+
+function renderGeOfferingScopeStudentTypePicks(selectedTypes = [], readonly = false) {
+  const box = document.getElementById('ge-offering-scope-student-types');
+  if (!box) return;
+  const selected = selectedTypes.length ? selectedTypes : [...SCHOOL_ELECTIVE_STUDENT_TYPES];
+  box.innerHTML = SCHOOL_ELECTIVE_STUDENT_TYPES.map(type => `<label class="school-elective-pick-option">
+    <input type="checkbox" class="ge-offering-scope-student-type-check" value="${escapeHtml(type)}" ${selected.includes(type) ? 'checked' : ''} ${readonly ? 'disabled' : ''}>
+    <span>${escapeHtml(type)}</span>
+  </label>`).join('');
+}
+
+function getGeOfferingScopeStudentTypesFromModal() {
+  return [...document.querySelectorAll('.ge-offering-scope-student-type-check:checked')].map(el => el.value);
+}
+
+function syncGeOfferingScopeModalReadOnly(readonly) {
+  const saveBtn = document.getElementById('ge-offering-scope-save-btn');
+  const pickBtn = document.getElementById('ge-offering-scope-programmes-btn');
+  const titleEl = document.getElementById('ge-offering-scope-title');
+  if (saveBtn) saveBtn.hidden = readonly;
+  if (pickBtn) pickBtn.disabled = readonly;
+  if (titleEl) titleEl.textContent = readonly ? '查看修读范围' : '修读范围';
+  document.querySelectorAll('.ge-offering-scope-student-type-check').forEach(el => { el.disabled = readonly; });
+}
+
+function openGeOfferingScopeModal(lineId) {
+  const line = getGeOfferingLineById(lineId);
+  if (!line) return;
+  const sec = getGeOfferingSectionForLine(line);
+  if (!sec) {
+    alert('未找到关联教学班，无法维护修读范围。');
+    return;
+  }
+  ensureGeOfferingSectionFields(sec);
+  geOfferingScopeEditLineId = lineId;
+  const course = findSchoolElectiveCourseForGeLine(line);
+  const readonly = sec.submitStatus === 'submitted';
+  document.getElementById('ge-offering-scope-code').textContent = line.code || '—';
+  document.getElementById('ge-offering-scope-name').textContent = line.name || '—';
+  document.getElementById('ge-offering-scope-dept').textContent = line.offeringUnitAbbr
+    || resolveSchoolElectiveOfferingUnitAbbr({ code: line.code, offeringUnitAbbr: line.offeringUnitAbbr })
+    || course?.department
+    || '—';
+  renderGeOfferingScopeProgrammeSummary(sec.excludedProgrammeKeys || []);
+  renderGeOfferingScopeStudentTypePicks(sec.eligibleStudentTypes || [], readonly);
+  syncGeOfferingScopeModalReadOnly(readonly);
+  openModal('modal-ge-offering-scope');
+}
+
+function openGeOfferingScopeProgrammePickerModal() {
+  if (document.getElementById('ge-offering-scope-save-btn')?.hidden) return;
+  programmePickerTarget = 'ge-offering-scope';
+  geOfferingScopeExcludedDraft = [...(geOfferingScopeExcludedDraft || [])];
+  const search = document.getElementById('school-elective-programme-picker-search');
+  if (search) search.value = '';
+  renderSchoolElectiveProgrammePickerList();
+  openModal('modal-school-elective-programme-picker');
+}
+
+function saveGeOfferingScopeModal() {
+  const line = getGeOfferingLineById(geOfferingScopeEditLineId);
+  if (!line) return;
+  const sec = getGeOfferingSectionForLine(line);
+  if (!sec) return;
+  if (sec.submitStatus === 'submitted') {
+    alert('已提交的开课计划不可修改修读范围。');
+    return;
+  }
+  const studentTypes = getGeOfferingScopeStudentTypesFromModal();
+  if (!studentTypes.length) {
+    alert('请至少选择一种可选学生类型。');
+    return;
+  }
+  sec.excludedProgrammeKeys = [...geOfferingScopeExcludedDraft];
+  sec.eligibleStudentTypes = studentTypes;
+  closeModal('modal-ge-offering-scope');
+  geOfferingScopeEditLineId = null;
+  renderGeOfferingPlanPage();
+}
+
+function isGeOfferingEditDrawerOpen() {
+  return document.getElementById('drawer-ge-offering-edit')?.classList.contains('open');
+}
+
+function getGeOfferingEditSection() {
+  return getGeOfferingSectionForLine(getGeOfferingLineById(geOfferingEditLineId));
+}
+
+function ensureGeOfferingVenueTypeMultiselect() {
+  const options = document.getElementById('ge-edit-venue-types-options');
+  if (!options) return;
+  options.innerHTML = MAJOR_OFFERING_CLASSROOM_TYPES.map(type =>
+    `<label class="clo-multiselect-option">
+      <input type="checkbox" class="ge-venue-type-check" value="${escapeHtml(type.value)}" onchange="onGeOfferingVenueTypeToggle(this)">
+      <span>${escapeHtml(getMajorOfferingClassroomTypeLabel(type.value))}</span>
+    </label>`
+  ).join('');
+}
+
+function getGeOfferingVenueTypeSelected() {
+  return [...document.querySelectorAll('.ge-venue-type-check:checked')].map(el => el.value);
+}
+
+function updateGeOfferingVenueTypeDisplay() {
+  const display = document.getElementById('ge-edit-venue-types-display');
+  if (!display) return;
+  const selected = getGeOfferingVenueTypeSelected();
+  if (selected.length) {
+    display.textContent = selected.map(getMajorOfferingClassroomTypeLabel).join('、');
+    display.classList.remove('placeholder');
+  } else {
+    display.textContent = '请选择';
+    display.classList.add('placeholder');
+  }
+}
+
+function onGeOfferingVenueTypeToggle() {
+  updateGeOfferingVenueTypeDisplay();
+}
+
+function toggleGeOfferingVenueTypeDropdown(event) {
+  event.stopPropagation();
+  const dd = document.getElementById('ge-edit-venue-types-dropdown');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeGeOfferingVenueTypeDropdown();
+  closeMajorOfferingVenueTypeDropdown();
+  if (willOpen) dd.hidden = false;
+}
+
+function closeGeOfferingVenueTypeDropdown() {
+  const dd = document.getElementById('ge-edit-venue-types-dropdown');
+  if (dd) dd.hidden = true;
+}
+
+function setGeOfferingVenueTypeSelected(types) {
+  const set = new Set((types || []).map(normalizeMajorOfferingClassroomType));
+  document.querySelectorAll('.ge-venue-type-check').forEach(el => { el.checked = set.has(el.value); });
+  updateGeOfferingVenueTypeDisplay();
+}
+
+function openGeOfferingClassroomPickerModal() {
+  const sec = getGeOfferingEditSection();
+  if (!sec) return;
+  majorOfferingClassroomPickerDraft = new Set((sec.classroomAssignments || []).map(c => c.id));
+  resetMajorOfferingClassroomPickerFilters();
+  openModal('modal-major-classroom-picker');
+}
+
+function getOfferingEditSectionForClassroomPicker() {
+  if (isOtherOfferingEditDrawerOpen()) return getOtherOfferingEditSection();
+  if (isGeOfferingEditDrawerOpen()) return getGeOfferingEditSection();
+  return getMajorOfferingEditSection();
+}
+
+function getActiveOfferingEditVenueTypeSelected() {
+  if (isOtherOfferingEditDrawerOpen()) return getOtherOfferingVenueTypeSelected();
+  return isGeOfferingEditDrawerOpen()
+    ? getGeOfferingVenueTypeSelected()
+    : getMajorOfferingVenueTypeSelected();
+}
+
+function updateGeOfferingEditCapacityLimitDisplay() {
+  const planned = Number(document.getElementById('ge-edit-student-total')?.value) || 0;
+  const reserved = Number(document.getElementById('ge-edit-reserved-spots')?.value) || 0;
+  const el = document.getElementById('ge-edit-capacity-limit');
+  if (el) el.value = planned + reserved;
+}
+
+function populateGeOfferingEditDrawer(line, sec) {
+  ensureGeOfferingSectionFields(sec);
+  ensureGeOfferingVenueTypeMultiselect();
+  closeGeOfferingVenueTypeDropdown();
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? '';
+  };
+  set('ge-edit-course-code', line.code || sec.code);
+  set('ge-edit-course-name', line.name || sec.name);
+  set('ge-edit-credits', line.credits ?? sec.credits);
+  set('ge-edit-total-hours', line.totalHours ?? sec.totalHours);
+  set('ge-edit-offering-unit', line.offeringUnitAbbr || sec.offeringUnitAbbr
+    || resolveSchoolElectiveOfferingUnitAbbr({ code: line.code, offeringUnitAbbr: line.offeringUnitAbbr }));
+  set('ge-edit-student-total', sec.estimatedStudents ?? sec.studentCount ?? 0);
+  set('ge-edit-reserved-spots', sec.reservedSpots ?? DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS);
+  updateGeOfferingEditCapacityLimitDisplay();
+  set('ge-edit-enrollment-type', '开放选课');
+  setGeOfferingVenueTypeSelected(sec.venueTypes || []);
+  set('ge-edit-classroom-arrangement', formatClassroomArrangementSummary(sec.classroomAssignments));
+  set('ge-edit-is-scheduled', sec.isScheduled || 'yes');
+  set('ge-edit-is-venue-scheduled', sec.isVenueScheduled || 'yes');
+  set('ge-edit-is-attendance', sec.isAttendance || 'yes');
+  set('ge-edit-is-grade-entry', sec.isGradeEntry || 'yes');
+  set('ge-edit-is-exam-scheduled', sec.isExamScheduled || 'yes');
+  set('ge-edit-remark', line.remark || '');
+}
+
+function openGeOfferingEditDrawer(lineId) {
+  const line = getGeOfferingLineById(lineId);
+  if (!line) return;
+  const sec = getGeOfferingSectionForLine(line);
+  if (!sec) {
+    alert('未找到关联教学班，无法修改。');
+    return;
+  }
+  geOfferingEditLineId = lineId;
+  populateGeOfferingEditDrawer(line, sec);
+  syncGeOfferingEditDrawerReadOnly(false);
+  document.getElementById('drawer-ge-offering-edit-backdrop')?.classList.add('open');
+  document.getElementById('drawer-ge-offering-edit')?.classList.add('open');
+}
+
+function closeGeOfferingEditDrawer() {
+  document.getElementById('drawer-ge-offering-edit-backdrop')?.classList.remove('open');
+  document.getElementById('drawer-ge-offering-edit')?.classList.remove('open');
+  closeGeOfferingVenueTypeDropdown();
+  syncGeOfferingEditDrawerReadOnly(false);
+  geOfferingEditLineId = null;
+}
+
+function confirmGeOfferingEditDrawer() {
+  const line = getGeOfferingLineById(geOfferingEditLineId);
+  if (!line) return;
+  const sec = getGeOfferingSectionForLine(line);
+  if (!sec) return;
+  const plannedRaw = document.getElementById('ge-edit-student-total')?.value;
+  if (plannedRaw === '' || plannedRaw == null) {
+    alert('请填写计划总人数。');
+    return;
+  }
+  const plannedTotal = Number(plannedRaw);
+  if (!Number.isFinite(plannedTotal) || plannedTotal < 0) {
+    alert('请填写有效的计划总人数（非负整数）。');
+    return;
+  }
+  const reservedRaw = document.getElementById('ge-edit-reserved-spots')?.value;
+  if (reservedRaw === '' || reservedRaw == null) {
+    alert('请填写预留名额。');
+    return;
+  }
+  const reservedSpots = Number(reservedRaw);
+  if (!Number.isFinite(reservedSpots) || reservedSpots < 0) {
+    alert('请填写有效的预留名额（非负整数）。');
+    return;
+  }
+  sec.estimatedStudents = Math.max(0, Math.round(plannedTotal));
+  sec.studentCount = sec.estimatedStudents;
+  sec.reservedSpots = Math.max(0, Math.round(reservedSpots));
+  sec.enrollmentType = 'open';
+  sec.venueTypes = getGeOfferingVenueTypeSelected();
+  sec.isScheduled = document.getElementById('ge-edit-is-scheduled')?.value || 'yes';
+  sec.isVenueScheduled = document.getElementById('ge-edit-is-venue-scheduled')?.value || 'yes';
+  sec.isAttendance = document.getElementById('ge-edit-is-attendance')?.value || 'yes';
+  sec.isGradeEntry = document.getElementById('ge-edit-is-grade-entry')?.value || 'yes';
+  sec.isExamScheduled = document.getElementById('ge-edit-is-exam-scheduled')?.value || 'yes';
+  line.remark = document.getElementById('ge-edit-remark')?.value.trim() || '';
+  closeGeOfferingEditDrawer();
+  renderGeOfferingPlanPage();
+  renderCourseGeOfferingTaskPage();
+}
+
+function openGeOfferingIntakeModal(catalogId) {
+  if (!ensureCourseOfferingPlan()) {
+    alert('请先维护通识选修开课计划。');
+    return;
+  }
+  const lines = COURSE_OFFERING_PLAN_STORE.lines.filter(l => l.offeringType === 'ge' && l.catalogId === catalogId);
+  if (!lines.length) return;
+  const sample = lines[0];
+  const title = document.getElementById('course-offering-intake-title');
+  const summary = document.getElementById('course-offering-intake-summary');
+  const tbody = document.getElementById('course-offering-intake-body');
+  if (title) title.textContent = `${sample.code} · 上课批次`;
+  if (summary) {
+    summary.textContent = `${sample.name} · 开课学期 ${COURSE_OFFERING_PLAN_STORE.termDisplay} · 共 ${lines.length} 个上课批次开设本课程`;
+  }
+  if (tbody) {
+    tbody.innerHTML = lines.map((line, idx) => `<tr>
+      <td class="col-index">${idx + 1}</td>
+      <td>—</td>
+      <td class="col-center"><code>${formatIntakeDisplay(line.intake)}</code></td>
+      <td><code>—</code></td>
+      <td class="col-center">—</td>
+      <td class="col-center">${line.credits ?? '—'}</td>
+    </tr>`).join('');
+  }
+  openModal('modal-course-offering-intake');
+}
+
 function ensureSectionOfferingFields(sec) {
   if (!sec) return sec;
   const line = COURSE_OFFERING_PLAN_STORE?.lines.find(l => l.id === sec.lineIds?.[0]);
@@ -3482,9 +8401,15 @@ function ensureSectionOfferingFields(sec) {
     sec.grade = p ? String(p.year) : '';
   }
   if (sec.estimatedStudents == null) sec.estimatedStudents = sec.studentCount || 30;
+  if (sec.reservedSpots == null || sec.reservedSpots === '') {
+    sec.reservedSpots = DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS;
+  }
   if (sec.isGrouped == null) sec.isGrouped = (sec.groups?.length || 0) > 0;
   if (!sec.groups) sec.groups = [];
   if (!sec.groupAssignments) sec.groupAssignments = [];
+  // syncSectionGroupsFromProgrammeBatches(sec); // 原计划阶段按专业批次自动生成分组；改由任务安排环节操作
+  sanitizeSectionGroupAssignments(sec);
+  // seedDemoOfferingGroupAssignments(sec); // 原每次 ensure 都自动造演示学时；新开课任务应保持未安排，演示数据仅在 seedMajorOfferingDemoTasks 中注入
   if (!sec.submitStatus) {
     sec.submitStatus = sec.status === 'offered' ? 'submitted' : 'draft'; // 兼容旧 status 字段
   }
@@ -3492,25 +8417,272 @@ function ensureSectionOfferingFields(sec) {
   if (sec.schedulingVisible == null) {
     sec.schedulingVisible = sec.submitStatus === 'submitted';
   }
+  if (!sec.rosterScheduleStatus) sec.rosterScheduleStatus = 'draft';
   // if (!sec.status) sec.status = 'offered';
-  if (!sec.weekRange) sec.weekRange = sec.weeks || meta.weekRange;
+  // if (!sec.weekRange) sec.weekRange = sec.weeks || meta.weekRange; // 原取课程目录默认，改按开课学期教学周数默认 1-N
+  ensureSectionWeekRangeFromTerm(sec);
   return sec;
+}
+
+function syncSectionGroupsFromProgrammeBatches(sec, { force = false } = {}) {
+  if (!sec?.lineIds?.length) return;
+  const metas = getSectionLineMetas(sec);
+  if (!metas.length) return;
+  if (!force && sec.groups?.length) {
+    const groupLineIds = new Set(sec.groups.map(g => g.lineId).filter(Boolean));
+    if (!groupLineIds.size) return; // 自动/手动/合并分组无 lineId 时不覆盖
+    const metaLineIds = new Set(metas.map(m => m.lineId));
+    // if (groupLineIds.size === metaLineIds.size && [...groupLineIds].every(id => metaLineIds.has(id))) return; // 原仅完全匹配时跳过，合并后小组数变少仍会误覆盖重建
+    if (sec.groups.some(g => !g.lineId)) return; // 含合并/自动分组等无 lineId 小组时不覆盖
+    if (groupLineIds.size !== metaLineIds.size) return; // 合并/删除后小组数与专业批次不一致时不覆盖
+    if (groupLineIds.size === metaLineIds.size && [...groupLineIds].every(id => metaLineIds.has(id))) return;
+  }
+  sec.groups = metas.map((meta, idx) => ({
+    id: `grp-${offeringGroupSeq++}`,
+    name: buildDefaultOfferingGroupName(idx + 1),
+    // name: meta.batchLabel, // 原默认专业批次名，改 Group1/Group2...
+    batchLabel: meta.batchLabel,
+    lineId: meta.lineId,
+    remark: '',
+    capacityLimit: getLineEstimatedStudents(meta.lineId)
+      || Math.round((sec.estimatedStudents || 0) / metas.length)
+      || 0,
+    studentCount: 0
+  }));
+  // studentCount: getLineEstimatedStudents(meta.lineId) ... // 原 studentCount 兼作上限，改 capacityLimit
+  sec.isGrouped = sec.groups.length > 0;
+}
+
+function shouldSeedDemoOfferingGroupAssignments(sec, idx = 0) {
+  // if (!sec?.groups?.length) return false;
+  // // 多专业批次合班示例、以及前 2 条初始演示任务保留预置学时
+  // if ((sec.lineIds?.length || 0) > 1) return true;
+  // return idx < 2;
+  if (sec?.submitStatus !== 'submitted') return false;
+  if (!sec?.groups?.length) return false;
+  return true;
+  // if (sec?.teachingConfirmStatus !== 'confirmed') return false; // 原按授课确认，改已提交即可演示任务安排
+}
+
+function seedDemoOfferingGroupAssignments(sec) {
+  if (!sec || sec.groupAssignments?.length) return;
+  const groups = sec.groups || [];
+  if (!groups.length) return;
+  const pool = buildMockTeacherPickerPool();
+  ensureSectionWeekRangeFromTerm(sec);
+  const sectionWeekRange = getSectionWeekRangeDisplay(sec);
+  const sectionWeeks = getSectionSelectedWeeks(sec);
+  const secKey = sec.id || sec.catalogId || '';
+  const variant = (secKey.charCodeAt(secKey.length - 1) || 0) % 3;
+
+  function teacherAt(idx, opts = {}) {
+    const t = pool[idx % pool.length];
+    const teacher = {
+      staffId: t.staffId,
+      name: t.name,
+      teacherType: t.teacherType,
+      departmentCode: t.departmentCode,
+      isCoordinator: !!opts.isCoordinator
+    };
+    teacher.role = resolveTeacherTeachingRoleForSection(sec, teacher);
+    // role: resolveTeacherTeachingRoleFromType(t.teacherType) // 原仅按教师类型
+    return teacher;
+  }
+  // function teacherAt(idx, role = '主讲') { ... } // 原手动指定授课角色，改由教师类型自动带出
+
+  function buildTeachersPayload(teachers) {
+    return {
+      teachers,
+      staffId: teachers.map(t => t.staffId).filter(Boolean).join('、'),
+      teacher: teachers.map(t => t.name).filter(Boolean).join('、'),
+      role: teachers.map(t => t.role).filter(Boolean).join('、')
+    };
+  }
+
+  function makeAssignment({ deliveryScope, groupIds = [], hourType, weekRange: rowWeekRange, teachers, mergeHours = true, weeklyHours: weeklyHoursOverride }) {
+    const primaryGroup = groupIds.length ? groups.find(g => g.id === groupIds[0]) : null;
+    const weekRangeVal = clampGroupAssignWeekRangeToSection(sec, rowWeekRange || sectionWeekRange);
+    // const weekRangeVal = rowWeekRange || defaultWeekRange; // 原未校验课程起止周
+    const planWeekly = getGroupAssignPlanWeeklyHours(sec);
+    const weeklyHours = weeklyHoursOverride ?? planWeekly ?? null;
+    // const weeklyHours = planWeekly || null; // 原不可指定周学时，演示各组已录入学时无法区分
+    const rowHours = weeklyHours && weekRangeVal
+      ? calcGroupAssignRowHours(weeklyHours, weekRangeVal, sec)
+      : null;
+    return {
+      id: `ga-${offeringGroupAssignSeq++}`,
+      deliveryScope,
+      groupId: groupIds[0] || '',
+      groupIds: [...groupIds],
+      groupName: deliveryScope === 'section' ? '全体小组' : (primaryGroup?.name || ''),
+      studentCount: deliveryScope === 'section'
+        ? (sec.estimatedStudents ?? 0)
+        : (primaryGroup?.capacityLimit ?? primaryGroup?.studentCount ?? 0),
+      // : (primaryGroup?.studentCount ?? 0), // 原取实际人数，改取人数上限
+      adminClass: '',
+      programmeBatch: deliveryScope === 'section'
+        ? getSectionMergedBatchLabelDisplayFull(sec)
+        : (primaryGroup?.batchLabel || ''),
+      hourType,
+      mergeHours,
+      weekRange: weekRangeVal,
+      weeklyHours,
+      hours: rowHours,
+      ...buildTeachersPayload(teachers)
+    };
+  }
+
+  const assignments = [];
+  if (isOfferingSectionHourTypeArrangeable(sec, '理论学时')) {
+    // assignments.push(makeAssignment({
+    //   deliveryScope: 'section',
+    //   hourType: '理论学时',
+    //   weekRange: sectionWeekRange,
+    //   teachers: variant === 0 ? [teacherAt(0)] : [teacherAt(0, { isCoordinator: true }), teacherAt(1)]
+    // })); // 原全体合班一条理论安排，各组已录入学时无法分别体现
+    if (groups[0]) {
+      const theoryWeeks1 = sectionWeeks.slice(0, Math.min(10, sectionWeeks.length));
+      assignments.push(makeAssignment({
+        deliveryScope: 'group',
+        groupIds: [groups[0].id],
+        hourType: '理论学时',
+        weekRange: formatGroupAssignWeekRangeFromSectionWeeks(sec, theoryWeeks1),
+        weeklyHours: 3,
+        teachers: variant === 0
+          ? [teacherAt(0)]
+          : [teacherAt(0, { isCoordinator: true }), teacherAt(1)]
+      }));
+    }
+    if (groups.length > 1) {
+      const theoryWeeks2 = sectionWeeks.slice(0, Math.min(13, sectionWeeks.length));
+      assignments.push(makeAssignment({
+        deliveryScope: 'group',
+        groupIds: [groups[1].id],
+        hourType: '理论学时',
+        weekRange: formatGroupAssignWeekRangeFromSectionWeeks(sec, theoryWeeks2),
+        weeklyHours: 2,
+        teachers: [teacherAt(1)]
+      }));
+    }
+  }
+
+  if (groups[0] && isOfferingSectionHourTypeArrangeable(sec, '实践学时')) {
+    const practiceWeeks = sectionWeeks.length > 2
+      ? sectionWeeks.slice(-Math.min(2, sectionWeeks.length))
+      : sectionWeeks;
+    assignments.push(makeAssignment({
+      deliveryScope: 'group',
+      groupIds: [groups[0].id],
+      hourType: '实践学时',
+      weekRange: formatGroupAssignWeekRangeFromSectionWeeks(sec, practiceWeeks),
+      // weekRange: variant === 1 ? '9-16' : '10-16', // 原硬编码超出短学期起止周
+      teachers: variant === 2
+        ? [teacherAt(2, { isCoordinator: true }), teacherAt(3)]
+        : [teacherAt(2)]
+    }));
+  }
+
+  if (groups.length > 1 && isOfferingSectionHourTypeArrangeable(sec, '辅导学时')) {
+    const tutorialWeeks = sectionWeeks.slice(0, Math.min(4, sectionWeeks.length));
+    assignments.push(makeAssignment({
+      deliveryScope: 'group',
+      groupIds: [groups[1].id],
+      hourType: '辅导学时',
+      weekRange: formatGroupAssignWeekRangeFromSectionWeeks(sec, tutorialWeeks),
+      // weekRange: '1-8', // 原硬编码，改须在课程起止周范围内
+      teachers: [teacherAt(4)]
+    }));
+  }
+
+  if (groups.length > 1 && variant !== 0 && isOfferingSectionHourTypeArrangeable(sec, '实践学时')) {
+    const practiceWeeks2 = sectionWeeks.length > 1
+      ? sectionWeeks.slice(-Math.min(2, sectionWeeks.length))
+      : sectionWeeks;
+    assignments.push(makeAssignment({
+      deliveryScope: 'group',
+      groupIds: [groups[1].id],
+      hourType: '实践学时',
+      weekRange: formatGroupAssignWeekRangeFromSectionWeeks(sec, practiceWeeks2),
+      // weekRange: '11-16', // 原硬编码超出短学期起止周
+      teachers: [teacherAt(5)]
+    }));
+  }
+
+  const otherGroup = groups[2] || groups[0];
+  if (otherGroup && isOfferingSectionHourTypeArrangeable(sec, '其他学时')) {
+    const otherWeeks = sectionWeeks.length > 1
+      ? sectionWeeks.slice(-Math.min(2, sectionWeeks.length))
+      : sectionWeeks;
+    assignments.push(makeAssignment({
+      deliveryScope: 'group',
+      groupIds: [otherGroup.id],
+      hourType: '其他学时',
+      weekRange: formatGroupAssignWeekRangeFromSectionWeeks(sec, otherWeeks),
+      // weekRange: '13-16', // 原硬编码超出短学期起止周
+      teachers: variant === 1
+        ? [teacherAt(6, { isCoordinator: true }), teacherAt(7)]
+        : [teacherAt(6)]
+    }));
+  }
+
+  // if (groups.length > 2 && variant === 1) { ... 原仅部分合班且 variant=1 时造其他学时
+  sec.groupAssignments = assignments;
+  syncSectionCoordinatorsFromAssignments(sec);
 }
 
 function getMajorOfferingSections() {
   if (!ensureCourseOfferingPlan()) return [];
   return COURSE_OFFERING_PLAN_STORE.sections
-    .filter(s => s.offeringType === 'major')
+    .filter(isMajorOfferingCatalogSection)
+    // .filter(s => s.offeringType === 'major') // 原仅按 offeringType，改排除通识选修课目录
     .map(ensureSectionOfferingFields)
     .sort((a, b) => a.code.localeCompare(b.code) || a.sectionNo - b.sectionNo);
 }
 
+function getMajorOfferingPlanRows() {
+  if (!ensureCourseOfferingPlan()) return [];
+  return (COURSE_OFFERING_PLAN_STORE.lines || [])
+    .filter(isMajorOfferingCatalogLine)
+    // .filter(line => line.offeringType === 'major') // 原仅按 offeringType，改排除通识选修课目录
+    .map(line => {
+      const sec = line.sectionId
+        ? COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === line.sectionId)
+        : null;
+      return { line, sec: sec ? ensureSectionOfferingFields(sec) : null };
+    })
+    .filter(row => row.sec)
+    .sort((a, b) =>
+      (a.line.code || '').localeCompare(b.line.code || '')
+      || (a.line.programmeKey || '').localeCompare(b.line.programmeKey || '')
+      || (a.line.intake || '').localeCompare(b.line.intake || '')
+      || (a.line.id || '').localeCompare(b.line.id || '')
+    );
+}
+
+function getMajorOfferingLineSchoolDisplay(line) {
+  return getProgrammeSchoolCode(line?.programmeKey) || '—';
+}
+
+function getMajorOfferingLineProgrammeDisplay(line) {
+  return getProgrammeCode(line?.programmeKey) || '—';
+}
+
+function getMajorOfferingLineIntakeDisplay(line) {
+  return formatIntakeDisplay(line?.intake) || '—';
+}
+
+function getMajorOfferingPlanRowStudentCount(row) {
+  if (!row?.line) return 0;
+  return getLineEstimatedStudents(row.line.id) || row.sec?.estimatedStudents || 0;
+}
+
 function getSectionIncludedClasses(sec) {
-  return sec.lineIds.map(id => {
-    const line = COURSE_OFFERING_PLAN_STORE.lines.find(l => l.id === id);
-    if (!line) return '';
-    return defaultClassNameForLine(line, 1);
-  }).filter(Boolean);
+  // return sec.lineIds.map(id => { // 原行政班简称（如 25金融A），XMUM 无行政班概念
+  //   const line = COURSE_OFFERING_PLAN_STORE.lines.find(l => l.id === id);
+  //   if (!line) return '';
+  //   return defaultClassNameForLine(line, 1);
+  // }).filter(Boolean);
+  return getSectionLineMetas(sec).map(m => m.batchLabel).filter(Boolean);
 }
 
 function syncSectionEstimatedStudentsFromRoster(sectionId) {
@@ -3524,6 +8696,41 @@ function syncSectionEstimatedStudentsFromRoster(sectionId) {
 
 function formatMajorOfferingGroupName(courseName, batchLabel) {
   return `${courseName || '—'}（${batchLabel || '—'}）`;
+}
+
+function formatMajorOfferingSectionGroupsSummary(sec) {
+  if (!sec?.groups?.length) return '尚未分组';
+  return sec.groups.map(g => formatMajorOfferingGroupName(sec.name, g.name)).join('、');
+}
+
+function getMajorOfferingSectionGroupCount(sec) {
+  return sec?.groups?.length || 0;
+}
+
+function formatMajorOfferingSectionGroupCountDisplay(sec) {
+  if (!sec?.isGrouped || !sec?.groups?.length) return '—';
+  return String(getMajorOfferingSectionGroupCount(sec));
+}
+
+function getMajorOfferingRosterScheduleStatusKey(sec) {
+  if (!sec) return 'draft';
+  if (sec.submitStatus === 'reverted' || sec.rosterScheduleStatus === 'reverted') return 'reverted';
+  if (sec.rosterScheduleStatus === 'submitted') return 'submitted';
+  return 'draft';
+}
+
+function renderMajorOfferingRosterScheduleStatus(sec) {
+  if (isMajorOfferingOpenEnrollment(sec)) {
+    return '<span class="offering-status-pill is-off" title="名单由选课应用根据选课结果生成">选课应用</span>';
+  }
+  const key = getMajorOfferingRosterScheduleStatusKey(sec);
+  if (key === 'submitted') {
+    return '<span class="offering-status-pill is-on">提交排课</span>';
+  }
+  if (key === 'reverted') {
+    return '<span class="offering-status-pill is-warn">回退</span>';
+  }
+  return '<span class="offering-status-pill is-off">草稿</span>';
 }
 
 function getProgrammeBatchGroupName(courseName, programmeKey, intake) {
@@ -3560,9 +8767,21 @@ function getMajorOfferingSectionGroupNames(sectionId) {
   return [...new Set(roster.flatMap(stu => getStudentGroupNames(stu)))].sort();
 }
 
-function formatStudentGroupNamesDisplay(stu) {
+function formatStudentCourseGroupLabel(courseName, groupLabel) {
+  const label = String(groupLabel || '').trim();
+  if (!label) return '—';
+  const course = courseName || '—';
+  const fullPrefix = `${course}（`;
+  if (label.startsWith(fullPrefix) && label.endsWith('）')) return label;
+  return formatMajorOfferingGroupName(course, label);
+}
+
+function formatStudentGroupNamesDisplay(stu, sec) {
   const names = getStudentGroupNames(stu);
-  return names.length ? names.join('、') : '—';
+  if (!names.length) return '—';
+  const courseName = sec?.name || '—';
+  return names.map(n => formatStudentCourseGroupLabel(courseName, n)).join('、');
+  // return names.length ? names.join('、') : '—'; // 原直接展示存储的小组名，改为课程名称（小组名称）
 }
 
 function refreshMajorOfferingStudentRosterGroups(sectionId) {
@@ -3580,10 +8799,473 @@ function refreshMajorOfferingStudentRosterGroups(sectionId) {
   });
 }
 
+const MAJOR_OFFERING_ROSTER_SOURCE_PRESET = '预置名单';
+const MAJOR_OFFERING_ROSTER_SOURCE_MANUAL = '手动添加';
+
 function formatMajorOfferingStudentRosterSource(source) {
-  if (source === '人工添加' || source === '人工新增') return '人工添加';
-  return '自动生成';
+  if (source === MAJOR_OFFERING_ROSTER_SOURCE_MANUAL || source === '人工添加' || source === '人工新增') {
+    return MAJOR_OFFERING_ROSTER_SOURCE_MANUAL;
+  }
+  if (source === MAJOR_OFFERING_ROSTER_SOURCE_PRESET || source === '自动生成' || source === '执行计划' || source === 'exec') {
+    return MAJOR_OFFERING_ROSTER_SOURCE_PRESET;
+  }
+  return source || MAJOR_OFFERING_ROSTER_SOURCE_PRESET;
+  // if (source === '人工添加' || source === '人工新增') return '人工添加'; // 原展示「人工添加」，改统一为「手动添加」
+  // return '自动生成'; // 原展示「自动生成」，改统一为「预置名单」
   // if (source === '执行计划' || source === 'exec') return '自动生成';
+}
+
+function isManualMajorOfferingRosterStudent(stu) {
+  return formatMajorOfferingStudentRosterSource(stu?.source) === MAJOR_OFFERING_ROSTER_SOURCE_MANUAL;
+}
+
+function isPresetMajorOfferingRosterStudent(stu) {
+  return formatMajorOfferingStudentRosterSource(stu?.source) === MAJOR_OFFERING_ROSTER_SOURCE_PRESET;
+}
+
+function isMajorOfferingSectionElective(sec) {
+  return getCatalogOfferingMeta(sec?.catalogId)?.courseNature === '选修';
+}
+
+function isPresetStudentEligibleForSection(preset, sec) {
+  if (!isEligibleMajorOfferingRosterStudent(preset)) return false;
+  const metas = getSectionLineMetas(sec);
+  const inScope = metas.some(meta =>
+    meta.programmeCode === preset.programmeCode && (meta.line?.intake || '') === (preset.intake || '')
+  );
+  if (!inScope) return false;
+  if (!isMajorOfferingSectionElective(sec)) return true;
+  const slot = Number.parseInt(String(preset.studentNo || '').slice(-2), 10);
+  return Number.isFinite(slot) ? slot % 10 !== 0 : true;
+}
+
+function buildEligiblePresetStudentPool(sec) {
+  const metas = getSectionLineMetas(sec);
+  const batches = metas.length ? metas : [{
+    line: { programmeKey: sec.programmeKey, intake: '202409' },
+    lineId: '',
+    schoolCode: getProgrammeSchoolCode(sec.programmeKey),
+    programmeCode: getProgrammeCode(sec.programmeKey),
+    batchLabel: formatProgrammeIntakeCode(sec.programmeKey, '202409')
+  }];
+  const lineTotal = batches.reduce((sum, meta) => sum + (getLineEstimatedStudents(meta.lineId) || 0), 0);
+  const totalCount = Math.max(sec.estimatedStudents || 0, lineTotal, batches.length * 8, 12);
+  const perBatch = Math.max(1, Math.floor(totalCount / batches.length));
+  const pool = [];
+  batches.forEach((meta, batchIdx) => {
+    const line = meta.line || { programmeKey: sec.programmeKey, intake: '202409' };
+    const batchCount = batchIdx === batches.length - 1 ? totalCount - pool.length : perBatch;
+    for (let j = 0; j < batchCount; j++) {
+      const candidate = {
+        studentNo: formatStudentNo(meta.programmeCode, line.intake || '202409', j + 1),
+        name: getMockStudentEnglishName(pool.length),
+        schoolCode: meta.schoolCode,
+        programmeCode: meta.programmeCode,
+        intake: line.intake || '202409',
+        nationality: getMockStudentNationality(pool.length),
+        gender: getMockStudentGender(pool.length),
+        registryStatus: 'active',
+        registryCategory: 'normal',
+        presetLineId: meta.lineId || '',
+        presetBatchLabel: meta.batchLabel || '',
+        programmeKey: line.programmeKey || sec.programmeKey
+      };
+      if (isPresetStudentEligibleForSection(candidate, sec)) pool.push(candidate);
+    }
+  });
+  return pool;
+}
+
+function resolvePresetStudentCandidateGroups(preset, sec, groups) {
+  if (!groups?.length) return [];
+  let matched = groups.filter(g => g.lineId && preset.presetLineId && g.lineId === preset.presetLineId);
+  if (!matched.length && preset.presetBatchLabel) {
+    matched = groups.filter(g => g.batchLabel === preset.presetBatchLabel);
+  }
+  if (!matched.length && preset.programmeCode) {
+    const batchMeta = getSectionLineMetas(sec).find(m =>
+      m.programmeCode === preset.programmeCode && (m.line?.intake || '') === (preset.intake || '')
+    );
+    if (batchMeta?.batchLabel) matched = groups.filter(g => g.batchLabel === batchMeta.batchLabel);
+  }
+  if (!matched.length && groups.length === 1) matched = groups;
+  return matched.length ? matched : groups;
+}
+
+function pickPresetStudentTargetGroup(preset, sec, groups, groupCounts) {
+  const candidates = resolvePresetStudentCandidateGroups(preset, sec, groups);
+  const withRoom = candidates
+    .map(g => ({
+      group: g,
+      remaining: (Number(g.capacityLimit) || Infinity) - (groupCounts.get(g.id) || 0)
+    }))
+    .filter(x => x.remaining > 0)
+    .sort((a, b) => b.remaining - a.remaining || String(a.group.name).localeCompare(String(b.group.name), 'zh-CN'));
+  return withRoom[0]?.group || null;
+}
+
+function countPresetStudentsInGroups(sec, roster, groupCounts) {
+  sec.groups.forEach(g => groupCounts.set(g.id, 0));
+  roster.forEach(stu => {
+    if (!isPresetMajorOfferingRosterStudent(stu)) return;
+    sec.groups.forEach(g => {
+      if (studentMatchesOfferingGroup(stu, g, sec)) {
+        groupCounts.set(g.id, (groupCounts.get(g.id) || 0) + 1);
+      }
+    });
+  });
+}
+
+function resolvePresetRosterStudentGroupingStatus(existing, sec) {
+  if (!existing) return 'ungrouped';
+  if ((sec?.groups || []).some(g => studentMatchesOfferingGroup(existing, g, sec))) return 'grouped';
+  return 'ungrouped';
+}
+
+function formatPresetRosterGroupingStatusLabel(groupingStatus) {
+  return groupingStatus === 'grouped' ? '已分组' : '未分组';
+}
+
+function buildPresetRosterGroupingPreviewRows(sec) {
+  if (!sec?.groups?.length) return [];
+  const sectionId = sec.id;
+  const roster = [...(majorOfferingStudentRosterStore[sectionId] || getMajorOfferingStudentRoster(sectionId))];
+  const existingByNo = new Map(roster.map(s => [s.studentNo, s]));
+  const rows = [];
+  buildEligiblePresetStudentPool(sec).forEach(preset => {
+    const existing = existingByNo.get(preset.studentNo);
+    if (existing && isManualMajorOfferingRosterStudent(existing)) return;
+    const groupingStatus = resolvePresetRosterStudentGroupingStatus(existing, sec);
+    if (groupingStatus === 'grouped') return;
+    rows.push({
+      key: preset.studentNo,
+      preset,
+      status: 'assignable',
+      groupingStatus,
+      groupingStatusLabel: formatPresetRosterGroupingStatusLabel(groupingStatus)
+    });
+  });
+  return rows;
+  // return buildEligiblePresetStudentPool(sec).map(preset => { ... targetGroup ... }); // 原含已分组与推荐课程组列
+}
+
+function applyPresetRosterGroupingCore(sectionId, { studentNos = null, groupByStudentNo = null } = {}) {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  if (!sec?.groups?.length) return { ok: false, message: '当前课程尚未分组，请先新增分组。' };
+  const presetPool = buildEligiblePresetStudentPool(sec);
+  if (!presetPool.length) return { ok: false, message: '未找到符合上课条件的预置名单学生。' };
+
+  const roster = [...(majorOfferingStudentRosterStore[sectionId] || getMajorOfferingStudentRoster(sectionId))];
+  const existingByNo = new Map(roster.map(s => [s.studentNo, s]));
+  const groupCounts = new Map();
+  countPresetStudentsInGroups(sec, roster, groupCounts);
+
+  let assigned = 0;
+  let skippedManual = 0;
+  let skippedFull = 0;
+
+  if (studentNos && groupByStudentNo?.size) {
+    const addsByGroupId = buildPresetRosterGroupAddCounts(sec, presetPool, studentNos, groupByStudentNo, existingByNo);
+    for (const [gid, addCount] of addsByGroupId) {
+      const group = sec.groups.find(g => g.id === gid);
+      const validation = validateOfferingGroupCanAcceptStudents(sec, group, addCount, { sectionId });
+      if (!validation.ok) return { ok: false, message: validation.message };
+    }
+  }
+
+  presetPool.forEach(preset => {
+    if (studentNos && !studentNos.has(preset.studentNo)) return;
+    const existing = existingByNo.get(preset.studentNo);
+    if (existing && isManualMajorOfferingRosterStudent(existing)) {
+      skippedManual += 1;
+      return;
+    }
+    const explicitGroupId = groupByStudentNo?.get(preset.studentNo);
+    const group = explicitGroupId
+      ? sec.groups.find(g => g.id === explicitGroupId)
+      : pickPresetStudentTargetGroup(preset, sec, sec.groups, groupCounts);
+    // const group = pickPresetStudentTargetGroup(preset, sec, sec.groups, groupCounts); // 原仅按规则自动匹配分组
+    if (!group) {
+      skippedFull += 1;
+      return;
+    }
+    const cap = getOfferingGroupCapacityLimitValue(group);
+    const cur = groupCounts.get(group.id) || 0;
+    if (Number.isFinite(cap) && cur >= cap) {
+      skippedFull += 1;
+      return;
+    }
+    // const cap = Number(group.capacityLimit); ... // 原超限静默跳过，改提交前校验并阻止添加
+    const groupShortName = group.name;
+    if (existing) {
+      setStudentGroupNames(existing, [groupShortName]);
+      existing.source = MAJOR_OFFERING_ROSTER_SOURCE_PRESET;
+      ensureStudentNationalityFields(existing, roster.indexOf(existing));
+      ensureStudentGenderFields(existing, roster.indexOf(existing));
+      ensureStudentRegistryFields(existing, roster.indexOf(existing));
+    } else {
+      const stu = {
+        id: `mos-${majorOfferingStudentRosterSeq++}`,
+        studentNo: preset.studentNo,
+        name: preset.name,
+        schoolCode: preset.schoolCode,
+        programmeCode: preset.programmeCode,
+        intake: preset.intake,
+        nationality: preset.nationality,
+        gender: preset.gender,
+        registryStatus: preset.registryStatus,
+        registryCategory: preset.registryCategory,
+        groupNames: [groupShortName],
+        groupName: groupShortName,
+        source: MAJOR_OFFERING_ROSTER_SOURCE_PRESET
+      };
+      roster.push(stu);
+      existingByNo.set(preset.studentNo, stu);
+    }
+    groupCounts.set(group.id, (groupCounts.get(group.id) || 0) + 1);
+    assigned += 1;
+  });
+
+  majorOfferingStudentRosterStore[sectionId] = roster;
+  syncSectionEstimatedStudentsFromRoster(sectionId);
+  syncOfferingGroupStudentCounts(sec);
+
+  const parts = [`已为 ${assigned} 名预置名单学生分配课程组。`];
+  if (skippedManual) parts.push(`跳过 ${skippedManual} 名手动添加学生。`);
+  if (skippedFull) {
+    return { ok: false, message: `${skippedFull} 名学生因分组人数已满未能分配，请调整勾选人数或分组上限后重试。` };
+  }
+  return { ok: true, assigned, skippedManual, skippedFull, message: parts.join('') };
+  // function applyPresetRosterGroupingCore(sectionId) { ... } // 原一次性全量分配，改支持按勾选学号分配
+}
+
+function openPresetRosterGroupingConfirm() {
+  openPresetRosterGroupingDrawer();
+  // if (!assertOfferingGroupingStudentEditable('预置名单分组')) return; // 原二次确认弹窗直接分配，改抽屉预览后确认
+  // openDeleteConfirm({ title: '预置名单分组', ... onConfirm: () => applyPresetRosterGroupingCore(...) });
+}
+
+function rebuildPresetRosterGroupingGroupOptions() {
+  const sel = document.getElementById('prg-target-group');
+  if (!sel) return;
+  const sec = getOfferingGroupingSection();
+  if (!sec?.groups?.length) {
+    sel.innerHTML = '<option value="">请选择</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">请选择</option>' +
+    sec.groups.map(g =>
+      `<option value="${escapeHtml(g.id)}">${escapeHtml(formatMajorOfferingGroupName(sec.name, g.name))}</option>`
+    ).join('');
+}
+
+// function buildPresetRosterGroupingRowGroupOptionsHtml(sec, selectedGroupId) { ... } // 原列表内逐行选组，列已移除
+// function onPresetRosterGroupingRowGroupChange(studentNo, groupId) { ... }
+// function applyPresetRosterGroupingTargetToSelected() { ... } // 原「应用到选中」，改由下方所属课程组 + 确定分配
+
+function rebuildPresetRosterGroupingFilters() {
+  rebuildCascadeFilterSelects({
+    schoolSelectId: 'prg-filter-school',
+    programmeSelectId: 'prg-filter-prog',
+    intakeSelectId: 'prg-filter-intake',
+    items: presetRosterGroupingPreviewRows.map(row => ({
+      schoolCode: row.preset.schoolCode,
+      programmeCode: row.preset.programmeCode,
+      programmeKey: row.preset.programmeKey,
+      intake: row.preset.intake
+    })),
+    getProgrammeKey: row => row.programmeKey || resolveProgrammeKeyByCode(row.programmeCode),
+    getIntake: row => row.intake,
+    schoolAllLabel: '全部学院',
+    programmeAllLabel: '全部专业',
+    intakeAllLabel: '全部批次'
+  });
+}
+
+function onPresetRosterGroupingSchoolChange() {
+  onCascadeFilterSchoolChange({
+    programmeSelectId: 'prg-filter-prog',
+    intakeSelectId: 'prg-filter-intake',
+    refresh: () => renderPresetRosterGroupingDrawer()
+  });
+}
+
+function onPresetRosterGroupingProgrammeChange() {
+  onCascadeFilterProgrammeChange({
+    intakeSelectId: 'prg-filter-intake',
+    refresh: () => renderPresetRosterGroupingDrawer()
+  });
+}
+
+function getFilteredPresetRosterGroupingList() {
+  const school = document.getElementById('prg-filter-school')?.value || '';
+  const prog = document.getElementById('prg-filter-prog')?.value || '';
+  const intake = document.getElementById('prg-filter-intake')?.value || '';
+  const studentNoQ = (document.getElementById('prg-filter-student-no')?.value || '').trim().toLowerCase();
+  const nameQ = (document.getElementById('prg-filter-name')?.value || '').trim().toLowerCase();
+  return presetRosterGroupingPreviewRows.filter(row => {
+    const preset = row.preset;
+    if (school && preset.schoolCode !== school) return false;
+    if (prog && preset.programmeCode !== prog) return false;
+    if (intake && preset.intake !== intake) return false;
+    if (studentNoQ && !preset.studentNo.toLowerCase().includes(studentNoQ)) return false;
+    if (nameQ && !preset.name.toLowerCase().includes(nameQ)) return false;
+    return true;
+  });
+}
+
+function updatePresetRosterGroupingSelection() {
+  presetRosterGroupingSelected = new Set(
+    [...document.querySelectorAll('.prg-row-check:checked')].map(el => el.value)
+  );
+  const paged = paginateListItems(getFilteredPresetRosterGroupingList(), 'presetRosterGrouping');
+  const checkAll = document.getElementById('prg-check-all');
+  const assignableOnPage = paged.items.filter(row => row.status === 'assignable');
+  if (checkAll && assignableOnPage.length) {
+    const checkedOnPage = assignableOnPage.filter(row => presetRosterGroupingSelected.has(row.key)).length;
+    checkAll.checked = checkedOnPage === assignableOnPage.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < assignableOnPage.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function togglePresetRosterGroupingCheckAll(checked) {
+  const list = paginateListItems(getFilteredPresetRosterGroupingList(), 'presetRosterGrouping').items;
+  list.forEach(row => {
+    if (row.status !== 'assignable') return;
+    if (checked) presetRosterGroupingSelected.add(row.key);
+    else presetRosterGroupingSelected.delete(row.key);
+  });
+  renderPresetRosterGroupingDrawer();
+}
+
+function renderPresetRosterGroupingDrawer() {
+  const tbody = document.getElementById('prg-picker-tbody');
+  const countEl = document.getElementById('prg-picker-count');
+  const summaryEl = document.getElementById('prg-picker-summary');
+  if (!tbody) return;
+  const list = getFilteredPresetRosterGroupingList();
+  const paged = paginateListItems(list, 'presetRosterGrouping');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map((row, idx) => {
+        const preset = row.preset;
+        return `<tr>
+        <td class="col-check"><input type="checkbox" class="prg-row-check" value="${escapeHtml(row.key)}" ${presetRosterGroupingSelected.has(row.key) ? 'checked' : ''} onchange="updatePresetRosterGroupingSelection()"></td>
+        <td class="col-index">${rowOffset + idx + 1}</td>
+        <td><code>${escapeHtml(preset.studentNo)}</code></td>
+        <td>${escapeHtml(preset.name)}</td>
+        <td class="col-center"><code>${escapeHtml(preset.schoolCode)}</code></td>
+        <td class="col-center"><code>${escapeHtml(preset.programmeCode)}</code></td>
+        <td class="col-center"><code>${formatIntakeDisplay(preset.intake)}</code></td>
+        <td class="col-center">${escapeHtml(row.groupingStatusLabel || formatPresetRosterGroupingStatusLabel(row.groupingStatus))}</td>
+      </tr>`;
+        // <td class="prg-col-group">${groupCell}</td> // 原分配课程组列，改由下方所属课程组统一指定
+      }).join('')
+    : '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">暂无未分组的预置名单学生</td></tr>';
+  if (countEl) countEl.textContent = `共 ${list.length} 条记录`;
+  if (summaryEl) {
+    summaryEl.textContent = list.length
+      ? `已勾选 ${presetRosterGroupingSelected.size} 人；请在下方选择所属课程组后确认分配。`
+      : '当前暂无未分组的预置名单学生。';
+  }
+  renderListPagination('prg-picker-pagination', 'presetRosterGrouping', paged.total);
+  updatePresetRosterGroupingSelection();
+}
+
+function resetPresetRosterGroupingFilters() {
+  ['prg-filter-student-no', 'prg-filter-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['prg-filter-school', 'prg-filter-prog', 'prg-filter-intake'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  resetListPage('presetRosterGrouping');
+  rebuildPresetRosterGroupingFilters();
+  renderPresetRosterGroupingDrawer();
+}
+
+function queryPresetRosterGrouping() {
+  resetListPage('presetRosterGrouping');
+  renderPresetRosterGroupingDrawer();
+}
+
+function openPresetRosterGroupingDrawer() {
+  if (!assertOfferingGroupingStudentEditable('预置名单分组')) return;
+  if (!ensureOfferingGroupingStudentOpsContext()) return;
+  const sec = getOfferingGroupingSection();
+  if (!sec?.groups?.length) {
+    alert('当前课程尚未分组，请先新增分组。');
+    return;
+  }
+  presetRosterGroupingPreviewRows = buildPresetRosterGroupingPreviewRows(sec);
+  if (!presetRosterGroupingPreviewRows.length) {
+    alert('暂无未分组的预置名单学生。');
+    return;
+  }
+  presetRosterGroupingSelected = new Set(presetRosterGroupingPreviewRows.map(row => row.key));
+  rebuildPresetRosterGroupingGroupOptions();
+  const groupSel = document.getElementById('prg-target-group');
+  const selectedGroup = getOfferingGroupingSelectedGroup(sec);
+  if (groupSel && selectedGroup?.id) groupSel.value = selectedGroup.id;
+  resetPresetRosterGroupingFilters();
+  document.getElementById('drawer-preset-roster-grouping-backdrop')?.classList.add('open');
+  document.getElementById('drawer-preset-roster-grouping')?.classList.add('open');
+}
+
+function closePresetRosterGroupingDrawer() {
+  document.getElementById('drawer-preset-roster-grouping-backdrop')?.classList.remove('open');
+  document.getElementById('drawer-preset-roster-grouping')?.classList.remove('open');
+  presetRosterGroupingSelected.clear();
+  presetRosterGroupingPreviewRows = [];
+}
+
+function confirmPresetRosterGrouping() {
+  const sectionId = offeringGroupingSectionId;
+  if (!sectionId) return;
+  const groupId = document.getElementById('prg-target-group')?.value || '';
+  if (!groupId) {
+    alert('请选择所属课程组。');
+    document.getElementById('prg-target-group')?.focus();
+    return;
+  }
+  const assignableSelected = presetRosterGroupingPreviewRows.filter(row =>
+    presetRosterGroupingSelected.has(row.key)
+  );
+  if (!assignableSelected.length) {
+    alert('请至少勾选一名未分组的预置名单学生。');
+    return;
+  }
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  const targetGroup = sec?.groups?.find(g => g.id === groupId);
+  const capacityCheck = validateOfferingGroupCanAcceptStudents(sec, targetGroup, assignableSelected.length, { sectionId });
+  if (!capacityCheck.ok) {
+    openOfferingGroupCapacityAlert(capacityCheck.message);
+    // alert(capacityCheck.message); // 原浏览器 alert，改弹窗提示
+    return;
+  }
+  const groupByStudentNo = new Map(assignableSelected.map(row => [row.key, groupId]));
+  const result = applyPresetRosterGroupingCore(sectionId, {
+    studentNos: new Set(groupByStudentNo.keys()),
+    groupByStudentNo
+  });
+  // const withoutGroup = assignableSelected.filter(row => !(row.targetGroupId || row.targetGroup?.id)); // 原逐行指定课程组
+  if (!result.ok) {
+    openOfferingGroupCapacityAlert(result.message);
+    // alert(result.message); // 原浏览器 alert，改弹窗提示
+    return;
+  }
+  closePresetRosterGroupingDrawer();
+  offeringGroupingStudentSelected.clear();
+  refreshOfferingGroupingPanelsIfOpen();
+  if (majorOfferingStudentRosterSectionId === sectionId) {
+    renderMajorOfferingStudentRosterDrawer();
+  }
+  alert(result.message);
 }
 
 function seedMajorOfferingStudentRoster(sectionId) {
@@ -3607,6 +9289,7 @@ function seedMajorOfferingStudentRoster(sectionId) {
       ? totalCount - students.length
       : perBatch;
     for (let j = 0; j < batchCount; j++) {
+      const registryProfile = { registryStatus: 'active', registryCategory: 'normal' };
       students.push({
         id: `mos-${majorOfferingStudentRosterSeq++}`,
         studentNo: formatStudentNo(meta.programmeCode, line.intake || '202409', j + 1),
@@ -3618,9 +9301,12 @@ function seedMajorOfferingStudentRoster(sectionId) {
         programmeCode: meta.programmeCode,
         intake: line.intake || '202409',
         nationality: getMockStudentNationality(globalIdx),
+        gender: getMockStudentGender(globalIdx),
+        ...registryProfile,
         groupNames: [groupName],
         groupName,
-        source: '自动生成'
+        source: MAJOR_OFFERING_ROSTER_SOURCE_PRESET
+        // source: '自动生成' // 原种子来源，改统一为「预置名单」
         // source: '执行计划'
       });
       globalIdx += 1;
@@ -3667,9 +9353,11 @@ function rebuildMajorOfferingStudentRosterFilters() {
   if (curIntake && intakes.includes(curIntake)) intakeSel.value = curIntake;
 
   if (groupSel) {
+    const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === majorOfferingStudentRosterSectionId);
     const groups = [...new Set(roster.flatMap(s => getStudentGroupNames(s)))].sort();
-    groupSel.innerHTML = '<option value="">全部小组</option>' +
-      groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+    groupSel.innerHTML = '<option value="">全部课程组</option>' +
+      groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(formatStudentCourseGroupLabel(sec?.name, g))}</option>`).join('');
+    // groupSel.innerHTML = '<option value="">全部小组</option>' + ... // 原筛选项文案
     if (curGroup && groups.includes(curGroup)) groupSel.value = curGroup;
   }
 }
@@ -3690,6 +9378,7 @@ function getFilteredMajorOfferingStudents() {
   const studentNoQ = (document.getElementById('mos-filter-student-no')?.value || '').trim().toLowerCase();
   const nameQ = (document.getElementById('mos-filter-name')?.value || '').trim().toLowerCase();
   return roster.filter(stu => {
+    if (!isEligibleMajorOfferingRosterStudent(stu)) return false;
     if (school && stu.schoolCode !== school) return false;
     const progKey = Object.entries(PROGRAMMES).find(([, p]) => p.code === stu.programmeCode)?.[0] || '';
     if (prog && progKey !== prog) return false;
@@ -3743,6 +9432,9 @@ function renderMajorOfferingStudentRosterDrawer() {
   const tbody = document.getElementById('mos-roster-tbody');
   const titleEl = document.getElementById('mos-roster-title');
   if (!sec || !tbody) return;
+  syncMajorOfferingStudentRosterDrawerPlanView();
+  const showGroup = !isMajorOfferingStudentRosterPlanView();
+  const colCount = showGroup ? 13 : 12;
   if (titleEl) {
     titleEl.textContent = `学生名单 · ${sec.code} ${sec.name}`;
   }
@@ -3765,12 +9457,14 @@ function renderMajorOfferingStudentRosterDrawer() {
         <td class="col-center"><code>${escapeHtml(stu.schoolCode)}</code></td>
         <td class="col-center"><code>${escapeHtml(stu.programmeCode)}</code></td>
         <td class="col-center"><code>${formatIntakeDisplay(stu.intake)}</code></td>
-        <td class="col-center">${escapeHtml(getStudentNationality(stu) || '—')}</td>
+        <td class="col-center col-nationality">${escapeHtml(getStudentNationality(stu) || '—')}</td>
         <td class="col-center">${escapeHtml(getStudentType(stu) || '—')}</td>
-        <td>${escapeHtml(formatStudentGroupNamesDisplay(stu))}</td>
+        <td class="col-center">${escapeHtml(formatStudentRegistryStatus(stu))}</td>
+        <td class="col-center">${escapeHtml(formatStudentRegistryCategory(stu))}</td>
+        ${showGroup ? `<td class="col-course-group">${escapeHtml(formatStudentGroupNamesDisplay(stu, sec))}</td>` : ''}
         <td>${escapeHtml(formatMajorOfferingStudentRosterSource(stu.source))}</td>
       </tr>`).join('')
-    : '<tr><td colspan="11" class="text-muted" style="text-align:center;padding:24px">暂无学生数据</td></tr>';
+    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">暂无学生数据</td></tr>`;
   renderListPagination('mos-roster-pagination', 'majorOfferingStudentRoster', paged.total);
   updateMajorOfferingStudentRosterSelection();
 }
@@ -3818,7 +9512,9 @@ function buildMockStudentPickerPool() {
           programmeKey,
           programmeCode: prog.code,
           intake,
-          nationality: getMockStudentNationality(idx)
+          nationality: getMockStudentNationality(idx),
+          gender: getMockStudentGender(idx),
+          ...getMockStudentRegistryProfile(idx)
         });
         idx += 1;
       }
@@ -3866,6 +9562,7 @@ function getFilteredMajorOfferingStudentPickerList() {
   const studentNoQ = (document.getElementById('mspk-filter-student-no')?.value || '').trim().toLowerCase();
   const nameQ = (document.getElementById('mspk-filter-name')?.value || '').trim().toLowerCase();
   return buildMockStudentPickerPool().filter(row => {
+    if (!isEligibleMajorOfferingRosterStudent(row)) return false;
     if (school && row.schoolCode !== school) return false;
     if (prog && row.programmeCode !== prog) return false;
     if (intake && row.intake !== intake) return false;
@@ -3917,7 +9614,7 @@ function renderMajorOfferingStudentPicker() {
         <td class="col-center"><code>${escapeHtml(row.programmeCode)}</code></td>
         <td class="col-center"><code>${formatIntakeDisplay(row.intake)}</code></td>
       </tr>`).join('')
-    : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">暂无可选学生（请调整筛选条件或名单中已包含该生）</td></tr>';
+    : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">暂无可选学生（仅学籍状态为 Active 且学籍类型为 Normal 的学生可加入名单）</td></tr>';
   if (countEl) countEl.textContent = `共 ${list.length} 条记录`;
   renderListPagination('mspk-picker-pagination', 'majorOfferingStudentPicker', paged.total);
   updateMajorOfferingStudentPickerSelection();
@@ -3947,8 +9644,60 @@ function openMajorOfferingStudentPickerDrawer() {
   if (!majorOfferingStudentRosterSectionId) return;
   majorOfferingStudentPickerSelected.clear();
   resetMajorOfferingStudentPickerFilters();
+  rebuildMajorOfferingStudentPickerGroupOptions();
   document.getElementById('drawer-major-student-picker-backdrop')?.classList.add('open');
   document.getElementById('drawer-major-student-picker')?.classList.add('open');
+}
+
+function rebuildMajorOfferingStudentPickerGroupOptions() {
+  const sel = document.getElementById('mspk-target-group');
+  if (!sel) return;
+  const sectionId = majorOfferingStudentRosterSectionId;
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  if (!sec) {
+    sel.innerHTML = '<option value="">请选择</option>';
+    return;
+  }
+  ensureSectionOfferingFields(sec);
+  const options = [];
+  if (sec.groups?.length) {
+    sec.groups.forEach(g => {
+      options.push({
+        value: g.id,
+        label: formatMajorOfferingGroupName(sec.name, g.name)
+      });
+    });
+  } else {
+    getSectionLineMetas(sec).forEach(meta => {
+      const batchLabel = meta.batchLabel || resolveStudentBatchGroupName(meta, sec);
+      const shortName = meta.batchLabel || batchLabel;
+      options.push({
+        value: shortName,
+        label: formatStudentCourseGroupLabel(sec.name, shortName)
+      });
+    });
+  }
+  const unique = new Map();
+  options.forEach(opt => {
+    if (!unique.has(opt.value)) unique.set(opt.value, opt.label);
+  });
+  sel.innerHTML = '<option value="">请选择</option>' +
+    [...unique.entries()].map(([value, label]) =>
+      `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`
+    ).join('');
+  if (offeringGroupingSectionId === sectionId) {
+    const group = getOfferingGroupingSelectedGroup(sec);
+    if (group && [...unique.keys()].includes(group.id)) sel.value = group.id;
+  }
+}
+
+function resolveMajorOfferingStudentPickerGroupName(sec) {
+  const sel = document.getElementById('mspk-target-group');
+  const value = sel?.value || '';
+  if (!value || !sec) return '';
+  const group = sec.groups?.find(g => g.id === value);
+  if (group) return group.name;
+  return value;
 }
 
 function closeMajorOfferingStudentPickerDrawer() {
@@ -3974,17 +9723,31 @@ function confirmMajorOfferingStudentPicker() {
     return;
   }
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
-  const roster = getMajorOfferingStudentRoster(sectionId);
+  const targetGroupName = resolveMajorOfferingStudentPickerGroupName(sec);
+  if (!targetGroupName) {
+    alert('请选择所属小组。');
+    // alert('请选择要放入的小组。'); // 原提示文案
+    document.getElementById('mspk-target-group')?.focus();
+    return;
+  }
+  const targetGroup = sec?.groups?.find(g => g.id === document.getElementById('mspk-target-group')?.value)
+    || findOfferingGroupByShortName(sec, targetGroupName);
+  const roster = majorOfferingStudentRosterStore[sectionId] || [];
   const existingNos = new Set(roster.map(s => s.studentNo));
   const poolMap = new Map(buildMockStudentPickerPool().map(p => [p.key, p]));
+  const picksToAdd = keys.filter(key => {
+    const pick = poolMap.get(key);
+    return pick && !existingNos.has(pick.studentNo);
+  });
+  const capacityCheck = validateOfferingGroupCanAcceptStudents(sec, targetGroup, picksToAdd.length, { sectionId });
+  if (!capacityCheck.ok) {
+    alert(capacityCheck.message);
+    return;
+  }
   let added = 0;
   keys.forEach(key => {
     const pick = poolMap.get(key);
     if (!pick || existingNos.has(pick.studentNo)) return;
-    const meta = getSectionLineMetas(sec).find(m =>
-      m.programmeCode === pick.programmeCode && m.line?.intake === pick.intake
-    ) || getSectionLineMetas(sec).find(m => m.programmeCode === pick.programmeCode)
-      || getSectionLineMetas(sec)[0];
     roster.push({
       id: `mos-${majorOfferingStudentRosterSeq++}`,
       studentNo: pick.studentNo,
@@ -3993,18 +9756,28 @@ function confirmMajorOfferingStudentPicker() {
       programmeCode: pick.programmeCode,
       intake: pick.intake,
       nationality: pick.nationality || getMockStudentNationality(roster.length),
-      groupNames: [resolveStudentBatchGroupName(meta, sec)],
-      groupName: resolveStudentBatchGroupName(meta, sec),
-      source: '人工添加'
+      gender: pick.gender || getMockStudentGender(roster.length),
+      registryStatus: pick.registryStatus || 'active',
+      registryCategory: pick.registryCategory || 'normal',
+      groupNames: [targetGroupName],
+      groupName: targetGroupName,
+      // const meta = ... resolveStudentBatchGroupName(meta, sec); // 原默认按专业批次，改由「放入小组」必选
+      // const selectedGroup = offeringGroupingSectionId === sectionId ? getOfferingGroupingSelectedGroup(sec) : null; // 原仅分组弹窗上下文
+      source: MAJOR_OFFERING_ROSTER_SOURCE_MANUAL
+      // source: '人工添加' // 原手动添加来源，改统一为「手动添加」
     });
     existingNos.add(pick.studentNo);
     added += 1;
   });
+  majorOfferingStudentRosterStore[sectionId] = roster;
   majorOfferingStudentPickerSelected.clear();
   closeMajorOfferingStudentPickerDrawer();
   syncSectionEstimatedStudentsFromRoster(sectionId);
+  syncOfferingGroupStudentCounts(sec);
   renderMajorOfferingStudentRosterDrawer();
-  if (added) alert(`已添加 ${added} 名学生。`);
+  refreshOfferingGroupingPanelsIfOpen();
+  if (added) alert(`已添加 ${added} 名学生至小组「${formatStudentCourseGroupLabel(sec?.name, targetGroupName)}」。`);
+  else alert('所选学生已在名单中，未重复添加。');
 }
 
 // function addMajorOfferingStudentRoster() {
@@ -4015,6 +9788,25 @@ function addMajorOfferingStudentRoster() {
   openMajorOfferingStudentPickerModal();
 }
 
+function applyMajorOfferingStudentRosterRemoval(selectedIds = null) {
+  const sectionId = majorOfferingStudentRosterSectionId;
+  const ids = new Set(selectedIds || majorOfferingStudentRosterSelected);
+  if (!sectionId || !ids.size) return;
+  const roster = majorOfferingStudentRosterStore[sectionId] || [];
+  const removed = roster.filter(s => ids.has(s.id));
+  if (!removed.length) return;
+  appendMajorOfferingStudentRemovalLog(sectionId, removed);
+  majorOfferingStudentRosterStore[sectionId] = roster.filter(s => !ids.has(s.id));
+  majorOfferingStudentRosterSelected.clear();
+  syncSectionEstimatedStudentsFromRoster(sectionId);
+  syncOfferingGroupStudentCounts(COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId));
+  renderMajorOfferingStudentRosterDrawer();
+  refreshOfferingGroupingPanelsIfOpen();
+  if (document.getElementById('drawer-major-student-removal-log')?.classList.contains('open')) {
+    renderMajorOfferingStudentRemovalLogDrawer();
+  }
+}
+
 function deleteMajorOfferingStudentRosterSelected() {
   const sectionId = majorOfferingStudentRosterSectionId;
   if (!sectionId || !majorOfferingStudentRosterSelected.size) {
@@ -4022,23 +9814,13 @@ function deleteMajorOfferingStudentRosterSelected() {
     return;
   }
   const count = majorOfferingStudentRosterSelected.size;
+  const selectedIds = [...majorOfferingStudentRosterSelected];
   openDeleteConfirm({
     title: '删除学生',
     message: `确定从名单中删除选中的 <strong>${count}</strong> 名学生吗？`,
     hint: '删除后将从当前名单中移除，学号与姓名会自动记入「名单移除记录」，可通过工具栏随时查阅。此操作不可撤销。',
-    onConfirm: () => {
-      const ids = new Set(majorOfferingStudentRosterSelected);
-      const roster = getMajorOfferingStudentRoster(sectionId);
-      const removed = roster.filter(s => ids.has(s.id));
-      appendMajorOfferingStudentRemovalLog(sectionId, removed);
-      majorOfferingStudentRosterStore[sectionId] = roster.filter(s => !ids.has(s.id));
-      majorOfferingStudentRosterSelected.clear();
-      syncSectionEstimatedStudentsFromRoster(sectionId);
-      renderMajorOfferingStudentRosterDrawer();
-      if (document.getElementById('drawer-major-student-removal-log')?.classList.contains('open')) {
-        renderMajorOfferingStudentRemovalLogDrawer();
-      }
-    }
+    onConfirm: () => applyMajorOfferingStudentRosterRemoval(selectedIds)
+    // onConfirm: () => applyMajorOfferingStudentRosterRemoval() // 原依赖实时选中态，二次确认期间可能丢失
   });
   // if (!confirm(`确定删除选中的 ${majorOfferingStudentRosterSelected.size} 名学生吗？`)) return;
 }
@@ -4132,19 +9914,22 @@ function populateMajorOfferingStudentGroupingModal(sectionId) {
     options.innerHTML = '';
   } else {
     if (empty) empty.hidden = true;
-    options.innerHTML = groups.map(g =>
-      `<label class="clo-multiselect-option">
-        <input type="checkbox" class="mos-grouping-group-check" value="${escapeHtml(g)}"
-          onchange="onMajorOfferingGroupingToggle(this)">
-        <span>${escapeHtml(g)}</span>
-      </label>`
-    ).join('');
+    options.innerHTML = groups.map(g => {
+      const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+      const display = formatStudentCourseGroupLabel(sec?.name, g);
+      return `<label class="clo-multiselect-option">
+        <input type="radio" name="mos-grouping-group" class="mos-grouping-group-radio" value="${escapeHtml(g)}"
+          onchange="onMajorOfferingGroupingSelect(this)">
+        <span>${escapeHtml(display)}</span>
+      </label>`;
+      // <input type="checkbox" class="mos-grouping-group-check" ... onchange="onMajorOfferingGroupingToggle(this)"> // 原多选，改单选：一门课内仅属一组
+    }).join('');
   }
   updateMajorOfferingGroupingDisplay();
-  const yesRadio = document.querySelector('input[name="mos-grouping-remove-original"][value="yes"]');
-  const noRadio = document.querySelector('input[name="mos-grouping-remove-original"][value="no"]');
-  if (yesRadio) yesRadio.checked = true;
-  if (noRadio) noRadio.checked = false;
+  // const yesRadio = document.querySelector('input[name="mos-grouping-remove-original"][value="yes"]'); // 原移出原分组选项，已移除
+  // const noRadio = document.querySelector('input[name="mos-grouping-remove-original"][value="no"]');
+  // if (yesRadio) yesRadio.checked = true;
+  // if (noRadio) noRadio.checked = false;
   return groups;
 }
 
@@ -4152,12 +9937,22 @@ function updateMajorOfferingGroupingDisplay() {
   const display = document.getElementById('mos-grouping-display');
   if (!display) return;
   if (majorOfferingGroupingSelectedGroups.length) {
-    display.textContent = majorOfferingGroupingSelectedGroups.join('、');
+    const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === majorOfferingStudentRosterSectionId);
+    display.textContent = majorOfferingGroupingSelectedGroups
+      .map(g => formatStudentCourseGroupLabel(sec?.name, g))
+      .join('、');
+    // display.textContent = majorOfferingGroupingSelectedGroups.join('、'); // 原直接展示存储的小组名
     display.classList.remove('placeholder');
   } else {
     display.textContent = '请选择';
     display.classList.add('placeholder');
   }
+}
+
+function onMajorOfferingGroupingSelect(radio) {
+  majorOfferingGroupingSelectedGroups = radio?.value ? [radio.value] : [];
+  updateMajorOfferingGroupingDisplay();
+  closeMajorOfferingGroupingDropdown();
 }
 
 function onMajorOfferingGroupingToggle(checkbox) {
@@ -4168,7 +9963,7 @@ function onMajorOfferingGroupingToggle(checkbox) {
     majorOfferingGroupingSelectedGroups = majorOfferingGroupingSelectedGroups.filter(g => g !== val);
   }
   updateMajorOfferingGroupingDisplay();
-}
+} // 原多选逻辑，保留供参考；现由 onMajorOfferingGroupingSelect 单选覆盖
 
 function toggleMajorOfferingGroupingDropdown(event) {
   event.stopPropagation();
@@ -4209,30 +10004,345 @@ function confirmMajorOfferingStudentGrouping() {
   const selectedGroups = [...majorOfferingGroupingSelectedGroups];
   // const selectedGroups = [...document.querySelectorAll('.mos-grouping-group-check:checked')].map(el => el.value);
   if (!selectedGroups.length) {
-    alert('请至少选择一个小组。');
+    alert('请选择一个小组。');
     return;
   }
-  const removeOriginal = document.querySelector('input[name="mos-grouping-remove-original"]:checked')?.value === 'yes';
-  getMajorOfferingStudentRoster(sectionId).forEach(stu => {
+  if (selectedGroups.length > 1) {
+    alert('一名学生在同一门课程内只能同时属于一个组。');
+    return;
+  }
+  const targetGroup = selectedGroups[0];
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  const targetGroupObj = findOfferingGroupByShortName(sec, targetGroup);
+  const roster = getMajorOfferingStudentRoster(sectionId);
+  const movingStudents = roster.filter(stu => majorOfferingStudentRosterSelected.has(stu.id));
+  if (targetGroupObj) {
+    const capacityCheck = validateOfferingGroupCanAcceptStudentList(sec, targetGroupObj, movingStudents, { sectionId });
+    if (!capacityCheck.ok) {
+      alert(capacityCheck.message);
+      return;
+    }
+  }
+  // const removeOriginal = document.querySelector('input[name="mos-grouping-remove-original"]:checked')?.value === 'yes'; // 原移出原分组选项，已固定为替换原组
+  roster.forEach(stu => {
     if (!majorOfferingStudentRosterSelected.has(stu.id)) return;
-    const current = getStudentGroupNames(stu);
-    const next = removeOriginal ? selectedGroups : [...new Set([...current, ...selectedGroups])];
-    setStudentGroupNames(stu, next);
+    // const current = getStudentGroupNames(stu);
+    // const next = removeOriginal ? selectedGroups : [...new Set([...current, ...selectedGroups])];
+    setStudentGroupNames(stu, [targetGroup]);
     // if (majorOfferingStudentRosterSelected.has(stu.id)) stu.groupName = groupName.trim(); // 原单组覆盖
   });
   majorOfferingStudentRosterSelected.clear();
   closeModal('modal-student-grouping');
   renderMajorOfferingStudentRosterDrawer();
+  refreshOfferingGroupingPanelsIfOpen();
 }
 
 function renderMajorOfferingSubmitStatus(sec) {
-  const submitted = sec.submitStatus === 'submitted';
-  return `<span class="offering-status-pill ${submitted ? 'is-on' : 'is-off'}">${submitted ? '已提交' : '草稿'}</span>`;
+  const status = sec.submitStatus || 'draft';
+  if (status === 'submitted') {
+    return `<span class="offering-status-pill is-on">已提交</span>`;
+  }
+  if (status === 'reverted') {
+    return `<span class="offering-status-pill is-warn">回退</span>`;
+  }
+  return `<span class="offering-status-pill is-off">草稿</span>`;
+  // const submitted = sec.submitStatus === 'submitted';
+  // return `<span class="offering-status-pill ${submitted ? 'is-on' : 'is-off'}">${submitted ? '已提交' : '草稿'}</span>`; // 原仅草稿/已提交，改增加回退
 }
 
 function renderMajorOfferingTeachingConfirmStatus(sec) {
   const confirmed = sec.teachingConfirmStatus === 'confirmed';
   return `<span class="offering-status-pill ${confirmed ? 'is-on' : 'is-warn'}">${confirmed ? '已确认' : '待确认'}</span>`;
+}
+
+function renderMajorOfferingTaskSubmitDisplay(sec) {
+  const key = getMajorOfferingTaskSubmitStatusKey(sec);
+  if (key === 'submitted') {
+    return `<span class="offering-status-pill is-on">已提交</span>`;
+  }
+  if (key === 'reverted') {
+    return `<span class="offering-status-pill is-warn">回退</span>`;
+  }
+  return `<span class="offering-status-pill is-off">草稿</span>`;
+  // const submitted = sec.teachingConfirmStatus === 'confirmed';
+  // return `<span class="offering-status-pill ${submitted ? 'is-on' : 'is-off'}">${submitted ? '是' : '否'}</span>`; // 原是否提交，改提交状态
+  // return renderMajorOfferingTeachingConfirmStatus(sec); // 原授课确认状态列，改是否提交
+}
+
+function getMajorOfferingTaskSubmitStatusKey(sec) {
+  if (!sec) return 'draft';
+  if (sec.submitStatus === 'reverted') return 'reverted';
+  if (sec.teachingConfirmStatus === 'confirmed') return 'submitted';
+  if (sec.taskRevertRemark) return 'reverted';
+  return 'draft';
+}
+
+function applyMajorOfferingTaskRevertRemark(sec, remark, kind = 'arrangement') {
+  if (!sec || !remark) return;
+  sec.taskRevertRemark = remark;
+  sec.taskRevertAt = new Date().toISOString();
+  sec.taskRevertKind = kind;
+}
+
+function clearMajorOfferingTaskRevertRemark(sec) {
+  if (!sec) return;
+  sec.taskRevertRemark = '';
+  sec.taskRevertAt = null;
+  sec.taskRevertKind = '';
+}
+
+function openMajorOfferingTaskRevertRemarkView(sectionId) {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  const remark = (sec?.taskRevertRemark || '').trim();
+  if (!remark) {
+    alert('暂无退回说明。');
+    return;
+  }
+  const titleEl = document.getElementById('major-task-revert-view-title');
+  const metaEl = document.getElementById('major-task-revert-view-meta');
+  const bodyEl = document.getElementById('major-task-revert-view-body');
+  const courseTitle = [sec?.code, sec?.name].filter(Boolean).join(' ') || '—';
+  if (titleEl) titleEl.textContent = '退回说明';
+  if (metaEl) {
+    const kindLabel = sec?.taskRevertKind === 'plan' ? '退回至开课计划' : '退回任务安排';
+    const timeLabel = sec?.taskRevertAt ? formatDatetimeDisplayDdMmYyyyHm(sec.taskRevertAt) : '—';
+    metaEl.textContent = `${courseTitle} · ${kindLabel} · ${timeLabel}`;
+  }
+  if (bodyEl) bodyEl.textContent = remark;
+  openModal('modal-major-task-revert-view');
+}
+
+function openMajorOfferingTaskRevertRemarkModal({ title, message, hint, confirmLabel = '退回', onConfirm }) {
+  pendingMajorTaskRevertConfirm = onConfirm || null;
+  const titleEl = document.getElementById('major-task-revert-remark-title');
+  const msgEl = document.getElementById('major-task-revert-remark-msg');
+  const hintEl = document.getElementById('major-task-revert-remark-hint');
+  const inputEl = document.getElementById('major-task-revert-remark-input');
+  const confirmBtn = document.getElementById('major-task-revert-remark-confirm-btn');
+  if (titleEl) titleEl.textContent = title || '退回确认';
+  if (msgEl) msgEl.innerHTML = message || '确定退回吗？';
+  if (hintEl) {
+    if (hint) {
+      hintEl.textContent = hint;
+      hintEl.style.display = '';
+    } else {
+      hintEl.textContent = '';
+      hintEl.style.display = 'none';
+    }
+  }
+  if (inputEl) inputEl.value = '';
+  if (confirmBtn) confirmBtn.textContent = confirmLabel;
+  openModal('modal-major-task-revert-remark');
+  inputEl?.focus();
+}
+
+function cancelMajorOfferingTaskRevertRemark() {
+  pendingMajorTaskRevertConfirm = null;
+  closeModal('modal-major-task-revert-remark');
+}
+
+function confirmMajorOfferingTaskRevertRemark() {
+  const remark = (document.getElementById('major-task-revert-remark-input')?.value || '').trim();
+  if (!remark) {
+    alert('请填写退回说明。');
+    return;
+  }
+  const cb = pendingMajorTaskRevertConfirm;
+  pendingMajorTaskRevertConfirm = null;
+  closeModal('modal-major-task-revert-remark');
+  if (cb) cb(remark);
+}
+
+function renderMajorOfferingTaskRowActions(sec) {
+  const parts = [
+    `<a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合分班</a>`,
+    `<a href="#" onclick="openOfferingGroupingModal('${sec.id}');return false">分组</a>`,
+    `<a href="#" onclick="openMajorOfferingTaskView('${sec.id}');return false">查看</a>`
+  ];
+  if ((sec?.taskRevertRemark || '').trim()) {
+    parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">退回说明</a>`);
+  }
+  return parts.join(' · ');
+}
+
+function isMajorOfferingPlanEditLocked(sec) {
+  if (!sec) return false;
+  return sec.submitStatus === 'submitted';
+}
+
+function isMajorOfferingSectionStructureLocked(sec) {
+  if (!sec) return false;
+  return sec.teachingConfirmStatus === 'confirmed';
+  // return sec.submitStatus === 'submitted' || sec.teachingConfirmStatus === 'confirmed'; // 原提交后即锁定，改由授课确认后锁定（任务安排阶段可合分班/分组）
+}
+
+function getMajorOfferingPlanEditLockMessage(sec) {
+  if (!isMajorOfferingPlanEditLocked(sec)) return '';
+  return '当前计划已提交，不支持修改，仅可查看。';
+}
+
+function getMajorOfferingStructureLockMessage(sec) {
+  if (!isMajorOfferingSectionStructureLocked(sec)) return '';
+  return '当前任务安排已提交，不支持修改，仅可查看。';
+  // return '当前已完成授课确认，不支持修改，仅可查看。'; // 原授课确认锁定提示，改任务安排提交
+  // const parts = [];
+  // if (sec.submitStatus === 'submitted') parts.push('已提交');
+  // if (sec.teachingConfirmStatus === 'confirmed') parts.push('已授课确认');
+  // return `当前状态（${parts.join('、')}）不支持修改，仅可查看。`; // 原合并提示
+}
+
+function syncMajorOfferingReadonlyHint(host, sec, bannerId, {
+  insertAfter = null,
+  isLocked = isMajorOfferingSectionStructureLocked,
+  getMessage = getMajorOfferingStructureLockMessage
+} = {}) {
+  if (!host) return;
+  let banner = document.getElementById(bannerId);
+  const locked = isLocked(sec);
+  if (!locked) {
+    if (banner) banner.hidden = true;
+    return;
+  }
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = bannerId;
+    banner.className = 'offering-readonly-hint';
+    const anchor = insertAfter ? host.querySelector(insertAfter) : null;
+    if (anchor) anchor.insertAdjacentElement('afterend', banner);
+    else host.insertBefore(banner, host.firstChild);
+  }
+  banner.textContent = getMessage(sec);
+  banner.hidden = false;
+}
+
+function assertMajorOfferingPlanEditEditable(sec, actionLabel = '操作') {
+  if (!isMajorOfferingPlanEditLocked(sec)) return true;
+  alert(getMajorOfferingPlanEditLockMessage(sec) || `当前状态不支持${actionLabel}。`);
+  return false;
+}
+
+function setContainerButtonsDisabled(container, disabled) {
+  if (!container) return;
+  container.querySelectorAll('button').forEach(btn => { btn.disabled = disabled; });
+}
+
+function renderMajorOfferingStructureActions(sec) {
+  const parts = [
+    `<a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>`
+  ];
+  if (sec?.submitStatus === 'reverted' && (sec.taskRevertRemark || '').trim()) {
+    parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">回退说明</a>`);
+  }
+  return parts.join(' · ');
+  // return `<a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>`; // 原仅修改，回退任务增加回退说明
+  // <a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合分班</a> // 原计划页合分班，改由任务安排环节操作
+  // <a href="#" onclick="openOfferingGroupingModal('${sec.id}');return false">分组</a> // 原计划页分组，改由任务安排环节操作
+}
+
+function assertMajorOfferingStructureEditable(sec, actionLabel = '操作') {
+  if (!isMajorOfferingSectionStructureLocked(sec)) return true;
+  alert(getMajorOfferingStructureLockMessage(sec) || `当前状态不支持修改。`);
+  return false;
+}
+
+function assertOfferingGroupingEditable(actionLabel = '操作') {
+  return assertMajorOfferingStructureEditable(getOfferingGroupingSection(), actionLabel);
+}
+
+function isOfferingGroupingRosterContext() {
+  return offeringGroupingReturnPage === 'course-major-offering-roster'
+    || offeringGroupingReturnPage === 'course-special-offering-roster';
+  // return offeringGroupingReturnPage === 'course-major-offering-roster'; // 原仅专业名单管理
+}
+
+function isOfferingGroupingStudentRosterMode(sec = getOfferingGroupingSection()) {
+  if (!sec) return false;
+  if (isOfferingGroupingRosterContext()) return true;
+  return (offeringGroupingReturnPage === 'course-major-offering-task'
+    || offeringGroupingReturnPage === 'course-special-offering-task')
+    && isMajorOfferingSectionStructureLocked(sec);
+  // return offeringGroupingReturnPage === 'course-major-offering-task'
+  //   && isMajorOfferingSectionStructureLocked(sec); // 原仅专业任务安排入口
+}
+
+function isMajorOfferingTaskArrangementSubmitted(sec) {
+  return sec?.teachingConfirmStatus === 'confirmed';
+}
+
+function isOfferingGroupingStudentEditable() {
+  const sec = getOfferingGroupingSection();
+  if (!sec) return false;
+  if (isOfferingGroupingStudentRosterMode(sec)) {
+    return isMajorOfferingTaskArrangementSubmitted(sec) && !!(sec.groups?.length);
+  }
+  // if (isOfferingGroupingRosterContext()) {
+  //   return isMajorOfferingTaskArrangementSubmitted(sec) && !!(sec.groups?.length);
+  // } // 原仅名单管理入口，改任务安排已提交后从「分组」亦可维护名单
+  return !isMajorOfferingSectionStructureLocked(sec);
+}
+
+function canSaveOfferingGroupingRoster() {
+  return shouldShowOfferingGroupingSaveRosterBtn();
+  // const sec = getOfferingGroupingSection();
+  // if (!sec || !isOfferingGroupingRosterContext() || !isOfferingGroupingStudentEditable()) return false;
+  // return getMajorOfferingRosterScheduleStatusKey(sec) === 'draft'; // 原仅草稿显示按钮，改名单管理入口可编辑即显示
+}
+
+function shouldShowOfferingGroupingSaveRosterBtn() {
+  const sec = getOfferingGroupingSection();
+  if (!sec || !isOfferingGroupingStudentRosterMode(sec) || !isOfferingGroupingStudentEditable()) return false;
+  return getMajorOfferingRosterScheduleStatusKey(sec) !== 'submitted';
+  // if (!sec || !isOfferingGroupingRosterContext() || !isOfferingGroupingStudentEditable()) return false; // 原仅名单管理入口
+}
+
+function syncOfferingGroupingHeaderActions() {
+  const savePageBtn = document.getElementById('ogg-btn-save-grouping-page');
+  const saveRosterBtn = document.getElementById('ogg-btn-save-roster-page');
+  const rosterMode = isOfferingGroupingStudentRosterMode(getOfferingGroupingSection());
+  const showSaveStructure = !rosterMode && !offeringGroupingReadOnly;
+  const showSaveRoster = shouldShowOfferingGroupingSaveRosterBtn();
+  // const rosterContext = isOfferingGroupingRosterContext(); // 原仅名单管理入口隐藏「保存」
+  if (savePageBtn) {
+    savePageBtn.hidden = !showSaveStructure;
+    savePageBtn.style.display = showSaveStructure ? '' : 'none';
+  }
+  if (saveRosterBtn) {
+    saveRosterBtn.hidden = !showSaveRoster;
+    saveRosterBtn.style.display = showSaveRoster ? '' : 'none';
+  }
+}
+
+function assertOfferingGroupingStudentEditable(actionLabel = '操作') {
+  const sec = getOfferingGroupingSection();
+  if (isOfferingGroupingStudentEditable()) return true;
+  if (isOfferingGroupingStudentRosterMode(sec)) {
+    if (!isMajorOfferingTaskArrangementSubmitted(sec)) {
+      alert('请先在「专业开课任务安排」提交任务安排后，再维护学生名单。');
+      return false;
+    }
+    if (!sec?.groups?.length) {
+      alert('当前课程尚未分组，无法维护学生名单。');
+      return false;
+    }
+  }
+  // if (isOfferingGroupingRosterContext()) { ... } // 原仅名单管理入口提示
+  alert(getMajorOfferingStructureLockMessage(sec) || `当前状态不支持${actionLabel}。`);
+  return false;
+}
+
+function getOfferingGroupingRosterStudentLockMessage(sec) {
+  if (!sec) return '分组与教师安排已提交锁定；本页仅供教务处按学院分组维护各小组学生名单。';
+  return `分组与教师安排已提交锁定；本页仅供教务处按学院已分好的小组（${sec.groups?.length || 0} 个）维护学生名单。`;
+}
+
+function hasTaskSubmittedMajorOfferingForRoster() {
+  return Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).some(store =>
+    (store?.sections || []).some(sec =>
+      sec.offeringType === 'major'
+      && sec.submitStatus === 'submitted'
+      && isMajorOfferingTaskArrangementSubmitted(sec)
+    )
+  );
 }
 
 // function renderMajorOfferingStatus(sec) {
@@ -4241,11 +10351,12 @@ function renderMajorOfferingTeachingConfirmStatus(sec) {
 // } // 原开课状态，已改为提交状态 + 授课确认状态
 
 function resetMajorOfferingFilters() {
-  ['course-major-filter-dept', 'course-major-filter-prog', 'course-major-filter-name',
-    'course-major-filter-submit-status', 'course-major-filter-teaching-confirm'].forEach(id => {
+  ['course-major-filter-dept', 'course-major-filter-prog', 'course-major-filter-offering-unit',
+    'course-major-filter-name', 'course-major-filter-submit-status'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  // 'course-major-filter-teaching-confirm' // 原计划页筛选，改由任务安排页
   rebuildOfferingTermFilterSelect('course-major-filter-term', { preserveValue: false });
   syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
   resetListPage('courseMajorOffering');
@@ -4255,6 +10366,193 @@ function resetMajorOfferingFilters() {
 function queryMajorOfferingList() {
   resetListPage('courseMajorOffering');
   renderCourseOfferingMajorPage();
+}
+
+function getFilteredMajorOfferingPlanRows() {
+  const list = getMajorOfferingPlanRows();
+  const dept = document.getElementById('course-major-filter-dept')?.value || '';
+  const prog = document.getElementById('course-major-filter-prog')?.value || '';
+  const offeringUnit = document.getElementById('course-major-filter-offering-unit')?.value || '';
+  const submitStatus = document.getElementById('course-major-filter-submit-status')?.value || '';
+  const q = (document.getElementById('course-major-filter-name')?.value || '').trim().toLowerCase();
+  return list.filter(({ line, sec }) => {
+    if (dept && getProgrammeSchoolCode(line.programmeKey) !== dept) return false;
+    if (prog && line.programmeKey !== prog) return false;
+    if (offeringUnit && resolveMajorOfferingSectionOfferingUnit(sec) !== offeringUnit) return false;
+    if (submitStatus && sec.submitStatus !== submitStatus) return false;
+    if (q && !line.code.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function onMajorOfferingTaskTermFilterChange() {
+  const display = document.getElementById('course-major-task-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(display));
+  resetListPage('courseMajorOfferingTask');
+  renderCourseMajorOfferingTaskPage();
+}
+
+function onMajorOfferingTaskSchoolFilterChange() {
+  const deptSel = document.getElementById('course-major-task-filter-dept');
+  const progSel = document.getElementById('course-major-task-filter-prog');
+  if (!deptSel || !progSel) return;
+  populateMajorOfferingProgrammeFilter(progSel, deptSel.value, progSel.value, { allLabel: '全部上课专业' });
+}
+
+function resolveMajorOfferingSectionOfferingUnit(sec) {
+  return sec?.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec?.catalogId) || '';
+}
+
+function rebuildMajorOfferingTaskFilterOptions() {
+  const deptSel = document.getElementById('course-major-task-filter-dept');
+  const progSel = document.getElementById('course-major-task-filter-prog');
+  const unitSel = document.getElementById('course-major-task-filter-offering-unit');
+  if (!deptSel || !progSel) return;
+  const curDept = deptSel.value;
+  const curProg = progSel.value;
+  const curUnit = unitSel?.value || '';
+  const schoolCodes = [...SCHOOL_CODES].sort();
+  deptSel.innerHTML = '<option value="">全部上课学院</option>' + schoolCodes.map(c =>
+    `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+  ).join('');
+  // deptSel.innerHTML = '<option value="">全部学院</option>' + ... // 原标签「学院」
+  if (curDept && schoolCodes.includes(curDept)) deptSel.value = curDept;
+  populateMajorOfferingProgrammeFilter(progSel, deptSel.value, curProg, { allLabel: '全部上课专业' });
+  if (unitSel) {
+    const unitCodes = [...new Set(
+      getMajorOfferingSections()
+        .filter(sec => sec.submitStatus === 'submitted')
+        .map(sec => resolveMajorOfferingSectionOfferingUnit(sec))
+        .filter(Boolean)
+    )].sort();
+    unitSel.innerHTML = '<option value="">全部开课单位</option>' + unitCodes.map(c =>
+      `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join('');
+    if (curUnit && unitCodes.includes(curUnit)) unitSel.value = curUnit;
+  }
+  rebuildOfferingTermFilterSelect('course-major-task-filter-term');
+  const termDisplay = document.getElementById('course-major-task-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(termDisplay));
+}
+
+function resetMajorOfferingTaskFilters() {
+  ['course-major-task-filter-dept', 'course-major-task-filter-prog', 'course-major-task-filter-offering-unit',
+    'course-major-task-filter-name', 'course-major-task-filter-task-submit'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  // 'course-major-task-filter-teaching-confirm' // 原授课确认状态筛选，改是否提交
+  rebuildOfferingTermFilterSelect('course-major-task-filter-term', { preserveValue: false });
+  syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
+  resetListPage('courseMajorOfferingTask');
+  renderCourseMajorOfferingTaskPage();
+}
+
+function queryMajorOfferingTaskList() {
+  resetListPage('courseMajorOfferingTask');
+  renderCourseMajorOfferingTaskPage();
+}
+
+function getFilteredMajorOfferingRosterSections() {
+  const list = getMajorOfferingSections().filter(sec =>
+    sec.submitStatus === 'submitted' && isMajorOfferingTaskArrangementSubmitted(sec)
+  );
+  // const list = getMajorOfferingSections().filter(sec => sec.submitStatus === 'submitted'); // 原仅计划已提交即可见，改须任务安排已提交
+  const dept = document.getElementById('course-major-roster-filter-dept')?.value || '';
+  const prog = document.getElementById('course-major-roster-filter-prog')?.value || '';
+  const offeringUnit = document.getElementById('course-major-roster-filter-offering-unit')?.value || '';
+  const q = (document.getElementById('course-major-roster-filter-name')?.value || '').trim().toLowerCase();
+  // const teachingConfirm = document.getElementById('course-major-roster-filter-teaching-confirm')?.value || ''; // 原授课确认状态筛选，已移除
+  return list.filter(sec => {
+    const metas = getSectionLineMetas(sec);
+    if (dept && !metas.some(m => m.schoolCode === dept)) return false;
+    if (prog && !metas.some(m => m.line?.programmeKey === prog)) return false;
+    if (offeringUnit && resolveMajorOfferingSectionOfferingUnit(sec) !== offeringUnit) return false;
+    // if (teachingConfirm && sec.teachingConfirmStatus !== teachingConfirm) return false;
+    if (q && !sec.code.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function onMajorOfferingRosterTermFilterChange() {
+  const display = document.getElementById('course-major-roster-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(display));
+  resetListPage('courseMajorOfferingRoster');
+  renderCourseMajorOfferingRosterPage();
+}
+
+function onMajorOfferingRosterSchoolFilterChange() {
+  const deptSel = document.getElementById('course-major-roster-filter-dept');
+  const progSel = document.getElementById('course-major-roster-filter-prog');
+  if (!deptSel || !progSel) return;
+  populateMajorOfferingProgrammeFilter(progSel, deptSel.value, progSel.value, { allLabel: '全部上课专业' });
+}
+
+function rebuildMajorOfferingRosterFilterOptions() {
+  const deptSel = document.getElementById('course-major-roster-filter-dept');
+  const progSel = document.getElementById('course-major-roster-filter-prog');
+  const unitSel = document.getElementById('course-major-roster-filter-offering-unit');
+  if (!deptSel || !progSel) return;
+  const curDept = deptSel.value;
+  const curProg = progSel.value;
+  const curUnit = unitSel?.value || '';
+  const schoolCodes = [...SCHOOL_CODES].sort();
+  deptSel.innerHTML = '<option value="">全部上课学院</option>' + schoolCodes.map(c =>
+    `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+  ).join('');
+  if (curDept && schoolCodes.includes(curDept)) deptSel.value = curDept;
+  populateMajorOfferingProgrammeFilter(progSel, deptSel.value, curProg, { allLabel: '全部上课专业' });
+  if (unitSel) {
+    const unitCodes = [...new Set(
+      getMajorOfferingSections()
+        .filter(sec => sec.submitStatus === 'submitted' && isMajorOfferingTaskArrangementSubmitted(sec))
+        .map(sec => resolveMajorOfferingSectionOfferingUnit(sec))
+        .filter(Boolean)
+    )].sort();
+    unitSel.innerHTML = '<option value="">全部开课单位</option>' + unitCodes.map(c =>
+      `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join('');
+    if (curUnit && unitCodes.includes(curUnit)) unitSel.value = curUnit;
+  }
+  rebuildOfferingTermFilterSelect('course-major-roster-filter-term');
+  const termDisplay = document.getElementById('course-major-roster-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(termDisplay));
+}
+
+function resetMajorOfferingRosterFilters() {
+  courseMajorRosterSelectedSectionIds.clear();
+  ['course-major-roster-filter-dept', 'course-major-roster-filter-prog', 'course-major-roster-filter-offering-unit',
+    'course-major-roster-filter-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  // 'course-major-roster-filter-teaching-confirm' // 原授课确认状态筛选，已移除
+  rebuildOfferingTermFilterSelect('course-major-roster-filter-term', { preserveValue: false });
+  syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
+  resetListPage('courseMajorOfferingRoster');
+  renderCourseMajorOfferingRosterPage();
+}
+
+function queryMajorOfferingRosterList() {
+  courseMajorRosterSelectedSectionIds.clear();
+  resetListPage('courseMajorOfferingRoster');
+  renderCourseMajorOfferingRosterPage();
+}
+
+function getMajorOfferingRosterRows() {
+  const rows = [];
+  getFilteredMajorOfferingRosterSections().forEach(sec => {
+    ensureSectionOfferingFields(sec);
+    if (sec.isGrouped && sec.groups?.length) {
+      (sec.groups || []).forEach(g => migrateLegacyOfferingGroupCapacity(g));
+      syncOfferingGroupStudentCounts(sec);
+    }
+    rows.push({ sec, rowKey: sec.id });
+    // sec.groups.forEach(g => rows.push({ sec, group: g, rowKey: `${sec.id}:${g.id}` })); // 原按小组拆行，改一条开课任务一行
+    // return;
+  });
+  return rows;
+  // rows.push({ sec, group: null, rowKey: `${sec.id}:none` }); // 原未分组单独行键
 }
 
 function getFilteredMajorOfferingSections() {
@@ -4276,14 +10574,15 @@ function getFilteredMajorOfferingSections() {
   });
 }
 
-function populateMajorOfferingProgrammeFilter(progSel, schoolCode, curProg) {
+function populateMajorOfferingProgrammeFilter(progSel, schoolCode, curProg, { allLabel = '全部专业' } = {}) {
   if (!progSel) return;
   const progEntries = Object.entries(PROGRAMMES)
     .filter(([, p]) => !schoolCode || p.schoolCode === schoolCode)
     .sort((a, b) => a[1].code.localeCompare(b[1].code));
-  progSel.innerHTML = '<option value="">全部专业</option>' + progEntries.map(([key, p]) =>
+  progSel.innerHTML = `<option value="">${escapeHtml(allLabel)}</option>` + progEntries.map(([key, p]) =>
     `<option value="${escapeHtml(key)}">${escapeHtml(p.code)}</option>`
   ).join('');
+  // progSel.innerHTML = '<option value="">全部专业</option>' + ... // 原默认文案
   if (curProg && progEntries.some(([k]) => k === curProg)) progSel.value = curProg;
 }
 
@@ -4297,29 +10596,107 @@ function onMajorOfferingSchoolFilterChange() {
 function rebuildMajorOfferingFilterOptions() {
   const deptSel = document.getElementById('course-major-filter-dept');
   const progSel = document.getElementById('course-major-filter-prog');
+  const unitSel = document.getElementById('course-major-filter-offering-unit');
   if (!deptSel || !progSel) return;
   const curDept = deptSel.value;
   const curProg = progSel.value;
+  const curUnit = unitSel?.value || '';
   const schoolCodes = [...SCHOOL_CODES].sort();
   deptSel.innerHTML = '<option value="">全部学院</option>' + schoolCodes.map(c =>
     `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
   ).join('');
   if (curDept && schoolCodes.includes(curDept)) deptSel.value = curDept;
   populateMajorOfferingProgrammeFilter(progSel, deptSel.value, curProg);
+  if (unitSel) {
+    const unitCodes = [...new Set(
+      getMajorOfferingPlanRows()
+        .map(({ sec }) => resolveMajorOfferingSectionOfferingUnit(sec))
+        .filter(Boolean)
+    )].sort();
+    unitSel.innerHTML = '<option value="">全部开课单位</option>' + unitCodes.map(c =>
+      `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join('');
+    if (curUnit && unitCodes.includes(curUnit)) unitSel.value = curUnit;
+  }
   rebuildOfferingTermFilterSelect('course-major-filter-term');
   const termDisplay = document.getElementById('course-major-filter-term')?.value || '';
   syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(termDisplay));
+}
+
+function getFilteredMajorOfferingTaskSections() {
+  const list = getMajorOfferingSections().filter(sec => sec.submitStatus === 'submitted');
+  const dept = document.getElementById('course-major-task-filter-dept')?.value || '';
+  const prog = document.getElementById('course-major-task-filter-prog')?.value || '';
+  const offeringUnit = document.getElementById('course-major-task-filter-offering-unit')?.value || '';
+  const taskSubmit = document.getElementById('course-major-task-filter-task-submit')?.value
+    || document.getElementById('course-major-task-filter-teaching-confirm')?.value
+    || '';
+  // const teachingConfirm = document.getElementById('course-major-task-filter-teaching-confirm')?.value || ''; // 原授课确认状态筛选
+  const q = (document.getElementById('course-major-task-filter-name')?.value || '').trim().toLowerCase();
+  return list.filter(sec => {
+    const metas = getSectionLineMetas(sec);
+    if (dept && !metas.some(m => m.schoolCode === dept)) return false;
+    if (prog && !metas.some(m => m.line?.programmeKey === prog)) return false;
+    if (offeringUnit && resolveMajorOfferingSectionOfferingUnit(sec) !== offeringUnit) return false;
+    if (taskSubmit && getMajorOfferingTaskSubmitStatusKey(sec) !== taskSubmit) return false;
+    // if (taskSubmit && sec.teachingConfirmStatus !== taskSubmit) return false; // 原是否提交筛选，改提交状态
+    if (q && !sec.code.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function hasSubmittedMajorOfferingTasks() {
+  return Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).some(store =>
+    (store?.sections || []).some(sec => sec.offeringType === 'major' && sec.submitStatus === 'submitted')
+  );
+  // return getMajorOfferingSections().some(sec => sec.submitStatus === 'submitted'); // 原仅当前学期 store
 }
 
 function getMajorOfferingSectionsForScheduling() {
   return getMajorOfferingSections().filter(sec => sec.submitStatus === 'submitted' && sec.schedulingVisible);
 }
 
-function confirmSelectedMajorOfferingTeaching() {
+function buildMajorOfferingTaskSubmitConfirm(pendingSections) {
+  const failures = [];
+  let allOk = true;
+  pendingSections.forEach(sec => {
+    ensureSectionOfferingFields(sec);
+    const result = validateMajorOfferingTaskArrangementSubmit(sec);
+    if (result.ok) return;
+    allOk = false;
+    const title = [sec.code, sec.name].filter(Boolean).join(' ') || '当前任务';
+    failures.push(title);
+    // failures.push(`${title}：\n${result.message}`); // 原展示分组/学时明细，批量提交数据量过大
+  });
+  const openEnrollmentCount = pendingSections.filter(isMajorOfferingOpenEnrollment).length;
+  const closedCount = pendingSections.length - openEnrollmentCount;
+  // const baseHint = '提交后将锁定合分班、分组与教师安排；教务处可进入「专业开课学生名单管理」按学院分好的小组添加学生。'; // 原未区分选课类型
+  let baseHint = '提交后将锁定合分班、分组与教师安排。';
+  if (closedCount) {
+    baseHint += '不开放选课的课程，教务处可在「专业开课学生名单管理」按小组维护学生名单。';
+  }
+  if (openEnrollmentCount) {
+    baseHint += closedCount
+      ? `其中 ${openEnrollmentCount} 门为开放选课，学生名单不由本模块维护，后续由选课应用根据选课结果生成。`
+      : '所选均为开放选课课程，学生名单不由本模块维护，后续由选课应用根据选课结果生成。';
+  }
+  const hint = allOk
+    ? baseHint
+    : [
+        '以下开课任务尚未满足提交条件（学时未排满、分组人数上限未覆盖计划人数或超过课程人数上限等），暂无法提交：',
+        '',
+        ...failures.map(title => `· ${title}`),
+        '',
+        '请返回分组页完善后再提交。'
+      ].join('\n');
+  return { allOk, hint };
+}
+
+function submitSelectedMajorOfferingTaskArrangements(selectedIds = null) {
   if (!ensureCourseOfferingPlan()) return;
-  const ids = [...courseMajorSelectedSectionIds];
+  const ids = selectedIds ? [...selectedIds] : [...courseMajorTaskSelectedSectionIds];
   if (!ids.length) {
-    alert('请先勾选需要授课确认的开课任务。');
+    alert('请先勾选需要提交的开课任务。');
     return;
   }
   const secs = ids
@@ -4327,16 +10704,72 @@ function confirmSelectedMajorOfferingTeaching() {
     .filter(s => s && s.offeringType === 'major');
   const pending = secs.filter(s => s.teachingConfirmStatus !== 'confirmed');
   if (!pending.length) {
-    alert('所选开课任务均已完成授课确认。');
+    alert('所选开课任务均已提交。');
     return;
   }
-  if (!confirm(`确定为 ${pending.length} 条开课任务完成授课确认吗？`)) return;
-  pending.forEach(sec => {
-    sec.teachingConfirmStatus = 'confirmed';
+  const { allOk, hint } = buildMajorOfferingTaskSubmitConfirm(pending);
+  // const validation = validateMajorOfferingTaskArrangementsSubmit(pending);
+  // if (!validation.ok) {
+  //   alert(validation.message);
+  //   return;
+  // } // 原 alert 阻断，改二次弹窗内警示且禁用确认
+  openDeleteConfirm({
+    title: '确认提交',
+    message: `确定提交选中的 <strong>${pending.length}</strong> 条开课任务安排吗？`,
+    hint,
+    hintWarn: !allOk,
+    confirmLabel: '提交',
+    confirmDisabled: !allOk,
+    onConfirm: allOk
+      ? () => {
+          pending.forEach(sec => {
+            sec.teachingConfirmStatus = 'confirmed';
+            clearMajorOfferingTaskRevertRemark(sec);
+          });
+          courseMajorTaskSelectedSectionIds.clear();
+          renderCourseMajorOfferingTaskPage();
+          renderCourseMajorOfferingRosterPage();
+          updateMajorOfferingTaskSelection();
+          const openCount = pending.filter(isMajorOfferingOpenEnrollment).length;
+          const rosterNote = openCount === pending.length
+            ? '开放选课课程的学生名单将由选课应用生成。'
+            : openCount
+              ? `其中 ${openCount} 门开放选课课程名单将由选课应用生成；其余请前往「专业开课学生名单管理」维护名单。`
+              : '请前往「专业开课学生名单管理」为各小组维护学生名单。';
+          // alert(`已提交 ${pending.length} 条任务安排。请前往「专业开课学生名单管理」为各小组维护学生名单。`); // 原未区分开放选课
+          alert(`已提交 ${pending.length} 条任务安排。${rosterNote}`);
+        }
+      : null
   });
-  courseMajorSelectedSectionIds.clear();
-  renderCourseOfferingMajorPage();
 }
+
+function confirmSelectedMajorOfferingTeaching(selectedIds = null) {
+  return submitSelectedMajorOfferingTaskArrangements(selectedIds);
+  // if (!ensureCourseOfferingPlan()) return;
+  // const ids = selectedIds ? [...selectedIds] : [...courseMajorTaskSelectedSectionIds.size
+  //   ? courseMajorTaskSelectedSectionIds
+  //   : courseMajorSelectedSectionIds];
+  // if (!ids.length) {
+  //   alert('请先勾选需要授课确认的开课任务。');
+  //   return;
+  // }
+  // const secs = ids
+  //   .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+  //   .filter(s => s && s.offeringType === 'major');
+  // const pending = secs.filter(s => s.teachingConfirmStatus !== 'confirmed');
+  // if (!pending.length) {
+  //   alert('所选开课任务均已完成授课确认。');
+  //   return;
+  // }
+  // if (!confirm(`确定为 ${pending.length} 条开课任务完成授课确认吗？`)) return;
+  // pending.forEach(sec => {
+  //   sec.teachingConfirmStatus = 'confirmed';
+  // });
+  // courseMajorSelectedSectionIds.clear();
+  // courseMajorTaskSelectedSectionIds.clear();
+  // renderCourseOfferingMajorPage();
+  // renderCourseMajorOfferingTaskPage();
+} // 原授课确认入口，改 submitSelectedMajorOfferingTaskArrangements
 
 function submitSelectedMajorOfferingTasks() {
   if (!ensureCourseOfferingPlan()) return;
@@ -4348,24 +10781,345 @@ function submitSelectedMajorOfferingTasks() {
   const secs = ids
     .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
     .filter(s => s && s.offeringType === 'major');
-  const notConfirmed = secs.filter(s => s.teachingConfirmStatus !== 'confirmed');
-  if (notConfirmed.length) {
-    alert(`所选开课任务中有 ${notConfirmed.length} 条尚未完成授课确认，无法提交。\n\n${notConfirmed.map(s => `${s.code} ${s.name}`).join('\n')}`);
-    return;
-  }
+  // const notConfirmed = secs.filter(s => s.teachingConfirmStatus !== 'confirmed');
+  // if (notConfirmed.length) {
+  //   alert(`所选开课任务中有 ${notConfirmed.length} 条尚未完成授课确认，无法提交。\n\n${notConfirmed.map(s => `${s.code} ${s.name}`).join('\n')}`);
+  //   return;
+  // } // 原须先授课确认再提交，改由任务安排完成后在任务页授课确认
   const toSubmit = secs.filter(s => s.submitStatus !== 'submitted');
   if (!toSubmit.length) {
     alert('所选开课任务均已提交。');
     return;
   }
-  if (!confirm(`确定提交 ${toSubmit.length} 条开课任务吗？\n提交后数据将进入排课模块，未提交任务排课模块不可见。`)) return;
-  toSubmit.forEach(sec => {
-    sec.submitStatus = 'submitted';
-    sec.schedulingVisible = true;
-    sec.submittedAt = new Date().toISOString();
+  const revertedCount = toSubmit.filter(s => s.submitStatus === 'reverted').length;
+  const resubmitHint = revertedCount
+    ? `含 ${revertedCount} 条回退任务，提交后将重新进入「专业开课任务安排」。`
+    : '提交后可进入「专业开课任务安排」进行合分班、分组与教师安排。';
+  openDeleteConfirm({
+    title: '提交开课任务',
+    message: `确定提交选中的 <strong>${toSubmit.length}</strong> 条开课任务吗？`,
+    hint: resubmitHint,
+    onConfirm: () => {
+      toSubmit.forEach(sec => {
+        sec.submitStatus = 'submitted';
+        sec.schedulingVisible = true;
+        sec.submittedAt = new Date().toISOString();
+      });
+      courseMajorSelectedSectionIds.clear();
+      renderCourseOfferingMajorPage();
+    }
   });
-  courseMajorSelectedSectionIds.clear();
-  renderCourseOfferingMajorPage();
+  // if (!confirm(`确定提交 ${toSubmit.length} 条开课任务吗？\n提交后数据将进入排课模块，未提交任务排课模块不可见。`)) return; // 原浏览器 confirm，改二次弹窗
+  // toSubmit.forEach(sec => {
+  //   sec.submitStatus = 'submitted';
+  //   sec.schedulingVisible = true;
+  //   sec.submittedAt = new Date().toISOString();
+  // });
+  // courseMajorSelectedSectionIds.clear();
+  // renderCourseOfferingMajorPage();
+}
+
+function clearMajorOfferingSectionTaskArrangement(sec) {
+  if (!sec) return;
+  sec.groupAssignments = [];
+  sec.groups = [];
+  sec.isGrouped = false;
+  sec.teacherAssignments = [];
+  sec.teachers = '';
+  sec.teacherRemark = '';
+  sec.coordinatorStaffId = '';
+  sec.coordinatorName = '';
+  sec.coordinatorStaffIds = [];
+  const roster = majorOfferingStudentRosterStore[sec.id];
+  if (roster?.length) {
+    roster.forEach(stu => setStudentGroupNames(stu, []));
+  }
+}
+
+function markMajorOfferingSectionRevertedFromTask(sec) {
+  if (!sec) return;
+  sec.submitStatus = 'reverted';
+  sec.schedulingVisible = false;
+  sec.teachingConfirmStatus = 'pending';
+  sec.submittedAt = null;
+  clearMajorOfferingSectionTaskArrangement(sec);
+}
+
+function splitMajorOfferingSectionOnRevertFromTask(sec) {
+  if (!sec || !ensureCourseOfferingPlan()) return;
+  if (sec.lineIds.length <= 1) {
+    markMajorOfferingSectionRevertedFromTask(sec);
+    return;
+  }
+  const anchor = sec;
+  const oldSectionId = sec.id;
+  const lineIds = [...sec.lineIds];
+  COURSE_OFFERING_PLAN_STORE.sections = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.id !== oldSectionId);
+  const lineSectionPairs = [];
+  lineIds.forEach(lineId => {
+    const line = getOfferingLineById(lineId);
+    if (!line) return;
+    const secNo = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.catalogId === anchor.catalogId).length + 1;
+    const newSec = buildOfferingSection(line, secNo);
+    newSec.weekRange = anchor.weekRange;
+    newSec.teachingWeeks = anchor.teachingWeeks;
+    newSec.totalHours = anchor.totalHours;
+    newSec.theoryHours = anchor.theoryHours;
+    newSec.tutorialHours = anchor.tutorialHours;
+    newSec.practiceHours = anchor.practiceHours;
+    newSec.otherHours = anchor.otherHours;
+    newSec.credits = anchor.credits;
+    newSec.estimatedStudents = getDonorLineShare(anchor, 'estimatedStudents', 30);
+    newSec.studentCount = newSec.estimatedStudents;
+    newSec.reservedSpots = getDonorLineShare(anchor, 'reservedSpots', 5);
+    newSec.venueTypes = [...(anchor.venueTypes || [])];
+    newSec.classroomAssignments = (anchor.classroomAssignments || []).map(c => ({ ...c }));
+    newSec.enrollmentType = anchor.enrollmentType;
+    newSec.isScheduled = anchor.isScheduled;
+    newSec.isVenueScheduled = anchor.isVenueScheduled;
+    newSec.isAttendance = anchor.isAttendance;
+    newSec.isGradeEntry = anchor.isGradeEntry;
+    newSec.isExamScheduled = anchor.isExamScheduled;
+    ensureSectionOfferingFields(newSec);
+    if (anchor.taskRevertRemark) {
+      newSec.taskRevertRemark = anchor.taskRevertRemark;
+      newSec.taskRevertAt = anchor.taskRevertAt;
+      newSec.taskRevertKind = anchor.taskRevertKind;
+    }
+    markMajorOfferingSectionRevertedFromTask(newSec);
+    COURSE_OFFERING_PLAN_STORE.sections.push(newSec);
+    line.sectionId = newSec.id;
+    lineSectionPairs.push({ lineId, sectionId: newSec.id });
+  });
+  splitMajorOfferingStudentRosterOnWithdraw(oldSectionId, lineSectionPairs);
+  renumberSectionsForCourse(anchor.catalogId);
+}
+
+function revertMajorOfferingSectionFromTask(sec) {
+  if (!sec) return;
+  if (sec.lineIds.length > 1) splitMajorOfferingSectionOnRevertFromTask(sec);
+  else markMajorOfferingSectionRevertedFromTask(sec);
+}
+
+function revertMajorOfferingTaskArrangementFromRoster(sectionIds, remark) {
+  const ids = sectionIds ? [...sectionIds] : [];
+  ids.forEach(sectionId => {
+    const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === sectionId);
+    if (!sec || sec.offeringType !== 'major') return;
+    applyMajorOfferingTaskRevertRemark(sec, remark, 'arrangement');
+    sec.teachingConfirmStatus = 'pending';
+  });
+  if (offeringGroupingSectionId && ids.includes(offeringGroupingSectionId) && isOfferingGroupingRosterContext()) {
+    closeOfferingGroupingPage({ force: true });
+  }
+  courseMajorRosterSelectedSectionIds.clear();
+  renderCourseMajorOfferingTaskPage();
+  renderCourseMajorOfferingRosterPage();
+}
+
+function revertSelectedMajorOfferingRosterArrangements() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...courseMajorRosterSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要退回的开课任务。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'major' && isMajorOfferingTaskArrangementSubmitted(s));
+  if (!secs.length) {
+    alert('所选开课任务无法退回。');
+    return;
+  }
+  openMajorOfferingTaskRevertRemarkModal({
+    title: '退回任务安排',
+    message: `确定退回选中的 <strong>${secs.length}</strong> 条开课任务吗？`,
+    hint: '退回后该任务将回到「专业开课任务安排」，可重新修改合分班、分组与教师安排并再次提交；本页已维护的学生名单将保留。',
+    confirmLabel: '退回',
+    onConfirm: remark => {
+      revertMajorOfferingTaskArrangementFromRoster(secs.map(s => s.id), remark);
+      alert(`已退回 ${secs.length} 条任务安排，请前往「专业开课任务安排」继续修改。`);
+    }
+  });
+}
+
+// function revertMajorOfferingTaskArrangementFromRoster(sectionId) { ... } // 原行内退回无备注，改工具栏批量+退回说明
+
+function revertSelectedMajorOfferingTaskArrangements() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...courseMajorTaskSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要退回的开课任务。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'major');
+  const revertable = secs.filter(s =>
+    s.submitStatus === 'submitted' && s.teachingConfirmStatus !== 'confirmed'
+  );
+  const revertableSections = [...new Map(revertable.map(s => [s.id, s])).values()];
+  if (!revertableSections.length) {
+    if (secs.some(s => s.teachingConfirmStatus === 'confirmed')) {
+      alert('所选开课任务已提交任务安排，无法退回。');
+    } else {
+      alert('所选开课任务无法退回。');
+    }
+    return;
+  }
+  const mergedCount = revertableSections.filter(s => (s.lineIds?.length || 0) > 1).length;
+  const mergeHint = mergedCount
+    ? `其中 ${mergedCount} 条为合班任务，退回后将拆回「一课程号 + 一专业批次」一条计划。`
+    : '';
+  openMajorOfferingTaskRevertRemarkModal({
+    title: '退回开课任务',
+    message: `确定退回选中的 <strong>${revertableSections.length}</strong> 条开课任务吗？`,
+    hint: `退回后「专业开课计划」提交状态显示为回退，可修改后再次提交；合分班、分组与教师安排将全部清除。${mergeHint}`,
+    confirmLabel: '退回',
+    onConfirm: remark => {
+      const processed = new Set();
+      revertableSections.forEach(sec => {
+        if (processed.has(sec.id)) return;
+        processed.add(sec.id);
+        applyMajorOfferingTaskRevertRemark(sec, remark, 'plan');
+        revertMajorOfferingSectionFromTask(sec);
+      });
+      if (offeringGroupingSectionId && processed.has(offeringGroupingSectionId)) {
+        offeringGroupingSectionId = null;
+        offeringGroupingSelectedGroupId = null;
+        offeringGroupingStudentSelected.clear();
+        offeringGroupingAssignSelected.clear();
+      }
+      courseMajorTaskSelectedSectionIds.clear();
+      renderCourseOfferingMajorPage();
+      renderCourseMajorOfferingTaskPage();
+      renderCourseMajorOfferingRosterPage();
+      renderCourseMergeSplitPage();
+      renderCourseSectionArrangePage();
+    }
+  });
+  // openDeleteConfirm({ ... onConfirm: () => { ... revertMajorOfferingSectionFromTask ... } }); // 原无退回说明
+}
+
+function revertMajorOfferingSectionSubmitToDraft(sec) {
+  if (!sec) return;
+  sec.submitStatus = 'draft';
+  sec.schedulingVisible = false;
+  sec.teachingConfirmStatus = 'pending';
+  // sec.submittedAt = sec.submittedAt; // 原保留提交时间，撤回后改清除
+  sec.submittedAt = null;
+  clearMajorOfferingSectionTaskArrangement(sec);
+}
+
+function splitMajorOfferingStudentRosterOnWithdraw(oldSectionId, lineSectionPairs) {
+  const roster = majorOfferingStudentRosterStore[oldSectionId];
+  if (!roster?.length) return;
+  delete majorOfferingStudentRosterStore[oldSectionId];
+  lineSectionPairs.forEach(({ lineId, sectionId }) => {
+    const line = getOfferingLineById(lineId);
+    if (!line) return;
+    const programmeCode = getProgrammeCode(line.programmeKey);
+    const students = roster
+      .filter(stu => stu.programmeCode === programmeCode && stu.intake === line.intake)
+      .map(stu => {
+        const copy = { ...stu };
+        setStudentGroupNames(copy, []);
+        return copy;
+      });
+    if (!students.length) return;
+    majorOfferingStudentRosterStore[sectionId] = students;
+    syncSectionEstimatedStudentsFromRoster(sectionId);
+  });
+}
+
+function splitMajorOfferingSectionOnWithdraw(sec) {
+  if (!sec || !ensureCourseOfferingPlan()) return;
+  if (sec.lineIds.length <= 1) {
+    revertMajorOfferingSectionSubmitToDraft(sec);
+    return;
+  }
+  const anchor = sec;
+  const oldSectionId = sec.id;
+  const lineIds = [...sec.lineIds];
+  COURSE_OFFERING_PLAN_STORE.sections = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.id !== oldSectionId);
+  const lineSectionPairs = [];
+  lineIds.forEach(lineId => {
+    const line = getOfferingLineById(lineId);
+    if (!line) return;
+    const secNo = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.catalogId === anchor.catalogId).length + 1;
+    const newSec = buildOfferingSection(line, secNo);
+    newSec.weekRange = anchor.weekRange;
+    newSec.teachingWeeks = anchor.teachingWeeks;
+    newSec.totalHours = anchor.totalHours;
+    newSec.theoryHours = anchor.theoryHours;
+    newSec.tutorialHours = anchor.tutorialHours;
+    newSec.practiceHours = anchor.practiceHours;
+    newSec.otherHours = anchor.otherHours;
+    newSec.estimatedStudents = getDonorLineShare(anchor, 'estimatedStudents', 30);
+    newSec.studentCount = newSec.estimatedStudents;
+    newSec.reservedSpots = getDonorLineShare(anchor, 'reservedSpots', 5);
+    ensureSectionOfferingFields(newSec);
+    COURSE_OFFERING_PLAN_STORE.sections.push(newSec);
+    line.sectionId = newSec.id;
+    lineSectionPairs.push({ lineId, sectionId: newSec.id });
+  });
+  splitMajorOfferingStudentRosterOnWithdraw(oldSectionId, lineSectionPairs);
+  renumberSectionsForCourse(anchor.catalogId);
+}
+
+function withdrawMajorOfferingSection(sec) {
+  if (!sec) return;
+  if (sec.lineIds.length > 1) splitMajorOfferingSectionOnWithdraw(sec);
+  else revertMajorOfferingSectionSubmitToDraft(sec);
+}
+
+function withdrawSelectedMajorOfferingTasks() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...courseMajorSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要撤回的开课任务。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'major');
+  const withdrawable = secs.filter(s =>
+    s.submitStatus === 'submitted' && s.teachingConfirmStatus !== 'confirmed'
+  );
+  const withdrawableSections = [...new Map(withdrawable.map(s => [s.id, s])).values()];
+  if (!withdrawableSections.length) {
+    if (secs.some(s => s.teachingConfirmStatus === 'confirmed')) {
+      alert('所选开课任务均已完成授课确认，无法撤回。');
+    } else {
+      alert('所选开课任务尚未提交，无需撤回。');
+    }
+    return;
+  }
+  openDeleteConfirm({
+    title: '撤回开课任务',
+    message: `确定撤回选中的 <strong>${withdrawableSections.length}</strong> 条开课任务吗？`,
+    hint: '撤回后计划恢复为草稿，可重新编辑并再次提交。此前在「专业开课任务安排」中的合分班、分组与授课安排将全部清除。',
+    onConfirm: () => {
+      const processed = new Set();
+      withdrawableSections.forEach(sec => {
+        if (processed.has(sec.id)) return;
+        processed.add(sec.id);
+        withdrawMajorOfferingSection(sec);
+      });
+      if (offeringGroupingSectionId && processed.has(offeringGroupingSectionId)) {
+        offeringGroupingSectionId = null;
+        offeringGroupingSelectedGroupId = null;
+        offeringGroupingStudentSelected.clear();
+      }
+      courseMajorSelectedSectionIds.clear();
+      courseMajorTaskSelectedSectionIds.clear();
+      renderCourseOfferingMajorPage();
+      renderCourseMajorOfferingTaskPage();
+      renderCourseMajorOfferingRosterPage();
+      renderCourseMergeSplitPage();
+      renderCourseSectionArrangePage();
+    }
+  });
 }
 
 function updateMajorOfferingSelection() {
@@ -4376,9 +11130,20 @@ function updateMajorOfferingSelection() {
   const btnDelete = document.getElementById('btn-major-offering-delete');
   const btnTeachingConfirm = document.getElementById('btn-major-offering-teaching-confirm');
   const btnSubmit = document.getElementById('btn-major-offering-submit');
+  // const btnWithdraw = document.getElementById('btn-major-offering-withdraw'); // 原计划页撤回按钮，已移除
   if (btnDelete) btnDelete.disabled = !hasSelection;
-  if (btnTeachingConfirm) btnTeachingConfirm.disabled = !hasSelection;
+  // if (btnTeachingConfirm) btnTeachingConfirm.disabled = !hasSelection; // 原计划在计划页授课确认
   if (btnSubmit) btnSubmit.disabled = !hasSelection;
+  // if (btnWithdraw) {
+  //   const canWithdraw = hasSelection && ensureCourseOfferingPlan() && [...courseMajorSelectedSectionIds].some(id => {
+  //     const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id);
+  //     return sec
+  //       && sec.offeringType === 'major'
+  //       && sec.submitStatus === 'submitted'
+  //       && sec.teachingConfirmStatus !== 'confirmed';
+  //   });
+  //   btnWithdraw.disabled = !canWithdraw;
+  // }
   const checkAll = document.getElementById('course-major-check-all');
   const selectable = document.querySelectorAll('.course-major-row-check');
   if (checkAll && selectable.length) {
@@ -4436,11 +11201,19 @@ function ensureMajorOfferingSectionEditFields(sec) {
     sec.teachingCode = sec.teachingClassNo || '';
   }
   if (sec.minEnrollment == null) sec.minEnrollment = 0;
+  if (sec.reservedSpots == null || sec.reservedSpots === '') {
+    sec.reservedSpots = DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS;
+  }
   if (!sec.enrollmentType) sec.enrollmentType = 'closed';
   if (!sec.isScheduled) sec.isScheduled = 'yes';
   if (!sec.isVenueScheduled) sec.isVenueScheduled = 'yes';
-  if (sec.tutorialHours == null) sec.tutorialHours = 0;
-  if (sec.otherHours == null) sec.otherHours = 0;
+  if (!sec.isAttendance) sec.isAttendance = 'yes';
+  if (!sec.isGradeEntry) sec.isGradeEntry = 'yes';
+  if (!sec.isExamScheduled) sec.isExamScheduled = 'yes';
+  if (sec.tutorialHours == null) sec.tutorialHours = DEFAULT_OFFERING_COURSE_HOURS.tutorialHours;
+  if (sec.otherHours == null) sec.otherHours = DEFAULT_OFFERING_COURSE_HOURS.otherHours;
+  // if (sec.tutorialHours == null) sec.tutorialHours = 0; // 原默认 0，改与开课计划默认学时一致
+  // if (sec.otherHours == null) sec.otherHours = 0; // 原默认 0，改与开课计划默认学时一致
   if (sec.location == null) sec.location = '';
   if (sec.teachers == null) sec.teachers = '';
   if (sec.teacherRemark == null) sec.teacherRemark = '';
@@ -4448,9 +11221,10 @@ function ensureMajorOfferingSectionEditFields(sec) {
     sec.weeklyHours = sec.credits ?? '';
     // const weeks = sec.teachingWeeks || 0; // 原默认 totalHours / teachingWeeks
   }
-  if (!Array.isArray(sec.selectedWeeks) || !sec.selectedWeeks.length) {
-    sec.selectedWeeks = parseWeekRangeToWeeks(sec.weekRange);
-  }
+  ensureSectionWeekRangeFromTerm(sec);
+  // if (!Array.isArray(sec.selectedWeeks) || !sec.selectedWeeks.length) {
+  //   sec.selectedWeeks = parseWeekRangeToWeeks(sec.weekRange);
+  // } // 原仅解析已有 weekRange，改由 ensureSectionWeekRangeFromTerm 按学期默认 1-N
   if (!Array.isArray(sec.venueTypes)) sec.venueTypes = [];
   else sec.venueTypes = sec.venueTypes.map(normalizeMajorOfferingClassroomType);
   if (!Array.isArray(sec.classroomAssignments)) sec.classroomAssignments = [];
@@ -4472,6 +11246,26 @@ function getSectionStudentTypeCounts(sectionId) {
     else if (type === 'International') counts.international += 1;
   });
   return counts;
+}
+
+function getSectionPlannedStudentCount(sec) {
+  if (!sec) return 0;
+  const roster = getMajorOfferingStudentRoster(sec.id);
+  if (roster.length) return roster.length;
+  return sec.estimatedStudents ?? sec.studentCount ?? 0;
+}
+
+function getSectionCapacityLimit(sec) {
+  const planned = getSectionPlannedStudentCount(sec);
+  const reserved = sec?.reservedSpots ?? 0;
+  return planned + reserved;
+}
+
+function updateMajorOfferingEditCapacityLimitDisplay() {
+  const planned = Number(document.getElementById('mos-edit-student-total')?.value) || 0;
+  const reserved = Number(document.getElementById('mos-edit-reserved-spots')?.value) || 0;
+  const el = document.getElementById('mos-edit-capacity-limit');
+  if (el) el.value = planned + reserved;
 }
 
 function formatClassroomArrangementSummary(assignments) {
@@ -4552,16 +11346,17 @@ function ensureMajorOfferingClassroomPickerFilters() {
 function getClassroomPickerTypeFilterValues() {
   const typeQ = document.getElementById('classroom-filter-type')?.value || '';
   if (typeQ) return [normalizeMajorOfferingClassroomType(typeQ)];
-  const drawerTypes = getMajorOfferingVenueTypeSelected().map(normalizeMajorOfferingClassroomType);
+  const drawerTypes = getActiveOfferingEditVenueTypeSelected().map(normalizeMajorOfferingClassroomType);
   if (drawerTypes.length) return drawerTypes;
   return [];
+  // const drawerTypes = getMajorOfferingVenueTypeSelected().map(normalizeMajorOfferingClassroomType); // 原仅专业开课抽屉
 }
 
 function syncClassroomPickerTypeFromDrawer() {
   ensureMajorOfferingClassroomPickerFilters();
   const typeSel = document.getElementById('classroom-filter-type');
   if (!typeSel) return;
-  const selected = getMajorOfferingVenueTypeSelected().map(normalizeMajorOfferingClassroomType);
+  const selected = getActiveOfferingEditVenueTypeSelected().map(normalizeMajorOfferingClassroomType);
   if (!selected.length) {
     typeSel.value = '';
     return;
@@ -4677,6 +11472,7 @@ function openMajorOfferingClassroomPickerModal() {
   if (!majorOfferingEditSectionId) return;
   const sec = getMajorOfferingEditSection();
   if (!sec) return;
+  if (!assertMajorOfferingStructureEditable(sec, '教室安排')) return;
   majorOfferingClassroomPickerDraft = new Set((sec.classroomAssignments || []).map(c => c.id));
   resetMajorOfferingClassroomPickerFilters();
   openModal('modal-major-classroom-picker');
@@ -4688,12 +11484,15 @@ function closeMajorOfferingClassroomPickerModal() {
 }
 
 function confirmMajorOfferingClassroomPickerModal() {
-  const sec = getMajorOfferingEditSection();
+  const sec = getOfferingEditSectionForClassroomPicker();
   if (!sec) return;
   sec.classroomAssignments = MOCK_CLASSROOM_POOL.filter(c => majorOfferingClassroomPickerDraft.has(c.id));
-  const input = document.getElementById('mos-edit-classroom-arrangement');
+  const geOpen = isGeOfferingEditDrawerOpen();
+  const input = document.getElementById(geOpen ? 'ge-edit-classroom-arrangement' : 'mos-edit-classroom-arrangement');
   if (input) input.value = formatClassroomArrangementSummary(sec.classroomAssignments);
   closeMajorOfferingClassroomPickerModal();
+  // const sec = getMajorOfferingEditSection(); // 原仅专业开课修改抽屉
+  // const input = document.getElementById('mos-edit-classroom-arrangement');
 }
 
 function parseWeekRangeToWeeks(rangeStr, maxWeeks = MAJOR_OFFERING_MAX_WEEKS) {
@@ -4757,17 +11556,68 @@ function isValidWeekRangeInput(str) {
 }
 
 function getSectionSelectedWeeks(sec) {
-  if (Array.isArray(sec.selectedWeeks) && sec.selectedWeeks.length) {
-    return [...sec.selectedWeeks].sort((a, b) => a - b);
+  const termWeeks = getSectionTermTeachingWeeks(sec);
+  const termAllowed = new Set(getDefaultSectionSelectedWeeks(sec));
+  if (sec?.weekRange) {
+    const fromRange = clampWeeksToAllowed(parseWeekRangeToWeeks(sec.weekRange, termWeeks), termAllowed);
+    if (fromRange.length) return fromRange;
   }
-  return parseWeekRangeToWeeks(sec.weekRange);
+  // if (Array.isArray(sec.selectedWeeks) && sec.selectedWeeks.length) { ... } // 原优先 selectedWeeks，与 weekRange 不一致时 meta 显示 1-6 但校验仍允许 1-12
+  if (Array.isArray(sec.selectedWeeks) && sec.selectedWeeks.length) {
+    return clampWeeksToAllowed(sec.selectedWeeks, termAllowed);
+  }
+  return parseWeekRangeToWeeks(sec.weekRange || sec.weeks, termWeeks);
 }
+
+function getSectionAllowedWeekSet(sec) {
+  const weeks = getSectionSelectedWeeks(sec);
+  if (weeks.length) return new Set(weeks);
+  return new Set(getDefaultSectionSelectedWeeks(sec));
+}
+
+function getSectionWeekRangeDisplay(sec) {
+  const weeks = getSectionSelectedWeeks(sec);
+  if (weeks.length) return formatWeeksDisplay(weeks);
+  return sec?.weekRange || getDefaultSectionWeekRange(sec) || '—';
+}
+
+function clampGroupAssignWeekRangeToSection(sec, weekRange) {
+  if (!sec) return normalizeGroupAssignWeekRange(weekRange);
+  const allowed = getSectionAllowedWeekSet(sec);
+  const parsed = parseWeekRangeToWeeks(weekRange, getSectionTermTeachingWeeks(sec));
+  const clamped = clampWeeksToAllowed(parsed, allowed);
+  if (!clamped.length) {
+    return getSectionWeekRangeDisplay(sec);
+  }
+  return formatWeeksSegmentDisplay(clamped);
+}
+
+function isGroupAssignWeekRangeWithinSection(sec, weekRange) {
+  if (!sec) return true;
+  const allowed = getSectionAllowedWeekSet(sec);
+  const weeks = parseWeekRangeToWeeks(weekRange, getSectionTermTeachingWeeks(sec));
+  if (!weeks.length) return false;
+  return weeks.every(w => allowed.has(w));
+}
+
+function formatGroupAssignWeekRangeFromSectionWeeks(sec, weeks) {
+  if (!sec || !weeks?.length) return getSectionWeekRangeDisplay(sec);
+  const allowed = getSectionAllowedWeekSet(sec);
+  const clamped = clampWeeksToAllowed(weeks, allowed);
+  return clamped.length ? formatWeeksSegmentDisplay(clamped) : getSectionWeekRangeDisplay(sec);
+}
+
+// function getSectionEndTeachingWeek(sec) {
+//   const weeks = getSectionSelectedWeeks(sec);
+//   return weeks.length ? weeks[weeks.length - 1] : '—';
+// } // 原展示截止周次，改展示起止周
 
 function syncSectionWeekFields(sec, weeks) {
   const sorted = [...weeks].sort((a, b) => a - b);
   sec.selectedWeeks = sorted;
   sec.weekRange = formatWeeksDisplay(sorted);
   sec.teachingWeeks = sorted.length || sec.teachingWeeks;
+  sanitizeSectionGroupAssignments(sec);
 }
 
 // function ensureMajorOfferingVenueSelect() {
@@ -4784,6 +11634,7 @@ function populateMajorOfferingEditDrawer(sec) {
   // ensureMajorOfferingVenueSelect(); // 原指定上课地点
   ensureMajorOfferingVenueTypeMultiselect();
   closeMajorOfferingVenueTypeDropdown();
+  syncMajorOfferingEditDrawerReadOnly(sec);
   const set = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.value = val ?? '';
@@ -4793,13 +11644,17 @@ function populateMajorOfferingEditDrawer(sec) {
   set('mos-edit-course-name', sec.name);
   set('mos-edit-credits', sec.credits);
   set('mos-edit-total-hours', sec.totalHours);
-  set('mos-edit-weekly-hours', sec.weeklyHours);
+  set('mos-edit-weekly-hours', getSectionPlanWeeklyHours(sec));
+  // set('mos-edit-weekly-hours', getSectionWeeklyHours(sec)); // 原由总学时/教学周数计算
   set('mos-edit-week-range', formatWeeksDisplay(getSectionSelectedWeeks(sec)));
-  const studentCounts = getSectionStudentTypeCounts(sec.id);
-  set('mos-edit-student-total', studentCounts.total);
-  set('mos-edit-student-international', studentCounts.international);
-  set('mos-edit-student-local', studentCounts.local);
-  set('mos-edit-student-chinese', studentCounts.chinese);
+  const plannedTotal = getSectionPlannedStudentCount(sec);
+  set('mos-edit-student-total', plannedTotal);
+  set('mos-edit-reserved-spots', sec.reservedSpots ?? DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS);
+  updateMajorOfferingEditCapacityLimitDisplay();
+  // set('mos-edit-student-total', studentCounts.total); // 原总人数
+  // set('mos-edit-student-international', studentCounts.international);
+  // set('mos-edit-student-local', studentCounts.local);
+  // set('mos-edit-student-chinese', studentCounts.chinese);
   // set('mos-edit-capacity', sec.estimatedStudents); // 原限定人数，暂时隐藏
   // set('mos-edit-min-enrollment', sec.minEnrollment); // 原最低开课人数，暂时隐藏
   setMajorOfferingVenueTypeSelected(sec.venueTypes || []);
@@ -4807,6 +11662,9 @@ function populateMajorOfferingEditDrawer(sec) {
   set('mos-edit-enrollment-type', sec.enrollmentType);
   set('mos-edit-is-scheduled', sec.isScheduled);
   set('mos-edit-is-venue-scheduled', sec.isVenueScheduled);
+  set('mos-edit-is-attendance', sec.isAttendance);
+  set('mos-edit-is-grade-entry', sec.isGradeEntry);
+  set('mos-edit-is-exam-scheduled', sec.isExamScheduled);
   // const locationSel = document.getElementById('mos-edit-location');
   // if (locationSel && sec.location && ![...locationSel.options].some(o => o.value === sec.location)) {
   //   locationSel.insertAdjacentHTML('beforeend',
@@ -4818,8 +11676,57 @@ function populateMajorOfferingEditDrawer(sec) {
   set('mos-edit-practice-hours', sec.practiceHours);
   set('mos-edit-other-hours', sec.otherHours);
   set('mos-edit-programme-batches', getSectionProgrammeBatchDisplay(sec));
-  set('mos-edit-teacher', formatTeacherAssignmentsSummary(sec.teacherAssignments));
-  set('mos-edit-remark', sec.teacherRemark);
+  // set('mos-edit-teacher', formatTeacherAssignmentsSummary(sec.teacherAssignments)); // 教师安排模块已隐藏
+  // set('mos-edit-remark', sec.teacherRemark); // 教师安排模块已隐藏
+}
+
+function syncMajorOfferingEditDrawerReadOnly(sec) {
+  const locked = isMajorOfferingPlanEditLocked(sec);
+  const drawer = document.getElementById('drawer-major-offering-edit');
+  drawer?.classList.toggle('is-readonly', locked);
+  syncMajorOfferingReadonlyHint(drawer?.querySelector('.drawer-body'), sec, 'major-offering-edit-readonly-hint', {
+    isLocked: isMajorOfferingPlanEditLocked,
+    getMessage: getMajorOfferingPlanEditLockMessage
+  });
+  const confirmBtn = drawer?.querySelector('.drawer-foot .btn-primary');
+  if (confirmBtn) {
+    confirmBtn.hidden = locked;
+    confirmBtn.disabled = locked;
+  }
+  const cancelBtn = drawer?.querySelector('.drawer-foot .btn-ghost');
+  if (cancelBtn) cancelBtn.textContent = locked ? '关闭' : '取消';
+  const titleEl = drawer?.querySelector('.drawer-head h3');
+  if (titleEl) titleEl.textContent = locked ? '查看教学任务' : '修改教学任务';
+  // if (confirmBtn) { confirmBtn.hidden = false; confirmBtn.disabled = locked; } // 原只读仍显示置灰确定
+  // if (cancelBtn) cancelBtn.textContent = '取消'; // 原只读与编辑共用取消文案
+  ['mos-edit-teaching-code'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (locked) {
+      el.readOnly = true;
+      el.classList.add('readonly');
+    } else if (id === 'mos-edit-teaching-code') {
+      el.readOnly = false;
+      el.classList.remove('readonly');
+    }
+  });
+  // ['mos-edit-teaching-code', 'mos-edit-remark'].forEach ... // mos-edit-remark 随教师安排模块隐藏
+  ['mos-edit-enrollment-type', 'mos-edit-is-scheduled', 'mos-edit-is-venue-scheduled',
+    'mos-edit-is-attendance', 'mos-edit-is-grade-entry', 'mos-edit-is-exam-scheduled'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = locked;
+  });
+  const reservedEl = document.getElementById('mos-edit-reserved-spots');
+  if (reservedEl) {
+    reservedEl.readOnly = locked;
+    reservedEl.disabled = locked;
+    reservedEl.classList.toggle('readonly', locked);
+  }
+  drawer?.querySelector('#mos-edit-venue-types-multiselect .clo-multiselect-trigger')
+    ?.toggleAttribute('disabled', locked);
+  drawer?.querySelectorAll('.input-with-btn .btn').forEach(btn => {
+    btn.toggleAttribute('disabled', locked);
+  });
 }
 
 function formatTeacherAssignmentsSummary(assignments) {
@@ -4944,7 +11851,16 @@ function renderMajorOfferingTeacherAssignModal() {
             <td class="col-expand"><button type="button" class="teacher-expand-btn" onclick="toggleMajorOfferingTeacherAssignmentExpand('${ta.id}')" aria-label="展开">${ta.expanded !== false ? '−' : '+'}</button></td>
             <td><code>${escapeHtml(ta.staffId)}</code></td>
             <td>${escapeHtml(ta.name)}</td>
-            <td>${escapeHtml(ta.role || '—')}</td>
+            <td>
+              <select class="input input-sm" onchange="updateMajorOfferingTeacherRole('${escapeHtml(ta.id)}', this.value)">
+                <option value="" ${!ta.role ? 'selected' : ''}>请选择</option>
+                <option value="主讲" ${ta.role === '主讲' ? 'selected' : ''}>主讲</option>
+                <option value="助教" ${ta.role === '助教' ? 'selected' : ''}>助教</option>
+                <option value="Support" ${ta.role === 'Support' ? 'selected' : ''}>Support</option>
+                <!-- <option value="指导" ...>指导</option> -->
+              </select>
+            </td>
+            <!-- <td>${escapeHtml(ta.role || '—')}</td> 原只读展示，改外部下拉选择 -->
             <td class="col-center">
               <label class="toggle-switch">
                 <input type="checkbox" ${ta.isGradeSubmitter ? 'checked' : ''} onchange="toggleMajorOfferingTeacherGradeSubmitter('${ta.id}', this.checked)">
@@ -4972,6 +11888,8 @@ function renderMajorOfferingTeacherAssignModal() {
 
 function openMajorOfferingTeacherAssignModal() {
   if (!majorOfferingEditSectionId) return;
+  const sec = getMajorOfferingEditSection();
+  if (!assertMajorOfferingStructureEditable(sec, '教师安排')) return;
   majorOfferingTeacherAssignSelected.clear();
   renderMajorOfferingTeacherAssignModal();
   openModal('modal-major-teacher-assign');
@@ -5227,18 +12145,19 @@ function buildMockTeacherPickerPool() {
   if (MOCK_TEACHER_PICKER_POOL) return MOCK_TEACHER_PICKER_POOL;
   const deptCodes = [...SCHOOL_CODES].sort();
   const teachers = [
-    { staffId: '2001210010', name: '肖云', teacherType: 'Full-time', gender: 'Female', departmentCode: deptCodes[0] || 'SEM' },
-    { staffId: '2001180023', name: 'Prof. Lim Wei Jie', teacherType: 'Full-time', gender: 'Male', departmentCode: deptCodes[0] || 'SEM' },
-    { staffId: '2001190045', name: 'Dr. Tan Mei Ling', teacherType: 'Full-time', gender: 'Female', departmentCode: deptCodes[0] || 'SEM' },
-    { staffId: '2001200067', name: 'Dr. Ahmad Rahman', teacherType: 'Full-time', gender: 'Male', departmentCode: deptCodes[1] || 'HSS' },
-    { staffId: '2001220089', name: 'Dr. Sarah Chen', teacherType: 'Full-time', gender: 'Female', departmentCode: deptCodes[1] || 'HSS' },
-    { staffId: '2001230101', name: 'Dr. Wong Kai', teacherType: 'Full-time', gender: 'Male', departmentCode: deptCodes[2] || 'SCI' },
-    { staffId: '2001240123', name: 'Dr. Lee Ming', teacherType: 'Part-time', gender: 'Male', departmentCode: deptCodes[2] || 'SCI' },
-    { staffId: '2001250145', name: 'Dr. Kumar Raj', teacherType: 'Full-time', gender: 'Male', departmentCode: deptCodes[3] || 'CSC' },
-    { staffId: '2001260167', name: 'Dr. Emily Ng', teacherType: 'Visiting', gender: 'Female', departmentCode: deptCodes[3] || 'CSC' },
-    { staffId: '2001270189', name: 'Dr. Hassan Ali', teacherType: 'Part-time', gender: 'Male', departmentCode: deptCodes[4] || 'ENG' },
-    { staffId: '2001280201', name: 'Dr. Priya Sharma', teacherType: 'Full-time', gender: 'Female', departmentCode: deptCodes[4] || 'ENG' },
-    { staffId: '2001290223', name: 'Dr. Michael Tan', teacherType: 'Visiting', gender: 'Male', departmentCode: deptCodes[0] || 'SEM' }
+    { staffId: '2001210010', name: '肖云', teacherType: 'AC (CS)', gender: 'Female', departmentCode: deptCodes[0] || 'SEM' },
+    { staffId: '2001180023', name: 'Prof. Lim Wei Jie', teacherType: 'AC (F)', gender: 'Male', departmentCode: deptCodes[0] || 'SEM' },
+    { staffId: '2001190045', name: 'Dr. Tan Mei Ling', teacherType: 'AC (LH)', gender: 'Female', departmentCode: deptCodes[0] || 'SEM' },
+    { staffId: '2001200067', name: 'Dr. Ahmad Rahman', teacherType: 'AD (CS)', gender: 'Male', departmentCode: deptCodes[1] || 'HSS' },
+    { staffId: '2001220089', name: 'Dr. Sarah Chen', teacherType: 'AD (F)', gender: 'Female', departmentCode: deptCodes[1] || 'HSS' },
+    { staffId: '2001230101', name: 'Dr. Wong Kai', teacherType: 'AD (LH)', gender: 'Male', departmentCode: deptCodes[2] || 'SCI' },
+    { staffId: '2001240123', name: 'Dr. Lee Ming', teacherType: 'PT', gender: 'Male', departmentCode: deptCodes[2] || 'SCI' },
+    { staffId: '2001250145', name: 'Dr. Kumar Raj', teacherType: 'RE (LH)', gender: 'Male', departmentCode: deptCodes[3] || 'CSC' },
+    { staffId: '2001260167', name: 'Dr. Emily Ng', teacherType: 'RE (F)', gender: 'Female', departmentCode: deptCodes[3] || 'CSC' },
+    { staffId: '2001270189', name: 'Dr. Hassan Ali', teacherType: 'IN (I)', gender: 'Male', departmentCode: deptCodes[4] || 'ENG' },
+    { staffId: '2001280201', name: 'Dr. Priya Sharma', teacherType: 'IN (E)', gender: 'Female', departmentCode: deptCodes[4] || 'ENG' },
+    { staffId: '2001290223', name: 'Dr. Michael Tan', teacherType: 'AC (CS)', gender: 'Male', departmentCode: deptCodes[0] || 'SEM' }
+    // teacherType: 'Full-time' / 'Part-time' / 'Visiting' // 原教师类型，改代码集简写
   ];
   const extraNames = [
     'Dr. Alex Foo', 'Prof. Jane Doe', 'Dr. Kevin Lim', 'Dr. Nina Wong', 'Dr. Omar Hassan',
@@ -5250,7 +12169,7 @@ function buildMockTeacherPickerPool() {
     teachers.push({
       staffId: `200130${String(1001 + i)}`,
       name,
-      teacherType: ['Full-time', 'Part-time', 'Visiting'][i % 3],
+      teacherType: TEACHER_TYPE_CODES[i % TEACHER_TYPE_CODES.length],
       gender: i % 2 === 0 ? 'Male' : 'Female',
       departmentCode: deptCodes[i % deptCodes.length] || 'SEM'
     });
@@ -5262,6 +12181,14 @@ function buildMockTeacherPickerPool() {
   return MOCK_TEACHER_PICKER_POOL;
 }
 
+function ensureMajorOfferingTeacherPickerTypeFilter() {
+  const sel = document.getElementById('teacher-picker-filter-type');
+  if (!sel || sel.dataset.built === '1') return;
+  sel.innerHTML = '<option value="">please select</option>' +
+    TEACHER_TYPE_CODES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  sel.dataset.built = '1';
+}
+
 function ensureMajorOfferingTeacherPickerDeptFilter() {
   const sel = document.getElementById('teacher-picker-filter-dept');
   if (!sel || sel.dataset.built === '1') return;
@@ -5271,8 +12198,14 @@ function ensureMajorOfferingTeacherPickerDeptFilter() {
 }
 
 function getFilteredMajorOfferingTeacherPickerList() {
-  const sec = getMajorOfferingEditSection();
-  const assignedIds = new Set((sec?.teacherAssignments || []).map(t => t.staffId));
+  // const sec = getMajorOfferingEditSection(); // 原仅专业开课编辑场景
+  let assignedIds;
+  if (teacherPickerContext === 'groupAssign') {
+    assignedIds = new Set(groupAssignFormTeachers.map(t => t.staffId));
+  } else {
+    const sec = getMajorOfferingEditSection();
+    assignedIds = new Set((sec?.teacherAssignments || []).map(t => t.staffId));
+  }
   const staffIdQ = (document.getElementById('teacher-picker-filter-staff-id')?.value || '').trim().toLowerCase();
   const nameQ = (document.getElementById('teacher-picker-filter-name')?.value || '').trim().toLowerCase();
   const typeQ = document.getElementById('teacher-picker-filter-type')?.value || '';
@@ -5290,6 +12223,7 @@ function getFilteredMajorOfferingTeacherPickerList() {
 }
 
 function renderMajorOfferingTeacherPickerModal() {
+  ensureMajorOfferingTeacherPickerTypeFilter();
   ensureMajorOfferingTeacherPickerDeptFilter();
   const tbody = document.getElementById('teacher-picker-tbody');
   if (!tbody) return;
@@ -5352,11 +12286,20 @@ function resetMajorOfferingTeacherPickerFilters() {
   renderMajorOfferingTeacherPickerModal();
 }
 
+function updateMajorOfferingTeacherRole(teacherId, role) {
+  const sec = getMajorOfferingEditSection();
+  const ta = sec?.teacherAssignments?.find(t => t.id === teacherId);
+  if (ta) ta.role = role || '';
+}
+
 function openMajorOfferingTeacherPickerModal() {
   if (!majorOfferingEditSectionId) return;
+  teacherPickerContext = 'majorOffering';
   majorOfferingTeacherPickerSelected.clear();
-  const roleSel = document.getElementById('teacher-picker-role');
-  if (roleSel) roleSel.value = '';
+  // const roleSel = document.getElementById('teacher-picker-role'); // 原弹窗内分配角色
+  // if (roleSel) roleSel.value = '';
+  const titleEl = document.getElementById('teacher-picker-title');
+  if (titleEl) titleEl.textContent = '新增教师';
   resetListPage('majorOfferingTeacherPicker');
   resetMajorOfferingTeacherPickerFilters();
   openModal('modal-major-teacher-picker');
@@ -5365,16 +12308,17 @@ function openMajorOfferingTeacherPickerModal() {
 function closeMajorOfferingTeacherPickerModal() {
   closeModal('modal-major-teacher-picker');
   majorOfferingTeacherPickerSelected.clear();
+  teacherPickerContext = null;
 }
 
 function confirmMajorOfferingTeacherPickerModal() {
-  const sec = getMajorOfferingEditSection();
-  if (!sec) return;
-  const role = document.getElementById('teacher-picker-role')?.value || '';
-  if (!role) {
-    alert('请选择分配角色。');
+  if (teacherPickerContext === 'groupAssign') {
+    confirmGroupAssignTeacherPickerModal();
     return;
   }
+  const sec = getMajorOfferingEditSection();
+  if (!sec) return;
+  // const role = document.getElementById('teacher-picker-role')?.value || ''; // 原弹窗内分配角色
   const keys = [...majorOfferingTeacherPickerSelected];
   if (!keys.length) {
     alert('请至少勾选一名教师。');
@@ -5390,7 +12334,7 @@ function confirmMajorOfferingTeacherPickerModal() {
       id: `ta-${majorOfferingTeacherAssignSeq++}`,
       staffId: pick.staffId,
       name: pick.name,
-      role,
+      role: '',
       teacherType: pick.teacherType,
       gender: pick.gender,
       departmentCode: pick.departmentCode,
@@ -5436,29 +12380,43 @@ function deleteMajorOfferingTeacherHour(teacherId, hourId) {
   renderMajorOfferingTeacherAssignModal();
 }
 
-function ensureMajorOfferingWeekPickerGrid() {
+function ensureMajorOfferingWeekPickerGrid(maxWeek) {
   const grid = document.getElementById('week-picker-grid');
   if (!grid) return;
-  if (grid.dataset.built === '1' && Number(grid.dataset.maxWeeks) === MAJOR_OFFERING_MAX_WEEKS) return;
-  grid.innerHTML = Array.from({ length: MAJOR_OFFERING_MAX_WEEKS }, (_, i) => {
+  const limit = maxWeek || weekRangePickerMaxWeek || MAJOR_OFFERING_MAX_WEEKS;
+  if (grid.dataset.built === '1' && Number(grid.dataset.maxWeeks) === limit) {
+    updateWeekPickerCellStates();
+    return;
+  }
+  grid.innerHTML = Array.from({ length: limit }, (_, i) => {
     const week = i + 1;
     return `<button type="button" class="week-picker-cell" data-week="${week}" onclick="toggleMajorOfferingWeekCell(${week})">${week}</button>`;
   }).join('');
   grid.dataset.built = '1';
-  grid.dataset.maxWeeks = String(MAJOR_OFFERING_MAX_WEEKS);
+  grid.dataset.maxWeeks = String(limit);
+  updateWeekPickerCellStates();
+}
+
+function updateWeekPickerCellStates() {
+  const allowed = weekRangePickerAllowedWeeks;
+  document.querySelectorAll('#week-picker-grid .week-picker-cell').forEach(el => {
+    const week = Number(el.dataset.week);
+    const isAllowed = !allowed || allowed.has(week);
+    el.classList.toggle('is-disabled', !isAllowed);
+    el.disabled = !isAllowed;
+    if (!isAllowed) majorOfferingWeekRangeDraft.delete(week);
+    el.classList.toggle('selected', majorOfferingWeekRangeDraft.has(week));
+  });
 }
 
 function renderMajorOfferingWeekRangeModal(updateDisplay = true) {
-  ensureMajorOfferingWeekPickerGrid();
+  ensureMajorOfferingWeekPickerGrid(weekRangePickerMaxWeek);
   const displayEl = document.getElementById('week-picker-display');
   if (updateDisplay && displayEl && document.activeElement !== displayEl) {
     displayEl.value = formatWeeksSegmentDisplay([...majorOfferingWeekRangeDraft].sort((a, b) => a - b));
     displayEl.classList.remove('is-invalid');
   }
-  document.querySelectorAll('#week-picker-grid .week-picker-cell').forEach(el => {
-    const week = Number(el.dataset.week);
-    el.classList.toggle('selected', majorOfferingWeekRangeDraft.has(week));
-  });
+  updateWeekPickerCellStates();
   if (updateDisplay) {
     document.querySelectorAll('input[name="week-range-preset"]').forEach(el => { el.checked = false; });
   }
@@ -5480,7 +12438,12 @@ function syncMajorOfferingWeekRangeFromInput() {
     return false;
   }
   el.classList.remove('is-invalid');
-  majorOfferingWeekRangeDraft = new Set(parseWeekRangeToWeeks(raw));
+  majorOfferingWeekRangeDraft = new Set(
+    clampWeeksToAllowed(
+      parseWeekRangeToWeeks(raw, weekRangePickerMaxWeek),
+      weekRangePickerAllowedWeeks
+    )
+  );
   document.querySelectorAll('input[name="week-range-preset"]').forEach(r => { r.checked = false; });
   renderMajorOfferingWeekRangeModal(false);
   return true;
@@ -5499,11 +12462,46 @@ function onMajorOfferingWeekRangeInputBlur() {
   el.value = formatWeeksSegmentDisplay(parseWeekRangeToWeeks(raw));
 }
 
+function setWeekRangePickerWarningVisible(visible) {
+  const warning = document.querySelector('#modal-major-week-range .week-range-warning');
+  if (warning) warning.hidden = !visible;
+}
+
 function openMajorOfferingWeekRangeModal() {
   if (!majorOfferingEditSectionId) return;
   const sec = getMajorOfferingEditSection();
   if (!sec) return;
+  if (!assertMajorOfferingPlanEditEditable(sec, '起止周')) return;
+  // if (!assertMajorOfferingStructureEditable(sec, '起止周')) return; // 原计划编辑误用授课确认锁定，改计划提交状态
+  const termWeeks = getSectionTermTeachingWeeks(sec);
+  weekRangePickerMaxWeek = termWeeks;
+  weekRangePickerAllowedWeeks = new Set(getDefaultSectionSelectedWeeks(sec));
+  weekRangePickerContext = 'majorOfferingEdit';
+  setWeekRangePickerWarningVisible(true);
   majorOfferingWeekRangeDraft = new Set(getSectionSelectedWeeks(sec));
+  renderMajorOfferingWeekRangeModal();
+  openModal('modal-major-week-range');
+}
+
+function openGroupAssignWeekRangeModal() {
+  const sec = getOfferingGroupingSection();
+  const sectionWeeks = getSectionSelectedWeeks(sec);
+  const allowedWeeks = sectionWeeks.length ? sectionWeeks : getDefaultSectionSelectedWeeks(sec);
+  weekRangePickerMaxWeek = getSectionTermTeachingWeeks(sec);
+  weekRangePickerAllowedWeeks = new Set(allowedWeeks);
+  weekRangePickerContext = 'groupAssign';
+  setWeekRangePickerWarningVisible(false);
+  const current = document.getElementById('group-assign-week-range')?.value.trim() || '';
+  if (current && isValidWeekRangeInput(current)) {
+    majorOfferingWeekRangeDraft = new Set(
+      clampWeeksToAllowed(parseWeekRangeToWeeks(current, weekRangePickerMaxWeek), weekRangePickerAllowedWeeks)
+    );
+  } else {
+    const fallback = current || sec?.weekRange || getDefaultSectionWeekRange(sec);
+    majorOfferingWeekRangeDraft = isValidWeekRangeInput(fallback)
+      ? new Set(clampWeeksToAllowed(parseWeekRangeToWeeks(fallback, weekRangePickerMaxWeek), weekRangePickerAllowedWeeks))
+      : new Set(allowedWeeks);
+  }
   renderMajorOfferingWeekRangeModal();
   openModal('modal-major-week-range');
 }
@@ -5511,11 +12509,13 @@ function openMajorOfferingWeekRangeModal() {
 function closeMajorOfferingWeekRangeModal() {
   closeModal('modal-major-week-range');
   majorOfferingWeekRangeDraft = new Set();
+  weekRangePickerContext = null;
+  weekRangePickerMaxWeek = MAJOR_OFFERING_MAX_WEEKS;
+  weekRangePickerAllowedWeeks = null;
+  setWeekRangePickerWarningVisible(true);
 }
 
 function confirmMajorOfferingWeekRangeModal() {
-  const sec = getMajorOfferingEditSection();
-  if (!sec) return;
   const displayEl = document.getElementById('week-picker-display');
   const raw = displayEl?.value.trim();
   if (raw) {
@@ -5525,12 +12525,36 @@ function confirmMajorOfferingWeekRangeModal() {
       displayEl?.focus();
       return;
     }
-    majorOfferingWeekRangeDraft = new Set(parseWeekRangeToWeeks(raw));
+    majorOfferingWeekRangeDraft = new Set(
+      clampWeeksToAllowed(
+        parseWeekRangeToWeeks(raw, weekRangePickerMaxWeek),
+        weekRangePickerAllowedWeeks
+      )
+    );
   }
   if (!majorOfferingWeekRangeDraft.size) {
     alert('请选择起止周。');
     return;
   }
+  if (weekRangePickerAllowedWeeks?.size) {
+    const invalid = [...majorOfferingWeekRangeDraft].filter(w => !weekRangePickerAllowedWeeks.has(w));
+    if (invalid.length) {
+      alert(weekRangePickerContext === 'groupAssign'
+        ? `教师安排起止周须在课程起止周（${getSectionWeekRangeDisplay(getOfferingGroupingSection())}）范围内。`
+        : '所选周次超出本学期教学周数。');
+      return;
+    }
+  }
+  const formatted = formatWeeksSegmentDisplay([...majorOfferingWeekRangeDraft].sort((a, b) => a - b));
+  if (weekRangePickerContext === 'groupAssign') {
+    const rangeEl = document.getElementById('group-assign-week-range');
+    if (rangeEl) rangeEl.value = formatted;
+    closeMajorOfferingWeekRangeModal();
+    syncGroupAssignHoursSummary();
+    return;
+  }
+  const sec = getMajorOfferingEditSection();
+  if (!sec) return;
   syncSectionWeekFields(sec, majorOfferingWeekRangeDraft);
   const rangeEl = document.getElementById('mos-edit-week-range');
   if (rangeEl) rangeEl.value = sec.weekRange;
@@ -5539,13 +12563,27 @@ function confirmMajorOfferingWeekRangeModal() {
 
 function applyMajorOfferingWeekRangePreset(preset) {
   majorOfferingWeekRangeDraft = new Set();
+  const limit = weekRangePickerMaxWeek || MAJOR_OFFERING_MAX_WEEKS;
+  const allowed = weekRangePickerAllowedWeeks;
+  const canPick = w => !allowed || allowed.has(w);
   if (preset === 'all') {
-    for (let w = 1; w <= MAJOR_OFFERING_MAX_WEEKS; w++) majorOfferingWeekRangeDraft.add(w);
+    if (allowed?.size) {
+      allowed.forEach(w => majorOfferingWeekRangeDraft.add(w));
+    } else {
+      for (let w = 1; w <= limit; w++) majorOfferingWeekRangeDraft.add(w);
+    }
   } else if (preset === 'odd') {
-    for (let w = 1; w <= MAJOR_OFFERING_MAX_WEEKS; w += 2) majorOfferingWeekRangeDraft.add(w);
+    for (let w = 1; w <= limit; w += 2) {
+      if (canPick(w)) majorOfferingWeekRangeDraft.add(w);
+    }
   } else if (preset === 'even') {
-    for (let w = 2; w <= MAJOR_OFFERING_MAX_WEEKS; w += 2) majorOfferingWeekRangeDraft.add(w);
+    for (let w = 2; w <= limit; w += 2) {
+      if (canPick(w)) majorOfferingWeekRangeDraft.add(w);
+    }
   }
+  // if (preset === 'all') {
+  //   for (let w = 1; w <= MAJOR_OFFERING_MAX_WEEKS; w++) majorOfferingWeekRangeDraft.add(w);
+  // } ... // 原固定 20 周，改按学期教学周数 / 教学任务起止周
   renderMajorOfferingWeekRangeModal();
   const radio = document.querySelector(`input[name="week-range-preset"][value="${preset}"]`);
   if (radio) radio.checked = true;
@@ -5563,6 +12601,7 @@ function clearMajorOfferingWeekRangeDraft() {
 }
 
 function toggleMajorOfferingWeekCell(week) {
+  if (weekRangePickerAllowedWeeks && !weekRangePickerAllowedWeeks.has(week)) return;
   if (majorOfferingWeekRangeDraft.has(week)) majorOfferingWeekRangeDraft.delete(week);
   else majorOfferingWeekRangeDraft.add(week);
   document.querySelectorAll('input[name="week-range-preset"]').forEach(el => { el.checked = false; });
@@ -5589,6 +12628,7 @@ function closeMajorOfferingEditDrawer() {
 function confirmMajorOfferingEditDrawer() {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === majorOfferingEditSectionId);
   if (!sec) return;
+  if (!assertMajorOfferingPlanEditEditable(sec, '修改')) return;
   const teachingCode = document.getElementById('mos-edit-teaching-code')?.value.trim();
   if (!teachingCode) {
     alert('请填写授课码。');
@@ -5597,29 +12637,63 @@ function confirmMajorOfferingEditDrawer() {
   sec.teachingCode = teachingCode;
   sec.teachingClassNo = teachingCode;
   // sec.credits = Number(document.getElementById('mos-edit-credits')?.value); // 学分不可修改
-  sec.weeklyHours = Number(document.getElementById('mos-edit-weekly-hours')?.value);
+  // sec.weeklyHours = Number(document.getElementById('mos-edit-weekly-hours')?.value); // 计划周学时仅供参考
+  sec.weeklyHours = sec.credits ?? sec.weeklyHours;
+  // const planWeeks = sec.teachingWeeks || 0; // 原计划周学时由总学时/教学周数计算
+  // if (planWeeks && sec.totalHours) sec.weeklyHours = sec.totalHours / planWeeks;
   const weekRangeVal = document.getElementById('mos-edit-week-range')?.value.trim();
   if (!weekRangeVal) {
     alert('请选择起止周。');
     return;
   }
-  syncSectionWeekFields(sec, parseWeekRangeToWeeks(weekRangeVal));
-  const studentCounts = getSectionStudentTypeCounts(sec.id);
-  sec.estimatedStudents = studentCounts.total;
-  sec.studentCount = studentCounts.total;
+  syncSectionWeekFields(sec, parseWeekRangeToWeeks(weekRangeVal, getSectionTermTeachingWeeks(sec)));
+  const reservedRaw = document.getElementById('mos-edit-reserved-spots')?.value;
+  if (reservedRaw === '' || reservedRaw == null) {
+    alert('请填写预留名额。');
+    return;
+  }
+  const reservedSpots = Number(reservedRaw);
+  if (!Number.isFinite(reservedSpots) || reservedSpots < 0) {
+    alert('请填写有效的预留名额（非负整数）。');
+    return;
+  }
+  sec.reservedSpots = Math.max(0, reservedSpots);
+  const plannedTotal = getSectionPlannedStudentCount(sec);
+  sec.estimatedStudents = plannedTotal;
+  sec.studentCount = plannedTotal;
+  // const studentCounts = getSectionStudentTypeCounts(sec.id); // 原计划人数取自名单统计
+  // sec.estimatedStudents = studentCounts.total;
   // sec.estimatedStudents = Number(document.getElementById('mos-edit-capacity')?.value) || 0; // 原限定人数
   // sec.minEnrollment = Number(document.getElementById('mos-edit-min-enrollment')?.value) || 0; // 原最低开课人数
   sec.venueTypes = getMajorOfferingVenueTypeSelected();
   sec.enrollmentType = document.getElementById('mos-edit-enrollment-type')?.value || 'closed';
   sec.isScheduled = document.getElementById('mos-edit-is-scheduled')?.value || 'yes';
   sec.isVenueScheduled = document.getElementById('mos-edit-is-venue-scheduled')?.value || 'yes';
+  sec.isAttendance = document.getElementById('mos-edit-is-attendance')?.value || 'yes';
+  sec.isGradeEntry = document.getElementById('mos-edit-is-grade-entry')?.value || 'yes';
+  sec.isExamScheduled = document.getElementById('mos-edit-is-exam-scheduled')?.value || 'yes';
   // sec.location = document.getElementById('mos-edit-location')?.value.trim() || ''; // 原指定上课地点
   sec.teachers = formatTeacherAssignmentsSummary(sec.teacherAssignments);
+  // sec.teacherRemark = document.getElementById('mos-edit-remark')?.value.trim() || ''; // 教师安排模块已隐藏
   // sec.teachers = document.getElementById('mos-edit-teacher')?.value.trim() || '';
-  sec.teacherRemark = document.getElementById('mos-edit-remark')?.value.trim() || '';
   closeMajorOfferingEditDrawer();
   renderCourseOfferingMajorPage();
   // alert('修改（原型占位）');
+}
+
+function getMajorOfferingSectionOwner(sec) {
+  if (!sec) return '—';
+  if (sec.owner) return sec.owner;
+  const cat = COURSE_CATALOG.find(c => c.id === sec.catalogId);
+  if (cat?.coordinator) return cat.coordinator;
+  return getProgrammeACTeacher(sec.programmeKey);
+}
+
+function getSectionOfferingTermDisplay(sec) {
+  if (sec?.termDisplay) return sec.termDisplay;
+  if (COURSE_OFFERING_PLAN_STORE?.termDisplay) return COURSE_OFFERING_PLAN_STORE.termDisplay;
+  if (sec?.termCode) return formatCourseTermDisplay(sec.termCode);
+  return '—';
 }
 
 function renderCourseOfferingMajorTableHeader() {
@@ -5628,11 +12702,14 @@ function renderCourseOfferingMajorTableHeader() {
   row.innerHTML =
     '<th class="col-check"><input type="checkbox" id="course-major-check-all" aria-label="全选" onchange="toggleMajorOfferingCheckAll(this.checked)"></th>' +
     renderListSortTh('courseMajorOffering', '序号', 'index', { center: true, extraClass: 'col-index' }) +
+    renderListSortTh('courseMajorOffering', '负责人', 'owner') +
     renderListSortTh('courseMajorOffering', '提交状态', 'submitStatus', { center: true }) +
-    renderListSortTh('courseMajorOffering', '授课确认状态', 'teachingConfirmStatus', { center: true }) +
+    // renderListSortTh('courseMajorOffering', '授课确认状态', 'teachingConfirmStatus', { center: true }) + // 原计划页，改由任务安排页
+    renderListSortTh('courseMajorOffering', '开课学期', 'offeringTerm', { center: true }) +
     renderListSortTh('courseMajorOffering', '课程代码', 'code') +
     renderListSortTh('courseMajorOffering', '课程名称', 'name') +
     renderListSortTh('courseMajorOffering', '课程类别', 'category') +
+    renderListSortTh('courseMajorOffering', '选课类型', 'enrollmentType', { center: true }) +
     renderListSortTh('courseMajorOffering', '上课学院', 'school', { center: true }) +
     renderListSortTh('courseMajorOffering', '上课专业', 'programme', { center: true }) +
     renderListSortTh('courseMajorOffering', '上课批次', 'intake', { center: true }) +
@@ -5647,9 +12724,21 @@ function renderCourseOfferingMajorTableHeader() {
     '<th class="col-sticky-actions">操作</th>';
 }
 
+function isMajorOfferingStudentRosterPlanView() {
+  // 计划页名单抽屉固定为查看模式；课程组分配改由「学生名单管理 → 管理名单」处理
+  return true;
+}
+
+function syncMajorOfferingStudentRosterDrawerPlanView() {
+  const drawer = document.getElementById('drawer-major-student-roster');
+  if (!drawer) return;
+  drawer.classList.add('is-plan-roster-view');
+}
+
 function renderMajorOfferingStudentRosterTableHeader() {
   const row = document.querySelector('.student-roster-table thead tr');
   if (!row) return;
+  const showGroup = !isMajorOfferingStudentRosterPlanView();
   row.innerHTML =
     '<th class="col-check"><input type="checkbox" id="mos-check-all" aria-label="全选" onchange="toggleMajorOfferingStudentRosterCheckAll(this.checked)"></th>' +
     renderListSortTh('majorOfferingStudentRoster', '序号', 'index', { center: true, extraClass: 'col-index' }) +
@@ -5658,30 +12747,39 @@ function renderMajorOfferingStudentRosterTableHeader() {
     renderListSortTh('majorOfferingStudentRoster', '学院', 'schoolCode', { center: true }) +
     renderListSortTh('majorOfferingStudentRoster', '专业', 'programmeCode', { center: true }) +
     renderListSortTh('majorOfferingStudentRoster', '入学批次', 'intake', { center: true }) +
-    renderListSortTh('majorOfferingStudentRoster', '国籍', 'nationality', { center: true }) +
+    renderListSortTh('majorOfferingStudentRoster', '国籍', 'nationality', { center: true, extraClass: 'col-nationality' }) +
     renderListSortTh('majorOfferingStudentRoster', '学生类型', 'studentType', { center: true }) +
-    renderListSortTh('majorOfferingStudentRoster', '所在小组', 'groupName') +
+    renderListSortTh('majorOfferingStudentRoster', '学籍状态', 'registryStatus', { center: true }) +
+    renderListSortTh('majorOfferingStudentRoster', '学籍类型', 'registryCategory', { center: true }) +
+    (showGroup
+      ? renderListSortTh('majorOfferingStudentRoster', '课程组', 'groupName', { extraClass: 'col-course-group' })
+      : '') +
+    // renderListSortTh('majorOfferingStudentRoster', '课程组', 'groupName', { extraClass: 'col-course-group' }) + // 原计划页抽屉展示，改由学生名单管理
+    // renderListSortTh('majorOfferingStudentRoster', '所在小组', 'groupName') + // 原列名
     renderListSortTh('majorOfferingStudentRoster', '名单来源', 'source');
 }
 
 const COURSE_MAJOR_OFFERING_SORT_COLUMNS = {
-  index: { get: sec => sec.id || '' },
-  submitStatus: { get: sec => sec.submitStatus || '' },
-  teachingConfirmStatus: { get: sec => sec.teachingConfirmStatus || '' },
-  code: { get: sec => sec.code || '' },
-  name: { get: sec => sec.name || '' },
-  category: { get: sec => sec.category || '' },
-  school: { get: sec => getSectionMergedSchoolDisplayFull(sec) },
-  programme: { get: sec => getSectionMergedProgrammeDisplayFull(sec) },
-  intake: { get: sec => getSectionMergedIntakeDisplayFull(sec) },
-  credits: { get: sec => sec.credits, type: 'number' },
-  totalHours: { get: sec => sec.totalHours, type: 'number' },
-  // theoryHours: { get: sec => sec.theoryHours, type: 'number' },
-  // practiceHours: { get: sec => sec.practiceHours, type: 'number' },
-  // teachingWeeks: { get: sec => sec.teachingWeeks, type: 'number' },
-  weekRange: { get: sec => sec.weekRange || '' },
-  offeringUnit: { get: sec => sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId) || '' },
-  estimatedStudents: { get: sec => sec.estimatedStudents ?? 0, type: 'number' }
+  index: { get: row => (row.line?.id || row.id || '') },
+  owner: { get: row => getMajorOfferingSectionOwner(row.sec || row) },
+  submitStatus: { get: row => (row.sec || row).submitStatus || '' },
+  // teachingConfirmStatus: { get: row => (row.sec || row).teachingConfirmStatus || '' }, // 原计划页，改由任务安排页
+  offeringTerm: { get: row => getSectionOfferingTermDisplay(row.sec || row) },
+  code: { get: row => (row.line?.code || row.code || '') },
+  name: { get: row => (row.line?.name || row.name || '') },
+  category: { get: row => (row.sec || row).category || '' },
+  enrollmentType: { get: row => (row.sec || row).enrollmentType || 'closed' },
+  school: { get: row => row.line ? getMajorOfferingLineSchoolDisplay(row.line) : getSectionMergedSchoolDisplayFull(row) },
+  programme: { get: row => row.line ? getMajorOfferingLineProgrammeDisplay(row.line) : getSectionMergedProgrammeDisplayFull(row) },
+  intake: { get: row => (row.line ? (row.line.intake || '') : getSectionMergedIntakeDisplayFull(row)), type: 'intake' },
+  credits: { get: row => (row.sec || row).credits, type: 'number' },
+  totalHours: { get: row => (row.sec || row).totalHours, type: 'number' },
+  // theoryHours: { get: row => (row.sec || row).theoryHours, type: 'number' },
+  // practiceHours: { get: row => (row.sec || row).practiceHours, type: 'number' },
+  // teachingWeeks: { get: row => (row.sec || row).teachingWeeks, type: 'number' },
+  weekRange: { get: row => (row.sec || row).weekRange || '' },
+  offeringUnit: { get: row => (row.sec || row).offeringUnitAbbr || getCatalogOfferingUnitAbbr((row.sec || row).catalogId) || '' },
+  estimatedStudents: { get: row => row.line ? getMajorOfferingPlanRowStudentCount(row) : (row.estimatedStudents ?? 0), type: 'number' }
 };
 
 const MAJOR_OFFERING_STUDENT_ROSTER_SORT_COLUMNS = {
@@ -5693,12 +12791,23 @@ const MAJOR_OFFERING_STUDENT_ROSTER_SORT_COLUMNS = {
   intake: { get: stu => stu.intake || '', type: 'intake' },
   nationality: { get: stu => getStudentNationality(stu) },
   studentType: { get: stu => getStudentType(stu) },
-  groupName: { get: stu => formatStudentGroupNamesDisplay(stu) },
+  registryStatus: { get: stu => formatStudentRegistryStatus(stu) },
+  registryCategory: { get: stu => formatStudentRegistryCategory(stu) },
+  groupName: {
+    get: stu => {
+      const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === majorOfferingStudentRosterSectionId);
+      return formatStudentGroupNamesDisplay(stu, sec);
+    }
+  },
   source: { get: stu => formatMajorOfferingStudentRosterSource(stu.source) }
 };
 
 function defaultCourseMajorOfferingCompare(a, b) {
-  return (a.code || '').localeCompare(b.code || '') || (a.id || '').localeCompare(b.id || '');
+  const codeA = a.line?.code || a.code || '';
+  const codeB = b.line?.code || b.code || '';
+  const idA = a.line?.id || a.id || '';
+  const idB = b.line?.id || b.id || '';
+  return codeA.localeCompare(codeB) || idA.localeCompare(idB);
 }
 
 function defaultMajorOfferingStudentRosterCompare(a, b) {
@@ -5712,13 +12821,13 @@ function renderCourseOfferingMajorPage() {
   renderCoursePlanOfferingHint('course-offering-hint-major');
   rebuildMajorOfferingFilterOptions();
   if (!ensureCourseOfferingPlan()) {
-    tbody.innerHTML = '<tr><td colspan="16" class="text-muted" style="text-align:center;padding:24px">请点击「生成开课任务」从已提交执行计划中选择课程</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="18" class="text-muted" style="text-align:center;padding:24px">请点击「生成开课任务」从已提交执行计划中选择课程</td></tr>';
     renderListPagination('course-major-offering-pagination', 'courseMajorOffering', 0);
     updateMajorOfferingSelection();
     return;
   }
   const list = sortListWithState(
-    getFilteredMajorOfferingSections(),
+    getFilteredMajorOfferingPlanRows(),
     'courseMajorOffering',
     COURSE_MAJOR_OFFERING_SORT_COLUMNS,
     defaultCourseMajorOfferingCompare
@@ -5726,35 +12835,724 @@ function renderCourseOfferingMajorPage() {
   const paged = paginateListItems(list, 'courseMajorOffering');
   const rowOffset = (paged.page - 1) * paged.pageSize;
   tbody.innerHTML = paged.items.length
-    ? paged.items.map((sec, idx) => {
+    ? paged.items.map((row, idx) => {
+        const { line, sec } = row;
         const unitAbbr = sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId);
+        const studentCount = getMajorOfferingPlanRowStudentCount(row);
         return `<tr>
           <td class="col-check"><input type="checkbox" class="course-major-row-check" value="${sec.id}" ${courseMajorSelectedSectionIds.has(sec.id) ? 'checked' : ''} onchange="updateMajorOfferingSelection()"></td>
           <td class="col-index">${rowOffset + idx + 1}</td>
+          <td>${escapeHtml(getMajorOfferingSectionOwner(sec))}</td>
           <td class="col-center">${renderMajorOfferingSubmitStatus(sec)}</td>
-          <td class="col-center">${renderMajorOfferingTeachingConfirmStatus(sec)}</td>
-          <td><strong>${escapeHtml(sec.code)}</strong></td>
-          <td>${escapeHtml(sec.name)}</td>
+          <td class="col-center">${escapeHtml(getSectionOfferingTermDisplay(sec))}</td>
+          <td><strong>${escapeHtml(line.code)}</strong></td>
+          <td>${escapeHtml(line.name)}</td>
           <td>${escapeHtml(sec.category || '—')}</td>
-          <td class="col-center col-merged-nowrap"><code title="${escapeHtml(getSectionMergedSchoolDisplayFull(sec))}">${escapeHtml(getSectionMergedSchoolDisplay(sec))}</code></td>
-          <td class="col-center col-merged-nowrap"><code title="${escapeHtml(getSectionMergedProgrammeDisplayFull(sec))}">${escapeHtml(getSectionMergedProgrammeDisplay(sec))}</code></td>
-          <td class="col-center col-merged-nowrap"><code title="${escapeHtml(getSectionMergedIntakeDisplayFull(sec))}">${escapeHtml(getSectionMergedIntakeDisplay(sec))}</code></td>
+          <td class="col-center">${renderMajorOfferingEnrollmentTypeDisplay(sec)}</td>
+          <td class="col-center"><code>${escapeHtml(getMajorOfferingLineSchoolDisplay(line))}</code></td>
+          <td class="col-center"><code>${escapeHtml(getMajorOfferingLineProgrammeDisplay(line))}</code></td>
+          <td class="col-center"><code>${escapeHtml(getMajorOfferingLineIntakeDisplay(line))}</code></td>
           <td class="col-center">${sec.credits ?? '—'}</td>
           <td class="col-center">${sec.totalHours ?? '—'}</td>
           <td class="col-center"><code>${escapeHtml(sec.weekRange || '—')}</code></td>
           <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
-          <td class="col-center col-sticky-count"><a href="#" class="link-student-count" onclick="openMajorOfferingStudentRosterDrawer('${sec.id}');return false">${sec.estimatedStudents ?? 0}</a></td>
+          <td class="col-center col-sticky-count"><a href="#" class="link-student-count" onclick="openMajorOfferingStudentRosterDrawer('${sec.id}');return false">${studentCount}</a></td>
           <td class="actions col-sticky-actions">
-            <a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合分班</a>
-            <a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>
-            <a href="#" onclick="openOfferingGroupingModal('${sec.id}');return false">分组</a>
+            ${renderMajorOfferingStructureActions(sec)}
           </td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="16" class="text-muted" style="text-align:center;padding:24px">暂无专业开课数据，请点击「生成开课任务」</td></tr>';
+    : '<tr><td colspan="18" class="text-muted" style="text-align:center;padding:24px">暂无专业开课数据，请点击「生成开课任务」</td></tr>';
   renderListPagination('course-major-offering-pagination', 'courseMajorOffering', paged.total);
   updateMajorOfferingSelection();
+  // bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]'); // 原计划行按批次展示，不再使用合并列 tooltip
 }
+
+function defaultCourseMajorOfferingTaskCompare(a, b) {
+  return (a.code || '').localeCompare(b.code || '') || (a.id || '').localeCompare(b.id || '');
+}
+
+const COURSE_MAJOR_OFFERING_TASK_SORT_COLUMNS = {
+  index: { get: sec => sec.id || '' },
+  taskSubmitStatus: { get: sec => getMajorOfferingTaskSubmitStatusKey(sec) },
+  // taskSubmitStatus: { get: sec => sec.teachingConfirmStatus || '' }, // 原是否提交，改提交状态
+  offeringTerm: { get: sec => getSectionOfferingTermDisplay(sec) },
+  code: { get: sec => sec.code || '' },
+  name: { get: sec => sec.name || '' },
+  // estimatedStudents: { get: sec => sec.estimatedStudents ?? 0, type: 'number' }, // 原计划人数，改课程名额上限
+  capacityLimit: { get: sec => getSectionCapacityLimit(sec), type: 'number' },
+  school: { get: sec => getSectionMergedSchoolDisplayFull(sec) },
+  programme: { get: sec => getSectionMergedProgrammeDisplayFull(sec) },
+  intake: { get: sec => getSectionMergedIntakeDisplayFull(sec) },
+  credits: { get: sec => sec.credits, type: 'number' },
+  totalHours: { get: sec => sec.totalHours, type: 'number' },
+  offeringUnit: { get: sec => sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId) || '' },
+  weekRange: { get: sec => sec.weekRange || '' }
+};
+
+function renderCourseMajorOfferingTaskTableHeader() {
+  const row = document.querySelector('#page-course-major-offering-task .course-offering-major-table thead tr');
+  if (!row) return;
+  row.innerHTML =
+    '<th class="col-check"><input type="checkbox" id="course-major-task-check-all" aria-label="全选" onchange="toggleMajorOfferingTaskCheckAll(this.checked)"></th>' +
+    renderListSortTh('courseMajorOfferingTask', '序号', 'index', { center: true, extraClass: 'col-index' }) +
+    renderListSortTh('courseMajorOfferingTask', '提交状态', 'taskSubmitStatus', { center: true }) +
+    // renderListSortTh('courseMajorOfferingTask', '是否提交', 'taskSubmitStatus', { center: true }) +
+    // renderListSortTh('courseMajorOfferingTask', '授课确认状态', 'teachingConfirmStatus', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '开课学期', 'offeringTerm', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '课程号', 'code') +
+    renderListSortTh('courseMajorOfferingTask', '课程名称', 'name') +
+    renderListSortTh('courseMajorOfferingTask', '上课学院', 'school', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '上课专业', 'programme', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '上课批次', 'intake', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '学分', 'credits', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '总学时', 'totalHours', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '开课单位', 'offeringUnit', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '起止周', 'weekRange', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', '课程名额上限', 'capacityLimit', { center: true }) +
+    // renderListSortTh('courseMajorOfferingTask', '计划人数', 'estimatedStudents', { center: true }) + // 改课程名额上限，列位于起止周后
+    '<th class="col-sticky-actions">操作</th>';
+}
+
+function openMajorOfferingTaskView(sectionId) {
+  openMajorOfferingEditDrawer(sectionId);
+}
+
+// function openMajorOfferingTaskArrange(sectionId) {
+//   openOfferingGroupingModal(sectionId, { tab: 'teacher' });
+// } // 原任务安排入口，改由「查看」打开计划修改抽屉只读内容
+
+function openMajorOfferingGroupRosterManage(sectionId, groupId = null) {
+  openOfferingGroupingModal(sectionId, {
+    tab: 'student',
+    groupId,
+    returnPage: 'course-major-offering-roster'
+  });
+}
+
+function getMajorOfferingTaskPendingSelection() {
+  if (!ensureCourseOfferingPlan() || !courseMajorTaskSelectedSectionIds.size) return [];
+  return [...courseMajorTaskSelectedSectionIds]
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'major' && s.teachingConfirmStatus !== 'confirmed');
+}
+
+function canSubmitMajorOfferingTaskSelection() {
+  const pending = getMajorOfferingTaskPendingSelection();
+  if (!pending.length) return false;
+  return pending.every(sec => validateMajorOfferingTaskArrangementSubmit(sec).ok);
+}
+
+function updateMajorOfferingTaskSelection() {
+  courseMajorTaskSelectedSectionIds = new Set(
+    [...document.querySelectorAll('.course-major-task-row-check:checked')].map(el => el.value)
+  );
+  const hasSelection = courseMajorTaskSelectedSectionIds.size > 0;
+  const btnTaskSubmit = document.getElementById('btn-major-task-submit');
+  const btnTaskRevert = document.getElementById('btn-major-task-revert');
+  const pending = getMajorOfferingTaskPendingSelection();
+  if (btnTaskSubmit) {
+    btnTaskSubmit.disabled = !hasSelection || !pending.length;
+    btnTaskSubmit.title = hasSelection && !pending.length ? '所选任务均已提交' : '';
+  }
+  // btnTaskSubmit.disabled = !hasSelection || !pending.length || !canSubmitMajorOfferingTaskSelection(); // 原学时未完成禁用工具栏，改仍可点开二次确认查看警示
+  if (btnTaskRevert) {
+    const canRevert = hasSelection && ensureCourseOfferingPlan() && [...courseMajorTaskSelectedSectionIds].some(id => {
+      const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id);
+      return sec
+        && sec.offeringType === 'major'
+        && sec.submitStatus === 'submitted'
+        && sec.teachingConfirmStatus !== 'confirmed';
+    });
+    btnTaskRevert.disabled = !canRevert;
+  }
+  // const btnTeachingConfirm = document.getElementById('btn-major-task-teaching-confirm'); // 原授课确认按钮
+  // if (btnTeachingConfirm) btnTeachingConfirm.disabled = !hasSelection;
+  const checkAll = document.getElementById('course-major-task-check-all');
+  const selectable = document.querySelectorAll('.course-major-task-row-check');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function toggleMajorOfferingTaskCheckAll(checked) {
+  document.querySelectorAll('.course-major-task-row-check').forEach(el => { el.checked = checked; });
+  updateMajorOfferingTaskSelection();
+}
+
+function renderCourseMajorOfferingTaskPage() {
+  const tbody = document.getElementById('course-major-offering-task-body');
+  if (!tbody) return;
+  renderCourseMajorOfferingTaskTableHeader();
+  rebuildMajorOfferingTaskFilterOptions();
+  if (!ensureCourseOfferingPlan()) {
+    tbody.innerHTML = '<tr><td colspan="15" class="text-muted" style="text-align:center;padding:24px">请先在「专业开课计划」生成开课任务</td></tr>';
+    renderListPagination('course-major-offering-task-pagination', 'courseMajorOfferingTask', 0);
+    updateMajorOfferingTaskSelection();
+    return;
+  }
+  const list = sortListWithState(
+    getFilteredMajorOfferingTaskSections(),
+    'courseMajorOfferingTask',
+    COURSE_MAJOR_OFFERING_TASK_SORT_COLUMNS,
+    defaultCourseMajorOfferingTaskCompare
+  );
+  const paged = paginateListItems(list, 'courseMajorOfferingTask');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map((sec, idx) => {
+        const unitAbbr = sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId);
+        return `<tr>
+          <td class="col-check"><input type="checkbox" class="course-major-task-row-check" value="${sec.id}" ${courseMajorTaskSelectedSectionIds.has(sec.id) ? 'checked' : ''} onchange="updateMajorOfferingTaskSelection()"></td>
+          <td class="col-index">${rowOffset + idx + 1}</td>
+          <td class="col-center">${renderMajorOfferingTaskSubmitDisplay(sec)}</td>
+          <!-- <td class="col-center">${renderMajorOfferingTeachingConfirmStatus(sec)}</td> --> <!-- 原授课确认状态列 -->
+          <td class="col-center">${escapeHtml(getSectionOfferingTermDisplay(sec))}</td>
+          <td><strong>${escapeHtml(sec.code || '—')}</strong></td>
+          <td>${escapeHtml(sec.name || '—')}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedSchoolDisplay(sec), getSectionMergedSchoolDisplayFull(sec))}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedProgrammeDisplay(sec), getSectionMergedProgrammeDisplayFull(sec))}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedIntakeDisplay(sec), getSectionMergedIntakeDisplayFull(sec))}</td>
+          <td class="col-center">${sec.credits ?? '—'}</td>
+          <td class="col-center">${sec.totalHours ?? '—'}</td>
+          <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
+          <td class="col-center"><code>${escapeHtml(sec.weekRange || '—')}</code></td>
+          <td class="col-center">${getSectionCapacityLimit(sec) || '—'}</td>
+          <!-- <td class="col-center">${sec.estimatedStudents ?? '—'}</td> --> <!-- 原计划人数，改课程名额上限，列位于起止周后 -->
+          <td class="actions col-sticky-actions">${renderMajorOfferingTaskRowActions(sec)}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="15" class="text-muted" style="text-align:center;padding:24px">暂无已提交的开课任务，请先在「专业开课计划」提交</td></tr>';
+  renderListPagination('course-major-offering-task-pagination', 'courseMajorOfferingTask', paged.total);
+  updateMajorOfferingTaskSelection();
+  bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]');
+}
+
+function defaultCourseMajorOfferingRosterCompare(a, b) {
+  return (a.sec?.code || '').localeCompare(b.sec?.code || '')
+    || (a.rowKey || '').localeCompare(b.rowKey || '');
+  // || (a.group?.name || '').localeCompare(b.group?.name || '') // 原按小组排序，改按开课任务
+}
+
+const COURSE_MAJOR_OFFERING_ROSTER_SORT_COLUMNS = {
+  index: { get: row => row.rowKey || '' },
+  // teachingConfirmStatus: { get: row => row.sec?.teachingConfirmStatus || '' }, // 原授课确认状态列，已移除
+  rosterStatus: { get: row => getMajorOfferingRosterScheduleStatusKey(row.sec) },
+  offeringTerm: { get: row => getSectionOfferingTermDisplay(row.sec) },
+  code: { get: row => row.sec?.code || '' },
+  name: { get: row => row.sec?.name || '' },
+  groupCount: { get: row => getMajorOfferingSectionGroupCount(row.sec), type: 'number' },
+  // groupsSummary: { get: row => formatMajorOfferingSectionGroupsSummary(row.sec) }, // 原分组汇总列，改小组数
+  school: { get: row => getSectionMergedSchoolDisplayFull(row.sec) },
+  programme: { get: row => getSectionMergedProgrammeDisplayFull(row.sec) },
+  intake: { get: row => getSectionMergedIntakeDisplayFull(row.sec) },
+  // capacityLimit: { get: row => row.group?.capacityLimit ?? -1, type: 'number' }, // 原人数上限列，列表已移除
+  // actualCount: { get: row => row.group?.studentCount ?? -1, type: 'number' }, // 原实际人数列，列表已移除
+  // remark: { get: row => row.group?.remark || '' }, // 原需求说明列，列表已移除
+  credits: { get: row => row.sec?.credits, type: 'number' },
+  totalHours: { get: row => row.sec?.totalHours, type: 'number' },
+  offeringUnit: { get: row => resolveMajorOfferingSectionOfferingUnit(row.sec) },
+  weekRange: { get: row => row.sec?.weekRange || '' }
+};
+
+function getMajorOfferingRosterRevertableSelection() {
+  if (!ensureCourseOfferingPlan() || !courseMajorRosterSelectedSectionIds.size) return [];
+  return [...courseMajorRosterSelectedSectionIds]
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'major' && isMajorOfferingTaskArrangementSubmitted(s));
+}
+
+function updateMajorOfferingRosterSelection() {
+  courseMajorRosterSelectedSectionIds = new Set(
+    [...document.querySelectorAll('.course-major-roster-row-check:checked')].map(el => el.value)
+  );
+  const hasSelection = courseMajorRosterSelectedSectionIds.size > 0;
+  const btnRosterRevert = document.getElementById('btn-major-roster-revert');
+  if (btnRosterRevert) {
+    btnRosterRevert.disabled = !getMajorOfferingRosterRevertableSelection().length;
+  }
+  const checkAll = document.getElementById('course-major-roster-check-all');
+  const selectable = document.querySelectorAll('.course-major-roster-row-check');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function toggleMajorOfferingRosterCheckAll(checked) {
+  document.querySelectorAll('.course-major-roster-row-check').forEach(el => { el.checked = checked; });
+  updateMajorOfferingRosterSelection();
+}
+
+function renderCourseMajorOfferingRosterTableHeader() {
+  const row = document.querySelector('#page-course-major-offering-roster .course-offering-major-table thead tr');
+  if (!row) return;
+  row.innerHTML =
+    '<th class="col-check"><input type="checkbox" id="course-major-roster-check-all" aria-label="全选" onchange="toggleMajorOfferingRosterCheckAll(this.checked)"></th>' +
+    renderListSortTh('courseMajorOfferingRoster', '序号', 'index', { center: true, extraClass: 'col-index' }) +
+    renderListSortTh('courseMajorOfferingRoster', '状态', 'rosterStatus', { center: true }) +
+    // renderListSortTh('courseMajorOfferingRoster', '授课确认状态', 'teachingConfirmStatus', { center: true }) +
+    renderListSortTh('courseMajorOfferingRoster', '开课学期', 'offeringTerm', { center: true }) +
+    renderListSortTh('courseMajorOfferingRoster', '课程号', 'code') +
+    renderListSortTh('courseMajorOfferingRoster', '课程名称', 'name') +
+    renderListSortTh('courseMajorOfferingRoster', '小组数', 'groupCount', { center: true }) +
+    // renderListSortTh('courseMajorOfferingRoster', '分组', 'groupsSummary') + // 原分组汇总列，改小组数
+    renderListSortTh('courseMajorOfferingRoster', '上课学院', 'school', { center: true }) +
+    renderListSortTh('courseMajorOfferingRoster', '上课专业', 'programme', { center: true }) +
+    renderListSortTh('courseMajorOfferingRoster', '上课批次', 'intake', { center: true }) +
+    // renderListSortTh('courseMajorOfferingRoster', '人数上限', 'capacityLimit', { center: true }) + // 列已移除
+    // renderListSortTh('courseMajorOfferingRoster', '实际人数', 'actualCount', { center: true }) + // 列已移除
+    // renderListSortTh('courseMajorOfferingRoster', '需求说明', 'remark') + // 列已移除
+    renderListSortTh('courseMajorOfferingRoster', '学分', 'credits', { center: true }) +
+    renderListSortTh('courseMajorOfferingRoster', '总学时', 'totalHours', { center: true }) +
+    renderListSortTh('courseMajorOfferingRoster', '开课单位', 'offeringUnit', { center: true }) +
+    renderListSortTh('courseMajorOfferingRoster', '起止周', 'weekRange', { center: true }) +
+    '<th class="col-sticky-actions">操作</th>';
+}
+
+function renderCourseMajorOfferingRosterPage() {
+  const tbody = document.getElementById('course-major-offering-roster-body');
+  if (!tbody) return;
+  renderCourseMajorOfferingRosterTableHeader();
+  rebuildMajorOfferingRosterFilterOptions();
+  const colCount = 15;
+  // const colCount = 14; // 原无状态列
+  if (!ensureCourseOfferingPlan()) {
+    tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">请先在「专业开课计划」生成开课任务</td></tr>`;
+    renderListPagination('course-major-offering-roster-pagination', 'courseMajorOfferingRoster', 0);
+    updateMajorOfferingRosterSelection();
+    return;
+  }
+  const list = sortListWithState(
+    getMajorOfferingRosterRows(),
+    'courseMajorOfferingRoster',
+    COURSE_MAJOR_OFFERING_ROSTER_SORT_COLUMNS,
+    defaultCourseMajorOfferingRosterCompare
+  );
+  const paged = paginateListItems(list, 'courseMajorOfferingRoster');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map(({ sec }, idx) => {
+        const unitAbbr = sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId);
+        const groupCountDisplay = formatMajorOfferingSectionGroupCountDisplay(sec);
+        // const groupsSummary = formatMajorOfferingSectionGroupsSummary(sec); // 原分组汇总列，改小组数
+        const canManage = sec.isGrouped && sec.groups?.length && !isMajorOfferingOpenEnrollment(sec);
+        const manageAction = isMajorOfferingOpenEnrollment(sec)
+          ? '<span class="text-muted" title="开放选课课程名单由选课应用生成">选课应用</span>'
+          : canManage
+            ? `<a href="#" onclick="openMajorOfferingGroupRosterManage('${sec.id}');return false">管理名单</a>`
+            : '<span class="text-muted">—</span>';
+        // const manageAction = canManage
+        //   ? `<a href="#" onclick="openMajorOfferingGroupRosterManage('${sec.id}');return false">管理名单</a>`
+        //   : '<span class="text-muted">—</span>'; // 原未区分开放选课
+        return `<tr>
+          <td class="col-check"><input type="checkbox" class="course-major-roster-row-check" value="${sec.id}" ${courseMajorRosterSelectedSectionIds.has(sec.id) ? 'checked' : ''} onchange="updateMajorOfferingRosterSelection()"></td>
+          <td class="col-index">${rowOffset + idx + 1}</td>
+          <td class="col-center">${renderMajorOfferingRosterScheduleStatus(sec)}</td>
+          <!-- <td class="col-center">${renderMajorOfferingTeachingConfirmStatus(sec)}</td> -->
+          <td class="col-center">${escapeHtml(getSectionOfferingTermDisplay(sec))}</td>
+          <td><strong>${escapeHtml(sec.code || '—')}</strong></td>
+          <td>${escapeHtml(sec.name || '—')}</td>
+          <td class="col-center">${escapeHtml(groupCountDisplay)}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedSchoolDisplay(sec), getSectionMergedSchoolDisplayFull(sec))}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedProgrammeDisplay(sec), getSectionMergedProgrammeDisplayFull(sec))}</td>
+          <td class="col-center col-merged-nowrap">${formatEllipsisTipCell(getSectionMergedIntakeDisplay(sec), getSectionMergedIntakeDisplayFull(sec))}</td>
+          <td class="col-center">${sec.credits ?? '—'}</td>
+          <td class="col-center">${sec.totalHours ?? '—'}</td>
+          <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
+          <td class="col-center"><code>${escapeHtml(sec.weekRange || '—')}</code></td>
+          <td class="actions col-sticky-actions">${manageAction}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">暂无已提交任务安排的开课任务，请先在「专业开课任务安排」完成合分班、分组与教师安排并提交</td></tr>`;
+  // const revertAction = ... 原行内退回，改工具栏批量
+  // paged.items.map(({ sec, group }, idx) => { ... sec.groups 每组建一行 ... }) // 原按小组拆行
+  renderListPagination('course-major-offering-roster-pagination', 'courseMajorOfferingRoster', paged.total);
+  updateMajorOfferingRosterSelection();
+  bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]');
+}
+
+// function renderCourseMajorOfferingRosterPage() { ... } // 原 compact 表无筛选分页，改参考任务安排页
+
+function renderCourseOfferingTaskPlaceholder(tbodyId, typeKey) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  if (!ensureCourseOfferingPlan()) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-muted" style="text-align:center;padding:24px">请先在对应开课计划页维护数据</td></tr>';
+    return;
+  }
+  const lines = (COURSE_OFFERING_PLAN_STORE?.lines || []).filter(l => {
+    if (typeKey === 'ge') return l.offeringType === 'ge';
+    if (typeKey === 'other') return l.offeringType === 'other';
+    return false;
+  });
+  tbody.innerHTML = lines.length
+    ? lines.slice(0, 20).map(line => `<tr>
+        <td><strong>${escapeHtml(line.code || '—')}</strong></td>
+        <td>${escapeHtml(line.name || '—')}</td>
+        <td>${escapeHtml(typeKey === 'other' ? (line.remark || '特殊') : formatGeOfferingIntakeDisplay(line.intake))}</td>
+        <td class="col-center">${line.estimatedStudents ?? '—'}</td>
+        <td class="col-center text-muted">待安排</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="text-muted" style="text-align:center;padding:24px">暂无计划数据</td></tr>';
+}
+
+function renderCourseOfferingRosterPlaceholder(tbodyId, typeKey) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6" class="text-muted" style="text-align:center;padding:24px">${typeKey === 'ge' ? '通识选修' : '特殊'}开课名单管理功能开发中，请先完成计划与任务安排。</td></tr>`;
+}
+
+function getGeOfferingSections() {
+  if (!ensureCourseOfferingPlan()) return [];
+  return (COURSE_OFFERING_PLAN_STORE?.sections || [])
+    .filter(s => s.offeringType === 'ge')
+    .map(ensureGeOfferingSectionFields)
+    .sort((a, b) => (a.code || '').localeCompare(b.code || '') || (a.id || '').localeCompare(b.id || ''));
+}
+
+function getGeOfferingLineIdForSection(sectionId) {
+  const line = (COURSE_OFFERING_PLAN_STORE?.lines || []).find(
+    l => l.sectionId === sectionId && l.offeringType === 'ge'
+  );
+  return line?.id || null;
+}
+
+function rebuildGeOfferingTaskFilterOptions() {
+  rebuildOfferingTermFilterSelect('ge-offering-task-filter-term');
+  const unitSel = document.getElementById('ge-offering-task-filter-offering-unit');
+  if (unitSel) {
+    const curUnit = unitSel.value || '';
+    const unitCodes = [...new Set(
+      getGeOfferingSections().map(sec => resolveMajorOfferingSectionOfferingUnit(sec)).filter(Boolean)
+    )].sort();
+    unitSel.innerHTML = '<option value="">全部开课单位</option>' + unitCodes.map(c =>
+      `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join('');
+    if (curUnit && unitCodes.includes(curUnit)) unitSel.value = curUnit;
+  }
+  const termDisplay = document.getElementById('ge-offering-task-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(termDisplay));
+}
+
+function onGeOfferingTaskTermFilterChange() {
+  const display = document.getElementById('ge-offering-task-filter-term')?.value || '';
+  syncCourseOfferingPlanStoreFromTerm(resolveOfferingTermCodeFromDisplay(display));
+  resetListPage('courseGeOfferingTask');
+  renderCourseGeOfferingTaskPage();
+}
+
+function resetGeOfferingTaskFilters() {
+  ['ge-offering-task-filter-offering-unit', 'ge-offering-task-filter-name', 'ge-offering-task-filter-task-submit'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  rebuildOfferingTermFilterSelect('ge-offering-task-filter-term', { preserveValue: false });
+  syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
+  resetListPage('courseGeOfferingTask');
+  renderCourseGeOfferingTaskPage();
+}
+
+function queryGeOfferingTaskList() {
+  resetListPage('courseGeOfferingTask');
+  renderCourseGeOfferingTaskPage();
+}
+
+function getFilteredGeOfferingTaskSections() {
+  const list = getGeOfferingSections().filter(sec => sec.submitStatus === 'submitted');
+  // const list = getGeOfferingSections(); // 原展示全部计划，改仅已提交计划可进入任务安排
+  const offeringUnit = document.getElementById('ge-offering-task-filter-offering-unit')?.value || '';
+  const taskSubmit = document.getElementById('ge-offering-task-filter-task-submit')?.value || '';
+  const q = (document.getElementById('ge-offering-task-filter-name')?.value || '').trim().toLowerCase();
+  return list.filter(sec => {
+    if (offeringUnit && resolveMajorOfferingSectionOfferingUnit(sec) !== offeringUnit) return false;
+    if (taskSubmit && getMajorOfferingTaskSubmitStatusKey(sec) !== taskSubmit) return false;
+    if (q && !String(sec.code || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function renderGeOfferingTaskRowActions(sec) {
+  const parts = [
+    `<a href="#" onclick="openOfferingGroupingModal('${sec.id}', { returnPage: 'course-ge-offering-task' });return false">分组</a>`,
+    `<a href="#" onclick="openGeOfferingTaskView('${sec.id}');return false">查看</a>`
+  ];
+  if ((sec?.taskRevertRemark || '').trim()) {
+    parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">退回说明</a>`);
+  }
+  return parts.join(' · ');
+  // `<a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合分班</a>` // 通识选修无合分班
+}
+
+function getGeOfferingTaskPendingSelection() {
+  if (!ensureCourseOfferingPlan() || !geOfferingTaskSelectedSectionIds.size) return [];
+  return [...geOfferingTaskSelectedSectionIds]
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'ge' && s.teachingConfirmStatus !== 'confirmed');
+}
+
+function updateGeOfferingTaskSelection() {
+  geOfferingTaskSelectedSectionIds = new Set(
+    [...document.querySelectorAll('.ge-offering-task-row-check:checked')].map(el => el.value)
+  );
+  const hasSelection = geOfferingTaskSelectedSectionIds.size > 0;
+  const btnTaskSubmit = document.getElementById('btn-ge-task-submit');
+  const btnTaskRevert = document.getElementById('btn-ge-task-revert');
+  const pending = getGeOfferingTaskPendingSelection();
+  if (btnTaskSubmit) {
+    btnTaskSubmit.disabled = !hasSelection || !pending.length;
+    btnTaskSubmit.title = hasSelection && !pending.length ? '所选任务均已提交' : '';
+  }
+  if (btnTaskRevert) {
+    const canRevert = hasSelection && ensureCourseOfferingPlan() && [...geOfferingTaskSelectedSectionIds].some(id => {
+      const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id);
+      return sec
+        && sec.offeringType === 'ge'
+        && sec.submitStatus === 'submitted'
+        && sec.teachingConfirmStatus !== 'confirmed';
+    });
+    btnTaskRevert.disabled = !canRevert;
+  }
+  const checkAll = document.getElementById('ge-offering-task-check-all');
+  const selectable = document.querySelectorAll('.ge-offering-task-row-check');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+}
+
+function toggleGeOfferingTaskCheckAll(checked) {
+  document.querySelectorAll('.ge-offering-task-row-check').forEach(el => { el.checked = checked; });
+  updateGeOfferingTaskSelection();
+}
+
+function markGeOfferingSectionRevertedFromTask(sec) {
+  if (!sec) return;
+  sec.submitStatus = 'reverted';
+  sec.schedulingVisible = false;
+  sec.teachingConfirmStatus = 'pending';
+  sec.submittedAt = null;
+  clearMajorOfferingSectionTaskArrangement(sec);
+}
+
+function submitSelectedGeOfferingTaskArrangements(selectedIds = null) {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = selectedIds ? [...selectedIds] : [...geOfferingTaskSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要提交的开课任务。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'ge');
+  const pending = secs.filter(s => s.teachingConfirmStatus !== 'confirmed');
+  if (!pending.length) {
+    alert('所选开课任务均已提交。');
+    return;
+  }
+  const { allOk, hint } = buildMajorOfferingTaskSubmitConfirm(pending);
+  openDeleteConfirm({
+    title: '确认提交',
+    message: `确定提交选中的 <strong>${pending.length}</strong> 条通识选修任务安排吗？`,
+    hint: allOk
+      ? '提交后将锁定分组与教师安排。通识选修为开放选课，学生名单由选课应用生成。'
+      : hint,
+    hintWarn: !allOk,
+    confirmLabel: '提交',
+    confirmDisabled: !allOk,
+    onConfirm: allOk
+      ? () => {
+          pending.forEach(sec => {
+            sec.teachingConfirmStatus = 'confirmed';
+            clearMajorOfferingTaskRevertRemark(sec);
+          });
+          geOfferingTaskSelectedSectionIds.clear();
+          renderCourseGeOfferingTaskPage();
+          updateGeOfferingTaskSelection();
+          alert(`已提交 ${pending.length} 条任务安排。开放选课课程的学生名单将由选课应用生成。`);
+        }
+      : null
+  });
+}
+
+function revertSelectedGeOfferingTaskArrangements() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...geOfferingTaskSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要退回的开课任务。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'ge');
+  const revertable = secs.filter(s =>
+    s.submitStatus === 'submitted' && s.teachingConfirmStatus !== 'confirmed'
+  );
+  const revertableSections = [...new Map(revertable.map(s => [s.id, s])).values()];
+  if (!revertableSections.length) {
+    if (secs.some(s => s.teachingConfirmStatus === 'confirmed')) {
+      alert('所选开课任务已提交任务安排，无法退回。');
+    } else {
+      alert('所选开课任务无法退回。');
+    }
+    return;
+  }
+  openMajorOfferingTaskRevertRemarkModal({
+    title: '退回开课任务',
+    message: `确定退回选中的 <strong>${revertableSections.length}</strong> 条通识选修开课任务吗？`,
+    hint: '退回后「通识选修开课计划」提交状态显示为回退，可修改后再次提交；分组与教师安排将全部清除。',
+    confirmLabel: '退回',
+    onConfirm: remark => {
+      revertableSections.forEach(sec => {
+        applyMajorOfferingTaskRevertRemark(sec, remark, 'plan');
+        markGeOfferingSectionRevertedFromTask(sec);
+      });
+      geOfferingTaskSelectedSectionIds.clear();
+      renderCourseGeOfferingTaskPage();
+      renderGeOfferingPlanPage();
+      updateGeOfferingTaskSelection();
+    }
+  });
+}
+
+function openGeOfferingTaskView(sectionId) {
+  const lineId = getGeOfferingLineIdForSection(sectionId);
+  if (!lineId) {
+    alert('未找到关联开课计划行。');
+    return;
+  }
+  openGeOfferingEditDrawer(lineId);
+  syncGeOfferingEditDrawerReadOnly(true);
+  // openMajorOfferingEditDrawer(sectionId); // 原参考专业查看抽屉，改通识选修专用
+}
+
+function syncGeOfferingEditDrawerReadOnly(readonly) {
+  const drawer = document.getElementById('drawer-ge-offering-edit');
+  drawer?.classList.toggle('is-readonly', readonly);
+  const confirmBtn = drawer?.querySelector('.drawer-foot .btn-primary');
+  if (confirmBtn) {
+    confirmBtn.hidden = readonly;
+    confirmBtn.disabled = readonly;
+  }
+  const cancelBtn = drawer?.querySelector('.drawer-foot .btn-ghost');
+  if (cancelBtn) cancelBtn.textContent = readonly ? '关闭' : '取消';
+  const titleEl = drawer?.querySelector('.drawer-head h3');
+  if (titleEl) titleEl.textContent = readonly ? '查看开课计划' : '修改开课计划';
+  drawer?.querySelectorAll('.input:not(.readonly), select, textarea').forEach(el => {
+    el.disabled = !!readonly;
+  });
+  const venueTrigger = drawer?.querySelector('#ge-edit-venue-types-multiselect .clo-multiselect-trigger');
+  if (venueTrigger) venueTrigger.disabled = !!readonly;
+  const classroomBtn = drawer?.querySelector('.input-with-btn .btn');
+  if (classroomBtn) classroomBtn.disabled = !!readonly;
+}
+
+const COURSE_GE_OFFERING_TASK_SORT_COLUMNS = {
+  index: { get: sec => sec.id || '' },
+  taskSubmitStatus: { get: sec => getMajorOfferingTaskSubmitStatusKey(sec) },
+  offeringTerm: { get: sec => getSectionOfferingTermDisplay(sec) },
+  code: { get: sec => sec.code || '' },
+  name: { get: sec => sec.name || '' },
+  credits: { get: sec => sec.credits, type: 'number' },
+  totalHours: { get: sec => sec.totalHours, type: 'number' },
+  offeringUnit: { get: sec => sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId) || '' },
+  weekRange: { get: sec => sec.weekRange || '' },
+  capacityLimit: { get: sec => getSectionCapacityLimit(sec), type: 'number' }
+};
+
+function defaultCourseGeOfferingTaskCompare(a, b) {
+  return (a.code || '').localeCompare(b.code || '') || (a.id || '').localeCompare(b.id || '');
+}
+
+function renderCourseGeOfferingTaskTableHeader() {
+  const row = document.querySelector('#page-course-ge-offering-task .course-ge-offering-task-table thead tr');
+  if (!row) return;
+  row.innerHTML =
+    '<th class="col-check"><input type="checkbox" id="ge-offering-task-check-all" aria-label="全选" onchange="toggleGeOfferingTaskCheckAll(this.checked)"></th>' +
+    renderListSortTh('courseGeOfferingTask', '序号', 'index', { center: true, extraClass: 'col-index' }) +
+    renderListSortTh('courseGeOfferingTask', '提交状态', 'taskSubmitStatus', { center: true }) +
+    renderListSortTh('courseGeOfferingTask', '开课学期', 'offeringTerm', { center: true }) +
+    renderListSortTh('courseGeOfferingTask', '课程号', 'code') +
+    renderListSortTh('courseGeOfferingTask', '课程名称', 'name') +
+    renderListSortTh('courseGeOfferingTask', '学分', 'credits', { center: true }) +
+    renderListSortTh('courseGeOfferingTask', '总学时', 'totalHours', { center: true }) +
+    renderListSortTh('courseGeOfferingTask', '开课单位', 'offeringUnit', { center: true }) +
+    renderListSortTh('courseGeOfferingTask', '起止周', 'weekRange', { center: true }) +
+    renderListSortTh('courseGeOfferingTask', '课程名额上限', 'capacityLimit', { center: true }) +
+    '<th class="col-sticky-actions">操作</th>';
+}
+
+function renderCourseGeOfferingTaskPage() {
+  const tbody = document.getElementById('course-ge-offering-task-body');
+  if (!tbody) return;
+  renderCourseGeOfferingTaskTableHeader();
+  rebuildGeOfferingTaskFilterOptions();
+  const termCode = resolveOfferingTermCodeFromDisplay(
+    document.getElementById('ge-offering-task-filter-term')?.value || getDefaultOfferingTermDisplay()
+  );
+  if (!termCode) {
+    tbody.innerHTML = '<tr><td colspan="12" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
+    renderListPagination('course-ge-offering-task-pagination', 'courseGeOfferingTask', 0);
+    updateGeOfferingTaskSelection();
+    return;
+  }
+  syncCourseOfferingPlanStoreFromTerm(termCode);
+  // if (!ensureCourseOfferingPlan()) {
+  //   tbody.innerHTML = '<tr><td colspan="11" class="text-muted" style="text-align:center;padding:24px">请先在「通识选修开课计划」添加开课课程</td></tr>';
+  //   renderListPagination('course-ge-offering-task-pagination', 'courseGeOfferingTask', 0);
+  //   return;
+  // } // 原无计划数据时阻断，改允许进入并展示空列表
+  const list = sortListWithState(
+    getFilteredGeOfferingTaskSections(),
+    'courseGeOfferingTask',
+    COURSE_GE_OFFERING_TASK_SORT_COLUMNS,
+    defaultCourseGeOfferingTaskCompare
+  );
+  const paged = paginateListItems(list, 'courseGeOfferingTask');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map((sec, idx) => {
+        const unitAbbr = sec.offeringUnitAbbr || getCatalogOfferingUnitAbbr(sec.catalogId);
+        return `<tr>
+          <td class="col-check"><input type="checkbox" class="ge-offering-task-row-check" value="${sec.id}" ${geOfferingTaskSelectedSectionIds.has(sec.id) ? 'checked' : ''} onchange="updateGeOfferingTaskSelection()"></td>
+          <td class="col-index">${rowOffset + idx + 1}</td>
+          <td class="col-center">${renderMajorOfferingTaskSubmitDisplay(sec)}</td>
+          <td class="col-center">${escapeHtml(getSectionOfferingTermDisplay(sec))}</td>
+          <td><strong>${escapeHtml(sec.code || '—')}</strong></td>
+          <td>${escapeHtml(sec.name || '—')}</td>
+          <td class="col-center">${sec.credits ?? '—'}</td>
+          <td class="col-center">${sec.totalHours ?? '—'}</td>
+          <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
+          <td class="col-center"><code>${escapeHtml(sec.weekRange || '—')}</code></td>
+          <td class="col-center">${getSectionCapacityLimit(sec) || '—'}</td>
+          <td class="actions col-sticky-actions">${renderGeOfferingTaskRowActions(sec)}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="12" class="text-muted" style="text-align:center;padding:24px">暂无已提交的通识选修开课任务，请先在「通识选修开课计划」添加并提交课程</td></tr>';
+  renderListPagination('course-ge-offering-task-pagination', 'courseGeOfferingTask', paged.total);
+  updateGeOfferingTaskSelection();
+  // renderCourseOfferingTaskPlaceholder('course-ge-offering-task-body', 'ge'); // 原占位列表
+}
+
+// function renderCourseSpecialOfferingTaskPage() {
+//   renderCourseOfferingTaskPlaceholder('course-special-offering-task-body', 'other');
+// } // 原占位，改完整任务安排页
+// function renderCourseSpecialOfferingRosterPage() {
+//   renderCourseOfferingRosterPlaceholder('course-special-offering-roster-body', 'other');
+// } // 原占位，改完整名单管理页
 
 /* 原弹窗合分班逻辑已改由右侧抽屉（openMajorMergeSplitModal → drawer）完成，保留供参考
 function openMajorMergeSplitModal_OLD(sectionId) { ... }
@@ -5776,6 +13574,8 @@ function mergeMajorOfferingSections(sectionIds, className) {
   merged.className = className;
   merged.estimatedStudents = secs.reduce((sum, s) => sum + (s.estimatedStudents || 0), 0);
   merged.studentCount = merged.estimatedStudents;
+  merged.reservedSpots = secs.reduce((sum, s) => sum + (s.reservedSpots ?? 5), 0);
+  // merged.reservedSpots = Math.max(0, ...secs.map(s => s.reservedSpots ?? 5)); // 原预留名额取最大值，改累加
   merged.weekRange = secs[0].weekRange;
   merged.teachingWeeks = secs[0].teachingWeeks;
   merged.totalHours = secs[0].totalHours;
@@ -5824,7 +13624,7 @@ function openMajorOfferingDetail(sectionId) {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
   if (!sec) return;
   const m = PROGRAMMES[sec.programmeKey];
-  const classes = getSectionIncludedClasses(sec).join('、') || '—';
+  const batches = getSectionMergedBatchLabelDisplayFull(sec);
   const body = document.getElementById('major-offering-detail-body');
   if (!body) return;
   body.innerHTML = `
@@ -5833,7 +13633,7 @@ function openMajorOfferingDetail(sectionId) {
       <dt>教学班</dt><dd>${escapeHtml(sec.className || '—')}</dd>
       <dt>课程</dt><dd>${escapeHtml(sec.code)} ${escapeHtml(sec.name)}</dd>
       <dt>专业</dt><dd>${escapeHtml(m?.nameZh || '—')}</dd>
-      <dt>上课班级</dt><dd>${escapeHtml(classes)}</dd>
+      <dt>专业批次</dt><dd><code>${escapeHtml(batches)}</code></dd>
       <dt>起止周 / 教学周数</dt><dd>${escapeHtml(sec.weekRange || '—')} / ${sec.teachingWeeks ?? '—'} 周</dd>
       <dt>总学时</dt><dd>${sec.totalHours ?? '—'}（理论 ${sec.theoryHours ?? '—'} / 实践 ${sec.practiceHours ?? '—'}）</dd>
       <dt>合分班</dt><dd>${sec.lineIds.length > 1 ? `已合并 ${sec.lineIds.length} 个班` : '独立班'}</dd>
@@ -5842,150 +13642,3052 @@ function openMajorOfferingDetail(sectionId) {
   openModal('modal-major-offering-detail');
 }
 
-function openOfferingGroupingModal(sectionId) {
+const OFFERING_GROUPING_RETURN_LABELS = {
+  'course-offering-major': '专业开课计划',
+  'course-major-offering-task': '专业开课任务安排',
+  'course-major-offering-roster': '专业开课学生名单管理',
+  'course-ge-offering-task': '通识选修开课任务安排',
+  'course-special-offering-task': '特殊开课任务安排',
+  'course-special-offering-roster': '特殊开课学生名单管理',
+};
+
+function syncOfferingGroupingBreadcrumb() {
+  const link = document.getElementById('offering-grouping-breadcrumb-link');
+  if (!link) return;
+  link.textContent = OFFERING_GROUPING_RETURN_LABELS[offeringGroupingReturnPage] || '专业开课任务安排';
+}
+
+function openOfferingGroupingModal(sectionId, options = {}) {
   offeringGroupingSectionId = sectionId;
+  const activePageId = document.querySelector('.page.active')?.id?.replace(/^page-/, '') || '';
+  offeringGroupingReturnPage = options.returnPage
+    || (activePageId && activePageId !== 'offering-grouping' ? activePageId : 'course-major-offering-task');
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  if (sec) ensureSectionOfferingFields(sec);
+  const requestedTab = options.tab || 'teacher';
+  const studentRosterMode = isOfferingGroupingStudentRosterMode(sec);
+  if (studentRosterMode && (!options.tab || options.tab === 'teacher')) {
+    offeringGroupingActiveTab = 'student';
+  } else if (requestedTab === 'student' && !studentRosterMode) {
+    offeringGroupingActiveTab = 'teacher';
+  } else {
+    offeringGroupingActiveTab = normalizeOfferingGroupingTab(requestedTab);
+  }
+  // if (requestedTab === 'student' && offeringGroupingReturnPage !== 'course-major-offering-roster') {
+  //   offeringGroupingActiveTab = 'teacher';
+  // } else {
+  //   offeringGroupingActiveTab = normalizeOfferingGroupingTab(requestedTab);
+  // } // 原仅名单管理入口可进学生 Tab，改任务安排已提交后从「分组」亦维护名单
+  // offeringGroupingActiveTab = options.tab || 'teacher'; // 原不区分入口，分组页也展示学生名单 Tab
+  offeringGroupingSelectedGroupId = options.groupId || null;
+  offeringGroupingStudentSelected.clear();
+  // offeringGroupingActiveTab = 'teacher'; // 原固定教师 Tab
+  // offeringGroupingSelectedGroupId = null; // 原固定清空
+  // const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId); // 原在 Tab 判定之后加载
+  offeringGroupingReadOnly = isMajorOfferingSectionStructureLocked(sec);
+  if (sec) {
+    // syncSectionGroupsFromProgrammeBatches(sec); // 原进入分组页自动按批次建组，改由任务安排环节手动/自动分组
+    if (shouldSeedDemoOfferingGroupAssignments(sec) && !(sec.groupAssignments?.length)) {
+      seedDemoOfferingGroupAssignments(sec);
+    }
+    getMajorOfferingStudentRoster(sectionId);
+  }
+  updateOfferingGroupingPageTitle(sec);
+  syncOfferingGroupingBreadcrumb();
+  syncOfferingGroupingHeaderActions();
+  goPage('offering-grouping');
   renderOfferingGroupingPanel();
-  openModal('modal-offering-grouping');
+  refreshOfferingGroupingLeaveSnapshot();
+  // renderOfferingGroupingPanel(); goPage('offering-grouping'); // 原先渲染后跳转，渲染异常时点击无反应
+  // openModal('modal-offering-grouping'); // 原全屏弹窗，改独立页 page-offering-grouping
+}
+
+function buildOfferingGroupingLeaveSnapshot(sectionId) {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  if (!sec) return null;
+  const roster = getMajorOfferingStudentRoster(sectionId) || [];
+  return cloneJson({
+    roster: roster.map(stu => ({
+      id: stu.id,
+      studentNo: stu.studentNo,
+      groupNames: [...(stu.groupNames || [])],
+      source: stu.source || ''
+    })),
+    groups: (sec.groups || []).map(g => ({
+      id: g.id,
+      name: g.name,
+      remark: g.remark || '',
+      capacityLimit: g.capacityLimit,
+      batchLabel: g.batchLabel || ''
+    })),
+    groupAssignments: (sec.groupAssignments || []).map(a => ({
+      id: a.id,
+      deliveryScope: a.deliveryScope,
+      groupId: a.groupId,
+      groupIds: [...(a.groupIds || [])],
+      hourType: a.hourType,
+      weekRange: a.weekRange,
+      weeklyHours: a.weeklyHours,
+      hours: a.hours,
+      staffId: a.staffId,
+      teacher: a.teacher
+    }))
+  });
+}
+
+function refreshOfferingGroupingLeaveSnapshot() {
+  if (!offeringGroupingSectionId) {
+    offeringGroupingLeaveSnapshot = null;
+    return;
+  }
+  offeringGroupingLeaveSnapshot = buildOfferingGroupingLeaveSnapshot(offeringGroupingSectionId);
+}
+
+function isOfferingGroupingPageDirty() {
+  if (!offeringGroupingSectionId || !offeringGroupingLeaveSnapshot) return false;
+  const current = buildOfferingGroupingLeaveSnapshot(offeringGroupingSectionId);
+  return JSON.stringify(current) !== JSON.stringify(offeringGroupingLeaveSnapshot);
+}
+
+function shouldConfirmOfferingGroupingLeave() {
+  // if (!isOfferingGroupingPageDirty()) return false; // 原仅 dirty 时提示，改可编辑态下点击返回均二次确认
+  if (isOfferingGroupingStudentRosterMode()) return isOfferingGroupingStudentEditable();
+  // if (isOfferingGroupingRosterContext()) return isOfferingGroupingStudentEditable(); // 原仅名单管理入口
+  return !offeringGroupingReadOnly;
+}
+
+function performCloseOfferingGroupingPage() {
+  const target = offeringGroupingReturnPage || 'course-major-offering-task';
+  offeringGroupingLeaveSnapshot = null;
+  goPage(target);
+  if (target === 'course-major-offering-task') renderCourseMajorOfferingTaskPage();
+  else if (target === 'course-ge-offering-task') renderCourseGeOfferingTaskPage();
+  else if (target === 'course-major-offering-roster') renderCourseMajorOfferingRosterPage();
+  else if (target === 'course-special-offering-task') renderCourseSpecialOfferingTaskPage();
+  else if (target === 'course-special-offering-roster') renderCourseSpecialOfferingRosterPage();
+  else if (target === 'course-offering-major') renderCourseOfferingMajorPage();
+  else if (target === 'course-offering-other') renderOtherOfferingPlanPage();
+}
+
+function closeOfferingGroupingPage(options = {}) {
+  const force = options === true || options?.force;
+  if (!force && shouldConfirmOfferingGroupingLeave()) {
+    const rosterMode = isOfferingGroupingStudentRosterMode();
+    openDeleteConfirm({
+      title: '返回确认',
+      message: '确定返回吗？返回后数据不会保存。',
+      hint: rosterMode
+        ? '如需保留学生名单修改，请先点击「保存名单」。'
+        : '如需保留分组与教师安排修改，请先点击「保存」。',
+      confirmLabel: '不保存并返回',
+      confirmDanger: true,
+      onConfirm: () => performCloseOfferingGroupingPage()
+    });
+    return;
+  }
+  performCloseOfferingGroupingPage();
+  // const rosterContext = isOfferingGroupingRosterContext(); // 原仅名单管理入口文案
+  // const target = offeringGroupingReturnPage || 'course-major-offering-task'; // 原直接返回，改未保存时二次确认
+  // goPage(target);
+  // if (target === 'course-major-offering-task') renderCourseMajorOfferingTaskPage();
+  // else if (target === 'course-major-offering-roster') renderCourseMajorOfferingRosterPage();
+  // else if (target === 'course-offering-major') renderCourseOfferingMajorPage();
+}
+
+function groupHasHourTypeAssignment(sec, groupId, hourType) {
+  return (sec?.groupAssignments || []).some(row =>
+    row.hourType === hourType && groupAssignRowMatchesGroup(row, groupId)
+  );
+}
+
+function appendOfferingGroupingSaveGroupWarning(bucket, label, line) {
+  if (!bucket.byGroup.has(label)) bucket.byGroup.set(label, []);
+  const lines = bucket.byGroup.get(label);
+  if (!lines.includes(line)) lines.push(line);
+}
+
+function collectOfferingGroupingSaveWarnings(sec) {
+  const bucket = { byGroup: new Map() };
+  // const bucket = { courseLevel: [], byGroup: new Map() }; // 原课程级平铺，改全部归入各组
+  const groups = sec?.groups || [];
+  sanitizeSectionGroupAssignments(sec);
+  getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
+    const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+    const rows = (sec.groupAssignments || []).filter(a => a.hourType === hourType);
+    if (!rows.length) {
+      groups.forEach(g => {
+        const label = formatMajorOfferingGroupName(sec.name, g.name);
+        appendOfferingGroupingSaveGroupWarning(bucket, label, `${hourType}尚未安排教师。`);
+      });
+      // bucket.courseLevel.push(`${hourType}尚未安排教师。`); // 原课程级提示，改按组列出
+      return;
+    }
+    groups.forEach(g => {
+      const label = formatMajorOfferingGroupName(sec.name, g.name);
+      if (!groupHasHourTypeAssignment(sec, g.id, hourType)) {
+        appendOfferingGroupingSaveGroupWarning(bucket, label, `${hourType}尚未安排教师。`);
+      }
+      if (typeTotal > 0) {
+        const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, g.id, hourType, '');
+        if (recorded < typeTotal) {
+          appendOfferingGroupingSaveGroupWarning(
+            bucket,
+            label,
+            `${hourType}已录入学时 ${recorded}/${typeTotal}，尚未录满。`
+          );
+        }
+        if (recorded > typeTotal) {
+          appendOfferingGroupingSaveGroupWarning(
+            bucket,
+            label,
+            `${hourType}已录入学时 ${recorded}/${typeTotal}，已超过计划。`
+          );
+        }
+      }
+    });
+  });
+  (sec.groupAssignments || []).forEach(row => {
+    if (!isOfferingSectionHourTypeArrangeable(sec, row.hourType)) return;
+    const labels = getGroupAssignRowGroupLabels(row, sec);
+    const targets = labels.length
+      ? labels
+      : groups.map(g => formatMajorOfferingGroupName(sec.name, g.name));
+    targets.forEach(label => {
+      if (!getGroupAssignTeachers(row).length) {
+        appendOfferingGroupingSaveGroupWarning(bucket, label, `${row.hourType}：未指定授课教师。`);
+      }
+      if (!(row.weekRange || '').trim()) {
+        appendOfferingGroupingSaveGroupWarning(bucket, label, `${row.hourType}：起止周不完整。`);
+      }
+      const wh = Number(row.weeklyHours);
+      if (!Number.isFinite(wh) || wh <= 0) {
+        appendOfferingGroupingSaveGroupWarning(bucket, label, `${row.hourType}：周学时不完整。`);
+      }
+    });
+  });
+  return bucket;
+}
+
+function countOfferingGroupingSaveWarnings(bucket) {
+  let count = 0;
+  bucket.byGroup.forEach(lines => { count += lines.length; });
+  return count;
+  // let count = bucket.courseLevel.length; // 原含课程级条目
+}
+
+function formatOfferingGroupingSaveWarningHint(bucket, sec) {
+  const groups = sec?.groups || [];
+  const blocks = [];
+  groups.forEach(g => {
+    const label = formatMajorOfferingGroupName(sec.name, g.name);
+    const lines = bucket.byGroup.get(label);
+    if (!lines?.length) return;
+    blocks.push(`${label}：\n${lines.map(line => `· ${line}`).join('\n')}`);
+  });
+  bucket.byGroup.forEach((lines, label) => {
+    if (!lines.length || groups.some(g => formatMajorOfferingGroupName(sec.name, g.name) === label)) return;
+    blocks.push(`${label}：\n${lines.map(line => `· ${line}`).join('\n')}`);
+  });
+  // if (bucket.courseLevel.length) {
+  //   blocks.push(bucket.courseLevel.map(line => `· ${line}`).join('\n'));
+  // } // 原课程级条目优先展示，改先按组再说具体学时类型
+  if (!blocks.length) return '保存后将更新分组与教师安排。';
+  return [
+    '以下分组尚未安排完成，将保存当前进度，可后续继续完善：',
+    // '以下分组尚未安排完成，将暂存当前进度，可后续继续完善：', // 原文案用「暂存」
+    '',
+    ...blocks
+  ].join('\n');
+  // return `以下分组或学时类型尚未安排完成...`; // 原组与课程级混排
+}
+
+function formatMajorOfferingTaskSubmitFailureMessage(bucket, sec) {
+  const groups = sec?.groups || [];
+  const blocks = [];
+  groups.forEach(g => {
+    const label = formatMajorOfferingGroupName(sec.name, g.name);
+    const lines = bucket.byGroup.get(label);
+    if (!lines?.length) return;
+    blocks.push(`${label}：\n${lines.map(line => `· ${line}`).join('\n')}`);
+  });
+  bucket.byGroup.forEach((lines, label) => {
+    if (!lines.length || groups.some(g => formatMajorOfferingGroupName(sec.name, g.name) === label)) return;
+    blocks.push(`${label}：\n${lines.map(line => `· ${line}`).join('\n')}`);
+  });
+  if (!blocks.length) return '学时安排尚未完成，无法提交。';
+  return `以下分组学时尚未安排完成：\n\n${blocks.join('\n\n')}`;
+}
+
+function validateMajorOfferingTaskArrangementSubmit(sec) {
+  if (!sec) return { ok: false, message: '未找到开课任务。' };
+  ensureSectionOfferingFields(sec);
+  const structural = validateOfferingGroupingPageSave(sec);
+  if (!structural.ok) {
+    return {
+      ok: false,
+      message: structural.message.replace(/^无法保存，/, '提交失败，')
+    };
+  }
+  const warningBucket = collectOfferingGroupingSaveWarnings(sec);
+  if (countOfferingGroupingSaveWarnings(warningBucket) > 0) {
+    return {
+      ok: false,
+      message: formatMajorOfferingTaskSubmitFailureMessage(warningBucket, sec)
+    };
+  }
+  return { ok: true };
+}
+
+function validateMajorOfferingTaskArrangementsSubmit(sections) {
+  const failures = [];
+  sections.forEach(sec => {
+    const result = validateMajorOfferingTaskArrangementSubmit(sec);
+    if (result.ok) return;
+    const title = [sec.code, sec.name].filter(Boolean).join(' ') || '当前任务';
+    failures.push(`${title}：\n${result.message}`);
+  });
+  if (!failures.length) return { ok: true };
+  return {
+    ok: false,
+    message: `提交失败，请先完善学时安排：\n\n${failures.join('\n\n')}`
+  };
+}
+
+function validateOfferingGroupingPageSave(sec) {
+  const errors = [];
+  // const warnings = []; // 原平铺 warnings，改 collectOfferingGroupingSaveWarnings 按组汇总
+  if (!sec) {
+    return { ok: false, message: '未找到当前课程分段。' };
+  }
+  const groups = sec.groups || [];
+  if (!groups.length) {
+    errors.push('请至少新增一个分组。');
+  }
+  const nameSet = new Set();
+  groups.forEach(g => {
+    const name = (g.name || '').trim();
+    const label = formatMajorOfferingGroupName(sec.name, name || g.name || '未命名');
+    if (!name) errors.push(`${label}：分组名称不能为空。`);
+    else if (nameSet.has(name)) errors.push(`分组名称「${name}」重复。`);
+    else nameSet.add(name);
+    const limit = Number(g.capacityLimit);
+    if (!Number.isFinite(limit) || limit <= 0) {
+      errors.push(`${label}：请设置有效的人数上限。`);
+    }
+  });
+  validateSectionGroupCapacityTotals(sec).forEach(line => errors.push(line));
+  sanitizeSectionGroupAssignments(sec);
+  const warningBucket = collectOfferingGroupingSaveWarnings(sec);
+  getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
+    const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+    groups.forEach(g => {
+      const label = formatMajorOfferingGroupName(sec.name, g.name);
+      if (typeTotal > 0) {
+        const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, g.id, hourType, '');
+        if (recorded > typeTotal) {
+          errors.push(`${label}：${hourType}已录入学时 ${recorded} 超过总数 ${typeTotal}。`);
+        }
+      }
+    });
+  });
+  // getOfferingSectionArrangeableHourTypes ... warnings 原平铺收集，改 collectOfferingGroupingSaveWarnings 按组汇总
+  // (sec.groupAssignments || []).forEach(row => { ... warnings ... });
+  if (errors.length) {
+    return {
+      ok: false,
+      message: `无法保存，请先完善以下内容：\n${errors.map(line => `· ${line}`).join('\n')}`
+    };
+  }
+  const hasIncomplete = countOfferingGroupingSaveWarnings(warningBucket) > 0;
+  const hint = formatOfferingGroupingSaveWarningHint(warningBucket, sec);
+  // const hasIncomplete = warnings.length > 0;
+  // const hint = hasIncomplete ? `以下分组或学时类型...` : ...; // 原平铺列表
+  return { ok: true, hint, hasIncomplete };
+}
+
+function applyOfferingGroupingPageSave({ hasIncomplete = false } = {}) {
+  const sec = getOfferingGroupingSection();
+  if (!sec) return;
+  sanitizeSectionGroupAssignments(sec);
+  sec.isGrouped = (sec.groups?.length || 0) > 0;
+  syncSectionCoordinatorsFromAssignments(sec);
+  syncOfferingGroupStudentCounts(sec);
+  renderCourseMajorOfferingTaskPage();
+  renderCourseOfferingMajorPage();
+  const msg = hasIncomplete
+    ? '分组与教师安排已保存，请后续继续完善未排完的小组与学时。'
+    : '分组与教师安排已保存。';
+  // renderOfferingGroupingPanel(); // 原保存后停留分组页重绘
+  // alert(hasIncomplete ? '分组与教师安排已保存，请后续继续完善未排完的小组与学时。' : '分组与教师安排已保存。'); // 原 alert 后仍停留分组页
+  refreshOfferingGroupingLeaveSnapshot();
+  performCloseOfferingGroupingPage();
+  alert(msg);
+  // alert(hasIncomplete ? '分组与教师安排已暂存...' : ...); // 原未完成时提示「已暂存」
+}
+
+function saveOfferingGroupingPage() {
+  if (!assertOfferingGroupingEditable('保存')) return;
+  const sec = getOfferingGroupingSection();
+  if (!sec) return;
+  const validation = validateOfferingGroupingPageSave(sec);
+  if (!validation.ok) {
+    alert(validation.message);
+    return;
+  }
+  const title = `${escapeHtml(sec.code || '')} ${escapeHtml(sec.name || '')}`.trim() || '当前课程';
+  const incomplete = !!validation.hasIncomplete;
+  openDeleteConfirm({
+    title: '确认保存',
+    message: `确定保存<strong>${title}</strong>的分组与教师安排吗？`,
+    // title: incomplete ? '确认暂存' : '确认保存', // 原未完成时用「暂存」
+    // message: incomplete ? `确定暂存<strong>${title}</strong>...` : ... // 原未完成时用「暂存」
+    hint: validation.hint || '',
+    confirmLabel: '保存',
+    onConfirm: () => applyOfferingGroupingPageSave({ hasIncomplete: incomplete })
+  });
+}
+
+function applyOfferingGroupingRosterSave() {
+  const sec = getOfferingGroupingSection();
+  const sectionId = offeringGroupingSectionId;
+  if (!sec || !sectionId) return;
+  getMajorOfferingStudentRoster(sectionId);
+  syncOfferingGroupStudentCounts(sec);
+  syncSectionEstimatedStudentsFromRoster(sectionId);
+  sec.rosterScheduleStatus = 'draft';
+  if (isOfferingGroupingStudentRosterMode(sec)) {
+    refreshOfferingGroupingLeaveSnapshot();
+    performCloseOfferingGroupingPage();
+    alert('学生名单已保存。');
+    return;
+  }
+  // if (isOfferingGroupingRosterContext()) { ... } // 原仅名单管理入口保存后返回
+  refreshOfferingGroupingPanelsIfOpen();
+  renderCourseMajorOfferingRosterPage();
+  alert('学生名单已保存。');
+}
+
+function saveOfferingGroupingRosterPage() {
+  if (!assertOfferingGroupingStudentEditable('保存名单')) return;
+  if (!ensureOfferingGroupingStudentOpsContext()) return;
+  const sec = getOfferingGroupingSection();
+  if (!sec) return;
+  const capacityIssues = validateOfferingGroupingRosterGroupCapacities(sec, offeringGroupingSectionId);
+  if (capacityIssues.length) {
+    openOfferingGroupCapacityAlert(capacityIssues.join('\n'));
+    return;
+  }
+  const title = `${escapeHtml(sec.code || '')} ${escapeHtml(sec.name || '')}`.trim() || '当前课程';
+  openDeleteConfirm({
+    title: '确认保存',
+    message: `确定保存<strong>${title}</strong>的学生名单吗？`,
+    hint: '保存后名单状态仍为草稿，可在「专业开课学生名单管理」中继续维护或提交排课。',
+    confirmLabel: '保存',
+    onConfirm: () => applyOfferingGroupingRosterSave()
+  });
+}
+
+function validateOfferingGroupingRosterGroupCapacities(sec, sectionId = sec?.id) {
+  if (!sec?.groups?.length) return [];
+  const issues = [];
+  sec.groups.forEach(group => {
+    const limit = getOfferingGroupCapacityLimitValue(group);
+    if (limit === Infinity) return;
+    const current = countOfferingGroupRosterStudents(group, sec, sectionId);
+    if (current > limit) {
+      const label = formatMajorOfferingGroupName(sec.name, group.name);
+      const capLabel = formatOfferingGroupCapacityLimit(group) || `≤${limit}人`;
+      issues.push(`分组「${label}」${capLabel}，当前已有 ${current} 人，超出人数上限。`);
+    }
+  });
+  return issues;
+}
+
+function updateOfferingGroupingPageTitle(sec) {
+  const el = document.getElementById('offering-grouping-page-title');
+  if (!el) return;
+  if (!sec) {
+    el.textContent = '分组';
+    return;
+  }
+  el.textContent = `分组 · ${sec.code || '—'} ${sec.name || ''}`.trim();
+}
+
+function isOfferingGroupingPageActive() {
+  return document.getElementById('page-offering-grouping')?.classList.contains('active');
+}
+
+function getOfferingGroupingBodyEl() {
+  return document.querySelector('#page-offering-grouping .offering-grouping-body');
+}
+
+function getOfferingGroupingShellEl() {
+  return document.querySelector('#page-offering-grouping .offering-grouping-shell');
+}
+
+function getOfferingGroupingSection() {
+  return COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+}
+
+function getOfferingGroupingSelectedGroup(sec = getOfferingGroupingSection()) {
+  if (!sec?.groups?.length || !offeringGroupingSelectedGroupId) return null;
+  return sec.groups.find(g => g.id === offeringGroupingSelectedGroupId) || null;
+}
+
+function studentMatchesOfferingGroup(stu, group, sec) {
+  if (!stu || !group || !sec) return false;
+  const fullName = formatMajorOfferingGroupName(sec.name, group.name);
+  return getStudentGroupNames(stu).some(name =>
+    name === group.name
+    || name === fullName
+    || formatStudentCourseGroupLabel(sec.name, name) === fullName
+  );
+}
+
+function ensureOfferingGroupingGroupSelection(sec = getOfferingGroupingSection()) {
+  if (!sec?.groups?.length) {
+    offeringGroupingSelectedGroupId = null;
+    return;
+  }
+  if (!offeringGroupingSelectedGroupId || !sec.groups.some(g => g.id === offeringGroupingSelectedGroupId)) {
+    offeringGroupingSelectedGroupId = sec.groups[0].id;
+  }
+}
+
+function selectOfferingGroup(groupId) {
+  if (offeringGroupingSelectedGroupId === groupId) return;
+  offeringGroupingSelectedGroupId = groupId;
+  offeringGroupingStudentSelected.clear();
+  offeringGroupingAssignSelected.clear();
+  resetListPage('offeringGroupingStudent');
+  renderOfferingGroupingPanel();
+}
+
+function isOfferingGroupingStudentTabEnabled() {
+  return isOfferingGroupingStudentRosterMode(getOfferingGroupingSection());
+  // return offeringGroupingReturnPage === 'course-major-offering-roster'; // 原仅名单管理入口
+}
+
+function syncOfferingGroupingTabVisibility() {
+  const studentTabEnabled = isOfferingGroupingStudentTabEnabled();
+  if (!studentTabEnabled && offeringGroupingActiveTab === 'student') {
+    offeringGroupingActiveTab = 'teacher';
+  }
+  document.querySelectorAll('.offering-group-tab').forEach(el => {
+    const tab = el.dataset.tab;
+    if (tab === 'student') {
+      el.toggleAttribute('hidden', !studentTabEnabled);
+    }
+    el.classList.toggle('is-active', tab === offeringGroupingActiveTab);
+    el.classList.toggle('is-muted', tab !== offeringGroupingActiveTab);
+  });
+  document.getElementById('offering-group-teacher-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'teacher');
+  document.getElementById('offering-group-student-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'student');
+  document.getElementById('offering-group-hour-summary-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'summary');
+  document.getElementById('offering-group-group-status-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'group-status');
+  // document.getElementById('offering-group-hour-summary-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'summary'); // 原仅三 Tab
+}
+
+function renderActiveOfferingGroupingTabPanel() {
+  if (offeringGroupingActiveTab === 'student') renderOfferingGroupingStudentPanel();
+  else if (offeringGroupingActiveTab === 'summary') renderOfferingGroupingHourSummaryPanel();
+  else if (offeringGroupingActiveTab === 'group-status') renderOfferingGroupingGroupStatusPanel();
+  else renderOfferingGroupingTeacherPanel();
+  // else if (offeringGroupingActiveTab === 'summary') renderOfferingGroupingHourSummaryPanel(); // 原不含小组学时 Tab
+}
+
+function switchOfferingGroupingTab(tab) {
+  if (tab === 'student' && !isOfferingGroupingStudentTabEnabled()) return;
+  // offeringGroupingActiveTab = tab === 'student' ? 'student' : 'teacher'; // 原仅教师/学生两 Tab
+  offeringGroupingActiveTab = normalizeOfferingGroupingTab(tab);
+  // offeringGroupingActiveTab = ['student', 'summary'].includes(tab) ? tab : 'teacher'; // 原不含小组学时 Tab
+  syncOfferingGroupingTabVisibility();
+  renderActiveOfferingGroupingTabPanel();
+  syncOfferingGroupingReadOnly();
+  document.querySelector('#offering-group-teacher-panel thead .col-check')?.toggleAttribute('hidden', offeringGroupingReadOnly);
+  document.querySelector('#offering-group-teacher-panel thead .col-sticky-actions')?.toggleAttribute('hidden', offeringGroupingReadOnly);
+  document.querySelector('#offering-group-student-panel thead .col-check')?.toggleAttribute('hidden', !isOfferingGroupingStudentEditable());
+  // renderOfferingGroupingPanel(); // 原全量重绘三 Tab，切换时易拖影
+}
+
+function refreshOfferingGroupingPanelsIfOpen() {
+  if (!offeringGroupingSectionId) return;
+  if (!isOfferingGroupingPageActive()) return;
+  renderOfferingGroupingPanel();
+  // if (!document.getElementById('modal-offering-grouping')?.classList.contains('open')) return; // 原弹窗检测
+}
+
+function ensureOfferingGroupingStudentOpsContext() {
+  if (!offeringGroupingSectionId) return false;
+  majorOfferingStudentRosterSectionId = offeringGroupingSectionId;
+  return true;
+}
+
+function getFilteredOfferingGroupingStudents() {
+  const sec = getOfferingGroupingSection();
+  const group = getOfferingGroupingSelectedGroup(sec);
+  if (!sec || !group) return [];
+  const roster = getMajorOfferingStudentRoster(offeringGroupingSectionId);
+  const nameQ = (document.getElementById('ogg-filter-name')?.value || '').trim().toLowerCase();
+  const studentNoQ = (document.getElementById('ogg-filter-student-no')?.value || '').trim().toLowerCase();
+  const genderQ = document.getElementById('ogg-filter-gender')?.value || '';
+  return roster.filter(stu => {
+    if (!studentMatchesOfferingGroup(stu, group, sec)) return false;
+    if (genderQ && getStudentGender(stu) !== genderQ) return false;
+    if (studentNoQ && !stu.studentNo.toLowerCase().includes(studentNoQ)) return false;
+    if (nameQ && !stu.name.toLowerCase().includes(nameQ)) return false;
+    return true;
+  });
+}
+
+// function expandOfferingGroupingStudentRows(students, sec, groupId) {
+//   const hourTypes = [...new Set((sec.groupAssignments || [])
+//     .filter(a => a.groupId === groupId)
+//     .map(a => a.hourType)
+//     .filter(Boolean))];
+//   if (!hourTypes.length) return students.map(stu => ({ stu, hourType: '—' }));
+//   return students.flatMap(stu => hourTypes.map(hourType => ({ stu, hourType })));
+// } // 原按学时类型展开多行，学生名单 Tab 已去掉学时类型列
+
+function queryOfferingGroupingStudents() {
+  resetListPage('offeringGroupingStudent');
+  renderOfferingGroupingStudentPanel();
+}
+
+function resetOfferingGroupingStudentFilters() {
+  ['ogg-filter-name', 'ogg-filter-student-no', 'ogg-filter-gender'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  resetListPage('offeringGroupingStudent');
+  renderOfferingGroupingStudentPanel();
+}
+
+function updateOfferingGroupingStudentSelection() {
+  offeringGroupingStudentSelected = new Set(
+    [...document.querySelectorAll('.ogg-row-check:checked')].map(el => el.value)
+  );
+  const checkAll = document.getElementById('ogg-check-all');
+  const selectable = document.querySelectorAll('.ogg-row-check');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+  const hasSelection = offeringGroupingStudentSelected.size > 0;
+  document.getElementById('ogg-btn-adjust-group')?.toggleAttribute('disabled', !hasSelection);
+  document.getElementById('ogg-btn-remove-roster')?.toggleAttribute('disabled', !hasSelection);
+}
+
+function toggleOfferingGroupingStudentCheckAll(checked) {
+  document.querySelectorAll('.ogg-row-check').forEach(el => { el.checked = checked; });
+  updateOfferingGroupingStudentSelection();
+}
+
+function getGroupAssignTeachers(row) {
+  if (Array.isArray(row?.teachers) && row.teachers.length) return row.teachers;
+  if (row?.teacher) {
+    return [{
+      staffId: row.staffId || '',
+      name: row.teacher,
+      role: row.role || '主讲'
+    }];
+  }
+  return [];
+}
+
+function formatGroupAssignTeacherNamesDisplay(row) {
+  const list = getGroupAssignTeachers(row);
+  return list.map(t => t.name).filter(Boolean).join('、') || '—';
+}
+
+function formatGroupAssignTeacherNamesSummaryDisplay(row, maxLen = 22) {
+  const full = formatGroupAssignTeacherNamesDisplay(row);
+  if (full === '—' || full.length <= maxLen) return { text: full, full };
+  return { text: `${full.slice(0, maxLen - 3)}...`, full };
+}
+
+function formatGroupAssignTeacherSummaryTooltip(row, sec) {
+  return formatGroupAssignTeacherNamesDisplay(row);
+  // const list = getGroupAssignTeachers(row);
+  // if (!list.length) return '—';
+  // return list.map(t => {
+  //   const role = getGroupAssignTeacherDisplayRole(t, sec);
+  //   const sectionCoord = getSectionCoordinator(sec);
+  //   const coord = sectionCoord && t.staffId === sectionCoord.staffId ? '，Coordinator' : '';
+  //   return `${t.name || '—'}（${role}${coord}）`;
+  // }).join('、'); // 原 tooltip 展示授课角色与 Coordinator，汇总列表仅显示姓名
+}
+
+function formatGroupAssignTeacherSummaryCell(row, maxLen = 22, sec) {
+  const section = sec || getOfferingGroupingSection();
+  const teacherDisplay = formatGroupAssignTeacherNamesSummaryDisplay(row, maxLen);
+  if (teacherDisplay.full === '—') return '—';
+  if (teacherDisplay.full === teacherDisplay.text) {
+    return escapeHtml(teacherDisplay.text);
+  }
+  const tooltip = formatGroupAssignTeacherSummaryTooltip(row, section);
+  return `<span class="offering-hour-teacher-tip cell-ellipsis-tip" data-tip="${escapeHtml(tooltip)}" tabindex="0">
+    <span class="offering-hour-teacher-tip-text">${escapeHtml(teacherDisplay.text)}</span>
+  </span>`;
+  // const tooltip = formatGroupAssignTeacherSummaryTooltip(row); // 原未传 sec，Support 角色可能不准
+}
+
+function bindOfferingHourTeacherTips(root = document.getElementById('offering-group-hour-summary-content')) {
+  bindCellFloatTips(root, '.offering-hour-teacher-tip[data-tip]');
+  const panel = document.getElementById('offering-group-hour-summary-panel');
+  if (panel && panel.dataset.tipScrollBound !== '1') {
+    panel.dataset.tipScrollBound = '1';
+    panel.addEventListener('scroll', hideCellFloatTip, { passive: true });
+  }
+}
+
+// let offeringHourTeacherTipEl = null; // 原教师汇总专用浮层，已抽为 cellFloatTipEl
+// function ensureOfferingHourTeacherTipEl() { ... }
+// function hideOfferingHourTeacherTip() { ... }
+// function showOfferingHourTeacherTip(anchor, text) { ... }
+
+function formatGroupAssignTeacherRolesDisplay(row, sec) {
+  const list = getGroupAssignTeachers(row);
+  return list.map(t => getGroupAssignTeacherDisplayRole(t, sec)).filter(Boolean).join('、') || '—';
+}
+
+function formatGroupAssignCoordinatorsDisplay(row, sec) {
+  const section = sec || getOfferingGroupingSection();
+  const teachers = getGroupAssignTeachers(row);
+  const coord = getSectionCoordinator(section);
+  if (coord?.staffId) {
+    // return teachers.some(t => t.staffId === coord.staffId) ? (coord.name || '—') : '—'; // 原展示姓名且单元格未居中
+    return teachers.some(t => t.staffId === coord.staffId) ? '是' : '—';
+  }
+  return teachers.some(t => t.isCoordinator) ? '是' : '—';
+  // const list = getGroupAssignTeachers(row).filter(t => t.isCoordinator); // 原按安排行可多 Coordinator
+  // return list.map(t => t.name).filter(Boolean).join('、') || '—';
+}
+
+function getSectionCoordinator(sec) {
+  if (!sec) return null;
+  const staffId = sec.coordinatorStaffId || sec.coordinatorStaffIds?.[0] || '';
+  if (staffId) {
+    return {
+      staffId,
+      name: sec.coordinatorName || sec.coordinators?.split('、')[0] || ''
+    };
+  }
+  for (const row of sec.groupAssignments || []) {
+    const t = getGroupAssignTeachers(row).find(x => x.isCoordinator);
+    if (t?.staffId) return { staffId: t.staffId, name: t.name || '' };
+  }
+  return null;
+}
+
+function formatSectionCoordinatorMetaHtml(sec) {
+  const coord = getSectionCoordinator(sec);
+  if (!coord?.staffId) {
+    return '<strong>Course Coordinator</strong> —';
+  }
+  return `<strong>Course Coordinator</strong> ${escapeHtml(coord.name || '—')}`;
+  // return '<strong>Coordinator</strong> —'; // 原不含 Course 前缀
+  // if (coord.name) {
+  //   return `<strong>课程 Coordinator</strong> ${escapeHtml(coord.name)} <code>${escapeHtml(coord.staffId)}</code>`;
+  // }
+  // return `<strong>课程 Coordinator</strong> <code>${escapeHtml(coord.staffId)}</code>`; // 原展示教工号，改仅显示姓名
+}
+
+function updateOfferingGroupingMetaCoordinatorDisplay(sec = getOfferingGroupingSection()) {
+  const el = document.getElementById('offering-grouping-meta-coordinator');
+  if (!el || !sec) return;
+  el.innerHTML = formatSectionCoordinatorMetaHtml(sec);
+}
+
+function setSectionCoordinator(sec, staffId, name) {
+  if (!sec) return;
+  sec.coordinatorStaffId = staffId || '';
+  sec.coordinatorName = name || '';
+  sec.coordinatorStaffIds = staffId ? [staffId] : [];
+  sec.coordinators = name || '';
+  (sec.groupAssignments || []).forEach(row => {
+    getGroupAssignTeachers(row).forEach(t => {
+      t.isCoordinator = !!staffId && t.staffId === staffId;
+    });
+  });
+  updateOfferingGroupingMetaCoordinatorDisplay(sec);
+}
+
+function collectSectionAssignTeachers(sec) {
+  const map = new Map();
+  (sec?.groupAssignments || []).forEach(row => {
+    getGroupAssignTeachers(row).forEach(t => {
+      if (!t?.staffId || map.has(t.staffId)) return;
+      map.set(t.staffId, {
+        staffId: t.staffId,
+        name: t.name || '',
+        teacherType: t.teacherType || ''
+      });
+    });
+  });
+  return [...map.values()];
+}
+
+function ensureSectionCoordinatorAutoDefault(sec) {
+  const teachers = collectSectionAssignTeachers(sec);
+  if (teachers.length !== 1) return false;
+  const only = teachers[0];
+  if (getSectionCoordinator(sec)?.staffId === only.staffId) return false;
+  setSectionCoordinator(sec, only.staffId, only.name);
+  return true;
+}
+
+function refreshSectionCoordinatorAfterAssignmentChange(sec) {
+  if (!sec) return;
+  const teachers = collectSectionAssignTeachers(sec);
+  if (!teachers.length) {
+    if (sec.coordinatorStaffId) setSectionCoordinator(sec, '', '');
+    return;
+  }
+  if (teachers.length === 1) {
+    ensureSectionCoordinatorAutoDefault(sec);
+    return;
+  }
+  const coord = getSectionCoordinator(sec);
+  if (coord?.staffId && !teachers.some(t => t.staffId === coord.staffId)) {
+    setSectionCoordinator(sec, '', '');
+  }
+}
+
+function renderSectionCoordinatorModal(sec, teachers) {
+  const wrap = document.getElementById('section-coordinator-picks');
+  if (!wrap) return;
+  const coord = getSectionCoordinator(sec);
+  const currentId = coord?.staffId || '';
+  wrap.innerHTML = teachers.map(t => {
+    const checked = t.staffId === currentId ? ' checked' : '';
+    return `<label class="section-coordinator-pick">
+      <input type="radio" name="section-coordinator-pick" value="${escapeHtml(t.staffId)}" data-name="${escapeHtml(t.name || '')}"${checked}>
+      <span class="section-coordinator-pick-text"><code>${escapeHtml(t.staffId)}</code> ${escapeHtml(t.name || '—')}</span>
+    </label>`;
+  }).join('');
+}
+
+function openSectionCoordinatorSettings() {
+  const sec = getOfferingGroupingSection();
+  if (!assertOfferingGroupingEditable('设置课程 Coordinator')) return;
+  if (!sec) return;
+  refreshSectionCoordinatorAfterAssignmentChange(sec);
+  const teachers = collectSectionAssignTeachers(sec);
+  if (!teachers.length) {
+    alert('请先安排教师后再设置课程 Coordinator。');
+    return;
+  }
+  if (teachers.length === 1) {
+    setSectionCoordinator(sec, teachers[0].staffId, teachers[0].name);
+    renderOfferingGroupingTeacherPanel();
+    renderOfferingGroupingHourSummaryPanel();
+    alert(`已将 ${teachers[0].name || teachers[0].staffId} 设为课程 Coordinator。`);
+    return;
+  }
+  renderSectionCoordinatorModal(sec, teachers);
+  openModal('modal-section-coordinator');
+}
+
+function saveSectionCoordinatorModal() {
+  const sec = getOfferingGroupingSection();
+  if (!sec) return;
+  const picked = document.querySelector('input[name="section-coordinator-pick"]:checked');
+  if (!picked?.value) {
+    alert('请选择一名课程 Coordinator。');
+    return;
+  }
+  setSectionCoordinator(sec, picked.value, picked.dataset.name || '');
+  closeModal('modal-section-coordinator');
+  renderOfferingGroupingTeacherPanel();
+  renderOfferingGroupingHourSummaryPanel();
+}
+
+function syncGroupAssignFormTeachersWithSectionCoordinator(sec) {
+  const coord = getSectionCoordinator(sec);
+  groupAssignFormTeachers.forEach(t => {
+    t.isCoordinator = coord ? t.staffId === coord.staffId : false;
+  });
+  if (!coord && groupAssignFormTeachers.length === 1) {
+    groupAssignFormTeachers[0].isCoordinator = true;
+  }
+}
+
+function resolveGroupAssignFormCourseCoordinator() {
+  if (groupAssignFormTeachers.length === 1) {
+    return groupAssignFormTeachers[0];
+  }
+  return groupAssignFormTeachers.find(t => t.isCoordinator) || null;
+}
+
+function formatGroupAssignTeachersDisplay(row, sec) {
+  const list = getGroupAssignTeachers(row);
+  return list.length
+    ? list.map(t => `${t.name || '—'}（${getGroupAssignTeacherDisplayRole(t, sec)}）`).join('、')
+    : '—';
+}
+
+function formatGroupAssignStaffIdsDisplay(row) {
+  const list = getGroupAssignTeachers(row);
+  return list.map(t => t.staffId).filter(Boolean).join('、') || '—';
+}
+
+// function getGroupAssignFormContext() {
+//   const deliveryScope = document.getElementById('group-assign-scope')?.value || 'group';
+//   const groupIds = deliveryScope === 'section' ? [] : getGroupAssignFormSelectedGroupIds();
+//   return {
+//     hourType: document.getElementById('group-assign-hour-type')?.value || '',
+//     deliveryScope,
+//     groupIds: [...groupIds].sort(),
+//     weekRange: (document.getElementById('group-assign-week-range')?.value || '').trim()
+//   };
+// } // 原「当前已安排教师」匹配条件，模块已移除
+//
+// function groupAssignContextMatches(row, ctx) {
+//   if ((row.hourType || '') !== (ctx.hourType || '')) return false;
+//   if ((row.weekRange || '').trim() !== (ctx.weekRange || '').trim()) return false;
+//   const rowScope = row.deliveryScope || (row.groupId ? 'group' : 'section');
+//   if (rowScope !== ctx.deliveryScope) return false;
+//   if (ctx.deliveryScope === 'section') return rowScope === 'section';
+//   const rowIds = getGroupAssignRowGroupIds(row).slice().sort().join(',');
+//   const ctxIds = ctx.groupIds.slice().sort().join(',');
+//   return rowIds === ctxIds;
+// } // 原「当前已安排教师」匹配逻辑，模块已移除
+
+function normalizeGroupAssignWeekRange(weekRange) {
+  return String(weekRange || '').trim();
+}
+
+function groupAssignWeekRangesOverlap(weekRangeA, weekRangeB) {
+  const weeksA = parseWeekRangeToWeeks(weekRangeA);
+  const weeksB = parseWeekRangeToWeeks(weekRangeB);
+  if (!weeksA.length || !weeksB.length) {
+    return normalizeGroupAssignWeekRange(weekRangeA) === normalizeGroupAssignWeekRange(weekRangeB);
+  }
+  const weekSetB = new Set(weeksB);
+  return weeksA.some(w => weekSetB.has(w));
+  // return normalizeGroupAssignWeekRange(weekRangeA) === normalizeGroupAssignWeekRange(weekRangeB); // 原仅完全相同周次才算冲突
+}
+
+function getGroupAssignScopeGroupIdSet(scope, sec) {
+  const ids = getGroupAssignRowGroupIds(scope);
+  if (ids.length) return new Set(ids);
+  if (scope?.deliveryScope === 'section') {
+    return new Set(getGroupAssignFormAllGroupIds(sec));
+    // 原 section 空 groupIds 时匹配全部小组；migrate 后应均有显式 groupIds
+  }
+  const fallback = scope?.groupId ? [scope.groupId] : [];
+  return new Set(fallback.filter(Boolean));
+  // const ids = Array.isArray(scope?.groupIds) && scope.groupIds.length ? scope.groupIds : ... // 原内联
+}
+
+function groupAssignScopesOverlap(scopeA, scopeB, sec) {
+  if ((scopeA?.hourType || '') !== (scopeB?.hourType || '')) return false;
+  if (!groupAssignWeekRangesOverlap(scopeA?.weekRange, scopeB?.weekRange)) {
+    return false;
+  }
+  // if (normalizeGroupAssignWeekRange(scopeA?.weekRange) !== normalizeGroupAssignWeekRange(scopeB?.weekRange)) return false; // 原仅周次完全相同才算冲突
+  const setA = getGroupAssignScopeGroupIdSet(scopeA, sec);
+  const setB = getGroupAssignScopeGroupIdSet(scopeB, sec);
+  if (!setA.size || !setB.size) return false;
+  for (const id of setA) {
+    if (setB.has(id)) return true;
+  }
+  return false;
+}
+
+function buildGroupAssignFormScope(sec, hourType, weekRange, deliveryScope, groupIds) {
+  return {
+    hourType,
+    weekRange: normalizeGroupAssignWeekRange(weekRange),
+    deliveryScope,
+    groupIds: deliveryScope === 'section' ? [] : [...groupIds],
+    groupId: deliveryScope === 'section' ? '' : (groupIds[0] || '')
+  };
+}
+
+function formatGroupAssignConflictScopeLabel(row, sec) {
+  const labels = getGroupAssignRowGroupLabels(row, sec);
+  const groupText = row?.deliveryScope === 'section'
+    ? '全体小组'
+    : (labels.length > 2 ? `${labels.slice(0, 2).join('、')}等` : labels.join('、') || '指定小组');
+  return `${row?.hourType || '—'} · ${row?.weekRange || '—'} · ${groupText}`;
+}
+
+function findGroupAssignDuplicateTeacherConflicts(sec, formScope, teacherStaffIds, excludeAssignId) {
+  const idSet = new Set((teacherStaffIds || []).filter(Boolean));
+  if (!idSet.size) return [];
+  const conflicts = new Map();
+  (sec?.groupAssignments || []).forEach(row => {
+    if (excludeAssignId && row.id === excludeAssignId) return;
+    if (!groupAssignScopesOverlap(formScope, row, sec)) return;
+    getGroupAssignTeachers(row).forEach(t => {
+      if (!t?.staffId || !idSet.has(t.staffId) || conflicts.has(t.staffId)) return;
+      conflicts.set(t.staffId, { name: t.name || t.staffId, row });
+    });
+  });
+  return [...conflicts.entries()].map(([staffId, info]) => ({ staffId, ...info }));
+}
+
+function validateGroupAssignFormNoDuplicateTeachers(sec, excludeAssignId = '') {
+  const { deliveryScope, groupIds } = resolveGroupAssignFormScope(sec);
+  const hourType = document.getElementById('group-assign-hour-type')?.value || '理论学时';
+  const weekRange = document.getElementById('group-assign-week-range')?.value.trim() || getDefaultSectionWeekRange(sec);
+  // const weekRange = document.getElementById('group-assign-week-range')?.value.trim() || '1-12'; // 原硬编码，改取课程起止周
+  const editId = excludeAssignId || document.getElementById('group-assign-edit-id')?.value || '';
+  const formScope = buildGroupAssignFormScope(sec, hourType, weekRange, deliveryScope, groupIds);
+  const conflicts = findGroupAssignDuplicateTeacherConflicts(
+    sec,
+    formScope,
+    groupAssignFormTeachers.map(t => t.staffId),
+    editId
+  );
+  if (!conflicts.length) return true;
+  const lines = conflicts.map(c =>
+    `· ${c.name}（已有安排：${formatGroupAssignConflictScopeLabel(c.row, sec)}）`
+  ).join('\n');
+  alert(`以下教师在相同学时类型、重叠起止周和重叠小组范围内已有安排，无法重复添加：\n${lines}`);
+  return false;
+}
+
+function validateGroupAssignFormCoordinators() {
+  return true;
+  // if (groupAssignFormTeachers.length <= 1) return true;
+  // ... // 原在安排教师弹窗内指定 Coordinator，改由分组页「设置 Coordinator」
+}
+
+function selectGroupAssignFormCourseCoordinator(staffId) {
+  groupAssignFormTeachers.forEach(t => {
+    t.isCoordinator = t.staffId === staffId;
+  });
+  refreshGroupAssignFormPanels();
+}
+
+// function toggleGroupAssignFormTeacherCoordinator(staffId, checked) {
+//   const item = groupAssignFormTeachers.find(t => t.staffId === staffId);
+//   if (item) item.isCoordinator = checked;
+//   refreshGroupAssignFormPanels();
+// } // 原复选框可多选 Coordinator，改课程级单选
+
+function syncSectionCoordinatorsFromAssignments(sec) {
+  if (!sec) return;
+  refreshSectionCoordinatorAfterAssignmentChange(sec);
+  if (sec.coordinatorStaffId) return;
+  // if (sec.coordinatorStaffId) return; // 原未校验仅一名教师自动默认、Coordinator 是否仍存在于安排中
+  for (const row of sec.groupAssignments || []) {
+    const t = getGroupAssignTeachers(row).find(x => x.isCoordinator);
+    if (t?.staffId) {
+      setSectionCoordinator(sec, t.staffId, t.name);
+      return;
+    }
+  }
+  // const ids = new Set(); ... // 原汇总全部 Coordinator，改课程仅保留一名
+}
+
+function renderGroupAssignFormTeachersList() {
+  const sec = getOfferingGroupingSection();
+  const tbody = document.getElementById('group-assign-form-teachers-body');
+  if (!tbody) return;
+  tbody.innerHTML = groupAssignFormTeachers.length
+    ? groupAssignFormTeachers.map(t => {
+        const enriched = enrichGroupAssignFormTeacher(t, sec);
+        // const coordCell = groupAssignFormTeachers.length > 1 ? ... // 原 Coordinator 列，改由分组页设置
+        const supportLabel = formatGroupAssignTeacherSupportDisplay(sec, enriched);
+        const supportCell = supportLabel === '是'
+          ? '<td class="col-center"><span class="group-assign-support-flag is-yes">是</span></td>'
+          : `<td class="col-center">${supportLabel}</td>`;
+        return `<tr>
+        <td><code>${escapeHtml(enriched.staffId || '—')}</code></td>
+        <td>${escapeHtml(enriched.name || '—')}</td>
+        <td class="col-center"><code>${escapeHtml(enriched.departmentCode || '—')}</code></td>
+        <td>${escapeHtml(enriched.teacherType || '—')}</td>
+        ${supportCell}
+        <!-- 原 Coordinator 列已移除，改由分组页设置 -->
+        <!-- <td>${escapeHtml(getGroupAssignTeacherDisplayRole(enriched, sec))}</td> --> <!-- 原授课角色列，改是否 Support 教师 + 教师类型 -->
+        <!-- <td><select ...> 原手动选择授课角色（主讲/助教/Support） -->
+        <td class="actions"><a href="#" onclick="removeGroupAssignFormTeacher('${escapeHtml(enriched.staffId)}');return false">移除</a></td>
+      </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:12px">请点击「添加教师」，支持多选共同授课</td></tr>';
+    // 原空态 colspan=7 含 Coordinator 列
+}
+
+// function renderGroupAssignExistingTeachersList() { ... } // 原「当前已安排教师」列表，模块已移除
+
+function refreshGroupAssignFormPanels() {
+  renderGroupAssignFormTeachersList();
+  // renderGroupAssignExistingTeachersList(); // 原「当前已安排教师」，模块已移除
+}
+
+// function updateGroupAssignFormTeacherRole(staffId, role) {
+//   const item = groupAssignFormTeachers.find(t => t.staffId === staffId);
+//   if (item) item.role = role || '';
+// } // 原手动设置授课角色，改由教师类型自动带出
+
+function removeGroupAssignFormTeacher(staffId) {
+  const wasCoordinator = groupAssignFormTeachers.find(t => t.staffId === staffId)?.isCoordinator;
+  groupAssignFormTeachers = groupAssignFormTeachers.filter(t => t.staffId !== staffId);
+  if (wasCoordinator && groupAssignFormTeachers.length === 1) {
+    groupAssignFormTeachers[0].isCoordinator = true;
+  }
+  refreshGroupAssignFormPanels();
+}
+
+function openGroupAssignTeacherPicker() {
+  teacherPickerContext = 'groupAssign';
+  majorOfferingTeacherPickerSelected.clear();
+  // const roleSel = document.getElementById('teacher-picker-role'); // 原弹窗内分配角色
+  // if (roleSel) roleSel.value = '主讲';
+  const titleEl = document.getElementById('teacher-picker-title');
+  if (titleEl) titleEl.textContent = '选择授课教师';
+  resetListPage('majorOfferingTeacherPicker');
+  ensureMajorOfferingTeacherPickerDeptFilter();
+  renderMajorOfferingTeacherPickerModal();
+  openModal('modal-major-teacher-picker');
+}
+
+function confirmGroupAssignTeacherPickerModal() {
+  const keys = [...majorOfferingTeacherPickerSelected];
+  if (!keys.length) {
+    alert('请至少勾选一名教师。');
+    return;
+  }
+  const sec = getOfferingGroupingSection();
+  const poolMap = new Map(buildMockTeacherPickerPool().map(t => [t.key, t]));
+  const existingIds = new Set(groupAssignFormTeachers.map(t => t.staffId));
+  let added = 0;
+  keys.forEach(key => {
+    const pick = poolMap.get(key);
+    if (!pick || existingIds.has(pick.staffId)) return;
+    groupAssignFormTeachers.push(enrichGroupAssignFormTeacher({
+      staffId: pick.staffId,
+      name: pick.name,
+      teacherType: pick.teacherType,
+      departmentCode: pick.departmentCode
+    }, sec));
+    // groupAssignFormTeachers.push({ staffId, name, role: '' }); // 原需手动选择授课角色
+    existingIds.add(pick.staffId);
+    added += 1;
+  });
+  closeMajorOfferingTeacherPickerModal();
+  syncGroupAssignFormTeachersWithSectionCoordinator(sec);
+  refreshGroupAssignFormPanels();
+  if (added) alert(`已添加 ${added} 名授课教师。`);
+}
+
+// function onGroupAssignGroupPickToggle() {
+//   refreshGroupAssignFormPanels();
+// } // 原刷新「当前已安排教师」，模块已移除
+
+function getGroupAssignPlanWeeklyHours(sec) {
+  const v = sec?.credits ?? sec?.weeklyHours;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function parseGroupAssignWeeklyHoursInput() {
+  const raw = document.getElementById('group-assign-weekly-hours')?.value;
+  if (raw === '' || raw == null) return null;
+  const n = Number(String(raw).trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+function getGroupAssignRowRecordedHours(row, sec) {
+  if (!row || !sec) return 0;
+  if (row.weeklyHours != null && row.weeklyHours !== '') {
+    return calcGroupAssignRowHours(row.weeklyHours, row.weekRange, sec);
+  }
+  if (row.hours != null && row.hours !== '') {
+    return Number(row.hours) || 0;
+  }
+  const planWeekly = getGroupAssignPlanWeeklyHours(sec);
+  if (planWeekly > 0 && row.weekRange) {
+    return calcGroupAssignRowHours(planWeekly, row.weekRange, sec);
+  }
+  return 0;
+}
+
+function calcGroupAssignRowHours(weeklyHours, weekRange, sec) {
+  const wh = Number(weeklyHours);
+  if (!Number.isFinite(wh) || wh <= 0) return 0;
+  const weeks = parseWeekRangeToWeeks(weekRange, getSectionTermTeachingWeeks(sec));
+  return wh * weeks.length;
+}
+
+function sumGroupAssignRecordedHoursByType(sec, hourType, excludeAssignId = '') {
+  let sum = 0;
+  (sec?.groupAssignments || []).forEach(row => {
+    if (row.hourType !== hourType) return;
+    if (excludeAssignId && row.id === excludeAssignId) return;
+    sum += getGroupAssignRowRecordedHours(row, sec);
+  });
+  return sum;
+}
+
+function sumGroupAssignRecordedHoursForGroupByType(sec, groupId, hourType, excludeAssignId = '') {
+  if (!groupId) return 0;
+  let sum = 0;
+  (sec?.groupAssignments || []).forEach(row => {
+    if (row.hourType !== hourType) return;
+    if (excludeAssignId && row.id === excludeAssignId) return;
+    if (!groupAssignRowMatchesGroup(row, groupId)) return;
+    sum += getGroupAssignRowRecordedHours(row, sec);
+  });
+  return sum;
+}
+
+function getGroupAssignFormScopeGroupIds(sec = getOfferingGroupingSection()) {
+  const { deliveryScope, groupIds } = resolveGroupAssignFormScope(sec);
+  if (deliveryScope === 'section') return getGroupAssignFormAllGroupIds(sec);
+  return groupIds;
+}
+
+function buildGroupAssignRecordedHoursSummaries(sec, hourType, editId, currentHours) {
+  const typeTotal = sec ? (Number(getOfferingSectionHoursByType(sec, hourType)) || 0) : 0;
+  const scopeGroupIds = sec ? getGroupAssignFormScopeGroupIds(sec) : [];
+  return scopeGroupIds.map(gid => {
+    const g = sec?.groups?.find(x => x.id === gid);
+    const label = g ? formatMajorOfferingGroupName(sec.name, g.name) : gid;
+    const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, gid, hourType, editId);
+    const totalAfter = recorded + currentHours;
+    return {
+      groupId: gid,
+      label,
+      recorded,
+      totalAfter,
+      typeTotal,
+      over: typeTotal > 0 && totalAfter > typeTotal,
+      under: typeTotal > 0 && totalAfter < typeTotal
+    };
+  });
+}
+
+function syncGroupAssignGroupPickHoursBadges(sec, hourType, editId, currentHours = 0) {
+  const typeTotal = sec ? (Number(getOfferingSectionHoursByType(sec, hourType)) || 0) : 0;
+  const scopeGroupIds = sec ? new Set(getGroupAssignFormScopeGroupIds(sec)) : new Set();
+  const pending = Number(currentHours) || 0;
+  (sec?.groups || []).forEach(g => {
+    const badge = document.querySelector(`.group-assign-group-pick-hours[data-group-id="${g.id}"]`);
+    if (!badge) return;
+    const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, g.id, hourType, editId);
+    // const totalAfter = recorded; // 原仅展示已保存录入，未含当前表单周学时换算
+    const totalAfter = recorded + (scopeGroupIds.has(g.id) ? pending : 0);
+    badge.className = 'group-assign-group-pick-hours';
+    if (!typeTotal) {
+      badge.textContent = String(totalAfter);
+      badge.removeAttribute('title');
+      return;
+    }
+    const over = totalAfter > typeTotal;
+    const under = totalAfter < typeTotal;
+    badge.textContent = `${totalAfter}/${typeTotal}`;
+    badge.classList.toggle('is-over', over);
+    badge.classList.toggle('is-under', under);
+    badge.classList.toggle('is-full', !over && !under);
+    badge.title = over ? '已超限' : (under ? '未录满' : '已满');
+  });
+}
+
+function validateGroupAssignFormRecordedHours(sec, hourType, editId, currentHours) {
+  const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+  if (!typeTotal) return true;
+  const { deliveryScope, groupIds } = resolveGroupAssignFormScope(sec);
+  const targetGroupIds = deliveryScope === 'section'
+    ? getGroupAssignFormAllGroupIds(sec)
+    : groupIds;
+  if (!targetGroupIds.length) return true;
+  const lines = [];
+  targetGroupIds.forEach(gid => {
+    const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, gid, hourType, editId);
+    if (recorded + currentHours > typeTotal) {
+      const g = sec.groups?.find(x => x.id === gid);
+      const label = g ? formatMajorOfferingGroupName(sec.name, g.name) : gid;
+      lines.push(`${label}：${recorded + currentHours} / ${typeTotal}`);
+    }
+  });
+  if (!lines.length) return true;
+  alert(`以下小组${hourType}已录入学时（含本次）将超过总数：\n${lines.map(line => `· ${line}`).join('\n')}`);
+  return false;
+}
+
+function sumGroupAssignWeeklyHoursPartsForGroupWeek(sec, groupId, weekNum, excludeAssignId, pendingEntry = null) {
+  const parts = [];
+  let sum = 0;
+  (sec?.groupAssignments || []).forEach(row => {
+    if (excludeAssignId && row.id === excludeAssignId) return;
+    if (!groupAssignRowMatchesGroup(row, groupId)) return;
+    const weeks = parseWeekRangeToWeeks(row.weekRange, getSectionTermTeachingWeeks(sec));
+    if (!weeks.includes(weekNum)) return;
+    const wh = Number(row.weeklyHours);
+    if (!Number.isFinite(wh) || wh <= 0) return;
+    sum += wh;
+    parts.push({ hourType: row.hourType, weeklyHours: wh });
+  });
+  if (pendingEntry && pendingEntry.weeklyHours > 0 && pendingEntry.weekRange) {
+    const weeks = parseWeekRangeToWeeks(pendingEntry.weekRange, getSectionTermTeachingWeeks(sec));
+    if (weeks.includes(weekNum)) {
+      sum += pendingEntry.weeklyHours;
+      parts.push({
+        hourType: pendingEntry.hourType,
+        weeklyHours: pendingEntry.weeklyHours,
+        isPending: true
+      });
+    }
+  }
+  return { sum, parts };
+}
+
+function formatGroupAssignWeeklyPartsBreakdown(parts) {
+  const map = new Map();
+  (parts || []).forEach(p => {
+    map.set(p.hourType, (map.get(p.hourType) || 0) + p.weeklyHours);
+  });
+  return [...map.entries()].map(([ht, wh]) => {
+    const short = String(ht || '').replace(/学时$/, '');
+    return `${short} ${wh}`;
+  }).join(' + ');
+}
+
+function buildGroupAssignPlanWeeklyWarnSummaries(sec, editId, hourType, weeklyHours, weekRange) {
+  const planWeekly = getGroupAssignPlanWeeklyHours(sec);
+  if (!planWeekly || weeklyHours == null || weeklyHours <= 0) return [];
+  const scopeGroupIds = getGroupAssignFormScopeGroupIds(sec);
+  if (!scopeGroupIds.length) return [];
+  const formWeeks = parseWeekRangeToWeeks(weekRange || '', getSectionTermTeachingWeeks(sec));
+  if (!formWeeks.length) return [];
+  const pending = { hourType, weeklyHours, weekRange };
+  const summaries = [];
+  scopeGroupIds.forEach(gid => {
+    const g = sec?.groups?.find(x => x.id === gid);
+    const label = g ? formatMajorOfferingGroupName(sec.name, g.name) : gid;
+    const singleTypeOver = weeklyHours > planWeekly;
+    let peakSum = 0;
+    let peakParts = [];
+    formWeeks.forEach(week => {
+      const { sum, parts } = sumGroupAssignWeeklyHoursPartsForGroupWeek(sec, gid, week, editId, pending);
+      if (sum > peakSum) {
+        peakSum = sum;
+        peakParts = parts;
+      }
+    });
+    const combinedOver = peakSum > planWeekly;
+    if (!singleTypeOver && !combinedOver) return;
+    summaries.push({
+      label,
+      planWeekly,
+      singleTypeOver,
+      combinedOver,
+      peakSum,
+      peakParts,
+      weeklyHours,
+      weekRange: weekRange || '',
+      breakdown: formatGroupAssignWeeklyPartsBreakdown(peakParts)
+    });
+  });
+  return summaries;
+}
+
+function formatGroupAssignPlanWeeklyWarnDisplayMessage(summaries, { saving = false } = {}) {
+  if (!summaries?.length) return '';
+  const planWeekly = summaries[0].planWeekly;
+  const planPart = planWeekly ? `（${planWeekly}）` : '';
+  const labels = summaries.map(s => s.label).join('、');
+  const tail = saving ? '仍将保存。' : '仍可保存，请确认安排合理。';
+  if (summaries.length === 1) {
+    return `${labels}在起止周内合计周学时超过计划周学时${planPart}，${tail}`;
+  }
+  return `以下小组在起止周内合计周学时超过计划周学时${planPart}：${labels}。${tail}`;
+}
+
+function formatGroupAssignPlanWeeklyWarnShortMessage(planWeekly) {
+  const planPart = planWeekly ? `（${planWeekly}）` : '';
+  return `起止周内存在合计周学时超过计划周学时${planPart}的情况，仍可保存，请确认安排合理。`;
+  // 原无小组名称，改由 formatGroupAssignPlanWeeklyWarnDisplayMessage 列出具体小组
+}
+
+function formatGroupAssignPlanWeeklyWarnLine(summary, { fullSentence = true } = {}) {
+  // if (!summary) return '';
+  // const tail = fullSentence ? '，仍可保存，请确认安排合理。' : '';
+  // if (summary.combinedOver && summary.breakdown && summary.breakdown.includes('+')) {
+  //   return `${summary.label}：${summary.weekRange} 与重叠安排合计周学时 ${summary.peakSum}（${summary.breakdown}）已超过计划周学时 ${summary.planWeekly}${tail}`;
+  // }
+  // if (summary.combinedOver) {
+  //   return `${summary.label}：${summary.weekRange} 合计周学时 ${summary.peakSum}（${summary.breakdown}）已超过计划周学时 ${summary.planWeekly}${tail}`;
+  // }
+  // return `周学时 ${summary.weeklyHours} 已超过计划周学时 ${summary.planWeekly}${tail}`; // 原逐组/逐类型明细，改由 formatGroupAssignPlanWeeklyWarnDisplayMessage 仅列小组名
+  return formatGroupAssignPlanWeeklyWarnShortMessage(summary?.planWeekly);
+}
+
+function formatGroupAssignPlanWeeklyWarnMessage(summaries) {
+  const list = Array.isArray(summaries) ? summaries : (summaries ? [summaries] : []);
+  return formatGroupAssignPlanWeeklyWarnDisplayMessage(list);
+  // return formatGroupAssignPlanWeeklyWarnShortMessage(summary?.planWeekly); // 原无小组名称
+}
+
+function getGroupAssignPlanWeeklyWarnHint(sec, editId, hourType, weeklyHours, weekRange) {
+  const summaries = buildGroupAssignPlanWeeklyWarnSummaries(sec, editId, hourType, weeklyHours, weekRange);
+  if (!summaries.length) return '';
+  return formatGroupAssignPlanWeeklyWarnDisplayMessage(summaries, { saving: true });
+  // return formatGroupAssignPlanWeeklyWarnShortMessage(summaries[0].planWeekly); // 原无小组名称
+}
+
+function bindGroupAssignFormFieldEvents() {
+  const whEl = document.getElementById('group-assign-weekly-hours');
+  if (!whEl || whEl.dataset.boundSync) return;
+  whEl.dataset.boundSync = '1';
+  whEl.addEventListener('input', scheduleGroupAssignHoursSummarySync);
+  whEl.addEventListener('change', syncGroupAssignHoursSummary);
+}
+
+let groupAssignHoursSummarySyncTimer = null;
+
+function scheduleGroupAssignHoursSummarySync() {
+  if (groupAssignHoursSummarySyncTimer) clearTimeout(groupAssignHoursSummarySyncTimer);
+  groupAssignHoursSummarySyncTimer = setTimeout(() => {
+    groupAssignHoursSummarySyncTimer = null;
+    syncGroupAssignHoursSummary();
+  }, 0);
+}
+
+function syncGroupAssignHoursSummary() {
+  const sec = getOfferingGroupingSection();
+  const hourTypeEl = document.getElementById('group-assign-hour-type');
+  const editIdEl = document.getElementById('group-assign-edit-id');
+  const weekRangeEl = document.getElementById('group-assign-week-range');
+  const planEl = document.getElementById('group-assign-plan-weekly-hours');
+  const typeTotalEl = document.getElementById('group-assign-type-total-hours');
+  const recordedEl = document.getElementById('group-assign-recorded-hours');
+  const recordedWarnEl = document.getElementById('group-assign-recorded-hours-warn');
+  const recordedField = recordedEl?.closest('.form-field');
+  // const hintEl = document.getElementById('group-assign-recorded-hours-hint'); // 原独立 hint，已合并至输入框
+  const warnEl = document.getElementById('group-assign-weekly-warn');
+  const weeklyField = document.getElementById('group-assign-weekly-hours')?.closest('.form-field');
+
+  const hourType = hourTypeEl?.value || '理论学时';
+  const editId = editIdEl?.value || '';
+  const planWeekly = sec ? getGroupAssignPlanWeeklyHours(sec) : 0;
+  const typeTotal = sec ? (Number(getOfferingSectionHoursByType(sec, hourType)) || 0) : 0;
+  // const recorded = sec ? sumGroupAssignRecordedHoursByType(sec, hourType, editId) : 0; // 原按课程汇总，无法体现各组已录入学时差异
+  const weeklyHours = parseGroupAssignWeeklyHoursInput();
+  const weekRange = weekRangeEl?.value.trim() || '';
+  const currentHours = sec && weeklyHours != null && weeklyHours > 0
+    ? calcGroupAssignRowHours(weeklyHours, weekRange, sec)
+    : 0;
+  const groupSummaries = buildGroupAssignRecordedHoursSummaries(sec, hourType, editId, currentHours);
+
+  if (planEl) planEl.value = planWeekly ? String(planWeekly) : '—';
+  if (typeTotalEl) typeTotalEl.value = typeTotal ? String(typeTotal) : '—';
+  syncGroupAssignGroupPickHoursBadges(sec, hourType, editId, currentHours);
+  // syncGroupAssignGroupPickHoursBadges(sec, hourType, editId); // 原未传入含本次录入学时，上方 x/30 不随周学时变化
+  const overType = groupSummaries.some(s => s.over);
+  const underType = !overType && groupSummaries.some(s => s.under);
+  if (recordedEl) {
+    recordedEl.value = currentHours > 0 ? String(currentHours) : '—';
+    // if (!groupSummaries.length) {
+    //   recordedEl.value = '—';
+    // } else {
+    //   const fmtRecorded = s => (typeTotal ? `${s.totalAfter} / ${typeTotal}` : String(s.totalAfter));
+    //   recordedEl.value = groupSummaries.length === 1
+    //     ? fmtRecorded(groupSummaries[0])
+    //     : groupSummaries.map(fmtRecorded).join('；');
+    // } // 原展示各组含累计 x/30，改仅展示本次录入总学时（周学时 × 起止周数）
+  }
+  recordedField?.classList.toggle('has-recorded-exceed-warn', overType);
+  recordedField?.classList.toggle('has-recorded-under-warn', underType);
+  if (recordedWarnEl) {
+    recordedWarnEl.classList.remove('is-over', 'is-under');
+    const overLines = groupSummaries.filter(s => s.over);
+    const underLines = groupSummaries.filter(s => s.under);
+    if (overLines.length) {
+      recordedWarnEl.classList.add('is-over');
+      if (overLines.length === 1) {
+        recordedWarnEl.textContent = `${overLines[0].label}：${hourType}含本次录入 ${overLines[0].totalAfter} 已超过总数 ${typeTotal}，无法保存。`;
+      } else {
+        recordedWarnEl.innerHTML = [
+          `以下小组${escapeHtml(hourType)}含本次录入已超过总数，无法保存：`,
+          ...overLines.map(s => `${escapeHtml(s.label)}：含本次 ${s.totalAfter}/${typeTotal}`)
+        ].join('<br>');
+      }
+      recordedWarnEl.classList.remove('is-empty');
+    } else if (underLines.length) {
+      recordedWarnEl.classList.add('is-under');
+      if (underLines.length === 1) {
+        const s = underLines[0];
+        recordedWarnEl.textContent = `${s.label}：${hourType}含本次录入 ${s.totalAfter}/${typeTotal}，尚未录满，仍可保存。`;
+      } else {
+        recordedWarnEl.innerHTML = [
+          `以下小组${escapeHtml(hourType)}含本次录入尚未录满，仍可保存：`,
+          ...underLines.map(s => `${escapeHtml(s.label)}：含本次 ${s.totalAfter}/${typeTotal}`)
+        ].join('<br>');
+      }
+      recordedWarnEl.classList.remove('is-empty');
+    } else {
+      recordedWarnEl.textContent = '\u00a0';
+      recordedWarnEl.classList.add('is-empty');
+    }
+  }
+  // if (recordedEl) recordedEl.value = typeTotal ? `${recorded} / ${typeTotal}` : String(recorded); // 原仅展示已录入，与 hint 重复
+  // hint 已合并至 #group-assign-recorded-hours 输入框，不再单独展示
+
+  const planWarnSummaries = buildGroupAssignPlanWeeklyWarnSummaries(
+    sec, editId, hourType, weeklyHours, weekRange
+  );
+  const overPlan = planWarnSummaries.length > 0;
+  // const overPlan = weeklyHours != null && weeklyHours > 0 && planWeekly > 0 && weeklyHours > planWeekly; // 原仅本类型周学时比较
+  weeklyField?.classList.toggle('has-plan-exceed-warn', overPlan);
+  if (warnEl) {
+    if (planWarnSummaries.length) {
+      warnEl.textContent = formatGroupAssignPlanWeeklyWarnDisplayMessage(planWarnSummaries);
+      // warnEl.textContent = formatGroupAssignPlanWeeklyWarnShortMessage(planWarnSummaries[0].planWeekly); // 原无小组名称
+      warnEl.classList.remove('is-empty');
+    } else {
+      warnEl.textContent = '\u00a0';
+      warnEl.classList.add('is-empty');
+    }
+    // warnEl.hidden = false; // 原 hidden 切换导致布局跳动，mousedown 在输入框、mouseup 落在遮罩时会误关弹窗
+  }
+  // const exceedWrap = document.getElementById('group-assign-plan-exceed-wrap'); // 原独立警示行，插入导致弹窗滚动跳动
+}
+
+function getOfferingSectionHoursByType(sec, hourType) {
+  const map = {
+    '理论学时': sec?.theoryHours,
+    '辅导学时': sec?.tutorialHours,
+    '实践学时': sec?.practiceHours,
+    '其他学时': sec?.otherHours
+  };
+  return map[hourType];
+}
+
+function isOfferingSectionHourTypeArrangeable(sec, hourType) {
+  const hours = getOfferingSectionHoursByType(sec, hourType);
+  return hours != null && hours !== '' && Number(hours) > 0;
+}
+
+function getOfferingSectionArrangeableHourTypes(sec) {
+  return OFFERING_GROUP_HOUR_SUMMARY_TYPES.filter(ht => isOfferingSectionHourTypeArrangeable(sec, ht));
+}
+
+function sanitizeSectionGroupAssignments(sec) {
+  if (!sec) return;
+  migrateLegacySectionScopeToExplicitGroups(sec);
+  // normalizeGroupAssignSectionScope(sec); // 原将全选转为 section 并自动囊括后续新增小组，改仅保留保存时显式 groupIds
+  if (!sec.groupAssignments?.length) return;
+  sec.groupAssignments = sec.groupAssignments.filter(a =>
+    isOfferingSectionHourTypeArrangeable(sec, a.hourType)
+  );
+  sec.groupAssignments.forEach(row => {
+    const clamped = clampGroupAssignWeekRangeToSection(sec, row.weekRange);
+    if (clamped) row.weekRange = clamped;
+    // if (clamped && clamped !== row.weekRange) { row.weekRange = clamped; ... } // 原仅字符串不等时修正，现统一 clamp
+    if (row.weeklyHours != null && row.weeklyHours !== '') {
+      row.hours = calcGroupAssignRowHours(row.weeklyHours, row.weekRange, sec);
+    }
+  });
+}
+
+function migrateLegacySectionScopeToExplicitGroups(sec) {
+  const allIds = getGroupAssignFormAllGroupIds(sec);
+  (sec?.groupAssignments || []).forEach(row => {
+    if (row.deliveryScope !== 'section' || row._scopeGroupIdsSnapshotted) return;
+    row.groupIds = row.groupIds?.length ? [...row.groupIds] : [...allIds];
+    row.deliveryScope = 'group';
+    row.groupId = row.groupIds[0] || '';
+    row._scopeGroupIdsSnapshotted = true;
+    if (row.groupIds.length === 1) {
+      const g = sec.groups?.find(x => x.id === row.groupIds[0]);
+      if (g) row.groupName = g.name;
+    }
+  });
+}
+
+function applyGroupAssignSectionScopeRowFields(row, sec) {
+  if (!row || !sec) return;
+  row.deliveryScope = 'section';
+  row.groupId = '';
+  row.groupIds = [];
+  row.groupName = '全体小组';
+  row.studentCount = sec.estimatedStudents ?? 0;
+  row.programmeBatch = getSectionMergedBatchLabelDisplayFull(sec);
+}
+
+function normalizeGroupAssignSectionScope(sec) {
+  // const allIds = getGroupAssignFormAllGroupIds(sec); ... // 原全选转 section 并自动囊括新增小组，已停用
+}
+
+function expandGroupAssignmentsAfterGroupsAdded(sec, previousGroupIds) {
+  // if (prevSet.size && currentIds.length > prevSet.size) { ... applyGroupAssignSectionScopeRowFields ... } // 原新增小组后自动扩展全体安排，已停用
+  migrateLegacySectionScopeToExplicitGroups(sec);
+}
+
+function refreshGroupAssignGroupPicksIfSelectAll(sec = getOfferingGroupingSection()) {
+  // const modal = document.getElementById('modal-group-assign-form'); ... // 原全选态下新增小组自动勾选，已停用
+}
+
+function refreshGroupAssignHourTypeOptions(sec = getOfferingGroupingSection()) {
+  const sel = document.getElementById('group-assign-hour-type');
+  if (!sel || !sec) return;
+  const current = sel.value;
+  sel.innerHTML = OFFERING_GROUP_HOUR_SUMMARY_TYPES.map(ht => {
+    const enabled = isOfferingSectionHourTypeArrangeable(sec, ht);
+    const hours = getOfferingSectionHoursByType(sec, ht) ?? 0;
+    const label = enabled ? ht : `${ht}（课程学时 ${hours}，不可安排）`;
+    return `<option value="${escapeHtml(ht)}"${enabled ? '' : ' disabled'}>${escapeHtml(label)}</option>`;
+  }).join('');
+  const arrangeable = getOfferingSectionArrangeableHourTypes(sec);
+  if (arrangeable.includes(current)) sel.value = current;
+  else if (arrangeable.length) sel.value = arrangeable[0];
+}
+
+function getGroupAssignRowGroupIds(row) {
+  if (Array.isArray(row?.groupIds) && row.groupIds.length) return row.groupIds;
+  // if (row?.deliveryScope === 'section') return []; // 原 section 返回空由 matches 匹配全部小组，改仅显式 groupIds
+  return row?.groupId ? [row.groupId] : [];
+}
+
+function groupAssignRowMatchesGroup(row, groupId) {
+  if (!groupId) return false;
+  const ids = getGroupAssignRowGroupIds(row);
+  if (row?.deliveryScope === 'section') {
+    return ids.length ? ids.includes(groupId) : false;
+    // return true; // 原全体小组匹配当前全部分组（含后续新增）
+  }
+  return ids.includes(groupId);
+}
+
+function formatGroupAssignScopeLabel(row) {
+  if (row?.deliveryScope === 'section') return '全体小组';
+  const ids = getGroupAssignRowGroupIds(row);
+  if (ids.length > 1) return '指定小组（多个）';
+  return '指定小组';
+}
+
+function getGroupAssignRowGroupLabels(row, sec) {
+  const ids = getGroupAssignRowGroupIds(row);
+  if (row?.deliveryScope === 'section' && !ids.length) {
+    return (sec?.groups || []).map(g => formatMajorOfferingGroupName(sec.name, g.name));
+    // 原 section 无快照时展示全部小组；新保存均带显式 groupIds
+  }
+  if (!ids.length) return [];
+  return ids.map(id => {
+    const g = sec?.groups?.find(x => x.id === id);
+    return g ? formatMajorOfferingGroupName(sec.name, g.name) : id;
+  });
+}
+
+function formatGroupAssignGroupsLabel(row, sec) {
+  const labels = getGroupAssignRowGroupLabels(row, sec);
+  if (!labels.length) return '—';
+  if (row?.deliveryScope === 'section') return joinUniqueLabels(labels, 3);
+  return labels.join('、');
+  // if (row?.deliveryScope === 'section') return 'All Groups'; // 原全体小组合班展示
+  // if (row?.deliveryScope === 'section') return '全体'; // 原中文展示
+}
+
+function formatGroupAssignGroupsSummaryCell(row, sec) {
+  const labels = getGroupAssignRowGroupLabels(row, sec);
+  if (!labels.length) return '—';
+  if (labels.length === 1) return escapeHtml(labels[0]);
+  return `<div class="offering-hour-summary-groups">${labels.map(label =>
+    `<span class="offering-hour-summary-group-line">${escapeHtml(label)}</span>`
+  ).join('')}</div>`;
+}
+
+function getGroupAssignFormAllGroupIds(sec = getOfferingGroupingSection()) {
+  return (sec?.groups || []).map(g => g.id);
+}
+
+function resolveGroupAssignFormScope(sec = getOfferingGroupingSection()) {
+  const selectedIds = getGroupAssignFormSelectedGroupIds();
+  if (!selectedIds.length) {
+    return { deliveryScope: 'group', groupIds: [] };
+  }
+  return { deliveryScope: 'group', groupIds: selectedIds };
+  // const isAllSelected = ... return { deliveryScope: 'section', groupIds: [] }; // 原全选存 section 并自动囊括后续新增小组
+}
+
+// function selectAllGroupAssignGroups() {
+//   document.querySelectorAll('.group-assign-group-check').forEach(el => { el.checked = true; });
+// } // 原全选按钮，已移除
+
+function syncGroupAssignHoursByType() {
+  const sec = getOfferingGroupingSection();
+  if (!sec) return;
+  const hourType = document.getElementById('group-assign-hour-type')?.value;
+  // const hoursEl = document.getElementById('group-assign-hours'); // 原学时字段，改由后续排课安排
+  if (!document.getElementById('group-assign-edit-id')?.value) {
+    if (offeringGroupingSelectedGroupId) {
+      populateGroupAssignGroupPicks(sec, [offeringGroupingSelectedGroupId]);
+    }
+    // if (groupAssignFormSelectAll) { populateGroupAssignGroupPicks(sec, getGroupAssignFormAllGroupIds(sec)); } // 原全选态切换学时类型时自动纳入新增小组
+    // if (hourType === '理论学时') { groupAssignFormSelectAll = true; populateGroupAssignGroupPicks(sec, getGroupAssignFormAllGroupIds(sec)); } // 原理论学时默认全选
+  }
+  syncGroupAssignHoursSummary();
+  // const scopeEl = document.getElementById('group-assign-scope'); // 原适用范围下拉，已并入指定小组全选
+}
+
+function populateGroupAssignGroupPicks(sec, selectedIds = []) {
+  const wrap = document.getElementById('group-assign-group-picks');
+  if (!wrap) return;
+  const groups = sec?.groups || [];
+  if (!groups.length) {
+    wrap.innerHTML = '<span class="text-muted">暂无小组</span>';
+    return;
+  }
+  const selected = new Set(selectedIds);
+  // const selected = new Set(groupAssignFormSelectAll ? getGroupAssignFormAllGroupIds(sec) : selectedIds); // 原全选态自动勾选新增小组
+  const rows = groups.map(g => {
+    const label = formatMajorOfferingGroupName(sec.name, g.name);
+    const checked = selected.has(g.id) ? ' checked' : '';
+    return `<tr class="group-assign-group-pick-row" onclick="toggleGroupAssignGroupPickRow(event, '${escapeHtml(g.id)}')">
+      <td class="col-check" onclick="event.stopPropagation()">
+        <input type="checkbox" class="group-assign-group-check" value="${escapeHtml(g.id)}"${checked} onchange="syncGroupAssignGroupPickSelection(); syncGroupAssignHoursSummary()">
+      </td>
+      <td>${escapeHtml(label)}</td>
+      <td class="col-center"><span class="group-assign-group-pick-hours" data-group-id="${escapeHtml(g.id)}">—</span></td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `<div class="table-scroll group-assign-group-picks-table-wrap">
+    <table class="data-table compact group-assign-group-picks-table">
+      <thead><tr>
+        <th class="col-check"><input type="checkbox" id="group-assign-groups-check-all" aria-label="全选小组" onchange="toggleGroupAssignGroupsCheckAll(this.checked)"></th>
+        <th>小组</th>
+        <th class="col-center">已录入学时</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+  // return `<label class="group-assign-group-pick">...</label>`; // 原平铺勾选列表，改表格式展示
+  syncGroupAssignGroupPickSelection();
+}
+
+function syncGroupAssignGroupPickSelection() {
+  const checks = [...document.querySelectorAll('.group-assign-group-check')];
+  const checkAll = document.getElementById('group-assign-groups-check-all');
+  if (checkAll && checks.length) {
+    const checkedCount = checks.filter(c => c.checked).length;
+    checkAll.checked = checkedCount === checks.length;
+    checkAll.indeterminate = checkedCount > 0 && checkedCount < checks.length;
+    groupAssignFormSelectAll = checkedCount === checks.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+    if (!checks.length) groupAssignFormSelectAll = false;
+  }
+}
+
+function toggleGroupAssignGroupsCheckAll(checked) {
+  groupAssignFormSelectAll = checked;
+  document.querySelectorAll('.group-assign-group-check').forEach(el => { el.checked = checked; });
+  syncGroupAssignGroupPickSelection();
+  syncGroupAssignHoursSummary();
+}
+
+function toggleGroupAssignGroupPickRow(ev, groupId) {
+  if (ev.target.closest('input, button, a, label')) return;
+  const check = document.querySelector(`.group-assign-group-check[value="${CSS.escape(groupId)}"]`);
+  if (!check) return;
+  check.checked = !check.checked;
+  syncGroupAssignGroupPickSelection();
+  syncGroupAssignHoursSummary();
+}
+
+// function syncGroupAssignScopeFields() {
+//   const scope = document.getElementById('group-assign-scope')?.value || 'group';
+//   const wrap = document.getElementById('group-assign-groups-wrap');
+//   if (wrap) wrap.hidden = scope === 'section';
+// } // 原适用范围显隐，已移除单独字段
+
+function getGroupAssignFormSelectedGroupIds() {
+  return [...document.querySelectorAll('.group-assign-group-check:checked')].map(el => el.value);
+}
+
+function updateOfferingGroupingAssignSelection() {
+  offeringGroupingAssignSelected = new Set(
+    [...document.querySelectorAll('.oga-row-check:checked')].map(el => el.value)
+  );
+  const checkAll = document.getElementById('oga-check-all');
+  const selectable = document.querySelectorAll('.oga-row-check');
+  if (checkAll && selectable.length) {
+    const checkedOnPage = [...selectable].filter(el => el.checked).length;
+    checkAll.checked = checkedOnPage === selectable.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < selectable.length;
+  } else if (checkAll) {
+    checkAll.checked = false;
+    checkAll.indeterminate = false;
+  }
+  const revokeBtn = document.getElementById('ogg-btn-revoke-assign');
+  if (revokeBtn) revokeBtn.disabled = offeringGroupingReadOnly || !offeringGroupingAssignSelected.size;
+  // document.getElementById('ogg-btn-revoke-assign')?.toggleAttribute('disabled', !offeringGroupingAssignSelected.size);
+}
+
+function toggleOfferingGroupingAssignCheckAll(checked) {
+  document.querySelectorAll('.oga-row-check').forEach(el => { el.checked = checked; });
+  updateOfferingGroupingAssignSelection();
+}
+
+function removeOfferingGroupAssignSelected() {
+  const sec = getOfferingGroupingSection();
+  if (!assertOfferingGroupingEditable('删除教师安排')) return;
+  if (!sec || !offeringGroupingAssignSelected.size) {
+    alert('请先勾选需要删除的教师安排。');
+    // alert('请先勾选需要撤销的教师安排。'); // 原提示文案
+    return;
+  }
+  const count = offeringGroupingAssignSelected.size;
+  openDeleteConfirm({
+    title: '删除',
+    // title: '撤销安排', // 原确认标题
+    message: `确定删除选中的 <strong>${count}</strong> 条教师安排吗？`,
+    // message: `确定撤销选中的 <strong>${count}</strong> 条教师安排吗？`, // 原文案
+    hint: '删除后该学时类型对应小组的任课教师安排将被移除，可重新安排。',
+    // hint: '撤销后该学时类型对应小组的任课教师安排将被移除，可重新安排。', // 原文案
+    onConfirm: () => {
+      const ids = new Set(offeringGroupingAssignSelected);
+      sec.groupAssignments = (sec.groupAssignments || []).filter(a => !ids.has(a.id));
+      offeringGroupingAssignSelected.clear();
+      renderOfferingGroupingPanel();
+      renderCourseOfferingMajorPage();
+    }
+  });
+}
+
+function syncOfferingGroupingTeacherToolbar(sec = getOfferingGroupingSection()) {
+  const locked = offeringGroupingReadOnly;
+  const hasGroups = !!(sec?.groups?.length);
+  const assignTeachers = sec ? collectSectionAssignTeachers(sec) : [];
+  const assignBtn = document.getElementById('ogg-btn-assign-teacher');
+  if (assignBtn) {
+    assignBtn.disabled = locked || !hasGroups;
+    assignBtn.title = !hasGroups && !locked ? '请先新增分组后再安排教师' : '';
+  }
+  const coordBtn = document.getElementById('ogg-btn-set-coordinator');
+  if (coordBtn) {
+    coordBtn.disabled = locked || !assignTeachers.length;
+    coordBtn.title = !assignTeachers.length && !locked ? '请先安排教师后再设置 Coordinator' : '设置课程 Coordinator';
+  }
+}
+
+function syncOfferingGroupingReadOnly() {
+  const sec = getOfferingGroupingSection();
+  const structureLocked = offeringGroupingReadOnly;
+  const studentEditable = isOfferingGroupingStudentEditable();
+  const rosterStudentMode = isOfferingGroupingStudentRosterMode(sec) && structureLocked;
+  // const rosterStudentMode = isOfferingGroupingRosterContext() && structureLocked; // 原仅名单管理入口
+  const shell = getOfferingGroupingShellEl();
+  shell?.classList.toggle('is-readonly', structureLocked && !rosterStudentMode);
+  shell?.classList.toggle('is-roster-student-mode', rosterStudentMode);
+  if (rosterStudentMode) {
+    syncMajorOfferingReadonlyHint(
+      getOfferingGroupingBodyEl(),
+      sec,
+      'offering-grouping-readonly-hint',
+      {
+        insertAfter: '#offering-grouping-meta',
+        isLocked: () => true,
+        getMessage: () => getOfferingGroupingRosterStudentLockMessage(sec)
+      }
+    );
+  } else {
+    syncMajorOfferingReadonlyHint(
+      getOfferingGroupingBodyEl(),
+      sec,
+      'offering-grouping-readonly-hint',
+      { insertAfter: '#offering-grouping-meta' }
+    );
+  }
+  setContainerButtonsDisabled(document.querySelector('.offering-group-sidebar-actions'), structureLocked);
+  const teacherToolbar = document.querySelector('#offering-group-teacher-panel .offering-group-toolbar');
+  if (structureLocked) {
+    setContainerButtonsDisabled(teacherToolbar, true);
+  } else {
+    setContainerButtonsDisabled(teacherToolbar, false);
+    syncOfferingGroupingTeacherToolbar(sec);
+    updateOfferingGroupingAssignSelection();
+  }
+  const adjustBtn = document.getElementById('ogg-btn-adjust-group');
+  const removeBtn = document.getElementById('ogg-btn-remove-roster');
+  const presetBtn = document.getElementById('ogg-btn-preset-roster-grouping');
+  const revokeBtn = document.getElementById('ogg-btn-revoke-assign');
+  if (adjustBtn) adjustBtn.disabled = !studentEditable;
+  if (removeBtn) removeBtn.disabled = !studentEditable;
+  if (presetBtn) presetBtn.disabled = !studentEditable;
+  if (revokeBtn && structureLocked) revokeBtn.disabled = true;
+  document.querySelectorAll('.offering-group-student-toolbar .btn-outline').forEach(btn => {
+    if (btn.textContent?.trim() === '添加学生') btn.disabled = !studentEditable;
+  });
+  document.getElementById('oga-check-all') && (document.getElementById('oga-check-all').disabled = structureLocked);
+  document.getElementById('ogg-check-all') && (document.getElementById('ogg-check-all').disabled = !studentEditable);
+  syncOfferingGroupingHeaderActions();
+  // const savePageBtn = document.getElementById('ogg-btn-save-grouping-page');
+  // const saveRosterBtn = document.getElementById('ogg-btn-save-roster-page');
+  // const rosterContext = isOfferingGroupingRosterContext();
+  // const canSaveStructure = !structureLocked && !rosterContext;
+  // const canSaveRoster = canSaveOfferingGroupingRoster();
+  // if (savePageBtn) {
+  //   savePageBtn.hidden = !canSaveStructure;
+  //   // if (savePageBtn) savePageBtn.hidden = !canSaveStructure; // 原名单管理入口结构已锁时隐藏，改名单管理入口始终隐藏「保存」
+  //   // if (savePageBtn) savePageBtn.disabled = structureLocked; // 原不可用时置灰，改不可用时隐藏
+  // }
+  // if (saveRosterBtn) saveRosterBtn.hidden = !canSaveRoster;
+  // if (adjustBtn) adjustBtn.disabled = locked; // 原与学生操作同锁，改名单管理模式下可维护学生
+  // if (removeBtn) removeBtn.disabled = locked;
+  // document.querySelectorAll('.offering-group-student-toolbar .btn-outline').forEach(btn => {
+  //   if (btn.textContent?.trim() === '添加学生') btn.disabled = locked;
+  // });
+  // document.getElementById('ogg-check-all') && (document.getElementById('ogg-check-all').disabled = locked);
+}
+
+function renderOfferingGroupingTeacherPanel() {
+  const sec = getOfferingGroupingSection();
+  const group = getOfferingGroupingSelectedGroup(sec);
+  const assignBody = document.getElementById('offering-group-assign-body');
+  const readOnly = offeringGroupingReadOnly;
+  const emptyColspan = readOnly ? 5 : 7;
+  // const emptyColspan = readOnly ? 6 : 8; // 原含授课角色列
+  // const emptyColspan = readOnly ? 7 : 9; // 原含 Coordinator 列
+  if (!assignBody) return;
+  if (sec && !sec.coordinatorStaffId) syncSectionCoordinatorsFromAssignments(sec);
+  else if (sec) refreshSectionCoordinatorAfterAssignmentChange(sec);
+  if (!group) {
+    assignBody.innerHTML = `<tr><td colspan="${emptyColspan}" class="text-muted" style="text-align:center;padding:20px">请先选择左侧分组</td></tr>`;
+    offeringGroupingAssignSelected.clear();
+    updateOfferingGroupingAssignSelection();
+    return;
+  }
+  const rows = (sec?.groupAssignments || [])
+    .filter(row => isOfferingSectionHourTypeArrangeable(sec, row.hourType))
+    .filter(row => groupAssignRowMatchesGroup(row, group.id));
+  assignBody.innerHTML = rows.length
+    ? rows.map((row, idx) => `<tr>
+        ${readOnly ? '' : `<td class="col-check"><input type="checkbox" class="oga-row-check" value="${row.id}" ${offeringGroupingAssignSelected.has(row.id) ? 'checked' : ''} onchange="updateOfferingGroupingAssignSelection()"></td>`}
+        <td class="col-index">${idx + 1}</td>
+        <td>${escapeHtml(row.hourType || '—')}</td>
+        <td class="col-center"><code>${escapeHtml(clampGroupAssignWeekRangeToSection(sec, row.weekRange) || row.weekRange || '—')}</code></td>
+        <td>${escapeHtml(formatGroupAssignTeacherNamesDisplay(row))}</td>
+        <!-- <td>${escapeHtml(formatGroupAssignTeacherRolesDisplay(row, sec))}</td> --> <!-- 列表不再展示授课角色 -->
+        <!-- <td class="col-center">${escapeHtml(formatGroupAssignCoordinatorsDisplay(row, sec))}</td> --> <!-- 改由工具栏设置 Coordinator，列表不再展示 -->
+        <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
+        <!-- <td>${escapeHtml(formatGroupAssignGroupsLabel(row, sec))}</td> --> <!-- 原单行顿号拼接 -->
+        ${readOnly ? '' : `<td class="actions col-sticky-actions"><a href="#" onclick="openGroupAssignForm('${row.id}');return false">修改</a></td>`}
+      </tr>`).join('')
+    : `<tr><td colspan="${emptyColspan}" class="text-muted" style="text-align:center;padding:20px">${readOnly ? '暂无教师安排。' : '暂无教师安排，请点击「安排教师」为理论/辅导/实践/其他学时指定任课教师与起止周'}</td></tr>`;
+  updateOfferingGroupingAssignSelection();
+  syncOfferingGroupingTeacherToolbar(sec);
+}
+
+function getOfferingGroupRemarkText(group) {
+  return (group?.remark || '').trim();
+}
+
+function shouldShowOfferingGroupRemarksInRosterContext() {
+  return isOfferingGroupingStudentRosterMode();
+  // return isOfferingGroupingRosterContext(); // 原仅名单管理入口展示分组备注
+}
+
+function renderOfferingGroupTreeRemarkHtml(group) {
+  if (!shouldShowOfferingGroupRemarksInRosterContext()) return '';
+  const remark = getOfferingGroupRemarkText(group);
+  if (!remark) return '';
+  return `<p class="group-tree-remark" title="${escapeHtml(remark)}"><span class="group-tree-remark-label">备注说明：</span>${escapeHtml(remark)}</p>`;
+  // return `<p class="group-tree-remark" title="${escapeHtml(remark)}">${escapeHtml(remark)}</p>`; // 原仅展示备注正文
+}
+
+function syncOfferingGroupingStudentGroupRemark(sec, group) {
+  const el = document.getElementById('offering-group-student-remark');
+  if (!el) return;
+  if (!shouldShowOfferingGroupRemarksInRosterContext() || !group) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  const remark = getOfferingGroupRemarkText(group);
+  if (!remark) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  const groupLabel = formatMajorOfferingGroupName(sec?.name, group.name);
+  el.hidden = false;
+  el.innerHTML = `<div class="offering-group-student-remark-head"><strong>备注说明</strong><span class="offering-group-student-remark-group">${escapeHtml(groupLabel)}</span></div><p class="offering-group-student-remark-body">${escapeHtml(remark)}</p>`;
+}
+
+function syncOfferingGroupingSidebarHead(sec) {
+  const head = document.querySelector('.offering-group-sidebar-head strong');
+  if (!head) return;
+  if (shouldShowOfferingGroupRemarksInRosterContext()) {
+    head.textContent = '分组信息（含备注说明）';
+    return;
+  }
+  head.textContent = '分组信息';
+  // if (shouldShowOfferingGroupRemarksInRosterContext()) head.textContent = '分组信息（含备注说明）'; // 原固定文案
+}
+
+function renderOfferingGroupingStudentPanel() {
+  const sec = getOfferingGroupingSection();
+  const group = getOfferingGroupingSelectedGroup(sec);
+  const tbody = document.getElementById('offering-group-student-body');
+  const readOnly = !isOfferingGroupingStudentEditable();
+  const emptyColspan = readOnly ? 9 : 10;
+  // const emptyColspan = readOnly ? 8 : 9; // 原未含来源列
+  // const readOnly = offeringGroupingReadOnly; // 原与结构锁定同锁，改名单管理模式下可勾选学生
+  if (!tbody) return;
+  syncOfferingGroupingStudentGroupRemark(sec, group);
+  if (!group) {
+    tbody.innerHTML = `<tr><td colspan="${emptyColspan}" class="text-muted" style="text-align:center;padding:20px">请先选择左侧分组</td></tr>`;
+    renderListPagination('offering-group-student-pagination', 'offeringGroupingStudent', 0);
+    updateOfferingGroupingStudentSelection();
+    return;
+  }
+  const students = getFilteredOfferingGroupingStudents();
+  const paged = paginateListItems(students, 'offeringGroupingStudent');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.length
+    ? paged.items.map((stu, idx) => `<tr>
+        ${readOnly ? '' : `<td class="col-check"><input type="checkbox" class="ogg-row-check" value="${stu.id}" ${offeringGroupingStudentSelected.has(stu.id) ? 'checked' : ''} onchange="updateOfferingGroupingStudentSelection()"></td>`}
+        <td class="col-index">${rowOffset + idx + 1}</td>
+        <td><code>${escapeHtml(stu.studentNo)}</code></td>
+        <td>${escapeHtml(stu.name)}</td>
+        <td class="col-center">${escapeHtml(getStudentGender(stu) || '—')}</td>
+        <td class="col-center"><code>${escapeHtml(stu.schoolCode || '—')}</code></td>
+        <td class="col-center"><code>${escapeHtml(stu.programmeCode || '—')}</code></td>
+        <td class="col-center"><code>${formatIntakeDisplay(stu.intake)}</code></td>
+        <td>${escapeHtml(formatStudentCourseGroupLabel(sec.name, group.name))}</td>
+        <td>${escapeHtml(formatMajorOfferingStudentRosterSource(stu.source))}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="${emptyColspan}" class="text-muted" style="text-align:center;padding:20px">该分组暂无学生</td></tr>`;
+  renderListPagination('offering-group-student-pagination', 'offeringGroupingStudent', paged.total);
+  updateOfferingGroupingStudentSelection();
+}
+
+function getOfferingHourSummaryTypeMeta(hourType) {
+  return OFFERING_HOUR_SUMMARY_TYPE_META[hourType] || { key: 'other', abbr: '—', tone: 'blue' };
+}
+
+function renderOfferingHourSummaryBlockHeader(hourType, plannedHours, rowCount, arrangeable) {
+  const meta = getOfferingHourSummaryTypeMeta(hourType);
+  const statusChip = !arrangeable
+    ? '<span class="offering-hour-stat-chip is-muted">无需安排</span>'
+    : rowCount
+    ? `<span class="offering-hour-stat-chip is-done">已安排 <b>${rowCount}</b> 条</span>`
+    : '<span class="offering-hour-stat-chip is-pending">待安排</span>';
+  return `<header class="offering-hour-summary-head">
+      <div class="offering-hour-summary-title">
+        <span class="offering-hour-type-badge is-${meta.tone}" aria-hidden="true">${escapeHtml(meta.abbr)}</span>
+        <strong>${escapeHtml(hourType)}</strong>
+      </div>
+      <div class="offering-hour-summary-meta">
+        <span class="offering-hour-stat-chip">课程学时 <b>${plannedHours ?? '—'}</b></span>
+        ${statusChip}
+      </div>
+    </header>`;
+  // return `<header class="offering-hour-summary-head"><strong>${escapeHtml(hourType)}</strong><span class="text-muted">课程学时 ${plannedHours ?? '—'} · 已安排 ${rowCount} 条</span></header>`; // 原单行标题
+}
+
+function renderOfferingHourAssignDetailGroups(row, sec) {
+  const labels = getGroupAssignRowGroupLabels(row, sec);
+  if (!labels.length) return '—';
+  if (labels.length === 1) return escapeHtml(labels[0]);
+  return `<div class="offering-hour-summary-groups">${labels.map(label =>
+    `<span class="offering-hour-summary-group-line">${escapeHtml(label)}</span>`
+  ).join('')}</div>`;
+}
+
+function openOfferingHourSummaryAssignDetail(assignId) {
+  const sec = getOfferingGroupingSection();
+  if (!sec || !assignId) return;
+  const row = (sec.groupAssignments || []).find(a => a.id === assignId);
+  if (!row) return;
+  const body = document.getElementById('offering-hour-assign-detail-body');
+  const titleEl = document.getElementById('offering-hour-assign-detail-title');
+  if (!body) return;
+  if (titleEl) titleEl.textContent = `${row.hourType || '学时'} · 安排详情`;
+  const teachers = getGroupAssignTeachers(row);
+  const teacherRows = teachers.length
+    ? teachers.map(t => {
+        const enriched = enrichGroupAssignFormTeacher(t, sec);
+        const supportLabel = formatGroupAssignTeacherSupportDisplay(sec, enriched);
+        const supportCell = supportLabel === '是'
+          ? '<td class="col-center"><span class="group-assign-support-flag is-yes">是</span></td>'
+          : `<td class="col-center">${escapeHtml(supportLabel)}</td>`;
+        return `<tr>
+        <td><code>${escapeHtml(enriched.staffId || '—')}</code></td>
+        <td>${escapeHtml(enriched.name || '—')}</td>
+        <td class="col-center"><code>${escapeHtml(enriched.departmentCode || '—')}</code></td>
+        ${supportCell}
+        <!-- <td class="col-center">${escapeHtml(getGroupAssignTeacherDisplayRole(t, sec))}</td> --> <!-- 原授课角色列 -->
+        <!-- <td class="col-center">Coordinator</td> --> <!-- 原 Coordinator 列，改由分组页设置 -->
+      </tr>`;
+      }).join('')
+    : '<tr><td colspan="4" class="text-muted" style="text-align:center;padding:12px">暂无授课教师</td></tr>';
+  body.innerHTML = `
+    <dl class="detail-dl offering-hour-assign-detail-dl">
+      <dt>学时类型</dt><dd>${escapeHtml(row.hourType || '—')}</dd>
+      <dt>起止周</dt><dd><code>${escapeHtml(row.weekRange || '—')}</code></dd>
+      <dt>周学时</dt><dd>${escapeHtml(row.weeklyHours != null && row.weeklyHours !== '' ? String(row.weeklyHours) : '—')}</dd>
+      <dt>指定小组</dt><dd class="offering-hour-assign-detail-groups">${renderOfferingHourAssignDetailGroups(row, sec)}</dd>
+    </dl>
+    <div class="offering-hour-assign-detail-teachers">
+      <h4 class="offering-hour-assign-detail-subtitle">授课教师</h4>
+      <div class="table-scroll">
+        <table class="data-table compact">
+          <thead><tr>
+            <th>教工号</th>
+            <th>姓名</th>
+            <th class="col-center">所属部门</th>
+            <th class="col-center">是否 Support 教师</th>
+            <!-- <th class="col-center">授课角色</th> -->
+            <!-- <th class="col-center">Coordinator</th> -->
+          </tr></thead>
+          <tbody>${teacherRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  openModal('modal-offering-hour-assign-detail');
+}
+
+function formatOfferingGroupHourTypeStatusCell(sec, group, hourType, groupIssues) {
+  const planned = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+  if (planned <= 0) {
+    return '<span class="text-muted">—</span>';
+  }
+  const typeIssues = groupIssues.filter(line => line.includes(hourType));
+  const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, group.id, hourType, '');
+  const hasTeacher = groupHasHourTypeAssignment(sec, group.id, hourType);
+  const ok = !typeIssues.length && hasTeacher && recorded === planned;
+  // if (!typeIssues.length && hasTeacher && recorded >= planned) { // 原 >= 视为完成，超计划仍显示绿色
+  if (ok) {
+    return `<span class="offering-group-hour-status-ok">${recorded}/${planned}</span>`;
+  }
+  if (!hasTeacher || typeIssues.some(line => line.includes('尚未安排教师') || line.includes('未指定授课教师'))) {
+    return `<span class="offering-group-hour-status-warn">${recorded}/${planned}</span>`;
+    // return '<span class="offering-group-hour-status-warn">未安排</span>'; // 原显示「未安排」，改显示已录/计划如 0/10
+  }
+  if (recorded !== planned) {
+    return `<span class="offering-group-hour-status-warn">${recorded}/${planned}</span>`;
+  }
+  const issue = typeIssues[0] || '未完成';
+  return `<span class="offering-group-hour-status-warn" title="${escapeHtml(issue)}">未完成</span>`;
+}
+
+function renderOfferingGroupingGroupStatusPanel() {
+  const sec = getOfferingGroupingSection();
+  const mount = document.getElementById('offering-group-group-status-content');
+  if (!mount || !sec) return;
+  sanitizeSectionGroupAssignments(sec);
+  const groups = sec.groups || [];
+  if (!groups.length) {
+    mount.innerHTML = '<p class="text-muted offering-group-status-empty">暂无分组，请先新增分组。</p>';
+    return;
+  }
+  const bucket = collectOfferingGroupingSaveWarnings(sec);
+  const hourTypes = OFFERING_GROUP_HOUR_SUMMARY_TYPES;
+  let completeCount = 0;
+  const bodyRows = groups.map((g, idx) => {
+    const label = formatMajorOfferingGroupName(sec.name, g.name);
+    const issues = bucket.byGroup.get(label) || [];
+    const complete = !issues.length;
+    if (complete) completeCount += 1;
+    const typeCells = hourTypes.map(ht => formatOfferingGroupHourTypeStatusCell(sec, g, ht, issues));
+    // const issueHtml = complete
+    //   ? '<span class="text-muted">—</span>'
+    //   : `<ul class="offering-group-status-issues">${issues.map(line =>
+    //       `<li>${escapeHtml(line)}</li>`
+    //     ).join('')}</ul>`; // 原未完成项列，已移除
+    const rowCls = complete ? 'is-complete' : 'is-incomplete';
+    return `<tr class="${rowCls}">
+      <td class="col-index">${idx + 1}</td>
+      <td>${escapeHtml(label)}</td>
+      ${typeCells.map(cell => `<td class="col-center">${cell}</td>`).join('')}
+      <td class="col-center"><span class="offering-group-status-badge ${complete ? 'is-ok' : 'is-warn'}">${complete ? '是' : '否'}</span></td>
+    </tr>`;
+    // <!-- <td class="offering-group-status-detail">...</td> --> // 原未完成项列；勿在模板字符串注释内写 \${issueHtml}，会被插值
+  }).join('');
+  const summaryCls = completeCount === groups.length ? 'is-ok' : 'is-warn';
+  mount.innerHTML = `
+    <p class="offering-group-status-summary">共 <strong>${groups.length}</strong> 个小组，<strong class="${summaryCls}">${completeCount}</strong> 个已排满。</p>
+    <div class="table-scroll offering-group-status-table-wrap">
+      <table class="data-table compact offering-group-status-table">
+        <thead><tr>
+          <th class="col-index">序号</th>
+          <th>小组</th>
+          ${hourTypes.map(ht => `<th class="col-center">${escapeHtml(OFFERING_HOUR_SUMMARY_TYPE_META[ht]?.abbr || ht.replace('学时', ''))}</th>`).join('')}
+          <th class="col-center">是否排满</th>
+          <!-- <th>未完成项</th> --> <!-- 列已移除 -->
+        </tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderOfferingGroupingHourSummaryPanel() {
+  const sec = getOfferingGroupingSection();
+  const mount = document.getElementById('offering-group-hour-summary-content');
+  if (!mount || !sec) return;
+  sanitizeSectionGroupAssignments(sec);
+  const assignments = sec.groupAssignments || [];
+  const hourTypes = OFFERING_GROUP_HOUR_SUMMARY_TYPES;
+  if (!getOfferingSectionArrangeableHourTypes(sec).length) {
+    mount.innerHTML = '<p class="text-muted offering-hour-summary-empty">本课程各类型学时均为 0，无需安排教师。</p>';
+    return;
+  }
+  // if (!assignments.length) { ... } 原无安排时整页空态，改由下方按类型展示
+  mount.innerHTML = `<div class="offering-hour-summary-stack">${hourTypes.map(hourType => {
+    const plannedHours = getOfferingSectionHoursByType(sec, hourType);
+    const arrangeable = isOfferingSectionHourTypeArrangeable(sec, hourType);
+    const rows = arrangeable ? assignments.filter(a => a.hourType === hourType) : [];
+    const meta = getOfferingHourSummaryTypeMeta(hourType);
+    const blockState = !arrangeable ? 'is-idle' : rows.length ? 'is-active' : 'is-pending';
+    const tbody = !arrangeable
+      ? `<tr class="offering-hour-summary-empty-row"><td colspan="5" class="text-muted">课程学时为 0，无需安排教师。</td></tr>`
+      : rows.map((row, idx) => `<tr>
+          <td class="col-index col-center">${idx + 1}</td>
+          <td class="col-teacher">${formatGroupAssignTeacherSummaryCell(row, 22, sec)}</td>
+          <!-- <td class="col-role col-center">${escapeHtml(formatGroupAssignTeacherRolesDisplay(row))}</td> --> <!-- 原授课角色列 -->
+          <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
+          <td class="col-center col-week"><code>${escapeHtml(row.weekRange || '—')}</code></td>
+          <td class="actions col-sticky-actions"><a href="#" onclick="openOfferingHourSummaryAssignDetail('${row.id}');return false">Details</a></td>
+          <!-- <td class="col-center col-actions"><a ...>Details</a></td> --> <!-- 原居中操作列 -->
+        </tr>`).join('');
+    // : `<tr class="offering-hour-summary-empty-row"><td colspan="5" class="text-muted">该学时类型尚未安排教师。</td></tr>`; // 原空态嵌在表格内，改独立 pending-body
+    const idleBody = !arrangeable
+      ? '<div class="offering-hour-summary-idle-body text-muted">课程学时为 0，无需安排教师。</div>'
+      : '';
+    const pendingBody = arrangeable && !rows.length
+      ? '<div class="offering-hour-summary-pending-body text-muted">该学时类型尚未安排教师。</div>'
+      : '';
+    const tableWrap = (arrangeable && rows.length) || !arrangeable
+      ? `<div class="offering-hour-summary-table-wrap">
+        <table class="data-table compact offering-hour-summary-table">
+          ${OFFERING_HOUR_SUMMARY_TABLE_COLGROUP}
+          ${OFFERING_HOUR_SUMMARY_TABLE_HEAD}
+          <tbody>${tbody}</tbody>
+        </table>
+      </div>`
+      : '';
+    return `<section class="offering-hour-summary-block is-type-${meta.key} ${blockState}">
+      ${renderOfferingHourSummaryBlockHeader(hourType, plannedHours, rows.length, arrangeable)}
+      ${idleBody}
+      ${pendingBody}
+      ${tableWrap}
+    </section>`;
+    // return `<section class="offering-hour-summary-block"><header class="offering-hour-summary-head">...</header><div class="offering-hour-summary-table-wrap">...</div></section>`; // 原统一灰底标题
+  }).join('')}</div>`;
+  bindOfferingHourTeacherTips(mount);
+  // mount.innerHTML = `<div class="table-scroll offering-hour-summary-scroll"><table>...</table></div>`; 原单表分组行，类型混在一起不清晰
 }
 
 function renderOfferingGroupingPanel() {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec) return;
-  const classes = getSectionIncludedClasses(sec).join('、') || sec.className;
+  ensureSectionOfferingFields(sec);
+  ensureMajorOfferingSectionEditFields(sec);
+  const batches = getSectionMergedBatchLabelDisplayFull(sec);
   const meta = document.getElementById('offering-grouping-meta');
   if (meta) {
     meta.innerHTML = `
-      <span><strong>教学班号</strong> ${escapeHtml(sec.teachingClassNo || '—')}</span>
-      <span><strong>教学班</strong> ${escapeHtml(sec.className || '—')}</span>
-      <span><strong>上课人数</strong> ${sec.estimatedStudents ?? '—'}</span>
-      <span><strong>课程名称</strong> ${escapeHtml(sec.name)}</span>
-      <span><strong>上课班级</strong> ${escapeHtml(classes)}</span>`;
-  }
-  const tree = document.getElementById('offering-group-tree');
-  if (tree) {
-    const groups = sec.groups || [];
-    tree.innerHTML = `
-      <div class="group-tree-root">
-        <div class="group-tree-node is-root">
-          <span class="group-tree-label">${escapeHtml(sec.className)}（${sec.estimatedStudents}人）</span>
+      <div class="offering-grouping-meta-row">
+        <div class="offering-grouping-meta-primary">
+          <span><strong>课程号</strong> <code>${escapeHtml(sec.code || '—')}</code></span>
+          <span><strong>课程名称</strong> ${escapeHtml(sec.name || '—')}</span>
+          <span><strong>开课单位</strong> <code>${escapeHtml(resolveMajorOfferingSectionOfferingUnit(sec) || '—')}</code></span>
+          <span><strong>计划人数</strong> ${getSectionPlannedStudentCount(sec) || '—'}</span>
+          <span><strong>课程人数上限</strong> ${getSectionCapacityLimit(sec) || '—'}</span>
+          <span><strong>学分</strong> ${sec.credits ?? '—'}</span>
+          <span><strong>起止周</strong> <code>${escapeHtml(getSectionWeekRangeDisplay(sec))}</code></span>
+          <!-- sec.weekRange 单独展示 --> <!-- 原可能与 selectedWeeks 不一致 -->
+          <!-- <span><strong>截止周次</strong> …</span> --> <!-- 原仅展示截止周次；模板字符串内勿写插值语法，getSectionEndTeachingWeek 已弃用 -->
+          <!-- <span><strong>上课人数</strong> ${sec.estimatedStudents ?? '—'}</span> --> <!-- 原展示计划人数，改展示课程人数上限（计划人数+预留名额） -->
         </div>
-        ${groups.map(g => `
-          <div class="group-tree-node is-child" data-group-id="${g.id}">
-            <span class="group-tree-label">${escapeHtml(g.name)}（${g.studentCount}人）</span>
-            <span class="group-tree-actions">
-              <a href="#" onclick="editOfferingGroup('${g.id}');return false" title="修改">✎</a>
-              <a href="#" onclick="deleteOfferingGroup('${g.id}');return false" title="删除">🗑</a>
-            </span>
-          </div>`).join('')}
+        <div class="offering-grouping-meta-hours">
+          <span><strong>总学时</strong> ${sec.totalHours ?? '—'}</span>
+          <span><strong>理论学时</strong> ${sec.theoryHours ?? '—'}</span>
+          <span><strong>辅导学时</strong> ${sec.tutorialHours ?? '—'}</span>
+          <span><strong>实践学时</strong> ${sec.practiceHours ?? '—'}</span>
+          <span><strong>其他学时</strong> ${sec.otherHours ?? '—'}</span>
+        </div>
+      </div>
+      <div class="offering-grouping-meta-row offering-grouping-meta-row-batches">
+        <span class="offering-grouping-meta-batch"><strong>专业批次</strong> <code>${escapeHtml(batches)}</code></span>
+        <span class="offering-grouping-meta-coordinator" id="offering-grouping-meta-coordinator">${formatSectionCoordinatorMetaHtml(sec)}</span>
       </div>`;
   }
-  const assignBody = document.getElementById('offering-group-assign-body');
-  if (assignBody) {
-    const rows = sec.groupAssignments || [];
-    assignBody.innerHTML = rows.length
-      ? rows.map((row, idx) => `<tr>
-          <td class="col-check"><input type="checkbox" value="${row.id}"></td>
-          <td class="col-index">${idx + 1}</td>
-          <td>${escapeHtml(row.groupName)}</td>
-          <td class="col-center">${row.studentCount}</td>
-          <td>${escapeHtml(row.adminClass || '—')}</td>
-          <td>${escapeHtml(row.hourType || '—')}</td>
-          <td class="col-center"><code>${escapeHtml(row.weekRange || '—')}</code></td>
-          <td class="col-center">${row.hours ?? '—'}</td>
-          <td><code>${escapeHtml(row.staffId || '—')}</code></td>
-          <td>${escapeHtml(row.teacher || '—')}</td>
-          <td>${escapeHtml(row.role || '—')}</td>
-          <td class="actions"><a href="#" onclick="openGroupAssignForm('${row.id}');return false">修改</a></td>
-        </tr>`).join('')
-      : '<tr><td colspan="12" class="text-muted" style="text-align:center;padding:20px">暂无学时分组安排，请点击「新增」</td></tr>';
+  // <span><strong>教学班号</strong> ${escapeHtml(sec.teachingClassNo || '—')}</span> // 原展示授课码，已改为课程号
+  const tree = document.getElementById('offering-group-tree');
+  ensureOfferingGroupingGroupSelection(sec);
+  (sec.groups || []).forEach(g => migrateLegacyOfferingGroupCapacity(g));
+  syncOfferingGroupStudentCounts(sec);
+  if (tree) {
+    const groups = sec.groups || [];
+    tree.innerHTML = groups.length
+      ? groups.map(g => {
+          ensureOfferingGroupFields(g);
+          const groupLabel = formatMajorOfferingGroupName(sec.name, g.name);
+          // const groupLabel = g.name || '—'; // 原仅展示组名，改课程组名称：课名（组名）
+          const selected = g.id === offeringGroupingSelectedGroupId ? ' is-selected' : '';
+          const capacityLabel = formatOfferingGroupCapacityLimit(g);
+          const remarkHtml = renderOfferingGroupTreeRemarkHtml(g);
+          const remarkClass = remarkHtml ? ' has-remark' : '';
+          const groupActions = offeringGroupingReadOnly ? '' : `
+            <span class="group-tree-actions">
+              <a href="#" onclick="event.stopPropagation();editOfferingGroup('${g.id}');return false" title="修改">✎</a>
+              <a href="#" onclick="event.stopPropagation();deleteOfferingGroup('${g.id}');return false" title="删除">🗑</a>
+            </span>`;
+          return `
+          <div class="group-tree-node is-child${selected}${remarkClass}" data-group-id="${g.id}" onclick="selectOfferingGroup('${g.id}')">
+            <div class="group-tree-node-main">
+              <span class="group-tree-label" title="${escapeHtml(groupLabel)}">${escapeHtml(groupLabel)}</span>
+              <span class="group-tree-node-meta">
+                <span class="group-tree-count">${capacityLabel ? `（${capacityLabel}）` : ''}</span>
+                ${groupActions}
+              </span>
+            </div>
+            ${remarkHtml}
+          </div>`;
+          // <span class="group-tree-count">...</span>${groupActions} // 原人数与操作分列，窄宽时操作换行，改由 group-tree-node-meta 靠右成组
+          // return `<div class="group-tree-node is-child${selected}" ...><span class="group-tree-label">...` // 原单行节点，名单管理入口改展示备注说明
+          // <span class="group-tree-count">（${count}人）</span> // 原展示实际人数，改展示人数上限
+        }).join('')
+      : '<div class="group-tree-empty text-muted">暂无分组</div>';
+    // onclick 无选中态，原整树不可点击
   }
+  syncOfferingGroupingSidebarHead(sec);
+  syncOfferingGroupingReadOnly();
+  document.querySelector('#offering-group-teacher-panel thead .col-check')?.toggleAttribute('hidden', offeringGroupingReadOnly);
+  document.querySelector('#offering-group-teacher-panel thead .col-sticky-actions')?.toggleAttribute('hidden', offeringGroupingReadOnly);
+  document.querySelector('#offering-group-student-panel thead .col-check')?.toggleAttribute('hidden', !isOfferingGroupingStudentEditable());
+  syncOfferingGroupingTabVisibility();
+  renderOfferingGroupingTeacherPanel();
+  renderOfferingGroupingStudentPanel();
+  renderOfferingGroupingHourSummaryPanel();
+  renderOfferingGroupingGroupStatusPanel();
+  // document.querySelectorAll('.offering-group-tab').forEach ... toggleAttribute hidden 原 inline，已抽 syncOfferingGroupingTabVisibility
   sec.isGrouped = (sec.groups?.length || 0) > 0;
-  const groupSelect = document.getElementById('group-assign-group');
-  if (groupSelect) {
-    groupSelect.innerHTML = '<option value="">请选择</option>' + (sec.groups || []).map(g =>
-      `<option value="${g.id}">${escapeHtml(g.name)}</option>`
-    ).join('');
+  // refreshGroupAssignGroupPicksIfSelectAll(sec); // 原全选态下渲染分组树时自动勾选新增小组
+  // const groupSelect = document.getElementById('group-assign-group'); // 原单选组别，改由 group-assign-group-picks 多选
+  // if (groupSelect) { ... }
+  // 原 assignBody 在此直接渲染，改由 renderOfferingGroupingTeacherPanel
+}
+
+function syncOfferingGroupStudentCounts(sec = getOfferingGroupingSection()) {
+  if (!sec?.groups?.length) return;
+  const sectionId = sec.id || offeringGroupingSectionId;
+  const roster = getMajorOfferingStudentRoster(sectionId);
+  sec.groups.forEach(g => {
+    g.studentCount = roster.filter(stu => studentMatchesOfferingGroup(stu, g, sec)).length;
+  });
+}
+
+function resolveStudentProgrammeBatchLabel(stu) {
+  if (!stu) return '';
+  const programmeKey = resolveProgrammeKeyByCode(stu.programmeCode);
+  if (programmeKey && stu.intake) return formatProgrammeIntakeCode(programmeKey, stu.intake);
+  if (stu.programmeCode && stu.intake) return `${stu.programmeCode}-${formatIntakeDisplay(stu.intake)}`;
+  return '';
+}
+
+function getOfferingGroupStudentBatchLabels(group, sec = getOfferingGroupingSection()) {
+  if (!group || !sec) return '—';
+  const roster = getMajorOfferingStudentRoster(offeringGroupingSectionId);
+  const labels = [...new Set(
+    roster
+      .filter(stu => studentMatchesOfferingGroup(stu, group, sec))
+      .map(stu => resolveStudentProgrammeBatchLabel(stu))
+      .filter(Boolean)
+  )].sort();
+  if (labels.length) return labels.join('、');
+  return group.batchLabel || '—';
+  // return group.batchLabel || '—'; // 原仅展示 group.batchLabel，未汇总组内学生专业批次
+}
+
+function adjustOfferingGroupingStudents() {
+  if (!assertOfferingGroupingStudentEditable('调整学生分组')) return;
+  if (!ensureOfferingGroupingStudentOpsContext()) return;
+  if (!offeringGroupingStudentSelected.size) {
+    alert('请先勾选需要调整分组的学生。');
+    return;
   }
+  majorOfferingStudentRosterSelected = new Set(offeringGroupingStudentSelected);
+  adjustMajorOfferingStudentGrouping();
+}
+
+function openOfferingGroupingStudentPicker() {
+  if (!assertOfferingGroupingStudentEditable('添加学生')) return;
+  if (!ensureOfferingGroupingStudentOpsContext()) return;
+  const group = getOfferingGroupingSelectedGroup();
+  if (!group) {
+    alert('请先选择左侧分组。');
+    return;
+  }
+  openMajorOfferingStudentPickerDrawer();
+}
+
+function removeOfferingGroupingStudentsFromRoster() {
+  if (!assertOfferingGroupingStudentEditable('移除学生')) return;
+  if (!ensureOfferingGroupingStudentOpsContext()) return;
+  if (!offeringGroupingStudentSelected.size) {
+    alert('请先勾选需要移除的学生。');
+    return;
+  }
+  const count = offeringGroupingStudentSelected.size;
+  openDeleteConfirm({
+    title: '确认移除',
+    message: `确定从课程名单中移除选中的 <strong>${count}</strong> 名学生吗？`,
+    hint: '移除后将从当前课程名单中删除，学号与姓名会自动记入「名单移除记录」。此操作不可撤销。',
+    onConfirm: () => {
+      const selectedIds = [...offeringGroupingStudentSelected];
+      majorOfferingStudentRosterSelected = new Set(selectedIds);
+      applyMajorOfferingStudentRosterRemoval(selectedIds);
+      offeringGroupingStudentSelected.clear();
+    }
+  });
+  // majorOfferingStudentRosterSelected = new Set(offeringGroupingStudentSelected); // 原无二次确认且立即清空选中
+  // deleteMajorOfferingStudentRosterSelected();
+  // offeringGroupingStudentSelected.clear();
+  // syncOfferingGroupStudentCounts();
+  // refreshOfferingGroupingPanelsIfOpen();
+}
+
+function openOfferingGroupingStudentRemovalLog() {
+  if (!ensureOfferingGroupingStudentOpsContext()) return;
+  openMajorOfferingStudentRemovalLog();
+}
+
+function revokeOfferingGroupingStudentFromGroup(stuId) {
+  const sec = getOfferingGroupingSection();
+  const group = getOfferingGroupingSelectedGroup(sec);
+  if (!sec || !group) return;
+  openDeleteConfirm({
+    title: '撤销分组',
+    message: `确定将选中学生从分组「<strong>${escapeHtml(formatMajorOfferingGroupName(sec.name, group.name))}</strong>」中移出吗？`,
+    hint: '学生仍保留在课程名单中，可重新调整分组。',
+    onConfirm: () => {
+      const roster = getMajorOfferingStudentRoster(offeringGroupingSectionId);
+      const stu = roster.find(s => s.id === stuId);
+      if (!stu) return;
+      const fullName = formatMajorOfferingGroupName(sec.name, group.name);
+      const next = getStudentGroupNames(stu).filter(name =>
+        name !== group.name
+        && name !== fullName
+        && formatStudentCourseGroupLabel(sec.name, name) !== fullName
+      );
+      setStudentGroupNames(stu, next);
+      syncOfferingGroupStudentCounts(sec);
+      renderOfferingGroupingPanel();
+      renderCourseOfferingMajorPage();
+    }
+  });
 }
 
 function addOfferingGroup() {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec) return;
-  const name = prompt('小组名称', `教学班${String((sec.groups?.length || 0) + 1).padStart(2, '0')}小组`);
-  if (!name) return;
-  const count = Number(prompt('人数', '25')) || 25;
+  if (!assertOfferingGroupingEditable('新增分组')) return;
   if (!sec.groups) sec.groups = [];
-  sec.groups.push({ id: `grp-${offeringGroupSeq++}`, name, studentCount: count });
+  const newGroup = {
+    id: `grp-${offeringGroupSeq++}`,
+    name: getNextDefaultOfferingGroupName(sec),
+    batchLabel: '',
+    lineId: '',
+    remark: '',
+    capacityLimit: null,
+    studentCount: 0
+  };
+  // studentCount: 25 // 原默认演示人数，改由 capacityLimit 单独维护
+  sec.groups.push(newGroup);
   sec.isGrouped = true;
-  renderOfferingGroupingPanel();
+  openOfferingGroupEditModal(newGroup.id, { isNew: true });
   renderCourseOfferingMajorPage();
 }
 
-function groupByAdminClass() {
+function openOfferingGroupBatchAddModal() {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec) return;
-  const classNames = getSectionIncludedClasses(sec);
-  if (!classNames.length) {
-    alert('无行政班信息，请手动添加分组。');
+  if (!assertOfferingGroupingEditable('批量新增分组')) return;
+  const input = document.getElementById('offering-group-batch-count');
+  if (input) input.value = '';
+  const hint = document.getElementById('offering-group-batch-add-hint');
+  if (hint) {
+    const planned = getSectionPlannedStudentCount(sec);
+    const courseLimit = getSectionCapacityLimit(sec);
+    const allocated = getOfferingGroupCapacityAllocated(sec);
+    hint.textContent = `计划人数 ${planned}，课程人数上限 ${courseLimit}；已有分组占用 ${allocated}。组名将自动命名为 Group1、Group2…，人数上限按剩余额度均分，添加后可逐组修改。`;
+  }
+  openModal('modal-offering-group-batch-add');
+}
+
+function closeOfferingGroupBatchAddModal() {
+  closeModal('modal-offering-group-batch-add');
+}
+
+function confirmOfferingGroupBatchAdd() {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+  if (!sec) return;
+  if (!assertOfferingGroupingEditable('批量新增分组')) return;
+  const count = Math.floor(Number(document.getElementById('offering-group-batch-count')?.value));
+  if (!Number.isFinite(count) || count <= 0) {
+    alert('请填写有效的组数（正整数）。');
+    document.getElementById('offering-group-batch-count')?.focus();
     return;
   }
-  const perClass = Math.floor((sec.estimatedStudents || 0) / classNames.length) || 25;
-  sec.groups = classNames.map((name, i) => ({
-    id: `grp-${offeringGroupSeq++}`,
-    name: `${name}小组`,
-    studentCount: i === classNames.length - 1
-      ? (sec.estimatedStudents || perClass) - perClass * (classNames.length - 1)
-      : perClass
-  }));
+  if (count > 99) {
+    alert('单次最多批量新增 99 个分组。');
+    return;
+  }
+  if (!sec.groups) sec.groups = [];
+  // const prevGroupIds = sec.groups.map(g => g.id); // 原用于新增后自动扩展全体安排，已停用
+  const names = buildNextDefaultOfferingGroupNames(sec, count);
+  const limits = splitBatchOfferingGroupCapacityLimits(sec, count);
+  names.forEach((name, i) => {
+    sec.groups.push({
+      id: `grp-${offeringGroupSeq++}`,
+      name,
+      batchLabel: '',
+      lineId: '',
+      remark: '',
+      capacityLimit: limits[i] || limits[limits.length - 1] || 1,
+      studentCount: 0
+    });
+  });
   sec.isGrouped = true;
+  migrateLegacySectionScopeToExplicitGroups(sec);
+  closeOfferingGroupBatchAddModal();
   renderOfferingGroupingPanel();
   renderCourseOfferingMajorPage();
 }
 
-function clearOfferingGroups() {
-  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
-  if (!sec) return;
+function normalizeOfferingGroupShortName(rawName, sec) {
+  const name = String(rawName || '').trim();
+  if (!name || !sec?.name) return name;
+  const fullPrefix = `${sec.name}（`;
+  if (name.startsWith(fullPrefix) && name.endsWith('）')) {
+    return name.slice(fullPrefix.length, -1);
+  }
+  return name;
+}
+
+function studentBelongsToAnyOfferingGroups(stu, groups, sec) {
+  return (groups || []).some(g => studentMatchesOfferingGroup(stu, g, sec));
+}
+
+function reassignStudentsToOfferingGroupShortName(sec, sourceGroups, mergedShortName) {
+  const roster = getMajorOfferingStudentRoster(offeringGroupingSectionId);
+  roster.forEach(stu => {
+    if (!studentBelongsToAnyOfferingGroups(stu, sourceGroups, sec)) return;
+    setStudentGroupNames(stu, [mergedShortName]);
+    // 课程组展示为 formatMajorOfferingGroupName(sec.name, mergedShortName)
+  });
+}
+
+function updateOfferingGroupMergeDisplay() {
+  const display = document.getElementById('offering-group-merge-display');
+  if (!display) return;
+  const sec = getOfferingGroupingSection();
+  if (!sec || !offeringGroupMergeSelectedIds.length) {
+    display.textContent = '请选择';
+    display.classList.add('placeholder');
+    return;
+  }
+  const labels = offeringGroupMergeSelectedIds.map(id => {
+    const g = sec.groups.find(x => x.id === id);
+    if (!g) return id;
+    const capacityLabel = formatOfferingGroupCapacityLimit(g);
+    const suffix = capacityLabel ? `（${capacityLabel}）` : '';
+    return `${formatMajorOfferingGroupName(sec.name, g.name)}${suffix}`;
+    // return `${formatMajorOfferingGroupName(sec.name, g.name)}（${count}人）`; // 原展示实际人数
+  });
+  display.textContent = labels.join('、');
+  display.classList.remove('placeholder');
+}
+
+function onOfferingGroupMergeToggle(checkbox) {
+  const val = checkbox.value;
+  if (checkbox.checked) {
+    if (!offeringGroupMergeSelectedIds.includes(val)) offeringGroupMergeSelectedIds.push(val);
+  } else {
+    offeringGroupMergeSelectedIds = offeringGroupMergeSelectedIds.filter(id => id !== val);
+  }
+  updateOfferingGroupMergeDisplay();
+}
+
+function toggleOfferingGroupMergeDropdown(event) {
+  event.stopPropagation();
+  const dd = document.getElementById('offering-group-merge-dropdown');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeOfferingGroupMergeDropdown();
+  if (willOpen) dd.hidden = false;
+}
+
+function closeOfferingGroupMergeDropdown() {
+  const dd = document.getElementById('offering-group-merge-dropdown');
+  if (dd) dd.hidden = true;
+}
+
+function openOfferingGroupMergeModal() {
+  if (!assertOfferingGroupingEditable('合并分组')) return;
+  const sec = getOfferingGroupingSection();
+  if (!sec?.groups?.length || sec.groups.length < 2) {
+    alert('至少需要两个小组才能合并。');
+    return;
+  }
+  syncOfferingGroupStudentCounts(sec);
+  offeringGroupMergeSelectedIds = [];
+  closeOfferingGroupMergeDropdown();
+  const options = document.getElementById('offering-group-merge-options');
+  const empty = document.getElementById('offering-group-merge-empty');
+  // const list = document.getElementById('offering-group-merge-list'); // 原平铺复选框列表
+  if (!options) return;
+  if (!sec.groups.length) {
+    if (empty) empty.hidden = false;
+    options.innerHTML = '';
+  } else {
+    if (empty) empty.hidden = true;
+    options.innerHTML = sec.groups.map(g => {
+      const label = formatMajorOfferingGroupName(sec.name, g.name);
+      const capacityLabel = formatOfferingGroupCapacityLimit(g);
+      const suffix = capacityLabel ? `（${capacityLabel}）` : '';
+      return `<label class="clo-multiselect-option">
+        <input type="checkbox" class="offering-group-merge-check" value="${escapeHtml(g.id)}"
+          onchange="onOfferingGroupMergeToggle(this)">
+        <span>${escapeHtml(label)}${suffix}</span>
+      </label>`;
+      // <span>${escapeHtml(label)}（${count}人）</span> // 原展示实际人数
+    }).join('');
+  }
+  updateOfferingGroupMergeDisplay();
+  const nameEl = document.getElementById('offering-group-merge-name');
+  if (nameEl) nameEl.value = '';
+  openModal('modal-offering-group-merge');
+}
+
+function closeOfferingGroupMergeModal() {
+  closeOfferingGroupMergeDropdown();
+  closeModal('modal-offering-group-merge');
+}
+
+function applyOfferingGroupMerge(sourceGroupIds, mergedName) {
+  const sec = getOfferingGroupingSection();
+  if (!sec?.groups?.length) return false;
+  const name = normalizeOfferingGroupShortName(mergedName, sec);
+  // const name = String(mergedName || '').trim(); // 原未规范化，可能填入完整课程组名
+  if (!name) {
+    alert('请填写合并后小组名称。');
+    document.getElementById('offering-group-merge-name')?.focus();
+    return false;
+  }
+  const ids = [...new Set(sourceGroupIds)];
+  if (ids.length < 2) {
+    alert('请至少选择两个小组进行合并。');
+    return false;
+  }
+  const sourceGroups = sec.groups.filter(g => ids.includes(g.id));
+  if (sourceGroups.length < 2) {
+    alert('所选小组无效，请重新选择。');
+    return false;
+  }
+  const duplicated = sec.groups.some(g =>
+    !ids.includes(g.id) && (g.name || '').trim() === name
+  );
+  if (duplicated) {
+    alert('合并后小组名称不能与已有小组重复。');
+    document.getElementById('offering-group-merge-name')?.focus();
+    return false;
+  }
+  const batchLabels = [...new Set(sourceGroups.map(g => g.batchLabel).filter(Boolean))];
+  const mergedCapacityLimit = sourceGroups.reduce((sum, g) => sum + (Number(g.capacityLimit) || 0), 0);
+  const mergedGroup = {
+    id: `grp-${offeringGroupSeq++}`,
+    name,
+    batchLabel: batchLabels.join('、'),
+    lineId: '',
+    remark: `合并自：${sourceGroups.map(g => g.name).filter(Boolean).join('、')}`,
+    capacityLimit: mergedCapacityLimit || null,
+    studentCount: 0
+  };
+  // studentCount: 0 // 原合并后人数，改 capacityLimit 求和、studentCount 由名单统计
+  reassignStudentsToOfferingGroupShortName(sec, sourceGroups, name);
+  (sec.groupAssignments || []).forEach(a => {
+    if (!ids.includes(a.groupId)) return;
+    a.groupId = mergedGroup.id;
+    a.groupName = name;
+    if (batchLabels.length) a.programmeBatch = batchLabels.join('、');
+  });
+  sec.groups = sec.groups.filter(g => !ids.includes(g.id));
+  sec.groups.push(mergedGroup);
+  sec.isGrouped = sec.groups.length > 0;
+  offeringGroupingSelectedGroupId = mergedGroup.id;
+  syncOfferingGroupStudentCounts(sec);
+  return true;
+}
+
+function confirmOfferingGroupMergeModal() {
+  // const selectedIds = [...document.querySelectorAll('.offering-group-merge-check:checked')].map(el => el.value); // 原平铺复选框取值
+  const selectedIds = [...offeringGroupMergeSelectedIds];
+  const mergedName = document.getElementById('offering-group-merge-name')?.value || '';
+  const sec = getOfferingGroupingSection();
+  if (selectedIds.length < 2) {
+    alert('请至少选择两个小组进行合并。');
+    return;
+  }
+  if (!normalizeOfferingGroupShortName(mergedName, sec)) {
+    alert('请填写合并后小组名称。');
+    document.getElementById('offering-group-merge-name')?.focus();
+    return;
+  }
   openDeleteConfirm({
-    title: '撤销教学小组',
-    message: '确定撤销<strong>所有</strong>教学小组吗？此操作不可撤销。',
+    title: '合并分组',
+    message: `确定将选中的 <strong>${selectedIds.length}</strong> 个组合并吗？`,
+    hint: '所选小组将合并为一个新小组；原小组内学生课程组将同步合并；涉及这些小组的教师安排将指向合并后小组。',
     onConfirm: () => {
-      sec.groups = [];
-      sec.groupAssignments = [];
-      sec.isGrouped = false;
+      if (!applyOfferingGroupMerge(selectedIds, mergedName)) return;
+      closeOfferingGroupMergeModal();
       renderOfferingGroupingPanel();
       renderCourseOfferingMajorPage();
     }
   });
+  // if (!applyOfferingGroupMerge(selectedIds, mergedName)) return; // 原直接合并，改由二次确认
+  // closeOfferingGroupMergeModal();
+  // renderOfferingGroupingPanel();
+  // renderCourseOfferingMajorPage();
 }
+
+// function groupByProgrammeBatch() {
+//   applyOfferingAutoGroup(offeringGroupingSectionId, 'programmeBatch');
+// } // 原按专业批次分组入口，改由 openOfferingAutoGroupModal 自动分组弹窗
+
+const OFFERING_AUTO_GROUP_MODES = [
+  { id: 'nationality', label: '按国籍分组', hint: '小组名称为国籍，如 Malaysia、China' },
+  { id: 'studentType', label: '按学生类别分组', hint: '小组名称为 Local / International / Chinese' },
+  { id: 'gender', label: '按性别分组', hint: '小组名称为 Male / Female' },
+  { id: 'programme', label: '按专业分组', hint: '小组名称为专业代码，如 FIN、TCM' },
+  { id: 'programmeBatch', label: '按专业批次分组', hint: '小组名称为专业代码-入学批次，如 FIN-2025/02' },
+  { id: 'intake', label: '按入学批次分组', hint: '小组名称为入学批次，如 2025/02' }
+];
+
+function resolveProgrammeKeyByCode(programmeCode) {
+  if (!programmeCode) return '';
+  const entry = Object.entries(PROGRAMMES).find(([, p]) => p.code === programmeCode);
+  return entry ? entry[0] : '';
+}
+
+function resolveOfferingAutoGroupStudentKey(stu, mode) {
+  switch (mode) {
+    case 'nationality':
+      return getStudentNationality(stu) || '未知';
+    case 'studentType':
+      return getStudentType(stu) || '未知';
+    case 'gender':
+      return getStudentGender(stu) || '未知';
+    case 'programme':
+      return stu.programmeCode || '—';
+    case 'programmeBatch': {
+      const programmeKey = resolveProgrammeKeyByCode(stu.programmeCode);
+      if (programmeKey && stu.intake) return formatProgrammeIntakeCode(programmeKey, stu.intake);
+      if (stu.programmeCode && stu.intake) return `${stu.programmeCode}-${formatIntakeDisplay(stu.intake)}`;
+      return '—';
+    }
+    case 'intake':
+      return stu.intake ? formatIntakeDisplay(stu.intake) : '—';
+    default:
+      return '—';
+  }
+}
+
+function renderOfferingAutoGroupOptions() {
+  const container = document.getElementById('offering-auto-group-options');
+  if (!container) return;
+  container.innerHTML = OFFERING_AUTO_GROUP_MODES.map((mode, idx) => `
+    <label class="offering-auto-group-option">
+      <input type="radio" name="offering-auto-group-mode" value="${escapeHtml(mode.id)}" ${idx === 0 ? 'checked' : ''}>
+      <span class="offering-auto-group-option-text">
+        <strong>${escapeHtml(mode.label)}</strong>
+        <span>${escapeHtml(mode.hint)}</span>
+      </span>
+    </label>`).join('');
+}
+
+function openOfferingAutoGroupModal() {
+  if (!offeringGroupingSectionId) return;
+  if (!assertOfferingGroupingEditable('自动分组')) return;
+  renderOfferingAutoGroupOptions();
+  openModal('modal-offering-auto-group');
+}
+
+function closeOfferingAutoGroupModal() {
+  closeModal('modal-offering-auto-group');
+}
+
+function applyOfferingAutoGroup(sectionId, mode) {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
+  if (!sec) return false;
+  const roster = getMajorOfferingStudentRoster(sectionId);
+  if (!roster.length) {
+    alert('暂无学生名单，无法自动分组。请先维护学生名单。');
+    return false;
+  }
+  ensureMajorOfferingStudentRosterNationality(sectionId);
+  const buckets = new Map();
+  roster.forEach((stu, idx) => {
+    ensureStudentGenderFields(stu, idx);
+    const key = resolveOfferingAutoGroupStudentKey(stu, mode);
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(stu);
+  });
+  if (!buckets.size) {
+    alert('未找到可用于分组的学生数据。');
+    return false;
+  }
+  sec.groups = [...buckets.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+    .map(([name, students]) => ({
+      id: `grp-${offeringGroupSeq++}`,
+      name,
+      batchLabel: mode === 'programmeBatch' ? name : '',
+      lineId: '',
+      remark: '',
+      capacityLimit: students.length,
+      studentCount: students.length
+    }));
+  roster.forEach((stu, idx) => {
+    ensureStudentGenderFields(stu, idx);
+    const key = resolveOfferingAutoGroupStudentKey(stu, mode);
+    setStudentGroupNames(stu, [key]);
+  });
+  sec.groupAssignments = [];
+  sec.isGrouped = sec.groups.length > 0;
+  syncOfferingGroupStudentCounts(sec);
+  return true;
+}
+
+function confirmOfferingAutoGroupModal() {
+  const mode = document.querySelector('input[name="offering-auto-group-mode"]:checked')?.value;
+  if (!mode) {
+    alert('请选择分组方式。');
+    return;
+  }
+  const modeMeta = OFFERING_AUTO_GROUP_MODES.find(m => m.id === mode);
+  openDeleteConfirm({
+    title: '生成分组',
+    message: `确定按「<strong>${escapeHtml(modeMeta?.label || mode)}</strong>」重新生成分组吗？`,
+    hint: '此操作将覆盖当前全部分组，并清除重置教师安排与各类型学时安排数据；学生课程组将按所选方式重新分配。',
+    // hint: '将覆盖当前全部分组并清空教师安排；学生课程组将按所选方式重新分配。', // 原提示未明确学时安排汇总
+    // message: `确定按「<strong>${escapeHtml(modeMeta?.label || mode)}</strong>」生成分组吗？`, // 原文案
+    onConfirm: () => {
+      if (!applyOfferingAutoGroup(offeringGroupingSectionId, mode)) return;
+      closeOfferingAutoGroupModal();
+      renderOfferingGroupingPanel();
+      renderCourseOfferingMajorPage();
+    }
+  });
+  // if (!applyOfferingAutoGroup(offeringGroupingSectionId, mode)) return; // 原直接生成，改由二次确认
+  // closeOfferingAutoGroupModal();
+  // renderOfferingGroupingPanel();
+  // renderCourseOfferingMajorPage();
+}
+
+// function groupByProgrammeBatch() {
+//   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+//   if (!sec) return;
+//   syncSectionGroupsFromProgrammeBatches(sec, { force: true });
+//   if (!sec.groups?.length) {
+//     alert('无专业批次信息，请手动添加分组。');
+//     return;
+//   }
+//   renderOfferingGroupingPanel();
+//   renderCourseOfferingMajorPage();
+// } // 原按专业批次分组入口，改由自动分组弹窗
+
+// function groupByAdminClass() {
+//   ... 原按行政班分组，XMUM 无行政班概念，改由 groupByProgrammeBatch 按专业批次分组
+// }
+
+function resetOfferingGroups() {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+  if (!sec) return;
+  if (!assertOfferingGroupingEditable('分组重置')) return;
+  openDeleteConfirm({
+    title: '分组重置',
+    message: '确定重置分组吗？重置后将<strong>清空全部分组</strong>及教师安排。',
+    hint: '分组需通过「新增分组」手动创建，并设置人数上限与需求说明；学生课程组关联将一并清除。',
+    // message: '确定重置分组吗？重置后将<strong>按专业批次</strong>重新生成分组。', // 原按批次自动重建
+    // hint: '将清空全部教师安排；现有分组将被覆盖，并按专业批次重新生成；学生课程组将恢复为对应专业批次。', // 原影响说明
+    onConfirm: () => {
+      sec.groupAssignments = [];
+      sec.groups = [];
+      sec.isGrouped = false;
+      offeringGroupingSelectedGroupId = null;
+      const roster = majorOfferingStudentRosterStore[offeringGroupingSectionId];
+      if (roster?.length) {
+        roster.forEach(stu => setStudentGroupNames(stu, []));
+      }
+      renderOfferingGroupingPanel();
+      renderCourseOfferingMajorPage();
+    }
+  });
+  // onConfirm: () => { syncSectionGroupsFromProgrammeBatches(sec, { force: true }); ... } // 原按专业批次重置
+}
+
+// function clearOfferingGroups() {
+//   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+//   if (!sec) return;
+//   openDeleteConfirm({
+//     title: '撤销教学小组',
+//     message: '确定撤销<strong>所有</strong>教学小组吗？此操作不可撤销。',
+//     onConfirm: () => {
+//       sec.groups = [];
+//       sec.groupAssignments = [];
+//       sec.isGrouped = false;
+//       renderOfferingGroupingPanel();
+//       renderCourseOfferingMajorPage();
+//     }
+//   });
+// } // 原撤销所有教学小组，改由 resetOfferingGroups 按专业批次重置
 
 function deleteOfferingGroup(groupId) {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec?.groups) return;
+  if (!assertOfferingGroupingEditable('删除分组')) return;
   const group = sec.groups.find(g => g.id === groupId);
   if (!group) return;
   openDeleteConfirm({
     title: '删除教学小组',
     message: `确定删除教学小组「<strong>${escapeHtml(group.name)}</strong>」吗？此操作不可撤销。`,
-    hint: group.studentCount ? `人数：${group.studentCount}` : '',
+    hint: (() => {
+      const parts = ['将同步删除该小组相关的教师/学时安排'];
+      const capacityLabel = formatOfferingGroupCapacityLimit(group);
+      if (capacityLabel) parts.push(`人数上限：${capacityLabel}`);
+      if (group.studentCount) parts.push(`当前名单：${group.studentCount} 人`);
+      return parts.join(' · ');
+    })(),
+    // hint: group.studentCount ? `人数：${group.studentCount}` : '', // 原仅展示实际人数
     onConfirm: () => {
       sec.groups = sec.groups.filter(g => g.id !== groupId);
-      sec.groupAssignments = (sec.groupAssignments || []).filter(a => a.groupId !== groupId);
+      if (!sec.groups.length) {
+        sec.groupAssignments = [];
+      } else {
+        purgeSectionGroupAssignmentsForDeletedGroup(sec, groupId);
+      }
+      // sec.groupAssignments = (sec.groupAssignments || []).filter(a => a.groupId !== groupId); // 原仅按 groupId 过滤，未处理 groupIds/全体小组
+      if (offeringGroupingSelectedGroupId === groupId) {
+        offeringGroupingSelectedGroupId = null;
+      }
+      offeringGroupingAssignSelected.clear();
       sec.isGrouped = sec.groups.length > 0;
+      syncOfferingGroupStudentCounts(sec);
       renderOfferingGroupingPanel();
       renderCourseOfferingMajorPage();
+      renderCourseMajorOfferingTaskPage();
     }
   });
 }
 
+function purgeSectionGroupAssignmentsForDeletedGroup(sec, deletedGroupId) {
+  if (!sec || !deletedGroupId) return;
+  const validGroupIds = new Set((sec.groups || []).map(g => g.id));
+  sec.groupAssignments = (sec.groupAssignments || []).reduce((next, row) => {
+    if (row.deliveryScope === 'section') {
+      return next;
+    }
+    const ids = getGroupAssignRowGroupIds(row).filter(id => id !== deletedGroupId && validGroupIds.has(id));
+    if (!ids.length) return next;
+    const primaryGroup = sec.groups.find(g => g.id === ids[0]);
+    next.push({
+      ...row,
+      deliveryScope: 'group',
+      groupId: ids[0],
+      groupIds: ids,
+      groupName: ids.length === 1 ? (primaryGroup?.name || row.groupName) : row.groupName
+    });
+    return next;
+  }, []);
+  sanitizeSectionGroupAssignments(sec);
+  syncSectionCoordinatorsFromAssignments(sec);
+  refreshSectionCoordinatorAfterAssignmentChange(sec);
+}
+
 function editOfferingGroup(groupId) {
+  openOfferingGroupEditModal(groupId);
+}
+
+function openOfferingGroupEditModal(groupId, { isNew = false } = {}) {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+  if (!isNew && !assertOfferingGroupingEditable('修改分组')) return;
+  if (isNew && !assertOfferingGroupingEditable('新增分组')) return;
   const g = sec?.groups?.find(x => x.id === groupId);
   if (!g) return;
-  const name = prompt('小组名称', g.name);
-  if (!name) return;
-  const count = Number(prompt('人数', String(g.studentCount))) || g.studentCount;
+  offeringGroupEditIsNew = isNew;
+  const titleEl = document.getElementById('offering-group-edit-title');
+  if (titleEl) titleEl.textContent = isNew ? '新增分组' : '修改分组';
+  document.getElementById('offering-group-edit-id').value = g.id;
+  const courseNameEl = document.getElementById('offering-group-edit-course-name');
+  if (courseNameEl) courseNameEl.value = sec?.name || '—';
+  document.getElementById('offering-group-edit-name').value = g.name || '';
+  const capacityEl = document.getElementById('offering-group-edit-capacity-limit');
+  if (capacityEl) {
+    capacityEl.value = g.capacityLimit != null && g.capacityLimit !== '' ? String(g.capacityLimit) : '';
+    // capacityEl.value = g.capacityLimit ?? (isNew ? (sec?.estimatedStudents || '') : ''); // 原新增时预填预估人数，改默认空由用户填写
+  }
+  // document.getElementById('offering-group-edit-batch').value = getOfferingGroupStudentBatchLabels(g, sec); // 专业批次字段暂不在弹窗展示
+  // document.getElementById('offering-group-edit-batch').value = g.batchLabel || '—'; // 原仅展示单个 batchLabel
+  document.getElementById('offering-group-edit-remark').value = g.remark || '';
+  openModal('modal-offering-group-edit');
+}
+
+function closeOfferingGroupEditModal() {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+  const groupId = document.getElementById('offering-group-edit-id')?.value;
+  const g = sec?.groups?.find(x => x.id === groupId);
+  if (offeringGroupEditIsNew && g && (!g.name?.trim() || g.capacityLimit == null)) {
+    sec.groups = sec.groups.filter(x => x.id !== groupId);
+    sec.isGrouped = (sec.groups?.length || 0) > 0;
+    renderOfferingGroupingPanel();
+    renderCourseOfferingMajorPage();
+  }
+  offeringGroupEditIsNew = false;
+  closeModal('modal-offering-group-edit');
+}
+
+function saveOfferingGroupEditModal() {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+  const groupId = document.getElementById('offering-group-edit-id')?.value;
+  const g = sec?.groups?.find(x => x.id === groupId);
+  if (!g) return;
+  const name = document.getElementById('offering-group-edit-name')?.value.trim();
+  if (!name) {
+    alert('请填写分组名称。');
+    document.getElementById('offering-group-edit-name')?.focus();
+    return;
+  }
+  const capacityLimit = Number(document.getElementById('offering-group-edit-capacity-limit')?.value);
+  if (!Number.isFinite(capacityLimit) || capacityLimit <= 0) {
+    alert('请填写有效的人数上限（正整数）。');
+    document.getElementById('offering-group-edit-capacity-limit')?.focus();
+    return;
+  }
+  if (!validateOfferingGroupCapacityWithinSection(sec, groupId, capacityLimit)) {
+    document.getElementById('offering-group-edit-capacity-limit')?.focus();
+    return;
+  }
+  const duplicated = (sec.groups || []).some(x => x.id !== groupId && (x.name || '').trim() === name);
+  if (duplicated) {
+    alert('分组名称不能与已有小组重复。');
+    document.getElementById('offering-group-edit-name')?.focus();
+    return;
+  }
   g.name = name;
-  g.studentCount = count;
+  g.capacityLimit = Math.floor(capacityLimit);
+  g.remark = document.getElementById('offering-group-edit-remark')?.value.trim() || '';
+  if (offeringGroupEditIsNew) {
+    migrateLegacySectionScopeToExplicitGroups(sec);
+    // expandGroupAssignmentsAfterGroupsAdded(sec, prevGroupIds); // 原新增小组后自动扩展全体安排，已停用
+  }
+  offeringGroupEditIsNew = false;
+  closeModal('modal-offering-group-edit');
   renderOfferingGroupingPanel();
   renderCourseOfferingMajorPage();
 }
@@ -5993,44 +16695,217 @@ function editOfferingGroup(groupId) {
 function openGroupAssignForm(assignId) {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec) return;
+  if (!assertOfferingGroupingEditable(assignId ? '修改教师安排' : '安排教师')) return;
+  if (!(sec.groups?.length)) {
+    alert('请先新增分组后再安排教师。');
+    return;
+  }
+  refreshGroupAssignHourTypeOptions(sec);
+  const arrangeable = getOfferingSectionArrangeableHourTypes(sec);
+  if (!arrangeable.length) {
+    alert('本课程各类型学时均为 0，无法安排教师。');
+    return;
+  }
   const row = assignId ? (sec.groupAssignments || []).find(a => a.id === assignId) : null;
   document.getElementById('group-assign-edit-id').value = row?.id || '';
-  document.getElementById('group-assign-group').value = row?.groupId || '';
-  document.getElementById('group-assign-hour-type').value = row?.hourType || '理论';
-  document.getElementById('group-assign-merge-hours').checked = row?.mergeHours !== false;
-  document.getElementById('group-assign-week-range').value = row?.weekRange || sec.weekRange || '1-12';
-  document.getElementById('group-assign-teacher').value = row?.teacher || '';
-  document.getElementById('group-assign-role').value = row?.role || '主讲';
+  const courseCodeEl = document.getElementById('group-assign-course-code');
+  const offeringUnitEl = document.getElementById('group-assign-offering-unit');
+  if (courseCodeEl) courseCodeEl.value = sec.code || '—';
+  if (offeringUnitEl) offeringUnitEl.value = resolveMajorOfferingSectionOfferingUnit(sec) || '—';
+  const hourType = row?.hourType && isOfferingSectionHourTypeArrangeable(sec, row.hourType)
+    ? row.hourType
+    : arrangeable[0];
+  document.getElementById('group-assign-hour-type').value = hourType;
+  let selectedGroupIds;
+  if (row) {
+    groupAssignFormSelectAll = false;
+    selectedGroupIds = getGroupAssignRowGroupIds(row);
+    if (row.deliveryScope === 'section' && !selectedGroupIds.length) {
+      selectedGroupIds = [];
+    }
+    // groupAssignFormSelectAll = row.deliveryScope === 'section'; // 原 section 编辑时全选当前全部分组（含新增）
+    // selectedGroupIds = row.deliveryScope === 'section' ? getGroupAssignFormAllGroupIds(sec) : ...;
+  } else if (offeringGroupingSelectedGroupId) {
+    groupAssignFormSelectAll = false;
+    selectedGroupIds = [offeringGroupingSelectedGroupId];
+  } else {
+    groupAssignFormSelectAll = false;
+    selectedGroupIds = [];
+    // groupAssignFormSelectAll = true; selectedGroupIds = getGroupAssignFormAllGroupIds(sec); // 原理论学时默认全选
+  }
+  populateGroupAssignGroupPicks(sec, selectedGroupIds);
+  // document.getElementById('group-assign-scope').value = ... // 原适用范围下拉
+  groupAssignFormTeachers = row
+    ? getGroupAssignTeachers(row).map(t => enrichGroupAssignFormTeacher(t, sec))
+    : [];
+  syncGroupAssignFormTeachersWithSectionCoordinator(sec);
+  bindGroupAssignFormFieldEvents();
+  const planWeekly = getGroupAssignPlanWeeklyHours(sec);
+  document.getElementById('group-assign-week-range').value = clampGroupAssignWeekRangeToSection(
+    sec,
+    row?.weekRange || sec.weekRange || getDefaultSectionWeekRange(sec)
+  );
+  document.getElementById('group-assign-weekly-hours').value = row?.weeklyHours ?? (planWeekly || '');
+  syncGroupAssignHoursSummary();
+  // document.getElementById('group-assign-hours').value = ... // 原学时字段，改由后续排课安排
+  // document.getElementById('group-assign-week-range').value = row?.weekRange || sec.weekRange || getDefaultSectionWeekRange(sec); // 原硬编码，改取学期/任务起止周
+  // document.getElementById('group-assign-teacher').value = row?.teacher || ''; // 原手工输入
+  // document.getElementById('group-assign-role').value = row?.role || '主讲';
+  refreshGroupAssignFormPanels();
+  // document.getElementById('group-assign-group').value = row?.groupId || offeringGroupingSelectedGroupId || ''; // 原单选组别
   openModal('modal-group-assign-form');
+}
+
+function cancelGroupAssignForm() {
+  openDeleteConfirm({
+    title: '确认取消',
+    message: '确定取消吗？当前修改<strong>不会保存</strong>。',
+    onConfirm: () => closeModal('modal-group-assign-form')
+  });
 }
 
 function saveGroupAssignForm() {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec) return;
-  const groupId = document.getElementById('group-assign-group')?.value;
-  const group = sec.groups?.find(g => g.id === groupId);
-  if (!group) { alert('请选择组别'); return; }
-  const teacher = document.getElementById('group-assign-teacher')?.value.trim();
-  if (!teacher) { alert('请填写任课教师'); return; }
+  const { deliveryScope, groupIds } = resolveGroupAssignFormScope(sec);
+  if (!getGroupAssignFormSelectedGroupIds().length) {
+    alert('请至少选择一个小组。');
+    return;
+  }
+  if (!groupAssignFormTeachers.length) {
+    alert('请至少选择一名授课教师。');
+    return;
+  }
+  // if (groupAssignFormTeachers.some(t => !t.role)) {
+  //   alert('请为每名授课教师选择授课角色。');
+  //   return;
+  // } // 原校验手动授课角色，改由教师类型自动带出
+  if (!validateGroupAssignFormCoordinators()) return;
+  const hourType = document.getElementById('group-assign-hour-type')?.value || '理论学时';
+  if (!isOfferingSectionHourTypeArrangeable(sec, hourType)) {
+    alert('该学时类型课程学时为 0，无法安排教师。');
+    return;
+  }
+  const weeklyHours = parseGroupAssignWeeklyHoursInput();
+  if (weeklyHours == null || weeklyHours <= 0) {
+    alert('请填写有效的周学时。');
+    return;
+  }
+  const weekRange = document.getElementById('group-assign-week-range')?.value.trim() || getDefaultSectionWeekRange(sec);
+  const weekNums = parseWeekRangeToWeeks(weekRange, getSectionTermTeachingWeeks(sec));
+  const allowedWeeks = new Set(getSectionSelectedWeeks(sec));
+  if (!weekNums.length) {
+    alert('请选择有效的起止周。');
+    return;
+  }
+  if (weekNums.some(w => !allowedWeeks.has(w))) {
+    alert(`教师安排起止周须在课程起止周（${getSectionWeekRangeDisplay(sec)}）范围内。`);
+    return;
+  }
   const editId = document.getElementById('group-assign-edit-id')?.value;
+  const currentHours = calcGroupAssignRowHours(weeklyHours, weekRange, sec);
+  // const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0; // 原按课程汇总校验
+  // const recorded = sumGroupAssignRecordedHoursByType(sec, hourType, editId);
+  // if (recorded + currentHours > typeTotal) { alert(...); return; } // 原未按小组分别校验
+  if (!validateGroupAssignFormRecordedHours(sec, hourType, editId, currentHours)) return;
+  if (!validateGroupAssignFormNoDuplicateTeachers(sec, editId)) return;
+  const overPlanHint = getGroupAssignPlanWeeklyWarnHint(sec, editId, hourType, weeklyHours, weekRange);
+  const isEdit = !!editId;
+  // const planWeekly = getGroupAssignPlanWeeklyHours(sec); // 原仅本类型周学时比较
+  // const overPlan = planWeekly > 0 && weeklyHours > planWeekly;
+  // const overPlanHint = overPlan ? `周学时 ${weeklyHours} 已超过计划周学时 ${planWeekly}，仍将保存。` : '';
+  openDeleteConfirm({
+    title: isEdit ? '确认修改' : '确认安排',
+    message: isEdit
+      ? `确定保存<strong>${escapeHtml(hourType)}</strong>（${escapeHtml(weekRange)} · 周学时 ${weeklyHours}）的教师安排修改吗？`
+      : `确定保存<strong>${escapeHtml(hourType)}</strong>（${escapeHtml(weekRange)} · 周学时 ${weeklyHours}）的教师安排吗？`,
+    hint: overPlanHint || '保存后将更新该学时类型的教师安排。',
+    onConfirm: () => applyGroupAssignFormSave()
+  });
+}
+
+function applyGroupAssignFormSave() {
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+  if (!sec) return;
+  const { deliveryScope, groupIds } = resolveGroupAssignFormScope(sec);
+  const hourType = document.getElementById('group-assign-hour-type')?.value || '理论学时';
+  if (!isOfferingSectionHourTypeArrangeable(sec, hourType)) {
+    alert('该学时类型课程学时为 0，无法安排教师。');
+    return;
+  }
+  const weeklyHours = parseGroupAssignWeeklyHoursInput();
+  if (weeklyHours == null || weeklyHours <= 0) {
+    alert('请填写有效的周学时。');
+    return;
+  }
+  const rawWeekRange = document.getElementById('group-assign-week-range')?.value.trim() || getDefaultSectionWeekRange(sec);
+  if (!isGroupAssignWeekRangeWithinSection(sec, rawWeekRange)) {
+    alert(`教师安排起止周须在课程起止周（${getSectionWeekRangeDisplay(sec)}）范围内。`);
+    return;
+  }
+  const weekRange = clampGroupAssignWeekRangeToSection(sec, rawWeekRange);
+  const editId = document.getElementById('group-assign-edit-id')?.value;
+  const currentHours = calcGroupAssignRowHours(weeklyHours, weekRange, sec);
+  // const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0; // 原按课程汇总校验
+  // const recorded = sumGroupAssignRecordedHoursByType(sec, hourType, editId);
+  // if (recorded + currentHours > typeTotal) { alert(...); return; } // 原未按小组分别校验
+  if (!validateGroupAssignFormRecordedHours(sec, hourType, editId, currentHours)) return;
+  // const hoursRaw = document.getElementById('group-assign-hours')?.value; // 原学时字段
+  // const hours = hoursRaw === '' || hoursRaw == null ? null : Number(hoursRaw);
+  const primaryGroup = groupIds.length ? sec.groups?.find(g => g.id === groupIds[0]) : null;
+  if (!validateGroupAssignFormNoDuplicateTeachers(sec, editId)) return;
+  const existingRow = editId ? (sec.groupAssignments || []).find(a => a.id === editId) : null;
+  // const coordTeacher = resolveGroupAssignFormCourseCoordinator();
+  // if (coordTeacher) {
+  //   setSectionCoordinator(sec, coordTeacher.staffId, coordTeacher.name);
+  // } // 原从安排教师弹窗指定 Coordinator，改由分组页「设置 Coordinator」
+  refreshSectionCoordinatorAfterAssignmentChange(sec);
+  const coordStaffId = getSectionCoordinator(sec)?.staffId || '';
+  const teachers = groupAssignFormTeachers.map(t => {
+    const enriched = enrichGroupAssignFormTeacher(t, sec);
+    return {
+      staffId: enriched.staffId,
+      name: enriched.name,
+      teacherType: enriched.teacherType,
+      departmentCode: enriched.departmentCode,
+      role: enriched.role,
+      isCoordinator: enriched.staffId === coordStaffId
+      // isCoordinator: !!enriched.isCoordinator // 原按表单勾选，可多选
+    };
+  });
   const payload = {
     id: editId || `ga-${offeringGroupAssignSeq++}`,
-    groupId,
-    groupName: group.name,
-    studentCount: group.studentCount,
+    deliveryScope,
+    groupId: groupIds[0] || '',
+    groupIds: [...groupIds],
+    groupName: deliveryScope === 'section' ? '全体小组' : (primaryGroup?.name || ''),
+    studentCount: deliveryScope === 'section'
+      ? (sec.estimatedStudents ?? 0)
+      : (primaryGroup?.capacityLimit ?? primaryGroup?.studentCount ?? 0),
+    // : (primaryGroup?.studentCount ?? 0), // 原取实际人数，改取人数上限
     adminClass: '',
-    hourType: document.getElementById('group-assign-hour-type')?.value || '理论',
-    mergeHours: document.getElementById('group-assign-merge-hours')?.checked !== false,
-    weekRange: document.getElementById('group-assign-week-range')?.value.trim() || '1-12',
-    hours: sec.totalHours || 48,
-    staffId: '2001210010',
-    teacher,
-    role: document.getElementById('group-assign-role')?.value || '主讲'
+    programmeBatch: deliveryScope === 'section'
+      ? getSectionMergedBatchLabelDisplayFull(sec)
+      : (primaryGroup?.batchLabel || ''),
+    hourType,
+    weeklyHours,
+    mergeHours: existingRow?.mergeHours !== false,
+    // mergeHours: document.getElementById('group-assign-merge-hours')?.checked !== false, // 原是否合并排课，字段已隐藏；新建默认 true
+    weekRange,
+    hours: currentHours,
+    // hours: existingRow?.hours ?? null, // 原学时，改由周学时×周数计算
+    teachers,
+    staffId: teachers.map(t => t.staffId).filter(Boolean).join('、'),
+    teacher: teachers.map(t => t.name).filter(Boolean).join('、'),
+    role: teachers.map(t => t.role).filter(Boolean).join('、')
   };
+  // const teacher = document.getElementById('group-assign-teacher')?.value.trim(); // 原单教师
+  // const groupId = document.getElementById('group-assign-group')?.value; // 原单组逻辑
   if (!sec.groupAssignments) sec.groupAssignments = [];
   const idx = sec.groupAssignments.findIndex(a => a.id === payload.id);
   if (idx >= 0) sec.groupAssignments[idx] = payload;
   else sec.groupAssignments.push(payload);
+  syncSectionCoordinatorsFromAssignments(sec);
   closeModal('modal-group-assign-form');
   renderOfferingGroupingPanel();
   renderCourseOfferingMajorPage();
@@ -6214,33 +17089,45 @@ function importSectionStudents(sectionId) {
 }
 
 function addManualOtherOffering() {
-  if (!ensureCourseOfferingPlan()) {
-    alert('请先生成开课计划');
+  openOtherOfferingAddModal();
+  // if (!COURSE_TIME_SETTINGS.length) { ... } // 原直接插入演示数据，改课程库选择弹窗
+  // const samples = seedOtherOfferingLines(); // 原循环演示样例
+}
+
+function removeOtherOfferingLine(lineId) {
+  if (!COURSE_OFFERING_PLAN_STORE) return;
+  const line = COURSE_OFFERING_PLAN_STORE.lines.find(l => l.id === lineId && l.offeringType === 'other');
+  if (!line) return;
+  const sec = getOtherOfferingSectionForLine(line);
+  if (sec?.submitStatus === 'submitted') {
+    alert('已提交的开课计划不可删除。');
     return;
   }
-  const line = seedOtherOfferingLines()[0];
-  if (!line) return;
-  line.id = nextOfferingLineId();
-  const secId = nextOfferingSectionId();
-  COURSE_OFFERING_PLAN_STORE.lines.push(line);
-  COURSE_OFFERING_PLAN_STORE.sections.push({
-    id: secId,
-    catalogId: line.catalogId,
-    code: line.code,
-    name: line.name,
-    offeringType: 'other',
-    sectionNo: COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.catalogId === line.catalogId).length + 1,
-    lineIds: [line.id],
-    teachers: '',
-    location: '',
-    weeks: '',
-    studentCount: 0
+  openDeleteConfirm({
+    title: '删除特殊开课计划',
+    message: `确定删除 <strong>${escapeHtml(line.code)} ${escapeHtml(line.name)}</strong> 吗？`,
+    hint: '将同时移除关联的教学班。',
+    confirmLabel: '删除',
+    onConfirm: () => {
+      const secId = line.sectionId;
+      COURSE_OFFERING_PLAN_STORE.lines = COURSE_OFFERING_PLAN_STORE.lines.filter(l => l.id !== lineId);
+      if (secId) {
+        const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === secId);
+        if (sec) {
+          const remainLineIds = sec.lineIds.filter(id => id !== lineId);
+          if (!remainLineIds.length) {
+            COURSE_OFFERING_PLAN_STORE.sections = COURSE_OFFERING_PLAN_STORE.sections.filter(s => s.id !== secId);
+          } else {
+            sec.lineIds = remainLineIds;
+            const remainLines = remainLineIds.map(getOfferingLineById).filter(Boolean);
+            applyMergedLinesToSection(sec, remainLines);
+          }
+        }
+      }
+      renderOtherOfferingPlanPage();
+      renderCourseSpecialOfferingTaskPage();
+    }
   });
-  line.sectionId = secId;
-  renderCourseOfferingTypeList('other');
-  renderCourseMergeSplitPage();
-  renderCourseSectionArrangePage();
-  alert('已新增一条其他开课（原型示例：挂科重修）。');
 }
 
 function openCourseOfferingIntakeModal(catalogId) {
@@ -8919,13 +19806,35 @@ const MODULES = {
 const COURSE_PAGE_IDS = new Set([
   'course-workflow',
   'course-time-setting',
-  // 'course-plan-generate', // 已移除：改由专业开课页「生成开课任务」选择器完成
+  'school-elective-courses',
+  // 'course-plan-generate', // 已移除：改由专业开课计划页「生成开课任务」选择器完成
   'course-offering-major',
+  'course-major-offering-task',
+  'course-major-offering-roster',
+  'offering-grouping',
   'course-offering-ge',
-  'course-offering-other'
-  // 'course-merge-split', // 已移除：合分班改由专业开课页操作列完成
+  'course-ge-offering-task',
+  'course-offering-other',
+  'course-special-offering-task',
+  'course-special-offering-roster'
+  // 'course-merge-split', // 已移除：合分班改由专业开课计划页操作列完成
   // 'course-section-arrange' // 已移除
 ]);
+
+// const OFFERING_NAV_PAGE_ALIASES = {
+//   'offering-grouping': 'course-offering-major'
+// }; // 原分组页固定高亮专业开课计划，改按 offeringGroupingReturnPage 高亮来源页
+
+function syncSidebarNavActive(pageId) {
+  let navPage = pageId;
+  if (pageId === 'offering-grouping') {
+    navPage = offeringGroupingReturnPage || 'course-major-offering-task';
+  }
+  // const navPage = OFFERING_NAV_PAGE_ALIASES[pageId] || pageId; // 原固定映射
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === navPage);
+  });
+}
 
 let activeModule = 'curriculum';
 let portalActiveTab = 'all';
@@ -8993,8 +19902,8 @@ function goPortal() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-portal')?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const search = document.getElementById('portal-search');
-  if (search) search.value = '';
+  // const search = document.getElementById('portal-search'); // 原搜索框，已移除
+  // if (search) search.value = '';
   portalActiveTab = 'all';
   document.querySelectorAll('.portal-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.portalTab === 'all');
@@ -9022,9 +19931,9 @@ function setPortalTab(tab) {
   renderPortalApps();
 }
 
-function filterPortalApps() {
-  renderPortalApps();
-}
+// function filterPortalApps() {
+//   renderPortalApps();
+// } // 原搜索框 oninput，搜索框已移除
 
 function portalAppIcon(type) {
   const icons = {
@@ -9039,14 +19948,14 @@ function portalAppIcon(type) {
 function renderPortalApps() {
   const grid = document.getElementById('portal-app-grid');
   if (!grid) return;
-  const q = (document.getElementById('portal-search')?.value || '').trim().toLowerCase();
+  // const q = (document.getElementById('portal-search')?.value || '').trim().toLowerCase(); // 原搜索框过滤
   let apps = PORTAL_APPS.filter(a => portalActiveTab === 'all' || a.category === portalActiveTab);
-  if (q) {
-    apps = apps.filter(a =>
-      a.name.toLowerCase().includes(q) ||
-      (a.nameZh && a.nameZh.toLowerCase().includes(q))
-    );
-  }
+  // if (q) {
+  //   apps = apps.filter(a =>
+  //     a.name.toLowerCase().includes(q) ||
+  //     (a.nameZh && a.nameZh.toLowerCase().includes(q))
+  //   );
+  // }
   if (!apps.length) {
     grid.innerHTML = '<p class="portal-app-empty">No matching application</p>';
     return;
@@ -9071,14 +19980,25 @@ function goPage(id) {
     goPortal();
     return;
   }
+  if (id === 'course-major-offering-task' && !hasSubmittedMajorOfferingTasks()) {
+    alert('请先在「专业开课计划」提交开课任务后，再进入任务安排。');
+    id = 'course-offering-major';
+  }
+  // if (id === 'course-ge-offering-task' && !hasSubmittedGeOfferingTasks()) {
+  //   alert('请先在「通识选修开课计划」提交开课计划后，再进入任务安排。');
+  //   id = 'course-offering-ge';
+  // } // 原无已提交数据时拦截入口，改允许进入并展示空列表
+  // if (id === 'course-major-offering-roster' && !hasTaskSubmittedMajorOfferingForRoster()) {
+  //   alert('请先在「专业开课任务安排」完成并提交任务安排后，再进入学生名单管理。');
+  //   id = 'course-major-offering-task';
+  // } // 原无数据时拦截入口，改允许进入并展示空列表
   document.querySelector('.app')?.classList.remove('portal-mode');
   const mod = getPageModule(id);
   if (mod) setActiveModule(mod);
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => {
-    n.classList.toggle('active', n.dataset.page === id);
-  });
+  syncSidebarNavActive(id);
+  // document.querySelectorAll('.nav-item').forEach(n => { n.classList.toggle('active', n.dataset.page === id); }); // 原直接匹配，分组页需高亮计划菜单
   if (id === 'version-list' || id === 'version-query') filterVersions();
   if (id === 'approval-list') renderApprovalList();
   if (id === 'exec-list') renderExecList();
@@ -9089,10 +20009,23 @@ function goPage(id) {
   if (id === 'workflow') renderWorkflowPage();
   if (id === 'course-workflow') renderCourseWorkflowPage();
   if (id === 'course-time-setting') renderCourseTimeSettingList();
+  if (id === 'school-elective-courses') renderSchoolElectiveCoursePage();
   // if (id === 'course-plan-generate') renderCoursePlanGeneratePage(); // 模块已移除
   if (id === 'course-offering-major') renderCourseOfferingMajorPage();
-  if (id === 'course-offering-ge') renderCourseOfferingTypeList('ge');
-  if (id === 'course-offering-other') renderCourseOfferingTypeList('other');
+  if (id === 'course-major-offering-task') renderCourseMajorOfferingTaskPage();
+  if (id === 'course-major-offering-roster') renderCourseMajorOfferingRosterPage();
+  if (id === 'offering-grouping') {
+    if (offeringGroupingSectionId) {
+      const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
+      updateOfferingGroupingPageTitle(sec);
+      renderOfferingGroupingPanel();
+    }
+  }
+  if (id === 'course-offering-ge') renderGeOfferingPlanPage();
+  if (id === 'course-ge-offering-task') renderCourseGeOfferingTaskPage();
+  if (id === 'course-offering-other') renderOtherOfferingPlanPage();
+  if (id === 'course-special-offering-task') renderCourseSpecialOfferingTaskPage();
+  if (id === 'course-special-offering-roster') renderCourseSpecialOfferingRosterPage();
   // if (id === 'course-merge-split') renderCourseMergeSplitPage(); // 模块已移除
   // if (id === 'course-section-arrange') renderCourseSectionArrangePage(); // 模块已移除
 }
@@ -9295,52 +20228,116 @@ function closeModal(id) {
   if (id === 'modal-submit-version') pendingSubmitVersionId = null;
   if (id === 'modal-delete-version') pendingDeleteVersionId = null;
   if (id === 'modal-delete-confirm') deleteConfirmCallback = null;
+  if (id === 'modal-major-task-revert-remark') pendingMajorTaskRevertConfirm = null;
 }
 
 let deleteConfirmCallback = null;
 
-function openDeleteConfirm({ title, message, hint, onConfirm }) {
+function openDeleteConfirm({ title, message, hint, onConfirm, confirmDisabled = false, confirmLabel, hintWarn = false, hideCancel = false, confirmDanger = false }) {
   deleteConfirmCallback = onConfirm || null;
   const titleEl = document.getElementById('delete-confirm-title');
   const msgEl = document.getElementById('delete-confirm-msg');
   const hintEl = document.getElementById('delete-confirm-hint');
+  const confirmBtn = document.getElementById('delete-confirm-btn');
+  const cancelBtn = document.querySelector('#modal-delete-confirm .modal-foot .btn-ghost');
   if (titleEl) titleEl.textContent = title || '确认删除';
   if (msgEl) msgEl.innerHTML = message || '确定删除吗？此操作不可撤销。';
   if (hintEl) {
     if (hint) {
       hintEl.textContent = hint;
       hintEl.style.display = '';
+      hintEl.style.whiteSpace = hint.includes('\n') ? 'pre-line' : '';
+      hintEl.classList.toggle('is-warn', hintWarn);
     } else {
       hintEl.textContent = '';
       hintEl.style.display = 'none';
+      hintEl.style.whiteSpace = '';
+      hintEl.classList.remove('is-warn');
     }
+  }
+  if (cancelBtn) cancelBtn.toggleAttribute('hidden', hideCancel);
+  if (confirmBtn) {
+    confirmBtn.disabled = confirmDisabled;
+    confirmBtn.textContent = confirmLabel || (confirmDanger ? '不保存并返回' : '确认');
+    confirmBtn.title = confirmDisabled ? '存在学时尚未安排完成的开课任务，暂无法提交' : '';
+    confirmBtn.classList.toggle('btn-primary', !confirmDanger);
+    confirmBtn.classList.toggle('btn-danger', confirmDanger);
+    confirmBtn.classList.toggle('is-disabled', confirmDisabled);
+    // confirmBtn.disabled = confirmDisabled; // 原仅设 disabled 属性，浏览器默认样式不明显
   }
   openModal('modal-delete-confirm');
 }
 
 function cancelDeleteConfirm() {
   deleteConfirmCallback = null;
+  const confirmBtn = document.getElementById('delete-confirm-btn');
+  const cancelBtn = document.querySelector('#modal-delete-confirm .modal-foot .btn-ghost');
+  if (cancelBtn) cancelBtn.removeAttribute('hidden');
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '确认';
+    confirmBtn.title = '';
+    confirmBtn.classList.remove('is-disabled', 'btn-danger');
+    confirmBtn.classList.add('btn-primary');
+  }
+  const hintEl = document.getElementById('delete-confirm-hint');
+  hintEl?.classList.remove('is-warn');
   closeModal('modal-delete-confirm');
 }
 
 function confirmDeleteConfirm() {
+  const confirmBtn = document.getElementById('delete-confirm-btn');
+  if (confirmBtn?.disabled) return;
   const cb = deleteConfirmCallback;
   deleteConfirmCallback = null;
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '确认';
+    confirmBtn.title = '';
+    confirmBtn.classList.remove('is-disabled', 'btn-danger');
+    confirmBtn.classList.add('btn-primary');
+  }
+  document.getElementById('delete-confirm-hint')?.classList.remove('is-warn');
   closeModal('modal-delete-confirm');
   if (cb) cb();
 }
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) closeModal(overlay.id);
+  overlay.addEventListener('mousedown', e => {
+    overlay.dataset.backdropDown = e.target === overlay ? '1' : '';
   });
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay && overlay.dataset.backdropDown === '1') {
+      closeModal(overlay.id);
+    }
+    overlay.dataset.backdropDown = '';
+  });
+  // overlay.addEventListener('click', e => {
+  //   if (e.target === overlay) closeModal(overlay.id);
+  // }); // 原仅 click 判断，布局跳动时 mouseup 落在遮罩会误关弹窗
 });
+
+bindGroupAssignFormFieldEvents();
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    const cuotPop = document.getElementById('cuot-date-picker-popover');
+    if (cuotPop && !cuotPop.hidden && cuotDatePickerState) {
+      closeCuotDatePicker();
+      e.preventDefault();
+      return;
+    }
     closeSltOutlineCloDropdown();
     closeSltInfoTip();
-    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    const openModals = [...document.querySelectorAll('.modal-overlay.open')];
+    if (!openModals.length) return;
+    const topModal = openModals.sort((a, b) => {
+      const za = Number(getComputedStyle(a).zIndex) || 0;
+      const zb = Number(getComputedStyle(b).zIndex) || 0;
+      return za - zb;
+    }).pop();
+    if (topModal?.id) closeModal(topModal.id);
+    // document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); // 原一次关闭全部弹窗
   }
 });
 
@@ -9349,8 +20346,12 @@ document.addEventListener('click', e => {
   if (wrap && !wrap.contains(e.target)) closeSltOutlineCloDropdown();
   const groupingWrap = document.getElementById('mos-grouping-multiselect');
   if (groupingWrap && !groupingWrap.contains(e.target)) closeMajorOfferingGroupingDropdown();
+  const mergeGroupWrap = document.getElementById('offering-group-merge-multiselect');
+  if (mergeGroupWrap && !mergeGroupWrap.contains(e.target)) closeOfferingGroupMergeDropdown();
   const venueTypeWrap = document.getElementById('mos-edit-venue-types-multiselect');
   if (venueTypeWrap && !venueTypeWrap.contains(e.target)) closeMajorOfferingVenueTypeDropdown();
+  const geVenueTypeWrap = document.getElementById('ge-edit-venue-types-multiselect');
+  if (geVenueTypeWrap && !geVenueTypeWrap.contains(e.target)) closeGeOfferingVenueTypeDropdown();
   const tahHourTypeWrap = document.getElementById('tah-hour-type-multiselect');
   if (tahHourTypeWrap && !tahHourTypeWrap.contains(e.target)) closeTeacherHourTypeDropdown();
   if (!e.target.closest('.slt-info-tip')) closeSltInfoTip();
@@ -15799,5 +26800,6 @@ function renderStatsBloomPage(renderTree = true) {
 
 initStatsTree();
 
-renderPortalApps();
-setActiveModule('curriculum');
+// renderPortalApps(); // 原初始化后直接展示培养方案侧栏，改由 goPortal 默认进入主菜单
+// setActiveModule('curriculum');
+goPortal();

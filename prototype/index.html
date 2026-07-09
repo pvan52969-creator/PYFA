@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="app">
+<div class="app portal-mode">
   <aside class="sidebar">
     <div class="sidebar-brand" role="button" tabindex="0" title="返回 Academic Portal 主菜单" onclick="goPortal()" onkeydown="if(event.key==='Enter'||event.key===' ')goPortal()">
       <div class="brand-icon">XM</div>
@@ -20,7 +20,7 @@
       <div class="nav-group">概览</div>
       <a href="#" class="nav-item" data-page="workflow">操作流程图</a>
       <div class="nav-group">方案版本</div>
-      <a href="#" class="nav-item active" data-page="version-list">方案版本管理</a>
+      <a href="#" class="nav-item" data-page="version-list">方案版本管理</a>
       <a href="#" class="nav-item" data-page="approval-list">版本审批</a>
       <a href="#" class="nav-item" data-page="version-query">版本查询</a>
       <div class="nav-group">方案版本变更</div>
@@ -36,11 +36,29 @@
       <div class="nav-group">开课管理</div>
       <a href="#" class="nav-item" data-page="course-workflow">操作流程图</a>
       <a href="#" class="nav-item" data-page="course-time-setting">开课时间设置</a>
-      <!-- 已移除「开课计划生成」模块：生成开课任务改由「专业开课」页选择器完成 -->
-      <div class="nav-group">开课类型</div>
-      <a href="#" class="nav-item" data-page="course-offering-major">专业开课</a>
-      <a href="#" class="nav-item" data-page="course-offering-ge">通识选修开课</a>
-      <a href="#" class="nav-item" data-page="course-offering-other">其他开课</a>
+      <a href="#" class="nav-item" data-page="school-elective-courses">校选课程管理</a>
+      <!-- 已移除「开课计划生成」模块：生成开课任务改由「专业开课计划」页选择器完成 -->
+      <div class="nav-section">
+        <div class="nav-section-title">专业开课</div>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-major">专业开课计划</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">专业开课任务安排</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">专业开课学生名单管理</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">通识选修课开课</div>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课计划</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">特殊开课</div>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-other">特殊开课计划</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-task">特殊开课任务安排</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-roster">特殊开课学生名单管理</a>
+      </div>
+      <!-- <div class="nav-group">开课类型</div> -->
+      <!-- <a href="#" class="nav-item" data-page="course-offering-major">专业开课</a> -->
+      <!-- <a href="#" class="nav-item" data-page="course-offering-ge">通识选修开课</a> -->
+      <!-- <a href="#" class="nav-item" data-page="course-offering-other">其他开课</a> -->
       <!-- 已移除「合分班管理」「开课明细安排」模块；合分班改由专业开课操作列完成
       <div class="nav-group">合分班与明细</div>
       <a href="#" class="nav-item" data-page="course-merge-split">合分班管理</a>
@@ -57,7 +75,7 @@
 
   <main class="main">
     <!-- ═══ Academic Portal 主菜单 ═══ -->
-    <section class="page" id="page-portal">
+    <section class="page active" id="page-portal">
       <div class="portal-shell">
         <header class="portal-topbar">
           <div class="portal-topbar-left">
@@ -82,10 +100,12 @@
               <span class="portal-card-icon" aria-hidden="true">▦</span>
               <h2>Academic Portal</h2>
             </div>
+            <!-- 原应用搜索框，已移除
             <div class="portal-search-wrap">
               <span class="portal-search-icon" aria-hidden="true">⌕</span>
               <input type="search" class="portal-search-input" id="portal-search" placeholder="Please input application name" oninput="filterPortalApps()">
             </div>
+            -->
             <div class="portal-tabs" role="tablist">
               <button type="button" class="portal-tab active" data-portal-tab="all" onclick="setPortalTab('all')">All</button>
               <button type="button" class="portal-tab" data-portal-tab="basic" onclick="setPortalTab('basic')">Basic Service</button>
@@ -123,7 +143,7 @@
     </section>
 
     <!-- ═══ 方案版本管理 ═══ -->
-    <section class="page active" id="page-version-list">
+    <section class="page" id="page-version-list">
       <div class="page-header">
         <div>
           <h1>培养方案版本管理</h1>
@@ -625,6 +645,7 @@
                 <th class="col-check"><input type="checkbox" id="course-time-check-all" aria-label="全选" onchange="toggleCourseTimeCheckAll(this.checked)"></th>
                 <th class="col-index">序号<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th>学年学期<span class="th-sort" aria-hidden="true">↕</span></th>
+                <th class="col-center">教学周数<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th>开课时间范围<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">是否开课学期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th>备注<span class="th-sort" aria-hidden="true">↕</span></th>
@@ -637,15 +658,134 @@
       </div>
     </section>
 
+<!-- ═══ 弹窗：开课管理 · 修改开课时间 ═══ -->
+<div class="modal-overlay" id="modal-course-time-setting-edit">
+  <div class="modal course-time-setting-edit-modal">
+    <div class="modal-head">
+      <h3>修改开课时间</h3>
+      <button class="modal-close" type="button" onclick="closeCourseTimeSettingEditModal()">×</button>
+    </div>
+    <div class="modal-body course-time-setting-edit-body">
+      <div class="form-item course-time-setting-edit-term">
+        <label>学年学期</label>
+        <p class="form-static" id="cts-edit-term">—</p>
+        <p class="form-hint">教学周数按学期类型固定：2 月学期 6 周，4/9 月学期 17 周</p>
+      </div>
+      <!-- 教学周数不在此设置，改由 resolveTermTypeDefaultTeachingWeeks 按学期类型推导 -->
+      <div class="form-item">
+        <label class="req">开课开始</label>
+        <input class="input course-datetime-input" type="text" id="cts-edit-start"
+          placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
+          data-picker-title="开课开始"
+          onclick="openCourseDatetimePicker(this, event)">
+        <!-- 原 date + time 分开输入，改融合选择器先选日期再选时间 -->
+      </div>
+      <div class="form-item">
+        <label class="req">开课截止</label>
+        <input class="input course-datetime-input" type="text" id="cts-edit-end"
+          placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
+          data-picker-title="开课截止"
+          onclick="openCourseDatetimePicker(this, event)">
+      </div>
+      <div class="form-item">
+        <label for="cts-edit-remark">备注</label>
+        <input class="input" type="text" id="cts-edit-remark" maxlength="200">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeCourseTimeSettingEditModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveCourseTimeSettingEditModal()">保存</button>
+    </div>
+  </div>
+</div>
+
     <!-- ═══ 开课管理 · 开课计划生成（已移除，改由专业开课页「生成开课任务」选择器完成） ═══ -->
     <!--
     <section class="page" id="page-course-plan-generate">...</section>
     -->
 
+    <!-- ═══ 开课管理 · 校选课程管理 ═══ -->
+    <section class="page" id="page-school-elective-courses">
+      <div class="page-header">
+        <div>
+          <h1>校选课程管理</h1>
+          <p class="subtitle">维护校内选修课程主数据，提前配置可选范围（允许选课的专业与学生类型）</p>
+        </div>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid school-elective-query-grid">
+          <div class="course-time-query-field">
+            <label for="school-elective-filter-dept">课程管理单位</label>
+            <select class="input input-sm" id="school-elective-filter-dept">
+              <option value="">全部</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="school-elective-filter-category">校选课类别</label>
+            <select class="input input-sm" id="school-elective-filter-category">
+              <option value="">全部</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="school-elective-filter-status">状态</label>
+            <select class="input input-sm" id="school-elective-filter-status">
+              <option value="">全部</option>
+              <option value="active">正常</option>
+              <option value="suspended">停课</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="school-elective-filter-keyword">课程代码 / 课程名称</label>
+            <input class="input input-sm" id="school-elective-filter-keyword" placeholder="课程代码 / 课程名称">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderSchoolElectiveCoursePage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetSchoolElectiveCourseFilters()">清除过滤</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="panel-toolbar school-elective-list-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openSchoolElectiveCourseAddModal()">新增</button>
+          <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-school-elective-delete" onclick="deleteSelectedSchoolElectiveCourses()" disabled>删除</button>
+          <!-- <button class="btn btn-outline btn-sm" type="button" onclick="alert('导出 Excel（原型占位）')">导出 Excel</button> -->
+        </div>
+        <div class="table-scroll">
+          <table class="data-table compact school-elective-course-table">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" id="school-elective-check-all" aria-label="全选" onchange="toggleSchoolElectiveCheckAll(this.checked)"></th>
+                <th class="col-index">序号</th>
+                <th>课程代码</th>
+                <th>课程名称</th>
+                <!-- <th>校选课类别</th> --> <!-- 列已移除 -->
+                <th class="col-center">学分</th>
+                <th class="col-center">总学时</th>
+                <!-- <th class="col-center">理论</th> -->
+                <!-- <th class="col-center">辅导</th> -->
+                <!-- <th class="col-center">实践</th> -->
+                <!-- <th class="col-center">其他</th> --> <!-- 原学时细分列，列表仅保留总学时 -->
+                <th class="col-center">开课单位</th>
+                <!-- <th>管理单位</th> --> <!-- 原列名，已改为开课单位代码 -->
+                <th class="col-center">状态</th>
+                <!-- <th>可选范围</th> --> <!-- 原列名，已改为仅展示不可选专业 -->
+                <th>不可选专业</th>
+                <th class="col-sticky-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody id="school-elective-course-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="school-elective-course-pagination"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ 开课管理 · 专业开课 ═══ -->
     <section class="page" id="page-course-offering-major">
       <div class="page-header">
-        <div><h1>专业开课</h1><p class="subtitle">必修课、专业选修、MPU、大学课等非公共选修课程 · 课程班合分班与学时分组</p></div>
+        <div><h1>专业开课计划</h1><p class="subtitle">教务处生成学期开课计划 · 一课一专业批次一条计划；提交后进入任务安排（合分班、分组、授课确认）</p></div>
       </div>
       <div class="legend-bar" id="course-offering-hint-major"></div>
       <div class="card course-major-query-card">
@@ -663,6 +803,10 @@
             <select class="input input-sm" id="course-major-filter-prog"><option value="">全部专业</option></select>
           </div>
           <div class="course-time-query-field">
+            <label for="course-major-filter-offering-unit">开课单位</label>
+            <select class="input input-sm" id="course-major-filter-offering-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <div class="course-time-query-field">
             <label for="course-major-filter-name">课程号</label>
             <input class="input input-sm" id="course-major-filter-name" placeholder="课程号">
           </div>
@@ -672,8 +816,10 @@
               <option value="">全部</option>
               <option value="draft">草稿</option>
               <option value="submitted">已提交</option>
+              <option value="reverted">回退</option>
             </select>
           </div>
+          <!-- 授课确认状态筛选改由任务安排页
           <div class="course-time-query-field">
             <label for="course-major-filter-teaching-confirm">授课确认状态</label>
             <select class="input input-sm" id="course-major-filter-teaching-confirm">
@@ -682,6 +828,7 @@
               <option value="confirmed">已确认</option>
             </select>
           </div>
+          -->
           <!-- 原「开课状态」筛选已改为提交状态 + 授课确认状态
           <div class="course-time-query-field">
             <label for="course-major-filter-status">开课状态</label>
@@ -704,20 +851,23 @@
       <div class="card">
         <div class="panel-toolbar course-major-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openGenerateMajorOfferingTaskModal()">生成开课任务</button>
-          <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button>
+          <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> --> <!-- 改由任务安排页 -->
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>提交</button>
+          <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
-          <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；合分班请使用操作列；须先授课确认再提交，提交后排课模块可见</span>
+          <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课计划」维护</span>
         </div>
         <div class="table-scroll">
           <table class="data-table course-offering-major-table">
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="course-major-check-all" aria-label="全选" onchange="toggleMajorOfferingCheckAll(this.checked)"></th>
               <th class="col-index">序号</th>
+              <th>负责人</th>
               <th class="col-center">提交状态</th>
-              <th class="col-center">授课确认状态</th>
+              <!-- <th class="col-center">授课确认状态</th> 改由任务安排页 -->
               <!-- <th class="col-center">状态</th> 原开课状态列 -->
-              <th>课程代码</th><th>课程名称</th><th>课程类别</th>
+              <th class="col-center">开课学期</th>
+              <th>课程代码</th><th>课程名称</th><th>课程类别</th><th class="col-center">选课类型</th>
               <th class="col-center">上课学院</th><th class="col-center">上课专业</th><th class="col-center">上课批次</th>
               <th class="col-center">学分</th><th class="col-center">总学时</th>
               <!-- <th class="col-center">理论学时</th><th class="col-center">实践学时</th> -->
@@ -736,48 +886,669 @@
       </div>
     </section>
 
+    <!-- ═══ 开课管理 · 专业开课 · 分组（独立页，原 modal-offering-grouping 弹窗） ═══ -->
+    <section class="page" id="page-offering-grouping">
+      <div class="page-header compact">
+        <div class="breadcrumb">
+          <a href="#" id="offering-grouping-breadcrumb-link" onclick="closeOfferingGroupingPage();return false">专业开课计划</a><span>/</span>
+          <span id="offering-grouping-page-title">分组</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupingPage()">返回</button>
+          <button class="btn btn-primary" type="button" id="ogg-btn-save-roster-page" onclick="saveOfferingGroupingRosterPage()" hidden style="display:none">保存名单</button>
+          <button class="btn btn-primary" type="button" id="ogg-btn-save-grouping-page" onclick="saveOfferingGroupingPage()">保存</button>
+        </div>
+      </div>
+      <div class="card offering-grouping-page-card">
+        <div class="offering-grouping-shell offering-grouping-body">
+          <div class="offering-grouping-meta" id="offering-grouping-meta"></div>
+          <div class="offering-grouping-layout">
+            <aside class="offering-group-sidebar">
+              <div class="offering-group-sidebar-head">
+                <strong>分组信息</strong>
+              </div>
+              <div class="offering-group-sidebar-actions">
+                <button class="btn btn-outline btn-sm" type="button" onclick="addOfferingGroup()">新增分组</button>
+                <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupBatchAddModal()">批量新增</button>
+                <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupMergeModal()">合并分组</button>
+                <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingAutoGroupModal()">自动分组</button> --> <!-- 功能暂下线 -->
+                <!-- <button class="btn btn-outline btn-sm btn-danger-text" type="button" onclick="resetOfferingGroups()">分组重置</button> --> <!-- 功能暂下线 -->
+              </div>
+              <div class="offering-group-tree" id="offering-group-tree"></div>
+            </aside>
+            <div class="offering-group-main">
+              <div class="offering-group-tabs">
+                <span class="offering-group-tab is-active" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
+                <span class="offering-group-tab" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
+                <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示 -->
+                <span class="offering-group-tab" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">小组学时情况</span>
+                <!-- <span ...>小组学时安排情况</span> --> <!-- 原文案 -->
+                <span class="offering-group-tab" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">分类学时汇总</span>
+                <!-- <span class="offering-group-tab" data-tab="summary" ...>学时安排情况汇总</span> 原 Tab 文案 -->
+              </div>
+              <div class="offering-group-panel-wrap">
+                <div id="offering-group-teacher-panel">
+                  <p class="offering-group-teacher-hint text-muted">为各小组安排理论/辅导/实践/其他学时的任课教师，并指定起止周；非开课学院教师自动为 Support，多名授课教师时须指定一名课程 Coordinator。理论学时通常面向全体小组合班授课，辅导/实践/其他学时可按小组分别安排，具体学时分摊由后续排课模块处理。</p>
+                  <div class="offering-group-toolbar">
+                    <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()" disabled>安排教师</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button>
+                    <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-revoke-assign" onclick="removeOfferingGroupAssignSelected()" disabled>删除</button>
+                  </div>
+                  <div class="table-scroll">
+                    <table class="data-table compact offering-group-assign-table">
+                      <thead><tr>
+                        <th class="col-check"><input type="checkbox" id="oga-check-all" aria-label="全选" onchange="toggleOfferingGroupingAssignCheckAll(this.checked)"></th>
+                        <th class="col-index">序号</th>
+                        <th>学时类型</th>
+                        <th class="col-center">起止周</th>
+                        <th>任课教师</th>
+                        <!-- <th>授课角色</th> --> <!-- 列表不再展示授课角色 -->
+                        <!-- <th class="col-center">Coordinator</th> --> <!-- 改由工具栏「设置 Coordinator」统一设置，列表不再展示 -->
+                        <th class="col-groups">小组</th>
+                        <th class="col-sticky-actions">操作</th>
+                      </tr></thead>
+                      <tbody id="offering-group-assign-body"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div id="offering-group-student-panel" hidden>
+                  <div class="offering-group-student-remark" id="offering-group-student-remark" hidden></div>
+                  <div class="offering-group-student-filters">
+                    <div class="form-item">
+                      <label for="ogg-filter-name">姓名</label>
+                      <input class="input input-sm" id="ogg-filter-name" placeholder="姓名">
+                    </div>
+                    <div class="form-item">
+                      <label for="ogg-filter-student-no">学号</label>
+                      <input class="input input-sm" id="ogg-filter-student-no" placeholder="学号">
+                    </div>
+                    <div class="form-item">
+                      <label for="ogg-filter-gender">性别</label>
+                      <select class="input input-sm" id="ogg-filter-gender">
+                        <option value="">全部</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </div>
+                    <div class="offering-group-student-filter-actions">
+                      <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingGroupingStudents()">查询</button>
+                      <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingGroupingStudentFilters()">重置</button>
+                    </div>
+                  </div>
+                  <div class="offering-group-toolbar offering-group-student-toolbar">
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-adjust-group" onclick="adjustOfferingGroupingStudents()">调整分组</button>
+                    <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentPicker()">添加学生</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-preset-roster-grouping" onclick="openPresetRosterGroupingConfirm()">预置名单分组</button>
+                    <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-remove-roster" onclick="removeOfferingGroupingStudentsFromRoster()">移除</button>
+                    <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentRemovalLog()">名单移除记录</button>
+                  </div>
+                  <div class="table-scroll">
+                    <table class="data-table compact offering-group-student-table">
+                      <thead><tr>
+                        <th class="col-check"><input type="checkbox" id="ogg-check-all" aria-label="全选" onchange="toggleOfferingGroupingStudentCheckAll(this.checked)"></th>
+                        <th class="col-index">序号</th>
+                        <th>学号</th>
+                        <th>姓名</th>
+                        <th class="col-center">性别</th>
+                        <th class="col-center">学院</th>
+                        <th class="col-center">专业</th>
+                        <th class="col-center">入学批次</th>
+                        <th>课程组</th>
+                        <th>来源</th>
+                      </tr></thead>
+                      <tbody id="offering-group-student-body"></tbody>
+                    </table>
+                  </div>
+                  <div class="offering-group-student-pagination">
+                    <div class="pagination" id="offering-group-student-pagination"></div>
+                  </div>
+                </div>
+                <div id="offering-group-hour-summary-panel" hidden>
+                  <p class="offering-group-teacher-hint text-muted">按学时类型汇总全部教师安排：展示各类型学时的任课教师、负责小组与起止周；数据来源于「教师安排」Tab 中的全部记录。</p>
+                  <div class="offering-hour-summary-content" id="offering-group-hour-summary-content"></div>
+                </div>
+                <div id="offering-group-group-status-panel" hidden>
+                  <p class="offering-group-teacher-hint text-muted">按小组查看各类型学时是否已安排完成：已录入学时达到计划值且无缺失项即为已排满；可据此快速定位尚未完善的分组。</p>
+                  <div class="offering-group-status-content" id="offering-group-group-status-content"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 专业开课 · 任务安排 ═══ -->
+    <section class="page" id="page-course-major-offering-task">
+      <div class="page-header">
+        <div><h1>专业开课任务安排</h1><p class="subtitle">对已提交的开课计划进行合分班、分组、教师安排，完成后批量提交</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ol class="offering-module-hint-list">
+          <li>须先在「专业开课计划」提交开课任务，方可进入本页。</li>
+          <li>按课程号、学分、学时、起止周等条件进行合分班；合班后计划人数相加，预留名额累加。</li>
+          <li>学院根据计划人数分组，并为各小组安排授课教师（学时类型、起止周等）。</li>
+          <li>完成上述安排后勾选教学班批量提交；提交后可进入「专业开课学生名单管理」为各小组添加学生。</li>
+          <!-- <li>完成上述安排后进行授课确认。</li> -->
+        </ol>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="course-major-task-filter-term">学年学期</label>
+            <select class="input input-sm" id="course-major-task-filter-term" onchange="onMajorOfferingTaskTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-task-filter-dept">上课学院</label>
+            <select class="input input-sm" id="course-major-task-filter-dept" onchange="onMajorOfferingTaskSchoolFilterChange()"><option value="">全部上课学院</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-task-filter-prog">上课专业</label>
+            <select class="input input-sm" id="course-major-task-filter-prog"><option value="">全部上课专业</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-task-filter-offering-unit">开课单位</label>
+            <select class="input input-sm" id="course-major-task-filter-offering-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-task-filter-name">课程号</label>
+            <input class="input input-sm" id="course-major-task-filter-name" placeholder="课程号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-task-filter-task-submit">提交状态</label>
+            <select class="input input-sm" id="course-major-task-filter-task-submit">
+              <option value="">全部</option>
+              <option value="submitted">已提交</option>
+              <option value="draft">草稿</option>
+              <option value="reverted">回退</option>
+            </select>
+            <!-- <label for="course-major-task-filter-task-submit">是否提交</label> -->
+            <!-- <option value="pending">否</option><option value="confirmed">是</option> -->
+          </div>
+          <!-- <div class="course-time-query-field">
+            <label for="course-major-task-filter-teaching-confirm">授课确认状态</label>
+            <select class="input input-sm" id="course-major-task-filter-teaching-confirm">
+              <option value="">全部</option>
+              <option value="pending">待确认</option>
+              <option value="confirmed">已确认</option>
+            </select>
+          </div> -->
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingTaskList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingTaskFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card course-major-task-list-card">
+        <div class="panel-toolbar course-major-task-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-major-task-submit" onclick="submitSelectedMajorOfferingTaskArrangements()" disabled>提交</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-revert" onclick="revertSelectedMajorOfferingTaskArrangements()" disabled>退回</button>
+          <span class="form-hint">完成合分班、分组与教师安排后勾选教学班批量提交；需修改计划信息时可退回至开课计划（合班将拆回单批次）</span>
+          <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> -->
+          <!-- <span class="form-hint">完成合分班、分组与教师安排后，勾选教学班批量授课确认</span> -->
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-major-table course-major-offering-task-table">
+            <colgroup>
+              <col class="col-check">
+              <col class="col-index">
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col class="col-sticky-actions">
+            </colgroup>
+            <thead><tr>
+              <th class="col-check"><input type="checkbox" id="course-major-task-check-all" aria-label="全选" onchange="toggleMajorOfferingTaskCheckAll(this.checked)"></th>
+              <th class="col-index">序号</th>
+              <th class="col-center">提交状态</th>
+              <!-- <th class="col-center">是否提交</th> -->
+              <!-- <th class="col-center">授课确认状态</th> -->
+              <th class="col-center">开课学期</th>
+              <th>课程号</th>
+              <th>课程名称</th>
+              <th class="col-center">上课学院</th>
+              <th class="col-center">上课专业</th>
+              <th class="col-center">上课批次</th>
+              <th class="col-center">学分</th>
+              <th class="col-center">总学时</th>
+              <th class="col-center">开课单位</th>
+              <th class="col-center">起止周</th>
+              <th class="col-center">课程名额上限</th>
+              <th class="col-sticky-actions">操作</th>
+            </tr></thead>
+            <tbody id="course-major-offering-task-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-major-offering-task-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 专业开课 · 学生名单管理 ═══ -->
+    <section class="page" id="page-course-major-offering-roster">
+      <div class="page-header">
+        <div><h1>专业开课学生名单管理</h1><p class="subtitle">任务安排提交后，按开课任务维护各小组学生名单</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ul class="offering-module-hint-list">
+          <li>任务安排提交后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
+          <!-- <li>任务安排提交后，本页展示各小组并维护学生名单；暂无数据时列表为空。</li> --> <!-- 原按小组拆行展示 -->
+          <!-- <li>须先在「专业开课任务安排」完成合分班、分组与教师安排并提交，方可进入本页。</li> --> <!-- 原强制前置条件，改允许空态进入 -->
+          <li>老生：计划人数默认读取当前批次可修该课程人数 + 预留名额（默认 5，可改）；计划人数随老生名单同步，不可手工改，可改预留名额。</li>
+          <li>新生：计划人数读取招生计划人数，不可改计划人数，仅可改预留名额；批次中暂无名单。</li>
+          <li>学院在「分组」环节为各小组设置人数上限与需求说明；教务在本环节按小组添加/调整学生，实际人数不超过上限。</li>
+        </ul>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="course-major-roster-filter-term">学年学期</label>
+            <select class="input input-sm" id="course-major-roster-filter-term" onchange="onMajorOfferingRosterTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-roster-filter-dept">上课学院</label>
+            <select class="input input-sm" id="course-major-roster-filter-dept" onchange="onMajorOfferingRosterSchoolFilterChange()"><option value="">全部上课学院</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-roster-filter-prog">上课专业</label>
+            <select class="input input-sm" id="course-major-roster-filter-prog"><option value="">全部上课专业</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-roster-filter-offering-unit">开课单位</label>
+            <select class="input input-sm" id="course-major-roster-filter-offering-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-roster-filter-name">课程号</label>
+            <input class="input input-sm" id="course-major-roster-filter-name" placeholder="课程号">
+          </div>
+          <!-- <div class="course-time-query-field">
+            <label for="course-major-roster-filter-teaching-confirm">授课确认状态</label>
+            <select class="input input-sm" id="course-major-roster-filter-teaching-confirm">
+              <option value="">全部</option>
+              <option value="pending">待确认</option>
+              <option value="confirmed">已确认</option>
+            </select>
+          </div> -->
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingRosterList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingRosterFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card course-major-roster-list-card">
+        <div class="panel-toolbar course-major-roster-toolbar">
+          <button class="btn btn-outline btn-sm" type="button" id="btn-major-roster-revert" onclick="revertSelectedMajorOfferingRosterArrangements()" disabled>退回</button>
+          <span class="form-hint">勾选开课任务后可批量退回至「专业开课任务安排」；开放选课课程名单由选课应用生成，不在此维护</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-major-table course-major-offering-roster-table">
+            <colgroup>
+              <col class="col-check">
+              <col class="col-index">
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col class="col-sticky-actions">
+            </colgroup>
+            <thead><tr>
+              <th class="col-check"><input type="checkbox" id="course-major-roster-check-all" aria-label="全选" onchange="toggleMajorOfferingRosterCheckAll(this.checked)"></th>
+              <th class="col-index">序号</th>
+              <!-- <th class="col-center">授课确认状态</th> -->
+              <th class="col-center">开课学期</th>
+              <th>课程号</th>
+              <th>课程名称</th>
+              <th>分组</th>
+              <!-- <th>小组</th> --> <!-- 原按小组拆行，改汇总展示 -->
+              <th class="col-center">上课学院</th>
+              <th class="col-center">上课专业</th>
+              <th class="col-center">上课批次</th>
+              <th class="col-center">学分</th>
+              <th class="col-center">总学时</th>
+              <th class="col-center">开课单位</th>
+              <th class="col-center">起止周</th>
+              <th class="col-sticky-actions">操作</th>
+            </tr></thead>
+            <tbody id="course-major-offering-roster-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-major-offering-roster-pagination"></div>
+        </div>
+      </div>
+      <!-- 原简易列表
+      <div class="card">
+        <div class="table-scroll">
+          <table class="data-table compact">...</table>
+        </div>
+      </div>
+      -->
+    </section>
+
     <!-- ═══ 开课管理 · 通识选修开课 ═══ -->
     <section class="page" id="page-course-offering-ge">
       <div class="page-header">
-        <div><h1>通识选修开课</h1><p class="subtitle">培养方案中 General Elective 分类课程 · 支持合分班</p></div>
+        <div><h1>通识选修开课计划</h1><p class="subtitle">从「校选课程管理」中选择本学期要开设的通识选修课程</p></div>
       </div>
       <div class="legend-bar" id="course-offering-hint-ge"></div>
-      <div class="toolbar-row"><div class="filter-bar inline">
-        <span class="filter-label">过滤</span>
-        <input class="input input-sm" id="course-offering-filter-ge" placeholder="课程号 / 专业 / 批次" oninput="renderCourseOfferingTypeList('ge')">
-        <button class="btn btn-outline btn-sm" type="button" onclick="renderCourseOfferingTypeList('ge')">查询</button>
-      </div></div>
-      <div class="card"><div class="table-scroll"><table class="data-table course-offering-table">
-        <thead><tr>
-          <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th>专业</th>
-          <th class="col-center">入学批次</th><th class="col-center">执行计划</th><th class="col-center">教学班</th><th>备注</th><th>操作</th>
-        </tr></thead>
-        <tbody id="course-offering-body-ge"></tbody>
-      </table></div></div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="ge-offering-filter-term">开课学期</label>
+            <select class="input input-sm" id="ge-offering-filter-term" onchange="onGeOfferingTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-offering-filter-ge">课程号 / 名称</label>
+            <input class="input input-sm" id="course-offering-filter-ge" placeholder="课程号 / 课程名称" oninput="renderGeOfferingPlanPage()">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderGeOfferingPlanPage()">查询</button>
+          </div>
+        </div>
+      </div>
+      <!-- <div class="toolbar-row"><div class="filter-bar inline">...</div></div> --> <!-- 原简易过滤栏，改与专业开课一致的开课学期查询区 -->
+      <div class="card">
+        <div class="panel-toolbar ge-offering-list-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openGeOfferingCourseAddModal()">添加开课课程</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-ge-offering-submit" onclick="submitSelectedGeOfferingTasks()" disabled>提交</button>
+          <span class="form-hint">从「校选课程管理」校选课程库中选择状态正常的课程，并指定开课学期加入计划；提交后方可进入「通识选修开课任务安排」</span>
+        </div>
+        <div class="table-scroll"><table class="data-table course-offering-table">
+          <thead><tr>
+            <th class="col-check"><input type="checkbox" id="ge-offering-check-all" aria-label="全选" onchange="toggleGeOfferingCheckAll(this.checked)"></th>
+            <th class="col-index">序号</th>
+            <th class="col-center">开课学期</th><th class="col-center">提交状态</th>
+            <th>课程号</th><th>课程名称</th><th class="col-center">开课单位</th>
+            <th class="col-center">学分</th><th class="col-center">总学时</th>
+            <!-- <th class="col-center">上课批次</th> --> <!-- 暂不支持指定上课批次范围 -->
+            <!-- <th class="col-center">教学班</th> --> <!-- 通识选修无教学班概念 -->
+            <th>备注</th><th class="col-sticky-actions">操作</th>
+          </tr></thead>
+          <tbody id="course-offering-body-ge"></tbody>
+        </table></div>
+      </div>
     </section>
 
-    <!-- ═══ 开课管理 · 其他开课 ═══ -->
+    <!-- ═══ 开课管理 · 通识选修 · 任务安排 ═══ -->
+    <section class="page" id="page-course-ge-offering-task">
+      <div class="page-header">
+        <div><h1>通识选修开课任务安排</h1><p class="subtitle">对已维护的通识选修开课计划进行分组、教师安排</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ol class="offering-module-hint-list">
+          <li>在「通识选修开课计划」添加并<strong>提交</strong>课程后，本页将展示对应任务；无数据时也可进入本页。</li>
+          <li>通识选修无合分班环节，按课程进行分组并为各小组安排授课教师（学时类型、起止周等）。</li>
+          <li>完成安排后可点击「查看」核对计划人数、场地与排课设置；开放选课名单由选课应用生成。</li>
+        </ol>
+        <!-- <p>依据通识选修开课计划，安排各课程班的学时、任课教师与起止周。（原型占位，后续与计划页联动。）</p> -->
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="ge-offering-task-filter-term">开课学期</label>
+            <select class="input input-sm" id="ge-offering-task-filter-term" onchange="onGeOfferingTaskTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-task-filter-offering-unit">开课单位</label>
+            <select class="input input-sm" id="ge-offering-task-filter-offering-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-task-filter-name">课程号</label>
+            <input class="input input-sm" id="ge-offering-task-filter-name" placeholder="课程号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-task-filter-task-submit">提交状态</label>
+            <select class="input input-sm" id="ge-offering-task-filter-task-submit">
+              <option value="">全部</option>
+              <option value="submitted">已提交</option>
+              <option value="draft">草稿</option>
+              <option value="reverted">回退</option>
+            </select>
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryGeOfferingTaskList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetGeOfferingTaskFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card course-ge-task-list-card">
+        <div class="panel-toolbar course-ge-task-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-ge-task-submit" onclick="submitSelectedGeOfferingTaskArrangements()" disabled>提交</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-ge-task-revert" onclick="revertSelectedGeOfferingTaskArrangements()" disabled>退回</button>
+          <span class="form-hint">完成分组与教师安排后勾选课程批量提交；需修改计划信息时可退回至开课计划</span>
+          <!-- <span class="form-hint">完成分组与教师安排；如需修改计划人数、场地等请点击「查看」</span> --> <!-- 原仅提示文案，改与专业任务页一致提供提交/退回 -->
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-table course-ge-offering-task-table">
+            <thead><tr>
+              <th class="col-check"><input type="checkbox" id="ge-offering-task-check-all" aria-label="全选" onchange="toggleGeOfferingTaskCheckAll(this.checked)"></th>
+              <th class="col-index">序号</th>
+              <th class="col-center">提交状态</th>
+              <th class="col-center">开课学期</th>
+              <th>课程号</th><th>课程名称</th>
+              <th class="col-center">学分</th><th class="col-center">总学时</th>
+              <th class="col-center">开课单位</th>
+              <th class="col-center">起止周</th>
+              <th class="col-center">课程名额上限</th>
+              <th class="col-sticky-actions">操作</th>
+            </tr></thead>
+            <tbody id="course-ge-offering-task-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-ge-offering-task-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 特殊开课 ═══ -->
     <section class="page" id="page-course-offering-other">
       <div class="page-header">
-        <div><h1>其他开课</h1><p class="subtitle">挂科重修、跨专业补修等额外开课需求 · 人工维护</p></div>
-        <button class="btn btn-primary btn-sm" type="button" onclick="addManualOtherOffering()">+ 人工开课</button>
+        <div><h1>特殊开课计划</h1><p class="subtitle">不在专业执行计划、通识选修流程内，需教务手动添加的开课计划</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ol class="offering-module-hint-list">
+          <li>从教务课程库<strong>手动添加</strong>挂科重修、跨专业补修等开课计划，设置预计容量与预留名额后提交，进入「特殊开课任务安排」。</li>
+          <li>无执行计划预置批次名单：学院完成分组与教师安排后，由教务在「特殊开课学生名单管理」向各小组手工添加学生。</li>
+        </ol>
       </div>
       <div class="legend-bar" id="course-offering-hint-other"></div>
-      <div class="toolbar-row"><div class="filter-bar inline">
-        <span class="filter-label">过滤</span>
-        <input class="input input-sm" id="course-offering-filter-other" placeholder="课程号 / 专业 / 批次" oninput="renderCourseOfferingTypeList('other')">
-        <button class="btn btn-outline btn-sm" type="button" onclick="renderCourseOfferingTypeList('other')">查询</button>
-      </div></div>
-      <div class="card"><div class="table-scroll"><table class="data-table course-offering-table">
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="other-offering-filter-term">开课学期</label>
+            <select class="input input-sm" id="other-offering-filter-term" onchange="onOtherOfferingTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-offering-filter-other">课程号 / 名称</label>
+            <input class="input input-sm" id="course-offering-filter-other" placeholder="课程号 / 课程名称" oninput="renderOtherOfferingPlanPage()">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderOtherOfferingPlanPage()">查询</button>
+          </div>
+        </div>
+      </div>
+      <!-- <div class="toolbar-row"><div class="filter-bar inline">...</div></div> --> <!-- 原简易过滤栏，改与通识选修一致的开课学期查询区 -->
+      <div class="card other-offering-list-card">
+        <div class="panel-toolbar other-offering-list-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="addManualOtherOffering()">添加开课计划</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-other-offering-submit" onclick="submitSelectedOtherOfferingTasks()" disabled>提交</button>
+          <span class="form-hint">从教务课程库中选择课程手动添加；提交后方可进入「特殊开课任务安排」进行分组与教师安排</span>
+        </div>
+        <div class="table-scroll"><table class="data-table course-offering-table">
         <thead><tr>
-          <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th>专业</th>
-          <th class="col-center">入学批次</th><th class="col-center">执行计划</th><th class="col-center">教学班</th><th>备注</th><th>操作</th>
+          <th class="col-check"><input type="checkbox" id="other-offering-check-all" aria-label="全选" onchange="toggleOtherOfferingCheckAll(this.checked)"></th>
+          <th class="col-index">序号</th>
+          <th class="col-center">开课学期</th><th class="col-center">提交状态</th>
+          <th>课程号</th><th>课程名称</th>
+          <th class="col-center">开课单位</th>
+          <th class="col-center">预计容量</th><th class="col-center">预留名额</th><th class="col-center">课程名额上限</th>
+          <th>备注</th><th class="col-sticky-actions">操作</th>
         </tr></thead>
         <tbody id="course-offering-body-other"></tbody>
-      </table></div></div>
+      </table></div>
+      </div>
     </section>
 
-    <!-- ═══ 开课管理 · 合分班（已移除，改由专业开课页操作列「合分班」完成） ═══ -->
+    <!-- ═══ 开课管理 · 特殊开课 · 任务安排 ═══ -->
+    <section class="page" id="page-course-special-offering-task">
+      <div class="page-header">
+        <div><h1>特殊开课任务安排</h1><p class="subtitle">对已提交的特殊开课计划进行分组、教师安排</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ol class="offering-module-hint-list">
+          <li>在「特殊开课计划」添加并<strong>提交</strong>课程后，本页将展示对应任务；无数据时也可进入本页。</li>
+          <li>无合分班环节，按教学班进行分组并为各小组安排授课教师（学时类型、起止周等）。</li>
+          <li>完成安排后批量提交，方可进入「特殊开课学生名单管理」向各小组添加学生（无预置批次名单）。</li>
+        </ol>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="other-offering-task-filter-term">开课学期</label>
+            <select class="input input-sm" id="other-offering-task-filter-term" onchange="onOtherOfferingTaskTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-task-filter-prog">专业</label>
+            <select class="input input-sm" id="other-offering-task-filter-prog"><option value="">全部专业</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-task-filter-offering-unit">开课单位</label>
+            <select class="input input-sm" id="other-offering-task-filter-offering-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-task-filter-name">课程号</label>
+            <input class="input input-sm" id="other-offering-task-filter-name" placeholder="课程号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-task-filter-task-submit">提交状态</label>
+            <select class="input input-sm" id="other-offering-task-filter-task-submit">
+              <option value="">全部</option>
+              <option value="submitted">已提交</option>
+              <option value="draft">草稿</option>
+              <option value="reverted">回退</option>
+            </select>
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryOtherOfferingTaskList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetOtherOfferingTaskFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card other-offering-task-list-card">
+        <div class="panel-toolbar other-offering-task-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-other-task-submit" onclick="submitSelectedOtherOfferingTaskArrangements()" disabled>提交</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-other-task-revert" onclick="revertSelectedOtherOfferingTaskArrangements()" disabled>退回</button>
+          <span class="form-hint">完成分组与教师安排后勾选批量提交；提交后可进入学生名单管理向各小组添加学生</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-table other-offering-task-table">
+            <thead><tr>
+              <th class="col-check"><input type="checkbox" id="other-offering-task-check-all" aria-label="全选" onchange="toggleOtherOfferingTaskCheckAll(this.checked)"></th>
+              <th class="col-index">序号</th>
+              <th class="col-center">提交状态</th>
+              <th class="col-center">开课学期</th>
+              <th>课程号</th><th>课程名称</th>
+              <th class="col-center">专业</th><th class="col-center">入学批次</th>
+              <th class="col-center">学分</th><th class="col-center">总学时</th>
+              <th class="col-center">开课单位</th>
+              <th class="col-center">起止周</th>
+              <th class="col-center">课程名额上限</th>
+              <th class="col-sticky-actions">操作</th>
+            </tr></thead>
+            <tbody id="course-special-offering-task-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-special-offering-task-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 特殊开课 · 学生名单管理 ═══ -->
+    <section class="page" id="page-course-special-offering-roster">
+      <div class="page-header">
+        <div><h1>特殊开课学生名单管理</h1><p class="subtitle">任务安排提交后，向各小组手动添加学生</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ul class="offering-module-hint-list">
+          <li>任务安排提交后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
+          <li>特殊开课<strong>无执行计划预置批次名单</strong>，学生均由教务在本环节按小组手工添加。</li>
+        </ul>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="other-offering-roster-filter-term">开课学期</label>
+            <select class="input input-sm" id="other-offering-roster-filter-term" onchange="onOtherOfferingRosterTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-roster-filter-prog">专业</label>
+            <select class="input input-sm" id="other-offering-roster-filter-prog"><option value="">全部专业</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-roster-filter-name">课程号</label>
+            <input class="input input-sm" id="other-offering-roster-filter-name" placeholder="课程号">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryOtherOfferingRosterList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetOtherOfferingRosterFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card other-offering-roster-list-card">
+        <div class="panel-toolbar other-offering-roster-toolbar">
+          <span class="form-hint">无预置批次名单；请在分组页为各小组添加需修读本课程的学生</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-table other-offering-roster-table">
+            <thead><tr>
+              <th class="col-index">序号</th>
+              <th class="col-center">开课学期</th>
+              <th>课程号</th><th>课程名称</th>
+              <th class="col-center">专业</th><th class="col-center">入学批次</th>
+              <th class="col-center">小组数</th>
+              <th class="col-center">学分</th><th class="col-center">总学时</th>
+              <th class="col-sticky-actions">操作</th>
+            </tr></thead>
+            <tbody id="course-special-offering-roster-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-special-offering-roster-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 原特殊开课占位页
+    <section class="page" id="page-course-special-offering-task">...</section>
+    <section class="page" id="page-course-special-offering-roster">...</section>
+    -->
+
+    <!-- ═══ 开课管理 · 合分班（已移除，改由专业开课计划页操作列「合分班」完成） ═══ -->
     <!--
     <section class="page" id="page-course-merge-split">...</section>
     -->
@@ -1222,6 +1993,7 @@
   </div>
   <div class="drawer-body">
     <div class="merge-split-info-grid" id="major-merge-split-info"></div>
+    <div class="alert-info merge-split-guide" id="major-merge-split-guide"></div>
     <div class="merge-split-shuttle">
       <div class="merge-split-pane">
         <div class="merge-split-pane-head">
@@ -1238,8 +2010,9 @@
         <div class="merge-split-list" id="major-merge-split-left-list"></div>
       </div>
       <div class="merge-split-actions">
-        <button class="btn btn-outline btn-sm" type="button" title="合并到右侧" onclick="moveMajorMergeSplitDrawerLines('toRight')">&gt;</button>
-        <button class="btn btn-outline btn-sm" type="button" title="移回左侧" onclick="moveMajorMergeSplitDrawerLines('toLeft')">&lt;</button>
+        <button class="btn btn-outline btn-sm merge-split-action-btn" type="button" title="合班：合并到右侧" onclick="moveMajorMergeSplitDrawerLines('toRight')"><span class="merge-split-action-mark">&gt;</span><span class="merge-split-action-label">合班</span></button>
+        <button class="btn btn-outline btn-sm merge-split-action-btn" type="button" title="分班：移回左侧" onclick="moveMajorMergeSplitDrawerLines('toLeft')"><span class="merge-split-action-mark">&lt;</span><span class="merge-split-action-label">分班</span></button>
+        <!-- 原仅 &gt; / &lt; 符号，改标注合班/分班 -->
       </div>
       <div class="merge-split-pane">
         <div class="merge-split-pane-head">
@@ -1295,8 +2068,8 @@
           <input class="input input-sm readonly" id="mos-edit-total-hours" type="text" readonly tabindex="-1">
         </div>
         <div class="form-item">
-          <label class="req" for="mos-edit-weekly-hours">周学时</label>
-          <input class="input input-sm" id="mos-edit-weekly-hours" type="number" min="0" step="0.1">
+          <label for="mos-edit-weekly-hours">计划周学时（仅供参考）</label>
+          <input class="input input-sm readonly" id="mos-edit-weekly-hours" type="text" readonly tabindex="-1">
         </div>
         <div class="form-item">
           <label class="req" for="mos-edit-week-range">起止周</label>
@@ -1316,9 +2089,22 @@
         </div>
         -->
         <div class="form-item">
-          <label for="mos-edit-student-total">总人数</label>
+          <label for="mos-edit-student-total">计划总人数</label>
           <input class="input input-sm readonly" id="mos-edit-student-total" type="text" readonly tabindex="-1">
+          <p class="form-hint">老生：读取批次中可修该课程的学生人数，不可修改</p>
         </div>
+        <!-- <label for="mos-edit-student-total">总人数</label> 原字段名 -->
+        <div class="form-item">
+          <label class="req" for="mos-edit-reserved-spots">预留名额</label>
+          <input class="input input-sm" id="mos-edit-reserved-spots" type="number" min="0" step="1" placeholder="5" required oninput="updateMajorOfferingEditCapacityLimitDisplay()">
+          <p class="form-hint">默认 5，可修改；计入课程名额上限</p>
+        </div>
+        <div class="form-item">
+          <label for="mos-edit-capacity-limit">课程名额上限</label>
+          <input class="input input-sm readonly" id="mos-edit-capacity-limit" type="text" readonly tabindex="-1">
+          <p class="form-hint">计划总人数 + 预留名额</p>
+        </div>
+        <!--
         <div class="form-item">
           <label for="mos-edit-student-international">国际学生人数</label>
           <input class="input input-sm readonly" id="mos-edit-student-international" type="text" readonly tabindex="-1">
@@ -1331,6 +2117,7 @@
           <label for="mos-edit-student-chinese">中国学生人数</label>
           <input class="input input-sm readonly" id="mos-edit-student-chinese" type="text" readonly tabindex="-1">
         </div>
+        -->
         <div class="form-item">
           <label for="mos-edit-venue-types">场地类型选择</label>
           <div class="clo-multiselect" id="mos-edit-venue-types-multiselect">
@@ -1367,6 +2154,27 @@
         <div class="form-item">
           <label class="req" for="mos-edit-is-venue-scheduled">是否排场地</label>
           <select class="input input-sm" id="mos-edit-is-venue-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="mos-edit-is-attendance">是否考勤（预留）</label>
+          <select class="input input-sm" id="mos-edit-is-attendance">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="mos-edit-is-grade-entry">是否录入成绩（预留）</label>
+          <select class="input input-sm" id="mos-edit-is-grade-entry">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="mos-edit-is-exam-scheduled">是否排考（预留）</label>
+          <select class="input input-sm" id="mos-edit-is-exam-scheduled">
             <option value="yes">是</option>
             <option value="no">否</option>
           </select>
@@ -1415,6 +2223,7 @@
         <input class="input input-sm readonly" id="mos-edit-programme-batches" type="text" readonly tabindex="-1">
       </div>
     </section>
+    <!-- 教师安排模块暂隐藏，改由任务安排·分组页维护
     <section class="offering-edit-section">
       <h4 class="offering-edit-section-title">教师安排</h4>
       <div class="form-grid-2">
@@ -1431,10 +2240,248 @@
         </div>
       </div>
     </section>
+    -->
   </div>
   <div class="drawer-foot">
     <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingEditDrawer()">取消</button>
     <button class="btn btn-primary" type="button" onclick="confirmMajorOfferingEditDrawer()">确定</button>
+  </div>
+</aside>
+
+<!-- ═══ 抽屉：通识选修开课 · 修改 ═══ -->
+<div class="drawer-backdrop" id="drawer-ge-offering-edit-backdrop" onclick="closeGeOfferingEditDrawer()"></div>
+<aside class="drawer-panel drawer-ge-offering-edit" id="drawer-ge-offering-edit">
+  <div class="drawer-head">
+    <h3>修改开课计划</h3>
+    <button class="modal-close" type="button" onclick="closeGeOfferingEditDrawer()">×</button>
+  </div>
+  <div class="drawer-body offering-edit-drawer-body">
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">课程信息</h4>
+      <div class="form-grid-2">
+        <div class="form-item">
+          <label class="req" for="ge-edit-course-code">课程号</label>
+          <input class="input input-sm readonly" id="ge-edit-course-code" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-offering-unit">开课单位</label>
+          <input class="input input-sm readonly" id="ge-edit-offering-unit" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item full">
+          <label class="req" for="ge-edit-course-name">课程名称</label>
+          <input class="input input-sm readonly" id="ge-edit-course-name" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-credits">学分</label>
+          <input class="input input-sm readonly" id="ge-edit-credits" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-total-hours">总学时</label>
+          <input class="input input-sm readonly" id="ge-edit-total-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-student-total">计划总人数</label>
+          <input class="input input-sm" id="ge-edit-student-total" type="number" min="0" step="1" oninput="updateGeOfferingEditCapacityLimitDisplay()">
+          <p class="form-hint">通识选修由选课应用生成名单，此处设置计划招生人数</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-reserved-spots">预留名额</label>
+          <input class="input input-sm" id="ge-edit-reserved-spots" type="number" min="0" step="1" placeholder="5" required oninput="updateGeOfferingEditCapacityLimitDisplay()">
+          <p class="form-hint">默认 5，可修改；计入课程名额上限</p>
+        </div>
+        <div class="form-item">
+          <label for="ge-edit-capacity-limit">课程名额上限</label>
+          <input class="input input-sm readonly" id="ge-edit-capacity-limit" type="text" readonly tabindex="-1">
+          <p class="form-hint">计划总人数 + 预留名额</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-enrollment-type">选课类型</label>
+          <input class="input input-sm readonly" id="ge-edit-enrollment-type" type="text" readonly tabindex="-1" value="开放选课">
+          <p class="form-hint">通识选修固定为开放选课，名单由选课应用生成</p>
+        </div>
+        <div class="form-item">
+          <label for="ge-edit-venue-types">场地类型选择</label>
+          <div class="clo-multiselect" id="ge-edit-venue-types-multiselect">
+            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleGeOfferingVenueTypeDropdown(event)">
+              <span class="clo-multiselect-display placeholder" id="ge-edit-venue-types-display">请选择</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="ge-edit-venue-types-dropdown" hidden>
+              <div class="clo-multiselect-options" id="ge-edit-venue-types-options"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label for="ge-edit-classroom-arrangement">教室安排</label>
+          <div class="input-with-btn">
+            <input class="input input-sm" id="ge-edit-classroom-arrangement" type="text" placeholder="请选择" readonly tabindex="-1">
+            <button class="btn btn-outline btn-sm" type="button" onclick="openGeOfferingClassroomPickerModal()">选择</button>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-is-scheduled">是否排课</label>
+          <select class="input input-sm" id="ge-edit-is-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-is-venue-scheduled">是否排场地</label>
+          <select class="input input-sm" id="ge-edit-is-venue-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-is-attendance">是否考勤（预留）</label>
+          <select class="input input-sm" id="ge-edit-is-attendance">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-is-grade-entry">是否录入成绩（预留）</label>
+          <select class="input input-sm" id="ge-edit-is-grade-entry">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-is-exam-scheduled">是否排考（预留）</label>
+          <select class="input input-sm" id="ge-edit-is-exam-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item full">
+          <label for="ge-edit-remark">备注</label>
+          <textarea class="input input-sm offering-edit-remark" id="ge-edit-remark" rows="3" placeholder="备注"></textarea>
+        </div>
+      </div>
+    </section>
+    <!-- 无合班信息：通识选修不按专业批次合班 -->
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeGeOfferingEditDrawer()">取消</button>
+    <button class="btn btn-primary" type="button" onclick="confirmGeOfferingEditDrawer()">确定</button>
+  </div>
+</aside>
+
+<!-- ═══ 抽屉：特殊开课 · 修改 ═══ -->
+<div class="drawer-backdrop" id="drawer-other-offering-edit-backdrop" onclick="closeOtherOfferingEditDrawer()"></div>
+<aside class="drawer-panel drawer-other-offering-edit" id="drawer-other-offering-edit">
+  <div class="drawer-head">
+    <h3>修改开课计划</h3>
+    <button class="modal-close" type="button" onclick="closeOtherOfferingEditDrawer()">×</button>
+  </div>
+  <div class="drawer-body offering-edit-drawer-body">
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">课程信息</h4>
+      <div class="form-grid-2">
+        <div class="form-item">
+          <label class="req" for="other-edit-course-code">课程号</label>
+          <input class="input input-sm readonly" id="other-edit-course-code" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-offering-unit">开课单位</label>
+          <input class="input input-sm readonly" id="other-edit-offering-unit" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item full">
+          <label class="req" for="other-edit-course-name">课程名称</label>
+          <input class="input input-sm readonly" id="other-edit-course-name" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-credits">学分</label>
+          <input class="input input-sm readonly" id="other-edit-credits" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-total-hours">总学时</label>
+          <input class="input input-sm readonly" id="other-edit-total-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-student-total">预计容量</label>
+          <input class="input input-sm" id="other-edit-student-total" type="number" min="0" step="1" oninput="updateOtherOfferingEditCapacityLimitDisplay()">
+          <p class="form-hint">无预置批次名单，由教务在名单管理环节手工添加学生</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-reserved-spots">预留名额</label>
+          <input class="input input-sm" id="other-edit-reserved-spots" type="number" min="0" step="1" placeholder="5" required oninput="updateOtherOfferingEditCapacityLimitDisplay()">
+          <p class="form-hint">默认 5，可修改；计入课程名额上限</p>
+        </div>
+        <div class="form-item">
+          <label for="other-edit-capacity-limit">课程名额上限</label>
+          <input class="input input-sm readonly" id="other-edit-capacity-limit" type="text" readonly tabindex="-1">
+          <p class="form-hint">预计容量 + 预留名额</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-enrollment-type">选课类型</label>
+          <input class="input input-sm readonly" id="other-edit-enrollment-type" type="text" readonly tabindex="-1" value="不开放选课">
+          <p class="form-hint">特殊开课固定为不开放选课，学生由教务手工维护</p>
+        </div>
+        <div class="form-item">
+          <label for="other-edit-venue-types">场地类型选择</label>
+          <div class="clo-multiselect" id="other-edit-venue-types-multiselect">
+            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleOtherOfferingVenueTypeDropdown(event)">
+              <span class="clo-multiselect-display placeholder" id="other-edit-venue-types-display">请选择</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="other-edit-venue-types-dropdown" hidden>
+              <div class="clo-multiselect-options" id="other-edit-venue-types-options"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label for="other-edit-classroom-arrangement">教室安排</label>
+          <div class="input-with-btn">
+            <input class="input input-sm" id="other-edit-classroom-arrangement" type="text" placeholder="请选择" readonly tabindex="-1">
+            <button class="btn btn-outline btn-sm" type="button" onclick="openOtherOfferingClassroomPickerModal()">选择</button>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-is-scheduled">是否排课</label>
+          <select class="input input-sm" id="other-edit-is-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-is-venue-scheduled">是否排场地</label>
+          <select class="input input-sm" id="other-edit-is-venue-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-is-attendance">是否考勤（预留）</label>
+          <select class="input input-sm" id="other-edit-is-attendance">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-is-grade-entry">是否录入成绩（预留）</label>
+          <select class="input input-sm" id="other-edit-is-grade-entry">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-edit-is-exam-scheduled">是否排考（预留）</label>
+          <select class="input input-sm" id="other-edit-is-exam-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item full">
+          <label for="other-edit-remark">备注</label>
+          <textarea class="input input-sm offering-edit-remark" id="other-edit-remark" rows="3" placeholder="备注"></textarea>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeOtherOfferingEditDrawer()">取消</button>
+    <button class="btn btn-primary" type="button" onclick="confirmOtherOfferingEditDrawer()">确定</button>
   </div>
 </aside>
 
@@ -1479,7 +2526,7 @@
 <div class="modal-overlay modal-nested" id="modal-major-teacher-picker">
   <div class="modal modal-xl">
     <div class="modal-head">
-      <h3>新增教师</h3>
+      <h3 id="teacher-picker-title">新增教师</h3>
       <button class="modal-close" type="button" onclick="closeMajorOfferingTeacherPickerModal()">×</button>
     </div>
     <div class="modal-body teacher-picker-modal-body">
@@ -1497,9 +2544,8 @@
             <label for="teacher-picker-filter-type">教师类型</label>
             <select class="input input-sm" id="teacher-picker-filter-type">
               <option value="">please select</option>
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Visiting">Visiting</option>
+              <!-- 选项由 ensureMajorOfferingTeacherPickerTypeFilter 按代码集简写生成 -->
+              <!-- <option value="Full-time">Full-time</option><option value="Part-time">Part-time</option><option value="Visiting">Visiting</option> -->
             </select>
           </div>
           <div class="form-item">
@@ -1511,7 +2557,7 @@
             </select>
           </div>
           <div class="form-item">
-            <label for="teacher-picker-filter-dept">所属部门（代码）</label>
+            <label for="teacher-picker-filter-dept">所属部门</label>
             <select class="input input-sm" id="teacher-picker-filter-dept">
               <option value="">please select</option>
             </select>
@@ -1530,21 +2576,16 @@
             <th>教师姓名</th>
             <th>教师类型</th>
             <th class="col-center">性别</th>
-            <th class="col-center">所属部门（代码）</th>
+            <th class="col-center">所属部门</th>
           </tr></thead>
           <tbody id="teacher-picker-tbody"></tbody>
         </table>
       </div>
       <div class="pagination teacher-picker-pagination" id="teacher-picker-pagination"></div>
-      <div class="form-item teacher-picker-role-row">
+      <!-- <div class="form-item teacher-picker-role-row">
         <label class="req" for="teacher-picker-role">分配角色</label>
-        <select class="input input-sm" id="teacher-picker-role">
-          <option value="">please select</option>
-          <option value="主讲">主讲</option>
-          <option value="助教">助教</option>
-          <option value="Support">Support</option>
-        </select>
-      </div>
+        <select class="input input-sm" id="teacher-picker-role">...</select>
+      </div> 原弹窗内分配角色，改由外部列表选择 -->
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingTeacherPickerModal()">取消</button>
@@ -1768,10 +2809,10 @@
         <label for="mos-filter-name">姓名</label>
         <input class="input input-sm" id="mos-filter-name" placeholder="姓名">
       </div>
-      <div class="form-item">
-        <label for="mos-filter-group">所在小组</label>
+      <div class="form-item student-roster-group-field">
+        <label for="mos-filter-group">课程组</label>
         <select class="input input-sm" id="mos-filter-group">
-          <option value="">全部小组</option>
+          <option value="">全部课程组</option>
         </select>
       </div>
       <div class="student-roster-query-actions">
@@ -1783,7 +2824,7 @@
       <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentPickerModal()">新增</button>
       <button class="btn btn-outline btn-sm btn-danger-outline" type="button" onclick="deleteMajorOfferingStudentRosterSelected()">删除</button>
       <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentRemovalLog()">名单移除记录</button>
-      <button class="btn btn-outline btn-sm" type="button" onclick="adjustMajorOfferingStudentGrouping()">调整学生分组</button>
+      <button class="btn btn-outline btn-sm student-roster-adjust-group-btn" type="button" onclick="adjustMajorOfferingStudentGrouping()">调整学生分组</button>
     </div>
     <div class="table-scroll student-roster-table-wrap">
       <table class="data-table compact student-roster-table">
@@ -1797,7 +2838,10 @@
           <th class="col-center">入学批次</th>
           <th class="col-center">国籍</th>
           <th class="col-center">学生类型</th>
-          <th>所在小组</th>
+          <th class="col-center">学籍状态</th>
+          <th class="col-center">学籍类型</th>
+          <!-- <th>课程组</th> 计划阶段未分组，改由学生名单管理展示 -->
+          <!-- <th>所在小组</th> 原列名 -->
           <th>名单来源</th>
         </tr></thead>
         <tbody id="mos-roster-tbody"></tbody>
@@ -1870,10 +2914,94 @@
       <span id="mspk-picker-count">共 0 条记录</span>
       <div class="pagination" id="mspk-picker-pagination"></div>
     </div>
+    <div class="form-item student-picker-group-field">
+      <label class="req" for="mspk-target-group">所属小组</label>
+      <!-- <label class="req" for="mspk-target-group">放入小组</label> --> <!-- 原字段名 -->
+      <select class="input input-sm" id="mspk-target-group">
+        <option value="">请选择</option>
+      </select>
+      <p class="form-hint">新增学生须指定所属小组；若尚未分组，可先按专业批次默认组选择。</p>
+    </div>
   </div>
   <div class="drawer-foot">
     <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingStudentPickerDrawer()">取消</button>
     <button class="btn btn-primary" type="button" onclick="confirmMajorOfferingStudentPicker()">确定</button>
+  </div>
+</aside>
+
+<!-- ═══ 抽屉：预置名单分组（分组页学生名单 Tab） ═══ -->
+<div class="drawer-backdrop" id="drawer-preset-roster-grouping-backdrop" onclick="closePresetRosterGroupingDrawer()"></div>
+<aside class="drawer-panel drawer-preset-roster-grouping" id="drawer-preset-roster-grouping">
+  <div class="drawer-head">
+    <h3>预置名单分组</h3>
+    <button class="modal-close" type="button" onclick="closePresetRosterGroupingDrawer()">×</button>
+  </div>
+  <div class="drawer-body student-picker-drawer-body">
+    <p class="form-hint preset-roster-grouping-hint">仅展示预置名单中尚未分组的符合条件学生；请在下方选择所属课程组，勾选后点击「确定分配」放入对应小组，不会覆盖来源为「手动添加」的学生。</p>
+    <div class="picker-filter-grid preset-roster-grouping-filters">
+      <div class="form-item">
+        <label for="prg-filter-student-no">学号</label>
+        <input class="input input-sm" id="prg-filter-student-no" placeholder="学号">
+      </div>
+      <div class="form-item">
+        <label for="prg-filter-name">姓名</label>
+        <input class="input input-sm" id="prg-filter-name" placeholder="姓名">
+      </div>
+      <div class="form-item">
+        <label for="prg-filter-school">学院</label>
+        <select class="input input-sm" id="prg-filter-school" onchange="onPresetRosterGroupingSchoolChange()">
+          <option value="">全部学院</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label for="prg-filter-prog">专业</label>
+        <select class="input input-sm" id="prg-filter-prog" onchange="onPresetRosterGroupingProgrammeChange()">
+          <option value="">全部专业</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label for="prg-filter-intake">批次</label>
+        <select class="input input-sm" id="prg-filter-intake" onchange="renderPresetRosterGroupingDrawer()">
+          <option value="">全部批次</option>
+        </select>
+      </div>
+      <div class="picker-filter-actions">
+        <button class="btn btn-primary btn-sm" type="button" onclick="queryPresetRosterGrouping()">查询</button>
+        <button class="btn btn-outline btn-sm" type="button" onclick="resetPresetRosterGroupingFilters()">重置</button>
+      </div>
+    </div>
+    <div class="picker-table-wrap student-picker-table-wrap">
+      <table class="data-table compact prg-picker-table">
+        <thead><tr>
+          <th class="col-check"><input type="checkbox" id="prg-check-all" aria-label="全选" onchange="togglePresetRosterGroupingCheckAll(this.checked)"></th>
+          <th class="col-index">序号</th>
+          <th>学号</th>
+          <th>姓名</th>
+          <th class="col-center">学院</th>
+          <th class="col-center">专业</th>
+          <th class="col-center">批次</th>
+          <th class="col-center">分组状态</th>
+        </tr></thead>
+        <tbody id="prg-picker-tbody"></tbody>
+      </table>
+    </div>
+    <div class="picker-table-footer student-picker-table-footer">
+      <span id="prg-picker-count">共 0 条记录</span>
+      <p class="form-hint preset-roster-grouping-summary" id="prg-picker-summary"></p>
+      <div class="pagination" id="prg-picker-pagination"></div>
+    </div>
+    <div class="form-item student-picker-group-field preset-roster-grouping-target">
+      <label class="req" for="prg-target-group">所属课程组</label>
+      <select class="input input-sm" id="prg-target-group">
+        <option value="">请选择</option>
+      </select>
+      <p class="form-hint">勾选学生并选择所属课程组后，点击「确定分配」统一放入该小组。</p>
+      <!-- <div class="preset-roster-grouping-target-row">...应用到选中...</div> --> <!-- 原批量应用到选中按钮，改由确定分配统一提交 -->
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closePresetRosterGroupingDrawer()">取消</button>
+    <button class="btn btn-primary" type="button" onclick="confirmPresetRosterGrouping()">确定分配</button>
   </div>
 </aside>
 
@@ -1908,6 +3036,126 @@
   </div>
 </aside>
 
+<!-- ═══ 抽屉：开课管理 · 单位开课时间设置 ═══ -->
+<div class="drawer-backdrop" id="drawer-course-unit-offering-time-backdrop" onclick="closeCourseUnitOfferingTimeDrawer()"></div>
+<aside class="drawer-panel drawer-course-unit-offering-time" id="drawer-course-unit-offering-time">
+  <div class="drawer-head">
+    <h3 id="course-unit-offering-time-title">单位开课时间设置</h3>
+    <button class="modal-close" type="button" onclick="closeCourseUnitOfferingTimeDrawer()">×</button>
+  </div>
+  <div class="drawer-body course-unit-offering-time-body">
+    <div class="alert-info" id="course-unit-offering-time-hint">可新增需要单独设置开放时间的开课单位；未新增的单位默认按全校开课时间范围操作。</div>
+    <p class="course-unit-offering-time-default text-muted" id="course-unit-offering-time-default"></p>
+    <div class="course-unit-offering-time-toolbar">
+      <button class="btn btn-outline btn-sm" type="button" id="btn-course-unit-offering-time-add" onclick="openCourseUnitOfferingTimeAddModal()">新增</button>
+      <!-- <select id="course-unit-offering-time-add-select">...</select> 原抽屉内下拉选择，改弹窗选择学院 -->
+      <!-- <button ...>新增单位</button> 原文案「新增单位」，改「新增」 -->
+    </div>
+    <div class="table-scroll course-unit-offering-time-table-wrap">
+      <table class="data-table compact course-unit-offering-time-table">
+        <thead>
+          <tr>
+            <th class="col-index col-center">序号</th>
+            <th class="col-center">开课单位</th>
+            <th>单位名称</th>
+            <th class="col-center">状态</th>
+            <th>开放开始</th>
+            <th>开放截止</th>
+            <th class="col-actions">操作</th>
+          </tr>
+        </thead>
+        <tbody id="course-unit-offering-time-body"></tbody>
+      </table>
+    </div>
+    <!-- 原左右分栏：左侧单位列表 + 右侧按专业/通识/特殊等细分模块，改各单位统一一段开放时间 -->
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeCourseUnitOfferingTimeDrawer()">关闭</button>
+    <button class="btn btn-primary" type="button" id="btn-course-unit-offering-time-save" onclick="saveCourseUnitOfferingTimeDrawer()">保存</button>
+  </div>
+</aside>
+
+<div id="cuot-date-picker-popover" class="cuot-date-picker-popover" hidden onclick="event.stopPropagation()">
+  <div id="cuot-date-picker-toolbar" class="cuot-date-picker-toolbar" hidden>
+    <button type="button" class="cuot-picker-action is-cancel" onmousedown="cancelCuotDatePicker(event)">取消</button>
+    <span class="cuot-picker-toolbar-title" id="cuot-date-picker-toolbar-title">选择日期时间</span>
+    <button type="button" class="cuot-picker-action is-confirm" onmousedown="confirmCuotDatePicker(event)">确定</button>
+  </div>
+  <div class="cuot-date-picker-body">
+    <div id="cuot-date-picker-date-panel">
+      <div class="cuot-date-picker-month-bar">
+        <div class="cuot-date-picker-month-nav">
+          <button type="button" class="cuot-date-picker-nav" onclick="shiftCuotDatePickerYear(-1, event)" aria-label="上一年">«</button>
+          <button type="button" class="cuot-date-picker-nav" onclick="shiftCuotDatePickerMonth(-1, event)" aria-label="上一月">‹</button>
+        </div>
+        <div class="cuot-date-picker-ym-selects">
+          <!-- <select class="cuot-date-picker-ym-select" id="cuot-date-picker-year" ...></select> --> <!-- 原 native select，在 fixed 弹层内下拉被裁剪且难交互 -->
+          <span class="cuot-date-picker-ym-label" id="cuot-date-picker-year-display">
+            <span id="cuot-date-picker-year-label">2026</span><span class="cuot-date-picker-ym-unit">年</span>
+          </span>
+          <span class="cuot-date-picker-ym-label" id="cuot-date-picker-month-display">
+            <span id="cuot-date-picker-month-label">1</span><span class="cuot-date-picker-ym-unit">月</span>
+          </span>
+          <!-- <button type="button" class="cuot-date-picker-ym-trigger" id="cuot-date-picker-year-trigger" onclick="toggleCuotDatePickerYmPanel('year', event)">...</button> -->
+          <!-- <button type="button" class="cuot-date-picker-ym-trigger" id="cuot-date-picker-month-trigger" onclick="toggleCuotDatePickerYmPanel('month', event)">...</button> --> <!-- 原点击展开年/月面板，改只读展示，请用两侧 ‹ › « » 切换 -->
+        </div>
+        <div class="cuot-date-picker-month-nav">
+          <button type="button" class="cuot-date-picker-nav" onclick="shiftCuotDatePickerMonth(1, event)" aria-label="下一月">›</button>
+          <button type="button" class="cuot-date-picker-nav" onclick="shiftCuotDatePickerYear(1, event)" aria-label="下一年">»</button>
+        </div>
+      </div>
+      <!-- <div class="cuot-date-picker-ym-panel" id="cuot-date-picker-ym-panel" hidden onclick="event.stopPropagation()"></div> --> <!-- 原点击年/月展开选择面板，改只读展示后不再使用 -->
+      <div class="cuot-date-picker-ym-panel" id="cuot-date-picker-ym-panel" hidden></div>
+      <div class="cuot-date-picker-weekdays" aria-hidden="true">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      </div>
+      <div class="cuot-date-picker-grid" id="cuot-date-picker-grid"></div>
+    </div>
+    <div id="cuot-date-picker-time-panel" hidden>
+      <button type="button" class="cuot-date-picker-time-row" onclick="toggleCuotTimeWheel(event)">
+        <span class="cuot-date-picker-time-row-label">时间</span>
+        <span class="cuot-date-picker-time-row-value" id="cuot-date-picker-time-display">08:00</span>
+        <span class="cuot-date-picker-time-chevron" id="cuot-date-picker-time-chevron" aria-hidden="true">›</span>
+      </button>
+      <div id="cuot-date-picker-time-wheel" class="cuot-date-picker-time-wheel">
+        <div class="cuot-time-wheel-wrap">
+          <div class="cuot-time-wheel-viewport">
+            <div class="cuot-time-wheel-list" id="cuot-hour-wheel"></div>
+          </div>
+          <span class="cuot-time-wheel-colon">:</span>
+          <div class="cuot-time-wheel-viewport">
+            <div class="cuot-time-wheel-list" id="cuot-minute-wheel"></div>
+          </div>
+        </div>
+      </div>
+      <!-- 原 hour/minute 按钮网格，改滚轮式选择 -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：开课管理 · 新增开课单位 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-course-unit-offering-time-add">
+  <div class="modal modal-sm course-unit-offering-time-add-modal">
+    <div class="modal-head">
+      <h3>新增开课单位</h3>
+      <button class="modal-close" type="button" onclick="closeCourseUnitOfferingTimeAddModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="req" for="course-unit-offering-time-add-select">开课单位</label>
+        <select class="input input-sm" id="course-unit-offering-time-add-select">
+          <option value="">请选择开课单位</option>
+        </select>
+      </div>
+      <p class="form-hint">未单独设置的单位默认按全校开课时间范围操作。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeCourseUnitOfferingTimeAddModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmCourseUnitOfferingTimeAddModal()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：专业开课 · 学生分组 ═══ -->
 <div class="modal-overlay modal-nested" id="modal-student-grouping">
   <div class="modal modal-sm">
@@ -1929,15 +3177,16 @@
           </div>
         </div>
         <!-- <div class="grouping-check-list" id="mos-grouping-groups"></div> 原平铺复选框 -->
-        <p class="form-hint">点击下拉框多选，仅可选择当前名单中已有的小组</p>
+        <p class="form-hint">1名学生在同一课程内只能属于1个小组</p>
+        <!-- <p class="form-hint">点击下拉框多选，仅可选择当前名单中已有的小组</p> -->
       </div>
-      <div class="form-item">
+      <!-- <div class="form-item">
         <label class="req">移出原分组</label>
         <div class="form-radio-row">
           <label class="form-radio-option"><input type="radio" name="mos-grouping-remove-original" value="yes" checked> 是</label>
           <label class="form-radio-option"><input type="radio" name="mos-grouping-remove-original" value="no"> 否</label>
         </div>
-      </div>
+      </div> -->
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-student-grouping')">取消</button>
@@ -1985,7 +3234,8 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：学时分组（全屏） ═══ -->
+<!-- ═══ 弹窗：学时分组（全屏）—— 已改为独立页 page-offering-grouping ═══ -->
+<!--
 <div class="modal-overlay" id="modal-offering-grouping">
   <div class="modal modal-xl offering-grouping-modal">
     <div class="modal-head">
@@ -1993,100 +3243,288 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-offering-grouping')">×</button>
     </div>
     <div class="modal-body offering-grouping-body">
-      <div class="offering-grouping-meta" id="offering-grouping-meta"></div>
-      <div class="offering-grouping-layout">
-        <aside class="offering-group-sidebar">
-          <div class="offering-group-sidebar-head">
-            <strong>分组信息</strong>
-            <input class="input input-sm" placeholder="搜索" aria-label="搜索分组">
-          </div>
-          <div class="offering-group-sidebar-actions">
-            <button class="btn btn-outline btn-sm" type="button" onclick="addOfferingGroup()">添加分组</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="groupByAdminClass()">按行政班分组</button>
-            <button class="btn btn-outline btn-sm btn-danger-text" type="button" onclick="clearOfferingGroups()">撤销所有教学小组</button>
-          </div>
-          <div class="offering-group-tree" id="offering-group-tree"></div>
-        </aside>
-        <div class="offering-group-main">
-          <div class="offering-group-tabs">
-            <span class="offering-group-tab is-active">指定教师学时分组</span>
-            <span class="offering-group-tab is-muted">指定学生名单分组</span>
-          </div>
-          <div class="offering-group-toolbar">
-            <button class="btn btn-primary btn-sm" type="button" onclick="openGroupAssignForm()">新增</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="alert('删除（原型占位）')">删除</button>
-          </div>
-          <div class="table-scroll">
-            <table class="data-table compact offering-group-assign-table">
-              <thead><tr>
-                <th class="col-check"><input type="checkbox" aria-label="全选"></th>
-                <th class="col-index">序号</th>
-                <th>组名称</th><th class="col-center">人数</th><th>行政班</th>
-                <th>学时类型</th><th class="col-center">起止周</th><th class="col-center">学时</th>
-                <th>教工号</th><th>任课教师</th><th>授课角色</th><th>操作</th>
-              </tr></thead>
-              <tbody id="offering-group-assign-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      ... 原弹窗内容已迁移至 #page-offering-grouping ...
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-grouping')">关闭</button>
     </div>
   </div>
 </div>
+-->
+<!-- 原 modal-offering-grouping 完整 markup 已注释移除，避免与页面 duplicate id；详见 page-offering-grouping -->
 
-<!-- ═══ 弹窗：安排学时分组 ═══ -->
-<div class="modal-overlay modal-nested" id="modal-group-assign-form">
-  <div class="modal">
+<!-- ═══ 弹窗：专业开课 · 自动分组（功能暂下线） ═══
+<div class="modal-overlay modal-nested" id="modal-offering-auto-group">
+  <div class="modal modal-sm offering-auto-group-modal">
     <div class="modal-head">
-      <h3>安排学时分组</h3>
+      <h3>自动分组</h3>
+      <button class="modal-close" type="button" onclick="closeOfferingAutoGroupModal()">×</button>
+    </div>
+    <div class="modal-body offering-auto-group-body">
+      <p class="form-hint">根据当前学生名单自动生成分组，请选择分组方式：</p>
+      <p class="offering-auto-group-warning">注意：自动分组将覆盖当前全部分组，并<strong>清除重置</strong>「教师安排」及「学时安排情况汇总」中的全部学时安排数据。</p>
+      <div class="offering-auto-group-options" id="offering-auto-group-options"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeOfferingAutoGroupModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmOfferingAutoGroupModal()">生成</button>
+    </div>
+  </div>
+</div>
+-->
+
+<!-- ═══ 弹窗：专业开课 · 合并分组 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-offering-group-merge">
+  <div class="modal modal-sm offering-group-merge-modal">
+    <div class="modal-head">
+      <h3>合并分组</h3>
+      <button class="modal-close" type="button" onclick="closeOfferingGroupMergeModal()">×</button>
+    </div>
+    <div class="modal-body offering-group-merge-body">
+      <p class="form-hint">选择要合并的小组，并填写合并后的小组名称。</p>
+      <div class="form-item">
+        <label class="req">选择小组</label>
+        <div class="clo-multiselect" id="offering-group-merge-multiselect">
+          <button type="button" class="clo-multiselect-trigger input" onclick="toggleOfferingGroupMergeDropdown(event)">
+            <span class="clo-multiselect-display placeholder" id="offering-group-merge-display">请选择</span>
+            <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="clo-multiselect-dropdown" id="offering-group-merge-dropdown" hidden>
+            <div class="clo-multiselect-empty" id="offering-group-merge-empty" hidden>暂无可用小组</div>
+            <div class="clo-multiselect-options" id="offering-group-merge-options"></div>
+          </div>
+        </div>
+        <!-- <div class="offering-group-merge-list" id="offering-group-merge-list"></div> 原平铺复选框列表 -->
+        <p class="form-hint">点击下拉框多选，至少选择两个小组</p>
+      </div>
+      <div class="form-item">
+        <label class="req" for="offering-group-merge-name">合并后小组名称</label>
+        <input class="input input-sm" id="offering-group-merge-name" type="text" placeholder="请输入小组名称">
+        <p class="form-hint">课程组名称展示为课程名称（小组名称），如 Financial Accounting（A组）</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupMergeModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmOfferingGroupMergeModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：专业开课 · 修改分组 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-offering-group-edit">
+  <div class="modal modal-sm offering-group-edit-modal">
+    <div class="modal-head">
+      <h3 id="offering-group-edit-title">修改分组</h3>
+      <button class="modal-close" type="button" onclick="closeOfferingGroupEditModal()">×</button>
+    </div>
+    <div class="modal-body offering-group-edit-body">
+      <input type="hidden" id="offering-group-edit-id">
+      <div class="form-item">
+        <label for="offering-group-edit-course-name">课程名称</label>
+        <input class="input input-sm readonly" id="offering-group-edit-course-name" type="text" readonly tabindex="-1">
+      </div>
+      <div class="form-item">
+        <label class="req" for="offering-group-edit-name">分组名称</label>
+        <input class="input input-sm" id="offering-group-edit-name" type="text" placeholder="请输入">
+      </div>
+      <div class="form-item">
+        <label class="req" for="offering-group-edit-capacity-limit">人数上限</label>
+        <input class="input input-sm" id="offering-group-edit-capacity-limit" type="number" min="1" step="1" placeholder="请输入">
+        <p class="form-hint">不得超过课程人数上限</p>
+        <!-- placeholder="如 60" 原示例占位；hint：该组最多可容纳的学生人数，学生名单管理环节将参考此上限 -->
+      </div>
+      <!-- <div class="form-item">
+        <label for="offering-group-edit-batch">专业批次</label>
+        <input class="input input-sm readonly" id="offering-group-edit-batch" type="text" readonly tabindex="-1">
+      </div> --> <!-- 暂不在修改分组弹窗展示专业批次 -->
+      <div class="form-item">
+        <label for="offering-group-edit-remark">备注说明</label>
+        <textarea class="input input-sm offering-group-edit-remark" id="offering-group-edit-remark" rows="4" placeholder="可填写分班偏好、特殊要求等，供后续学生名单管理环节参考"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupEditModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveOfferingGroupEditModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：专业开课 · 批量新增分组 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-offering-group-batch-add">
+  <div class="modal modal-sm offering-group-batch-add-modal">
+    <div class="modal-head">
+      <h3>批量新增分组</h3>
+      <button class="modal-close" type="button" onclick="closeOfferingGroupBatchAddModal()">×</button>
+    </div>
+    <div class="modal-body offering-group-batch-add-body">
+      <div class="form-item">
+        <label class="req" for="offering-group-batch-count">组数</label>
+        <input class="input input-sm" id="offering-group-batch-count" type="number" min="1" max="99" step="1" placeholder="请输入要新增的分组数量">
+        <p class="form-hint" id="offering-group-batch-add-hint">组名将自动命名为 Group1、Group2…，人数上限按剩余额度均分。</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupBatchAddModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmOfferingGroupBatchAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：设置课程 Coordinator ═══ -->
+<div class="modal-overlay modal-nested" id="modal-section-coordinator">
+  <div class="modal modal-sm section-coordinator-modal">
+    <div class="modal-head">
+      <h3>设置课程 Coordinator</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-section-coordinator')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint section-coordinator-hint">请从本课程已安排的任课教师中选择一名课程 Coordinator。</p>
+      <div class="section-coordinator-picks" id="section-coordinator-picks"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-section-coordinator')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveSectionCoordinatorModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：安排教师（分组弹窗 · 教师安排 Tab） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-group-assign-form">
+  <div class="modal modal-md group-assign-form-modal" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+    <div class="modal-head">
+      <h3>安排教师</h3>
+      <!-- <h3>安排学时分组</h3> -->
       <button class="modal-close" type="button" onclick="closeModal('modal-group-assign-form')">×</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="group-assign-edit-id">
       <div class="form-grid-2">
         <div class="form-field">
-          <label for="group-assign-group">组别 <span class="req">*</span></label>
-          <select class="input" id="group-assign-group"><option value="">请选择</option></select>
+          <label for="group-assign-course-code">课程号</label>
+          <input class="input" id="group-assign-course-code" type="text" readonly tabindex="-1">
         </div>
         <div class="form-field">
-          <label for="group-assign-hour-type">学时类型</label>
-          <select class="input" id="group-assign-hour-type">
-            <option value="理论">理论</option>
-            <option value="实践">实践</option>
-            <option value="实验">实验</option>
+          <label for="group-assign-offering-unit">开课单位</label>
+          <input class="input" id="group-assign-offering-unit" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-field form-field-span-2">
+          <label for="group-assign-hour-type">学时类型 <span class="req">*</span></label>
+          <select class="input" id="group-assign-hour-type" onchange="syncGroupAssignHoursByType()">
+            <option value="理论学时">理论学时</option>
+            <option value="辅导学时">辅导学时</option>
+            <option value="实践学时">实践学时</option>
+            <option value="其他学时">其他学时</option>
           </select>
         </div>
         <div class="form-field">
-          <label>是否合并学时</label>
+          <label for="group-assign-plan-weekly-hours">计划周学时</label>
+          <input class="input" id="group-assign-plan-weekly-hours" type="text" readonly tabindex="-1">
+          <p class="form-hint">参考教学任务计划周学时</p>
+        </div>
+        <div class="form-field">
+          <label for="group-assign-type-total-hours">该类型学时总数</label>
+          <input class="input" id="group-assign-type-total-hours" type="text" readonly tabindex="-1">
+        </div>
+        <!-- <div class="form-field">
+          <label for="group-assign-hours">学时</label>
+          <input class="input" id="group-assign-hours" type="number" min="0" placeholder="如 24">
+        </div> 原学时字段，改由后续排课模块安排 -->
+        <!-- <div class="form-field form-field-span-2">
+          <label for="group-assign-scope">适用范围</label>
+          <select class="input" id="group-assign-scope">...</select>
+        </div> 原单独适用范围字段，已并入指定小组全选 -->
+        <div class="form-field form-field-span-2" id="group-assign-groups-wrap">
+          <label>指定小组 <span class="req">*</span></label>
+          <p class="form-hint">勾选全部小组即全体合班授课（如理论学时）；可多选部分小组分别安排</p>
+          <!-- <div class="group-assign-group-toolbar">
+            <button type="button" class="btn btn-outline btn-sm" onclick="selectAllGroupAssignGroups()">全选</button>
+            <span class="form-hint">全选即全体小组合班授课（如理论学时）；可多选部分小组分别安排</span>
+          </div> -->
+          <div class="group-assign-group-picks" id="group-assign-group-picks"></div>
+          <!-- <p class="form-hint">可多选；同一教师可负责多个小组的同类型学时</p> -->
+        </div>
+        <div class="form-field group-assign-weekly-field">
+          <label for="group-assign-weekly-hours">周学时 <span class="req">*</span></label>
+          <input class="input" id="group-assign-weekly-hours" type="text" inputmode="decimal" placeholder="如 2">
+          <p class="form-hint group-assign-weekly-warn is-empty" id="group-assign-weekly-warn" aria-live="polite">&nbsp;</p>
+          <!-- <p class="form-hint group-assign-weekly-warn" id="group-assign-weekly-warn" hidden></p> --> <!-- 原 hidden 切换导致布局跳动误触遮罩关闭弹窗 -->
+        </div>
+        <div class="form-field group-assign-recorded-field">
+          <label for="group-assign-recorded-hours">本次录入总学时</label>
+          <!-- <label for="group-assign-recorded-hours">已录入学时</label> --> <!-- 原按各组分别展示含累计，改仅展示本次录入总数 -->
+          <input class="input" id="group-assign-recorded-hours" type="text" readonly tabindex="-1">
+          <p class="form-hint group-assign-recorded-warn is-empty" id="group-assign-recorded-hours-warn" aria-live="polite">&nbsp;</p>
+          <p class="form-hint">由周学时与起止周自动计算</p>
+          <!-- <p class="form-hint">按当前所选小组分别统计；各组上限为上方「该类型总学时」</p> --> <!-- 原说明各组累计，改各组 x/30 在上方小组勾选处展示 -->
+          <!-- recordedEl.classList.toggle('group-assign-recorded-over') 原输入框标红，改独立红色提示条 -->
+        </div>
+        <div class="form-field form-field-span-2">
+          <label for="group-assign-week-range">起止周 <span class="req">*</span></label>
+          <div class="input-with-btn group-assign-week-range-input">
+            <input class="input" id="group-assign-week-range" type="text" placeholder="请选择" readonly tabindex="-1">
+            <button class="btn btn-outline btn-sm" type="button" onclick="openGroupAssignWeekRangeModal()">选择</button>
+          </div>
+        </div>
+        <!-- <div class="form-field">
+          <label for="group-assign-week-range">起止周 <span class="req">*</span></label>
+          <input class="input" id="group-assign-week-range" type="text" placeholder="请选择" readonly tabindex="-1">
+        </div>
+        <div class="form-field group-assign-week-range-btn-field">
+          <label class="group-assign-week-range-btn-label" aria-hidden="true">&nbsp;</label>
+          <button class="btn btn-outline btn-sm group-assign-week-range-btn" type="button" onclick="openGroupAssignWeekRangeModal()">选择</button>
+        </div> --> <!-- 原两列布局按钮过宽，改回 input-with-btn -->
+        <!-- <div class="form-field">
+          <label>是否合并排课</label>
           <label class="table-bool-switch">
             <input type="checkbox" id="group-assign-merge-hours" checked>
             <span class="table-bool-track is-on"><span class="table-bool-thumb"></span><span class="table-bool-text">是</span></span>
           </label>
-        </div>
-        <div class="form-field">
-          <label for="group-assign-week-range">起止周 <span class="req">*</span></label>
-          <input class="input" id="group-assign-week-range" placeholder="如 1-12">
-        </div>
-        <div class="form-field">
-          <label for="group-assign-teacher">任课教师 <span class="req">*</span></label>
-          <input class="input" id="group-assign-teacher" placeholder="搜索教师">
-        </div>
-        <div class="form-field">
-          <label for="group-assign-role">授课角色 <span class="req">*</span></label>
-          <select class="input" id="group-assign-role">
-            <option value="主讲">主讲</option>
-            <option value="助教">助教</option>
-            <option value="指导">指导</option>
-          </select>
+        </div> -->
+        <div class="form-field form-field-span-2 group-assign-teacher-field">
+          <div class="group-assign-teacher-head">
+            <label>授课教师 <span class="req">*</span></label>
+            <div class="group-assign-teacher-toolbar">
+              <button type="button" class="btn btn-outline btn-sm" onclick="openGroupAssignTeacherPicker()">添加教师</button>
+              <!-- 原按钮文案：选择教师 -->
+              <span class="form-hint">支持多选；Coordinator 请在分组页通过「设置 Coordinator」指定；Support 由是否开课学院自动判定</span>
+              <!-- <span class="form-hint">支持多选；多名教师时须指定一名课程 Coordinator；Support 由是否开课学院自动判定</span> --> <!-- 原在表单内指定 Coordinator -->
+            </div>
+          </div>
+          <!-- 原布局：label 单独一行，按钮与提示在下方左侧 -->
+          <div class="table-scroll group-assign-teacher-table-wrap">
+            <table class="data-table compact">
+              <thead><tr>
+                <th>工号</th><th>姓名</th><th class="col-center">所属单位</th><th>教师类型</th><th class="col-center">是否 Support 教师</th><th class="col-actions">操作</th>
+                <!-- <th class="col-center">Coordinator</th> --> <!-- 改由分组页「设置 Coordinator」统一指定，不在安排教师弹窗设置 -->
+                <!-- <th>教工号</th> --> <!-- 原表头文案，改「工号」 -->
+                <!-- <th>授课角色</th> 原授课角色列，改是否 Support 教师（非开课单位自动为是）+ 教师类型 -->
+              </tr></thead>
+              <tbody id="group-assign-form-teachers-body"></tbody>
+            </table>
+          </div>
+          <!-- <label for="group-assign-teacher">任课教师</label><input id="group-assign-teacher"> 原手工输入 -->
+          <!-- <label for="group-assign-role">授课角色</label><select id="group-assign-role"> 原单教师单角色 -->
+          <!-- 原「当前已安排教师」模块，已移除 -->
         </div>
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-group-assign-form')">取消</button>
+      <button class="btn btn-ghost" type="button" onclick="cancelGroupAssignForm()">取消</button>
       <button class="btn btn-primary" type="button" onclick="saveGroupAssignForm()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：学时安排汇总 · 安排详情 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-offering-hour-assign-detail">
+  <div class="modal modal-md offering-hour-assign-detail-modal">
+    <div class="modal-head">
+      <h3 id="offering-hour-assign-detail-title">安排详情</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-offering-hour-assign-detail')">×</button>
+    </div>
+    <div class="modal-body" id="offering-hour-assign-detail-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-hour-assign-detail')">关闭</button>
     </div>
   </div>
 </div>
@@ -2172,11 +3610,47 @@
     <div class="modal-head"><h3 id="delete-confirm-title">确认删除</h3><button class="modal-close" onclick="cancelDeleteConfirm()">×</button></div>
     <div class="modal-body">
       <p id="delete-confirm-msg">确定删除吗？此操作不可撤销。</p>
-      <p class="form-hint" id="delete-confirm-hint" style="display:none"></p>
+      <p class="form-hint delete-confirm-hint" id="delete-confirm-hint" style="display:none"></p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="cancelDeleteConfirm()">取消</button>
-      <button class="btn btn-danger" type="button" onclick="confirmDeleteConfirm()">确认删除</button>
+      <button class="btn btn-primary" type="button" id="delete-confirm-btn" onclick="confirmDeleteConfirm()">确认</button>
+      <!-- <button class="btn btn-primary" type="button" onclick="confirmDeleteConfirm()">确认</button> --> <!-- 原无 id，改支持禁用确认 -->
+      <!-- <button class="btn btn-danger" type="button" onclick="confirmDeleteConfirm()">确认</button> -->
+      <!-- <button class="btn btn-danger" type="button" onclick="confirmDeleteConfirm()">确认删除</button> -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：专业开课 · 退回说明填写 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-major-task-revert-remark">
+  <div class="modal">
+    <div class="modal-head"><h3 id="major-task-revert-remark-title">退回确认</h3><button class="modal-close" type="button" onclick="cancelMajorOfferingTaskRevertRemark()">×</button></div>
+    <div class="modal-body">
+      <p id="major-task-revert-remark-msg">确定退回吗？</p>
+      <p class="form-hint" id="major-task-revert-remark-hint" style="display:none"></p>
+      <div class="form-item" style="margin-top:12px;margin-bottom:0">
+        <label class="req" for="major-task-revert-remark-input">退回说明</label>
+        <textarea class="input" id="major-task-revert-remark-input" rows="4" placeholder="请填写退回原因或说明"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="cancelMajorOfferingTaskRevertRemark()">取消</button>
+      <button class="btn btn-primary" type="button" id="major-task-revert-remark-confirm-btn" onclick="confirmMajorOfferingTaskRevertRemark()">退回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：专业开课 · 退回说明查看 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-major-task-revert-view">
+  <div class="modal">
+    <div class="modal-head"><h3 id="major-task-revert-view-title">退回说明</h3><button class="modal-close" type="button" onclick="closeModal('modal-major-task-revert-view')">×</button></div>
+    <div class="modal-body">
+      <p class="form-hint" id="major-task-revert-view-meta"></p>
+      <div class="major-task-revert-view-body" id="major-task-revert-view-body"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeModal('modal-major-task-revert-view')">知道了</button>
     </div>
   </div>
 </div>
@@ -3136,6 +4610,261 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal('modal-gen-exec')">取消</button>
       <button class="btn btn-primary" id="btn-gen-exec-submit" onclick="confirmGenerateExecPlan()">生成并编辑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：通识选修开课 · 添加课程 ═══ -->
+<div class="modal-overlay" id="modal-ge-offering-add">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3>添加通识选修开课</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="picker-filter-grid">
+        <div class="form-item">
+          <label class="req" for="ge-offering-add-term">开课学期</label>
+          <select class="input input-sm" id="ge-offering-add-term" onchange="onGeOfferingAddTermFilterChange()"></select>
+        </div>
+        <div class="form-item">
+          <label for="ge-offering-add-keyword">课程代码 / 名称</label>
+          <input class="input input-sm" id="ge-offering-add-keyword" placeholder="课程代码 / 课程名称" oninput="renderGeOfferingAddModalPicker()">
+        </div>
+        <div class="form-item">
+          <label for="ge-offering-add-unit">开课单位</label>
+          <select class="input input-sm" id="ge-offering-add-unit" onchange="renderGeOfferingAddModalPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="picker-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="renderGeOfferingAddModalPicker()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetGeOfferingAddModalFilters()">重置</button>
+        </div>
+      </div>
+      <p class="form-hint" id="ge-offering-add-term-hint">—</p>
+      <div class="picker-table-wrap" style="margin-top:12px">
+        <table class="data-table compact">
+          <thead><tr>
+            <th class="col-check"><input type="checkbox" id="ge-offering-add-check-all" aria-label="全选" onchange="toggleGeOfferingAddCheckAll(this.checked)"></th>
+            <th class="col-index">序号</th>
+            <th>课程代码</th><th>课程名称</th><th>校选课类别</th>
+            <th class="col-center">学分</th><th class="col-center">总学时</th>
+            <th class="col-center">开课单位</th>
+          </tr></thead>
+          <tbody id="ge-offering-add-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="ge-offering-add-count">共 0 门课程</span>
+      </div>
+      <!-- 暂不支持指定上课批次范围
+      <div class="form-item" style="margin-top:16px">
+        <label class="req">上课批次</label>
+        <p class="form-hint">为所选课程指定本学期要开设的上课批次；每门课 × 每个批次生成一条计划行</p>
+        <div class="checkbox-chip-grid" id="ge-offering-add-intakes"></div>
+      </div>
+      -->
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-ge-offering-add')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmGeOfferingCourseAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：通识选修开课 · 修读范围 ═══ -->
+<div class="modal-overlay" id="modal-ge-offering-scope">
+  <div class="modal modal-md ge-offering-scope-modal">
+    <div class="modal-head">
+      <h3 id="ge-offering-scope-title">修读范围</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-scope')">×</button>
+    </div>
+    <div class="modal-body school-elective-edit-body">
+      <dl class="detail-dl school-elective-edit-summary">
+        <dt>课程代码</dt><dd id="ge-offering-scope-code">—</dd>
+        <dt>课程名称</dt><dd id="ge-offering-scope-name">—</dd>
+        <dt>开课单位</dt><dd id="ge-offering-scope-dept">—</dd>
+      </dl>
+      <p class="form-hint" id="ge-offering-scope-default-hint">默认读取「校选课程管理」中维护的不可选专业与可选学生类型；可按本学期开课计划单独调整。</p>
+      <div class="form-item">
+        <label class="req">不可选专业</label>
+        <div class="input-with-btn school-elective-excluded-programmes-field">
+          <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-programmes">全部专业可选</div>
+          <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
+        </div>
+        <p class="form-hint">未设置表示全部专业均可选。</p>
+      </div>
+      <div class="form-item">
+        <label class="req">可选学生类型</label>
+        <div class="school-elective-student-type-picks" id="ge-offering-scope-student-types"></div>
+        <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-ge-offering-scope')">关闭</button>
+      <button class="btn btn-primary" type="button" id="ge-offering-scope-save-btn" onclick="saveGeOfferingScopeModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：特殊开课 · 添加计划（课程库选择器） ═══ -->
+<div class="modal-overlay" id="modal-other-offering-add">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3>添加特殊开课计划</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-other-offering-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="picker-filter-grid">
+        <div class="form-item">
+          <label class="req" for="other-offering-add-term">开课学期</label>
+          <select class="input input-sm" id="other-offering-add-term" onchange="onOtherOfferingAddTermFilterChange()"></select>
+        </div>
+        <!-- <div class="form-item">
+          <label class="req" for="other-offering-add-programme">上课专业</label>
+          <select class="input input-sm" id="other-offering-add-programme"></select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="other-offering-add-intake">入学批次</label>
+          <select class="input input-sm" id="other-offering-add-intake"></select>
+        </div> --> <!-- 特殊开课不指定专业批次，改由计划页设置预计容量与预留名额 -->
+        <div class="form-item">
+          <label for="other-offering-add-remark">备注</label>
+          <input class="input input-sm" id="other-offering-add-remark" placeholder="如 挂科重修、跨专业补修">
+        </div>
+        <div class="form-item">
+          <label for="other-offering-add-keyword">课程代码 / 名称</label>
+          <input class="input input-sm" id="other-offering-add-keyword" placeholder="课程代码 / 课程名称" oninput="renderOtherOfferingAddModalPicker()">
+        </div>
+        <div class="form-item">
+          <label for="other-offering-add-unit">开课单位</label>
+          <select class="input input-sm" id="other-offering-add-unit" onchange="renderOtherOfferingAddModalPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="picker-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="renderOtherOfferingAddModalPicker()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetOtherOfferingAddModalFilters()">重置</button>
+        </div>
+      </div>
+      <p class="form-hint" id="other-offering-add-term-hint">—</p>
+      <div class="picker-table-wrap" style="margin-top:12px">
+        <table class="data-table compact">
+          <thead><tr>
+            <th class="col-check"><input type="checkbox" id="other-offering-add-check-all" aria-label="全选" onchange="toggleOtherOfferingAddCheckAll(this.checked)"></th>
+            <th class="col-index">序号</th>
+            <th>课程代码</th><th>课程名称</th><th>课程分类</th>
+            <th class="col-center">学分</th>
+            <th class="col-center">开课单位</th>
+          </tr></thead>
+          <tbody id="other-offering-add-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="other-offering-add-count">共 0 门课程</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-other-offering-add')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmOtherOfferingAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：校选课程 · 新增 ═══ -->
+<div class="modal-overlay" id="modal-school-elective-add">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>新增校选课程</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="req" for="school-elective-add-catalog">选择课程</label>
+        <select class="input input-sm" id="school-elective-add-catalog">
+          <option value="">请选择</option>
+        </select>
+        <p class="form-hint">从教务课程库中选择尚未纳入校选课程列表的选修课；添加后可继续维护可选范围。</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-add')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveCourseAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：校选课程 · 维护可选范围 ═══ -->
+<div class="modal-overlay" id="modal-school-elective-edit">
+  <div class="modal modal-md school-elective-edit-modal">
+    <div class="modal-head">
+      <h3>维护可选范围</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-edit')">×</button>
+    </div>
+    <div class="modal-body school-elective-edit-body">
+      <dl class="detail-dl school-elective-edit-summary">
+        <dt>课程代码</dt><dd id="school-elective-edit-code">—</dd>
+        <dt>课程名称</dt><dd id="school-elective-edit-name">—</dd>
+        <dt>开课单位</dt><dd id="school-elective-edit-dept">—</dd>
+        <!-- <dt>管理单位</dt> --> <!-- 原字段名，已改为开课单位 -->
+      </dl>
+      <!-- 原校选课类别字段已移除
+      <div class="form-grid form-grid-2">
+        <div class="form-item">
+          <label class="req" for="school-elective-edit-category">校选课类别</label>
+          <select class="input input-sm" id="school-elective-edit-category"></select>
+        </div>
+        ...
+      </div>
+      -->
+      <div class="form-item">
+        <label class="req" for="school-elective-edit-status">状态</label>
+        <select class="input input-sm" id="school-elective-edit-status">
+          <option value="active">正常</option>
+          <option value="suspended">停课</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label class="req">不可选专业</label>
+        <!-- <div class="school-elective-programme-picks" id="school-elective-edit-programmes"></div> --> <!-- 原平铺复选框，已改为摘要 + 弹窗选择 -->
+        <div class="input-with-btn school-elective-excluded-programmes-field">
+          <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-programmes">全部专业可选</div>
+          <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectiveProgrammePickerModal()">选择</button>
+        </div>
+        <p class="form-hint">点击「选择」维护不可选课的专业；未设置表示全部专业均可选。</p>
+      </div>
+      <div class="form-item">
+        <label class="req">可选学生类型</label>
+        <div class="school-elective-student-type-picks" id="school-elective-edit-student-types"></div>
+        <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-edit')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveSchoolElectiveCourseEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：校选课程 · 选择不可选专业 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-school-elective-programme-picker">
+  <div class="modal modal-sm school-elective-programme-picker-modal">
+    <div class="modal-head">
+      <h3>选择不可选专业</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-programme-picker')">×</button>
+    </div>
+    <div class="modal-body school-elective-programme-picker-body">
+      <div class="form-item">
+        <label for="school-elective-programme-picker-search">搜索专业</label>
+        <input class="input input-sm" id="school-elective-programme-picker-search" type="text" placeholder="专业代码 / 名称" oninput="renderSchoolElectiveProgrammePickerList()">
+      </div>
+      <div class="school-elective-programme-picks" id="school-elective-programme-picker-list"></div>
+      <p class="form-hint">勾选不可选课的专业；不勾选任何专业表示全部专业均可选。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-programme-picker')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveProgrammePicker()">确定</button>
     </div>
   </div>
 </div>

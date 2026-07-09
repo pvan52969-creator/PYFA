@@ -1,0 +1,137 @@
+# -*- coding: utf-8 -*-
+"""页面/弹窗 ID 与操作路径映射。"""
+
+PORTAL = "Academic Portal 主菜单"
+
+MODULE_CURRICULUM = "培养方案管理"
+MODULE_OFFERING = "开课管理"
+
+# page / drawer / modal id -> 到达该界面的操作路径（不含字段级后缀）
+LOCATION_PATHS: dict[str, str] = {
+    # ── 培养方案 · 页面 ──
+    "page-portal": f"{PORTAL}",
+    "page-workflow": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「概览」→「操作流程图」",
+    "page-version-list": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「方案版本」→「方案版本管理」",
+    "page-version-edit": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本管理 → 列表操作「编辑/查看」→ 版本编辑页",
+    "page-approval-list": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「方案版本」→「版本审批」",
+    "page-version-query": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「方案版本」→「版本查询」",
+    "page-change-apply": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「方案版本变更」→「方案版本变更申请」",
+    "page-change-review": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「方案版本变更」→「方案版本变更审核」",
+    "page-exec-list": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「专业批次执行计划」→「专业批次执行计划」",
+    "page-exec-edit": f"{PORTAL} → {MODULE_CURRICULUM} → 专业批次执行计划 → 列表操作「编辑/查看」→ 执行计划编辑页",
+    "page-stats-bloom": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「数据统计」→「Bloom's Taxonomy Charts」",
+    "page-stats-exec": f"{PORTAL} → {MODULE_CURRICULUM} → 侧边栏「数据统计」→「执行计划统计」",
+    # ── 开课 · 页面 ──
+    "page-course-workflow": f"{PORTAL} → {MODULE_OFFERING} → 侧边栏「开课管理」→「操作流程图」",
+    "page-course-time-setting": f"{PORTAL} → {MODULE_OFFERING} → 侧边栏「开课管理」→「开课时间设置」",
+    "page-school-elective-courses": f"{PORTAL} → {MODULE_OFFERING} → 侧边栏「开课管理」→「校选课程管理」",
+    "page-course-offering-major": f"{PORTAL} → {MODULE_OFFERING} → 侧边栏「开课类型」→「专业开课」",
+    "page-course-offering-ge": f"{PORTAL} → {MODULE_OFFERING} → 侧边栏「开课类型」→「通识选修开课」",
+    "page-course-offering-other": f"{PORTAL} → {MODULE_OFFERING} → 侧边栏「开课类型」→「其他开课」",
+    # ── 培养方案 · 弹窗/抽屉 ──
+    "modal-new-version": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本管理 → 页头「+ 新增版本」",
+    "modal-copy-version": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本管理 → 工具栏「复制版本」",
+    "modal-add-category": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → TAB1 课程分类 →「+ 新增分类」",
+    "modal-delete-category": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → TAB1 → 分类行「删除」",
+    "modal-version-refs": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本管理 → 列表「版本引用情况」链接",
+    "modal-save-version": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → 页头「保存」",
+    "modal-discard-version-edit": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → 页头「返回」",
+    "modal-submit-version": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → 页头「提交审批」",
+    "modal-batch-submit-version": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本管理 → 工具栏「提交审批」",
+    "modal-delete-version": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本管理 → 行内/批量「删除」",
+    "modal-delete-confirm": "各页面/弹窗内触发删除等二次确认时弹出（通用）",
+    "modal-exec-lock": f"{PORTAL} → {MODULE_CURRICULUM} → 专业批次执行计划 → 工具栏「提交」",
+    "modal-exec-unlock": f"{PORTAL} → {MODULE_CURRICULUM} → 专业批次执行计划 → 工具栏「撤回提交」",
+    "modal-exec-delete": f"{PORTAL} → {MODULE_CURRICULUM} → 专业批次执行计划 → 工具栏「删除」",
+    "modal-exec-notice": f"{PORTAL} → {MODULE_CURRICULUM} → 执行计划相关操作提示",
+    "modal-exec-change-log": f"{PORTAL} → {MODULE_CURRICULUM} → 专业批次执行计划 → 行内「修改记录」",
+    "modal-gen-exec": f"{PORTAL} → {MODULE_CURRICULUM} → 专业批次执行计划 → 页头「+ 生成执行计划」",
+    "modal-batch-add-course": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → TAB2 课程设置 →「批量新增」",
+    "modal-add-course": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → TAB2 →「+ 新增课程」/ 行内「编辑」",
+    "modal-clo-form": f"{PORTAL} → {MODULE_CURRICULUM} → 课程设置弹窗 → Step2 CLO",
+    "modal-slt-outline-form": f"{PORTAL} → {MODULE_CURRICULUM} → 课程设置弹窗 → Step3.1 大纲",
+    "modal-slt-assessment-form": f"{PORTAL} → {MODULE_CURRICULUM} → 课程设置弹窗 → Step3.2/3.3 评估",
+    "modal-course-group": f"{PORTAL} → {MODULE_CURRICULUM} → 版本编辑 → TAB3 课程组 →「+ 新建课程组」",
+    "modal-course-group-view": f"{PORTAL} → {MODULE_CURRICULUM} → TAB3 → 行内「查看」",
+    "modal-course-group-member-picker": f"{PORTAL} → {MODULE_CURRICULUM} → 新建课程组弹窗 →「课程选择」",
+    "modal-merge-course-picker": f"{PORTAL} → {MODULE_CURRICULUM} → 课程设置弹窗 → 合并课程选择",
+    "modal-course-picker": f"{PORTAL} → {MODULE_CURRICULUM} → 课程设置/批量新增 → 课程选择器",
+    "modal-approval-review": f"{PORTAL} → {MODULE_CURRICULUM} → 版本审批 → 行内「Review」",
+    "modal-batch-approval-review": f"{PORTAL} → {MODULE_CURRICULUM} → 版本审批 → 批量 Review",
+    "modal-approval-log": f"{PORTAL} → {MODULE_CURRICULUM} → 版本审批 →「审批日志」",
+    "modal-new-change-apply": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本变更申请 →「+ 新建申请」",
+    "modal-submit-change": f"{PORTAL} → {MODULE_CURRICULUM} → 变更申请 →「提交审批」",
+    "modal-batch-submit-change": f"{PORTAL} → {MODULE_CURRICULUM} → 变更申请 → 批量提交",
+    "modal-change-review": f"{PORTAL} → {MODULE_CURRICULUM} → 方案版本变更审核 → Review",
+    "modal-batch-change-review": f"{PORTAL} → {MODULE_CURRICULUM} → 变更审核 → 批量 Review",
+    "modal-change-review-log": f"{PORTAL} → {MODULE_CURRICULUM} → 变更审核 → 审批日志",
+    # ── 开课 · 弹窗/抽屉 ──
+    "modal-course-offering-intake": f"{PORTAL} → {MODULE_OFFERING} → 专业开课 → 相关「专业批次开设情况」入口",
+    "modal-generate-major-offering-task": f"{PORTAL} → {MODULE_OFFERING} → 专业开课 → 工具栏「生成开课任务」",
+    "drawer-major-merge-split": f"{PORTAL} → {MODULE_OFFERING} → 专业开课 → 操作列「合拆班」",
+    "drawer-major-offering-edit": f"{PORTAL} → {MODULE_OFFERING} → 专业开课 → 操作列「修改教学任务」",
+    "modal-major-teacher-assign": f"{PORTAL} → {MODULE_OFFERING} → 修改教学任务抽屉 → 教师安排 →「设置」",
+    "modal-major-teacher-picker": f"{PORTAL} → {MODULE_OFFERING} → 安排老师弹窗 →「新增教师」",
+    "modal-major-teacher-hour-arrange": f"{PORTAL} → {MODULE_OFFERING} → 安排老师 → 行内「学时安排」",
+    "modal-major-week-range": f"{PORTAL} → {MODULE_OFFERING} → 修改教学任务 → 起止周「选择」",
+    "modal-major-classroom-picker": f"{PORTAL} → {MODULE_OFFERING} → 修改教学任务 → 教室安排「选择」",
+    "drawer-major-student-roster": f"{PORTAL} → {MODULE_OFFERING} → 专业开课 → 操作列「学生名单」",
+    "drawer-major-student-picker": f"{PORTAL} → {MODULE_OFFERING} → 学生名单抽屉 →「新增」/ 分组弹窗「添加学生」",
+    "drawer-major-student-removal-log": f"{PORTAL} → {MODULE_OFFERING} → 学生名单 →「名单移除记录」",
+    "modal-student-grouping": f"{PORTAL} → {MODULE_OFFERING} → 学生名单 →「调整学生分组」",
+    "modal-major-offering-detail": f"{PORTAL} → {MODULE_OFFERING} → 专业开课 → 操作列「详情」",
+    "modal-offering-grouping": f"{PORTAL} → {MODULE_OFFERING} → 专业开课 → 操作列「分组」",
+    "modal-offering-auto-group": f"{PORTAL} → {MODULE_OFFERING} → 分组弹窗 →「自动分组」",
+    "modal-offering-group-merge": f"{PORTAL} → {MODULE_OFFERING} → 分组弹窗 →「合并分组」",
+    "modal-offering-group-edit": f"{PORTAL} → {MODULE_OFFERING} → 分组弹窗 → 侧栏分组「修改」",
+    "modal-group-assign-form": f"{PORTAL} → {MODULE_OFFERING} → 分组弹窗 → Tab「教师安排」→「安排教师」",
+    "modal-school-elective-add": f"{PORTAL} → {MODULE_OFFERING} → 校选课程管理 → 工具栏「新增」",
+    "modal-school-elective-edit": f"{PORTAL} → {MODULE_OFFERING} → 校选课程管理 → 操作「维护范围」",
+    "sidebar-nav-curriculum": f"{PORTAL} → 进入「培养方案管理」模块后的左侧导航",
+    "sidebar-nav-course": f"{PORTAL} → 进入「开课管理」模块后的左侧导航",
+    "sidebar-footer": f"{PORTAL} → 侧边栏页脚",
+}
+
+# PRD 字段表标题 -> 操作路径
+PRD_TABLE_PATHS: dict[str, str] = {
+    "新增/查看版本——弹窗（新增培养方案版本）": LOCATION_PATHS["modal-new-version"],
+    "复制版本——弹窗": LOCATION_PATHS["modal-copy-version"],
+    "版本编辑——TAB1（课程分类、英文名：Course Classification）": f"{LOCATION_PATHS['page-version-edit']} → TAB1 课程分类 → 新增/编辑分类弹窗",
+    "版本编辑——TAB1 分类树展示列（只读，非编辑字段）": f"{LOCATION_PATHS['page-version-edit']} → TAB1 课程分类 → 分类树列表",
+    "版本编辑——TAB1 选修课学期修读要求矩阵": f"{LOCATION_PATHS['page-version-edit']} → TAB1 → 新增分类弹窗 → 选修课学期修读要求",
+    "版本编辑——TAB1 学分校验规则（已确认）": f"{LOCATION_PATHS['page-version-edit']} → TAB1（后台校验规则，界面无独立字段）",
+    "版本编辑——TAB2 Step1（基础信息、英文名：General Information）": f"{LOCATION_PATHS['modal-add-course']} → Step1 General Information",
+    "版本编辑——TAB2 Step2（课程学习成果、英文名：Course Learning Outcome）": f"{LOCATION_PATHS['modal-add-course']} → Step2 Course Learning Outcome",
+    "版本编辑——TAB2 Step3.1（课程内容大纲、英文名：Course Content Outline and Subtopics）": f"{LOCATION_PATHS['modal-add-course']} → Step3.1 Course Content Outline",
+    "版本编辑——TAB2 Step3.2/3.3（过程性/期末评估、Continuous/Final Assessment）": f"{LOCATION_PATHS['modal-add-course']} → Step3.2/3.3 Assessment",
+    "版本编辑——TAB2 分类课程学分配置情况（course-credits-summary）": f"{LOCATION_PATHS['page-version-edit']} → TAB2 → 右侧分类学分配置面板",
+    "版本编辑——信息条（edit-info-strip，不含毕业总学分）": f"{LOCATION_PATHS['page-version-edit']} → 页顶信息条",
+    "版本编辑——TAB4 方案进程表（Programme Structure，V2.0）": f"{LOCATION_PATHS['page-version-edit']} → TAB4 方案进程表",
+    "版本编辑——TAB3 课程组列表（Course Groups）": f"{LOCATION_PATHS['page-version-edit']} → TAB3 课程组 → 列表",
+    "版本编辑——TAB3 课程组弹窗（V2.2）": LOCATION_PATHS["modal-course-group"],
+    "版本编辑——TAB3 课程组查看弹窗": LOCATION_PATHS["modal-course-group-view"],
+    "版本编辑——TAB3 组内SR内课程选择子弹窗": LOCATION_PATHS["modal-course-group-member-picker"],
+    "执行计划编辑——TAB2 增量字段": f"{LOCATION_PATHS['page-exec-edit']} → 课程列表 → 行内「编辑」→ 课程设置弹窗（执行计划模式）",
+}
+
+# 修正 typo key
+PRD_TABLE_PATHS["版本编辑——TAB3 组内课程选择子弹窗"] = LOCATION_PATHS["modal-course-group-member-picker"]
+
+# 字段类别 -> 界面区域描述
+CATEGORY_AREA: dict[str, str] = {
+    "模块名称": "模块标题",
+    "导航分组": "侧边栏分组标题",
+    "导航菜单": "侧边栏菜单项",
+    "导航": "面包屑/导航",
+    "弹窗标题": "页面或弹窗标题区",
+    "标签页": "Tab 标签",
+    "列表列": "数据表格表头",
+    "筛选项": "筛选/query 区域",
+    "表单字段": "表单 label / 摘要字段",
+    "按钮": "按钮/链接操作",
+    "按钮/操作": "按钮/链接操作",
+    "信息条": "提示条/摘要/页眉说明",
+    "步骤标题": "向导步骤标题",
+    "业务术语": "全局术语",
+    "术语": "全局术语",
+}

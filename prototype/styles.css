@@ -79,6 +79,23 @@ body {
   background: rgba(255,255,255,.12); color: #fff;
   border-left-color: var(--blue-500); font-weight: 600;
 }
+.nav-section {
+  margin-top: 4px;
+}
+.nav-section-title {
+  padding: 10px 16px 6px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,.88);
+  letter-spacing: 0.02em;
+}
+.nav-item-sub {
+  padding-left: 32px;
+  font-size: 12px;
+}
+.nav-item-sub.active {
+  font-weight: 600;
+}
 
 .sidebar-footer {
   padding: 12px 16px;
@@ -348,6 +365,21 @@ body {
   color: #c2410c;
 }
 .btn-sm { padding: 4px 12px; font-size: 12px; }
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.btn-primary:disabled,
+.btn-primary[disabled] {
+  background: #94a3b8;
+  color: #fff;
+}
+.btn-primary:disabled:hover,
+.btn-primary[disabled]:hover {
+  background: #94a3b8;
+}
 
 /* ── Inputs ── */
 .input {
@@ -994,6 +1026,9 @@ body {
   font-size: 11px;
 }
 .form-item label.req::after { content: " *"; color: var(--red); }
+label .req,
+.form-field label .req,
+th .req { color: var(--red); }
 .form-item.field-disabled label { color: var(--text-2); font-weight: 400; }
 .form-item.field-disabled label.req::after { content: none; }
 .form-item.field-disabled select.input:disabled {
@@ -2683,6 +2718,496 @@ code {
 .table-bool-track.is-off .table-bool-text { color: #64748b; padding-left: 18px; }
 .table-bool-track.is-on .table-bool-text { padding-right: 18px; }
 .course-time-table .actions a + a { margin-left: 10px; }
+.course-time-setting-edit-modal {
+  width: min(560px, 94vw);
+}
+.course-time-setting-edit-body {
+  padding: 28px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.course-time-setting-edit-modal .form-item {
+  gap: 10px;
+}
+.course-time-setting-edit-modal .form-item label {
+  font-size: 13px;
+}
+.course-time-setting-edit-term .form-hint {
+  margin: 4px 0 0;
+}
+.course-time-setting-edit-modal .form-static {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-1, #0f172a);
+}
+.course-datetime-input {
+  width: 100%;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 10px 12px;
+}
+/* 只读仅为禁止手输，点击仍打开选择器，勿用全局 readonly 置灰样式 */
+.course-datetime-input[readonly],
+.course-datetime-input.input[readonly] {
+  background: #fff;
+  color: var(--text-1, #0f172a);
+  cursor: pointer;
+}
+.course-datetime-input[readonly]:hover {
+  border-color: var(--blue-400, #60a5fa);
+}
+.course-time-datetime-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.course-time-datetime-field .cuot-date-input {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+.course-time-hm-input {
+  width: 88px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.drawer-course-unit-offering-time {
+  width: min(860px, 96vw);
+}
+.course-unit-offering-time-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.course-unit-offering-time-default {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.course-unit-offering-time-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+/* .course-unit-offering-time-toolbar select { min-width: 280px; ... } 原抽屉内下拉，改弹窗选择 */
+.course-unit-offering-time-add-modal select {
+  width: 100%;
+}
+.course-unit-offering-time-table-wrap {
+  max-height: calc(100vh - 220px);
+}
+.course-unit-offering-time-table .col-index { width: 56px; }
+.course-unit-offering-time-table .col-center { text-align: center; }
+.course-unit-offering-time-table .cuot-date-input,
+.course-unit-offering-time-table .course-datetime-input {
+  min-width: 168px;
+  max-width: 100%;
+  cursor: pointer;
+}
+.course-unit-offering-time-table .course-datetime-input[readonly]:not([data-locked="1"]) {
+  background: #fff;
+  color: var(--text-1, #0f172a);
+  cursor: pointer;
+}
+.course-unit-offering-time-table .cuot-date-input.readonly,
+.course-unit-offering-time-table .course-datetime-input[data-locked="1"] {
+  cursor: default;
+}
+.cuot-date-picker-popover {
+  position: fixed;
+  z-index: 1200;
+  width: min(320px, 94vw);
+  max-height: min(560px, 90vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+.cuot-date-picker-popover[hidden] {
+  display: none !important;
+  pointer-events: none;
+}
+.cuot-date-picker-popover.is-datetime-mode {
+  width: min(340px, 94vw);
+}
+.cuot-date-picker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  flex-shrink: 0;
+}
+.cuot-picker-action {
+  border: none;
+  background: none;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1.2;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.cuot-picker-action.is-cancel {
+  color: var(--text-3, #64748b);
+}
+.cuot-picker-action.is-confirm {
+  color: var(--primary, #2563eb);
+  font-weight: 600;
+}
+.cuot-picker-toolbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1, #0f172a);
+  text-align: center;
+  flex: 1;
+}
+.cuot-date-picker-body {
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+.cuot-date-picker-popover:not(.is-datetime-mode) .cuot-date-picker-body {
+  padding: 12px;
+}
+.cuot-date-picker-month-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cuot-date-picker-ym-selects {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.cuot-date-picker-ym-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1, #0f172a);
+  padding: 4px 2px;
+  line-height: 1.2;
+  cursor: default;
+  user-select: none;
+}
+.cuot-date-picker-ym-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-1, #0f172a);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.cuot-date-picker-ym-trigger:hover,
+.cuot-date-picker-ym-trigger.is-open {
+  border-color: var(--primary, #2563eb);
+  background: #eff6ff;
+}
+.cuot-date-picker-ym-unit {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2, #475569);
+}
+.cuot-date-picker-ym-panel {
+  margin: -4px 0 10px;
+  padding: 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+  max-height: 168px;
+  overflow-y: auto;
+}
+.cuot-date-picker-ym-panel[hidden] {
+  display: none !important;
+}
+.cuot-date-picker-ym-grid {
+  display: grid;
+  gap: 6px;
+}
+.cuot-date-picker-ym-grid.is-year {
+  grid-template-columns: repeat(4, 1fr);
+}
+.cuot-date-picker-ym-grid.is-month {
+  grid-template-columns: repeat(4, 1fr);
+}
+.cuot-date-picker-ym-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-1, #0f172a);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.cuot-date-picker-ym-item:hover:not(.is-disabled) {
+  background: #e0ecff;
+  color: var(--primary, #2563eb);
+}
+.cuot-date-picker-ym-item.is-selected {
+  background: var(--primary, #2563eb);
+  color: #fff;
+  font-weight: 600;
+}
+.cuot-date-picker-ym-item.is-disabled {
+  background: transparent;
+  color: var(--text-3, #94a3b8);
+  cursor: not-allowed;
+}
+/* .cuot-date-picker-ym-select { ... } 原 native select 样式，改按钮 + 内联面板 */
+.cuot-date-picker-ym-select {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-1, #0f172a);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 6px;
+  max-width: 88px;
+  cursor: pointer;
+}
+.cuot-date-picker-ym-sep {
+  font-size: 13px;
+  color: var(--text-2, #475569);
+  flex-shrink: 0;
+}
+.cuot-date-picker-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1, #0f172a);
+}
+.cuot-date-picker-month-nav {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+#cuot-date-picker-time-panel:not([hidden]) {
+  margin-top: 14px;
+  padding-top: 2px;
+}
+.cuot-date-picker-time-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.cuot-date-picker-time-row:hover {
+  background: #f1f5f9;
+}
+.cuot-date-picker-time-row-label {
+  font-size: 14px;
+  color: var(--text-2, #475569);
+}
+.cuot-date-picker-time-row-value {
+  margin-left: auto;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1, #0f172a);
+}
+.cuot-date-picker-time-chevron {
+  color: var(--text-3, #94a3b8);
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.cuot-date-picker-time-chevron.is-open {
+  transform: rotate(90deg);
+}
+.cuot-date-picker-time-wheel {
+  margin-top: 10px;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--border-light, #f1f5f9);
+}
+.cuot-time-wheel-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+}
+.cuot-time-wheel-wrap::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: 36px;
+  transform: translateY(-50%);
+  border-top: 1px solid var(--border, #e2e8f0);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: rgba(248, 250, 252, 0.85);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 0;
+}
+.cuot-time-wheel-viewport {
+  position: relative;
+  z-index: 1;
+  width: 72px;
+  height: 148px;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to bottom, transparent, #000 28%, #000 72%, transparent);
+}
+.cuot-time-wheel-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cuot-time-wheel-spacer {
+  height: 56px;
+  flex-shrink: 0;
+}
+.cuot-time-wheel-item {
+  scroll-snap-align: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 16px;
+  color: var(--text-3, #94a3b8);
+  cursor: pointer;
+}
+.cuot-time-wheel-item:hover {
+  color: var(--text-2, #64748b);
+}
+.cuot-time-wheel-item.is-selected {
+  color: var(--text-1, #0f172a);
+  font-weight: 700;
+  font-size: 18px;
+}
+.cuot-time-wheel-colon {
+  position: relative;
+  z-index: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-2, #475569);
+  padding-bottom: 2px;
+}
+.cuot-date-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cuot-date-picker-nav {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-2, #475569);
+  cursor: pointer;
+  line-height: 1;
+}
+.cuot-date-picker-nav:hover {
+  background: #f8fafc;
+}
+.cuot-date-picker-weekdays,
+.cuot-date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cuot-date-picker-weekdays {
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--text-3, #94a3b8);
+  text-align: center;
+}
+.cuot-date-picker-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-1, #0f172a);
+  cursor: pointer;
+  gap: 1px;
+  line-height: 1.1;
+}
+.cuot-date-picker-day-tag {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.95;
+}
+.cuot-date-picker-day:hover:not(.is-disabled):not(.is-empty) {
+  background: #f1f5f9;
+}
+.cuot-date-picker-day.is-selected {
+  background: var(--primary, #2563eb);
+  color: #fff;
+}
+.cuot-date-picker-day.is-today:not(.is-selected) {
+  box-shadow: inset 0 0 0 1px var(--primary, #2563eb);
+  color: var(--primary, #2563eb);
+  font-weight: 600;
+}
+.cuot-date-picker-day.is-disabled,
+.cuot-date-picker-day.is-empty {
+  color: var(--text-3, #cbd5e1);
+  cursor: default;
+}
+.course-unit-offering-time-table tr.is-readonly-row td {
+  background: #fafafa;
+}
+.offering-module-time-status {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.offering-module-time-status.is-open {
+  background: #dcfce7;
+  color: #166534;
+}
+.offering-module-time-status.is-closed {
+  background: #f1f5f9;
+  color: var(--text-3);
+}
+.drawer-course-unit-offering-time.is-readonly .drawer-foot .btn-primary {
+  display: none;
+}
+/* .course-unit-offering-time-layout { ... } 原左右分栏 + 模块细分布局 */
 .course-task-table th.col-center,
 .course-task-table td.col-center { text-align: center; }
 
@@ -2709,7 +3234,8 @@ code {
 .course-offering-major-table th.col-center,
 .course-offering-major-table td.col-center { text-align: center; }
 .course-offering-major-table .col-muted { color: var(--text-3); font-size: 12px; max-width: 140px; }
-.course-offering-major-table { min-width: 1800px; --major-offering-actions-col-width: 188px; }
+.course-offering-major-table { min-width: 1800px; --major-offering-actions-col-width: 240px; }
+/* .course-offering-major-table { min-width: 1800px; --major-offering-actions-col-width: 188px; } */ /* 原仅「修改」，改含「回退说明」 */
 .course-offering-major-table th.col-sticky-actions,
 .course-offering-major-table td.col-sticky-actions {
   position: sticky;
@@ -2787,22 +3313,335 @@ code {
   margin-left: 0;
   justify-content: flex-start;
 }
-.course-major-list-toolbar {
+.course-major-list-toolbar,
+.course-major-task-toolbar,
+.course-major-roster-toolbar,
+.course-ge-task-toolbar,
+.other-offering-list-toolbar,
+.other-offering-task-toolbar,
+.other-offering-roster-toolbar {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 0;
+}
+.course-major-list-toolbar .form-hint,
+.course-major-task-toolbar .form-hint,
+.course-major-roster-toolbar .form-hint,
+.course-ge-task-toolbar .form-hint,
+.other-offering-list-toolbar .form-hint,
+.other-offering-task-toolbar .form-hint,
+.other-offering-roster-toolbar .form-hint {
+  margin: 0;
+  line-height: 1.5;
 }
 #page-course-offering-major .table-scroll {
   padding-bottom: 4px;
+}
+#page-course-major-offering-task.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-major-offering-task .course-major-task-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#page-course-major-offering-task .table-scroll {
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+#page-course-major-offering-roster.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-major-offering-roster .course-major-roster-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#page-course-major-offering-roster .table-scroll {
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+#page-course-major-offering-roster .table-footer {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border-light);
+  background: #fafbfc;
+}
+#page-course-major-offering-roster .course-offering-major-table,
+#page-course-major-offering-roster .course-major-offering-roster-table {
+  min-width: 1800px;
+  --major-offering-actions-col-width: 120px;
+  /* --major-offering-actions-col-width: 160px; */ /* 原含行内「退回」，改工具栏批量 */
+}
+#page-course-major-offering-roster .course-offering-major-table th.col-sticky-actions,
+#page-course-major-offering-roster .course-offering-major-table td.col-sticky-actions,
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-sticky-actions,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+}
+#page-course-major-offering-roster .course-offering-major-table thead th.col-sticky-actions,
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-major-offering-roster .course-offering-major-table tr:hover td.col-sticky-actions,
+#page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+#page-course-major-offering-task .table-footer {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border-light);
+  background: #fafbfc;
+}
+#page-course-major-offering-task .course-offering-major-table,
+#page-course-major-offering-task .course-major-offering-task-table {
+  min-width: 1600px;
+  --major-offering-actions-col-width: 260px;
+  /* --major-offering-actions-col-width: 220px; */ /* 原无「退回说明」，改支持查看退回说明 */
+}
+#page-course-major-offering-task .course-offering-major-table th.col-sticky-actions,
+#page-course-major-offering-task .course-offering-major-table td.col-sticky-actions,
+#page-course-major-offering-task .course-major-offering-task-table th.col-sticky-actions,
+#page-course-major-offering-task .course-major-offering-task-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+}
+#page-course-major-offering-task .course-offering-major-table thead th.col-sticky-actions,
+#page-course-major-offering-task .course-major-offering-task-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-major-offering-task .course-offering-major-table tr:hover td.col-sticky-actions,
+#page-course-major-offering-task .course-major-offering-task-table tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+#page-course-major-offering-task .course-offering-major-table td.col-merged-nowrap code.cell-ellipsis-tip {
+  cursor: help;
+}
+#page-course-ge-offering-task.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-ge-offering-task .course-ge-task-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 12px;
+}
+#page-course-offering-other .other-offering-list-card,
+#page-course-special-offering-task .other-offering-task-list-card,
+#page-course-special-offering-roster .other-offering-roster-list-card {
+  margin-top: 16px;
+}
+#page-course-offering-other .course-major-query-card {
+  margin-bottom: 16px;
+}
+#page-course-offering-other .course-offering-table {
+  min-width: 1200px;
+  --major-offering-actions-col-width: 200px;
+  /* --major-offering-actions-col-width: 120px; */ /* 原仅修改/删除，改含回退说明 */
+}
+#page-course-offering-other .course-offering-table th.col-sticky-actions,
+#page-course-offering-other .course-offering-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+}
+#page-course-offering-other .course-offering-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-offering-other .course-offering-table tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+.drawer-other-offering-edit.is-readonly .drawer-foot .btn-primary[disabled],
+.drawer-other-offering-edit.is-readonly .input-with-btn .btn[disabled],
+.drawer-other-offering-edit.is-readonly #other-edit-venue-types-multiselect .clo-multiselect-trigger[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.drawer-other-offering-edit.is-readonly textarea:not(.readonly),
+.drawer-other-offering-edit.is-readonly input:not(.readonly):not([readonly]),
+.drawer-other-offering-edit.is-readonly select {
+  background: #f8fafc;
+}
+#page-course-special-offering-task .table-footer,
+#page-course-special-offering-roster .table-footer {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border-light);
+  background: #fafbfc;
+}
+#page-course-special-offering-task.active,
+#page-course-special-offering-roster.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-special-offering-task .other-offering-task-list-card,
+#page-course-special-offering-roster .other-offering-roster-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#page-course-special-offering-task .table-scroll,
+#page-course-special-offering-roster .table-scroll {
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+#page-course-special-offering-task .other-offering-task-table,
+#page-course-special-offering-roster .other-offering-roster-table {
+  min-width: 1100px;
+  --major-offering-actions-col-width: 140px;
+}
+#page-course-special-offering-task .other-offering-task-table th.col-sticky-actions,
+#page-course-special-offering-task .other-offering-task-table td.col-sticky-actions,
+#page-course-special-offering-roster .other-offering-roster-table th.col-sticky-actions,
+#page-course-special-offering-roster .other-offering-roster-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+}
+#page-course-special-offering-task .other-offering-task-table thead th.col-sticky-actions,
+#page-course-special-offering-roster .other-offering-roster-table thead th.col-sticky-actions {
+  z-index: 3;
+  background: var(--blue-50);
+}
+#page-course-ge-offering-task .table-scroll {
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+#page-course-ge-offering-task .course-ge-offering-task-table {
+  min-width: 1100px;
+  --major-offering-actions-col-width: 120px;
+}
+#page-course-ge-offering-task .course-ge-offering-task-table th.col-sticky-actions,
+#page-course-ge-offering-task .course-ge-offering-task-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+}
+#page-course-ge-offering-task .course-ge-offering-task-table thead th.col-sticky-actions {
+  z-index: 3;
+  background: var(--blue-50);
+}
+#page-course-ge-offering-task .course-ge-offering-task-table tr:hover td.col-sticky-actions {
+  background: #fafbfc;
 }
 #page-course-offering-major .table-footer {
   padding: 12px 14px 14px;
   border-top: 1px solid var(--border-light);
   background: #fafbfc;
 }
+#page-school-elective-courses .table-footer {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border-light);
+  background: #fafbfc;
+}
+.school-elective-list-toolbar {
+  padding: 12px 14px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border-light);
+  gap: 12px;
+}
+#page-school-elective-courses .table-scroll {
+  padding-bottom: 4px;
+}
+.ge-offering-list-toolbar {
+  padding: 12px 14px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border-light);
+  gap: 12px;
+}
+#page-course-offering-ge .course-offering-table {
+  min-width: 1100px;
+  --major-offering-actions-col-width: 260px;
+}
+#page-course-offering-ge .course-offering-table th.col-sticky-actions,
+#page-course-offering-ge .course-offering-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+}
+#page-course-offering-ge .course-offering-table thead th.col-sticky-actions {
+  z-index: 3;
+  background: var(--blue-50);
+}
+#page-course-offering-ge .course-offering-table tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+.checkbox-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.checkbox-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: #fafbfc;
+  font-size: 13px;
+  cursor: pointer;
+}
+.checkbox-chip input { margin: 0; }
 .offering-status-pill {
   display: inline-block;
   padding: 2px 8px;
@@ -2822,13 +3661,15 @@ code {
   text-decoration: underline;
 }
 .drawer-major-student-roster {
-  width: min(980px, 96vw);
+  width: min(1280px, 98vw);
+  /* width: min(980px, 96vw); 原宽度偏窄，国籍/课程组易换行 */
 }
 .student-roster-drawer-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
+  overflow: hidden;
 }
 .student-roster-query-grid {
   display: grid;
@@ -2861,6 +3702,28 @@ code {
   max-height: calc(100vh - 360px);
   border: 1px solid var(--border-light);
   border-radius: 8px;
+  overflow: auto;
+}
+.student-roster-table {
+  min-width: 1200px;
+}
+.student-roster-table th,
+.student-roster-table td {
+  white-space: nowrap;
+}
+.student-roster-table .col-index {
+  width: 56px;
+  text-align: center;
+}
+.student-roster-table .col-course-group {
+  min-width: 220px;
+}
+.student-roster-table .col-nationality {
+  min-width: 128px;
+}
+.drawer-major-student-roster.is-plan-roster-view .student-roster-group-field,
+.drawer-major-student-roster.is-plan-roster-view .student-roster-adjust-group-btn {
+  display: none;
 }
 .student-roster-pagination {
   padding-top: 4px;
@@ -2886,8 +3749,400 @@ code {
 .btn-danger-text { color: #dc2626; border-color: #fecaca; }
 .btn-danger-text:hover { background: #fef2f2; }
 #modal-offering-grouping .modal-xl {
-  width: min(96vw, 1180px);
-  max-width: 1180px;
+  width: min(98vw, 1440px);
+  max-width: 1440px;
+  height: 88vh;
+  max-height: 92vh;
+  min-height: 720px;
+  /* max-height only 时随 Tab 内容伸缩，切换 Tab 会变大变小 */
+}
+#modal-offering-grouping .modal-body {
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 28px;
+}
+#modal-offering-grouping .modal-foot {
+  padding-top: 20px;
+  padding-bottom: 16px;
+  flex-shrink: 0;
+}
+#modal-offering-grouping .offering-grouping-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  padding-top: 16px;
+  padding-bottom: 8px;
+  gap: 16px;
+}
+
+/* ── 专业开课 · 分组独立页（原 modal-offering-grouping） ── */
+#page-offering-grouping.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-offering-grouping .header-actions [hidden] {
+  display: none !important;
+}
+#page-offering-grouping .offering-grouping-page-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#page-offering-grouping .offering-grouping-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  gap: 16px;
+}
+#page-offering-grouping .offering-grouping-layout {
+  min-height: 480px;
+}
+#page-offering-grouping .offering-readonly-hint {
+  margin: 0 0 12px;
+}
+.offering-grouping-shell.is-readonly .offering-group-sidebar-actions .btn[disabled],
+.offering-grouping-shell.is-readonly .offering-group-toolbar .btn[disabled],
+.offering-grouping-modal.is-readonly .offering-group-sidebar-actions .btn[disabled],
+.offering-grouping-modal.is-readonly .offering-group-toolbar .btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+#modal-offering-group-edit.modal-nested {
+  z-index: 1110;
+}
+#modal-offering-auto-group.modal-nested {
+  z-index: 1110;
+}
+#modal-offering-group-merge.modal-nested {
+  z-index: 1110;
+}
+#modal-group-assign-form.modal-nested {
+  z-index: 1110;
+}
+.group-assign-form-modal {
+  width: min(92vw, 720px);
+  max-width: 720px;
+}
+.group-assign-form-modal .form-grid-2 {
+  gap: 10px 16px;
+}
+.group-assign-form-modal .input-with-btn {
+  width: 100%;
+}
+.group-assign-form-modal .input-with-btn .input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.group-assign-form-modal .input-with-btn .btn.btn-sm {
+  min-width: 58px;
+  width: auto;
+  flex-shrink: 0;
+  padding: 7px 12px;
+  font-size: 13px;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+/* .group-assign-week-range-btn-field { ... } 原两列布局，按钮 width:100% 过宽 */
+/* .group-assign-week-range-btn { width: 100%; ... } */
+.group-assign-weekly-warn {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 400;
+  /* font-weight: 600; */ /* 原加粗强调，改常规字重便于阅读 */
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+.group-assign-weekly-warn.is-empty {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  border: none;
+}
+.group-assign-weekly-warn:not(.is-empty) {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  visibility: visible;
+}
+.group-assign-recorded-warn {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+.group-assign-recorded-warn.is-empty {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  border: none;
+}
+.group-assign-recorded-warn.is-over:not(.is-empty) {
+  border-color: #f87171;
+  background: #fef2f2;
+  color: #dc2626;
+  visibility: visible;
+  line-height: 1.45;
+}
+.group-assign-recorded-warn.is-under:not(.is-empty) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+  visibility: visible;
+  line-height: 1.45;
+}
+.form-field.has-recorded-exceed-warn > .input {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, .12);
+}
+.form-field.has-recorded-under-warn > .input {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, .22);
+}
+/* .group-assign-recorded-warn:not(.is-empty) { ... } 原仅红色超限，改 is-over / is-under 分态 */
+/* .group-assign-weekly-warn { min-height: 34px; ... } 原空态也占位导致与起止周间距过大 */
+.form-field.has-plan-exceed-warn > .input {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, .12);
+}
+.group-assign-plan-exceed-alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.group-assign-recorded-over {
+  color: #dc2626;
+  font-weight: 600;
+}
+input#group-assign-recorded-hours.group-assign-recorded-over {
+  border-color: #f87171;
+  background: #fef2f2;
+}
+.group-assign-support-flag.is-yes {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 700;
+}
+.group-assign-teacher-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.group-assign-teacher-head > label {
+  margin: 0;
+  flex-shrink: 0;
+}
+.group-assign-teacher-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.group-assign-teacher-toolbar .form-hint {
+  margin: 0;
+  white-space: nowrap;
+}
+.group-assign-teacher-table-wrap,
+.group-assign-group-picks-table-wrap {
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+}
+.group-assign-teacher-table-wrap .data-table td,
+.group-assign-teacher-table-wrap .data-table th,
+.group-assign-group-picks-table-wrap .data-table td,
+.group-assign-group-picks-table-wrap .data-table th {
+  font-size: 12px;
+}
+.group-assign-teacher-table-wrap .data-table tr:last-child td,
+.group-assign-group-picks-table-wrap .data-table tr:last-child td {
+  border-bottom: none;
+}
+/* .group-assign-teacher-table-wrap {
+  max-height: 160px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+}
+.group-assign-teacher-table-wrap .data-table td,
+.group-assign-teacher-table-wrap .data-table th {
+  font-size: 12px;
+} */ /* 原仅教师表，改与指定小组表共用边框滚动容器样式 */
+.offering-group-merge-body .form-hint {
+  margin-bottom: 12px;
+}
+#modal-offering-group-merge .modal-body {
+  overflow: visible;
+}
+#modal-offering-group-merge .form-item .form-hint {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+#modal-offering-group-merge .clo-multiselect-dropdown {
+  z-index: 30;
+}
+/* .offering-group-merge-list { ... } 已改为下拉多选 clo-multiselect */
+.offering-group-merge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+}
+.offering-group-merge-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.offering-group-merge-option input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.offering-group-merge-body .form-item + .form-item {
+  margin-top: 14px;
+}
+.offering-group-merge-body .form-item .form-hint {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+#modal-delete-confirm.modal-nested {
+  z-index: 1180;
+}
+#modal-delete-confirm .delete-confirm-hint.is-warn {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  line-height: 1.55;
+}
+#modal-delete-confirm #delete-confirm-btn:disabled,
+#modal-delete-confirm #delete-confirm-btn[disabled] {
+  opacity: 1;
+  background: #cbd5e1;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.major-task-revert-view-body {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.offering-auto-group-body .form-hint {
+  margin-bottom: 12px;
+}
+.offering-auto-group-warning {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  border-radius: 6px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.offering-auto-group-warning strong {
+  font-weight: 700;
+}
+.offering-auto-group-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.offering-auto-group-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  cursor: pointer;
+  background: #fff;
+}
+.offering-auto-group-option:hover {
+  background: #f8fafc;
+}
+.offering-auto-group-option input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.offering-auto-group-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.offering-auto-group-option-text strong {
+  font-size: 13px;
+  color: var(--text-1);
+}
+.offering-auto-group-option-text span {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.offering-group-edit-body .form-item {
+  margin-bottom: 14px;
+}
+.offering-group-edit-body .form-item:last-child {
+  margin-bottom: 0;
+}
+.offering-group-edit-remark {
+  min-height: 88px;
+  resize: vertical;
 }
 #modal-generate-major-offering-task .modal-xl {
   width: min(96vw, 1280px);
@@ -2920,6 +4175,38 @@ code {
     grid-column: 1 / -1;
   }
 }
+#modal-other-offering-add .modal-xl {
+  width: 960px;
+  max-width: 96vw;
+}
+#modal-other-offering-add .picker-table-wrap {
+  max-height: 360px;
+  overflow: auto;
+}
+#modal-other-offering-add .picker-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+}
+#modal-other-offering-add .picker-filter-grid .form-item {
+  margin: 0;
+  min-width: 0;
+}
+#modal-other-offering-add .picker-filter-grid .form-item .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+#modal-other-offering-add .picker-filter-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}
+@media (max-width: 900px) {
+  #modal-other-offering-add .picker-filter-grid {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+}
 /* 二次抽屉：叠于学生名单抽屉之上 */
 .drawer-backdrop-nested {
   z-index: 1060;
@@ -2936,6 +4223,19 @@ code {
 .drawer-major-student-picker {
   width: min(1280px, 96vw);
 }
+.drawer-preset-roster-grouping {
+  width: min(1280px, 96vw);
+}
+.preset-roster-grouping-hint {
+  margin: 0;
+  flex-shrink: 0;
+}
+.preset-roster-grouping-summary {
+  margin: 0;
+}
+.preset-roster-grouping-target .input {
+  max-width: 420px;
+}
 .student-picker-drawer-body {
   display: flex;
   flex-direction: column;
@@ -2943,22 +4243,35 @@ code {
   min-height: 0;
   overflow: hidden;
 }
+#drawer-preset-roster-grouping .picker-filter-grid,
 #drawer-major-student-picker .picker-filter-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
   gap: 12px 16px;
   align-items: end;
   flex-shrink: 0;
 }
+#drawer-preset-roster-grouping .picker-filter-grid .form-item,
 #drawer-major-student-picker .picker-filter-grid .form-item {
   min-width: 0;
 }
+#drawer-preset-roster-grouping .picker-filter-grid .form-item .input,
 #drawer-major-student-picker .picker-filter-grid .form-item .input {
   width: 100%;
   box-sizing: border-box;
 }
+#drawer-preset-roster-grouping .picker-filter-actions,
 #drawer-major-student-picker .picker-filter-actions {
   align-self: end;
   white-space: nowrap;
+}
+.student-picker-group-field {
+  flex-shrink: 0;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+.student-picker-group-field .input {
+  max-width: 420px;
 }
 .student-picker-table-wrap {
   flex: 1;
@@ -2974,9 +4287,11 @@ code {
   flex-shrink: 0;
 }
 @media (max-width: 1100px) {
+  #drawer-preset-roster-grouping .picker-filter-grid,
   #drawer-major-student-picker .picker-filter-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  #drawer-preset-roster-grouping .picker-filter-actions,
   #drawer-major-student-picker .picker-filter-actions {
     grid-column: 1 / -1;
     justify-content: flex-end;
@@ -3056,6 +4371,12 @@ code {
   cursor: pointer;
 }
 .drawer-major-offering-edit {
+  width: min(760px, 96vw);
+}
+.drawer-ge-offering-edit {
+  width: min(760px, 96vw);
+}
+.drawer-other-offering-edit {
   width: min(760px, 96vw);
 }
 .offering-edit-drawer-body {
@@ -3445,11 +4766,18 @@ code {
   width: 100%;
   text-align: left;
 }
+#ge-edit-venue-types-multiselect .clo-multiselect-trigger {
+  width: 100%;
+  text-align: left;
+}
 #drawer-major-offering-edit .clo-multiselect-dropdown {
   z-index: 40;
 }
+#drawer-ge-offering-edit .clo-multiselect-dropdown {
+  z-index: 40;
+}
 #modal-major-week-range.modal-nested {
-  z-index: 1130;
+  z-index: 1170;
 }
 .week-range-modal-body {
   display: flex;
@@ -3557,6 +4885,16 @@ code {
   border-color: #16a34a;
   color: #fff;
 }
+.week-picker-cell.is-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: #f8fafc;
+  color: var(--text-3);
+}
+.week-picker-cell.is-disabled:hover {
+  border-color: var(--border);
+  color: var(--text-3);
+}
 #mos-edit-teacher {
   background: #f8fafc;
   cursor: default;
@@ -3565,73 +4903,1115 @@ code {
   min-height: 72px;
   resize: vertical;
 }
-.offering-grouping-body { padding-top: 0; }
+.offering-grouping-body { padding-top: 16px; }
+#modal-offering-grouping .modal-head {
+  padding-bottom: 14px;
+  flex-shrink: 0;
+}
 .offering-grouping-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  padding: 12px 14px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 0;
   background: #f8fafc;
   border: 1px solid var(--border-light);
   border-radius: 8px;
   font-size: 12px;
+  flex-shrink: 0;
+  /* margin-bottom: 16px; 改由 offering-grouping-body gap 控制与下方布局间距 */
 }
-.offering-grouping-meta span strong { color: var(--text-2); margin-right: 4px; }
+.offering-grouping-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+.offering-grouping-meta-primary,
+.offering-grouping-meta-hours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  align-items: center;
+}
+.offering-grouping-meta-hours {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+.offering-grouping-meta-row-batches {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+}
+.offering-grouping-meta-batch {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+.offering-grouping-meta-coordinator {
+  flex-shrink: 0;
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}
+.offering-grouping-meta span strong,
+.offering-grouping-meta-row span strong { color: var(--text-2); margin-right: 4px; }
 .offering-grouping-layout {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 12px;
-  min-height: 360px;
+  grid-template-columns: minmax(380px, 34%) 1fr;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  align-items: stretch;
+  margin-bottom: 12px;
+  /* gap: 16px; 原侧栏与主区域间距偏小 */
 }
 .offering-group-sidebar {
   border: 1px solid var(--border-light);
   border-radius: 8px;
-  padding: 10px;
+  padding: 14px;
   background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 .offering-group-sidebar-head {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 10px;
+  flex-shrink: 0;
 }
 .offering-group-sidebar-actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 10px;
+  flex-shrink: 0;
+  /* flex-direction: column; 原纵向堆叠，占高较多 */
 }
-.offering-group-tree { font-size: 12px; }
+.offering-group-tree {
+  font-size: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .group-tree-root { display: flex; flex-direction: column; gap: 4px; }
 .group-tree-node {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 10px;
   border-radius: 6px;
+  min-width: 0;
+}
+.group-tree-node-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+.group-tree-node-meta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.group-tree-node:not(.has-remark) .group-tree-node-main {
+  width: 100%;
+}
+.group-tree-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.group-tree-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.group-tree-actions {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 .group-tree-node.is-root { background: var(--blue-50); font-weight: 600; }
-.group-tree-node.is-child { margin-left: 12px; border: 1px solid var(--border-light); }
+.group-tree-node.is-child { border: 1px solid var(--border-light); cursor: pointer; }
+.group-tree-node.is-child.is-selected {
+  border-color: var(--blue-400);
+  background: var(--blue-50);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+.group-tree-node.is-child:hover:not(.is-selected) { background: #f8fafc; }
+.group-tree-empty { padding: 12px 8px; font-size: 12px; }
 .group-tree-actions a { margin-left: 6px; text-decoration: none; font-size: 12px; }
+.group-tree-remark {
+  margin: 0;
+  padding: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-3);
+  border-top: 1px dashed var(--border-light);
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.group-tree-remark-label {
+  color: var(--text-2);
+  font-weight: 600;
+}
+.group-tree-node.is-selected .group-tree-remark { color: var(--text-2); }
+.offering-group-student-remark {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #92400e;
+}
+.offering-group-student-remark-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.offering-group-student-remark-group {
+  color: #78350f;
+  font-weight: 600;
+}
+.offering-group-student-remark-body {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .offering-group-main {
   border: 1px solid var(--border-light);
   border-radius: 8px;
-  padding: 10px;
+  padding: 14px;
   min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.offering-group-panel-wrap {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* display: grid; grid-template-rows: 1fr; 原三面板叠层 grid，Tab 切换易拖影 */
+}
+#offering-group-teacher-panel,
+#offering-group-student-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* grid-area: 1 / 1 / 2 / 2; 原叠层占位 */
+}
+#offering-group-hour-summary-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* overflow: hidden; 原隐藏溢出，汇总内容无法纵向滚动 */
+}
+#offering-group-group-status-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+#offering-group-teacher-panel[hidden],
+#offering-group-student-panel[hidden],
+#offering-group-hour-summary-panel[hidden],
+#offering-group-group-status-panel[hidden] {
+  display: none !important;
+  /* display: flex !important; visibility: hidden; pointer-events: none; z-index: 0; 原 visibility 叠层，Tab1→Tab3 切换有拖影 */
+}
+#offering-group-group-status-panel .offering-group-teacher-hint {
+  margin: 0 0 8px;
+  flex-shrink: 0;
+}
+.offering-group-status-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.offering-group-status-summary {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.offering-group-status-summary .is-ok { color: #15803d; }
+.offering-group-status-summary .is-warn { color: #c2410c; }
+.offering-group-status-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.offering-group-status-table td.offering-group-status-detail {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 360px;
+}
+.offering-group-status-issues {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.offering-group-status-table tr.is-incomplete td {
+  background: #fffbeb;
+}
+.offering-group-status-table tr.is-complete td {
+  background: #f0fdf4;
+}
+.offering-group-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.offering-group-status-badge.is-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+.offering-group-status-badge.is-warn {
+  background: #fef3c7;
+  color: #c2410c;
+}
+.offering-group-hour-status-ok {
+  color: #15803d;
+  font-weight: 600;
+}
+.offering-group-hour-status-warn {
+  color: #c2410c;
+  font-weight: 600;
+}
+.offering-group-status-empty {
+  margin: 0;
+  padding: 20px 0;
+}
+/* #offering-group-teacher-panel:not([hidden]), ... visibility: visible; 原叠层显示 */
+.offering-group-main .table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 .offering-group-tabs {
   display: flex;
-  gap: 16px;
+  gap: 24px;
   border-bottom: 1px solid var(--border-light);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  flex-shrink: 0;
+}
+.offering-group-tab {
+  position: relative;
+  display: inline-block;
+  padding: 8px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.offering-group-tab.is-active {
+  color: var(--blue-900);
+  border-bottom-color: var(--blue-600);
+}
+.offering-group-tab.is-muted { color: var(--text-3); }
+.offering-group-tab[hidden] { display: none !important; }
+.offering-group-tab:hover:not(.is-active) { color: var(--text-2); }
+/* .offering-group-tab.is-active { color: var(--blue-700); border-bottom: 2px solid var(--blue-600); padding-bottom: 6px; margin-bottom: -8px; } 原下划线不明显 */
+
+.offering-hour-summary-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+  align-items: stretch;
+  /* overflow: hidden; 原裁切子内容，导致 tooltip 与滚动异常 */
+}
+#offering-group-hour-summary-panel .offering-group-teacher-hint {
+  margin: 0 0 8px;
+  flex-shrink: 0;
+}
+.offering-hour-summary-stack {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 14px;
+  /* gap: 16px; padding: 2px 0 12px; 原区块间距偏紧 */
+  /* overflow: auto; 原内层滚动，改由 #offering-group-hour-summary-panel 统一纵向滚动 */
+  --ohs-col-index: 48px;
+  --ohs-col-teacher: 280px;
+  /* --ohs-col-role: 112px; 原授课角色列宽 */
+  --ohs-col-week: 84px;
+  --ohs-col-sticky-actions: 72px;
+  /* --ohs-col-actions: 84px; 原操作列宽 */
+}
+.offering-hour-summary-block {
+  border: 1px solid var(--border-2, var(--border));
+  border-radius: var(--radius-md, var(--radius));
+  overflow: hidden;
+  background: #fff;
+  flex-shrink: 0;
+  box-shadow: var(--shadow);
+  border-left-width: 4px;
+}
+.offering-hour-summary-block.is-type-theory { border-left-color: var(--blue-500); }
+.offering-hour-summary-block.is-type-tutoring { border-left-color: var(--teal); }
+.offering-hour-summary-block.is-type-practical { border-left-color: var(--orange); }
+.offering-hour-summary-block.is-type-other { border-left-color: var(--purple); }
+.offering-hour-summary-block.is-idle {
+  background: #f8fafc;
+  box-shadow: none;
+}
+.offering-hour-summary-block.is-idle .offering-hour-summary-head {
+  background: transparent;
+  border-bottom: none;
+}
+.offering-hour-summary-block.is-idle .offering-hour-summary-table-wrap {
+  display: none;
+}
+.offering-hour-summary-block.is-pending .offering-hour-summary-head {
+  background: linear-gradient(90deg, #fffbeb 0%, #fff 48%);
+  border-bottom: none;
+}
+.offering-hour-summary-pending-body {
+  padding: 2px 14px 14px 52px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-3, var(--text-3));
+}
+.offering-hour-summary-idle-body {
+  padding: 0 14px 14px 52px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.offering-hour-summary-block.is-active .offering-hour-summary-head {
+  background: linear-gradient(90deg, var(--blue-50) 0%, #fff 52%);
+}
+.offering-hour-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 10px;
+  background: var(--surface-2, var(--blue-50));
+  border-bottom: 1px solid var(--border-2, var(--border-light));
+  /* padding: 12px 14px; 原上下内边距一致，待安排区块与正文间距偏紧 */
+}
+.offering-hour-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.offering-hour-summary-head strong {
+  font-size: 14px;
+  color: var(--text-1, var(--text));
+  font-weight: 700;
+}
+.offering-hour-type-badge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.offering-hour-type-badge.is-blue {
+  color: var(--blue-700);
+  background: var(--blue-100, #edf4fc);
+  border: 1px solid #bfdbfe;
+}
+.offering-hour-type-badge.is-teal {
+  color: #0f766e;
+  background: #ecfdf5;
+  border: 1px solid #99f6e4;
+}
+.offering-hour-type-badge.is-orange {
+  color: #c2410c;
+  background: var(--orange-bg);
+  border: 1px solid #fed7aa;
+}
+.offering-hour-type-badge.is-purple {
+  color: #6d28d9;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+}
+.offering-hour-summary-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.offering-hour-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-2, var(--text-2));
+  background: #fff;
+  border: 1px solid var(--border-light, #e8eef5);
+  white-space: nowrap;
+}
+.offering-hour-stat-chip b {
+  font-weight: 700;
+  color: var(--text-1, var(--text));
+}
+.offering-hour-stat-chip.is-done {
+  color: #15803d;
+  background: var(--green-bg);
+  border-color: #86efac;
+}
+.offering-hour-stat-chip.is-pending {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+.offering-hour-stat-chip.is-muted {
+  color: var(--text-3, var(--text-3));
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+.offering-hour-summary-block.is-active .offering-hour-summary-table thead th {
+  background: #fafcff;
+}
+/* .offering-hour-summary-block.is-pending .offering-hour-summary-table thead { display: none; } 原 pending 空态用表格行，已改 pending-body */
+/* .offering-hour-summary-block.is-pending .offering-hour-summary-empty-row td { ... } 原 pending 空态表格行样式 */
+.offering-hour-summary-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.offering-hour-summary-table {
+  width: 100%;
+  table-layout: fixed;
+  min-width: 720px;
+}
+/* table-layout: auto; min-width: 640px; 原按内容自适应，各表列宽不一致 */
+.offering-hour-summary-table col.col-index { width: var(--ohs-col-index); }
+.offering-hour-summary-table col.col-teacher { width: var(--ohs-col-teacher); }
+/* .offering-hour-summary-table col.col-role { width: var(--ohs-col-role); } 原授课角色列 */
+.offering-hour-summary-table col.col-week { width: var(--ohs-col-week); }
+.offering-hour-summary-table col.col-sticky-actions { width: var(--ohs-col-sticky-actions); }
+/* .offering-hour-summary-table col.col-actions { width: var(--ohs-col-actions); } 原操作列 */
+.offering-hour-summary-table th.col-teacher,
+.offering-hour-summary-table td.col-teacher,
+.offering-hour-summary-table th.col-week,
+.offering-hour-summary-table td.col-week {
+  white-space: nowrap;
+}
+.offering-hour-summary-table th.col-index,
+.offering-hour-summary-table td.col-index,
+.offering-hour-summary-table th.col-week,
+.offering-hour-summary-table td.col-week {
+  text-align: center;
+}
+.offering-hour-summary-table th.col-sticky-actions,
+.offering-hour-summary-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--ohs-col-sticky-actions);
+  width: var(--ohs-col-sticky-actions);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+}
+.offering-hour-summary-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+.offering-hour-summary-table tbody tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+.offering-hour-summary-table td.col-teacher {
+  overflow: visible;
+  max-width: 0;
+}
+.offering-hour-teacher-tip {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  cursor: default;
+}
+.offering-hour-teacher-tip-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.course-offering-major-table td.col-merged-nowrap code.cell-ellipsis-tip {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+  cursor: default;
+}
+.cell-float-tip,
+.offering-hour-teacher-tip-float {
+  position: fixed;
+  z-index: 1200;
+  min-width: 160px;
+  max-width: min(360px, 70vw);
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 52, 96, 0.14);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-1);
+  white-space: normal;
+  word-break: break-word;
+  pointer-events: none;
+}
+.cell-float-tip::before,
+.offering-hour-teacher-tip-float::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 14px;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-left: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-light);
+  transform: rotate(45deg);
+}
+.cell-float-tip.is-above::before,
+.offering-hour-teacher-tip-float.is-above::before {
+  top: auto;
+  bottom: -5px;
+  border-left: none;
+  border-top: none;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+/* .offering-hour-teacher-tip-pop { ... } 原单元格内 popover，易被父级 overflow 裁切 */
+/* .offering-hour-summary-table td.col-teacher { overflow: hidden; text-overflow: ellipsis; } 原单元格截断 + title */
+.offering-hour-summary-table th.col-teacher,
+.offering-hour-summary-table td.col-teacher,
+.offering-hour-summary-table th.col-week,
+.offering-hour-summary-table td.col-week,
+.offering-hour-summary-table td.col-index {
+  vertical-align: middle;
+  padding-top: 8px;
   padding-bottom: 8px;
 }
-.offering-group-tab { font-size: 13px; font-weight: 600; color: var(--text-3); }
-.offering-group-tab.is-active { color: var(--blue-700); border-bottom: 2px solid var(--blue-600); padding-bottom: 6px; margin-bottom: -8px; }
-.offering-group-tab.is-muted { cursor: default; }
-.offering-group-toolbar { margin-bottom: 8px; display: flex; gap: 8px; }
-.offering-group-assign-table { min-width: 900px; }
+.offering-hour-summary-table td.col-sticky-actions {
+  vertical-align: middle;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+/* .offering-hour-summary-table td.col-actions { ... } 原居中操作列 */
+.offering-hour-summary-table td.actions a {
+  white-space: nowrap;
+}
+.offering-hour-assign-detail-dl dd.offering-hour-assign-detail-groups {
+  color: var(--text-2);
+}
+.offering-hour-assign-detail-subtitle {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue-900);
+}
+.offering-hour-assign-detail-teachers .table-scroll {
+  max-height: 240px;
+}
+.offering-hour-summary-table td.col-groups {
+  vertical-align: top;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  word-break: break-word;
+  white-space: normal;
+}
+.offering-hour-summary-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.45;
+}
+.offering-hour-summary-group-line {
+  display: block;
+}
+.offering-hour-summary-table td:nth-child(4) {
+  word-break: break-word;
+  white-space: normal;
+}
+.offering-hour-summary-empty-row td {
+  text-align: center;
+  padding: 14px;
+}
+/* .offering-hour-summary-scroll { ... } 原单表滚动容器 */
+/* .offering-hour-summary-type-row { ... } 原单表内分组行 */
+.offering-hour-summary-scroll {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-md);
+  overflow: auto;
+  background: var(--surface-1);
+}
+.offering-hour-summary-type-row td {
+  padding: 0;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border-2);
+  border-bottom: 1px solid var(--border-2);
+}
+.offering-hour-summary-type-row:first-child td {
+  border-top: none;
+}
+.offering-hour-summary-type-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+}
+.offering-hour-summary-type-label strong {
+  font-size: 14px;
+  color: var(--text-1);
+}
+.offering-hour-summary-block .table-scroll {
+  max-height: none;
+}
+.offering-hour-summary-empty {
+  margin: 0;
+  padding: 16px 14px;
+  text-align: center;
+}
+.offering-group-student-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 10px 12px;
+  align-items: end;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.offering-group-student-filter-actions {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+.offering-group-student-toolbar {
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+}
+.offering-group-student-table { min-width: 980px; }
+.offering-group-student-pagination {
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+.offering-group-toolbar {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.offering-group-toolbar .btn[disabled] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.offering-group-assign-table {
+  min-width: 1100px;
+  --offering-group-assign-actions-width: 72px;
+}
+.offering-group-assign-table th,
+.offering-group-assign-table td {
+  white-space: nowrap;
+}
+.offering-group-assign-table th.col-sticky-actions,
+.offering-group-assign-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--offering-group-assign-actions-width);
+  width: var(--offering-group-assign-actions-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+}
+.offering-group-assign-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+.offering-group-assign-table tbody tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+.offering-group-assign-table td.actions a {
+  white-space: nowrap;
+}
+.offering-group-assign-table th.col-groups,
+.offering-group-assign-table td.col-groups {
+  white-space: normal;
+  word-break: break-word;
+  min-width: 280px;
+}
+.offering-group-assign-table td.col-groups {
+  vertical-align: top;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.school-elective-query-grid {
+  grid-template-columns: repeat(4, minmax(160px, 1fr)) auto;
+}
+.school-elective-course-table {
+  min-width: 1280px;
+  --school-elective-actions-width: 88px;
+}
+.school-elective-course-table .col-check {
+  width: 44px;
+  text-align: center;
+}
+.school-elective-course-table th.col-sticky-actions,
+.school-elective-course-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--school-elective-actions-width);
+  width: var(--school-elective-actions-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+}
+.school-elective-course-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+.school-elective-scope-cell {
+  max-width: 240px;
+  white-space: normal;
+  line-height: 1.45;
+}
+.school-elective-edit-summary {
+  /* margin-bottom: 16px; */ /* 间距改由 .school-elective-edit-body 统一控制 */
+  margin-bottom: 0;
+}
+.school-elective-edit-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.school-elective-edit-body .form-item {
+  gap: 8px;
+  margin: 0;
+}
+.school-elective-edit-body .check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-2);
+  margin: 0 0 2px;
+}
+.school-elective-edit-body .form-item .form-hint {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+.school-elective-excluded-programmes-field {
+  width: 100%;
+  align-items: stretch;
+  gap: 8px;
+}
+.school-elective-excluded-programmes-field .school-elective-excluded-display {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  display: flex;
+  align-items: center;
+  min-height: 29px;
+  box-sizing: border-box;
+  background: #f8fafc;
+  word-break: break-word;
+}
+.school-elective-excluded-programmes-field .btn.btn-sm {
+  min-width: 58px;
+  padding: 4px 12px;
+  box-sizing: border-box;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+.school-elective-programme-picker-body .form-item {
+  margin-bottom: 10px;
+}
+.school-elective-programme-picker-body .school-elective-programme-picks {
+  max-height: 280px;
+}
+.school-elective-programme-picks,
+.school-elective-student-type-picks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+}
+.school-elective-pick-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.school-elective-pick-option input {
+  margin-top: 2px;
+}
+.tag-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+.tag-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.offering-group-teacher-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.group-assign-group-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.group-assign-group-toolbar .form-hint {
+  margin: 0;
+}
+.section-coordinator-hint {
+  margin: 0 0 10px;
+}
+.section-coordinator-picks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.section-coordinator-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.section-coordinator-pick:has(input:checked) {
+  border-color: var(--blue-400);
+  background: var(--blue-50);
+}
+.section-coordinator-pick input {
+  margin: 0;
+  accent-color: var(--blue-600);
+  flex-shrink: 0;
+}
+.section-coordinator-pick-text {
+  font-size: 13px;
+  line-height: 1.35;
+}
+/* .group-assign-group-picks-table-wrap {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px 0;
+} */ /* 原独立边框+内边距导致表头与外框割裂，改与 group-assign-teacher-table-wrap 一致 */
+.group-assign-group-picks-table {
+  width: 100%;
+  margin: 0;
+  /* border-collapse: separate;
+  border-spacing: 0; */ /* 原 separate 与外层圆角边框叠出缝隙，改默认 collapse */
+}
+.group-assign-group-picks-table .col-check {
+  width: 44px;
+  min-width: 44px;
+  text-align: center;
+}
+.group-assign-group-picks-table .col-check input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  vertical-align: middle;
+  cursor: pointer;
+  accent-color: var(--blue-600);
+}
+.group-assign-group-picks-table th.col-center,
+.group-assign-group-picks-table td.col-center {
+  min-width: 96px;
+  white-space: nowrap;
+}
+.group-assign-group-picks-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--blue-50);
+  box-shadow: 0 1px 0 var(--border);
+}
+.group-assign-group-pick-row {
+  cursor: pointer;
+}
+.group-assign-group-pick-row:has(.group-assign-group-check:checked) td {
+  background: #f8fbff;
+}
+.group-assign-group-pick-row:hover td {
+  background: #fafbfc;
+}
+.group-assign-group-pick-row:has(.group-assign-group-check:checked):hover td {
+  background: #f0f7ff;
+}
+/* .group-assign-group-picks-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.group-assign-group-picks-table.data-table.compact th,
+.group-assign-group-picks-table.data-table.compact td {
+  font-size: 12px;
+  vertical-align: middle;
+  padding: 8px 14px;
+  line-height: 1.4;
+}
+.group-assign-group-picks-table.data-table.compact .col-check,
+.group-assign-group-picks-table .col-check {
+  width: 48px;
+  min-width: 48px;
+  padding: 8px 12px 8px 16px;
+  text-align: center;
+}
+.group-assign-group-picks-table .col-check input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.group-assign-group-picks-table th.col-center,
+.group-assign-group-picks-table td.col-center {
+  min-width: 100px;
+  padding-left: 16px;
+  padding-right: 16px;
+  white-space: nowrap;
+}
+.group-assign-group-picks-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--blue-50, #eff6ff);
+}
+.group-assign-group-pick-row {
+  cursor: pointer;
+}
+.group-assign-group-pick-row:has(.group-assign-group-check:checked) {
+  background: #f8fbff;
+} */ /* 原独立大 padding / separate 布局，改复用 data-table.compact 与 teacher-table-wrap 视觉 */
+/* .group-assign-group-picks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+} */ /* 原平铺 label 列表容器，改 table-wrap */
+.group-assign-group-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.group-assign-group-pick input { margin-top: 0; accent-color: var(--blue-600); flex-shrink: 0; }
+.group-assign-group-pick-text {
+  flex: 1;
+  min-width: 0;
+}
+.group-assign-group-pick-hours {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+.group-assign-group-pick-hours.is-full {
+  color: #15803d;
+}
+.group-assign-group-pick-hours.is-under {
+  color: #b45309;
+}
+.group-assign-group-pick-hours.is-over {
+  color: #dc2626;
+}
+input#group-assign-recorded-hours {
+  font-size: 12px;
+}
+#group-assign-groups-wrap[hidden] { display: none !important; }
+.form-field-span-2 { grid-column: 1 / -1; }
 @media (max-width: 900px) {
   .course-major-query-grid { grid-template-columns: 1fr 1fr; }
   .offering-grouping-layout { grid-template-columns: 1fr; }
@@ -3725,6 +6105,36 @@ code {
   color: var(--text-1);
   word-break: break-word;
 }
+.merge-split-guide {
+  margin-bottom: 16px;
+  line-height: 1.55;
+}
+.merge-split-guide-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.merge-split-guide-list {
+  margin: 6px 0 8px 18px;
+  padding: 0;
+}
+.merge-split-guide-list li {
+  margin-bottom: 4px;
+}
+.merge-split-guide-compat {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed #bfdbfe;
+}
+.merge-split-guide-compat code {
+  font-size: 11px;
+  margin: 0 2px;
+}
+.merge-split-guide-ops {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed #bfdbfe;
+  color: var(--blue-700);
+}
 .merge-split-shuttle {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -3775,6 +6185,74 @@ code {
   overflow-y: auto;
   padding: 8px;
 }
+.merge-split-list-item-readonly {
+  display: block;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.offering-module-hint {
+  margin-bottom: 14px;
+}
+.offering-module-hint-list {
+  margin: 8px 0 0 18px;
+  line-height: 1.65;
+}
+.offering-module-hint-list li + li {
+  margin-top: 4px;
+}
+.offering-readonly-hint {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 6px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  flex-shrink: 0;
+}
+#modal-offering-grouping .offering-readonly-hint,
+#page-offering-grouping .offering-readonly-hint {
+  margin: 0 0 12px;
+}
+.drawer-major-merge-split.is-readonly .merge-split-actions .btn[disabled],
+.drawer-major-offering-edit.is-readonly .drawer-foot .btn-primary[disabled],
+.offering-grouping-shell.is-readonly .offering-group-sidebar-actions .btn[disabled],
+.offering-grouping-shell.is-readonly .offering-group-toolbar .btn[disabled],
+.offering-grouping-modal.is-readonly .offering-group-sidebar-actions .btn[disabled],
+.offering-grouping-modal.is-readonly .offering-group-toolbar .btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.drawer-major-offering-edit.is-readonly .input-with-btn .btn[disabled],
+.drawer-major-offering-edit.is-readonly #mos-edit-venue-types-multiselect .clo-multiselect-trigger[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.drawer-major-offering-edit.is-readonly textarea:not(.readonly),
+.drawer-major-offering-edit.is-readonly input:not(.readonly):not([readonly]),
+.drawer-major-offering-edit.is-readonly select {
+  pointer-events: none;
+  background: var(--surface-2, #f8fafc);
+}
+.drawer-ge-offering-edit.is-readonly .drawer-foot .btn-primary[disabled],
+.drawer-ge-offering-edit.is-readonly .input-with-btn .btn[disabled],
+.drawer-ge-offering-edit.is-readonly #ge-edit-venue-types-multiselect .clo-multiselect-trigger[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.drawer-ge-offering-edit.is-readonly textarea:not(.readonly),
+.drawer-ge-offering-edit.is-readonly input:not(.readonly):not([readonly]),
+.drawer-ge-offering-edit.is-readonly select {
+  pointer-events: none;
+  background: var(--surface-2, #f8fafc);
+}
+.offering-grouping-shell.is-readonly .offering-group-teacher-hint.is-edit-hint,
+.offering-grouping-modal.is-readonly .offering-group-teacher-hint.is-edit-hint {
+  display: none;
+}
 .merge-split-list-item {
   display: flex;
   align-items: flex-start;
@@ -3805,6 +6283,22 @@ code {
 .merge-split-actions .btn {
   min-width: 36px;
   padding: 0 10px;
+}
+.merge-split-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 64px;
+  white-space: nowrap;
+}
+.merge-split-action-mark {
+  font-size: 13px;
+  line-height: 1;
+}
+.merge-split-action-label {
+  font-size: 12px;
+  font-weight: 600;
 }
 @media (max-width: 900px) {
   .merge-split-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

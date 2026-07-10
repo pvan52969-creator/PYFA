@@ -2557,6 +2557,9 @@ code {
   color: var(--text);
   margin-bottom: 18px;
 }
+.portal-section + .portal-section {
+  margin-top: 28px;
+}
 .portal-section-bar {
   width: 4px;
   height: 16px;
@@ -8601,6 +8604,9 @@ code {
   font-weight: 700;
   color: var(--text);
   margin-bottom: 18px;
+}
+.portal-section + .portal-section {
+  margin-top: 28px;
 }
 .portal-section-bar {
   width: 4px;

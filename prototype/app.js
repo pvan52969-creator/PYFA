@@ -27343,9 +27343,9 @@ const PORTAL_APPS = [
   },
   {
     id: 'curriculum',
-    name: 'Curriculum Management',
+    name: 'Programme Structure',
     nameZh: '培养方案管理',
-    category: 'basic',
+    category: 'teaching',
     disabled: false,
     icon: 'book',
     action: 'enterCurriculumModule'
@@ -27354,7 +27354,7 @@ const PORTAL_APPS = [
     id: 'course',
     name: 'Course Management',
     nameZh: '开课管理',
-    category: 'basic',
+    category: 'teaching',
     disabled: false,
     icon: 'calendar',
     action: 'enterCourseModule'
@@ -27363,7 +27363,7 @@ const PORTAL_APPS = [
     id: 'schedule',
     name: 'Scheduling Management',
     nameZh: '排课管理',
-    category: 'basic',
+    category: 'teaching',
     disabled: false,
     icon: 'schedule',
     action: 'enterScheduleModule'
@@ -27419,27 +27419,17 @@ function portalAppIcon(type) {
     grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
     user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>',
     book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h11v16H6a2 2 0 00-2 2V5z"/><path d="M6 3v16a2 2 0 002 2h11"/></svg>',
-    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>'
+    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>',
+    schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18M8 14h2M12 14h2M16 14h2M8 18h2M12 18h2"/></svg>'
   };
   return icons[type] || icons.grid;
 }
 
-function renderPortalApps() {
-  const grid = document.getElementById('portal-app-grid');
-  if (!grid) return;
-  // const q = (document.getElementById('portal-search')?.value || '').trim().toLowerCase(); // 原搜索框过滤
-  let apps = PORTAL_APPS.filter(a => portalActiveTab === 'all' || a.category === portalActiveTab);
-  // if (q) {
-  //   apps = apps.filter(a =>
-  //     a.name.toLowerCase().includes(q) ||
-  //     (a.nameZh && a.nameZh.toLowerCase().includes(q))
-  //   );
-  // }
+function renderPortalAppCards(apps) {
   if (!apps.length) {
-    grid.innerHTML = '<p class="portal-app-empty">No matching application</p>';
-    return;
+    return '<p class="portal-app-empty">No matching application</p>';
   }
-  grid.innerHTML = apps.map(app => {
+  return apps.map(app => {
     const label = app.nameZh ? `${app.name}<br><span style="font-weight:400;font-size:11px;color:var(--text-3)">${app.nameZh}</span>` : app.name;
     const badge = app.badge ? `<span class="portal-app-badge">${escapeHtml(app.badge)}</span>` : '';
     const cls = app.disabled ? 'portal-app-card is-disabled' : 'portal-app-card';
@@ -27452,6 +27442,31 @@ function renderPortalApps() {
       <div class="portal-app-name">${label}</div>
     </div>`;
   }).join('');
+}
+
+const PORTAL_APP_SECTIONS = [
+  { category: 'basic', gridId: 'portal-app-grid-basic', sectionKey: 'basic' },
+  { category: 'teaching', gridId: 'portal-app-grid-teaching', sectionKey: 'teaching' }
+];
+
+function renderPortalApps() {
+  // const grid = document.getElementById('portal-app-grid'); // 原单网格，改分组渲染
+  PORTAL_APP_SECTIONS.forEach(({ category, gridId, sectionKey }) => {
+    const grid = document.getElementById(gridId);
+    const section = document.querySelector(`[data-portal-section="${sectionKey}"]`);
+    if (!grid) return;
+    const showSection = portalActiveTab === 'all' || portalActiveTab === category;
+    if (section) section.hidden = !showSection;
+    if (!showSection) return;
+    const apps = PORTAL_APPS.filter(a => a.category === category);
+    grid.innerHTML = renderPortalAppCards(apps);
+  });
+  // let apps = PORTAL_APPS.filter(a => portalActiveTab === 'all' || a.category === portalActiveTab);
+  // if (!apps.length) {
+  //   grid.innerHTML = '<p class="portal-app-empty">No matching application</p>';
+  //   return;
+  // }
+  // grid.innerHTML = apps.map(app => { ... }).join('');
 }
 
 function goPage(id) {

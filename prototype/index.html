@@ -142,11 +142,20 @@
             <div class="portal-tabs" role="tablist">
               <button type="button" class="portal-tab active" data-portal-tab="all" onclick="setPortalTab('all')">All</button>
               <button type="button" class="portal-tab" data-portal-tab="basic" onclick="setPortalTab('basic')">Basic Service</button>
+              <button type="button" class="portal-tab" data-portal-tab="teaching" onclick="setPortalTab('teaching')">教学运行</button>
             </div>
-            <div class="portal-section">
+            <div class="portal-section" data-portal-section="basic">
+              <h3 class="portal-section-title"><span class="portal-section-bar"></span>Basic Service</h3>
+              <div class="portal-app-grid" id="portal-app-grid-basic"></div>
+            </div>
+            <div class="portal-section" data-portal-section="teaching">
+              <h3 class="portal-section-title"><span class="portal-section-bar"></span>教学运行</h3>
+              <div class="portal-app-grid" id="portal-app-grid-teaching"></div>
+            </div>
+            <!-- <div class="portal-section">
               <h3 class="portal-section-title"><span class="portal-section-bar"></span>Basic Service</h3>
               <div class="portal-app-grid" id="portal-app-grid"></div>
-            </div>
+            </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
         </div>
       </div>

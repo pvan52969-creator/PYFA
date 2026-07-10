@@ -991,7 +991,9 @@ body {
   width: 520px; max-width: 100%; max-height: 90vh;
   display: flex; flex-direction: column;
 }
-.modal-lg { width: 680px; }
+#modal-shared-teaching-setup .modal-lg {
+  width: min(920px, calc(100vw - 48px));
+}
 .modal-xl { width: 860px; }
 #modal-add-course .modal-xl { width: min(98vw, 1280px); max-width: 1280px; }
 .modal-md { width: 560px; }
@@ -3317,6 +3319,7 @@ code {
 .course-major-task-toolbar,
 .course-major-roster-toolbar,
 .course-ge-task-toolbar,
+.course-ge-roster-toolbar,
 .other-offering-list-toolbar,
 .other-offering-task-toolbar,
 .other-offering-roster-toolbar {
@@ -3332,6 +3335,7 @@ code {
 .course-major-task-toolbar .form-hint,
 .course-major-roster-toolbar .form-hint,
 .course-ge-task-toolbar .form-hint,
+.course-ge-roster-toolbar .form-hint,
 .other-offering-list-toolbar .form-hint,
 .other-offering-task-toolbar .form-hint,
 .other-offering-roster-toolbar .form-hint {
@@ -3340,6 +3344,16 @@ code {
 }
 #page-course-offering-major .table-scroll {
   padding-bottom: 4px;
+}
+#page-course-offering-major .course-offering-major-table {
+  --major-offering-actions-col-width: 112px;
+  /* --major-offering-actions-col-width: 240px; */ /* 继承全局默认过宽，改适配「修改/回退说明」 */
+}
+#page-course-offering-major .course-offering-major-table th.col-sticky-actions,
+#page-course-offering-major .course-offering-major-table td.col-sticky-actions {
+  white-space: nowrap;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 #page-course-major-offering-task.active {
   display: flex;
@@ -3501,6 +3515,183 @@ code {
 .drawer-other-offering-edit.is-readonly select {
   background: #f8fafc;
 }
+#page-course-offering-manifest.active,
+#page-course-shared-teaching-maintenance.active,
+#page-course-offering-roster-change-log.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-offering-manifest .offering-manifest-list-card,
+#page-course-shared-teaching-maintenance .shared-teaching-list-card,
+#page-course-offering-roster-change-log .offering-roster-change-log-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 16px;
+}
+#page-course-offering-manifest .course-major-query-card,
+#page-course-shared-teaching-maintenance .course-major-query-card,
+#page-course-offering-roster-change-log .course-major-query-card {
+  margin-bottom: 16px;
+}
+.offering-manifest-toolbar {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+.offering-manifest-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+#page-course-shared-teaching-maintenance .shared-teaching-list-toolbar {
+  justify-content: flex-start;
+}
+#page-course-shared-teaching-maintenance .shared-teaching-list-toolbar .offering-manifest-toolbar-actions {
+  margin-left: 0;
+  margin-right: 12px;
+  /* margin-left: auto; */ /* 原靠右对齐，共同授课维护页改最左 */
+}
+.offering-manifest-shared-code-preview-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.offering-manifest-shared-code-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.offering-manifest-shared-code-list code {
+  font-size: 12px;
+}
+#page-course-offering-manifest .offering-shared-teaching-code,
+#page-course-shared-teaching-maintenance .offering-shared-teaching-code {
+  color: var(--blue-700);
+  background: var(--blue-50);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.offering-manifest-toolbar .form-hint {
+  margin: 0;
+  line-height: 1.5;
+}
+#page-course-offering-manifest .table-scroll,
+#page-course-shared-teaching-maintenance .table-scroll,
+#page-course-offering-roster-change-log .table-scroll {
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+#page-course-offering-manifest .offering-manifest-table {
+  min-width: 1780px;
+  /* min-width: 1680px; */ /* 原宽度，改含勾选列与共同授课码列 */
+  --major-offering-actions-col-width: 148px;
+  /* --major-offering-actions-col-width: 88px; */ /* 原仅「查看」，改「查看 · 分组详情」 */
+}
+#page-course-shared-teaching-maintenance .shared-teaching-table {
+  min-width: 1280px;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-nowrap,
+#page-course-shared-teaching-maintenance .shared-teaching-table td.col-nowrap {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#page-course-shared-teaching-maintenance .table-footer {
+  flex-shrink: 0;
+}
+.shared-teaching-setup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.shared-teaching-setup-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.shared-teaching-setup-toolbar .input-sm {
+  min-width: 220px;
+}
+.shared-teaching-setup-table-wrap {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+}
+.shared-teaching-setup-teacher-hint.is-error {
+  color: #b45309;
+}
+.shared-teaching-setup-teacher-hint.is-ok {
+  color: #15803d;
+}
+.shared-teaching-setup-code-field {
+  margin-bottom: 0;
+}
+.shared-teaching-status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  min-width: 120px;
+}
+.shared-teaching-status-cell.is-group {
+  justify-content: center;
+}
+.shared-teaching-status-courses {
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  max-width: 180px;
+}
+.shared-teaching-status-col.is-merged,
+.shared-teaching-code-col.is-merged {
+  vertical-align: middle;
+  background: #f8fbff;
+}
+#page-course-offering-manifest .offering-manifest-table th.col-sticky-actions,
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+#page-course-offering-manifest .table-footer,
+#page-course-shared-teaching-maintenance .table-footer,
+#page-course-offering-roster-change-log .table-footer {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border-light);
+  background: #fafbfc;
+}
 #page-course-special-offering-task .table-footer,
 #page-course-special-offering-roster .table-footer {
   padding: 12px 14px 14px;
@@ -3575,6 +3766,56 @@ code {
   background: var(--blue-50);
 }
 #page-course-ge-offering-task .course-ge-offering-task-table tr:hover td.col-sticky-actions {
+  background: #fafbfc;
+}
+#page-course-ge-offering-roster.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-ge-offering-roster .course-ge-roster-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* margin-top: 16px; */ /* 原额外上边距，改与专业/特殊名单页一致，由查询区 margin-bottom 控制间距 */
+}
+#page-course-ge-offering-roster .course-major-query-card {
+  margin-bottom: 12px;
+}
+#page-course-ge-offering-roster .table-scroll {
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+#page-course-ge-offering-roster .table-footer {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border-light);
+  background: #fafbfc;
+}
+#page-course-ge-offering-roster .course-ge-offering-roster-table {
+  min-width: 1280px;
+  --major-offering-actions-col-width: 112px;
+  /* --major-offering-actions-col-width: 96px; */ /* 原仅管理名单，改含查看 */
+}
+#page-course-ge-offering-roster .course-ge-offering-roster-table th.col-sticky-actions,
+#page-course-ge-offering-roster .course-ge-offering-roster-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+}
+#page-course-ge-offering-roster .course-ge-offering-roster-table thead th.col-sticky-actions {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-ge-offering-roster .course-ge-offering-roster-table tr:hover td.col-sticky-actions {
   background: #fafbfc;
 }
 #page-course-offering-major .table-footer {
@@ -4222,6 +4463,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .drawer-major-student-picker {
   width: min(1280px, 96vw);
+}
+#ogg-btn-preset-roster-grouping[hidden] {
+  display: none !important;
 }
 .drawer-preset-roster-grouping {
   width: min(1280px, 96vw);

@@ -38,190 +38,184 @@
   <div class="header">
     <div class="header-left">
       <h1>XMUM 开课管理 · 操作流程</h1>
-      <p>参考教务系统：正常开课、合班、分班、合分班。主路径：时间设置 → 生成计划 → 合分班 → 明细安排（学生 / 教师 / 地点 / 周次）</p>
+      <p>主路径：准备 → 三类开课（计划 · 任务 · 名单）→ 开课清单 → 共同授课 → 排课/选课</p>
     </div>
     <div class="legend">
       <span class="legend-item" style="background:#eff6ff"><span class="legend-dot" style="background:#2563eb"></span>准备</span>
-      <span class="legend-item" style="background:#f0fdf4"><span class="legend-dot" style="background:#16a34a"></span>生成计划</span>
-      <span class="legend-item" style="background:#fff7ed"><span class="legend-dot" style="background:#ea580c"></span>合分班</span>
-      <span class="legend-item" style="background:#faf5ff"><span class="legend-dot" style="background:#9333ea"></span>明细安排</span>
+      <span class="legend-item" style="background:#f0fdf4"><span class="legend-dot" style="background:#16a34a"></span>开课计划</span>
+      <span class="legend-item" style="background:#fff7ed"><span class="legend-dot" style="background:#ea580c"></span>任务安排</span>
+      <span class="legend-item" style="background:#faf5ff"><span class="legend-dot" style="background:#9333ea"></span>名单管理</span>
+      <span class="legend-item" style="background:#ecfeff"><span class="legend-dot" style="background:#0891b2"></span>汇总排课</span>
     </div>
   </div>
   <div class="diagram-area">
-    <svg viewBox="0 0 1000 960" preserveAspectRatio="xMidYMid meet">
+    <svg viewBox="0 0 1000 1020" preserveAspectRatio="xMidYMid meet">
       <defs>
         <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/></marker>
         <marker id="arr-g" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/></marker>
         <marker id="arr-o" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#ea580c"/></marker>
         <marker id="arr-p" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#9333ea"/></marker>
+        <marker id="arr-c" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#0891b2"/></marker>
       </defs>
 
-      <!-- 阶段一：主路径 -->
-      <path d="M 500 76 C 500 98, 500 98, 500 120" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
-      <path d="M 500 172 C 500 194, 500 194, 500 216" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
+      <!-- 阶段一：准备（居中主干） -->
+      <path d="M 500 76 L 500 120" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
+      <path d="M 500 172 L 500 392" fill="none" stroke="#16a34a" stroke-width="1.1"/>
 
-      <!-- 生成计划 → 三类开课（连续竖线至分支总线） -->
-      <path d="M 500 268 C 500 330, 500 330, 500 402" fill="none" stroke="#16a34a" stroke-width="1.1"/>
-      <path d="M 140 402 L 860 402" fill="none" stroke="#16a34a" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M 140 402 C 140 414, 140 414, 140 426" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
-      <path d="M 500 402 C 500 414, 500 414, 500 426" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
-      <path d="M 860 402 C 860 414, 860 414, 860 426" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+      <!-- 执行计划 ↔ 校选课程（同级支路） -->
+      <path d="M 580 146 L 780 146" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
 
-      <!-- 三类开课 → 合分班 hub -->
-      <path d="M 140 478 C 140 496, 140 496, 140 512" fill="none" stroke="#16a34a" stroke-width="1.1"/>
-      <path d="M 500 478 C 500 496, 500 496, 500 512" fill="none" stroke="#16a34a" stroke-width="1.1"/>
-      <path d="M 860 478 C 860 496, 860 496, 860 512" fill="none" stroke="#16a34a" stroke-width="1.1"/>
-      <path d="M 140 512 L 860 512" fill="none" stroke="#16a34a" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M 500 512 C 500 524, 500 524, 500 540" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+      <!-- 校选课程 → 通识选修开课计划 -->
+      <path d="M 860 172 L 860 394 L 500 394 L 500 416" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr)"/>
 
-      <!-- 合分班 hub → 四场景 -->
-      <path d="M 500 592 C 500 614, 500 614, 500 630" fill="none" stroke="#ea580c" stroke-width="1.1"/>
-      <path d="M 120 630 L 840 630" fill="none" stroke="#ea580c" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M 120 630 C 120 642, 120 642, 120 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
-      <path d="M 360 630 C 360 642, 360 642, 360 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
-      <path d="M 600 630 C 600 642, 600 642, 600 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
-      <path d="M 840 630 C 840 642, 840 642, 840 654" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+      <!-- 执行计划 → 三类计划（横线分支） -->
+      <path d="M 140 392 L 860 392" fill="none" stroke="#16a34a" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 140 392 L 140 416" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+      <path d="M 500 392 L 500 416" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
+      <path d="M 860 392 L 860 416" fill="none" stroke="#16a34a" stroke-width="1.1" marker-end="url(#arr-g)"/>
 
-      <!-- 四场景 → 确定教学班 -->
-      <path d="M 120 706 C 120 724, 120 724, 120 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
-      <path d="M 360 706 C 360 724, 360 724, 360 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
-      <path d="M 600 706 C 600 724, 600 724, 600 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
-      <path d="M 840 706 C 840 724, 840 724, 840 740" fill="none" stroke="#ea580c" stroke-width="1.1"/>
-      <path d="M 120 740 L 840 740" fill="none" stroke="#ea580c" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M 500 740 C 500 752, 500 752, 500 768" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+      <!-- 三类计划 → 三类任务 -->
+      <path d="M 140 468 L 140 504" fill="none" stroke="#16a34a" stroke-width="1.1"/>
+      <path d="M 500 468 L 500 504" fill="none" stroke="#16a34a" stroke-width="1.1"/>
+      <path d="M 860 468 L 860 504" fill="none" stroke="#16a34a" stroke-width="1.1"/>
+      <path d="M 140 504 L 860 504" fill="none" stroke="#ea580c" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 140 504 L 140 528" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+      <path d="M 500 504 L 500 528" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
+      <path d="M 860 504 L 860 528" fill="none" stroke="#ea580c" stroke-width="1.1" marker-end="url(#arr-o)"/>
 
-      <!-- 确定教学班 → 明细四步 -->
-      <path d="M 500 820 C 500 842, 500 842, 500 858" fill="none" stroke="#9333ea" stroke-width="1.1"/>
-      <path d="M 120 858 L 840 858" fill="none" stroke="#9333ea" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M 120 858 C 120 870, 120 870, 120 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
-      <path d="M 360 858 C 360 870, 360 870, 360 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
-      <path d="M 600 858 C 600 870, 600 870, 600 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
-      <path d="M 840 858 C 840 870, 840 870, 840 882" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+      <!-- 三类任务 → 三类名单 -->
+      <path d="M 140 580 L 140 616" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 500 580 L 500 616" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 860 580 L 860 616" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+      <path d="M 140 616 L 860 616" fill="none" stroke="#9333ea" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 140 616 L 140 640" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+      <path d="M 500 616 L 500 640" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+      <path d="M 860 616 L 860 640" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
 
-      <!-- 节点：准备 -->
+      <!-- 三类名单 → 开课清单（居中汇总） -->
+      <path d="M 140 692 L 140 728" fill="none" stroke="#9333ea" stroke-width="1.1"/>
+      <path d="M 500 692 L 500 728" fill="none" stroke="#9333ea" stroke-width="1.1"/>
+      <path d="M 860 692 L 860 728" fill="none" stroke="#9333ea" stroke-width="1.1"/>
+      <path d="M 140 728 L 860 728" fill="none" stroke="#9333ea" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M 500 728 L 500 752" fill="none" stroke="#9333ea" stroke-width="1.1" marker-end="url(#arr-p)"/>
+
+      <!-- 开课清单 → 共同授课 → 排课 -->
+      <path d="M 500 804 L 500 848" fill="none" stroke="#0891b2" stroke-width="1.1" marker-end="url(#arr-c)"/>
+      <path d="M 500 900 L 500 944" fill="none" stroke="#0891b2" stroke-width="1.1" marker-end="url(#arr-c)"/>
+
+      <!-- 准备 -->
       <foreignObject x="420" y="24" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
           <div class="node-title">开课时间设置</div>
-          <div class="node-sub">指定当前开课学期（是/否）</div>
+          <div class="node-sub">指定当前开课学期</div>
         </div>
       </foreignObject>
       <foreignObject x="420" y="120" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
           <div class="node-title">执行计划已提交</div>
-          <div class="node-sub">专业批次执行计划 · 已锁定</div>
+          <div class="node-sub">专业批次 · 已锁定</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="780" y="120" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+          <div class="node-title">校选课程管理</div>
+          <div class="node-sub">通识选修课程库</div>
         </div>
       </foreignObject>
 
-      <!-- 节点：生成计划 -->
-      <foreignObject x="420" y="216" width="160" height="52">
+      <!-- 三类计划 -->
+      <foreignObject x="60" y="416" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
-          <div class="node-title">生成开课计划</div>
-          <div class="node-sub">专业批次 + 课程号 · 一条数据</div>
+          <div class="node-title">专业开课计划</div>
+          <div class="node-sub">生成 · 合分班 · 提交</div>
         </div>
       </foreignObject>
-
-      <!-- 节点：三类开课 -->
-      <foreignObject x="60" y="426" width="160" height="52">
+      <foreignObject x="420" y="416" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
-          <div class="node-title">专业开课</div>
-          <div class="node-sub">必修 / 专业选修 / 基础课</div>
+          <div class="node-title">通识选修开课计划</div>
+          <div class="node-sub">校选课添加 · 提交</div>
         </div>
       </foreignObject>
-      <foreignObject x="420" y="426" width="160" height="52">
+      <foreignObject x="780" y="416" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
-          <div class="node-title">通识选修开课</div>
-          <div class="node-sub">General Elective</div>
-        </div>
-      </foreignObject>
-      <foreignObject x="780" y="426" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
-          <div class="node-title">其他开课</div>
-          <div class="node-sub">重修 / 补修 · 人工新增</div>
+          <div class="node-title">特殊开课计划</div>
+          <div class="node-sub">教务库 · 手动添加</div>
         </div>
       </foreignObject>
 
-      <!-- 节点：合分班 hub -->
-      <foreignObject x="420" y="540" width="160" height="52">
+      <!-- 三类任务 -->
+      <foreignObject x="60" y="528" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">按课程号合分班</div>
-          <div class="node-sub">同一课程号下操作</div>
+          <div class="node-title">专业任务安排</div>
+          <div class="node-sub">分组 · 教师 · 提交</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="420" y="528" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">通识选修任务安排</div>
+          <div class="node-sub">分组 · 教师 · 提交</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="780" y="528" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">特殊任务安排</div>
+          <div class="node-sub">分组 · 教师 · 提交</div>
         </div>
       </foreignObject>
 
-      <!-- 节点：四场景 -->
-      <foreignObject x="40" y="654" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">正常开课</div>
-          <div class="node-sub">一批次一课一班</div>
+      <!-- 三类名单 -->
+      <foreignObject x="60" y="640" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">专业名单管理</div>
+          <div class="node-sub">预置批次 · 不开放选课</div>
         </div>
       </foreignObject>
-      <foreignObject x="280" y="654" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">合班</div>
-          <div class="node-sub">多批次 → 一个教学班</div>
+      <foreignObject x="420" y="640" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">通识选修名单管理</div>
+          <div class="node-sub">开放选课 · 选课应用</div>
         </div>
       </foreignObject>
-      <foreignObject x="520" y="654" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">分班</div>
-          <div class="node-sub">一批次 → 多个教学班</div>
-        </div>
-      </foreignObject>
-      <foreignObject x="760" y="654" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">合分班</div>
-          <div class="node-sub">先合班再分班调整</div>
+      <foreignObject x="780" y="640" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">特殊名单管理</div>
+          <div class="node-sub">无预置 · 手工添加</div>
         </div>
       </foreignObject>
 
-      <!-- 节点：确定分组 -->
-      <foreignObject x="420" y="768" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
-          <div class="node-title">确定教学班分组</div>
-          <div class="node-sub">分班名单锁定后进入明细</div>
+      <!-- 汇总排课（居中） -->
+      <foreignObject x="420" y="752" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">开课清单</div>
+          <div class="node-sub">已提交任务汇总</div>
         </div>
       </foreignObject>
-
-      <!-- 节点：明细四步 -->
-      <foreignObject x="40" y="882" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
-          <div class="node-title">学生名单导入</div>
-          <div class="node-sub">按教学班维护</div>
+      <foreignObject x="420" y="848" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">共同授课维护</div>
+          <div class="node-sub">同教师 · 多课程号</div>
         </div>
       </foreignObject>
-      <foreignObject x="280" y="882" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
-          <div class="node-title">教师安排</div>
-          <div class="node-sub">主讲 / 辅导教师</div>
-        </div>
-      </foreignObject>
-      <foreignObject x="520" y="882" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
-          <div class="node-title">地点安排</div>
-          <div class="node-sub">教室 / 实验室</div>
-        </div>
-      </foreignObject>
-      <foreignObject x="760" y="882" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
-          <div class="node-title">上课周次</div>
-          <div class="node-sub">周次 / 节次模式</div>
+      <foreignObject x="420" y="944" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">排课 / 选课应用</div>
+          <div class="node-sub">下游消费开课数据</div>
         </div>
       </foreignObject>
     </svg>
   </div>
 
   <div class="workflow-phases">
-    <div class="workflow-phases-title">三阶段说明（对照参考视频）</div>
-    <p><strong>阶段一 · 生成开课计划：</strong>依据已提交的专业批次执行计划，按「专业批次 + 课程号」生成明细行。必修课、专业选修、MPU、大学课等归入<strong>专业开课</strong>；General Elective 归入<strong>通识选修开课</strong>；挂科重修等额外需求在<strong>其他开课</strong>人工维护。仅当前「开课学期 = 是」的学年学期可生成。</p>
-    <p><strong>阶段二 · 合分班：</strong>在<strong>同一课程号</strong>下对计划行操作。<em>正常</em>：一行一班；<em>合班</em>：多行合并为一个教学班；<em>分班</em>：拆成多个教学班；<em>合分班</em>：先合后分，灵活调整容量与批次组合。</p>
-    <p><strong>阶段三 · 开课明细：</strong>教学班分组确定后，为每个班维护学生名单、任课教师、上课地点与上课周次，完成本学期排课前置数据。</p>
+    <div class="workflow-phases-title">阶段说明（对照当前原型）</div>
+    <p><strong>阶段一 · 准备：</strong>维护开课学期；专业依赖已提交执行计划，通识选修需维护校选课程库。</p>
+    <p><strong>阶段二 · 三类开课：</strong>专业 / 通识选修 / 特殊各自「计划提交 → 任务安排提交 → 名单管理」。专业含合分班；通识选修名单来自选课应用；特殊开课由教务手工维护名单。</p>
+    <p><strong>阶段三 · 汇总排课：</strong>任务提交后纳入开课清单；共同授课维护设置同教师多课合排码；排课/选课应用消费数据。已移除独立「开课计划生成」「合分班管理」「开课明细安排」页。</p>
   </div>
 
   <div class="footer">
-    <div class="footer-item"><strong>数据粒度</strong><br>计划行 = 1 专业批次 × 1 课程号；教学班 = 合分班后的上课班组</div>
-    <div class="footer-item"><strong>前置依赖</strong><br>培养方案执行计划已提交 · 开课时间窗口内操作</div>
-    <!-- 已移除参考视频说明（原型演示用，不再展示） -->
-    <!-- <div class="footer-item"><strong>参考视频</strong><br>正常.mp4 · 合班.mp4 · 分班.mp4 · 合分班.mp4</div> -->
+    <div class="footer-item"><strong>数据粒度</strong><br>计划按类型维护；任务提交后清单一门课一条</div>
+    <div class="footer-item"><strong>前置依赖</strong><br>执行计划已提交 · 当前开课学期有效</div>
+    <div class="footer-item"><strong>下游</strong><br>开课清单 · 共同授课码 · 排课/选课</div>
   </div>
   <div class="meta">开课管理原型流程图 · XMUM</div>
 </div>

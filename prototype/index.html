@@ -48,12 +48,20 @@
         <div class="nav-section-title">通识选修课开课</div>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课计划</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
       </div>
       <div class="nav-section">
         <div class="nav-section-title">特殊开课</div>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-other">特殊开课计划</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-task">特殊开课任务安排</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-roster">特殊开课学生名单管理</a>
+        <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> --> <!-- 原挂于特殊开课下，改独立一级菜单 -->
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">开课清单</div>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a>
       </div>
       <!-- <div class="nav-group">开课类型</div> -->
       <!-- <a href="#" class="nav-item" data-page="course-offering-major">专业开课</a> -->
@@ -1106,6 +1114,7 @@
               <col>
               <col>
               <col>
+              <col>
               <col class="col-sticky-actions">
             </colgroup>
             <thead><tr>
@@ -1117,6 +1126,7 @@
               <th class="col-center">开课学期</th>
               <th>课程号</th>
               <th>课程名称</th>
+              <th class="col-center">选课类型</th>
               <th class="col-center">上课学院</th>
               <th class="col-center">上课专业</th>
               <th class="col-center">上课批次</th>
@@ -1276,6 +1286,7 @@
           <thead><tr>
             <th class="col-check"><input type="checkbox" id="ge-offering-check-all" aria-label="全选" onchange="toggleGeOfferingCheckAll(this.checked)"></th>
             <th class="col-index">序号</th>
+            <th>负责人</th>
             <th class="col-center">开课学期</th><th class="col-center">提交状态</th>
             <th>课程号</th><th>课程名称</th><th class="col-center">开课单位</th>
             <th class="col-center">学分</th><th class="col-center">总学时</th>
@@ -1361,6 +1372,69 @@
       </div>
     </section>
 
+    <!-- ═══ 开课管理 · 通识选修 · 开课名单管理 ═══ -->
+    <section class="page" id="page-course-ge-offering-roster">
+      <div class="page-header">
+        <div><h1>通识选修课开课名单管理</h1><p class="subtitle">任务安排提交后，按开课任务维护各小组学生名单</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ul class="offering-module-hint-list">
+          <li>任务安排提交后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
+          <li>通识选修为<strong>开放选课</strong>，默认名单由选课应用生成；本页支持<strong>移除</strong>与<strong>手动添加</strong>学生，无预置批次名单。</li>
+          <!-- <li>任务安排提交后，本页按开课任务展示；点击「查看名单」进入分组页，在左侧切换小组查看学生。</li> -->
+          <!-- <li>通识选修为<strong>开放选课</strong>，学生名单由选课应用生成，本页<strong>仅支持查看</strong>，不可手工维护名单。</li> -->
+        </ul>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="ge-offering-roster-filter-term">开课学期</label>
+            <select class="input input-sm" id="ge-offering-roster-filter-term" onchange="onGeOfferingRosterTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-roster-filter-offering-unit">开课单位</label>
+            <select class="input input-sm" id="ge-offering-roster-filter-offering-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-roster-filter-name">课程号</label>
+            <input class="input input-sm" id="ge-offering-roster-filter-name" placeholder="课程号">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryGeOfferingRosterList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetGeOfferingRosterFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card course-ge-roster-list-card">
+        <div class="panel-toolbar course-ge-roster-toolbar">
+          <span class="form-hint">开放选课默认名单由选课应用生成；本页可按小组移除或手动添加学生</span>
+          <!-- <span class="form-hint">开放选课课程名单由选课应用生成；本页仅供查看各分组当前名单情况</span> -->
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-table course-ge-offering-roster-table">
+            <thead><tr id="course-ge-offering-roster-table-head">
+              <th class="col-index">序号</th>
+              <th class="col-center">开课学期</th>
+              <th>课程号</th>
+              <th>课程名称</th>
+              <th class="col-center">小组数</th>
+              <th class="col-center">开课单位</th>
+              <th class="col-center">学分</th>
+              <th class="col-center">总学时</th>
+              <th class="col-center">起止周</th>
+              <th class="col-center">当前名单人数</th>
+              <th class="col-sticky-actions">操作</th>
+            </tr></thead>
+            <tbody id="course-ge-offering-roster-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-ge-offering-roster-pagination"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ 开课管理 · 特殊开课 ═══ -->
     <section class="page" id="page-course-offering-other">
       <div class="page-header">
@@ -1400,6 +1474,7 @@
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="other-offering-check-all" aria-label="全选" onchange="toggleOtherOfferingCheckAll(this.checked)"></th>
           <th class="col-index">序号</th>
+          <th>负责人</th>
           <th class="col-center">开课学期</th><th class="col-center">提交状态</th>
           <th>课程号</th><th>课程名称</th>
           <th class="col-center">开课单位</th>
@@ -1529,7 +1604,8 @@
               <th class="col-index">序号</th>
               <th class="col-center">开课学期</th>
               <th>课程号</th><th>课程名称</th>
-              <th class="col-center">专业</th><th class="col-center">入学批次</th>
+              <th class="col-center">开课单位</th><th class="col-center">起止周</th>
+              <!-- <th class="col-center">专业</th><th class="col-center">入学批次</th> -->
               <th class="col-center">小组数</th>
               <th class="col-center">学分</th><th class="col-center">总学时</th>
               <th class="col-sticky-actions">操作</th>
@@ -1539,6 +1615,202 @@
         </div>
         <div class="table-footer">
           <div class="pagination" id="course-special-offering-roster-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 开课清单（任务安排已提交汇总） ═══ -->
+    <section class="page" id="page-course-offering-manifest">
+      <div class="page-header">
+        <div><h1>开课清单</h1><p class="subtitle">汇总专业、通识选修、特殊开课中任务安排已提交的课程信息</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p>本页自动汇总三类开课流程中<strong>任务安排已提交</strong>的数据，便于教务统一查阅课程、课程人数上限、当前学生名单人数与任课教师；如需调整请返回对应任务安排页。</p>
+      </div>
+      <div class="legend-bar" id="course-offering-hint-manifest"></div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="offering-manifest-filter-term">开课学期</label>
+            <select class="input input-sm" id="offering-manifest-filter-term" onchange="onOfferingManifestTermFilterChange()">
+              <option value="">全部学期</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="offering-manifest-filter-type">开课类型</label>
+            <select class="input input-sm" id="offering-manifest-filter-type">
+              <option value="">全部类型</option>
+              <option value="major">专业开课</option>
+              <option value="ge">通识选修</option>
+              <option value="other">特殊开课</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="offering-manifest-filter-unit">开课单位</label>
+            <select class="input input-sm" id="offering-manifest-filter-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="offering-manifest-filter-name">课程号 / 课程名称</label>
+            <input class="input input-sm" id="offering-manifest-filter-name" placeholder="课程号 / 课程名称">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingManifestList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingManifestFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card offering-manifest-list-card">
+        <div class="panel-toolbar offering-manifest-toolbar">
+          <span class="form-hint">一门课一条记录；已分组课程汇总展示课程人数上限、当前学生名单人数与任课教师</span>
+          <!-- <div class="offering-manifest-toolbar-actions">
+            <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-shared-code" onclick="openOfferingManifestSharedTeachingCodeModal()" disabled>设置共同授课码</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-clear-shared-code" onclick="clearOfferingManifestSharedTeachingCode()" disabled>解除共同授课</button>
+          </div> --> <!-- 原共同授课码批量操作，已从工具栏移除 -->
+          <!-- <span class="form-hint">一门课一条记录；已分组课程汇总展示容量、人数与任课教师</span> --> <!-- 原文案 -->
+          <!-- <span class="form-hint">按课程班展示；已分组课程按小组展开为多行</span> --> <!-- 原按小组展开 -->
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-table offering-manifest-table">
+            <thead><tr id="offering-manifest-table-head">
+              <th class="col-check"><input type="checkbox" id="offering-manifest-check-all" aria-label="全选"></th>
+              <th class="col-index">序号</th>
+              <th>负责人</th>
+              <th class="col-center">开课学期</th>
+              <th class="col-center">开课类型</th>
+              <th>课程号</th>
+              <th>课程名称</th>
+              <!-- <th>课程班名称</th> --> <!-- 原列名 -->
+              <th>开课单位</th>
+              <th class="col-center">选课类型</th>
+              <th class="col-center">学分</th>
+              <th class="col-center">小组数</th>
+              <th class="col-center">起止周</th>
+              <!-- <th class="col-center">教学周数</th> --> <!-- 原教学周数列，已移除 -->
+              <th class="col-center">总学时</th>
+              <!-- <th class="col-center">计划学时</th> --> <!-- 原列名 -->
+              <!-- <th class="col-center">排课学时</th> --> <!-- 原排课学时列，已移除 -->
+              <th class="col-center">课程人数上限</th>
+              <!-- <th class="col-center">容量</th> --> <!-- 原列名 -->
+              <th class="col-center">当前学生名单人数</th>
+              <!-- <th class="col-center">人数</th> --> <!-- 原列名 -->
+              <!-- <th class="col-center">共同授课码</th> --> <!-- 原共同授课码列，已移除 -->
+              <th>任课教师</th>
+              <!-- <th class="col-center">修改记录</th> --> <!-- 原修改记录列 -->
+              <th class="col-sticky-actions">操作</th>
+            </tr></thead>
+            <tbody id="course-offering-manifest-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-offering-manifest-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 共同授课维护 ═══ -->
+    <section class="page" id="page-course-shared-teaching-maintenance">
+      <div class="page-header">
+        <div><h1>共同授课维护</h1><p class="subtitle">对已提交任务安排的开课记录维护是否共同授课及共同授课码</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p>共同授课适用于<strong>不同课程号、课程内容相近且由同一任课教师授课</strong>的情况。设置后，该教师在排课时可忽略这些课程之间的时间冲突（原型示意）。</p>
+      </div>
+      <div class="legend-bar" id="course-offering-hint-shared-teaching"></div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="shared-teaching-filter-term">开课学期</label>
+            <select class="input input-sm" id="shared-teaching-filter-term" onchange="onSharedTeachingMaintenanceTermFilterChange()">
+              <option value="">全部学期</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="shared-teaching-filter-type">开课类型</label>
+            <select class="input input-sm" id="shared-teaching-filter-type">
+              <option value="">全部类型</option>
+              <option value="major">专业开课</option>
+              <option value="ge">通识选修</option>
+              <option value="other">特殊开课</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="shared-teaching-filter-unit">开课单位</label>
+            <select class="input input-sm" id="shared-teaching-filter-unit"><option value="">全部开课单位</option></select>
+          </div>
+          <!-- <div class="course-time-query-field">
+            <label for="shared-teaching-filter-shared">是否共同授课</label>
+            <select class="input input-sm" id="shared-teaching-filter-shared">
+              <option value="">全部</option>
+              <option value="yes">是</option>
+              <option value="no">否</option>
+            </select>
+          </div> --> <!-- 列表已默认仅展示已设共同授课码课程，独立授课不展示 -->
+          <div class="course-time-query-field">
+            <label for="shared-teaching-filter-name">课程号 / 课程名称</label>
+            <input class="input input-sm" id="shared-teaching-filter-name" placeholder="课程号 / 课程名称">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="querySharedTeachingMaintenanceList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetSharedTeachingMaintenanceFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card shared-teaching-list-card">
+        <div class="panel-toolbar offering-manifest-toolbar shared-teaching-list-toolbar">
+          <div class="offering-manifest-toolbar-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="openSharedTeachingSetupModal()">设置共同授课</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-shared-teaching-clear-code" onclick="clearSharedTeachingMaintenanceCode()" disabled>解除共同授课</button>
+          </div>
+          <span class="form-hint">须勾选含相同任课教师的课程方可设置共同授课，用于排课时同一教师忽略冲突</span>
+          <!-- <span class="form-hint">...</span><div class="offering-manifest-toolbar-actions">...</div> --> <!-- 原按钮在右侧，改工具栏最左 -->
+          <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-shared-teaching-set-code" onclick="openSharedTeachingMaintenanceModal()" disabled>设置共同授课码</button> --> <!-- 原列表勾选后设置，改弹窗从开课清单选择 -->
+        </div>
+        <div class="table-scroll">
+          <table class="data-table course-offering-table shared-teaching-table">
+            <thead><tr id="shared-teaching-table-head"></tr></thead>
+            <tbody id="course-shared-teaching-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-shared-teaching-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 开课名单变更日志 ═══ -->
+    <section class="page" id="page-course-offering-roster-change-log">
+      <div class="page-header">
+        <div><h1>开课名单变更日志</h1><p class="subtitle">记录学生进入或移出各课程小组的操作，便于追溯</p></div>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="offering-roster-change-log-filter-course">课程号 / 课程名称</label>
+            <input class="input input-sm" id="offering-roster-change-log-filter-course" placeholder="课程号 / 课程名称">
+          </div>
+          <div class="course-time-query-field">
+            <label for="offering-roster-change-log-filter-student-no">学号</label>
+            <input class="input input-sm" id="offering-roster-change-log-filter-student-no" placeholder="学号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="offering-roster-change-log-filter-student-name">姓名</label>
+            <input class="input input-sm" id="offering-roster-change-log-filter-student-name" placeholder="姓名">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingRosterChangeLogList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingRosterChangeLogFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card offering-roster-change-log-list-card">
+        <div class="table-scroll">
+          <table class="data-table course-offering-table offering-roster-change-log-table">
+            <thead><tr id="offering-roster-change-log-table-head"></tr></thead>
+            <tbody id="course-offering-roster-change-log-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-offering-roster-change-log-pagination"></div>
         </div>
       </div>
     </section>
@@ -2118,6 +2390,7 @@
           <input class="input input-sm readonly" id="mos-edit-student-chinese" type="text" readonly tabindex="-1">
         </div>
         -->
+        <!-- 原场地类型选择、教室安排字段，已从专业开课教学任务抽屉移除
         <div class="form-item">
           <label for="mos-edit-venue-types">场地类型选择</label>
           <div class="clo-multiselect" id="mos-edit-venue-types-multiselect">
@@ -2137,6 +2410,7 @@
             <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingClassroomPickerModal()">选择</button>
           </div>
         </div>
+        -->
         <div class="form-item">
           <label class="req" for="mos-edit-enrollment-type">选课类型</label>
           <select class="input input-sm" id="mos-edit-enrollment-type">
@@ -2299,6 +2573,7 @@
           <input class="input input-sm readonly" id="ge-edit-enrollment-type" type="text" readonly tabindex="-1" value="开放选课">
           <p class="form-hint">通识选修固定为开放选课，名单由选课应用生成</p>
         </div>
+        <!-- 原场地类型选择、教室安排字段，已从通识选修开课计划抽屉移除
         <div class="form-item">
           <label for="ge-edit-venue-types">场地类型选择</label>
           <div class="clo-multiselect" id="ge-edit-venue-types-multiselect">
@@ -2318,6 +2593,7 @@
             <button class="btn btn-outline btn-sm" type="button" onclick="openGeOfferingClassroomPickerModal()">选择</button>
           </div>
         </div>
+        -->
         <div class="form-item">
           <label class="req" for="ge-edit-is-scheduled">是否排课</label>
           <select class="input input-sm" id="ge-edit-is-scheduled">
@@ -2418,6 +2694,7 @@
           <input class="input input-sm readonly" id="other-edit-enrollment-type" type="text" readonly tabindex="-1" value="不开放选课">
           <p class="form-hint">特殊开课固定为不开放选课，学生由教务手工维护</p>
         </div>
+        <!-- 原场地类型选择、教室安排字段，已从特殊开课计划抽屉移除
         <div class="form-item">
           <label for="other-edit-venue-types">场地类型选择</label>
           <div class="clo-multiselect" id="other-edit-venue-types-multiselect">
@@ -2437,6 +2714,7 @@
             <button class="btn btn-outline btn-sm" type="button" onclick="openOtherOfferingClassroomPickerModal()">选择</button>
           </div>
         </div>
+        -->
         <div class="form-item">
           <label class="req" for="other-edit-is-scheduled">是否排课</label>
           <select class="input input-sm" id="other-edit-is-scheduled">
@@ -3600,6 +3878,74 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="cancelDeleteVersion()">取消</button>
       <button class="btn btn-danger" onclick="confirmDeleteVersion()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：共同授课维护 · 设置共同授课（本学期开课清单） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-shared-teaching-setup">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3>设置共同授课</h3>
+      <button class="modal-close" type="button" onclick="closeSharedTeachingSetupModal()">×</button>
+    </div>
+    <div class="modal-body shared-teaching-setup-body">
+      <p class="form-hint" id="shared-teaching-setup-term-hint">从本学期开课清单中选择两门及以上课程，且须至少有一名相同任课教师。</p>
+      <p class="form-hint shared-teaching-setup-teacher-hint" id="shared-teaching-setup-teacher-hint"></p>
+      <div class="shared-teaching-setup-toolbar">
+        <input class="input input-sm" id="shared-teaching-setup-keyword" placeholder="课程号 / 课程名称" oninput="renderSharedTeachingSetupModalTable()">
+        <span class="form-hint" id="shared-teaching-setup-count-hint"></span>
+      </div>
+      <div class="table-scroll shared-teaching-setup-table-wrap">
+        <table class="data-table course-offering-table">
+          <thead>
+            <tr>
+              <th class="col-check"><input type="checkbox" id="shared-teaching-setup-check-all" aria-label="全选" onchange="toggleSharedTeachingSetupCheckAll(this.checked)"></th>
+              <th class="col-index">序号</th>
+              <th>课程号</th>
+              <th>课程名称</th>
+              <th class="col-center">开课类型</th>
+              <th class="col-center">开课单位</th>
+              <th>任课教师</th>
+              <th class="col-center">当前共同授课码</th>
+            </tr>
+          </thead>
+          <tbody id="shared-teaching-setup-body"></tbody>
+        </table>
+      </div>
+      <div class="form-item shared-teaching-setup-code-field">
+        <label class="req" for="shared-teaching-setup-code-input">共同授课码</label>
+        <input class="input" id="shared-teaching-setup-code-input" placeholder="如 CST-ACC-240001" oninput="this.dataset.userEdited='1'">
+        <p class="form-hint">须勾选 2 门及以上课程，且所选课程至少有一名相同任课教师；课程号可不同。</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeSharedTeachingSetupModal()">取消</button>
+      <button class="btn btn-primary" type="button" id="btn-shared-teaching-setup-confirm" onclick="confirmSharedTeachingSetup()" disabled>确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：共同授课维护 · 设置共同授课码（原列表勾选小弹窗，已改 modal-shared-teaching-setup） ═══ -->
+<!-- <div class="modal-overlay modal-nested" id="modal-offering-manifest-shared-teaching-code">...</div> -->
+<div class="modal-overlay modal-nested" id="modal-offering-manifest-shared-teaching-code" hidden>
+  <div class="modal modal-md">
+    <div class="modal-head"><h3>设置共同授课码</h3><button class="modal-close" type="button" onclick="closeSharedTeachingMaintenanceModal()">×</button></div>
+    <div class="modal-body">
+      <p class="form-hint" id="offering-manifest-shared-code-meta">已选课程将共用同一授课码，排课时忽略彼此时间冲突。</p>
+      <div class="form-item" style="margin-top:12px;margin-bottom:0">
+        <label class="req" for="offering-manifest-shared-code-input">共同授课码</label>
+        <input class="input" id="offering-manifest-shared-code-input" placeholder="如 CST-ACC-240001" oninput="this.dataset.userEdited='1'">
+        <p class="form-hint">不同课程号可设置相同授课码，用于合班合排；排课系统识别同码课程后不再校验相互冲突（原型示意）。</p>
+      </div>
+      <div class="offering-manifest-shared-code-preview" style="margin-top:16px">
+        <strong class="offering-manifest-shared-code-preview-title">已选课程</strong>
+        <ul class="offering-manifest-shared-code-list" id="offering-manifest-shared-code-list"></ul>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeSharedTeachingMaintenanceModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSharedTeachingMaintenanceCode()">确定</button>
     </div>
   </div>
 </div>

@@ -998,6 +998,11 @@ body {
 #modal-add-course .modal-xl { width: min(98vw, 1280px); max-width: 1280px; }
 .modal-md { width: 560px; }
 
+#modal-group-assign-form .modal.group-assign-form-modal {
+  width: min(98vw, 1280px);
+  max-width: 1280px;
+}
+
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 20px; border-bottom: 1px solid var(--border-light);
@@ -3463,6 +3468,9 @@ code {
 #page-course-major-offering-task .course-offering-major-table td.col-merged-nowrap code.cell-ellipsis-tip {
   cursor: help;
 }
+#page-course-major-offering-task .course-major-offering-task-table td.col-course-name {
+  white-space: nowrap;
+}
 #page-course-ge-offering-task.active {
   display: flex;
   flex-direction: column;
@@ -3892,6 +3900,7 @@ code {
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .offering-status-pill.is-on { background: #dcfce7; color: #15803d; }
 .offering-status-pill.is-off { background: #f1f5f9; color: #64748b; }
@@ -4048,6 +4057,7 @@ code {
   gap: 16px;
 }
 #page-offering-grouping .offering-grouping-layout {
+  flex: 1;
   min-height: 480px;
 }
 #page-offering-grouping .offering-readonly-hint {
@@ -4072,12 +4082,203 @@ code {
 #modal-group-assign-form.modal-nested {
   z-index: 1110;
 }
+#modal-group-assign-form .modal.group-assign-form-modal,
 .group-assign-form-modal {
-  width: min(92vw, 720px);
-  max-width: 720px;
+  width: min(98vw, 1280px);
+  max-width: 1280px;
+}
+.group-assign-form-body {
+  padding: 16px 24px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+.group-assign-form-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(480px, 1.12fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.group-assign-form-panel {
+  min-width: 0;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.group-assign-form-panel-head {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+.group-assign-form-panel-body {
+  padding: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.group-assign-form-grid {
+  gap: 12px 14px;
+}
+.group-assign-form-grid .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.group-assign-form-grid .form-field > label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  line-height: 1.35;
+}
+.group-assign-form-grid .form-field > .form-hint {
+  margin-top: 0;
+}
+.group-assign-form-panel-config .group-assign-hour-type-picks-table-wrap,
+.group-assign-form-panel-config .group-assign-group-picks-table-wrap {
+  max-height: 168px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap {
+  max-height: 168px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table {
+  min-width: 640px;
+}
+.group-assign-form-modal .week-picker-cell {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+.group-assign-form-modal .week-range-input-hint {
+  font-size: 11px;
+}
+@media (max-width: 1100px) {
+  .group-assign-form-layout {
+    grid-template-columns: 1fr;
+  }
+  #modal-group-assign-form .modal.group-assign-form-modal,
+  .group-assign-form-modal {
+    width: min(98vw, 720px);
+    max-width: 720px;
+  }
 }
 .group-assign-form-modal .form-grid-2 {
-  gap: 10px 16px;
+  gap: 12px 18px;
+}
+.group-assign-hour-type-picks-table-wrap,
+.group-assign-group-picks-table-wrap {
+  max-height: 180px;
+}
+.group-assign-hour-type-picks-table .group-assign-hour-type-row.is-disabled {
+  opacity: 0.55;
+}
+.group-assign-hour-type-picks-table .group-assign-hour-type-row.is-selected td {
+  background: #f0f7ff;
+}
+.group-assign-merge-hours-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.group-assign-merge-hours-controls .form-hint {
+  flex: 1 1 220px;
+  margin: 0;
+}
+#group-assign-merge-hours:disabled + .toggle-track {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.group-assign-week-inline-wrap .week-picker-grid {
+  margin-top: 8px;
+}
+.group-assign-week-inline-wrap .week-range-display-row {
+  margin-top: 8px;
+}
+.group-assign-course-level-display {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+.group-assign-course-level-card {
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.group-assign-course-level-display.is-status-over .group-assign-course-level-card {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+.group-assign-course-level-display.is-status-ok .group-assign-course-level-card {
+  border-color: #bbf7d0;
+  background: #f7fef9;
+}
+.group-assign-course-level-display.is-status-under .group-assign-course-level-card {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.group-assign-course-level-name {
+  flex: 1 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.group-assign-course-level-hours {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.group-assign-course-level-status {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.group-assign-course-level-status.is-none {
+  background: #f1f5f9;
+  color: var(--text-3);
+}
+.group-assign-course-level-status.is-over {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.group-assign-course-level-status.is-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+.group-assign-course-level-status.is-under {
+  background: #fef3c7;
+  color: #b45309;
+}
+.group-tree-node.is-root.is-course,
+.group-tree-course-default .group-tree-node.is-course-default {
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+.group-tree-node.is-root.is-course.is-selected,
+.group-tree-course-default .group-tree-node.is-course-default.is-selected {
+  border-color: var(--blue-300);
+  background: #eff6ff;
 }
 .group-assign-form-modal .input-with-btn {
   width: 100%;
@@ -4215,14 +4416,18 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 0;
   margin-left: auto;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 .group-assign-teacher-toolbar .form-hint {
   margin: 0;
-  white-space: nowrap;
+  max-width: 220px;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: right;
 }
 .group-assign-teacher-table-wrap,
 .group-assign-group-picks-table-wrap {
@@ -4406,6 +4611,16 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-generate-major-offering-task .picker-filter-grid .form-item .input {
   width: 100%;
   box-sizing: border-box;
+}
+#modal-generate-major-offering-task .gmot-modal-foot {
+  justify-content: flex-end;
+}
+#modal-generate-major-offering-task .gmot-modal-foot .btn-outline:first-child {
+  margin-right: auto;
+}
+.school-elective-edit-remark {
+  resize: vertical;
+  min-height: 72px;
 }
 #modal-generate-major-offering-task .picker-filter-actions {
   align-self: end;
@@ -5204,16 +5419,44 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-grouping-meta span strong,
 .offering-grouping-meta-row span strong { color: var(--text-2); margin-right: 4px; }
 .offering-grouping-layout {
-  display: grid;
-  grid-template-columns: minmax(380px, 34%) 1fr;
+  display: flex;
+  align-items: stretch;
   gap: 20px;
   flex: 1;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
-  align-items: stretch;
+  overflow: visible;
   margin-bottom: 12px;
-  /* gap: 16px; 原侧栏与主区域间距偏小 */
+  transition: gap 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  /* display: grid; grid-template-columns: minmax(380px, 34%) 1fr; 原 grid 列宽无法平滑过渡 */
+}
+.offering-grouping-layout.is-sidebar-collapsed {
+  gap: 8px;
+}
+.offering-group-sidebar-wrap {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  flex: 0 0 clamp(340px, 34%, 420px);
+  width: clamp(340px, 34%, 420px);
+  min-width: clamp(340px, 34%, 420px);
+  max-width: 420px;
+  min-height: 0;
+  overflow: visible;
+  transition:
+    width 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    min-width 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    flex-basis 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar-wrap {
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  overflow: hidden;
 }
 .offering-group-sidebar {
   border: 1px solid var(--border-light);
@@ -5222,9 +5465,94 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   background: #fff;
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
-  min-width: 0;
+  height: 100%;
+  width: 100%;
+  min-width: 340px;
+  box-sizing: border-box;
   overflow: hidden;
+  transition:
+    transform 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.28s ease,
+    visibility 0.28s ease,
+    border-color 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar {
+  transform: translateX(-100%);
+  opacity: 0;
+  visibility: hidden;
+  border-color: transparent;
+  padding-left: 0;
+  padding-right: 0;
+  pointer-events: none;
+}
+.offering-grouping-layout.is-sidebar-animating .offering-group-sidebar {
+  will-change: transform;
+}
+.offering-grouping-layout.is-sidebar-animating .offering-group-sidebar-wrap {
+  will-change: width, min-width, max-width;
+}
+.offering-group-sidebar-rail {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  z-index: 6;
+  width: 24px;
+  height: 56px;
+  padding: 0;
+  border: 1px solid var(--border-light);
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.08);
+  color: var(--blue-600);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    top 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    right 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    left 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s ease,
+    background 0.2s ease,
+    border-color 0.25s ease;
+}
+.offering-group-sidebar-rail:hover {
+  background: #eff6ff;
+  color: var(--blue-700);
+  box-shadow: 2px 0 14px rgba(37, 99, 235, 0.14);
+}
+.offering-group-sidebar-rail-icon {
+  width: 8px;
+  height: 8px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  margin-left: 3px;
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1), margin 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar-rail {
+  top: 50%;
+  right: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+.offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar-rail:hover {
+  box-shadow: 0 2px 14px rgba(37, 99, 235, 0.14);
+}
+.offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar-rail-icon {
+  transform: rotate(-135deg);
+  margin-left: 0;
+  margin-right: 0;
 }
 .offering-group-sidebar-head {
   display: flex;
@@ -5249,6 +5577,13 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 2px 0;
+}
+.group-tree-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 .group-tree-root { display: flex; flex-direction: column; gap: 4px; }
 .group-tree-node {
@@ -5259,6 +5594,81 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   padding: 8px 10px;
   border-radius: 6px;
   min-width: 0;
+}
+.group-tree-node.is-root.is-course {
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  font-weight: 600;
+}
+.group-tree-node.is-child { border: 1px solid var(--border-light); background: #fff; }
+.group-tree-toggle,
+.group-tree-toggle-spacer {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+}
+.group-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border-light);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.group-tree-toggle:hover {
+  background: var(--blue-50);
+  border-color: var(--blue-200);
+  color: var(--blue-700);
+}
+.group-tree-toggle-icon {
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform 0.2s ease;
+}
+.group-tree-branch.is-collapsed .group-tree-toggle-icon {
+  transform: rotate(-45deg) translate(-1px, 1px);
+}
+.group-tree-children {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2px 0 0 10px;
+  padding: 2px 0 2px 14px;
+  border-left: 1px dashed var(--border-light);
+}
+.group-tree-branch.is-collapsed .group-tree-children,
+.group-tree-children[hidden] {
+  display: none !important;
+}
+.group-tree-node.has-remark {
+  gap: 2px;
+}
+.group-tree-child-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue-300);
+  margin-right: 2px;
+}
+.group-tree-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .group-tree-node-main {
   display: flex;
@@ -5298,34 +5708,25 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   white-space: nowrap;
 }
 .group-tree-node.is-root { background: var(--blue-50); font-weight: 600; }
-.group-tree-node.is-child { border: 1px solid var(--border-light); cursor: pointer; }
-.group-tree-node.is-child.is-selected {
-  border-color: var(--blue-400);
-  background: var(--blue-50);
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
-}
-.group-tree-node.is-child:hover:not(.is-selected) { background: #f8fafc; }
 .group-tree-empty { padding: 12px 8px; font-size: 12px; }
 .group-tree-actions a { margin-left: 6px; text-decoration: none; font-size: 12px; }
 .group-tree-remark {
   margin: 0;
-  padding: 4px 0 0;
+  padding: 4px 0 2px 18px;
   font-size: 11px;
   line-height: 1.45;
   color: var(--text-3);
-  border-top: 1px dashed var(--border-light);
   white-space: pre-wrap;
   word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: block;
 }
 .group-tree-remark-label {
   color: var(--text-2);
   font-weight: 600;
 }
-.group-tree-node.is-selected .group-tree-remark { color: var(--text-2); }
+.group-tree-node.is-child.has-remark .group-tree-node-main {
+  padding-bottom: 0;
+}
 .offering-group-student-remark {
   margin: 0 0 12px;
   padding: 10px 12px;
@@ -5352,6 +5753,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   word-break: break-word;
 }
 .offering-group-main {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
   border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 14px;
@@ -5360,6 +5764,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
+  transition: flex 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .offering-group-panel-wrap {
   min-height: 0;
@@ -5375,7 +5780,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* overflow: hidden; 原隐藏溢出，多分组块无法纵向滚动 */
   /* grid-area: 1 / 1 / 2 / 2; 原叠层占位 */
 }
 #offering-group-hour-summary-panel {
@@ -5518,6 +5925,119 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   overflow: visible;
   align-items: stretch;
   /* overflow: hidden; 原裁切子内容，导致 tooltip 与滚动异常 */
+}
+.offering-group-assign-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+  align-items: stretch;
+}
+.offering-group-assign-stack {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 14px;
+  --oga-col-check: 44px;
+  --oga-col-index: 52px;
+  --oga-col-hour-type: 100px;
+  --oga-col-week: 120px;
+  --oga-col-teacher: 240px;
+  --oga-col-groups: 280px;
+  --oga-col-sticky-actions: 72px;
+}
+.offering-group-assign-block {
+  border: 1px solid var(--border-2, var(--border));
+  border-radius: var(--radius-md, var(--radius));
+  overflow: hidden;
+  background: #fff;
+  flex-shrink: 0;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--blue-500);
+}
+.offering-group-assign-block.is-pending .offering-group-assign-head {
+  background: linear-gradient(90deg, #fffbeb 0%, #fff 48%);
+  border-bottom: none;
+}
+.offering-group-assign-block.is-active .offering-group-assign-head {
+  background: linear-gradient(90deg, var(--blue-50) 0%, #fff 52%);
+}
+.offering-group-assign-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 10px;
+  background: var(--surface-2, var(--blue-50));
+  border-bottom: 1px solid var(--border-2, var(--border-light));
+}
+.offering-group-assign-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.offering-group-assign-title strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.offering-group-assign-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--blue-100);
+  color: var(--blue-700);
+  font-size: 12px;
+  font-weight: 700;
+}
+.offering-group-assign-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.offering-group-assign-pending-body {
+  padding: 2px 14px 14px 52px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-3, var(--text-3));
+}
+.offering-group-assign-empty {
+  padding: 20px 0;
+  text-align: center;
+}
+.offering-group-assign-table-wrap .table-scroll {
+  overflow-x: auto;
+}
+.offering-group-assign-block.is-active .offering-group-assign-table thead th {
+  background: var(--blue-50);
+}
+.offering-group-assign-check-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-2, var(--text-2));
+  cursor: pointer;
+  user-select: none;
+}
+.offering-group-assign-check-all input {
+  margin: 0;
+}
+#offering-group-teacher-panel .offering-group-teacher-hint {
+  margin: 0 0 8px;
+  flex-shrink: 0;
 }
 #offering-group-hour-summary-panel .offering-group-teacher-hint {
   margin: 0 0 8px;
@@ -5917,8 +6437,28 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   pointer-events: none;
 }
 .offering-group-assign-table {
-  min-width: 1100px;
-  --offering-group-assign-actions-width: 72px;
+  table-layout: fixed;
+  width: 100%;
+  min-width: 920px;
+  --offering-group-assign-actions-width: var(--oga-col-sticky-actions, 72px);
+}
+.offering-group-assign-table col.col-check { width: var(--oga-col-check); }
+.offering-group-assign-table col.col-index { width: var(--oga-col-index); }
+.offering-group-assign-table col.col-hour-type { width: var(--oga-col-hour-type); }
+.offering-group-assign-table col.col-week { width: var(--oga-col-week); }
+.offering-group-assign-table col.col-teacher { width: var(--oga-col-teacher); }
+.offering-group-assign-table col.col-groups { width: var(--oga-col-groups); }
+.offering-group-assign-table col.col-sticky-actions { width: var(--oga-col-sticky-actions); }
+.offering-group-assign-table th.col-week,
+.offering-group-assign-table td.col-week,
+.offering-group-assign-table th.col-index,
+.offering-group-assign-table td.col-index {
+  text-align: center;
+}
+.offering-group-assign-table th.col-teacher,
+.offering-group-assign-table td.col-teacher {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .offering-group-assign-table th,
 .offering-group-assign-table td {
@@ -5948,12 +6488,17 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-assign-table td.col-groups {
   white-space: normal;
   word-break: break-word;
-  min-width: 280px;
 }
 .offering-group-assign-table td.col-groups {
   vertical-align: top;
   padding-top: 8px;
   padding-bottom: 8px;
+}
+/* 教师安排 Tab 按小组分块，小组列用于查看跨组合班安排 */
+.offering-group-assign-table th.col-check,
+.offering-group-assign-table td.col-check {
+  width: 44px;
+  text-align: center;
 }
 
 .school-elective-query-grid {
@@ -5985,6 +6530,17 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   max-width: 240px;
   white-space: normal;
   line-height: 1.45;
+}
+.school-elective-remark-cell {
+  max-width: 200px;
+}
+.school-elective-remark-cell .cell-ellipsis-tip {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
 }
 .school-elective-edit-summary {
   /* margin-bottom: 16px; */ /* 间距改由 .school-elective-edit-body 统一控制 */
@@ -6257,11 +6813,36 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 input#group-assign-recorded-hours {
   font-size: 12px;
 }
-#group-assign-groups-wrap[hidden] { display: none !important; }
+#group-assign-groups-wrap[hidden],
+#group-assign-hour-type-wrap[hidden] { display: none !important; }
 .form-field-span-2 { grid-column: 1 / -1; }
+@media (prefers-reduced-motion: reduce) {
+  .offering-grouping-layout,
+  .offering-group-sidebar-wrap,
+  .offering-group-sidebar,
+  .offering-group-sidebar-rail,
+  .offering-group-sidebar-rail-icon,
+  .offering-group-main {
+    transition: none !important;
+  }
+}
 @media (max-width: 900px) {
   .course-major-query-grid { grid-template-columns: 1fr 1fr; }
-  .offering-grouping-layout { grid-template-columns: 1fr; }
+  .offering-grouping-layout { flex-direction: column; }
+  .offering-grouping-layout.is-sidebar-collapsed { gap: 8px; }
+  .offering-group-sidebar-wrap {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar {
+    transform: none;
+    border-color: var(--border-light);
+    padding: 14px;
+    pointer-events: auto;
+  }
+  .offering-group-sidebar-rail { display: none; }
   .form-grid-2 { grid-template-columns: 1fr; }
 }
 .merge-line-list { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -7064,6 +7645,11 @@ input#group-assign-recorded-hours {
 .modal-xl { width: 860px; }
 #modal-add-course .modal-xl { width: min(98vw, 1280px); max-width: 1280px; }
 .modal-md { width: 560px; }
+
+#modal-group-assign-form .modal.group-assign-form-modal {
+  width: min(98vw, 1280px);
+  max-width: 1280px;
+}
 
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -8863,48 +9449,7 @@ code {
   font-size: 12px;
 }
 .offering-grouping-meta span strong { color: var(--text-2); margin-right: 4px; }
-.offering-grouping-layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 12px;
-  min-height: 360px;
-}
-.offering-group-sidebar {
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  padding: 10px;
-  background: #fff;
-}
-.offering-group-sidebar-head {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.offering-group-sidebar-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.offering-group-tree { font-size: 12px; }
-.group-tree-root { display: flex; flex-direction: column; gap: 4px; }
-.group-tree-node {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 8px;
-  border-radius: 6px;
-}
-.group-tree-node.is-root { background: var(--blue-50); font-weight: 600; }
-.group-tree-node.is-child { margin-left: 12px; border: 1px solid var(--border-light); }
-.group-tree-actions a { margin-left: 6px; text-decoration: none; font-size: 12px; }
-.offering-group-main {
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  padding: 10px;
-  min-width: 0;
-}
+/* offering-grouping-layout / sidebar 样式见上方主定义（flex + 宽度过渡） */
 .offering-group-tabs {
   display: flex;
   gap: 16px;
@@ -8916,10 +9461,34 @@ code {
 .offering-group-tab.is-active { color: var(--blue-700); border-bottom: 2px solid var(--blue-600); padding-bottom: 6px; margin-bottom: -8px; }
 .offering-group-tab.is-muted { cursor: default; }
 .offering-group-toolbar { margin-bottom: 8px; display: flex; gap: 8px; }
-.offering-group-assign-table { min-width: 900px; }
+.offering-group-assign-table { min-width: 920px; }
+@media (prefers-reduced-motion: reduce) {
+  .offering-grouping-layout,
+  .offering-group-sidebar-wrap,
+  .offering-group-sidebar,
+  .offering-group-sidebar-rail,
+  .offering-group-sidebar-rail-icon,
+  .offering-group-main {
+    transition: none !important;
+  }
+}
 @media (max-width: 900px) {
   .course-major-query-grid { grid-template-columns: 1fr 1fr; }
-  .offering-grouping-layout { grid-template-columns: 1fr; }
+  .offering-grouping-layout { flex-direction: column; }
+  .offering-grouping-layout.is-sidebar-collapsed { gap: 8px; }
+  .offering-group-sidebar-wrap {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar {
+    transform: none;
+    border-color: var(--border-light);
+    padding: 14px;
+    pointer-events: auto;
+  }
+  .offering-group-sidebar-rail { display: none; }
   .form-grid-2 { grid-template-columns: 1fr; }
 }
 .merge-line-list { display: flex; flex-wrap: wrap; gap: 6px; }

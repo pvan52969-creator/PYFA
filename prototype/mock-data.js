@@ -11,7 +11,8 @@ const SCHOOL_NAME_MAP = {
   CAMS: 'China-ASEAN College of Marine Sciences',
   SECE: 'School of Energy and Chemical Engineering',
   SEEAI: 'School of Artificial Intelligence and Robotics',
-  SMP: 'School of Mathematics and Physics'
+  SMP: 'School of Mathematics and Physics',
+  MPU: 'Mata Pelajaran Umum (MPU)'
 };
 
 /** 与对照表 No.1–25 顺序一致 */
@@ -71,3 +72,5 @@ function buildProgrammesFromCatalog() {
 
 var PROGRAMMES = buildProgrammesFromCatalog();
 var SCHOOL_CODES = [...new Set(Object.values(PROGRAMME_SCHOOL_CODE_MAP))].sort();
+/** 开课单位：各专业学院 + MPU（通识必修教学单位，无本科专业） */
+var OFFERING_UNIT_CODES = [...SCHOOL_CODES, 'MPU'];

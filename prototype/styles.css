@@ -3474,6 +3474,16 @@ code {
 #page-course-major-offering-task .course-major-offering-task-table td.col-course-name {
   white-space: nowrap;
 }
+#page-course-major-offering-task .course-major-offering-task-table td.col-teachers {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#page-course-major-offering-task .course-offering-major-table td.col-nowrap,
+#page-course-major-offering-task .course-major-offering-task-table td.col-nowrap {
+  white-space: nowrap;
+}
 #page-course-ge-offering-task.active {
   display: flex;
   flex-direction: column;

@@ -3300,6 +3300,9 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.course-offering-major-table td.col-nowrap {
+  white-space: nowrap;
+}
 .course-offering-major-table td.col-merged-nowrap code {
   display: inline-block;
   max-width: 100%;

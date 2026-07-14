@@ -914,6 +914,7 @@
               <th class="col-center">开课学期</th>
               <th>课程代码</th><th>课程名称</th><th>课程类别</th><th class="col-center">选课类型</th>
               <th class="col-center">上课学院</th><th class="col-center">上课专业</th><th class="col-center">上课批次</th>
+              <th class="col-center">是否新生批次</th>
               <th class="col-center">学分</th><th class="col-center">总学时</th>
               <!-- <th class="col-center">理论学时</th><th class="col-center">实践学时</th> -->
               <!-- <th class="col-center">教学周数</th> -->
@@ -1095,13 +1096,14 @@
             <input class="input input-sm" id="course-major-task-filter-name" placeholder="课程号">
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-task-filter-task-submit">提交状态</label>
+            <label for="course-major-task-filter-task-submit">任务安排状态</label>
             <select class="input input-sm" id="course-major-task-filter-task-submit">
               <option value="">全部</option>
               <option value="submitted">已提交</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
             </select>
+            <!-- <label for="course-major-task-filter-task-submit">提交状态</label> -->
             <!-- <label for="course-major-task-filter-task-submit">是否提交</label> -->
             <!-- <option value="pending">否</option><option value="confirmed">是</option> -->
           </div>
@@ -1153,7 +1155,8 @@
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="course-major-task-check-all" aria-label="全选" onchange="toggleMajorOfferingTaskCheckAll(this.checked)"></th>
               <th class="col-index">序号</th>
-              <th class="col-center">提交状态</th>
+              <th class="col-center">任务安排状态</th>
+              <!-- <th class="col-center">提交状态</th> -->
               <!-- <th class="col-center">是否提交</th> -->
               <!-- <th class="col-center">授课确认状态</th> -->
               <th class="col-center">开课学期</th>
@@ -3525,7 +3528,7 @@
         <div class="form-item">
           <label for="mos-edit-student-total">计划总人数</label>
           <input class="input input-sm readonly" id="mos-edit-student-total" type="text" readonly tabindex="-1" oninput="updateMajorOfferingEditCapacityLimitDisplay()">
-          <p class="form-hint" id="mos-edit-student-total-hint">老生：读取批次中可修该课程的学生人数，不可修改</p>
+          <p class="form-hint" id="mos-edit-student-total-hint">老生：读取批次中可修该课程的学生人数；新生：读取招生计划人数；均不可手工修改</p>
         </div>
         <!-- <label for="mos-edit-student-total">总人数</label> 原字段名 -->
         <div class="form-item">

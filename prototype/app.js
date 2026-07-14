@@ -15766,6 +15766,7 @@ const COURSE_MAJOR_OFFERING_TASK_SORT_COLUMNS = {
   totalHours: { get: sec => sec.totalHours ?? getOfferingSectionClassifiedHoursTotal(sec), type: 'number' },
   teacherCount: { get: sec => getMajorOfferingSectionTeacherCount(sec), type: 'number' },
   groupCount: { get: sec => getMajorOfferingSectionGroupCount(sec), type: 'number' },
+  courseCoordinator: { get: sec => getSectionCoordinatorDisplayName(sec) },
   offeringUnit: { get: sec => resolveMajorOfferingSectionOfferingUnit(sec) },
   weekRange: { get: sec => sec.weekRange || '' },
   supportHistory: { get: sec => formatMajorOfferingSupportHistoryDisplay(sec) },
@@ -15792,6 +15793,7 @@ function renderCourseMajorOfferingTaskTableHeader() {
     renderListSortTh('courseMajorOfferingTask', '总学时', 'totalHours', { center: true }) +
     renderListSortTh('courseMajorOfferingTask', '教师数', 'teacherCount', { center: true }) +
     renderListSortTh('courseMajorOfferingTask', '小组数', 'groupCount', { center: true }) +
+    renderListSortTh('courseMajorOfferingTask', 'Course Coordinator', 'courseCoordinator') +
     renderListSortTh('courseMajorOfferingTask', '开课单位', 'offeringUnit', { center: true }) +
     renderListSortTh('courseMajorOfferingTask', '起止周', 'weekRange', { center: true }) +
     renderListSortTh('courseMajorOfferingTask', '课程名额上限', 'capacityLimit', { center: true }) +
@@ -15894,7 +15896,7 @@ function renderCourseMajorOfferingTaskPage() {
   renderCourseMajorOfferingTaskTableHeader();
   rebuildMajorOfferingTaskFilterOptions();
   if (!ensureCourseOfferingPlan()) {
-    tbody.innerHTML = '<tr><td colspan="20" class="text-muted" style="text-align:center;padding:24px">请先在「专业开课计划」生成开课任务</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="21" class="text-muted" style="text-align:center;padding:24px">请先在「专业开课计划」生成开课任务</td></tr>';
     renderListPagination('course-major-offering-task-pagination', 'courseMajorOfferingTask', 0);
     updateMajorOfferingTaskSelection();
     return;
@@ -15926,6 +15928,7 @@ function renderCourseMajorOfferingTaskPage() {
           <td class="col-center">${sec.totalHours ?? (getOfferingSectionClassifiedHoursTotal(sec) || '—')}</td>
           <td class="col-center">${getMajorOfferingSectionTeacherCount(sec) || '—'}</td>
           <td class="col-center">${getMajorOfferingSectionGroupCount(sec) || '—'}</td>
+          <td>${escapeHtml(getSectionCoordinatorDisplayName(sec))}</td>
           <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
           <td class="col-center"><code>${escapeHtml(sec.weekRange || '—')}</code></td>
           <td class="col-center">${getSectionCapacityLimit(sec) || '—'}</td>
@@ -15935,7 +15938,7 @@ function renderCourseMajorOfferingTaskPage() {
           <td class="actions col-sticky-actions">${renderMajorOfferingTaskRowActions(sec)}</td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="20" class="text-muted" style="text-align:center;padding:24px">暂无已提交的开课任务，请先在「专业开课计划」提交</td></tr>';
+    : '<tr><td colspan="21" class="text-muted" style="text-align:center;padding:24px">暂无已提交的开课任务，请先在「专业开课计划」提交</td></tr>';
   renderListPagination('course-major-offering-task-pagination', 'courseMajorOfferingTask', paged.total);
   updateMajorOfferingTaskSelection();
   bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]');
@@ -17611,6 +17614,14 @@ function getSectionCoordinator(sec) {
     if (t?.staffId) return { staffId: t.staffId, name: t.name || '' };
   }
   return null;
+}
+
+function getSectionCoordinatorDisplayName(sec) {
+  const coord = getSectionCoordinator(sec);
+  const name = (coord?.name || '').trim();
+  if (name) return name;
+  if ((sec?.coordinatorName || '').trim()) return sec.coordinatorName.trim();
+  return '—';
 }
 
 function formatSectionCoordinatorMetaHtml(sec) {

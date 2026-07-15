@@ -4014,8 +4014,7 @@ code {
 .student-roster-table .col-nationality {
   min-width: 128px;
 }
-.drawer-major-student-roster.is-plan-roster-view .student-roster-group-field,
-.drawer-major-student-roster.is-plan-roster-view .student-roster-adjust-group-btn {
+.drawer-major-student-roster.is-plan-roster-view .student-roster-group-field {
   display: none;
 }
 .student-roster-pagination {
@@ -4824,11 +4823,89 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   margin: 0;
   flex-shrink: 0;
 }
+.form-hint.student-picker-scope-hint {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
 .preset-roster-grouping-summary {
   margin: 0;
 }
 .preset-roster-grouping-target .input {
   max-width: 420px;
+}
+.preset-roster-grouping-target-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 160px 170px 160px;
+  gap: 10px;
+  align-items: start;
+}
+.preset-roster-grouping-stat {
+  min-height: 29px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.preset-roster-grouping-selected-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+}
+.preset-roster-grouping-selected-stat.is-over {
+  border-color: #fecaca;
+  background: #fff;
+}
+.preset-roster-grouping-selected-stat.is-over strong {
+  color: #dc2626;
+}
+.preset-roster-grouping-remaining-stat.is-empty strong {
+  color: #dc2626;
+}
+.preset-roster-grouping-stat strong {
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.preset-roster-grouping-stat-label {
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.form-hint.preset-roster-grouping-target-warning {
+  align-self: flex-end;
+  width: max-content;
+  max-width: 320px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, .08);
+}
+.form-hint.preset-roster-grouping-target-warning:empty {
+  display: none;
 }
 .student-picker-drawer-body {
   display: flex;
@@ -4878,7 +4955,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   min-width: 980px;
 }
 .prg-picker-table {
-  min-width: 1060px;
+  min-width: 1240px;
 }
 .student-picker-table-footer {
   display: flex;
@@ -5922,6 +5999,38 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   white-space: pre-wrap;
   word-break: break-word;
 }
+.offering-group-student-context {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #f8fbff;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.offering-group-student-context[hidden] {
+  display: none !important;
+}
+.offering-group-student-context-title {
+  color: var(--blue-700);
+  font-weight: 700;
+}
+.offering-group-student-context strong {
+  color: var(--text);
+}
+.offering-group-student-context.is-over {
+  border-color: #fecaca;
+  background: var(--red-bg);
+  color: #991b1b;
+}
+.offering-group-student-context.is-over .offering-group-student-context-title,
+.offering-group-student-context.is-over strong {
+  color: #991b1b;
+}
 .offering-group-main {
   position: relative;
   z-index: 1;
@@ -6607,7 +6716,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   align-items: center;
   flex-shrink: 0;
 }
-.offering-group-student-table { min-width: 1180px; }
+.offering-group-student-table { min-width: 1360px; }
 .offering-group-student-pagination {
   margin-top: 8px;
   flex-shrink: 0;

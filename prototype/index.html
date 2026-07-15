@@ -993,6 +993,7 @@
                 </div>
                 <div id="offering-group-student-panel" hidden>
                   <div class="offering-group-student-remark" id="offering-group-student-remark" hidden></div>
+                  <div class="offering-group-student-context" id="offering-group-student-context" hidden></div>
                   <div class="offering-group-student-filters">
                     <div class="form-item">
                       <label for="ogg-filter-name">姓名</label>
@@ -1035,7 +1036,9 @@
                         <th class="col-center">学院</th>
                         <th class="col-center">专业</th>
                         <th class="col-center">入学批次</th>
-                        <th>课程组</th>
+                        <th>课程班/小组</th>
+                        <th class="col-center">学籍状态</th>
+                        <th class="col-center">学籍类型</th>
                         <th>来源</th>
                       </tr></thead>
                       <tbody id="offering-group-student-body"></tbody>
@@ -1153,6 +1156,7 @@
               <col>
               <col>
               <col>
+              <col class="col-sticky-count">
               <col class="col-sticky-actions">
             </colgroup>
             <thead><tr>
@@ -1278,6 +1282,7 @@
               <th class="col-center">总学时</th>
               <th class="col-center">开课单位</th>
               <th class="col-center">起止周</th>
+              <th class="col-center col-sticky-count">人数</th>
               <th class="col-sticky-actions">操作</th>
             </tr></thead>
             <tbody id="course-major-offering-roster-body"></tbody>
@@ -4277,7 +4282,8 @@
       <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentPickerModal()">新增</button>
       <button class="btn btn-outline btn-sm btn-danger-outline" type="button" onclick="deleteMajorOfferingStudentRosterSelected()">删除</button>
       <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentRemovalLog()">名单移除记录</button>
-      <button class="btn btn-outline btn-sm student-roster-adjust-group-btn" type="button" onclick="adjustMajorOfferingStudentGrouping()">调整学生分组</button>
+      <button class="btn btn-outline btn-sm student-roster-preset-grouping-btn" type="button" id="mos-btn-preset-roster-grouping" onclick="openMajorOfferingStudentRosterPresetGrouping()">预置名单分配</button>
+      <button class="btn btn-outline btn-sm student-roster-adjust-group-btn" type="button" id="mos-btn-adjust-group" onclick="adjustMajorOfferingStudentGrouping()">调整分组</button>
     </div>
     <div class="table-scroll student-roster-table-wrap">
       <table class="data-table compact student-roster-table">
@@ -4289,11 +4295,12 @@
           <th class="col-center">学院</th>
           <th class="col-center">专业</th>
           <th class="col-center">入学批次</th>
+          <th class="col-course-group">课程班/小组</th>
           <th class="col-center">国籍</th>
           <th class="col-center">学生类型</th>
           <th class="col-center">学籍状态</th>
           <th class="col-center">学籍类型</th>
-          <!-- <th>课程组</th> 计划阶段未分组，改由学生名单管理展示 -->
+          <!-- <th>课程组</th> 原靠后展示，改为入学批次后展示课程班/小组 -->
           <!-- <th>所在小组</th> 原列名 -->
           <th>名单来源</th>
         </tr></thead>
@@ -4317,6 +4324,7 @@
     <button class="modal-close" type="button" onclick="closeMajorOfferingStudentPickerDrawer()">×</button>
   </div>
   <div class="drawer-body student-picker-drawer-body">
+    <p class="form-hint student-picker-scope-hint">添加学生面向全校学生池；列表已过滤本课程预置名单学生、已在当前名单中的学生，以及不符合学籍条件的学生。请在下方选择所属课程班/小组后，勾选学生并点击「确定」加入名单。</p>
     <div class="picker-filter-grid">
       <div class="form-item">
         <label for="mspk-filter-student-no">学号</label>
@@ -4372,9 +4380,26 @@
     <div class="form-item student-picker-group-field">
       <label class="req" for="mspk-target-group">所属课程班/小组</label>
       <!-- <label class="req" for="mspk-target-group">放入小组</label> --> <!-- 原字段名 -->
-      <select class="input input-sm" id="mspk-target-group">
-        <option value="">请选择</option>
-      </select>
+      <div class="preset-roster-grouping-target-grid">
+        <select class="input input-sm" id="mspk-target-group" onchange="updateMajorOfferingStudentPickerTargetStats()">
+          <option value="">请选择</option>
+        </select>
+        <div class="preset-roster-grouping-stat">
+          <span class="preset-roster-grouping-stat-label">小组人数上限</span>
+          <strong id="mspk-target-limit">—</strong>
+        </div>
+        <div class="preset-roster-grouping-stat preset-roster-grouping-remaining-stat" id="mspk-target-remaining-stat">
+          <span class="preset-roster-grouping-stat-label">剩余可分配名额</span>
+          <strong id="mspk-target-remaining">—</strong>
+        </div>
+        <div class="preset-roster-grouping-selected-wrap">
+          <div class="preset-roster-grouping-stat preset-roster-grouping-selected-stat" id="mspk-target-selected-stat">
+            <span class="preset-roster-grouping-stat-label">当前选中人数</span>
+            <strong id="mspk-target-selected">0 人</strong>
+          </div>
+          <p class="form-hint preset-roster-grouping-target-warning" id="mspk-target-warning" aria-live="polite"></p>
+        </div>
+      </div>
       <p class="form-hint">新增学生须指定所属课程班/小组；若尚未分组，可选择课程班。</p>
     </div>
   </div>
@@ -4437,6 +4462,8 @@
           <th class="col-center">批次</th>
           <th class="col-center">国籍</th>
           <th class="col-center">类型</th>
+          <th class="col-center">学籍状态</th>
+          <th class="col-center">学籍类型</th>
           <th class="col-center">分配状态</th>
         </tr></thead>
         <tbody id="prg-picker-tbody"></tbody>
@@ -4449,9 +4476,26 @@
     </div>
     <div class="form-item student-picker-group-field preset-roster-grouping-target">
       <label class="req" for="prg-target-group">所属课程班/小组</label>
-      <select class="input input-sm" id="prg-target-group">
-        <option value="">请选择</option>
-      </select>
+      <div class="preset-roster-grouping-target-grid">
+        <select class="input input-sm" id="prg-target-group" onchange="updatePresetRosterGroupingTargetStats()">
+          <option value="">请选择</option>
+        </select>
+        <div class="preset-roster-grouping-stat">
+          <span class="preset-roster-grouping-stat-label">小组人数上限</span>
+          <strong id="prg-target-limit">—</strong>
+        </div>
+        <div class="preset-roster-grouping-stat preset-roster-grouping-remaining-stat" id="prg-target-remaining-stat">
+          <span class="preset-roster-grouping-stat-label">剩余可分配名额</span>
+          <strong id="prg-target-remaining">—</strong>
+        </div>
+        <div class="preset-roster-grouping-selected-wrap">
+          <div class="preset-roster-grouping-stat preset-roster-grouping-selected-stat" id="prg-target-selected-stat">
+            <span class="preset-roster-grouping-stat-label">当前选中人数</span>
+            <strong id="prg-target-selected">0</strong>
+          </div>
+          <p class="form-hint preset-roster-grouping-target-warning" id="prg-target-warning" aria-live="polite"></p>
+        </div>
+      </div>
       <p class="form-hint">勾选学生并选择所属课程班/小组后，点击「确定分配」统一放入对应课程班/小组。</p>
       <!-- <div class="preset-roster-grouping-target-row">...应用到选中...</div> --> <!-- 原批量应用到选中按钮，改由确定分配统一提交 -->
     </div>

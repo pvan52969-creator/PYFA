@@ -33,7 +33,7 @@
       <a href="#" class="nav-item" data-page="stats-exec">执行计划统计</a>
     </nav>
     <nav class="sidebar-nav" id="sidebar-nav-course" hidden>
-      <div class="nav-group">开课管理</div>
+      <div class="nav-group">开课前置条件管理</div>
       <a href="#" class="nav-item" data-page="course-workflow">操作流程图</a>
       <a href="#" class="nav-item" data-page="course-time-setting">开课时间设置</a>
       <a href="#" class="nav-item" data-page="school-elective-courses">校选课程管理</a>
@@ -972,9 +972,9 @@
                 <span class="offering-group-tab is-active" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
                 <span class="offering-group-tab" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
                 <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示 -->
-                <span class="offering-group-tab" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">小组学时情况</span>
+                <span class="offering-group-tab" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
                 <!-- <span ...>小组学时安排情况</span> --> <!-- 原文案 -->
-                <span class="offering-group-tab" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">分类学时汇总</span>
+                <span class="offering-group-tab" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">类型学时汇总</span>
                 <!-- <span class="offering-group-tab" data-tab="summary" ...>学时安排情况汇总</span> 原 Tab 文案 -->
               </div>
               <div class="offering-group-panel-wrap">
@@ -1018,7 +1018,7 @@
                   <div class="offering-group-toolbar offering-group-student-toolbar">
                     <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-adjust-group" onclick="adjustOfferingGroupingStudents()">调整分组</button>
                     <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentPicker()">添加学生</button>
-                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-preset-roster-grouping" onclick="openPresetRosterGroupingConfirm()">预置名单分组</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-preset-roster-grouping" onclick="openPresetRosterGroupingConfirm()">预置名单分配</button>
                     <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-remove-roster" onclick="removeOfferingGroupingStudentsFromRoster()">移除</button>
                     <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentRemovalLog()">名单移除记录</button>
                   </div>
@@ -1030,6 +1030,8 @@
                         <th>学号</th>
                         <th>姓名</th>
                         <th class="col-center">性别</th>
+                        <th class="col-center">国籍</th>
+                        <th class="col-center">学生类别</th>
                         <th class="col-center">学院</th>
                         <th class="col-center">专业</th>
                         <th class="col-center">入学批次</th>
@@ -4356,6 +4358,8 @@
           <th class="col-center">学院</th>
           <th class="col-center">专业</th>
           <th class="col-center">批次</th>
+          <th class="col-center">国籍</th>
+          <th class="col-center">类别</th>
         </tr></thead>
         <tbody id="mspk-picker-tbody"></tbody>
       </table>
@@ -4379,15 +4383,15 @@
   </div>
 </aside>
 
-<!-- ═══ 抽屉：预置名单分组（分组页学生名单 Tab） ═══ -->
+<!-- ═══ 抽屉：预置名单分配（分组页学生名单 Tab） ═══ -->
 <div class="drawer-backdrop" id="drawer-preset-roster-grouping-backdrop" onclick="closePresetRosterGroupingDrawer()"></div>
 <aside class="drawer-panel drawer-preset-roster-grouping" id="drawer-preset-roster-grouping">
   <div class="drawer-head">
-    <h3>预置名单分组</h3>
+    <h3>预置名单分配</h3>
     <button class="modal-close" type="button" onclick="closePresetRosterGroupingDrawer()">×</button>
   </div>
   <div class="drawer-body student-picker-drawer-body">
-    <p class="form-hint preset-roster-grouping-hint">仅展示预置名单中尚未分组的符合条件学生；请在下方选择所属课程组，勾选后点击「确定分配」放入对应小组，不会覆盖来源为「手动添加」的学生。</p>
+    <p class="form-hint preset-roster-grouping-hint">仅展示预置名单中尚未分配的符合条件学生；请在下方选择所属课程班/小组，勾选后点击「确定分配」放入对应课程班/小组，不会覆盖来源为「手动添加」的学生。</p>
     <div class="picker-filter-grid preset-roster-grouping-filters">
       <div class="form-item">
         <label for="prg-filter-student-no">学号</label>
@@ -4430,7 +4434,8 @@
           <th class="col-center">学院</th>
           <th class="col-center">专业</th>
           <th class="col-center">批次</th>
-          <th class="col-center">分组状态</th>
+          <th class="col-center">类型</th>
+          <th class="col-center">分配状态</th>
         </tr></thead>
         <tbody id="prg-picker-tbody"></tbody>
       </table>
@@ -4441,11 +4446,11 @@
       <div class="pagination" id="prg-picker-pagination"></div>
     </div>
     <div class="form-item student-picker-group-field preset-roster-grouping-target">
-      <label class="req" for="prg-target-group">所属课程组</label>
+      <label class="req" for="prg-target-group">所属课程班/小组</label>
       <select class="input input-sm" id="prg-target-group">
         <option value="">请选择</option>
       </select>
-      <p class="form-hint">勾选学生并选择所属课程组后，点击「确定分配」统一放入该小组。</p>
+      <p class="form-hint">勾选学生并选择所属课程班/小组后，点击「确定分配」统一放入对应课程班/小组。</p>
       <!-- <div class="preset-roster-grouping-target-row">...应用到选中...</div> --> <!-- 原批量应用到选中按钮，改由确定分配统一提交 -->
     </div>
   </div>

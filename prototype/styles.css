@@ -3303,7 +3303,23 @@ code {
 .course-offering-major-table td.col-nowrap {
   white-space: nowrap;
 }
-.course-offering-major-table td.col-merged-nowrap code {
+.course-offering-major-table td.col-course-name {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.course-offering-major-table td.col-course-name .cell-ellipsis-tip {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+  cursor: help;
+}
+.course-offering-major-table td.col-merged-nowrap code,
+.course-offering-major-table td.col-merged-nowrap .cell-ellipsis-tip {
   display: inline-block;
   max-width: 100%;
   white-space: nowrap;
@@ -3409,9 +3425,19 @@ code {
 }
 #page-course-major-offering-roster .course-offering-major-table,
 #page-course-major-offering-roster .course-major-offering-roster-table {
-  min-width: 1800px;
+  min-width: 2020px;
   --major-offering-actions-col-width: 120px;
   /* --major-offering-actions-col-width: 160px; */ /* 原含行内「退回」，改工具栏批量 */
+}
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-teachers,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-teachers {
+  max-width: 180px;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-teachers,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-teachers .cell-ellipsis-tip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 #page-course-major-offering-roster .course-offering-major-table th.col-sticky-actions,
 #page-course-major-offering-roster .course-offering-major-table td.col-sticky-actions,
@@ -3468,12 +3494,13 @@ code {
 #page-course-major-offering-task .course-major-offering-task-table tr:hover td.col-sticky-actions {
   background: #fafbfc;
 }
-#page-course-major-offering-task .course-offering-major-table td.col-merged-nowrap code.cell-ellipsis-tip {
+#page-course-major-offering-task .course-offering-major-table td.col-merged-nowrap .cell-ellipsis-tip {
   cursor: help;
 }
 #page-course-major-offering-task .course-major-offering-task-table td.col-course-name {
   white-space: nowrap;
 }
+#page-course-major-offering-task .course-major-offering-task-table td.col-teacher,
 #page-course-major-offering-task .course-major-offering-task-table td.col-teachers {
   max-width: 180px;
   white-space: nowrap;
@@ -4755,6 +4782,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border: 1px solid var(--border-light);
   border-radius: 8px;
 }
+.mspk-picker-table {
+  min-width: 980px;
+}
 .student-picker-table-footer {
   display: flex;
   flex-direction: column;
@@ -5665,12 +5695,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   gap: 2px;
 }
 .group-tree-child-dot {
-  flex-shrink: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--blue-300);
-  margin-right: 2px;
+  display: none;
 }
 .group-tree-chip {
   display: inline-flex;
@@ -5708,6 +5733,27 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   text-overflow: ellipsis;
   line-height: 1.4;
 }
+.group-tree-child-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  white-space: normal;
+  overflow: hidden;
+}
+.group-tree-child-label .group-tree-course-name {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-tree-child-label .group-tree-group-name {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  color: var(--text-2);
+}
 .group-tree-count {
   flex-shrink: 0;
   font-size: 12px;
@@ -5724,11 +5770,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .group-tree-empty { padding: 12px 8px; font-size: 12px; }
 .group-tree-actions a { margin-left: 6px; text-decoration: none; font-size: 12px; }
 .group-tree-remark {
-  margin: 0;
-  padding: 4px 0 2px 18px;
+  margin: 4px 0 0 0;
+  padding: 4px 8px;
   font-size: 11px;
   line-height: 1.45;
-  color: var(--text-3);
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
   white-space: pre-wrap;
   word-break: break-word;
   display: block;
@@ -5864,6 +5913,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-table tr.is-complete td {
   background: #f0fdf4;
 }
+.offering-group-status-table tr.is-over td {
+  background: #fff7ed;
+}
 .offering-group-status-badge {
   display: inline-flex;
   align-items: center;
@@ -5880,6 +5932,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-badge.is-warn {
   background: #fef3c7;
+  color: #c2410c;
+}
+.offering-group-status-badge.is-under {
+  background: #fef3c7;
+  color: #c2410c;
+}
+.offering-group-status-badge.is-over {
+  background: #ffedd5;
   color: #c2410c;
 }
 .offering-group-hour-status-ok {
@@ -5961,6 +6021,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   --oga-col-week: 120px;
   --oga-col-teacher: 240px;
   --oga-col-groups: 280px;
+  --oga-col-weekly-hours: 72px;
   --oga-col-sticky-actions: 72px;
 }
 .offering-group-assign-block {
@@ -6069,6 +6130,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   --ohs-col-index: 48px;
   --ohs-col-teacher: 280px;
   /* --ohs-col-role: 112px; 原授课角色列宽 */
+  --ohs-col-weekly-hours: 72px;
   --ohs-col-week: 84px;
   --ohs-col-sticky-actions: 72px;
   /* --ohs-col-actions: 84px; 原操作列宽 */
@@ -6219,12 +6281,13 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-hour-summary-table {
   width: 100%;
   table-layout: fixed;
-  min-width: 720px;
+  min-width: 780px;
 }
 /* table-layout: auto; min-width: 640px; 原按内容自适应，各表列宽不一致 */
 .offering-hour-summary-table col.col-index { width: var(--ohs-col-index); }
 .offering-hour-summary-table col.col-teacher { width: var(--ohs-col-teacher); }
 /* .offering-hour-summary-table col.col-role { width: var(--ohs-col-role); } 原授课角色列 */
+.offering-hour-summary-table col.col-weekly-hours { width: var(--ohs-col-weekly-hours); }
 .offering-hour-summary-table col.col-week { width: var(--ohs-col-week); }
 .offering-hour-summary-table col.col-sticky-actions { width: var(--ohs-col-sticky-actions); }
 /* .offering-hour-summary-table col.col-actions { width: var(--ohs-col-actions); } 原操作列 */
@@ -6236,6 +6299,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-hour-summary-table th.col-index,
 .offering-hour-summary-table td.col-index,
+.offering-hour-summary-table th.col-weekly-hours,
+.offering-hour-summary-table td.col-weekly-hours,
 .offering-hour-summary-table th.col-week,
 .offering-hour-summary-table td.col-week {
   text-align: center;
@@ -6273,7 +6338,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.course-offering-major-table td.col-merged-nowrap code.cell-ellipsis-tip {
+.course-offering-major-table td.col-merged-nowrap .cell-ellipsis-tip {
   display: inline-block;
   max-width: 100%;
   white-space: nowrap;
@@ -6434,7 +6499,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   align-items: center;
   flex-shrink: 0;
 }
-.offering-group-student-table { min-width: 980px; }
+.offering-group-student-table { min-width: 1180px; }
 .offering-group-student-pagination {
   margin-top: 8px;
   flex-shrink: 0;
@@ -6452,7 +6517,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-assign-table {
   table-layout: fixed;
   width: 100%;
-  min-width: 920px;
+  min-width: 980px;
   --offering-group-assign-actions-width: var(--oga-col-sticky-actions, 72px);
 }
 .offering-group-assign-table col.col-check { width: var(--oga-col-check); }
@@ -6461,9 +6526,12 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-assign-table col.col-week { width: var(--oga-col-week); }
 .offering-group-assign-table col.col-teacher { width: var(--oga-col-teacher); }
 .offering-group-assign-table col.col-groups { width: var(--oga-col-groups); }
+.offering-group-assign-table col.col-weekly-hours { width: var(--oga-col-weekly-hours); }
 .offering-group-assign-table col.col-sticky-actions { width: var(--oga-col-sticky-actions); }
 .offering-group-assign-table th.col-week,
 .offering-group-assign-table td.col-week,
+.offering-group-assign-table th.col-weekly-hours,
+.offering-group-assign-table td.col-weekly-hours,
 .offering-group-assign-table th.col-index,
 .offering-group-assign-table td.col-index {
   text-align: center;
@@ -7108,6 +7176,28 @@ input#group-assign-recorded-hours {
 }
 .merge-split-list-item input {
   margin-top: 2px;
+}
+.merge-split-list-item-merged {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.merge-split-list-item-merged > input {
+  flex: 0 0 auto;
+}
+.merge-split-list-item-merged > span {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+}
+.merge-split-inline-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.merge-split-list-separator {
+  color: var(--text-3);
 }
 .merge-split-empty {
   padding: 48px 12px;

@@ -20879,8 +20879,8 @@ function renderOfferingGroupTreeHtml(sec) {
     ? ' role="button" tabindex="0" onclick="selectOfferingCourseRoot()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();selectOfferingCourseRoot()}"'
     : '';
   const expanded = offeringGroupTreeExpanded && hasGroups;
-  const plannedCount = getSectionPlannedStudentCount(sec);
-  const countLabel = plannedCount ? `（${plannedCount}人）` : '';
+  const courseLimit = getSectionCapacityLimit(sec);
+  const countLabel = courseLimit ? `（≤${courseLimit}人）` : '';
   const groupCountChip = hasGroups
     ? `<span class="group-tree-chip">${groups.length} 个小组</span>`
     : '';

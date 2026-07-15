@@ -999,8 +999,8 @@ body {
 .modal-md { width: 560px; }
 
 #modal-group-assign-form .modal.group-assign-form-modal {
-  width: min(98vw, 1280px);
-  max-width: 1280px;
+  width: calc(100vw - 12px);
+  max-width: none;
 }
 
 .modal-head {
@@ -3425,7 +3425,7 @@ code {
 }
 #page-course-major-offering-roster .course-offering-major-table,
 #page-course-major-offering-roster .course-major-offering-roster-table {
-  min-width: 2020px;
+  min-width: 2100px;
   --major-offering-actions-col-width: 120px;
   /* --major-offering-actions-col-width: 160px; */ /* 原含行内「退回」，改工具栏批量 */
 }
@@ -4121,20 +4121,27 @@ code {
 }
 #modal-group-assign-form.modal-nested {
   z-index: 1110;
+  padding: 6px;
 }
 #modal-group-assign-form .modal.group-assign-form-modal,
 .group-assign-form-modal {
-  width: min(98vw, 1280px);
-  max-width: 1280px;
+  width: calc(100vw - 12px);
+  max-width: none;
+  height: calc(100vh - 12px);
+  max-height: calc(100vh - 12px);
+  display: flex;
+  flex-direction: column;
 }
 .group-assign-form-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 16px 24px;
-  max-height: calc(100vh - 120px);
+  max-height: none;
   overflow: auto;
 }
 .group-assign-form-layout {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(480px, 1.12fr);
+  grid-template-columns: minmax(700px, 1.18fr) minmax(560px, 0.9fr);
   gap: 18px;
   align-items: stretch;
 }
@@ -4188,7 +4195,39 @@ code {
   max-height: 168px;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table {
-  min-width: 640px;
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th,
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(1),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(1) {
+  width: 72px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(2),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(2) {
+  width: 66px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(3),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(3) {
+  width: 135px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(4),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(4) {
+  width: 82px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(5),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(5) {
+  width: 92px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(6),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(6) {
+  width: 52px;
 }
 .group-assign-form-modal .week-picker-cell {
   width: 34px;
@@ -4245,6 +4284,51 @@ code {
   background: transparent;
   padding: 0;
   margin: 0;
+}
+.group-assign-course-level-table-wrap {
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+}
+.group-assign-course-level-table {
+  width: 100%;
+  table-layout: fixed;
+  margin: 0;
+}
+.group-assign-course-level-table th,
+.group-assign-course-level-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-assign-course-level-table th:first-child,
+.group-assign-course-level-table td:first-child {
+  width: 42%;
+}
+.group-assign-course-level-table th:nth-child(2),
+.group-assign-course-level-table td:nth-child(2) {
+  width: 86px;
+}
+.group-assign-course-level-table th:nth-child(3),
+.group-assign-course-level-table td:nth-child(3) {
+  width: 92px;
+}
+.group-assign-course-level-table th:nth-child(4),
+.group-assign-course-level-table td:nth-child(4) {
+  width: 76px;
+}
+.group-assign-course-level-table th:nth-child(5),
+.group-assign-course-level-table td:nth-child(5) {
+  width: 62px;
+}
+.group-assign-course-level-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--blue-50);
+  box-shadow: 0 1px 0 var(--border);
 }
 .group-assign-course-level-card {
   border: 1px solid var(--border-light);
@@ -4482,6 +4566,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .group-assign-group-picks-table-wrap .data-table td,
 .group-assign-group-picks-table-wrap .data-table th {
   font-size: 12px;
+}
+.group-assign-teacher-table-wrap .data-table.compact th,
+.group-assign-teacher-table-wrap .data-table.compact td {
+  padding: 6px 5px;
+}
+.group-assign-group-picks-table-wrap .data-table.compact th,
+.group-assign-group-picks-table-wrap .data-table.compact td {
+  padding: 6px 6px;
 }
 .group-assign-teacher-table-wrap .data-table tr:last-child td,
 .group-assign-group-picks-table-wrap .data-table tr:last-child td {
@@ -4784,6 +4876,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .mspk-picker-table {
   min-width: 980px;
+}
+.prg-picker-table {
+  min-width: 1060px;
 }
 .student-picker-table-footer {
   display: flex;
@@ -5645,6 +5740,19 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   font-weight: 600;
 }
 .group-tree-node.is-child { border: 1px solid var(--border-light); background: #fff; }
+.group-tree-node.is-clickable {
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.group-tree-node.is-clickable:hover {
+  border-color: var(--blue-200);
+  background: var(--blue-50);
+}
+.group-tree-node.is-selected {
+  border-color: var(--blue-400);
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
 .group-tree-toggle,
 .group-tree-toggle-spacer {
   flex-shrink: 0;
@@ -6765,13 +6873,15 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 } */ /* 原独立边框+内边距导致表头与外框割裂，改与 group-assign-teacher-table-wrap 一致 */
 .group-assign-group-picks-table {
   width: 100%;
+  min-width: 0;
+  table-layout: fixed;
   margin: 0;
   /* border-collapse: separate;
   border-spacing: 0; */ /* 原 separate 与外层圆角边框叠出缝隙，改默认 collapse */
 }
 .group-assign-group-picks-table .col-check {
-  width: 44px;
-  min-width: 44px;
+  width: 34px;
+  min-width: 34px;
   text-align: center;
 }
 .group-assign-group-picks-table .col-check input[type="checkbox"] {
@@ -6784,8 +6894,32 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .group-assign-group-picks-table th.col-center,
 .group-assign-group-picks-table td.col-center {
-  min-width: 96px;
+  min-width: 0;
   white-space: nowrap;
+}
+.group-assign-group-picks-table th:nth-child(2),
+.group-assign-group-picks-table td:nth-child(2) {
+  width: 42%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-assign-group-picks-table th:nth-child(3),
+.group-assign-group-picks-table td:nth-child(3) {
+  width: 72px;
+}
+.group-assign-group-picks-table th:nth-child(4),
+.group-assign-group-picks-table td:nth-child(4) {
+  width: 78px;
+}
+.group-assign-group-picks-table th:nth-child(5),
+.group-assign-group-picks-table td:nth-child(5) {
+  width: 72px;
+}
+.group-assign-group-picks-table th:nth-child(6),
+.group-assign-group-picks-table td:nth-child(6) {
+  width: 58px;
 }
 .group-assign-group-picks-table thead th {
   position: sticky;
@@ -6895,6 +7029,7 @@ input#group-assign-recorded-hours {
   font-size: 12px;
 }
 #group-assign-groups-wrap[hidden],
+#group-assign-course-level-wrap[hidden],
 #group-assign-hour-type-wrap[hidden] { display: none !important; }
 .form-field-span-2 { grid-column: 1 / -1; }
 @media (prefers-reduced-motion: reduce) {
@@ -7750,8 +7885,8 @@ input#group-assign-recorded-hours {
 .modal-md { width: 560px; }
 
 #modal-group-assign-form .modal.group-assign-form-modal {
-  width: min(98vw, 1280px);
-  max-width: 1280px;
+  width: calc(100vw - 12px);
+  max-width: none;
 }
 
 .modal-head {

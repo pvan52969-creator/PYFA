@@ -1126,8 +1126,9 @@
       <div class="card course-major-task-list-card">
         <div class="panel-toolbar course-major-task-toolbar">
           <button class="btn btn-primary btn-sm" type="button" id="btn-major-task-submit" onclick="submitSelectedMajorOfferingTaskArrangements()" disabled>提交</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-withdraw" onclick="withdrawSelectedMajorOfferingTaskArrangements()" disabled>撤回</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-revert" onclick="revertSelectedMajorOfferingTaskArrangements()" disabled>退回</button>
-          <span class="form-hint">完成合分班、分组与教师安排后勾选教学班批量提交；需修改计划信息时可退回至开课计划（合班将拆回单批次）</span>
+          <span class="form-hint">提交后可撤回任务安排并重置分组/名单分组；需修改计划信息时可退回至开课计划（合班将拆回单批次）</span>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> -->
           <!-- <span class="form-hint">完成合分班、分组与教师安排后，勾选教学班批量授课确认</span> -->
         </div>
@@ -1198,7 +1199,7 @@
           <li>任务安排提交后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
           <!-- <li>任务安排提交后，本页展示各小组并维护学生名单；暂无数据时列表为空。</li> --> <!-- 原按小组拆行展示 -->
           <!-- <li>须先在「专业开课任务安排」完成合分班、分组与教师安排并提交，方可进入本页。</li> --> <!-- 原强制前置条件，改允许空态进入 -->
-          <li>老生：计划人数默认读取当前批次可修该课程人数 + 预留名额（默认 5，可改）；计划人数随老生名单同步，不可手工改，可改预留名额。</li>
+          <li>老生：计划人数读取当前批次可修该课程的预置名单人数；名单管理只维护当前学生名单与分配结果，不改变计划人数或课程名额上限。</li>
           <li>新生：计划人数读取招生计划人数，不可改计划人数，仅可改预留名额；批次中暂无名单。</li>
           <li>学院在「分组」环节为各小组设置人数上限与需求说明；教务在本环节按小组添加/调整学生，实际人数不超过上限。</li>
         </ul>
@@ -4369,12 +4370,12 @@
       <div class="pagination" id="mspk-picker-pagination"></div>
     </div>
     <div class="form-item student-picker-group-field">
-      <label class="req" for="mspk-target-group">所属小组</label>
+      <label class="req" for="mspk-target-group">所属课程班/小组</label>
       <!-- <label class="req" for="mspk-target-group">放入小组</label> --> <!-- 原字段名 -->
       <select class="input input-sm" id="mspk-target-group">
         <option value="">请选择</option>
       </select>
-      <p class="form-hint">新增学生须指定所属小组；若尚未分组，可先按专业批次默认组选择。</p>
+      <p class="form-hint">新增学生须指定所属课程班/小组；若尚未分组，可选择课程班。</p>
     </div>
   </div>
   <div class="drawer-foot">
@@ -4434,6 +4435,7 @@
           <th class="col-center">学院</th>
           <th class="col-center">专业</th>
           <th class="col-center">批次</th>
+          <th class="col-center">国籍</th>
           <th class="col-center">类型</th>
           <th class="col-center">分配状态</th>
         </tr></thead>
@@ -4914,9 +4916,9 @@
                 <div class="group-assign-group-picks" id="group-assign-group-picks"></div>
               </div>
               <div class="form-field form-field-span-2 group-assign-course-level-hint" id="group-assign-course-level-wrap" hidden>
-                <label>课程整体安排</label>
+                <label>课程班学时安排情况</label>
                 <div class="group-assign-course-level-display" id="group-assign-course-level-display">—</div>
-                <p class="form-hint">未分组时按课程整体安排；下方展示已排学时与整体状态（超出 / 达标 / 不足）。</p>
+                <p class="form-hint">未分组时按课程班安排；下方展示当前学时类型的已录入、剩余与状态。</p>
               </div>
             </div>
           </div>

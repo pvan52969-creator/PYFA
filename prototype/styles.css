@@ -454,14 +454,23 @@ body {
 .data-table.compact th, .data-table.compact td { padding: 6px 10px; font-size: 12px; }
 .data-table.editable td input { width: 80px; }
 
-.actions a {
+.actions a,
+.actions .action-disabled {
   color: var(--blue-500); text-decoration: none; margin-right: 10px;
   font-size: 12px;
 }
-.actions a + a { margin-left: 8px; }
+.actions a + a,
+.actions a + .action-disabled,
+.actions .action-disabled + a,
+.actions .action-disabled + .action-disabled { margin-left: 8px; }
 .tree-table .actions a + a { margin-left: 8px; }
 .actions a:hover { text-decoration: underline; }
 .actions a.danger { color: var(--red); }
+.actions .action-disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+  font-size: 12px;
+}
 
 .credit-cell,
 .count-cell {

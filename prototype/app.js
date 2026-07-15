@@ -13952,9 +13952,15 @@ function confirmMajorOfferingTaskRevertRemark() {
   if (cb) cb(remark);
 }
 
+function renderDisabledAction(label, title = '') {
+  return `<span class="action-disabled" role="link" aria-disabled="true" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
+}
+
 function renderMajorOfferingTaskRowActions(sec) {
   const parts = [];
-  if (!isMajorOfferingSectionStructureLocked(sec)) {
+  if (isMajorOfferingSectionStructureLocked(sec)) {
+    parts.push(renderDisabledAction('合班', getMajorMergeSplitSelectableMessage('task')));
+  } else {
     parts.push(`<a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合班</a>`);
   }
   parts.push(
@@ -14086,7 +14092,9 @@ function renderMajorOfferingStructureActions(sec) {
   const parts = [
     `<a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>`
   ];
-  if (!isMajorOfferingPlanEditLocked(sec)) {
+  if (isMajorOfferingPlanEditLocked(sec)) {
+    parts.push(renderDisabledAction('合班', getMajorMergeSplitSelectableMessage('plan')));
+  } else {
     parts.push(`<a href="#" onclick="openMajorMergeSplitModal('${sec.id}', { context: 'plan' });return false">合班</a>`);
   }
   if (sec?.submitStatus === 'reverted' && (sec.taskRevertRemark || '').trim()) {

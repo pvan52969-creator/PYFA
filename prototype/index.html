@@ -46,6 +46,8 @@
       </div>
       <div class="nav-section">
         <div class="nav-section-title">通识选修课开课</div>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-demand">通识选修开课需求</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">通识选修小组配额</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课计划</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
@@ -943,55 +945,65 @@
         <div class="header-actions">
           <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupingPage()">返回</button>
           <button class="btn btn-primary" type="button" id="ogg-btn-save-roster-page" onclick="saveOfferingGroupingRosterPage()" hidden style="display:none">保存名单</button>
-          <button class="btn btn-primary" type="button" id="ogg-btn-save-grouping-page" onclick="saveOfferingGroupingPage()">保存</button>
+          <button class="btn btn-primary" type="button" id="ogg-btn-submit-grouping-page" onclick="submitOfferingGroupingPage()">提交</button>
+          <!-- <button ... id="ogg-btn-save-grouping-page" onclick="saveOfferingGroupingPage()">保存</button> -->
+          <!-- 原「保存」需手动确认，改添加/安排后自动保存，右上角改为任务安排「提交」 -->
         </div>
       </div>
       <div class="card offering-grouping-page-card">
         <div class="offering-grouping-shell offering-grouping-body">
-          <div class="offering-grouping-meta" id="offering-grouping-meta"></div>
-          <div class="offering-grouping-layout" id="offering-grouping-layout">
-            <div class="offering-group-sidebar-wrap" id="offering-group-sidebar-wrap">
-              <aside class="offering-group-sidebar" id="offering-group-sidebar">
-              <div class="offering-group-sidebar-head">
-                <strong>分组信息</strong>
+          <div class="offering-grouping-workspace" id="offering-grouping-workspace">
+            <aside class="offering-grouping-course-list" id="offering-grouping-course-list" aria-label="Course List">
+              <div class="offering-grouping-course-list-head">
+                <strong>Course List</strong>
               </div>
-              <div class="offering-group-sidebar-actions">
-                <button class="btn btn-outline btn-sm" type="button" onclick="addOfferingGroup()">新增分组</button>
-                <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupBatchAddModal()">批量新增</button>
-                <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupMergeModal()">合并分组</button>
-                <button class="btn btn-outline btn-sm btn-danger-text" type="button" onclick="resetOfferingGroupingAll()">重置</button>
-                <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingAutoGroupModal()">自动分组</button> --> <!-- 功能暂下线 -->
-              </div>
-              <div class="offering-group-tree" id="offering-group-tree"></div>
-              </aside>
-              <button type="button" class="offering-group-sidebar-rail" id="offering-group-sidebar-toggle" aria-expanded="true" aria-label="收起分组信息" onclick="toggleOfferingGroupSidebar()">
-                <span class="offering-group-sidebar-rail-icon" aria-hidden="true"></span>
-              </button>
-            </div>
-            <div class="offering-group-main">
-              <div class="offering-group-tabs">
-                <span class="offering-group-tab is-active" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
-                <span class="offering-group-tab" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
-                <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示 -->
-                <span class="offering-group-tab" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
-                <!-- <span ...>小组学时安排情况</span> --> <!-- 原文案 -->
-                <span class="offering-group-tab" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">类型学时汇总</span>
-                <!-- <span class="offering-group-tab" data-tab="summary" ...>学时安排情况汇总</span> 原 Tab 文案 -->
-              </div>
-              <div class="offering-group-panel-wrap">
-                <div id="offering-group-teacher-panel">
-                  <p class="offering-group-teacher-hint text-muted">为各小组安排理论/辅导/实践/其他学时的任课教师，并指定起止周；非开课学院教师自动为 Support，多名授课教师时须指定一名课程 Coordinator。理论学时通常面向全体小组合班授课，辅导/实践/其他学时可按小组分别安排，具体学时分摊由后续排课模块处理。</p>
-                  <div class="offering-group-toolbar">
-                    <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()" disabled>安排教师</button>
-                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button>
-                    <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-revoke-assign" onclick="removeOfferingGroupAssignSelected()" disabled>删除</button>
-                    <label class="offering-group-assign-check-all" id="oga-check-all-wrap">
-                      <input type="checkbox" id="oga-check-all" aria-label="全选" onchange="toggleOfferingGroupingAssignCheckAll(this.checked)">
-                      <span>全选</span>
-                    </label>
-                  </div>
-                  <div class="offering-group-assign-content" id="offering-group-assign-content"></div>
+              <div class="offering-grouping-course-list-body" id="offering-grouping-course-list-body"></div>
+              <div class="offering-grouping-course-list-foot" id="offering-grouping-course-list-foot">共 0 条</div>
+            </aside>
+            <div class="offering-grouping-layout" id="offering-grouping-layout">
+              <div class="offering-group-sidebar-wrap" id="offering-group-sidebar-wrap">
+                <aside class="offering-group-sidebar" id="offering-group-sidebar">
+                <div class="offering-group-sidebar-head">
+                  <strong>分组信息</strong>
                 </div>
+                <div class="offering-grouping-meta" id="offering-grouping-meta"></div>
+                <div class="offering-group-sidebar-actions">
+                  <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupSplitModal()">分组</button>
+                  <!-- <button ... onclick="addOfferingGroup()">新增分组</button> --> <!-- 与批量新增合并为「分组」 -->
+                  <!-- <button ... onclick="openOfferingGroupBatchAddModal()">批量新增</button> -->
+                  <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupMergeModal()">合并分组</button> -->
+                  <button class="btn btn-outline btn-sm btn-danger-text" type="button" onclick="resetOfferingGroupingAll()">重置</button>
+                  <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingAutoGroupModal()">自动分组</button> --> <!-- 功能暂下线 -->
+                </div>
+                <div class="offering-group-tree" id="offering-group-tree"></div>
+                </aside>
+                <!-- <button type="button" class="offering-group-sidebar-rail" ...>收起分组信息</button> -->
+                <!-- 原侧栏折叠轨，改始终展开分组信息 -->
+              </div>
+              <div class="offering-group-main">
+                <div class="offering-group-tabs">
+                  <span class="offering-group-tab is-active" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
+                  <span class="offering-group-tab" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
+                  <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示 -->
+                  <span class="offering-group-tab" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
+                  <!-- <span ...>小组学时安排情况</span> --> <!-- 原文案 -->
+                  <span class="offering-group-tab" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">类型学时汇总</span>
+                  <!-- <span class="offering-group-tab" data-tab="summary" ...>学时安排情况汇总</span> 原 Tab 文案 -->
+                </div>
+                <div class="offering-group-panel-wrap">
+                  <div id="offering-group-teacher-panel">
+                    <p class="offering-group-teacher-hint text-muted">为各小组安排理论/辅导/实践/其他学时的任课教师，并指定起止周；非开课学院教师自动为 Support，多名授课教师时须指定一名课程 Coordinator。理论学时通常面向全体小组合班授课，辅导/实践/其他学时可按小组分别安排，具体学时分摊由后续排课模块处理。</p>
+                    <div class="offering-group-toolbar">
+                      <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()" disabled>安排教师</button>
+                      <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button>
+                      <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-revoke-assign" onclick="removeOfferingGroupAssignSelected()" disabled>删除</button>
+                      <label class="offering-group-assign-check-all" id="oga-check-all-wrap">
+                        <input type="checkbox" id="oga-check-all" aria-label="全选" onchange="toggleOfferingGroupingAssignCheckAll(this.checked)">
+                        <span>全选</span>
+                      </label>
+                    </div>
+                    <div class="offering-group-assign-content" id="offering-group-assign-content"></div>
+                  </div>
                 <div id="offering-group-student-panel" hidden>
                   <div class="offering-group-student-remark" id="offering-group-student-remark" hidden></div>
                   <div class="offering-group-student-context" id="offering-group-student-context" hidden></div>
@@ -1102,14 +1114,14 @@
             <input class="input input-sm" id="course-major-task-filter-name" placeholder="课程号">
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-task-filter-task-submit">任务安排状态</label>
+            <label for="course-major-task-filter-task-submit">提交状态</label>
             <select class="input input-sm" id="course-major-task-filter-task-submit">
               <option value="">全部</option>
               <option value="submitted">已提交</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
             </select>
-            <!-- <label for="course-major-task-filter-task-submit">提交状态</label> -->
+            <!-- <label for="course-major-task-filter-task-submit">任务安排状态</label> -->
             <!-- <label for="course-major-task-filter-task-submit">是否提交</label> -->
             <!-- <option value="pending">否</option><option value="confirmed">是</option> -->
           </div>
@@ -1163,8 +1175,8 @@
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="course-major-task-check-all" aria-label="全选" onchange="toggleMajorOfferingTaskCheckAll(this.checked)"></th>
               <th class="col-index">序号</th>
-              <th class="col-center">任务安排状态</th>
-              <!-- <th class="col-center">提交状态</th> -->
+              <th class="col-center">提交状态</th>
+              <!-- <th class="col-center">任务安排状态</th> -->
               <!-- <th class="col-center">是否提交</th> -->
               <!-- <th class="col-center">授课确认状态</th> -->
               <th class="col-center">开课学期</th>
@@ -1302,12 +1314,123 @@
       -->
     </section>
 
+    <!-- ═══ 开课管理 · 通识选修 · 开课需求 ═══ -->
+    <section class="page" id="page-course-ge-offering-demand">
+      <div class="page-header">
+        <div>
+          <h1>通识选修开课需求</h1>
+          <p class="subtitle">按学期汇总需修通识选修的专业批次与人数，供 AC 定组与学院开课参考</p>
+        </div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>说明</strong></p>
+        <ul class="offering-module-hint-list">
+          <li>本页为<strong>演示数据</strong>。正式环境将依据已提交执行计划详情中「选修类分类 · 修读要求」（4学年×3学期）汇总本学期需修 GE 的专业批次与人数。</li>
+          <li>学生侧文/商/理<strong>挂在专业</strong>上（学院本身不具有文商理类别）；汇总人数时按专业大类归并。</li>
+          <li>交叉规则：文科学生可选商科/理科 GE；商科学生可选文科/理科 GE；理科学生可选文科/商科 GE。</li>
+        </ul>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="ge-offering-demand-filter-term">开课学期</label>
+            <select class="input input-sm" id="ge-offering-demand-filter-term" onchange="onGeOfferingDemandTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderGeOfferingDemandPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="goPage('course-ge-offering-quota')">前往小组配额</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="ge-offering-demand-summary"></div>
+      <div class="card">
+        <div class="card-head"><span>按学院需求</span><span class="hint">学院仅汇总人数；文商理见上方按专业大类合计</span></div>
+        <div class="table-scroll">
+          <table class="data-table compact">
+            <thead>
+              <tr>
+                <th class="col-index">序号</th>
+                <th>学院</th>
+                <th class="col-center">预计人数</th>
+                <th>涉及专业批次</th>
+              </tr>
+            </thead>
+            <tbody id="ge-offering-demand-school-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 通识选修 · 小组配额 ═══ -->
+    <section class="page" id="page-course-ge-offering-quota">
+      <div class="page-header">
+        <div>
+          <h1>通识选修小组配额</h1>
+          <p class="subtitle">AC 为各学院定保底组数（下限）；学院可超额，无需确认</p>
+        </div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>规则</strong></p>
+        <ul class="offering-module-hint-list">
+          <li>保底组数为<strong>下限</strong>：学院至少开满，可以开多，不能开少；超额不需 AC 确认。</li>
+          <li>本模块只管组数与每组人数上限；学生名单由选课应用生成。</li>
+          <li>文商理挂在专业上，学院配额不区分文商理。</li>
+        </ul>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="ge-offering-quota-filter-term">开课学期</label>
+            <select class="input input-sm" id="ge-offering-quota-filter-term" onchange="onGeOfferingQuotaTermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="saveGeOfferingQuotaPage()">保存配额</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="goPage('course-offering-ge')">前往开课计划</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span>各学院保底组数</span><span class="hint">下限；可超额</span></div>
+        <div class="table-scroll">
+          <table class="data-table compact">
+            <thead>
+              <tr>
+                <th class="col-index">序号</th>
+                <th>学院</th>
+                <th class="col-center">保底组数（下限）</th>
+                <th class="col-center">当前已开组数</th>
+                <th class="col-center">进度</th>
+              </tr>
+            </thead>
+            <tbody id="ge-offering-quota-college-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ 开课管理 · 通识选修开课 ═══ -->
     <section class="page" id="page-course-offering-ge">
       <div class="page-header">
-        <div><h1>通识选修开课计划</h1><p class="subtitle">从「校选课程管理」中选择本学期要开设的通识选修课程</p></div>
+        <div><h1>通识选修开课计划</h1><p class="subtitle">对照 AC 保底组数，从「校选课程管理」选择本学期要开设的通识选修课程</p></div>
       </div>
       <div class="legend-bar" id="course-offering-hint-ge"></div>
+      <div class="card" id="ge-offering-plan-quota-card" style="margin-bottom:12px">
+        <div class="card-head"><span>需求与配额进度</span><span class="hint">提交前，所选课程所属学院须达到保底组数下限</span></div>
+        <div class="legend-bar" id="ge-offering-plan-demand-summary" style="border:0;padding:8px 16px 0"></div>
+        <div class="table-scroll" style="padding:0 0 8px">
+          <table class="data-table compact">
+            <thead>
+              <tr>
+                <th>学院</th>
+                <th class="col-center">保底组数</th>
+                <th class="col-center">已开组数</th>
+                <th class="col-center">状态</th>
+              </tr>
+            </thead>
+            <tbody id="ge-offering-plan-quota-body"></tbody>
+          </table>
+        </div>
+      </div>
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
@@ -1328,7 +1451,7 @@
         <div class="panel-toolbar ge-offering-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openGeOfferingCourseAddModal()">添加开课课程</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-ge-offering-submit" onclick="submitSelectedGeOfferingTasks()" disabled>提交</button>
-          <span class="form-hint">从「校选课程管理」校选课程库中选择状态正常的课程，并指定开课学期加入计划；提交后方可进入「通识选修开课任务安排」</span>
+          <span class="form-hint">从校选课程库加课并维护拟开组数；学院已开组数须 ≥ AC 保底下限后方可提交；名单由选课应用生成</span>
         </div>
         <div class="table-scroll"><table class="data-table course-offering-table">
           <thead><tr>
@@ -1337,6 +1460,7 @@
             <th>负责人</th>
             <th class="col-center">开课学期</th><th class="col-center">提交状态</th>
             <th>课程号</th><th>课程名称</th><th class="col-center">开课单位</th>
+            <th class="col-center">拟开组数</th>
             <th class="col-center">学分</th><th class="col-center">总学时</th>
             <!-- <th class="col-center">上课批次</th> --> <!-- 暂不支持指定上课批次范围 -->
             <!-- <th class="col-center">教学班</th> --> <!-- 通识选修无教学班概念 -->
@@ -3845,9 +3969,14 @@
           <input class="input input-sm readonly" id="ge-edit-total-hours" type="text" readonly tabindex="-1">
         </div>
         <div class="form-item">
+          <label class="req" for="ge-edit-planned-group-count">拟开组数</label>
+          <input class="input input-sm" id="ge-edit-planned-group-count" type="number" min="1" step="1">
+          <p class="form-hint" id="ge-edit-planned-group-hint">计入学院保底组数进度；一门课可开多组</p>
+        </div>
+        <div class="form-item">
           <label class="req" for="ge-edit-student-total">计划总人数</label>
           <input class="input input-sm" id="ge-edit-student-total" type="number" min="0" step="1" oninput="updateGeOfferingEditCapacityLimitDisplay()">
-          <p class="form-hint">通识选修由选课应用生成名单，此处设置计划招生人数</p>
+          <p class="form-hint">通识选修由选课应用生成名单，此处设置计划招生人数（可参考每组人数参考值 × 拟开组数）</p>
         </div>
         <div class="form-item">
           <label class="req" for="ge-edit-reserved-spots">预留名额</label>
@@ -4961,23 +5090,46 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：专业开课 · 批量新增分组 ═══ -->
+<!-- ═══ 弹窗：专业开课 · 分组（按组数 / 按人数） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-offering-group-batch-add">
   <div class="modal modal-sm offering-group-batch-add-modal">
     <div class="modal-head">
-      <h3>批量新增分组</h3>
-      <button class="modal-close" type="button" onclick="closeOfferingGroupBatchAddModal()">×</button>
+      <h3>分组</h3>
+      <button class="modal-close" type="button" onclick="closeOfferingGroupSplitModal()">×</button>
     </div>
     <div class="modal-body offering-group-batch-add-body">
       <div class="form-item">
-        <label class="req" for="offering-group-batch-count">组数</label>
-        <input class="input input-sm" id="offering-group-batch-count" type="number" min="1" max="99" step="1" placeholder="请输入要新增的分组数量">
-        <p class="form-hint" id="offering-group-batch-add-hint">组名将自动命名为 Group1、Group2…，人数上限按剩余额度均分。</p>
+        <label class="req">分配方式</label>
+        <div class="offering-group-split-modes" role="radiogroup" aria-label="分配方式">
+          <label class="offering-auto-group-option">
+            <input type="radio" name="offering-group-split-mode" value="byCount" checked onchange="syncOfferingGroupSplitModeUi()">
+            <span class="offering-auto-group-option-text">
+              <strong>按组数分</strong>
+              <span>只需填写小组数，系统按课程人数上限尽量平均分配给各组</span>
+            </span>
+          </label>
+          <label class="offering-auto-group-option">
+            <input type="radio" name="offering-group-split-mode" value="bySize" onchange="syncOfferingGroupSplitModeUi()">
+            <span class="offering-auto-group-option-text">
+              <strong>按人数分</strong>
+              <span>填写每组人数上限，系统自动计算组数并尽量平均分配</span>
+            </span>
+          </label>
+        </div>
       </div>
+      <div class="form-item" id="offering-group-split-count-wrap">
+        <label class="req" for="offering-group-batch-count">组数</label>
+        <input class="input input-sm" id="offering-group-batch-count" type="number" min="1" max="99" step="1" placeholder="请输入组数" oninput="syncOfferingGroupSplitPreview()">
+      </div>
+      <div class="form-item" id="offering-group-split-size-wrap" hidden>
+        <label class="req" for="offering-group-batch-size">每组人数上限</label>
+        <input class="input input-sm" id="offering-group-batch-size" type="number" min="1" max="999" step="1" placeholder="如 50" oninput="syncOfferingGroupSplitPreview()">
+      </div>
+      <p class="form-hint" id="offering-group-batch-add-hint">组名将自动命名为 Group1、Group2…，人数上限按课程人数上限均分。</p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupBatchAddModal()">取消</button>
-      <button class="btn btn-primary" type="button" onclick="confirmOfferingGroupBatchAdd()">确定</button>
+      <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupSplitModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmOfferingGroupSplit()">确定</button>
     </div>
   </div>
 </div>

@@ -34,7 +34,7 @@ body {
   overflow: hidden;
 }
 
-/* ── Layout ── */
+/* ?? Layout ?? */
 .app { display: flex; height: 100vh; }
 
 .sidebar {
@@ -303,7 +303,7 @@ body {
 }
 .workflow-doc .workflow-modules dl { margin: 0; }
 .workflow-doc .workflow-modules dt { font-weight: 600; color: #0f172a; display: inline; }
-.workflow-doc .workflow-modules dt::after { content: '：'; }
+.workflow-doc .workflow-modules dt::after { content: '?'; }
 .workflow-doc .workflow-modules dd { margin: 0 0 6px 0; display: inline; }
 .workflow-doc .meta {
   margin-top: 0;
@@ -312,7 +312,7 @@ body {
   color: #94a3b8;
 }
 
-/* ── Page header ── */
+/* ?? Page header ?? */
 .page-header {
   display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 16px;
@@ -334,7 +334,7 @@ body {
 }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 
-/* ── Buttons ── */
+/* ?? Buttons ?? */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 7px 16px; border-radius: 6px; font-size: 13px;
@@ -381,7 +381,7 @@ body {
   background: #94a3b8;
 }
 
-/* ── Inputs ── */
+/* ?? Inputs ?? */
 .input {
   padding: 7px 10px; border: 1px solid var(--border);
   border-radius: 6px; font-size: 13px; font-family: inherit;
@@ -398,7 +398,7 @@ body {
 }
 .filter-bar .input { width: auto; min-width: 130px; }
 
-/* ── Card & Table ── */
+/* ?? Card & Table ?? */
 .card {
   background: #fff; border-radius: var(--radius);
   border: 1px solid var(--border-light);
@@ -547,7 +547,7 @@ body {
 .row-l1.highlight td { background: #fffbeb; }
 .tree-toggle { color: var(--text-3); margin-right: 4px; font-size: 10px; }
 
-/* ── Programme Structure (Table 3a) ── */
+/* ?? Programme Structure (Table 3a) ?? */
 .ps-card { padding: 0; overflow: hidden; }
 .programme-structure {
   font-family: "Times New Roman", "PingFang SC", serif;
@@ -751,7 +751,7 @@ body {
   .ps-meta { grid-template-columns: 1fr; }
 }
 
-/* ── Status & Tags ── */
+/* ?? Status & Tags ?? */
 .status {
   display: inline-block; padding: 2px 10px; border-radius: 12px;
   font-size: 11px; font-weight: 600;
@@ -799,7 +799,7 @@ body {
 .batch-tag.b04 { background: #7c3aed; }
 .batch-tag.b09 { background: #0d9488; }
 
-/* ── Info strip ── */
+/* ?? Info strip ?? */
 .info-strip {
   display: flex; flex-wrap: wrap; gap: 20px;
   background: #fff; border: 1px solid var(--border-light);
@@ -811,7 +811,7 @@ body {
 }
 .text-blue { color: var(--blue-700); }
 
-/* ── Tabs ── */
+/* ?? Tabs ?? */
 .tab-bar {
   display: flex; gap: 0; margin-bottom: 14px;
   background: #fff; border-radius: var(--radius);
@@ -968,7 +968,7 @@ body {
 .hint { font-size: 12px; color: var(--text-3); }
 .th-hint { display: block; font-size: 10px; font-weight: 400; color: var(--text-3); line-height: 1.2; margin-top: 2px; }
 
-/* ── Alerts ── */
+/* ?? Alerts ?? */
 .alert-info {
   padding: 10px 14px; background: var(--blue-50);
   border: 1px solid #bfdbfe; border-radius: var(--radius);
@@ -986,7 +986,7 @@ body {
 }
 .lock-icon { font-size: 11px; color: var(--text-3); }
 
-/* ── Modals ── */
+/* ?? Modals ?? */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(15,52,96,.45); z-index: 1000;
@@ -1029,7 +1029,7 @@ body {
   display: flex; justify-content: flex-end; gap: 8px;
 }
 
-/* ── Forms ── */
+/* ?? Forms ?? */
 .form-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px;
 }
@@ -1054,7 +1054,7 @@ th .req { color: var(--red); }
   border-color: #e2e8f0;
 }
 
-/* 课程弹窗：不可编辑字段与「课程性质」一致的浅蓝只读样式 */
+/* ??????????????????????????? */
 .course-form-details .form-item.is-field-locked > label {
   color: var(--text-2);
   font-weight: 400;
@@ -1219,7 +1219,7 @@ th .req { color: var(--red); }
 }
 #page-version-edit.version-readonly #tab-courses .actions:not(:has(.view-link))::after,
 #page-version-edit.version-readonly #tab-course-groups .actions:not(:has(.view-link))::after {
-  content: '—';
+  content: '?';
   color: var(--text-3);
   font-size: 12px;
 }
@@ -1333,7 +1333,7 @@ th .req { color: var(--red); }
   text-align: left;
 }
 
-/* 分类弹窗：不可编辑字段浅蓝只读样式（与课程弹窗 is-field-locked 一致） */
+/* ??????????????????????? is-field-locked ??? */
 .category-form-panel .form-item.is-field-locked > label {
   color: var(--text-2);
   font-weight: 400;
@@ -2050,7 +2050,7 @@ code {
 .link-name { color: var(--blue-500); text-decoration: none; font-weight: 500; }
 .link-name:hover { text-decoration: underline; }
 
-/* ── Version management ── */
+/* ?? Version management ?? */
 .toolbar-row {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
@@ -2094,7 +2094,7 @@ code {
 .batch-code.batch-end { background: #fef3c7; color: #b45309; }
 .batch-code.batch-start { background: #dbeafe; color: #1d4ed8; }
 
-/* 列表中相邻版本：截止批次 + 下一开始批次 可视化衔接 */
+/* ???????????? + ?????? ????? */
 .version-table tr.row-current td { background: #f0fdf4; }
 .version-table .row-current td:first-child { border-left: 3px solid var(--green); }
 
@@ -2170,7 +2170,7 @@ code {
   .approval-summary { grid-template-columns: 1fr 1fr; }
 }
 
-/* ── Data Statistics ── */
+/* ?? Data Statistics ?? */
 .stats-shell {
   display: flex;
   height: calc(100vh - 40px);
@@ -2368,7 +2368,7 @@ code {
   .stats-table-pair { grid-template-columns: 1fr; }
 }
 
-/* ── Academic Portal 主菜单 ── */
+/* ?? Academic Portal ??? ?? */
 .sidebar-brand {
   cursor: pointer;
   transition: background .15s;
@@ -2644,7 +2644,7 @@ code {
   padding: 32px;
 }
 
-/* ── 开课时间设置 ── */
+/* ?? ?????? ?? */
 .course-time-query-card {
   padding: 16px 18px;
   margin-bottom: 12px;
@@ -2766,7 +2766,7 @@ code {
   font-size: 14px;
   padding: 10px 12px;
 }
-/* 只读仅为禁止手输，点击仍打开选择器，勿用全局 readonly 置灰样式 */
+/* ?????????????????????? readonly ???? */
 .course-datetime-input[readonly],
 .course-datetime-input.input[readonly] {
   background: #fff;
@@ -2810,7 +2810,7 @@ code {
   align-items: center;
   justify-content: flex-end;
 }
-/* .course-unit-offering-time-toolbar select { min-width: 280px; ... } 原抽屉内下拉，改弹窗选择 */
+/* .course-unit-offering-time-toolbar select { min-width: 280px; ... } ???????????? */
 .course-unit-offering-time-add-modal select {
   width: 100%;
 }
@@ -2997,7 +2997,7 @@ code {
   color: var(--text-3, #94a3b8);
   cursor: not-allowed;
 }
-/* .cuot-date-picker-ym-select { ... } 原 native select 样式，改按钮 + 内联面板 */
+/* .cuot-date-picker-ym-select { ... } ? native select ?????? + ???? */
 .cuot-date-picker-ym-select {
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 6px;
@@ -3226,7 +3226,7 @@ code {
 .drawer-course-unit-offering-time.is-readonly .drawer-foot .btn-primary {
   display: none;
 }
-/* .course-unit-offering-time-layout { ... } 原左右分栏 + 模块细分布局 */
+/* .course-unit-offering-time-layout { ... } ????? + ?????? */
 .course-task-table th.col-center,
 .course-task-table td.col-center { text-align: center; }
 
@@ -3254,7 +3254,7 @@ code {
 .course-offering-major-table td.col-center { text-align: center; }
 .course-offering-major-table .col-muted { color: var(--text-3); font-size: 12px; max-width: 140px; }
 .course-offering-major-table { min-width: 1800px; --major-offering-actions-col-width: 240px; }
-/* .course-offering-major-table { min-width: 1800px; --major-offering-actions-col-width: 188px; } */ /* 原仅「修改」，改含「回退说明」 */
+/* .course-offering-major-table { min-width: 1800px; --major-offering-actions-col-width: 188px; } */ /* ??????????????? */
 .course-offering-major-table th.col-sticky-actions,
 .course-offering-major-table td.col-sticky-actions {
   position: sticky;
@@ -3383,7 +3383,7 @@ code {
 }
 #page-course-offering-major .course-offering-major-table {
   --major-offering-actions-col-width: 112px;
-  /* --major-offering-actions-col-width: 240px; */ /* 继承全局默认过宽，改适配「修改/回退说明」 */
+  /* --major-offering-actions-col-width: 240px; */ /* ???????????????/????? */
 }
 #page-course-offering-major .course-offering-major-table th.col-sticky-actions,
 #page-course-offering-major .course-offering-major-table td.col-sticky-actions {
@@ -3436,7 +3436,7 @@ code {
 #page-course-major-offering-roster .course-major-offering-roster-table {
   min-width: 2100px;
   --major-offering-actions-col-width: 120px;
-  /* --major-offering-actions-col-width: 160px; */ /* 原含行内「退回」，改工具栏批量 */
+  /* --major-offering-actions-col-width: 160px; */ /* ??????????????? */
 }
 #page-course-major-offering-roster .course-major-offering-roster-table th.col-teachers,
 #page-course-major-offering-roster .course-major-offering-roster-table td.col-teachers {
@@ -3479,7 +3479,7 @@ code {
 #page-course-major-offering-task .course-major-offering-task-table {
   min-width: 1600px;
   --major-offering-actions-col-width: 260px;
-  /* --major-offering-actions-col-width: 220px; */ /* 原无「退回说明」，改支持查看退回说明 */
+  /* --major-offering-actions-col-width: 220px; */ /* ?????????????????? */
 }
 #page-course-major-offering-task .course-offering-major-table th.col-sticky-actions,
 #page-course-major-offering-task .course-offering-major-table td.col-sticky-actions,
@@ -3544,7 +3544,7 @@ code {
 #page-course-offering-other .course-offering-table {
   min-width: 1200px;
   --major-offering-actions-col-width: 200px;
-  /* --major-offering-actions-col-width: 120px; */ /* 原仅修改/删除，改含回退说明 */
+  /* --major-offering-actions-col-width: 120px; */ /* ????/????????? */
 }
 #page-course-offering-other .course-offering-table th.col-sticky-actions,
 #page-course-offering-other .course-offering-table td.col-sticky-actions {
@@ -3620,7 +3620,7 @@ code {
 #page-course-shared-teaching-maintenance .shared-teaching-list-toolbar .offering-manifest-toolbar-actions {
   margin-left: 0;
   margin-right: 12px;
-  /* margin-left: auto; */ /* 原靠右对齐，共同授课维护页改最左 */
+  /* margin-left: auto; */ /* ???????????????? */
 }
 .offering-manifest-shared-code-preview-title {
   display: block;
@@ -3659,9 +3659,9 @@ code {
 }
 #page-course-offering-manifest .offering-manifest-table {
   min-width: 1780px;
-  /* min-width: 1680px; */ /* 原宽度，改含勾选列与共同授课码列 */
+  /* min-width: 1680px; */ /* ???????????????? */
   --major-offering-actions-col-width: 148px;
-  /* --major-offering-actions-col-width: 88px; */ /* 原仅「查看」，改「查看 · 分组详情」 */
+  /* --major-offering-actions-col-width: 88px; */ /* ??????????? ? ????? */
 }
 #page-course-shared-teaching-maintenance .shared-teaching-table {
   min-width: 1280px;
@@ -3839,7 +3839,7 @@ code {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* margin-top: 16px; */ /* 原额外上边距，改与专业/特殊名单页一致，由查询区 margin-bottom 控制间距 */
+  /* margin-top: 16px; */ /* ???????????/???????????? margin-bottom ???? */
 }
 #page-course-ge-offering-roster .course-major-query-card {
   margin-bottom: 12px;
@@ -3858,7 +3858,7 @@ code {
 #page-course-ge-offering-roster .course-ge-offering-roster-table {
   min-width: 1280px;
   --major-offering-actions-col-width: 112px;
-  /* --major-offering-actions-col-width: 96px; */ /* 原仅管理名单，改含查看 */
+  /* --major-offering-actions-col-width: 96px; */ /* ??????????? */
 }
 #page-course-ge-offering-roster .course-ge-offering-roster-table th.col-sticky-actions,
 #page-course-ge-offering-roster .course-ge-offering-roster-table td.col-sticky-actions {
@@ -3964,7 +3964,7 @@ code {
 }
 .drawer-major-student-roster {
   width: min(1280px, 98vw);
-  /* width: min(980px, 96vw); 原宽度偏窄，国籍/课程组易换行 */
+  /* width: min(980px, 96vw); ????????/?????? */
 }
 .student-roster-drawer-body {
   display: flex;
@@ -4055,7 +4055,7 @@ code {
   height: 88vh;
   max-height: 92vh;
   min-height: 720px;
-  /* max-height only 时随 Tab 内容伸缩，切换 Tab 会变大变小 */
+  /* max-height only ?? Tab ??????? Tab ????? */
 }
 #modal-offering-grouping .modal-body {
   overflow: hidden;
@@ -4079,7 +4079,7 @@ code {
   gap: 16px;
 }
 
-/* ── 专业开课 · 分组独立页（原 modal-offering-grouping） ── */
+/* ?? ???? ? ??????? modal-offering-grouping? ?? */
 #page-offering-grouping.active {
   display: flex;
   flex-direction: column;
@@ -4429,7 +4429,7 @@ code {
   line-height: 1.2;
   box-sizing: border-box;
 }
-/* .group-assign-week-range-btn-field { ... } 原两列布局，按钮 width:100% 过宽 */
+/* .group-assign-week-range-btn-field { ... } ???????? width:100% ?? */
 /* .group-assign-week-range-btn { width: 100%; ... } */
 .group-assign-weekly-warn {
   margin-top: 4px;
@@ -4440,7 +4440,7 @@ code {
   color: #b45309;
   font-size: 12px;
   font-weight: 400;
-  /* font-weight: 600; */ /* 原加粗强调，改常规字重便于阅读 */
+  /* font-weight: 600; */ /* ??????????????? */
   line-height: 1.35;
   box-sizing: border-box;
 }
@@ -4500,8 +4500,8 @@ code {
   border-color: #93c5fd;
   box-shadow: 0 0 0 3px rgba(147, 197, 253, .22);
 }
-/* .group-assign-recorded-warn:not(.is-empty) { ... } 原仅红色超限，改 is-over / is-under 分态 */
-/* .group-assign-weekly-warn { min-height: 34px; ... } 原空态也占位导致与起止周间距过大 */
+/* .group-assign-recorded-warn:not(.is-empty) { ... } ???????? is-over / is-under ?? */
+/* .group-assign-weekly-warn { min-height: 34px; ... } ???????????????? */
 .form-field.has-plan-exceed-warn > .input {
   border-color: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, .12);
@@ -4595,7 +4595,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .group-assign-teacher-table-wrap .data-table td,
 .group-assign-teacher-table-wrap .data-table th {
   font-size: 12px;
-} */ /* 原仅教师表，改与指定小组表共用边框滚动容器样式 */
+} */ /* ??????????????????????? */
 .offering-group-merge-body .form-hint {
   margin-bottom: 12px;
 }
@@ -4609,7 +4609,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-offering-group-merge .clo-multiselect-dropdown {
   z-index: 30;
 }
-/* .offering-group-merge-list { ... } 已改为下拉多选 clo-multiselect */
+/* .offering-group-merge-list { ... } ??????? clo-multiselect */
 .offering-group-merge-list {
   display: flex;
   flex-direction: column;
@@ -4806,7 +4806,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
     grid-template-columns: repeat(2, minmax(160px, 1fr));
   }
 }
-/* 二次抽屉：叠于学生名单抽屉之上 */
+/* ??????????????? */
 .drawer-backdrop-nested {
   z-index: 1060;
 }
@@ -4983,7 +4983,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
     justify-content: flex-end;
   }
 }
-/* #modal-major-student-picker { ... } 已改为 drawer-major-student-picker */
+/* #modal-major-student-picker { ... } ??? drawer-major-student-picker */
 .drawer-major-student-removal-log {
   width: min(980px, 96vw);
 }
@@ -5041,7 +5041,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-student-grouping .clo-multiselect-dropdown {
   z-index: 30;
 }
-/* .grouping-check-list { ... } 已改为下拉多选 clo-multiselect */
+/* .grouping-check-list { ... } ??????? clo-multiselect */
 .form-radio-row {
   display: flex;
   align-items: center;
@@ -5312,7 +5312,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border-right: 1px solid var(--border-light);
   border-bottom: 1px solid var(--border-light);
 }
-/* .teacher-hour-merge-row > label { ... } // 原独占一行布局 */
+/* .teacher-hour-merge-row > label { ... } // ??????? */
 #modal-major-teacher-hour-arrange .clo-multiselect-dropdown {
   z-index: 20;
 }
@@ -5605,7 +5605,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border-radius: 8px;
   font-size: 12px;
   flex-shrink: 0;
-  /* margin-bottom: 16px; 改由 offering-grouping-body gap 控制与下方布局间距 */
+  /* margin-bottom: 16px; ?? offering-grouping-body gap ????????? */
 }
 .offering-grouping-meta-row {
   display: flex;
@@ -5652,7 +5652,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   overflow: visible;
   margin-bottom: 12px;
   transition: gap 0.38s cubic-bezier(0.4, 0, 0.2, 1);
-  /* display: grid; grid-template-columns: minmax(380px, 34%) 1fr; 原 grid 列宽无法平滑过渡 */
+  /* display: grid; grid-template-columns: minmax(380px, 34%) 1fr; ? grid ???????? */
 }
 .offering-grouping-layout.is-sidebar-collapsed {
   gap: 8px;
@@ -5791,7 +5791,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   gap: 6px;
   margin-bottom: 10px;
   flex-shrink: 0;
-  /* flex-direction: column; 原纵向堆叠，占高较多 */
+  /* flex-direction: column; ?????????? */
 }
 .offering-group-tree {
   font-size: 12px;
@@ -6060,7 +6060,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* display: grid; grid-template-rows: 1fr; 原三面板叠层 grid，Tab 切换易拖影 */
+  /* display: grid; grid-template-rows: 1fr; ?????? grid?Tab ????? */
 }
 #offering-group-teacher-panel,
 #offering-group-student-panel {
@@ -6070,8 +6070,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
-  /* overflow: hidden; 原隐藏溢出，多分组块无法纵向滚动 */
-  /* grid-area: 1 / 1 / 2 / 2; 原叠层占位 */
+  /* overflow: hidden; ???????????????? */
+  /* grid-area: 1 / 1 / 2 / 2; ????? */
 }
 #offering-group-hour-summary-panel {
   flex: 1;
@@ -6080,7 +6080,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
-  /* overflow: hidden; 原隐藏溢出，汇总内容无法纵向滚动 */
+  /* overflow: hidden; ???????????????? */
 }
 #offering-group-group-status-panel {
   flex: 1;
@@ -6095,7 +6095,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #offering-group-hour-summary-panel[hidden],
 #offering-group-group-status-panel[hidden] {
   display: none !important;
-  /* display: flex !important; visibility: hidden; pointer-events: none; z-index: 0; 原 visibility 叠层，Tab1→Tab3 切换有拖影 */
+  /* display: flex !important; visibility: hidden; pointer-events: none; z-index: 0; ? visibility ???Tab1?Tab3 ????? */
 }
 #offering-group-group-status-panel .offering-group-teacher-hint {
   margin: 0 0 8px;
@@ -6180,7 +6180,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   margin: 0;
   padding: 20px 0;
 }
-/* #offering-group-teacher-panel:not([hidden]), ... visibility: visible; 原叠层显示 */
+/* #offering-group-teacher-panel:not([hidden]), ... visibility: visible; ????? */
 .offering-group-main .table-scroll {
   flex: 1;
   min-height: 0;
@@ -6214,7 +6214,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-tab.is-muted { color: var(--text-3); }
 .offering-group-tab[hidden] { display: none !important; }
 .offering-group-tab:hover:not(.is-active) { color: var(--text-2); }
-/* .offering-group-tab.is-active { color: var(--blue-700); border-bottom: 2px solid var(--blue-600); padding-bottom: 6px; margin-bottom: -8px; } 原下划线不明显 */
+/* .offering-group-tab.is-active { color: var(--blue-700); border-bottom: 2px solid var(--blue-600); padding-bottom: 6px; margin-bottom: -8px; } ??????? */
 
 .offering-hour-summary-content {
   display: flex;
@@ -6223,7 +6223,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   min-height: 0;
   overflow: visible;
   align-items: stretch;
-  /* overflow: hidden; 原裁切子内容，导致 tooltip 与滚动异常 */
+  /* overflow: hidden; ????????? tooltip ????? */
 }
 .offering-group-assign-content {
   display: flex;
@@ -6351,15 +6351,16 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   flex-direction: column;
   gap: 14px;
   padding: 4px 0 14px;
-  /* gap: 16px; padding: 2px 0 12px; 原区块间距偏紧 */
-  /* overflow: auto; 原内层滚动，改由 #offering-group-hour-summary-panel 统一纵向滚动 */
+  /* gap: 16px; padding: 2px 0 12px; ??????? */
+  /* overflow: auto; ???????? #offering-group-hour-summary-panel ?????? */
   --ohs-col-index: 48px;
   --ohs-col-teacher: 280px;
   /* --ohs-col-role: 112px; 原授课角色列宽 */
   --ohs-col-weekly-hours: 72px;
+  /* --ohs-col-role: 112px; ??????? */
   --ohs-col-week: 84px;
   --ohs-col-sticky-actions: 72px;
-  /* --ohs-col-actions: 84px; 原操作列宽 */
+  /* --ohs-col-actions: 84px; ????? */
 }
 .offering-hour-summary-block {
   border: 1px solid var(--border-2, var(--border));
@@ -6411,7 +6412,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   padding: 12px 14px 10px;
   background: var(--surface-2, var(--blue-50));
   border-bottom: 1px solid var(--border-2, var(--border-light));
-  /* padding: 12px 14px; 原上下内边距一致，待安排区块与正文间距偏紧 */
+  /* padding: 12px 14px; ????????????????????? */
 }
 .offering-hour-summary-title {
   display: flex;
@@ -6498,8 +6499,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-hour-summary-block.is-active .offering-hour-summary-table thead th {
   background: #fafcff;
 }
-/* .offering-hour-summary-block.is-pending .offering-hour-summary-table thead { display: none; } 原 pending 空态用表格行，已改 pending-body */
-/* .offering-hour-summary-block.is-pending .offering-hour-summary-empty-row td { ... } 原 pending 空态表格行样式 */
+/* .offering-hour-summary-block.is-pending .offering-hour-summary-table thead { display: none; } ? pending ????????? pending-body */
+/* .offering-hour-summary-block.is-pending .offering-hour-summary-empty-row td { ... } ? pending ??????? */
 .offering-hour-summary-table-wrap {
   overflow-x: auto;
   overflow-y: visible;
@@ -6509,14 +6510,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   table-layout: fixed;
   min-width: 780px;
 }
-/* table-layout: auto; min-width: 640px; 原按内容自适应，各表列宽不一致 */
+/* table-layout: auto; min-width: 640px; ??????????????? */
 .offering-hour-summary-table col.col-index { width: var(--ohs-col-index); }
 .offering-hour-summary-table col.col-teacher { width: var(--ohs-col-teacher); }
 /* .offering-hour-summary-table col.col-role { width: var(--ohs-col-role); } 原授课角色列 */
 .offering-hour-summary-table col.col-weekly-hours { width: var(--ohs-col-weekly-hours); }
 .offering-hour-summary-table col.col-week { width: var(--ohs-col-week); }
 .offering-hour-summary-table col.col-sticky-actions { width: var(--ohs-col-sticky-actions); }
-/* .offering-hour-summary-table col.col-actions { width: var(--ohs-col-actions); } 原操作列 */
+/* .offering-hour-summary-table col.col-actions { width: var(--ohs-col-actions); } ???? */
 .offering-hour-summary-table th.col-teacher,
 .offering-hour-summary-table td.col-teacher,
 .offering-hour-summary-table th.col-week,
@@ -6613,8 +6614,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border-right: 1px solid var(--border-light);
   border-bottom: 1px solid var(--border-light);
 }
-/* .offering-hour-teacher-tip-pop { ... } 原单元格内 popover，易被父级 overflow 裁切 */
-/* .offering-hour-summary-table td.col-teacher { overflow: hidden; text-overflow: ellipsis; } 原单元格截断 + title */
+/* .offering-hour-teacher-tip-pop { ... } ????? popover????? overflow ?? */
+/* .offering-hour-summary-table td.col-teacher { overflow: hidden; text-overflow: ellipsis; } ?????? + title */
 .offering-hour-summary-table th.col-teacher,
 .offering-hour-summary-table td.col-teacher,
 .offering-hour-summary-table th.col-week,
@@ -6629,7 +6630,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   padding-top: 8px;
   padding-bottom: 8px;
 }
-/* .offering-hour-summary-table td.col-actions { ... } 原居中操作列 */
+/* .offering-hour-summary-table td.col-actions { ... } ?????? */
 .offering-hour-summary-table td.actions a {
   white-space: nowrap;
 }
@@ -6669,8 +6670,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   text-align: center;
   padding: 14px;
 }
-/* .offering-hour-summary-scroll { ... } 原单表滚动容器 */
-/* .offering-hour-summary-type-row { ... } 原单表内分组行 */
+/* .offering-hour-summary-scroll { ... } ??????? */
+/* .offering-hour-summary-type-row { ... } ??????? */
 .offering-hour-summary-scroll {
   flex: 1;
   min-height: 0;
@@ -6801,7 +6802,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   padding-top: 8px;
   padding-bottom: 8px;
 }
-/* 教师安排 Tab 按小组分块，小组列用于查看跨组合班安排 */
+/* ???? Tab ??????????????????? */
 .offering-group-assign-table th.col-check,
 .offering-group-assign-table td.col-check {
   width: 44px;
@@ -6850,7 +6851,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   cursor: help;
 }
 .school-elective-edit-summary {
-  /* margin-bottom: 16px; */ /* 间距改由 .school-elective-edit-body 统一控制 */
+  /* margin-bottom: 16px; */ /* ???? .school-elective-edit-body ???? */
   margin-bottom: 0;
 }
 .school-elective-edit-body {
@@ -6988,14 +6989,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border-radius: 8px;
   background: #fff;
   padding: 4px 0;
-} */ /* 原独立边框+内边距导致表头与外框割裂，改与 group-assign-teacher-table-wrap 一致 */
+} */ /* ?????+??????????????? group-assign-teacher-table-wrap ?? */
 .group-assign-group-picks-table {
   width: 100%;
   min-width: 0;
   table-layout: fixed;
   margin: 0;
   /* border-collapse: separate;
-  border-spacing: 0; */ /* 原 separate 与外层圆角边框叠出缝隙，改默认 collapse */
+  border-spacing: 0; */ /* ? separate ??????????????? collapse */
 }
 .group-assign-group-picks-table .col-check {
   width: 34px;
@@ -7103,7 +7104,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .group-assign-group-pick-row:has(.group-assign-group-check:checked) {
   background: #f8fbff;
-} */ /* 原独立大 padding / separate 布局，改复用 data-table.compact 与 teacher-table-wrap 视觉 */
+} */ /* ???? padding / separate ?????? data-table.compact ? teacher-table-wrap ?? */
 /* .group-assign-group-picks {
   display: flex;
   flex-direction: column;
@@ -7114,7 +7115,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border: 1px solid var(--border-light);
   border-radius: 8px;
   background: #fff;
-} */ /* 原平铺 label 列表容器，改 table-wrap */
+} */ /* ??? label ?????? table-wrap */
 .group-assign-group-pick {
   display: flex;
   align-items: center;
@@ -7188,7 +7189,7 @@ input#group-assign-recorded-hours {
 .merge-line-chip input { margin: 0; }
 .course-section-table .input-sm { min-width: 100px; }
 
-/* ── 专业开课 · 合拆班抽屉 ── */
+/* ?? ???? ? ????? ?? */
 .drawer-backdrop {
   position: fixed;
   inset: 0;
@@ -7493,7 +7494,7 @@ input#group-assign-recorded-hours {
   .course-plan-stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ── 调课管理 ── */
+/* ?? ???? ?? */
 .adjustment-apply-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .adj-type-badge {
   display: inline-block; padding: 2px 10px; border-radius: 12px;
@@ -7504,7 +7505,7 @@ input#group-assign-recorded-hours {
 .adj-type-badge.adj-makeup     { background: #dcfce7; color: #15803d; }
 .adj-type-badge.adj-addclass   { background: #ede9fe; color: #6d28d9; }
 
-/* 调课申请 · 节次多选清单 */
+/* ???? ? ?????? */
 .adj-slot-list {
   max-height: 180px; overflow-y: auto;
   border: 1px solid var(--border); border-radius: 6px; padding: 4px;
@@ -7520,7 +7521,7 @@ input#group-assign-recorded-hours {
 .adj-slot-opt-sub { font-size: 12px; color: var(--text-2); }
 .adj-slot-empty { padding: 14px; text-align: center; color: var(--text-3); font-size: 12px; }
 
-/* 调课申请 · 每节次调后设置 */
+/* ???? ? ??????? */
 .adj-perslot-list { display: flex; flex-direction: column; gap: 8px; }
 .adj-perslot-row {
   border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--bg-2);
@@ -7540,7 +7541,7 @@ input#group-assign-recorded-hours {
 .adj-perslot-ro { background: var(--bg-2); color: var(--text-1); font-weight: 600; }
 @media (max-width: 720px) { .adj-perslot-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-/* 调后日期 · 下拉月历（保留教学周显示） */
+/* ???? ? ????????????? */
 .adj-cal-dropdown {
   position: fixed; z-index: 2000;
   background: #fff; border: 1px solid var(--border); border-radius: 10px;
@@ -7569,10 +7570,11 @@ input#group-assign-recorded-hours {
 .adj-cal-day.is-range-end { background: var(--blue-700); color: #fff; font-weight: 700; border-radius: 0 6px 6px 0; }
 .adj-cal-day.is-range-start.is-range-end { border-radius: 6px; }
 .adj-cal-tip { margin-top: 6px; font-size: 11px; color: var(--blue-700); text-align: center; }
+.adj-cal-tip.is-warn { color: #dc2626; font-weight: 600; }
 .adj-cal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-light, #e8eef5); }
 .adj-cal-foot .btn[disabled] { opacity: .5; cursor: not-allowed; }
 
-/* 公假日 · 内嵌多选月历 + 已选日期 chips */
+/* ??? ? ?????? + ???? chips */
 .adj-cal-inline {
   border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: #fff;
 }
@@ -7589,14 +7591,14 @@ input#group-assign-recorded-hours {
 }
 .adj-holiday-chip button:hover { color: var(--red); }
 
-/* 详情 · 调课信息分组表格 */
+/* ?? ? ???????? */
 .adj-detail-info-table th.adj-detail-group { background: var(--blue-50); font-weight: 700; }
 .adj-detail-info-table td.adj-detail-cancel { color: var(--red); font-weight: 600; }
 .adj-detail-info-table td.adj-detail-changed { background: #fef3c7; color: #92400e; font-weight: 700; }
 .adj-detail-changed-note { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
 .adj-detail-changed-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: #fef3c7; border: 1px solid #fcd34d; }
 
-/* ── 调课管理 · 页面布局（查询区内间距 / 表格与卡片间距） ── */
+/* ?? ???? ? ??????????? / ???????? ?? */
 .adjustment-page > .card { padding: 16px; }
 .adjustment-page .schedule-query-card { padding: 16px 18px; }
 .adjustment-page .schedule-query-row { align-items: flex-end; gap: 18px; row-gap: 14px; }
@@ -7604,7 +7606,7 @@ input#group-assign-recorded-hours {
 .adjustment-page .adjustment-apply-actions { margin-bottom: 14px; }
 .adjustment-page .card > .table-scroll { margin-top: 0; }
 
-/* ── 调课管理 · 表格横向滚动 + 冻结左三列 ── */
+/* ?? ???? ? ?????? + ????? ?? */
 .adjustment-table { min-width: 1120px; }
 .adjustment-table th, .adjustment-table td { white-space: nowrap; }
 .adjustment-table th:nth-child(-n+3),
@@ -7619,7 +7621,7 @@ input#group-assign-recorded-hours {
   left: 172px; width: 88px; min-width: 88px;
   box-shadow: 6px 0 8px -6px rgba(15,52,96,.22);
 }
-/* 右侧冻结：审批状态 + 操作列 */
+/* ????????? + ??? */
 .adj-freeze-2 th:last-child, .adj-freeze-2 td:last-child,
 .adj-freeze-1 th:last-child, .adj-freeze-1 td:last-child {
   position: sticky; right: 0; z-index: 1; background: #fff;
@@ -7635,20 +7637,20 @@ input#group-assign-recorded-hours {
 .adj-freeze-2 tr:hover td:last-child, .adj-freeze-2 tr:hover td:nth-last-child(2),
 .adj-freeze-1 tr:hover td:last-child { background: #fafbfc; }
 
-/* ── 抽屉式弹窗 ── */
+/* ?? ????? ?? */
 .modal-overlay.modal-drawer { justify-content: flex-end; align-items: stretch; padding: 0; }
 .modal-overlay.modal-drawer .modal {
   width: 640px; max-width: 94vw; height: 100vh; max-height: 100vh;
   border-radius: 0; box-shadow: -14px 0 46px rgba(15,52,96,.2);
   animation: adj-drawer-in .24s cubic-bezier(.22,.61,.36,1);
 }
-/* 单位时间设置：加宽以便时间列一行完整显示 */
+/* ???????????????????? */
 #modal-schedule-unit-time.modal-drawer .modal {
   width: min(96vw, 1080px);
 }
 @keyframes adj-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-/* ── 调课申请 · 调课设置（标题 / 按钮 / 列表） ── */
+/* ?? ???? ? ??????? / ?? / ??? ?? */
 .adj-resch-setup { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .adj-resch-pick { align-self: flex-start; }
 .adj-resch-list { width: 100%; display: flex; flex-direction: column; gap: 10px; }
@@ -7670,7 +7672,7 @@ input#group-assign-recorded-hours {
 }
 .adj-pick-btn:hover { border-color: var(--blue-400, #60a5fa); }
 .adj-pick-btn:not(.input-sm) { min-height: 34px; }
-/* 统一调课弹窗内 日期选择器/下拉框/输入框 的高度与宽度 */
+/* ??????? ?????/???/??? ?????? */
 #modal-adjustment-apply select.input,
 #modal-adjustment-apply input.input:not([type=file]),
 #modal-adjustment-apply button.input { min-height: 34px; }
@@ -7686,7 +7688,7 @@ input#group-assign-recorded-hours {
 .adj-resch-conf.bad { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; cursor: pointer; }
 .adj-resch-conf-full { display: flex; flex-direction: column; gap: 5px; }
 
-/* ── 调课申请 · 选择弹窗（节次表格 / 教师 / 教室） ── */
+/* ?? ???? ? ????????? / ?? / ??? ?? */
 .adj-slot-picker-filter { margin-bottom: 10px; }
 .adj-slot-picker-count { margin-right: auto; font-size: 12px; color: var(--text-2); }
 .adj-slot-picker-table { min-width: 900px; }
@@ -7709,7 +7711,7 @@ input#group-assign-recorded-hours {
 .adj-room-picker-table tr.is-current-room .srf-col-pick,
 .adj-room-picker-table tr.is-current-room .srf-col-room { background: var(--bg-2); }
 
-/* 调课申请 · 详情抽屉 */
+/* ???? ? ???? */
 .adj-detail-info {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px;
   padding: 14px 16px; background: var(--bg-2); border-radius: 8px; margin-bottom: 18px;
@@ -7734,7 +7736,7 @@ input#group-assign-recorded-hours {
 .adj-log-meta { font-size: 12px; color: var(--text-2); margin-top: 2px; }
 .adj-log-note { font-size: 12px; color: var(--text-2); margin-top: 3px; background: var(--bg-2); border-radius: 5px; padding: 4px 8px; }
 
-/* 调课申请 · 冲突检测面板 */
+/* ???? ? ?????? */
 .adj-conflict-panel { display: flex; flex-direction: column; gap: 6px; }
 .adj-conflict-line {
   font-size: 12px; padding: 7px 10px; border-radius: 6px; border: 1px solid transparent;
@@ -7745,7 +7747,7 @@ input#group-assign-recorded-hours {
 .adj-conflict-skip { color: var(--text-2); background: var(--bg-2); border-color: var(--border); }
 .adj-conflict-detail { margin-top: 4px; padding-left: 4px; line-height: 1.6; color: #9a3412; }
 
-/* 调课申请 · 附件 */
+/* ???? ? ?? */
 .adj-file-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .adj-file-list { display: flex; flex-direction: column; gap: 4px; }
 .adj-file-empty { font-size: 12px; }
@@ -7796,7 +7798,7 @@ input#group-assign-recorded-hours {
 .batch-tag.b04 { background: #7c3aed; }
 .batch-tag.b09 { background: #0d9488; }
 
-/* ── Info strip ── */
+/* ?? Info strip ?? */
 .info-strip {
   display: flex; flex-wrap: wrap; gap: 20px;
   background: #fff; border: 1px solid var(--border-light);
@@ -7808,7 +7810,7 @@ input#group-assign-recorded-hours {
 }
 .text-blue { color: var(--blue-700); }
 
-/* ── Tabs ── */
+/* ?? Tabs ?? */
 .tab-bar {
   display: flex; gap: 0; margin-bottom: 14px;
   background: #fff; border-radius: var(--radius);
@@ -7965,7 +7967,7 @@ input#group-assign-recorded-hours {
 .hint { font-size: 12px; color: var(--text-3); }
 .th-hint { display: block; font-size: 10px; font-weight: 400; color: var(--text-3); line-height: 1.2; margin-top: 2px; }
 
-/* ── Alerts ── */
+/* ?? Alerts ?? */
 .alert-info {
   padding: 10px 14px; background: var(--blue-50);
   border: 1px solid #bfdbfe; border-radius: var(--radius);
@@ -7983,7 +7985,7 @@ input#group-assign-recorded-hours {
 }
 .lock-icon { font-size: 11px; color: var(--text-3); }
 
-/* ── Modals ── */
+/* ?? Modals ?? */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(15,52,96,.45); z-index: 1000;
@@ -8024,7 +8026,7 @@ input#group-assign-recorded-hours {
   display: flex; justify-content: flex-end; gap: 8px;
 }
 
-/* ── Forms ── */
+/* ?? Forms ?? */
 .form-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px;
 }
@@ -8046,7 +8048,7 @@ input#group-assign-recorded-hours {
   border-color: #e2e8f0;
 }
 
-/* 课程弹窗：不可编辑字段与「课程性质」一致的浅蓝只读样式 */
+/* ??????????????????????????? */
 .course-form-details .form-item.is-field-locked > label {
   color: var(--text-2);
   font-weight: 400;
@@ -8211,7 +8213,7 @@ input#group-assign-recorded-hours {
 }
 #page-version-edit.version-readonly #tab-courses .actions:not(:has(.view-link))::after,
 #page-version-edit.version-readonly #tab-course-groups .actions:not(:has(.view-link))::after {
-  content: '—';
+  content: '?';
   color: var(--text-3);
   font-size: 12px;
 }
@@ -8325,7 +8327,7 @@ input#group-assign-recorded-hours {
   text-align: left;
 }
 
-/* 分类弹窗：不可编辑字段浅蓝只读样式（与课程弹窗 is-field-locked 一致） */
+/* ??????????????????????? is-field-locked ??? */
 .category-form-panel .form-item.is-field-locked > label {
   color: var(--text-2);
   font-weight: 400;
@@ -9026,7 +9028,7 @@ code {
 .link-name { color: var(--blue-500); text-decoration: none; font-weight: 500; }
 .link-name:hover { text-decoration: underline; }
 
-/* ── Version management ── */
+/* ?? Version management ?? */
 .toolbar-row {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
@@ -9070,7 +9072,7 @@ code {
 .batch-code.batch-end { background: #fef3c7; color: #b45309; }
 .batch-code.batch-start { background: #dbeafe; color: #1d4ed8; }
 
-/* 列表中相邻版本：截止批次 + 下一开始批次 可视化衔接 */
+/* ???????????? + ?????? ????? */
 .version-table tr.row-current td { background: #f0fdf4; }
 .version-table .row-current td:first-child { border-left: 3px solid var(--green); }
 
@@ -9146,7 +9148,7 @@ code {
   .approval-summary { grid-template-columns: 1fr 1fr; }
 }
 
-/* ── Data Statistics ── */
+/* ?? Data Statistics ?? */
 .stats-shell {
   display: flex;
   height: calc(100vh - 40px);
@@ -9344,7 +9346,7 @@ code {
   .stats-table-pair { grid-template-columns: 1fr; }
 }
 
-/* ── Academic Portal 主菜单 ── */
+/* ?? Academic Portal ??? ?? */
 .sidebar-brand {
   cursor: pointer;
   transition: background .15s;
@@ -9620,7 +9622,7 @@ code {
   padding: 32px;
 }
 
-/* ── 开课时间设置 ── */
+/* ?? ?????? ?? */
 .course-time-query-card {
   padding: 16px 18px;
   margin-bottom: 12px;
@@ -9805,7 +9807,7 @@ code {
   font-size: 12px;
 }
 .offering-grouping-meta span strong { color: var(--text-2); margin-right: 4px; }
-/* offering-grouping-layout / sidebar 样式见上方主定义（flex + 宽度过渡） */
+/* offering-grouping-layout / sidebar ?????????flex + ????? */
 .offering-group-tabs {
   display: flex;
   gap: 16px;
@@ -9859,7 +9861,7 @@ code {
   .course-plan-stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ── 排课管理 · 页面布局 ── */
+/* ?? ???? ? ???? ?? */
 .schedule-page > .card,
 .schedule-page .tab-panel > .card {
   padding: 16px;
@@ -9931,7 +9933,7 @@ code {
   margin-left: auto;
 }
 
-/* ── 排课管理 · 配置表单 ── */
+/* ?? ???? ? ???? ?? */
 .schedule-setting-form-card { padding: 16px; margin-bottom: 14px; }
 .schedule-setting-section-title {
   font-size: 14px; font-weight: 600; color: var(--text-1);
@@ -9952,7 +9954,7 @@ code {
 .schedule-setting-field .input { width: 100%; }
 .schedule-setting-actions { margin-top: 16px; }
 
-/* ── 排课管理 · 课表节次 ── */
+/* ?? ???? ? ???? ?? */
 .schedule-period-toolbar { align-items: center; }
 .schedule-period-toolbar-divider {
   width: 1px; height: 22px; background: var(--border-light); margin: 0 4px;
@@ -10041,7 +10043,7 @@ code {
   animation: none; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
 }
 
-/* 专业批次排课 · 图形化课表 */
+/* ?????? ? ????? */
 .schedule-detail-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -10099,7 +10101,7 @@ code {
   font-weight: 600;
   color: var(--text-1);
 }
-/* 课程列表字段：统一「标签 + 值」对齐格式 */
+/* ???????????? + ?????? */
 .schedule-detail-course-fields {
   display: flex;
   flex-direction: column;
@@ -10161,7 +10163,7 @@ code {
 .schedule-detail-course-li .schedule-detail-course-item { flex: 1; min-width: 0; }
 .schedule-detail-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
-/* 排课详情：周次小格子 / 场地 / 底部撤销条 */
+/* ?????????? / ?? / ????? */
 .schedule-detail-field {
   display: flex;
   align-items: flex-start;
@@ -10229,7 +10231,7 @@ code {
 .schedule-room-modal-table tbody tr { cursor: pointer; }
 .schedule-room-modal-table tr.is-current-room { background: var(--bg-2); }
 
-/* 横向滚动时固定「选择」「教室」两列 */
+/* ????????????????? */
 .schedule-room-modal-table .srf-col-pick { position: sticky; left: 0; z-index: 2; width: 56px; min-width: 56px; background: #fff; }
 .schedule-room-modal-table .srf-col-room { position: sticky; left: 56px; z-index: 2; min-width: 130px; background: #fff; box-shadow: 1px 0 0 var(--border); }
 .schedule-room-modal-table thead .srf-col-pick,
@@ -10251,7 +10253,7 @@ code {
 .schedule-detail-footer-info { font-size: 11px; color: var(--text-2); }
 .schedule-detail-sidebar-foot .btn { white-space: nowrap; }
 
-/* 课程列表 tab */
+/* ???? tab */
 .schedule-detail-tabs {
   display: flex;
   border-bottom: 1px solid var(--border);
@@ -10278,7 +10280,7 @@ code {
 .schedule-detail-tab.is-active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
 .schedule-detail-tab.is-active span { background: #dbeafe; color: #2563eb; }
 
-/* 课程学时明细（学时类型：已排/总） */
+/* ??????????????/?? */
 .schedule-detail-course-hours .hr-type { display: inline-flex; gap: 3px; color: var(--text-3); }
 .schedule-detail-course-hours .hr-type i { font-style: normal; }
 .schedule-detail-course-hours .hr-type b { color: var(--text-1); font-weight: 600; }
@@ -10298,13 +10300,13 @@ code {
 }
 .schedule-grid-line.schedule-grid-hourtype { color: #4f46e5; font-weight: 600; }
 
-/* 保存状态 + 工具条右侧 */
+/* ???? + ????? */
 .schedule-detail-toolbar-right { display: flex; align-items: center; gap: 10px; }
 .schedule-detail-save-status { font-size: 12px; white-space: nowrap; }
 .schedule-detail-save-status.is-dirty { color: #d97706; }
 .schedule-detail-save-status.is-saved { color: #16a34a; }
 
-/* 编辑提示（排课卡片顶部浅蓝卡片） */
+/* ???????????????? */
 .schedule-detail-op-hint,
 .schedule-detail-edit-hint {
   font-size: 12px;
@@ -10408,7 +10410,7 @@ code {
 .schedule-grid-cell.is-active-course .schedule-grid-block,
 .schedule-grid-cell.is-slot-selected .schedule-grid-block { opacity: 0.92; }
 .schedule-grid-cell.is-conflict { cursor: pointer; }
-/* 冲突类型：红=教师 / 蓝=学生 / 绿=教室 / 品红=综合 / 灰=同课冲突，色相差异明显 */
+/* ??????=?? / ?=?? / ?=?? / ??=?? / ?=??????????? */
 .schedule-grid-cell.is-conflict-teacher {
   background: #fca5a5 !important;
   box-shadow: inset 0 0 0 3px #dc2626;
@@ -10435,7 +10437,7 @@ code {
 .sch-conflict-line.is-student { background: #eff6ff; border-left: 3px solid #1d4ed8; }
 .sch-conflict-line.is-room { background: #f0fdf4; border-left: 3px solid #15803d; }
 .sch-conflict-line.is-cell { background: #f3f4f6; border-left: 3px solid #4b5563; }
-/* 课表卡片统一为单一底色，突出冲突色 */
+/* ????????????????? */
 .schedule-grid-block.is-c0,
 .schedule-grid-block.is-c1,
 .schedule-grid-block.is-c2,
@@ -10490,7 +10492,7 @@ code {
   padding: 8px 0;
 }
 
-/* 显示设置栏 */
+/* ????? */
 .schedule-detail-view-settings {
   display: flex;
   flex-wrap: wrap;
@@ -10509,10 +10511,10 @@ code {
 .schedule-view-opt.is-required input { cursor: not-allowed; }
 .schedule-view-sep { color: var(--text-3); font-weight: 600; }
 
-/* 保证 hidden 属性对按钮生效（覆盖 .btn 的 display） */
+/* ?? hidden ?????????? .btn ? display? */
 .btn[hidden] { display: none !important; }
 
-/* 课表格子多行卡片 + 选中节次高亮 */
+/* ???????? + ?????? */
 .schedule-grid-block-rich {
   display: flex;
   flex-direction: column;
@@ -10594,7 +10596,7 @@ code {
   border-top: 1px solid var(--border-light);
 }
 
-/* 单位时间设置抽屉：表单卡片与列表间距 */
+/* ?????????????????? */
 .schedule-unit-time-body {
   display: flex;
   flex-direction: column;
@@ -10782,7 +10784,7 @@ code {
   opacity: 0.92;
 }
 
-/* ── 课表查询：展示字段工具栏 ── */
+/* ?? ???????????? ?? */
 .schedule-tt-fieldbar {
   display: flex;
   flex-wrap: wrap;
@@ -10825,7 +10827,7 @@ code {
   border-bottom: 1px solid var(--border);
 }
 
-/* ── 课表查询：图形化网格 ── */
+/* ?? ?????????? ?? */
 .schedule-tt-table td.schedule-tt-cell {
   vertical-align: top;
   padding: 3px;
@@ -10862,4 +10864,114 @@ code {
   font-size: 13px;
   font-weight: 600;
   border-bottom: 1px solid var(--border);
+}
+
+/* ??????????? */
+#modal-adjustment-batch.modal-drawer .adjustment-batch-drawer-modal {
+  width: min(96vw, 960px);
+  max-width: 960px;
+}
+#modal-adjustment-batch .adjustment-batch-card {
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+#modal-adjustment-batch .tab-panel { display: none; }
+#modal-adjustment-batch .tab-panel.active { display: block; }
+#modal-adjustment-batch.modal-drawer .modal {
+  display: flex;
+  flex-direction: column;
+}
+#modal-adjustment-batch .modal-foot {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+/* 批量调课明细：仅冻结序号 + 课程编号，取消课程名称冻结 */
+#modal-adjustment-batch .adj-batch-preview-table th:nth-child(n+3),
+#modal-adjustment-batch .adj-batch-preview-table td:nth-child(n+3) {
+  position: static;
+  left: auto;
+  z-index: auto;
+  box-shadow: none;
+}
+#modal-adjustment-batch .adjustment-batch-form {
+  margin-bottom: 0;
+}
+#modal-adjustment-batch .adjustment-batch-table-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 20px;
+  margin-bottom: 14px;
+  padding-top: 4px;
+}
+#modal-adjustment-batch .adjustment-batch-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+#modal-adjustment-batch .adjustment-batch-card > .table-scroll {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+#modal-adjustment-batch .adjustment-batch-meta-form {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+#modal-adjustment-batch .adjustment-batch-preview-tip {
+  margin-top: 0;
+  font-size: 12px;
+  color: var(--blue-700);
+}
+#modal-adjustment-batch .adjustment-batch-preview-tip.is-error {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+#page-adjustment-batch .adjustment-batch-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+#page-adjustment-batch .adjustment-batch-record-btns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+#page-adjustment-batch .adjustment-batch-table-toolbar .legend-bar {
+  margin: 0;
+}
+
+.adj-freeze-left-2 th.col-index,
+.adj-freeze-left-2 td.col-index {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  min-width: 56px;
+}
+.adj-freeze-left-2 th:nth-child(2),
+.adj-freeze-left-2 td:nth-child(2) {
+  position: sticky;
+  left: 56px;
+  z-index: 2;
+  background: #fff;
+  box-shadow: 2px 0 4px rgba(15, 52, 96, 0.06);
+}
+.adj-freeze-left-2 thead th.col-index,
+.adj-freeze-left-2 thead th:nth-child(2) {
+  z-index: 3;
+  background: var(--blue-50);
+}
+.adj-freeze-left-2 tr:hover td.col-index,
+.adj-freeze-left-2 tr:hover td:nth-child(2) {
+  background: #fafbfc;
 }

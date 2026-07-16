@@ -93,10 +93,11 @@
       <a href="#" class="nav-item" data-page="schedule-time-timetable">时间课表</a>
       <div class="nav-group">调课管理</div>
       <a href="#" class="nav-item" data-page="adjustment-teacher">我的调课申请</a>
-      <a href="#" class="nav-item" data-page="adjustment-admin">调课申请管理</a>
       <a href="#" class="nav-item" data-page="adjustment-approval">调课申请审批</a>
+      <a href="#" class="nav-item" data-page="adjustment-record">调课申请记录</a>
+      <a href="#" class="nav-item" data-page="adjustment-admin">调课申请管理</a>
       <a href="#" class="nav-item" data-page="adjustment-holiday">公假日停课</a>
-      <a href="#" class="nav-item" data-page="adjustment-record">调课记录</a>
+      <a href="#" class="nav-item" data-page="adjustment-batch">批量调课管理</a>
     </nav>
     <div class="sidebar-footer">
       <span class="batch-tag b02">02</span>
@@ -2000,7 +2001,7 @@
       <div class="page-header workflow-page-header">
         <div class="workflow-page-title">
           <h1>排课管理 · 操作流程</h1>
-          <p class="subtitle">课表节次 / 排课时间与规则配置 → 时间 / 教师 / 教室排课 → 课表查询（入学批次 / 教师 / 教室 / 时间课表）</p>
+          <p class="subtitle">基础配置 → 排课安排 → 课表查询 → 调课管理（含公假日停课、批量调课）</p>
         </div>
         <div class="workflow-zoom-toolbar">
           <button type="button" class="btn btn-ghost btn-sm workflow-zoom-btn" onclick="scheduleWorkflowZoomStep(-0.1)">−</button>
@@ -2021,7 +2022,7 @@
       <div class="page-header">
         <div>
           <h1>课表节次维护</h1>
-          <p class="subtitle">按学期维护课表节次数量、起止时间与节次备注（早班授课 / 午间休息 / 晚班授课）</p>
+          <p class="subtitle">按学期维护课表节次数量、起止时间与节次备注（早班授课 / 晚班授课）</p>
         </div>
       </div>
       <div class="card schedule-query-card">
@@ -2070,7 +2071,7 @@
       <div class="page-header">
         <div>
           <h1>排课时间设置</h1>
-          <p class="subtitle">维护每学期排课窗口、师生课表查看时间，以及不排课时段与教师排课时段</p>
+          <p class="subtitle">维护每学期排课窗口、师生课表查看时间，以及不排课、选修课占位与教师排课时段</p>
         </div>
       </div>
       <div class="card schedule-query-card">
@@ -2090,6 +2091,7 @@
       <div class="tab-bar" id="schedule-time-setting-tabs">
         <button type="button" class="tab active" data-schedule-time-tab="term" onclick="activateScheduleTimeSettingTab('term')">学期排课时间</button>
         <button type="button" class="tab" data-schedule-time-tab="blackout" onclick="activateScheduleTimeSettingTab('blackout')">课表不排课时间</button>
+        <button type="button" class="tab" data-schedule-time-tab="elective" onclick="activateScheduleTimeSettingTab('elective')">选修课排课时间</button>
         <button type="button" class="tab" data-schedule-time-tab="teacher-slot" onclick="activateScheduleTimeSettingTab('teacher-slot')">教师排课时间</button>
       </div>
       <div class="tab-panel active" id="schedule-time-tab-term">
@@ -2131,6 +2133,30 @@
                 </tr>
               </thead>
               <tbody id="schedule-blackout-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="schedule-time-tab-elective">
+        <div class="card schedule-card">
+          <div class="panel-toolbar">
+            <button class="btn btn-primary btn-sm" type="button" onclick="openScheduleElectiveSlotModal()">新增</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="deleteSelectedScheduleElectiveSlots()">删除</button>
+            <span class="hint">按星期 + 节次维度维护选修课占位时间；排课时冲突提示「选修课预占位」，可选择继续排课</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table schedule-time-table">
+              <thead>
+                <tr>
+                  <th class="col-check"><input type="checkbox" id="schedule-elective-check-all" onchange="toggleScheduleElectiveCheckAll(this.checked)"></th>
+                  <th class="col-index">序号</th>
+                  <th class="col-center">星期</th>
+                  <th class="col-center">节次</th>
+                  <th>占位备注</th>
+                  <th class="col-center">操作</th>
+                </tr>
+              </thead>
+              <tbody id="schedule-elective-body"></tbody>
             </table>
           </div>
         </div>
@@ -2223,6 +2249,14 @@
                 <option value="">全部入学批次</option>
               </select>
             </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-filter-status">排课状态</label>
+              <select class="input input-sm" id="schedule-time-filter-status">
+                <option value="">全部</option>
+                <option value="done">已排完</option>
+                <option value="pending">未排完</option>
+              </select>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleTimePage()">查询</button>
@@ -2234,7 +2268,7 @@
       <div class="card schedule-card"><div class="table-scroll"><table class="data-table">
         <thead><tr>
           <th class="col-index">序号</th><th>入学批次</th><th>专业</th><th class="col-center">学院</th>
-          <th class="col-center">课程数</th><th class="col-center">已排完</th><th class="col-center">待排场地</th><th class="col-center">操作</th>
+          <th class="col-center">课程数</th><th class="col-center">已排完</th><th class="col-center">未排完</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-time-body"></tbody>
       </table></div></div>
@@ -2272,6 +2306,7 @@
               <span class="sch-leg-item is-teacher">教师冲突</span>
               <span class="sch-leg-item is-student">学生冲突</span>
               <span class="sch-leg-item is-room">教室冲突</span>
+              <span class="sch-leg-item is-soft">占位/时段提示</span>
               <span class="sch-leg-item is-mixed">综合冲突</span>
             </div>
             <div class="schedule-timetable-toolbar">
@@ -2325,15 +2360,23 @@
               <input class="input input-sm" id="schedule-teacher-filter-term" readonly placeholder="—">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-teacher-filter-course">课程号 / 名称</label>
-              <input class="input input-sm" id="schedule-teacher-filter-course" placeholder="课程号 / 课程名称">
+              <label for="schedule-teacher-filter-id">教工号</label>
+              <input class="input input-sm" id="schedule-teacher-filter-id" placeholder="教工号">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-teacher-filter-name">教师姓名</label>
+              <input class="input input-sm" id="schedule-teacher-filter-name" placeholder="教师姓名">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-teacher-filter-dept">所在单位</label>
+              <input class="input input-sm" id="schedule-teacher-filter-dept" placeholder="所在单位">
             </div>
             <div class="schedule-query-field">
               <label for="schedule-teacher-filter-status">排课状态</label>
               <select class="input input-sm" id="schedule-teacher-filter-status">
                 <option value="">全部</option>
-                <option value="done">已安排</option>
-                <option value="pending">待安排</option>
+                <option value="done">已排完</option>
+                <option value="pending">未排完</option>
               </select>
             </div>
           </div>
@@ -2348,7 +2391,7 @@
         <thead><tr>
           <th class="col-index">序号</th><th>教师工号</th><th>教师姓名</th><th>所在单位</th>
           <th class="col-center">教职工类型</th><th class="col-center">课程数</th><th class="col-center">已排完</th>
-          <th class="col-center">地点未排</th><th class="col-center">操作</th>
+          <th class="col-center">未排完</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-teacher-body"></tbody>
       </table></div></div>
@@ -2367,8 +2410,16 @@
               <input class="input input-sm" id="schedule-course-filter-term" readonly placeholder="—">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-course-filter-course">课程号 / 名称</label>
-              <input class="input input-sm" id="schedule-course-filter-course" placeholder="课程号 / 课程名称">
+              <label for="schedule-course-filter-code">课程号</label>
+              <input class="input input-sm" id="schedule-course-filter-code" placeholder="课程号">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-course-filter-name">课程名称</label>
+              <input class="input input-sm" id="schedule-course-filter-name" placeholder="课程名称">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-course-filter-dept">开课单位</label>
+              <input class="input input-sm" id="schedule-course-filter-dept" placeholder="开课单位">
             </div>
             <div class="schedule-query-field">
               <label for="schedule-course-filter-status">排课状态</label>
@@ -2390,7 +2441,7 @@
         <thead><tr>
           <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th>开课单位</th>
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
-          <th class="col-center">地点未排</th><th class="col-center">操作</th>
+          <th class="col-center">未排完</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-course-body"></tbody>
       </table></div></div>
@@ -3044,10 +3095,70 @@
       </table></div></div>
     </section>
 
-    <!-- ═══ 调课管理 · 调课记录 ═══ -->
+    <!-- ═══ 调课管理 · 批量调课管理 ═══ -->
+    <section class="page adjustment-page" id="page-adjustment-batch">
+      <div class="page-header">
+        <div>
+          <h1>批量调课管理</h1>
+          <p class="subtitle">管理员按日期、节次批量统一换时间或换场地</p>
+        </div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields">
+            <div class="schedule-query-field">
+              <label for="adjustment-batch-filter-term">学年学期</label>
+              <select class="input input-sm" id="adjustment-batch-filter-term"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-batch-filter-kind">调课类型</label>
+              <select class="input input-sm" id="adjustment-batch-filter-kind">
+                <option value="">全部</option>
+                <option value="time">调时间</option>
+                <option value="room">调教室</option>
+              </select>
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentBatchRecords()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentBatchQuery()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card schedule-card">
+        <div class="adjustment-batch-table-toolbar">
+          <div class="adjustment-batch-record-btns">
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('time')">批量调时间</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('room')">批量调教室</button>
+          </div>
+          <div class="legend-bar" id="adjustment-batch-record-hint"></div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table adjustment-table adj-freeze-left-2">
+            <thead>
+              <tr>
+                <th class="col-index">序号</th>
+                <th>记录编号</th>
+                <th class="col-center">调课类型</th>
+                <th>源日期范围</th>
+                <th class="col-center">源节次</th>
+                <th>调整目标</th>
+                <th class="col-center">影响节数</th>
+                <th>调整原因</th>
+                <th class="col-center">操作时间</th>
+                <th class="col-center">操作人</th>
+              </tr>
+            </thead>
+            <tbody id="adjustment-batch-record-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 调课管理 · 调课申请记录 ═══ -->
     <section class="page adjustment-page" id="page-adjustment-record">
       <div class="page-header">
-        <div><h1>调课记录</h1><p class="subtitle">查询全部调课、停课、补课、加课及公假日停课记录</p></div>
+        <div><h1>调课申请记录</h1><p class="subtitle">查询全部调课、停课、补课、加课及公假日停课申请记录</p></div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -6589,6 +6700,25 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-schedule-elective-slot">
+  <div class="modal modal-md">
+    <div class="modal-head"><h3 id="modal-schedule-elective-slot-title">选修课排课时间</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-elective-slot')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-item"><label class="req">星期</label><select class="input" id="schedule-modal-elective-weekday"></select></div>
+        <div class="form-item full"><label class="req">节次（可多选）</label>
+          <div class="schedule-multi-check-grid" id="schedule-modal-elective-periods"></div>
+        </div>
+        <div class="form-item full"><label>占位备注</label><input type="text" class="input" id="schedule-modal-elective-remark" placeholder="选修课预占位"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-elective-slot')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveScheduleElectiveSlotModal()">保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay modal-drawer" id="modal-schedule-teacher-slot">
   <div class="modal modal-xl">
     <div class="modal-head"><h3 id="modal-schedule-teacher-slot-title">教师排课时段</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-teacher-slot')">×</button></div>
@@ -6860,8 +6990,8 @@
   </div>
 </div>
 
-<!-- 弹窗：目标教室选择 -->
-<div class="modal-overlay modal-nested" id="modal-adjustment-room-picker">
+<!-- 抽屉：目标教室选择 -->
+<div class="modal-overlay modal-drawer" id="modal-adjustment-room-picker">
   <div class="modal modal-lg">
     <div class="modal-head"><h3>选择目标教室</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-room-picker')">×</button></div>
     <div class="modal-body">
@@ -7014,16 +7144,168 @@
 <!-- 弹窗：排课冲突提醒 -->
 <div class="modal-overlay modal-nested" id="modal-schedule-place-conflict">
   <div class="modal modal-md">
-    <div class="modal-head"><h3 id="schedule-place-conflict-title">排课冲突提醒</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-place-conflict')">×</button></div>
+    <div class="modal-head"><h3 id="schedule-place-conflict-title">排课冲突提醒</h3><button class="modal-close" type="button" onclick="closeSchedulePlaceConflictModal()">×</button></div>
     <div class="modal-body" id="schedule-place-conflict-body"></div>
     <div class="modal-foot">
-      <button class="btn btn-primary" type="button" onclick="closeModal('modal-schedule-place-conflict')">知道了</button>
+      <button class="btn btn-ghost" type="button" id="schedule-place-conflict-force" hidden onclick="forceSchedulePlaceDespiteConflict()">继续排课</button>
+      <button class="btn btn-primary" type="button" onclick="closeSchedulePlaceConflictModal()">我知道了</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ 弹窗：排课场地选择器 ═══ -->
-<div class="modal-overlay" id="modal-schedule-room-picker">
+<!-- ═══ 抽屉：批量调时间 / 批量调教室 ═══ -->
+<div class="modal-overlay modal-drawer" id="modal-adjustment-batch">
+  <div class="modal modal-xl adjustment-batch-drawer-modal">
+    <div class="modal-head">
+      <h3 id="adjustment-batch-drawer-title">批量调时间</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-adjustment-batch')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-panel active" id="adjustment-batch-tab-time">
+        <div class="card schedule-card adjustment-batch-card">
+          <div class="panel-toolbar">
+            <span class="hint">选择源日期与节次后，将命中课节统一调整到目标日期与节次</span>
+          </div>
+          <div class="form-grid adjustment-batch-form">
+            <div class="form-item full">
+              <label class="req">源日期</label>
+              <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-time-date-btn" onclick="openAdjustmentBatchDatePicker('time', event)">选择起止日期</button>
+              <div class="adjustment-batch-date-summary" id="adjustment-batch-time-dates">尚未选择日期</div>
+            </div>
+            <div class="form-item full">
+              <label class="req">源节次（可多选）</label>
+              <div class="schedule-multi-check-grid" id="adjustment-batch-time-periods"></div>
+            </div>
+            <div class="form-item full">
+              <label class="req">目标日期</label>
+              <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-timeTarget-date-btn" onclick="openAdjustmentBatchDatePicker('timeTarget', event)">选择起止日期</button>
+              <div class="adjustment-batch-date-summary" id="adjustment-batch-timeTarget-dates">尚未选择日期</div>
+            </div>
+            <div class="form-item full">
+              <label class="req">目标节次（可多选）</label>
+              <div class="schedule-multi-check-grid" id="adjustment-batch-time-target-periods"></div>
+            </div>
+          </div>
+          <div class="adjustment-batch-table-head">
+            <div class="adjustment-batch-table-actions">
+              <button class="btn btn-outline btn-sm" type="button" onclick="generateAdjustmentBatchTimePreview()">确定生成调课明细</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="clearAdjustmentBatchTimePreview()">清空调课明细</button>
+            </div>
+            <div class="adjustment-batch-preview-tip" id="adjustment-batch-time-tip" hidden></div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table adjustment-table adj-freeze-left-2 adj-batch-preview-table">
+              <thead>
+                <tr>
+                  <th class="col-index">序号</th>
+                  <th>课程编号</th>
+                  <th>课程名称</th>
+                  <th>上课小组</th>
+                  <th>教师</th>
+                  <th class="col-center">源日期</th>
+                  <th class="col-center">原节次</th>
+                  <th>教室</th>
+                  <th class="col-center">调整后日期</th>
+                  <th class="col-center">调整后节次</th>
+                </tr>
+              </thead>
+              <tbody id="adjustment-batch-time-preview-body"></tbody>
+            </table>
+          </div>
+          <div class="form-grid adjustment-batch-meta-form">
+            <div class="form-item full">
+              <label class="req">调整原因</label>
+              <textarea class="input" id="adjustment-batch-time-reason" rows="3" placeholder="请填写批量调时间原因"></textarea>
+            </div>
+            <div class="form-item full">
+              <label>附件</label>
+              <input type="file" id="adjustment-batch-time-files" multiple onchange="onAdjustmentBatchFilesChange('time', event)" style="display:none">
+              <div class="adj-file-bar">
+                <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('adjustment-batch-time-files').click()">+ 添加附件</button>
+                <span class="text-muted" style="font-size:12px">支持上传相关证明材料</span>
+              </div>
+              <div class="adj-file-list" id="adjustment-batch-time-file-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="adjustment-batch-tab-room">
+        <div class="card schedule-card adjustment-batch-card">
+          <div class="panel-toolbar">
+            <span class="hint">选择源日期、源节次与源教室后，将命中课节统一更换到目标教室</span>
+          </div>
+          <div class="form-grid adjustment-batch-form">
+            <div class="form-item full">
+              <label class="req">源日期</label>
+              <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-room-date-btn" onclick="openAdjustmentBatchDatePicker('room', event)">选择起止日期</button>
+              <div class="adjustment-batch-date-summary" id="adjustment-batch-room-dates">尚未选择日期</div>
+            </div>
+            <div class="form-item full">
+              <label class="req">源节次（可多选）</label>
+              <div class="schedule-multi-check-grid" id="adjustment-batch-room-periods"></div>
+            </div>
+            <div class="form-item full">
+              <label class="req">源教室</label>
+              <button type="button" class="input adj-pick-btn" id="adjustment-batch-room-source-btn" onclick="openAdjustmentBatchSourceRoomPicker()">选择教室</button>
+              <input type="hidden" id="adjustment-batch-room-source" value="">
+            </div>
+            <div class="form-item full">
+              <label class="req">目标教室</label>
+              <button type="button" class="input adj-pick-btn" id="adjustment-batch-room-target-btn" onclick="openAdjustmentBatchRoomPicker()">选择教室</button>
+              <input type="hidden" id="adjustment-batch-room-target" value="">
+            </div>
+          </div>
+          <div class="adjustment-batch-table-head">
+            <div class="adjustment-batch-table-actions">
+              <button class="btn btn-outline btn-sm" type="button" onclick="generateAdjustmentBatchRoomPreview()">确定生成调课明细</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="clearAdjustmentBatchRoomPreview()">清空调课明细</button>
+            </div>
+            <div class="adjustment-batch-preview-tip" id="adjustment-batch-room-tip" hidden></div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table adjustment-table adj-freeze-left-2 adj-batch-preview-table">
+              <thead>
+                <tr>
+                  <th class="col-index">序号</th>
+                  <th>课程编号</th>
+                  <th>课程名称</th>
+                  <th>教师</th>
+                  <th class="col-center">日期</th>
+                  <th class="col-center">节次</th>
+                  <th>原教室</th>
+                  <th>目标教室</th>
+                </tr>
+              </thead>
+              <tbody id="adjustment-batch-room-preview-body"></tbody>
+            </table>
+          </div>
+          <div class="form-grid adjustment-batch-meta-form">
+            <div class="form-item full">
+              <label class="req">调整原因</label>
+              <textarea class="input" id="adjustment-batch-room-reason" rows="3" placeholder="请填写批量调教室原因"></textarea>
+            </div>
+            <div class="form-item full">
+              <label>附件</label>
+              <input type="file" id="adjustment-batch-room-files" multiple onchange="onAdjustmentBatchFilesChange('room', event)" style="display:none">
+              <div class="adj-file-bar">
+                <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('adjustment-batch-room-files').click()">+ 添加附件</button>
+                <span class="text-muted" style="font-size:12px">支持上传相关证明材料</span>
+              </div>
+              <div class="adj-file-list" id="adjustment-batch-room-file-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-batch')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmAdjustmentBatchDrawer()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 抽屉：排课场地选择器 ═══ -->
+<div class="modal-overlay modal-drawer" id="modal-schedule-room-picker">
   <div class="modal modal-lg">
     <div class="modal-head">
       <h3>选择上课教室</h3>

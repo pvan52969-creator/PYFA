@@ -45,7 +45,7 @@
         <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">专业开课学生名单管理</a>
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">通识选修课开课</div>
+        <div class="nav-section-title">通识选修课开课<span class="nav-section-status">（设计中）</span></div>
         <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-demand">通识选修开课需求</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">通识选修小组配额</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课计划</a>
@@ -53,14 +53,15 @@
         <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">特殊开课</div>
+        <div class="nav-section-title">特殊开课<span class="nav-section-status">（设计中）</span></div>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-other">特殊开课计划</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-task">特殊开课任务安排</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-roster">特殊开课学生名单管理</a>
         <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> --> <!-- 原挂于特殊开课下，改独立一级菜单 -->
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">开课清单</div>
+        <div class="nav-section-title">开课清单<span class="nav-section-status">（调整中）</span></div>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">教师开课学时统计</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a>
@@ -950,16 +951,17 @@
           <!-- 原「保存」需手动确认，改添加/安排后自动保存，右上角改为任务安排「提交」 -->
         </div>
       </div>
-      <div class="card offering-grouping-page-card">
-        <div class="offering-grouping-shell offering-grouping-body">
-          <div class="offering-grouping-workspace" id="offering-grouping-workspace">
-            <aside class="offering-grouping-course-list" id="offering-grouping-course-list" aria-label="Course List">
-              <div class="offering-grouping-course-list-head">
-                <strong>Course List</strong>
-              </div>
-              <div class="offering-grouping-course-list-body" id="offering-grouping-course-list-body"></div>
-              <div class="offering-grouping-course-list-foot" id="offering-grouping-course-list-foot">共 0 条</div>
-            </aside>
+      <div class="offering-grouping-page-row">
+        <aside class="offering-grouping-course-list" id="offering-grouping-course-list" aria-label="Course List">
+          <div class="offering-grouping-course-list-head">
+            <strong>Course List</strong>
+          </div>
+          <div class="offering-grouping-course-list-body" id="offering-grouping-course-list-body"></div>
+          <div class="offering-grouping-course-list-foot" id="offering-grouping-course-list-foot">共 0 条</div>
+        </aside>
+        <div class="card offering-grouping-page-card">
+          <div class="offering-grouping-shell offering-grouping-body">
+            <div class="offering-grouping-workspace" id="offering-grouping-workspace">
             <div class="offering-grouping-layout" id="offering-grouping-layout">
               <div class="offering-group-sidebar-wrap" id="offering-group-sidebar-wrap">
                 <aside class="offering-group-sidebar" id="offering-group-sidebar">
@@ -973,6 +975,8 @@
                   <!-- <button ... onclick="openOfferingGroupBatchAddModal()">批量新增</button> -->
                   <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupMergeModal()">合并分组</button> -->
                   <button class="btn btn-outline btn-sm btn-danger-text" type="button" onclick="resetOfferingGroupingAll()">重置</button>
+                  <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-hour-type-settings" onclick="openGroupAssignHourTypeSettings()">学时类型设置</button>
+                  <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()">安排教师</button>
                   <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingAutoGroupModal()">自动分组</button> --> <!-- 功能暂下线 -->
                 </div>
                 <div class="offering-group-tree" id="offering-group-tree"></div>
@@ -981,27 +985,27 @@
                 <!-- 原侧栏折叠轨，改始终展开分组信息 -->
               </div>
               <div class="offering-group-main">
+                <div class="offering-group-main-head">
                 <div class="offering-group-tabs">
-                  <span class="offering-group-tab is-active" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
-                  <span class="offering-group-tab" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
+                  <span class="offering-group-tab is-active" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
+                  <span class="offering-group-tab is-muted" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
+                  <span class="offering-group-tab is-muted" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
                   <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示 -->
-                  <span class="offering-group-tab" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
-                  <!-- <span ...>小组学时安排情况</span> --> <!-- 原文案 -->
-                  <span class="offering-group-tab" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">类型学时汇总</span>
+                  <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">类型学时汇总</span>
                   <!-- <span class="offering-group-tab" data-tab="summary" ...>学时安排情况汇总</span> 原 Tab 文案 -->
                 </div>
+                <div class="offering-group-toolbar offering-group-assign-toolbar" id="offering-group-assign-toolbar">
+                  <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button>
+                  <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-revoke-assign" onclick="removeOfferingGroupAssignSelected()" disabled hidden>删除</button>
+                  <label class="offering-group-assign-check-all" id="oga-check-all-wrap" hidden>
+                    <input type="checkbox" id="oga-check-all" aria-label="全选" onchange="toggleOfferingGroupingAssignCheckAll(this.checked)">
+                    <span>全选</span>
+                  </label>
+                </div>
+                </div>
                 <div class="offering-group-panel-wrap">
-                  <div id="offering-group-teacher-panel">
-                    <p class="offering-group-teacher-hint text-muted">为各小组安排理论/辅导/实践/其他学时的任课教师，并指定起止周；非开课学院教师自动为 Support，多名授课教师时须指定一名课程 Coordinator。理论学时通常面向全体小组合班授课，辅导/实践/其他学时可按小组分别安排，具体学时分摊由后续排课模块处理。</p>
-                    <div class="offering-group-toolbar">
-                      <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()" disabled>安排教师</button>
-                      <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button>
-                      <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-revoke-assign" onclick="removeOfferingGroupAssignSelected()" disabled>删除</button>
-                      <label class="offering-group-assign-check-all" id="oga-check-all-wrap">
-                        <input type="checkbox" id="oga-check-all" aria-label="全选" onchange="toggleOfferingGroupingAssignCheckAll(this.checked)">
-                        <span>全选</span>
-                      </label>
-                    </div>
+                  <div id="offering-group-teacher-panel" hidden>
+                    <p class="offering-group-teacher-hint text-muted">为各小组安排理论/辅导/实践/其他学时的任课教师，并指定起止周；非开课学院教师自动为 Support，多名授课教师时须指定一名课程 Coordinator。理论学时通常面向全体小组合班授课，辅导/实践/其他学时可按小组分别安排，具体学时分摊由后续排课模块处理。多选小组合班时可在选教师时指定「同时多组授课」，学时只计一次。</p>
                     <div class="offering-group-assign-content" id="offering-group-assign-content"></div>
                   </div>
                 <div id="offering-group-student-panel" hidden>
@@ -1065,11 +1069,13 @@
                   <p class="offering-group-teacher-hint text-muted">按学时类型汇总全部教师安排：展示各类型学时的任课教师、负责小组与起止周；数据来源于「教师安排」Tab 中的全部记录。</p>
                   <div class="offering-hour-summary-content" id="offering-group-hour-summary-content"></div>
                 </div>
-                <div id="offering-group-group-status-panel" hidden>
-                  <p class="offering-group-teacher-hint text-muted">按小组查看各类型学时是否已安排完成：已录入学时达到计划值且无缺失项即为已排满；可据此快速定位尚未完善的分组。</p>
+                <div id="offering-group-group-status-panel">
+                  <p class="offering-group-teacher-hint text-muted">按小组查看各类型学时是否已安排完成：单元格展示已录/计划，并轻量带出教师与起止周；悬停可看全部安排明细。细改请到「教师安排」。</p>
                   <div class="offering-group-status-content" id="offering-group-group-status-content"></div>
                 </div>
               </div>
+            </div>
+          </div>
             </div>
           </div>
         </div>
@@ -1983,6 +1989,55 @@
         </div>
         <div class="table-footer">
           <div class="pagination" id="course-offering-roster-change-log-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 教师开课学时统计 ═══ -->
+    <section class="page" id="page-course-teacher-teaching-load">
+      <div class="page-header">
+        <div>
+          <h1>教师开课学时统计</h1>
+          <p class="subtitle">Teaching Load (hour) · 按教师汇总各学期已安排授课学时</p>
+        </div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p>按教师横向展示各学期授课学时（周学时 × 周次）。原型数据示意学院 Teaching Load 表结构；后续可与开课清单中已提交的教师安排联动。</p>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label id="teacher-load-filter-term-label">开课学期</label>
+            <div class="clo-multiselect" id="teacher-load-filter-term-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadTermDropdown(event)" aria-labelledby="teacher-load-filter-term-label">
+                <span class="clo-multiselect-display placeholder" id="teacher-load-filter-term-display">请选择</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" id="teacher-load-filter-term-dropdown" hidden>
+                <div class="clo-multiselect-options" id="teacher-load-filter-term-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="course-time-query-field">
+            <label for="teacher-load-filter-name">教师姓名</label>
+            <input class="input input-sm" id="teacher-load-filter-name" placeholder="姓名">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryTeacherTeachingLoadPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetTeacherTeachingLoadFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card teacher-teaching-load-card">
+        <div class="panel-toolbar">
+          <span class="form-hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
+        </div>
+        <div class="table-scroll teacher-teaching-load-scroll">
+          <table class="data-table teacher-teaching-load-table" id="teacher-teaching-load-table">
+            <thead id="teacher-teaching-load-head"></thead>
+            <tbody id="teacher-teaching-load-body"></tbody>
+            <tfoot id="teacher-teaching-load-foot"></tfoot>
+          </table>
         </div>
       </div>
     </section>
@@ -4280,6 +4335,15 @@
         </table>
       </div>
       <div class="pagination teacher-picker-pagination" id="teacher-picker-pagination"></div>
+      <div class="form-item teacher-picker-simultaneous-row" id="teacher-picker-simultaneous-wrap" hidden>
+        <label class="req" for="teacher-picker-simultaneous">是否同时多组授课</label>
+        <select class="input input-sm" id="teacher-picker-simultaneous">
+          <option value="">please select</option>
+          <option value="yes">是（合班授课，学时只计一次）</option>
+          <option value="no">否（各小组分别计入学时）</option>
+        </select>
+        <p class="form-hint">仅多选小组时需选择；选「是」则本次学时不按小组重复累计。</p>
+      </div>
       <!-- <div class="form-item teacher-picker-role-row">
         <label class="req" for="teacher-picker-role">分配角色</label>
         <select class="input input-sm" id="teacher-picker-role">...</select>
@@ -5134,6 +5198,54 @@
   </div>
 </div>
 
+<!-- ═══ 弹窗：学时类型设置（分组信息 · 安排教师前置） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-group-assign-hour-type-settings">
+  <div class="modal modal-sm group-assign-hour-type-settings-modal">
+    <div class="modal-head">
+      <h3>学时类型设置</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-group-assign-hour-type-settings')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" id="group-assign-hour-type-settings-hint">设置本课程安排教师时的学时合并方式。保存后安排教师将按此设定进行；已有教师安排时不可修改，如需调整请先删除全部教师安排。</p>
+      <div class="group-assign-hour-type-settings-options" id="group-assign-hour-type-settings-options" role="radiogroup" aria-label="学时类型设置">
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="group-assign-hours-mode" value="all" checked onchange="syncGroupAssignHourTypeSettingsPartialPicks()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>全部合并</strong>
+            <span class="form-hint">按课程总学时统一安排，不再区分学时类型（默认）</span>
+          </span>
+        </label>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="group-assign-hours-mode" value="partial" onchange="syncGroupAssignHourTypeSettingsPartialPicks()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>部分学时合并</strong>
+            <span class="form-hint">可建多组两两（或更多）合并；未入组的类型单独安排</span>
+          </span>
+        </label>
+        <div class="group-assign-partial-merge-types-wrap" id="group-assign-partial-merge-types-wrap" hidden>
+          <p class="form-hint group-assign-partial-merge-types-hint">每组至少勾选 2 种；同一学时类型只能属于一组。</p>
+          <div class="group-assign-partial-merge-groups" id="group-assign-partial-merge-groups"></div>
+          <div class="group-assign-partial-merge-groups-foot">
+            <button type="button" class="btn btn-outline btn-sm" id="group-assign-partial-merge-add-group" onclick="addGroupAssignPartialMergeGroupDraft()">添加合并组</button>
+            <p class="form-hint group-assign-partial-merge-separate-hint" id="group-assign-partial-merge-separate-hint"></p>
+          </div>
+        </div>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="group-assign-hours-mode" value="separate" onchange="syncGroupAssignHourTypeSettingsPartialPicks()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>按学时类型分别安排</strong>
+            <span class="form-hint">理论 / 辅导 / 实践 / 其他学时各自安排</span>
+          </span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-group-assign-hour-type-settings')">取消</button>
+      <button class="btn btn-primary" type="button" id="group-assign-hour-type-settings-save" onclick="saveGroupAssignHourTypeSettings()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：设置课程 Coordinator ═══ -->
 <div class="modal-overlay modal-nested" id="modal-section-coordinator">
   <div class="modal modal-sm section-coordinator-modal">
@@ -5181,6 +5293,13 @@
     </div>
     <div class="modal-body group-assign-form-body">
       <input type="hidden" id="group-assign-edit-id">
+      <div class="group-assign-prior-teachers" id="group-assign-prior-teachers" hidden>
+        <div class="group-assign-prior-teachers-head">
+          <strong>上学期任课参考</strong>
+          <span class="form-hint" id="group-assign-prior-teachers-term"></span>
+        </div>
+        <div class="group-assign-prior-teachers-list" id="group-assign-prior-teachers-list"></div>
+      </div>
       <div class="group-assign-form-layout">
         <section class="group-assign-form-panel group-assign-form-panel-config">
           <header class="group-assign-form-panel-head">安排条件</header>
@@ -5194,16 +5313,7 @@
                 <label for="group-assign-offering-unit">开课单位</label>
                 <input class="input" id="group-assign-offering-unit" type="text" readonly tabindex="-1">
               </div>
-              <div class="form-field form-field-span-2" id="group-assign-merge-hours-wrap">
-                <label for="group-assign-merge-hours">是否合并学时 <span class="req">*</span></label>
-                <div class="group-assign-merge-hours-controls">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="group-assign-merge-hours" checked onchange="syncGroupAssignMergeHoursMode()">
-                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                  </label>
-                  <p class="form-hint" id="group-assign-merge-hours-hint">开启后不再按学时类型分别安排，而是按课程总学时为各小组安排；保存后将无法修改，如需调整请先删除全部教师安排后重新设置。</p>
-                </div>
-              </div>
+              <!-- 「是否合并学时」已移至侧栏「学时类型设置」 -->
               <div class="form-field form-field-span-2" id="group-assign-hour-type-wrap">
                 <label>学时类型 <span class="req">*</span></label>
                 <div class="group-assign-hour-type-picks" id="group-assign-hour-type-picks"></div>

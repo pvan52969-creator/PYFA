@@ -4385,24 +4385,37 @@ function ensureMajorOfferingStudentRosterNationality(sectionId) {
 let offeringGroupingSectionId = null;
 let offeringGroupingReturnPage = 'course-major-offering-task';
 let offeringGroupingSelectedGroupId = null;
-let offeringGroupingActiveTab = 'teacher';
-const OFFERING_GROUPING_PANEL_TABS = new Set(['student', 'summary', 'group-status']);
+let offeringGroupingActiveTab = 'group-status';
+const OFFERING_GROUPING_PANEL_TABS = new Set(['teacher', 'student', 'summary', 'group-status']);
 function normalizeOfferingGroupingTab(tab) {
-  return OFFERING_GROUPING_PANEL_TABS.has(tab) ? tab : 'teacher';
+  return OFFERING_GROUPING_PANEL_TABS.has(tab) ? tab : 'group-status';
 }
 const OFFERING_GROUP_HOUR_SUMMARY_TYPES = ['理论学时', '辅导学时', '实践学时', '其他学时'];
 const GROUP_ASSIGN_MERGED_HOUR_TYPE = '总学时';
+const GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE = '部分合并学时';
+const GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE_LEGACY = '理论实践辅导学时';
+const GROUP_ASSIGN_PARTIAL_MERGE_TYPES_DEFAULT = ['理论学时', '实践学时', '辅导学时'];
+const GROUP_ASSIGN_PARTIAL_MERGE_GROUPS_DEFAULT = [GROUP_ASSIGN_PARTIAL_MERGE_TYPES_DEFAULT.slice()];
+let groupAssignPartialMergeGroupsDraft = [];
+let groupAssignPartialMergeGroupsDraftLocked = false;
+let groupAssignFormSimultaneousGroups = null; // null=未选；true=合班只计一次；false=分别计
+const GROUP_ASSIGN_HOURS_MODE_ALL = 'all';
+const GROUP_ASSIGN_HOURS_MODE_PARTIAL = 'partial';
+const GROUP_ASSIGN_HOURS_MODE_SEPARATE = 'separate';
+const GROUP_ASSIGN_HOURS_MODE_DEFAULT = GROUP_ASSIGN_HOURS_MODE_ALL;
 const OFFERING_HOUR_SUMMARY_TYPE_META = {
   '理论学时': { key: 'theory', abbr: '理', tone: 'blue' },
   '辅导学时': { key: 'tutoring', abbr: '辅', tone: 'teal' },
   '实践学时': { key: 'practical', abbr: '实', tone: 'orange' },
   '其他学时': { key: 'other', abbr: '其', tone: 'purple' },
-  [GROUP_ASSIGN_MERGED_HOUR_TYPE]: { key: 'merged', abbr: '总', tone: 'blue' }
+  [GROUP_ASSIGN_MERGED_HOUR_TYPE]: { key: 'merged', abbr: '总', tone: 'blue' },
+  [GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE]: { key: 'partial', abbr: '合', tone: 'teal' },
+  [GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE_LEGACY]: { key: 'partial', abbr: '合', tone: 'teal' }
 };
 const OFFERING_HOUR_SUMMARY_TABLE_COLGROUP = `<colgroup>
   <col class="col-index">
   <col class="col-teacher">
-  <!-- <col class="col-role"> --> <!-- 原授课角色列，改在详情弹窗展示 -->
+  <col class="col-simultaneous">
   <col class="col-groups">
   <col class="col-weekly-hours">
   <col class="col-week">
@@ -4411,12 +4424,11 @@ const OFFERING_HOUR_SUMMARY_TABLE_COLGROUP = `<colgroup>
 const OFFERING_HOUR_SUMMARY_TABLE_HEAD = `<thead><tr>
   <th class="col-index col-center">序号</th>
   <th class="col-teacher">任课教师</th>
-  <!-- <th class="col-role col-center">授课角色</th> --> <!-- 原授课角色列 -->
+  <th class="col-center col-simultaneous">是否同时多组授课</th>
   <th class="col-groups">课程班/小组</th>
   <th class="col-center col-weekly-hours">周学时</th>
   <th class="col-center col-week">起止周</th>
   <th class="col-sticky-actions">操作</th>
-  <!-- <th class="col-center col-actions">操作</th> --> <!-- 原居中操作列 -->
 </tr></thead>`;
 let offeringGroupingStudentSelected = new Set();
 let offeringGroupingAssignSelected = new Set();
@@ -4832,7 +4844,7 @@ function seedCompleteDemoOfferingGroupAssignments(sec, { hourMode = 'merged' } =
   if (useMerged) {
     const mergedTotal = getOfferingSectionHoursTotalForAssign(sec);
     if (mergedTotal <= 0) return;
-    sec.mergeGroupAssignHours = true;
+    setSectionGroupAssignHoursMode(sec, GROUP_ASSIGN_HOURS_MODE_ALL);
     groups.forEach((g, gi) => {
       const { weeks, weeklyHours } = pickDemoAssignWeeksAndWeekly(sectionWeeks, mergedTotal, true);
       if (!weeks.length) return;
@@ -4849,7 +4861,7 @@ function seedCompleteDemoOfferingGroupAssignments(sec, { hourMode = 'merged' } =
       }));
     });
   } else {
-    sec.mergeGroupAssignHours = false;
+    setSectionGroupAssignHoursMode(sec, GROUP_ASSIGN_HOURS_MODE_SEPARATE);
     const hourTypePreferStart = new Set(['理论学时', '辅导学时']);
     getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
       const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
@@ -4960,6 +4972,9 @@ function seedMajorOfferingDemoTaskLayout() {
     delete sec._manualMerged;
     delete sec.manualMergedAt;
     delete sec.mergeGroupAssignHours;
+    delete sec.groupAssignHoursMode;
+    delete sec.groupAssignPartialMergeTypes;
+    delete sec.groupAssignPartialMergeGroups;
   });
   seedMajorOfferingShowcaseDemoIntoStore();
   syncMajorOfferingTaskDemoSubmitStatuses();
@@ -10173,7 +10188,7 @@ function viewOfferingManifestEntry(sectionId, termCode) {
   offeringGroupingSelectedGroupId = null;
   openOfferingGroupingModal(sectionId, {
     returnPage: 'course-offering-manifest',
-    tab: 'teacher'
+    tab: 'group-status'
   });
   // offeringGroupingSelectedGroupId = groupId || null; // 原按小组定位，改一门课一条记录
 }
@@ -10675,6 +10690,198 @@ function renderCourseOfferingRosterChangeLogPage() {
       </tr>`).join('')
     : '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">暂无变更记录</td></tr>';
   renderListPagination('course-offering-roster-change-log-pagination', 'courseOfferingRosterChangeLog', paged.total);
+}
+
+/** 教师开课学时统计 · Teaching Load 演示数据（对齐学院 Excel 示意表；学期与开课时间设置一致） */
+const TEACHER_TEACHING_LOAD_MAX_TERMS = 6;
+const TEACHER_TEACHING_LOAD_DEMO = {
+  terms: ['202402', '202404', '202409', '202502', '202504', '202509', '202602', '202604', '202609'],
+  teachers: [
+    { name: 'Dr. Kim Yun Jin', hours: [15, 138, 120, 0, 114, 106, 90, 132, 0] },
+    { name: 'Dr. Lim Chee Hoong', hours: [90, 120, 105, 30, 0, 135, 60, 165, 45] },
+    { name: 'Dr. Chep Lee Lu Siang', hours: [105, 120, 90, 30, 90, 0, 75, 153, 60] },
+    { name: 'Mr. Wong Guo Lin', hours: [75, 90, 80, 30, 60, 114, 45, 90, 30] },
+    { name: 'Dr. Tan Hong Yien', hours: [90, 105, 95, 60, 75, 122, 60, 90, 45] },
+    { name: 'Dr. Aslam Muhammad Shahzad', hours: [60, 120, 100, 30, 90, 165, 75, 83, 60] }
+  ]
+};
+
+/** @type {string[]|null} null 表示尚未初始化，首次进入按当前开课学期默认单选 */
+let teacherTeachingLoadSelectedTerms = null;
+
+function formatTeacherTeachingLoadTermLabel(termCode) {
+  const code = String(termCode || '');
+  const short = code.length >= 4 ? code.slice(-4) : code;
+  return `${short} semester`;
+}
+
+function formatTeacherTeachingLoadHours(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function getTeacherTeachingLoadAvailableTerms() {
+  return TEACHER_TEACHING_LOAD_DEMO.terms.slice();
+}
+
+function getDefaultTeacherTeachingLoadTerms() {
+  const available = getTeacherTeachingLoadAvailableTerms();
+  const def = getDefaultOfferingTermCode();
+  if (def && available.includes(def)) return [def];
+  return available.length ? [available[available.length - 1]] : [];
+}
+
+function ensureTeacherTeachingLoadSelectedTerms() {
+  const available = getTeacherTeachingLoadAvailableTerms();
+  if (!teacherTeachingLoadSelectedTerms) {
+    teacherTeachingLoadSelectedTerms = getDefaultTeacherTeachingLoadTerms();
+  } else {
+    teacherTeachingLoadSelectedTerms = teacherTeachingLoadSelectedTerms.filter(t => available.includes(t));
+    if (!teacherTeachingLoadSelectedTerms.length) {
+      teacherTeachingLoadSelectedTerms = getDefaultTeacherTeachingLoadTerms();
+    }
+  }
+  return teacherTeachingLoadSelectedTerms.slice(0, TEACHER_TEACHING_LOAD_MAX_TERMS);
+}
+
+function getTeacherTeachingLoadTermIndices(selectedTerms) {
+  const all = TEACHER_TEACHING_LOAD_DEMO.terms;
+  return selectedTerms.map(term => all.indexOf(term)).filter(idx => idx >= 0);
+}
+
+function ensureTeacherTeachingLoadTermMultiselect() {
+  const options = document.getElementById('teacher-load-filter-term-options');
+  if (!options) return;
+  const selected = new Set(ensureTeacherTeachingLoadSelectedTerms());
+  options.innerHTML = getTeacherTeachingLoadAvailableTerms().map(term =>
+    `<label class="clo-multiselect-option">
+      <input type="checkbox" class="teacher-load-term-check" value="${escapeHtml(term)}" ${selected.has(term) ? 'checked' : ''} onchange="onTeacherTeachingLoadTermToggle(this)">
+      <span>${escapeHtml(formatCourseTermDisplay(term))}</span>
+    </label>`
+  ).join('');
+  updateTeacherTeachingLoadTermDisplay();
+}
+
+function getTeacherTeachingLoadTermChecks() {
+  return [...document.querySelectorAll('#teacher-load-filter-term-options .teacher-load-term-check')];
+}
+
+function updateTeacherTeachingLoadTermDisplay() {
+  const display = document.getElementById('teacher-load-filter-term-display');
+  if (!display) return;
+  const selected = ensureTeacherTeachingLoadSelectedTerms();
+  if (selected.length) {
+    display.textContent = selected.map(formatCourseTermDisplay).join('、');
+    display.classList.remove('placeholder');
+  } else {
+    display.textContent = '请选择';
+    display.classList.add('placeholder');
+  }
+}
+
+function onTeacherTeachingLoadTermToggle(checkbox) {
+  if (!checkbox) return;
+  const checked = getTeacherTeachingLoadTermChecks().filter(el => el.checked).map(el => el.value);
+  if (checkbox.checked && checked.length > TEACHER_TEACHING_LOAD_MAX_TERMS) {
+    checkbox.checked = false;
+    alert(`最多同时展示 ${TEACHER_TEACHING_LOAD_MAX_TERMS} 个学期`);
+    return;
+  }
+  if (!checked.length) {
+    checkbox.checked = true;
+    alert('请至少选择 1 个开课学期');
+    return;
+  }
+  teacherTeachingLoadSelectedTerms = getTeacherTeachingLoadTermChecks()
+    .filter(el => el.checked)
+    .map(el => el.value);
+  updateTeacherTeachingLoadTermDisplay();
+}
+
+function toggleTeacherTeachingLoadTermDropdown(event) {
+  event.stopPropagation();
+  const dd = document.getElementById('teacher-load-filter-term-dropdown');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeTeacherTeachingLoadTermDropdown();
+  if (willOpen) {
+    ensureTeacherTeachingLoadTermMultiselect();
+    dd.hidden = false;
+  }
+}
+
+function closeTeacherTeachingLoadTermDropdown() {
+  const dd = document.getElementById('teacher-load-filter-term-dropdown');
+  if (dd) dd.hidden = true;
+}
+
+function getFilteredTeacherTeachingLoadRows() {
+  const q = (document.getElementById('teacher-load-filter-name')?.value || '').trim().toLowerCase();
+  return TEACHER_TEACHING_LOAD_DEMO.teachers.filter(row => {
+    if (!q) return true;
+    return String(row.name || '').toLowerCase().includes(q);
+  });
+}
+
+function queryTeacherTeachingLoadPage() {
+  closeTeacherTeachingLoadTermDropdown();
+  renderCourseTeacherTeachingLoadPage();
+}
+
+function resetTeacherTeachingLoadFilters() {
+  const input = document.getElementById('teacher-load-filter-name');
+  if (input) input.value = '';
+  teacherTeachingLoadSelectedTerms = getDefaultTeacherTeachingLoadTerms();
+  ensureTeacherTeachingLoadTermMultiselect();
+  closeTeacherTeachingLoadTermDropdown();
+  renderCourseTeacherTeachingLoadPage();
+}
+
+function renderCourseTeacherTeachingLoadPage() {
+  const head = document.getElementById('teacher-teaching-load-head');
+  const body = document.getElementById('teacher-teaching-load-body');
+  const foot = document.getElementById('teacher-teaching-load-foot');
+  if (!head || !body || !foot) return;
+  ensureTeacherTeachingLoadTermMultiselect();
+  const terms = ensureTeacherTeachingLoadSelectedTerms();
+  const termIndices = getTeacherTeachingLoadTermIndices(terms);
+  const rows = getFilteredTeacherTeachingLoadRows();
+  const termColCount = terms.length;
+  head.innerHTML = `
+    <tr>
+      <th class="teacher-load-title" colspan="${2 + termColCount}">Teaching Load (hour)</th>
+    </tr>
+    <tr>
+      <th class="col-index col-center">序号</th>
+      <th class="col-name">Name</th>
+      ${terms.map(term => `<th class="col-term col-center">${escapeHtml(formatTeacherTeachingLoadTermLabel(term))}</th>`).join('')}
+    </tr>`;
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="${2 + termColCount}" class="text-muted" style="text-align:center;padding:24px">暂无教师学时数据</td></tr>`;
+    foot.innerHTML = '';
+    return;
+  }
+  body.innerHTML = rows.map((row, idx) => `<tr>
+      <td class="col-index col-center">${idx + 1}</td>
+      <td class="col-name">${escapeHtml(row.name)}</td>
+      ${termIndices.map(termIdx => `<td class="col-term col-center">${escapeHtml(formatTeacherTeachingLoadHours(row.hours?.[termIdx]))}</td>`).join('')}
+    </tr>`).join('');
+  const totals = termIndices.map(termIdx =>
+    rows.reduce((sum, row) => sum + (Number(row.hours?.[termIdx]) || 0), 0)
+  );
+  const averages = totals.map(total => (rows.length ? total / rows.length : 0));
+  foot.innerHTML = `
+    <tr class="is-total">
+      <td class="col-index col-center"></td>
+      <td class="col-name">Grand Total</td>
+      ${totals.map(v => `<td class="col-term col-center">${escapeHtml(formatTeacherTeachingLoadHours(v))}</td>`).join('')}
+    </tr>
+    <tr class="is-average">
+      <td class="col-index col-center"></td>
+      <td class="col-name">AVERAGE</td>
+      ${averages.map(v => `<td class="col-term col-center">${escapeHtml(Number(v).toFixed(1))}</td>`).join('')}
+    </tr>`;
 }
 
 // ── 通识选修 · 需求 / 配额（方案 A） ──
@@ -16907,6 +17114,7 @@ function renderMajorOfferingTeacherPickerModal() {
     : '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:24px">暂无符合条件的教师</td></tr>';
   renderListPagination('teacher-picker-pagination', 'majorOfferingTeacherPicker', paged.total);
   updateMajorOfferingTeacherPickerSelection();
+  syncTeacherPickerSimultaneousVisibility();
 }
 
 function updateMajorOfferingTeacherPickerSelection() {
@@ -18703,14 +18911,14 @@ function openOfferingGroupingModal(sectionId, options = {}) {
     || (activePageId && activePageId !== 'offering-grouping' ? activePageId : 'course-major-offering-task');
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === sectionId);
   if (sec) ensureSectionOfferingFields(sec);
-  const requestedTab = options.tab || 'teacher';
+  const requestedTab = options.tab || 'group-status';
   const studentRosterMode = isOfferingGroupingStudentRosterMode(sec);
   const studentViewOnlyContext = isOfferingGroupingManifestViewContext();
   // const studentViewOnlyContext = isOfferingGroupingManifestViewContext() || isOfferingGroupingGeRosterViewContext(); // 原 GE 名单只读，改名单管理可编辑
-  if (studentRosterMode && (!options.tab || options.tab === 'teacher')) {
+  if (studentRosterMode && (!options.tab || options.tab === 'teacher' || options.tab === 'group-status')) {
     offeringGroupingActiveTab = 'student';
   } else if (requestedTab === 'student' && !studentRosterMode && !studentViewOnlyContext) {
-    offeringGroupingActiveTab = 'teacher';
+    offeringGroupingActiveTab = 'group-status';
   // } else if (requestedTab === 'student' && !studentRosterMode) { // 原会将 manifest/ge 名单查看强制切回教师 Tab
   } else {
     offeringGroupingActiveTab = normalizeOfferingGroupingTab(requestedTab);
@@ -18862,11 +19070,7 @@ function offeringGroupingSectionHasMissingTeacher(sec) {
     });
   }
 
-  const hourTypes = isSectionGroupAssignHoursMerged(sec)
-    ? [GROUP_ASSIGN_MERGED_HOUR_TYPE]
-    : getOfferingSectionArrangeableHourTypes(sec).filter(ht =>
-      isOfferingSectionHourTypeRequiredForSubmit(sec, ht)
-    );
+  const hourTypes = getSectionGroupAssignRequiredModeHourTypes(sec);
   if (!hourTypes.length) return !hasAnyGroupAssignTeacher(sec);
 
   return targets.some(groupId => hourTypes.some(hourType =>
@@ -18880,13 +19084,9 @@ function offeringGroupingSectionHasRecordedHourMismatch(sec) {
   const targets = (sec.groups || []).length
     ? sec.groups.map(g => g.id)
     : ['__course__'];
-  const hourTypes = isSectionGroupAssignHoursMerged(sec)
-    ? [GROUP_ASSIGN_MERGED_HOUR_TYPE]
-    : OFFERING_GROUP_HOUR_SUMMARY_TYPES;
+  const hourTypes = getSectionGroupAssignModeHourTypes(sec);
   return targets.some(groupId => hourTypes.some(hourType => {
-    const planned = hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE
-      ? getOfferingSectionHoursTotalForAssign(sec)
-      : Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+    const planned = getGroupAssignHourTypeTotal(sec, hourType);
     const recorded = groupId === '__course__'
       ? sumGroupAssignRecordedHoursByType(sec, hourType, '')
       : sumGroupAssignRecordedHoursForGroupByType(sec, groupId, hourType, '');
@@ -19032,7 +19232,7 @@ function switchOfferingGroupingCourse(sectionId) {
   if (!sectionId || sectionId === offeringGroupingSectionId) return;
   openOfferingGroupingModal(sectionId, {
     returnPage: offeringGroupingReturnPage,
-    tab: offeringGroupingActiveTab || 'teacher'
+    tab: offeringGroupingActiveTab || 'group-status'
   });
 }
 
@@ -19065,8 +19265,8 @@ function collectOfferingGroupingSaveWarnings(sec) {
       rows.forEach(row => appendGroupAssignRowCompletenessWarnings(bucket, courseLabel, row, sec));
       return bucket;
     }
-    getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
-      const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+    getSectionGroupAssignModeHourTypes(sec).forEach(hourType => {
+      const typeTotal = getGroupAssignHourTypeTotal(sec, hourType);
       const rows = (sec.groupAssignments || []).filter(a => a.hourType === hourType);
       const recorded = sumGroupAssignRecordedHoursByType(sec, hourType, '');
       const hasTeacher = rows.some(row => getGroupAssignTeachers(row).length > 0);
@@ -19151,8 +19351,8 @@ function collectOfferingGroupingSaveWarnings(sec) {
     });
     return bucket;
   }
-  getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
-    const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+  getSectionGroupAssignModeHourTypes(sec).forEach(hourType => {
+    const typeTotal = getGroupAssignHourTypeTotal(sec, hourType);
     const rows = (sec.groupAssignments || []).filter(a => a.hourType === hourType);
     if (!rows.length) {
       // 计划学时为 0：允许不安排；>0 必须安排
@@ -19184,7 +19384,7 @@ function collectOfferingGroupingSaveWarnings(sec) {
     });
   });
   (sec.groupAssignments || []).forEach(row => {
-    if (!isOfferingSectionHourTypeArrangeable(sec, row.hourType)) return;
+    if (!isGroupAssignRowActive(sec, row)) return;
     const labels = getGroupAssignRowGroupLabels(row, sec);
     const targets = labels.length
       ? labels
@@ -19217,8 +19417,8 @@ function collectOfferingGroupingOverHourWarnings(sec) {
       }
       return bucket;
     }
-    getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
-      const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+    getSectionGroupAssignModeHourTypes(sec).forEach(hourType => {
+      const typeTotal = getGroupAssignHourTypeTotal(sec, hourType);
       const recorded = sumGroupAssignRecordedHoursByType(sec, hourType, '');
       if (recorded > typeTotal) {
         appendOfferingGroupingSaveGroupWarning(
@@ -19246,8 +19446,8 @@ function collectOfferingGroupingOverHourWarnings(sec) {
     });
     return bucket;
   }
-  getOfferingSectionArrangeableHourTypes(sec).forEach(hourType => {
-    const typeTotal = Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
+  getSectionGroupAssignModeHourTypes(sec).forEach(hourType => {
+    const typeTotal = getGroupAssignHourTypeTotal(sec, hourType);
     groups.forEach(g => {
       const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, g.id, hourType, '');
       if (recorded > typeTotal) {
@@ -19666,8 +19866,9 @@ function isOfferingGroupingStudentTabEnabled() {
 function syncOfferingGroupingTabVisibility() {
   const studentTabEnabled = isOfferingGroupingStudentTabEnabled();
   if (!studentTabEnabled && offeringGroupingActiveTab === 'student') {
-    offeringGroupingActiveTab = 'teacher';
+    offeringGroupingActiveTab = 'group-status';
   }
+  offeringGroupingActiveTab = normalizeOfferingGroupingTab(offeringGroupingActiveTab);
   document.querySelectorAll('.offering-group-tab').forEach(el => {
     const tab = el.dataset.tab;
     if (tab === 'student') {
@@ -19680,7 +19881,13 @@ function syncOfferingGroupingTabVisibility() {
   document.getElementById('offering-group-student-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'student');
   document.getElementById('offering-group-hour-summary-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'summary');
   document.getElementById('offering-group-group-status-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'group-status');
-  // document.getElementById('offering-group-hour-summary-panel')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'summary'); // 原仅三 Tab
+  // Coordinator 仅「课程班/小组学时详情」可见；全选/删除仅「教师安排」
+  document.getElementById('offering-group-assign-toolbar')
+    ?.toggleAttribute('hidden', !['group-status', 'teacher'].includes(offeringGroupingActiveTab));
+  const teacherOpsVisible = offeringGroupingActiveTab === 'teacher';
+  document.getElementById('ogg-btn-set-coordinator')?.toggleAttribute('hidden', offeringGroupingActiveTab !== 'group-status');
+  document.getElementById('ogg-btn-revoke-assign')?.toggleAttribute('hidden', !teacherOpsVisible);
+  document.getElementById('oga-check-all-wrap')?.toggleAttribute('hidden', !teacherOpsVisible);
 }
 
 function renderActiveOfferingGroupingTabPanel() {
@@ -19688,7 +19895,6 @@ function renderActiveOfferingGroupingTabPanel() {
   else if (offeringGroupingActiveTab === 'summary') renderOfferingGroupingHourSummaryPanel();
   else if (offeringGroupingActiveTab === 'group-status') renderOfferingGroupingGroupStatusPanel();
   else renderOfferingGroupingTeacherPanel();
-  // else if (offeringGroupingActiveTab === 'summary') renderOfferingGroupingHourSummaryPanel(); // 原不含小组学时 Tab
 }
 
 function switchOfferingGroupingTab(tab) {
@@ -19989,6 +20195,7 @@ function openSectionCoordinatorSettings() {
   if (teachers.length === 1) {
     setSectionCoordinator(sec, teachers[0].staffId, teachers[0].name);
     renderOfferingGroupingTeacherPanel();
+    renderOfferingGroupingGroupStatusPanel();
     renderOfferingGroupingHourSummaryPanel();
     alert(`已将 ${teachers[0].name || teachers[0].staffId} 设为课程 Coordinator。`);
     return;
@@ -20008,6 +20215,7 @@ function saveSectionCoordinatorModal() {
   setSectionCoordinator(sec, picked.value, picked.dataset.name || '');
   closeModal('modal-section-coordinator');
   renderOfferingGroupingTeacherPanel();
+  renderOfferingGroupingGroupStatusPanel();
   renderOfferingGroupingHourSummaryPanel();
 }
 
@@ -20224,7 +20432,129 @@ function renderGroupAssignFormTeachersList() {
 
 function refreshGroupAssignFormPanels() {
   renderGroupAssignFormTeachersList();
+  renderGroupAssignPriorTermTeachers();
   // renderGroupAssignExistingTeachersList(); // 原「当前已安排教师」，模块已移除
+}
+
+function compareOfferingTermCodes(a, b) {
+  return String(a || '').localeCompare(String(b || ''));
+}
+
+function getMostRecentPriorOfferingTermCode(currentTermCode) {
+  const cur = String(currentTermCode || '');
+  const terms = [...new Set([
+    ...(COURSE_TIME_SETTINGS || []).map(r => r.termCode),
+    ...Object.keys(COURSE_OFFERING_PLAN_BY_TERM || {})
+  ])].filter(Boolean).sort(compareOfferingTermCodes);
+  const earlier = terms.filter(t => compareOfferingTermCodes(t, cur) < 0);
+  return earlier.length ? earlier[earlier.length - 1] : '';
+}
+
+function collectCourseAssignTeachersFromStore(store, courseCode) {
+  const map = new Map();
+  (store?.sections || []).forEach(sec => {
+    if ((sec.code || '') !== courseCode) return;
+    (sec.groupAssignments || []).forEach(row => {
+      getGroupAssignTeachers(row).forEach(t => {
+        const staffId = String(t.staffId || '').trim();
+        const name = String(t.name || '').trim();
+        if (!staffId && !name) return;
+        const key = staffId || name;
+        if (!map.has(key)) {
+          map.set(key, {
+            staffId,
+            name: name || '—',
+            teacherType: t.teacherType || '',
+            departmentCode: t.departmentCode || '',
+            hourTypes: new Set()
+          });
+        }
+        const entry = map.get(key);
+        if (row.hourType) entry.hourTypes.add(row.hourType);
+        if (!entry.teacherType && t.teacherType) entry.teacherType = t.teacherType;
+        if (!entry.departmentCode && t.departmentCode) entry.departmentCode = t.departmentCode;
+      });
+    });
+  });
+  return [...map.values()].map(row => ({
+    staffId: row.staffId,
+    name: row.name,
+    teacherType: row.teacherType,
+    departmentCode: row.departmentCode,
+    hourTypes: [...row.hourTypes]
+  }));
+}
+
+function buildMockPriorTermTeachersForCourse(courseCode, priorTermCode) {
+  const pool = buildMockTeacherPickerPool();
+  if (!pool.length || !priorTermCode) return [];
+  const hash = [...String(courseCode || 'X')].reduce((n, ch) => n + ch.charCodeAt(0), 0);
+  return [0, 3, 7]
+    .map(offset => pool[(hash + offset) % pool.length])
+    .filter(Boolean)
+    .filter((t, idx, arr) => arr.findIndex(x => x.staffId === t.staffId) === idx)
+    .slice(0, 2)
+    .map(t => ({
+      staffId: t.staffId,
+      name: t.name,
+      teacherType: t.teacherType || '',
+      departmentCode: t.departmentCode || '',
+      hourTypes: []
+    }));
+}
+
+/** 取该课程最近一次往期开课的任课教师（优先真实 store，原型无数据时回落示意） */
+function getGroupAssignPriorTermTeachers(sec) {
+  const courseCode = sec?.code || '';
+  const currentTerm = COURSE_OFFERING_PLAN_STORE?.termCode || getDefaultOfferingTermCode() || '';
+  if (!courseCode || !currentTerm) return { termCode: '', teachers: [] };
+
+  let bestTerm = '';
+  let bestTeachers = [];
+  Object.entries(COURSE_OFFERING_PLAN_BY_TERM || {}).forEach(([termCode, store]) => {
+    if (compareOfferingTermCodes(termCode, currentTerm) >= 0) return;
+    const teachers = collectCourseAssignTeachersFromStore(store, courseCode);
+    if (!teachers.length) return;
+    if (!bestTerm || compareOfferingTermCodes(termCode, bestTerm) > 0) {
+      bestTerm = termCode;
+      bestTeachers = teachers;
+    }
+  });
+  if (bestTeachers.length) {
+    return { termCode: bestTerm, teachers: bestTeachers, source: 'store' };
+  }
+
+  const priorTerm = getMostRecentPriorOfferingTermCode(currentTerm);
+  const mockTeachers = buildMockPriorTermTeachersForCourse(courseCode, priorTerm);
+  return { termCode: priorTerm, teachers: mockTeachers, source: mockTeachers.length ? 'mock' : '' };
+}
+
+function renderGroupAssignPriorTermTeachers() {
+  const wrap = document.getElementById('group-assign-prior-teachers');
+  const termEl = document.getElementById('group-assign-prior-teachers-term');
+  const listEl = document.getElementById('group-assign-prior-teachers-list');
+  if (!wrap || !listEl) return;
+  const sec = getOfferingGroupingSection();
+  const { termCode, teachers } = getGroupAssignPriorTermTeachers(sec);
+  if (!termCode || !teachers.length) {
+    wrap.hidden = true;
+    listEl.innerHTML = '';
+    if (termEl) termEl.textContent = '';
+    return;
+  }
+  wrap.hidden = false;
+  if (termEl) termEl.textContent = `${formatCourseTermDisplay(termCode)} · 共 ${teachers.length} 人`;
+  listEl.innerHTML = teachers.map(t => {
+    const unit = t.departmentCode ? escapeHtml(t.departmentCode) : '—';
+    const hourHint = (t.hourTypes || []).length
+      ? escapeHtml(t.hourTypes.map(ht => getGroupAssignHourTypeDisplayLabel(sec, ht) || ht).join('、'))
+      : '';
+    const meta = [escapeHtml(t.staffId || '—'), unit, hourHint].filter(Boolean).join(' · ');
+    return `<span class="group-assign-prior-teacher-chip">
+      <strong>${escapeHtml(t.name || '—')}</strong>
+      <span class="group-assign-prior-teacher-meta">${meta}</span>
+    </span>`;
+  }).join('');
 }
 
 // function updateGroupAssignFormTeacherRole(staffId, role) {
@@ -20270,6 +20600,7 @@ function openGroupAssignTeacherPicker() {
   });
   ensureMajorOfferingTeacherPickerDeptFilter();
   syncGroupAssignTeacherPickerOfferingUnitFilter();
+  syncTeacherPickerSimultaneousVisibility();
   renderMajorOfferingTeacherPickerModal();
   openModal('modal-major-teacher-picker');
 }
@@ -20279,6 +20610,18 @@ function confirmGroupAssignTeacherPickerModal() {
   if (!keys.length) {
     alert('请至少勾选一名教师。');
     return;
+  }
+  if (teacherPickerContext === 'groupAssign' && getGroupAssignFormSelectedGroupIds().length > 1) {
+    const sel = document.getElementById('teacher-picker-simultaneous');
+    const val = sel?.value || '';
+    if (val !== 'yes' && val !== 'no') {
+      alert('已多选小组，请选择是否同时多组授课。');
+      sel?.focus();
+      return;
+    }
+    setGroupAssignFormSimultaneousGroups(val === 'yes');
+  } else {
+    groupAssignFormSimultaneousGroups = null;
   }
   const sec = getOfferingGroupingSection();
   const allowedUnits = getGroupAssignTeacherPickerAllowedUnits();
@@ -20302,7 +20645,15 @@ function confirmGroupAssignTeacherPickerModal() {
   closeMajorOfferingTeacherPickerModal();
   syncGroupAssignFormTeachersWithSectionCoordinator(sec);
   refreshGroupAssignFormPanels();
-  if (added) alert(`已添加 ${added} 名授课教师。`);
+  syncGroupAssignHoursSummary();
+  if (added) {
+    const multiHint = getGroupAssignFormSelectedGroupIds().length > 1
+      ? (groupAssignFormSimultaneousGroups === true
+        ? '（已设为同时多组授课，学时只计一次）'
+        : '（已设为各小组分别计入学时）')
+      : '';
+    alert(`已添加 ${added} 名授课教师${multiHint}。`);
+  }
 }
 
 // function onGroupAssignGroupPickToggle() {
@@ -20349,7 +20700,7 @@ function sumGroupAssignRecordedHoursByType(sec, hourType, excludeAssignId = '') 
   (sec?.groupAssignments || []).forEach(row => {
     if (row.hourType !== hourType) return;
     if (excludeAssignId && row.id === excludeAssignId) return;
-    sum += getGroupAssignRowRecordedHours(row, sec);
+    sum += getGroupAssignRowWorkloadHours(row, sec);
   });
   return sum;
 }
@@ -20361,9 +20712,68 @@ function sumGroupAssignRecordedHoursForGroupByType(sec, groupId, hourType, exclu
     if (row.hourType !== hourType) return;
     if (excludeAssignId && row.id === excludeAssignId) return;
     if (!groupAssignRowMatchesGroup(row, groupId)) return;
-    sum += getGroupAssignRowRecordedHours(row, sec);
+    const base = getGroupAssignRowRecordedHours(row, sec);
+    // 同时多组授课：各小组展示共享学时，但不在此按组累加放大（课程合计另计）
+    if (row.simultaneousGroups) {
+      sum += base;
+      return;
+    }
+    sum += base;
   });
   return sum;
+}
+
+function getGroupAssignRowWorkloadHours(row, sec) {
+  const base = getGroupAssignRowRecordedHours(row, sec);
+  if (!row || row.simultaneousGroups) return base;
+  const n = getGroupAssignRowGroupIds(row).length;
+  return n > 1 ? base * n : base;
+}
+
+function isGroupAssignFormSimultaneousGroups() {
+  // 已明确选择则按其值；多选且尚未选时预览按合班（只计一次），避免未选题前各组重复计超
+  if (groupAssignFormSimultaneousGroups == null) {
+    return getGroupAssignFormSelectedGroupIds().length > 1;
+  }
+  return groupAssignFormSimultaneousGroups === true;
+}
+
+function setGroupAssignFormSimultaneousGroups(value) {
+  if (value == null) {
+    groupAssignFormSimultaneousGroups = null;
+  } else {
+    groupAssignFormSimultaneousGroups = !!value;
+  }
+  const sel = document.getElementById('teacher-picker-simultaneous');
+  if (sel) {
+    sel.value = groupAssignFormSimultaneousGroups === true
+      ? 'yes'
+      : (groupAssignFormSimultaneousGroups === false ? 'no' : '');
+  }
+}
+
+function syncTeacherPickerSimultaneousVisibility() {
+  const wrap = document.getElementById('teacher-picker-simultaneous-wrap');
+  const sel = document.getElementById('teacher-picker-simultaneous');
+  if (!wrap) return;
+  const multi = teacherPickerContext === 'groupAssign'
+    && getGroupAssignFormSelectedGroupIds().length > 1;
+  wrap.hidden = !multi;
+  if (!sel) return;
+  if (!multi) {
+    sel.value = '';
+    return;
+  }
+  // 多选小组时必选：已选过则回填，否则留空请用户选择
+  sel.value = groupAssignFormSimultaneousGroups === true
+    ? 'yes'
+    : (groupAssignFormSimultaneousGroups === false ? 'no' : '');
+}
+
+function getGroupAssignFormPendingHoursFactor() {
+  const n = getGroupAssignFormSelectedGroupIds().length;
+  if (n <= 1) return 1;
+  return isGroupAssignFormSimultaneousGroups() ? 1 : n;
 }
 
 function getGroupAssignFormScopeGroupIds(sec = getOfferingGroupingSection()) {
@@ -20382,10 +20792,27 @@ function formatGroupAssignScopeGroupLabel(sec, groupId) {
 function buildGroupAssignRecordedHoursSummaries(sec, hourType, editId, currentHours) {
   const typeTotal = sec ? getGroupAssignHourTypeTotal(sec, hourType) : 0;
   const scopeGroupIds = sec ? getGroupAssignFormScopeGroupIds(sec) : [];
+  const simultaneous = isGroupAssignFormSimultaneousGroups() && scopeGroupIds.length > 1;
+  if (simultaneous) {
+    const recorded = sumGroupAssignRecordedHoursByType(sec, hourType, editId);
+    const totalAfter = recorded + currentHours;
+    return [{
+      groupId: scopeGroupIds.join(','),
+      label: scopeGroupIds.map(gid => formatGroupAssignScopeGroupLabel(sec, gid)).join('、'),
+      recorded,
+      totalAfter,
+      typeTotal,
+      over: typeTotal > 0 && totalAfter > typeTotal,
+      under: typeTotal > 0 && totalAfter < typeTotal,
+      simultaneous: true
+    }];
+  }
+  const factor = getGroupAssignFormPendingHoursFactor();
   return scopeGroupIds.map(gid => {
     const label = formatGroupAssignScopeGroupLabel(sec, gid);
     const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, gid, hourType, editId);
-    const totalAfter = recorded + currentHours;
+    const pending = factor > 1 ? currentHours : currentHours;
+    const totalAfter = recorded + pending;
     return {
       groupId: gid,
       label,
@@ -20402,17 +20829,24 @@ function syncGroupAssignGroupPickHoursBadges(sec, hourType, editId, currentHours
   const typeTotal = sec ? getGroupAssignHourTypeTotal(sec, hourType) : 0;
   const scopeGroupIds = sec ? new Set(getGroupAssignFormScopeGroupIds(sec)) : new Set();
   const pending = Number(currentHours) || 0;
+  const simultaneous = isGroupAssignFormSimultaneousGroups() && scopeGroupIds.size > 1;
+  const courseRecorded = sec ? sumGroupAssignRecordedHoursByType(sec, hourType, editId) : 0;
   (sec?.groups || []).forEach(g => {
     const badge = document.querySelector(`.group-assign-group-pick-hours[data-group-id="${g.id}"]`);
     const typeCell = document.querySelector(`.group-assign-group-pick-type[data-group-id="${g.id}"]`);
     const remainingCell = document.querySelector(`.group-assign-group-pick-remaining[data-group-id="${g.id}"]`);
     const statusCell = document.querySelector(`.group-assign-group-pick-status[data-group-id="${g.id}"]`);
+    const inScope = scopeGroupIds.has(g.id);
     const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, g.id, hourType, editId);
-    // const totalAfter = recorded; // 原仅展示已保存录入，未含当前表单周学时换算
-    const totalAfter = recorded + (scopeGroupIds.has(g.id) ? pending : 0);
+    // 合班共享：所选小组统一按课程合计（含本次）展示，避免 68/50 × 组数
+    const totalAfter = simultaneous && inScope
+      ? (courseRecorded + pending)
+      : (recorded + (inScope ? pending : 0));
     if (typeCell) {
-      typeCell.textContent = hourType || '—';
-      typeCell.title = hourType || '';
+      const typeLabel = getGroupAssignHourTypeDisplayLabel(sec, hourType);
+      const tip = simultaneous && inScope ? `${typeLabel || '—'}（合班共享，学时只计一次）` : (typeLabel || '');
+      typeCell.textContent = typeLabel || '—';
+      typeCell.title = tip;
     }
     if (badge) {
       badge.className = 'group-assign-group-pick-hours';
@@ -20450,19 +20884,21 @@ function syncGroupAssignGroupPickHoursBadges(sec, hourType, editId, currentHours
       badge.classList.toggle('is-over', over);
       badge.classList.toggle('is-under', under);
       badge.classList.toggle('is-full', !over && !under);
-      badge.title = over ? '已超限' : (under ? '未录满' : '已满');
+      badge.title = simultaneous && inScope ? '合班共享，学时只计一次' : (under ? '未录满' : (over ? '已超出' : '达标'));
     }
     if (remainingCell) {
       remainingCell.textContent = String(remaining);
       remainingCell.classList.toggle('is-over', over);
       remainingCell.classList.toggle('is-under', under);
       remainingCell.classList.toggle('is-full', !over && !under);
-      remainingCell.title = over ? `已超过 ${totalAfter - typeTotal} 学时` : (under ? `剩余 ${remaining} 学时` : '已满');
+      remainingCell.title = over ? `已超过 ${totalAfter - typeTotal} 学时` : (under ? `剩余 ${remaining} 学时` : '无剩余');
     }
     if (statusCell) {
       statusCell.textContent = over ? '超出' : (under ? '不足' : '达标');
       statusCell.classList.add(over ? 'is-over' : (under ? 'is-under' : 'is-ok'));
-      statusCell.title = over ? `已超过 ${totalAfter - typeTotal} 学时` : (under ? `剩余 ${remaining} 学时` : '达标');
+      statusCell.title = simultaneous && inScope
+        ? '合班共享，学时只计一次'
+        : (over ? `已超过 ${totalAfter - typeTotal} 学时` : (under ? `剩余 ${remaining} 学时` : '达标'));
     }
   });
 }
@@ -20681,9 +21117,7 @@ function finalizeCourseLevelAssignStatus(recorded, planned, hasAssignment) {
 
 function buildCourseLevelAssignStatusSummary(sec, editId = '', draftHourType = '', draftHours = 0) {
   const planned = getOfferingSectionClassifiedHoursTotal(sec);
-  const merged = isSectionGroupAssignHoursModeLocked(sec)
-    ? isSectionGroupAssignHoursMerged(sec)
-    : resolveGroupAssignFormMergeHours(sec);
+  const merged = isSectionGroupAssignHoursMerged(sec);
   if (merged) {
     let recorded = sumGroupAssignRecordedHoursByType(sec, GROUP_ASSIGN_MERGED_HOUR_TYPE, editId);
     if (draftHourType === GROUP_ASSIGN_MERGED_HOUR_TYPE) recorded += draftHours;
@@ -20692,7 +21126,7 @@ function buildCourseLevelAssignStatusSummary(sec, editId = '', draftHourType = '
     ) || draftHours > 0;
     return finalizeCourseLevelAssignStatus(recorded, planned, hasAssignment);
   }
-  const types = getOfferingSectionArrangeableHourTypes(sec);
+  const types = getSectionGroupAssignModeHourTypes(sec).filter(ht => ht !== GROUP_ASSIGN_MERGED_HOUR_TYPE);
   if (!types.length) return finalizeCourseLevelAssignStatus(0, planned, false);
   let anyOver = false;
   let anyUnder = false;
@@ -20701,7 +21135,7 @@ function buildCourseLevelAssignStatusSummary(sec, editId = '', draftHourType = '
   types.forEach(ht => {
     let recorded = sumGroupAssignRecordedHoursByType(sec, ht, editId);
     if (ht === draftHourType) recorded += draftHours;
-    const typePlanned = Number(getOfferingSectionHoursByType(sec, ht)) || 0;
+    const typePlanned = getGroupAssignHourTypeTotal(sec, ht);
     totalRecorded += recorded;
     if (recorded > 0) hasAnyAssignment = true;
     if (recorded > typePlanned) anyOver = true;
@@ -20726,9 +21160,7 @@ function getGroupAssignCourseLevelStatus(recorded, planned) {
 }
 
 function buildGroupAssignCourseLevelRows(sec, editId = '', draftHourType = '', draftHours = 0) {
-  const merged = isSectionGroupAssignHoursModeLocked(sec)
-    ? isSectionGroupAssignHoursMerged(sec)
-    : resolveGroupAssignFormMergeHours(sec);
+  const merged = isSectionGroupAssignHoursMerged(sec);
   const hourTypes = merged ? [GROUP_ASSIGN_MERGED_HOUR_TYPE] : [draftHourType].filter(Boolean);
   return hourTypes.map(hourType => {
     const planned = getGroupAssignHourTypeTotal(sec, hourType);
@@ -20760,7 +21192,7 @@ function renderGroupAssignCourseLevelDisplayHtml(sec, rows) {
       </tr></thead>
       <tbody>${rows.map(row => `<tr>
         <td title="${escapeHtml(courseLabel)}">${escapeHtml(courseLabel)}</td>
-        <td class="col-center">${escapeHtml(row.hourType)}</td>
+        <td class="col-center">${escapeHtml(getGroupAssignHourTypeDisplayLabel(sec, row.hourType))}</td>
         <td class="col-center"><span class="group-assign-group-pick-hours is-${row.status.key === 'over' ? 'over' : row.status.key === 'under' ? 'under' : 'full'}">${row.recorded}/${row.planned}</span></td>
         <td class="col-center"><span class="group-assign-group-pick-hours is-${row.status.key === 'over' ? 'over' : row.status.key === 'under' ? 'under' : 'full'}">${row.remaining}</span></td>
         <td class="col-center"><span class="offering-group-status-badge is-${row.status.key}">${escapeHtml(row.status.label)}</span></td>
@@ -20788,15 +21220,62 @@ function syncGroupAssignCourseLevelDisplay(sec = getOfferingGroupingSection()) {
 }
 
 function ensureSectionGroupAssignHoursMode(sec) {
-  if (!sec || sec.mergeGroupAssignHours != null) return;
+  if (!sec) return;
+  const validModes = new Set([
+    GROUP_ASSIGN_HOURS_MODE_ALL,
+    GROUP_ASSIGN_HOURS_MODE_PARTIAL,
+    GROUP_ASSIGN_HOURS_MODE_SEPARATE
+  ]);
+  if (validModes.has(sec.groupAssignHoursMode)) {
+    sec.mergeGroupAssignHours = sec.groupAssignHoursMode === GROUP_ASSIGN_HOURS_MODE_ALL;
+    if (sec.groupAssignHoursMode === GROUP_ASSIGN_HOURS_MODE_PARTIAL) {
+      ensureSectionGroupAssignPartialMergeGroups(sec);
+      migrateLegacyPartialMergedAssignmentHourTypes(sec);
+    }
+    return;
+  }
   const rows = sec.groupAssignments || [];
-  if (!rows.length) return;
-  sec.mergeGroupAssignHours = rows.some(a => a.hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE);
+  if (sec.mergeGroupAssignHours === true || rows.some(a => a.hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE)) {
+    sec.groupAssignHoursMode = GROUP_ASSIGN_HOURS_MODE_ALL;
+  } else if (rows.some(a => isGroupAssignPartialMergedHourType(a.hourType))) {
+    sec.groupAssignHoursMode = GROUP_ASSIGN_HOURS_MODE_PARTIAL;
+    ensureSectionGroupAssignPartialMergeGroups(sec);
+    migrateLegacyPartialMergedAssignmentHourTypes(sec);
+  } else if (sec.mergeGroupAssignHours === false || rows.length) {
+    sec.groupAssignHoursMode = GROUP_ASSIGN_HOURS_MODE_SEPARATE;
+  } else {
+    sec.groupAssignHoursMode = GROUP_ASSIGN_HOURS_MODE_DEFAULT;
+  }
+  sec.mergeGroupAssignHours = sec.groupAssignHoursMode === GROUP_ASSIGN_HOURS_MODE_ALL;
+}
+
+function getSectionGroupAssignHoursMode(sec) {
+  ensureSectionGroupAssignHoursMode(sec);
+  return sec?.groupAssignHoursMode || GROUP_ASSIGN_HOURS_MODE_DEFAULT;
+}
+
+function setSectionGroupAssignHoursMode(sec, mode, partialMergeGroups) {
+  if (!sec) return;
+  const next = mode === GROUP_ASSIGN_HOURS_MODE_PARTIAL || mode === GROUP_ASSIGN_HOURS_MODE_SEPARATE
+    ? mode
+    : GROUP_ASSIGN_HOURS_MODE_ALL;
+  sec.groupAssignHoursMode = next;
+  sec.mergeGroupAssignHours = next === GROUP_ASSIGN_HOURS_MODE_ALL;
+  if (next === GROUP_ASSIGN_HOURS_MODE_PARTIAL) {
+    sec.groupAssignPartialMergeGroups = normalizeSectionGroupAssignPartialMergeGroups(
+      partialMergeGroups ?? sec.groupAssignPartialMergeGroups ?? sec.groupAssignPartialMergeTypes
+    );
+    ensureSectionGroupAssignPartialMergeGroups(sec);
+    delete sec.groupAssignPartialMergeTypes;
+  }
 }
 
 function isSectionGroupAssignHoursMerged(sec) {
-  ensureSectionGroupAssignHoursMode(sec);
-  return sec?.mergeGroupAssignHours === true;
+  return getSectionGroupAssignHoursMode(sec) === GROUP_ASSIGN_HOURS_MODE_ALL;
+}
+
+function isSectionGroupAssignHoursPartial(sec) {
+  return getSectionGroupAssignHoursMode(sec) === GROUP_ASSIGN_HOURS_MODE_PARTIAL;
 }
 
 function isSectionGroupAssignHoursModeLocked(sec) {
@@ -20806,31 +21285,374 @@ function isSectionGroupAssignHoursModeLocked(sec) {
 function resetSectionGroupAssignHoursModeIfEmpty(sec) {
   if (!sec || (sec.groupAssignments || []).length) return;
   delete sec.mergeGroupAssignHours;
+  delete sec.groupAssignHoursMode;
+  delete sec.groupAssignPartialMergeTypes;
+  delete sec.groupAssignPartialMergeGroups;
 }
 
-function isGroupAssignFormMergeHoursChecked() {
-  return !!document.getElementById('group-assign-merge-hours')?.checked;
+function isGroupAssignPartialMergedHourType(hourType) {
+  if (!hourType) return false;
+  if (hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE
+    || hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE_LEGACY) return true;
+  return /^部分合并学时（.+）$/.test(String(hourType));
 }
 
-function resolveGroupAssignFormMergeHours(sec) {
-  if (isSectionGroupAssignHoursModeLocked(sec)) return isSectionGroupAssignHoursMerged(sec);
-  return isGroupAssignFormMergeHoursChecked();
+function normalizeSectionGroupAssignPartialMergeTypes(types) {
+  const selected = new Set(
+    (Array.isArray(types) ? types : []).filter(ht => OFFERING_GROUP_HOUR_SUMMARY_TYPES.includes(ht))
+  );
+  return OFFERING_GROUP_HOUR_SUMMARY_TYPES.filter(ht => selected.has(ht));
+}
+
+function normalizeSectionGroupAssignPartialMergeGroups(groups) {
+  const used = new Set();
+  const result = [];
+  const input = Array.isArray(groups) && groups.length && typeof groups[0] === 'string'
+    ? [groups]
+    : (Array.isArray(groups) ? groups : []);
+  input.forEach(group => {
+    const normalized = normalizeSectionGroupAssignPartialMergeTypes(group)
+      .filter(ht => !used.has(ht));
+    if (normalized.length < 2) return;
+    normalized.forEach(ht => used.add(ht));
+    result.push(normalized);
+  });
+  return result;
+}
+
+function ensureSectionGroupAssignPartialMergeGroups(sec) {
+  if (!sec) return GROUP_ASSIGN_PARTIAL_MERGE_GROUPS_DEFAULT.map(g => g.slice());
+  let groups = normalizeSectionGroupAssignPartialMergeGroups(
+    sec.groupAssignPartialMergeGroups ?? sec.groupAssignPartialMergeTypes
+  );
+  if (!groups.length) groups = GROUP_ASSIGN_PARTIAL_MERGE_GROUPS_DEFAULT.map(g => g.slice());
+  sec.groupAssignPartialMergeGroups = groups;
+  delete sec.groupAssignPartialMergeTypes;
+  return sec.groupAssignPartialMergeGroups;
+}
+
+function getSectionGroupAssignPartialMergeGroups(sec) {
+  return ensureSectionGroupAssignPartialMergeGroups(sec);
+}
+
+function getSectionGroupAssignPartialSeparateTypes(sec) {
+  const merged = new Set(getSectionGroupAssignPartialMergeGroups(sec).flat());
+  return OFFERING_GROUP_HOUR_SUMMARY_TYPES.filter(ht => !merged.has(ht));
+}
+
+function formatGroupAssignPartialMergeHourTypeShort(types) {
+  const ordered = normalizeSectionGroupAssignPartialMergeTypes(types);
+  return ordered.map(ht => String(ht).replace(/学时$/, '')).join('、');
+}
+
+function buildGroupAssignPartialMergeHourType(types) {
+  const short = formatGroupAssignPartialMergeHourTypeShort(types);
+  return short
+    ? `${GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE}（${short}）`
+    : GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE;
+}
+
+function parseGroupAssignPartialMergeHourTypeSources(hourType) {
+  if (hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE_LEGACY
+    || hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE) {
+    return GROUP_ASSIGN_PARTIAL_MERGE_TYPES_DEFAULT.slice();
+  }
+  const m = String(hourType || '').match(/^部分合并学时（(.+)）$/);
+  if (!m) return null;
+  const parts = m[1].split('、').map(s => s.trim()).filter(Boolean);
+  const mapped = parts.map(part => (
+    OFFERING_GROUP_HOUR_SUMMARY_TYPES.find(ht =>
+      ht === part || ht === `${part}学时` || String(ht).replace(/学时$/, '') === part
+    )
+  )).filter(Boolean);
+  return normalizeSectionGroupAssignPartialMergeTypes(mapped);
+}
+
+function getSectionGroupAssignPartialMergeSourcesForHourType(sec, hourType) {
+  const parsed = parseGroupAssignPartialMergeHourTypeSources(hourType);
+  if (parsed?.length) return parsed;
+  const groups = getSectionGroupAssignPartialMergeGroups(sec);
+  if (groups.length === 1 && (
+    hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE
+    || hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE_LEGACY
+  )) {
+    return groups[0].slice();
+  }
+  return [];
+}
+
+function migrateLegacyPartialMergedAssignmentHourTypes(sec) {
+  // 勿调用 isSectionGroupAssignHoursPartial：其经 getSectionGroupAssignHoursMode
+  // 会再次进入 ensureSectionGroupAssignHoursMode，形成无限递归。
+  if (!sec || sec.groupAssignHoursMode !== GROUP_ASSIGN_HOURS_MODE_PARTIAL) return;
+  const groups = getSectionGroupAssignPartialMergeGroups(sec);
+  if (groups.length !== 1) return;
+  const key = buildGroupAssignPartialMergeHourType(groups[0]);
+  (sec.groupAssignments || []).forEach(row => {
+    if (row.hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE
+      || row.hourType === GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE_LEGACY) {
+      row.hourType = key;
+    }
+  });
+}
+
+function getSectionGroupAssignPartialMergedHours(sec, hourTypeOrTypes) {
+  const types = Array.isArray(hourTypeOrTypes)
+    ? normalizeSectionGroupAssignPartialMergeTypes(hourTypeOrTypes)
+    : getSectionGroupAssignPartialMergeSourcesForHourType(sec, hourTypeOrTypes || GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE);
+  return types.reduce(
+    (sum, ht) => sum + (Number(getOfferingSectionHoursByType(sec, ht)) || 0),
+    0
+  );
+}
+
+function getGroupAssignHourTypeDisplayLabel(sec, hourType) {
+  if (isGroupAssignPartialMergedHourType(hourType)) {
+    const sources = getSectionGroupAssignPartialMergeSourcesForHourType(sec, hourType);
+    if (sources.length) return formatGroupAssignPartialMergeHourTypeShort(sources) || '—';
+    const m = String(hourType || '').match(/^部分合并学时（(.+)）$/);
+    if (m?.[1]) return m[1];
+    return hourType || '—';
+  }
+  return hourType || '—';
+}
+
+/** 当前学时模式下用于安排/校验/展示的学时类型列表 */
+function getSectionGroupAssignModeHourTypes(sec) {
+  const mode = getSectionGroupAssignHoursMode(sec);
+  if (mode === GROUP_ASSIGN_HOURS_MODE_ALL) return [GROUP_ASSIGN_MERGED_HOUR_TYPE];
+  if (mode === GROUP_ASSIGN_HOURS_MODE_PARTIAL) {
+    return [
+      ...getSectionGroupAssignPartialMergeGroups(sec).map(buildGroupAssignPartialMergeHourType),
+      ...getSectionGroupAssignPartialSeparateTypes(sec)
+    ];
+  }
+  return getOfferingSectionArrangeableHourTypes(sec);
+}
+
+function getSectionGroupAssignRequiredModeHourTypes(sec) {
+  return getSectionGroupAssignModeHourTypes(sec).filter(ht =>
+    isOfferingSectionHourTypeRequiredForSubmit(sec, ht)
+  );
+}
+
+function cloneGroupAssignPartialMergeGroupsDraft(groups) {
+  return (groups || []).map(g => normalizeSectionGroupAssignPartialMergeTypes(g));
+}
+
+function getGroupAssignPartialMergeDraftUsedTypes(exceptIndex = -1) {
+  const used = new Set();
+  groupAssignPartialMergeGroupsDraft.forEach((group, idx) => {
+    if (idx === exceptIndex) return;
+    (group || []).forEach(ht => used.add(ht));
+  });
+  return used;
+}
+
+function getGroupAssignPartialMergeDraftSeparateTypes() {
+  const used = getGroupAssignPartialMergeDraftUsedTypes();
+  return OFFERING_GROUP_HOUR_SUMMARY_TYPES.filter(ht => !used.has(ht));
+}
+
+function syncGroupAssignPartialMergeSeparateHint() {
+  const el = document.getElementById('group-assign-partial-merge-separate-hint');
+  if (!el) return;
+  const separate = getGroupAssignPartialMergeDraftSeparateTypes();
+  el.textContent = separate.length
+    ? `未入组、将单独安排：${separate.join('、')}`
+    : '当前学时类型均已入组合并';
+}
+
+function renderGroupAssignPartialMergeGroupsDraft() {
+  const wrap = document.getElementById('group-assign-partial-merge-groups');
+  if (!wrap) return;
+  const locked = groupAssignPartialMergeGroupsDraftLocked;
+  if (!groupAssignPartialMergeGroupsDraft.length) {
+    groupAssignPartialMergeGroupsDraft = [[]];
+  }
+  wrap.innerHTML = groupAssignPartialMergeGroupsDraft.map((group, groupIndex) => {
+    const selected = new Set(group || []);
+    const usedElsewhere = getGroupAssignPartialMergeDraftUsedTypes(groupIndex);
+    const typeChecks = OFFERING_GROUP_HOUR_SUMMARY_TYPES.map(ht => {
+      const checked = selected.has(ht) ? ' checked' : '';
+      const taken = usedElsewhere.has(ht);
+      const disabled = locked || taken ? ' disabled' : '';
+      const cls = taken ? ' is-used-elsewhere' : '';
+      return `<label class="group-assign-partial-merge-type${cls}">
+        <input type="checkbox" class="group-assign-partial-merge-type-check"
+          data-group-index="${groupIndex}" value="${escapeHtml(ht)}"${checked}${disabled}
+          onchange="onGroupAssignPartialMergeTypeToggle(${groupIndex}, '${escapeHtml(ht)}', this.checked)">
+        <span>${escapeHtml(ht)}</span>
+      </label>`;
+    }).join('');
+    const removeBtn = locked || groupAssignPartialMergeGroupsDraft.length <= 1
+      ? ''
+      : `<button type="button" class="btn btn-ghost btn-sm btn-danger-text" onclick="removeGroupAssignPartialMergeGroupDraft(${groupIndex})">删除</button>`;
+    return `<div class="group-assign-partial-merge-group" data-group-index="${groupIndex}">
+      <div class="group-assign-partial-merge-group-head">
+        <span class="group-assign-partial-merge-group-title">合并组 ${groupIndex + 1}</span>
+        ${removeBtn}
+      </div>
+      <div class="group-assign-partial-merge-group-types">${typeChecks}</div>
+    </div>`;
+  }).join('');
+  const addBtn = document.getElementById('group-assign-partial-merge-add-group');
+  if (addBtn) {
+    const free = getGroupAssignPartialMergeDraftSeparateTypes().length;
+    addBtn.disabled = locked || free < 2;
+    addBtn.title = free < 2 ? '至少还需 2 种未入组学时才能新增合并组' : '添加合并组';
+  }
+  syncGroupAssignPartialMergeSeparateHint();
+}
+
+function onGroupAssignPartialMergeTypeToggle(groupIndex, hourType, checked) {
+  if (groupAssignPartialMergeGroupsDraftLocked) return;
+  if (!OFFERING_GROUP_HOUR_SUMMARY_TYPES.includes(hourType)) return;
+  const group = groupAssignPartialMergeGroupsDraft[groupIndex];
+  if (!group) return;
+  const set = new Set(group);
+  if (checked) {
+    // 同一类型只能属于一组
+    groupAssignPartialMergeGroupsDraft.forEach((g, idx) => {
+      if (idx === groupIndex) return;
+      groupAssignPartialMergeGroupsDraft[idx] = g.filter(ht => ht !== hourType);
+    });
+    set.add(hourType);
+  } else {
+    set.delete(hourType);
+  }
+  groupAssignPartialMergeGroupsDraft[groupIndex] = OFFERING_GROUP_HOUR_SUMMARY_TYPES.filter(ht => set.has(ht));
+  renderGroupAssignPartialMergeGroupsDraft();
+}
+
+function addGroupAssignPartialMergeGroupDraft() {
+  if (groupAssignPartialMergeGroupsDraftLocked) return;
+  if (getGroupAssignPartialMergeDraftSeparateTypes().length < 2) {
+    alert('至少还需 2 种未入组学时才能新增合并组。');
+    return;
+  }
+  groupAssignPartialMergeGroupsDraft.push([]);
+  renderGroupAssignPartialMergeGroupsDraft();
+}
+
+function removeGroupAssignPartialMergeGroupDraft(groupIndex) {
+  if (groupAssignPartialMergeGroupsDraftLocked) return;
+  if (groupAssignPartialMergeGroupsDraft.length <= 1) return;
+  groupAssignPartialMergeGroupsDraft.splice(groupIndex, 1);
+  renderGroupAssignPartialMergeGroupsDraft();
+}
+
+function syncGroupAssignHourTypeSettingsPartialPicks() {
+  const wrap = document.getElementById('group-assign-partial-merge-types-wrap');
+  if (!wrap) return;
+  const mode = document.querySelector('input[name="group-assign-hours-mode"]:checked')?.value;
+  wrap.hidden = mode !== GROUP_ASSIGN_HOURS_MODE_PARTIAL;
+  if (mode === GROUP_ASSIGN_HOURS_MODE_PARTIAL) {
+    if (!groupAssignPartialMergeGroupsDraft.length) {
+      groupAssignPartialMergeGroupsDraft = [[]];
+    }
+    renderGroupAssignPartialMergeGroupsDraft();
+  }
+}
+
+function openGroupAssignHourTypeSettings() {
+  const sec = getOfferingGroupingSection();
+  if (!sec) return;
+  if (!assertOfferingGroupingEditable('学时类型设置')) return;
+  ensureSectionGroupAssignHoursMode(sec);
+  const mode = getSectionGroupAssignHoursMode(sec);
+  const locked = isSectionGroupAssignHoursModeLocked(sec);
+  groupAssignPartialMergeGroupsDraftLocked = locked;
+  const savedGroups = Array.isArray(sec.groupAssignPartialMergeGroups)
+    ? sec.groupAssignPartialMergeGroups
+    : null;
+  groupAssignPartialMergeGroupsDraft = (mode === GROUP_ASSIGN_HOURS_MODE_PARTIAL && savedGroups?.length)
+    ? cloneGroupAssignPartialMergeGroupsDraft(savedGroups)
+    : [[]];
+  document.querySelectorAll('input[name="group-assign-hours-mode"]').forEach(el => {
+    el.checked = el.value === mode;
+    el.disabled = locked;
+  });
+  syncGroupAssignHourTypeSettingsPartialPicks();
+  const hintEl = document.getElementById('group-assign-hour-type-settings-hint');
+  if (hintEl) {
+    hintEl.textContent = locked
+      ? '已安排教师后不可修改；如需调整请先删除全部教师安排后重新设置。'
+      : '设置本课程安排教师时的学时合并方式。可建多组合并（如理论+实践、辅导+其他）；保存后安排教师将按此设定进行。';
+  }
+  const saveBtn = document.getElementById('group-assign-hour-type-settings-save');
+  if (saveBtn) saveBtn.disabled = locked;
+  openModal('modal-group-assign-hour-type-settings');
+}
+
+function saveGroupAssignHourTypeSettings() {
+  const sec = getOfferingGroupingSection();
+  if (!sec) return;
+  if (isSectionGroupAssignHoursModeLocked(sec)) {
+    alert('已安排教师后不可修改学时类型设置；如需调整请先删除全部教师安排。');
+    return;
+  }
+  const checked = document.querySelector('input[name="group-assign-hours-mode"]:checked');
+  const mode = checked?.value || GROUP_ASSIGN_HOURS_MODE_DEFAULT;
+  if (mode === GROUP_ASSIGN_HOURS_MODE_PARTIAL) {
+    const groups = normalizeSectionGroupAssignPartialMergeGroups(groupAssignPartialMergeGroupsDraft);
+    if (!groups.length) {
+      alert('请至少配置 1 个合并组，且每组至少勾选 2 种学时类型。');
+      return;
+    }
+    const incomplete = groupAssignPartialMergeGroupsDraft.some(g =>
+      normalizeSectionGroupAssignPartialMergeTypes(g).length > 0
+      && normalizeSectionGroupAssignPartialMergeTypes(g).length < 2
+    );
+    if (incomplete) {
+      alert('每个合并组请至少勾选 2 种学时类型，或删除空组/不足两组。');
+      return;
+    }
+    setSectionGroupAssignHoursMode(sec, mode, groups);
+  } else {
+    setSectionGroupAssignHoursMode(sec, mode);
+  }
+  closeModal('modal-group-assign-hour-type-settings');
+  renderOfferingGroupingPanel();
+  // switchOfferingGroupingTab('teacher'); // 原保存后强制切到教师安排 Tab
+  syncOfferingGroupingTeacherToolbar(sec);
+  renderCourseOfferingMajorPage();
 }
 
 function getGroupAssignFormHourType(sec) {
-  return resolveGroupAssignFormMergeHours(sec)
-    ? GROUP_ASSIGN_MERGED_HOUR_TYPE
-    : getGroupAssignSelectedHourType();
+  if (isSectionGroupAssignHoursMerged(sec)) return GROUP_ASSIGN_MERGED_HOUR_TYPE;
+  const modeTypes = getSectionGroupAssignModeHourTypes(sec);
+  const selected = getGroupAssignSelectedHourType();
+  if (selected && modeTypes.includes(selected)) return selected;
+  return modeTypes[0] || '';
+}
+
+function isGroupAssignFormHourTypeValid(sec, hourType) {
+  if (!sec || !hourType) return false;
+  if (isSectionGroupAssignHoursMerged(sec)) return hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE;
+  return getSectionGroupAssignModeHourTypes(sec).includes(hourType);
 }
 
 function getGroupAssignHourTypeTotal(sec, hourType) {
   if (hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE) return getOfferingSectionHoursTotalForAssign(sec);
+  if (isGroupAssignPartialMergedHourType(hourType)) return getSectionGroupAssignPartialMergedHours(sec, hourType);
   return Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
 }
 
 function isGroupAssignRowActive(sec, row) {
-  if (isSectionGroupAssignHoursMerged(sec)) return row?.hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE;
-  return isOfferingSectionHourTypeArrangeable(sec, row?.hourType);
+  if (!row?.hourType) return false;
+  if (isSectionGroupAssignHoursMerged(sec)) return row.hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE;
+  if (isSectionGroupAssignHoursPartial(sec)) {
+    const modeTypes = getSectionGroupAssignModeHourTypes(sec);
+    if (modeTypes.includes(row.hourType)) return true;
+    if (!isGroupAssignPartialMergedHourType(row.hourType)) return false;
+    const rebuilt = buildGroupAssignPartialMergeHourType(
+      getSectionGroupAssignPartialMergeSourcesForHourType(sec, row.hourType)
+    );
+    return modeTypes.includes(rebuilt);
+  }
+  return isOfferingSectionHourTypeArrangeable(sec, row.hourType)
+    && OFFERING_GROUP_HOUR_SUMMARY_TYPES.includes(row.hourType);
 }
 
 function filterActiveGroupAssignments(sec, assignments) {
@@ -20845,11 +21667,11 @@ function canSectionArrangeGroupAssignTeachers(sec) {
   // return getOfferingSectionArrangeableHourTypes(sec).length > 0;
 }
 
-function syncGroupAssignMergeHoursMode() {
+function syncGroupAssignHourTypeModeUI() {
   const sec = getOfferingGroupingSection();
   const hourTypeWrap = document.getElementById('group-assign-hour-type-wrap');
   const typeTotalLabel = document.getElementById('group-assign-type-total-label');
-  const merged = resolveGroupAssignFormMergeHours(sec);
+  const merged = isSectionGroupAssignHoursMerged(sec);
   if (hourTypeWrap) {
     hourTypeWrap.hidden = merged;
     hourTypeWrap.querySelectorAll('.group-assign-hour-type-radio').forEach(el => {
@@ -20861,68 +21683,65 @@ function syncGroupAssignMergeHoursMode() {
   } else if (sec) {
     populateGroupAssignHourTypePicks(sec, getGroupAssignSelectedHourType());
   }
-  if (typeTotalLabel) typeTotalLabel.textContent = merged ? '课程总学时' : '该类型学时总数';
+  if (typeTotalLabel) {
+    typeTotalLabel.textContent = merged
+      ? '课程总学时'
+      : (isSectionGroupAssignHoursPartial(sec) ? '该合并类型学时总数' : '该类型学时总数');
+  }
   syncGroupAssignHoursSummary();
   syncGroupAssignCourseLevelDisplay(sec);
 }
 
-function syncGroupAssignMergeHoursField(sec, row) {
-  const mergeEl = document.getElementById('group-assign-merge-hours');
-  const hintEl = document.getElementById('group-assign-merge-hours-hint');
-  if (!mergeEl) return;
-  const locked = isSectionGroupAssignHoursModeLocked(sec);
-  if (locked) {
-    mergeEl.checked = isSectionGroupAssignHoursMerged(sec);
-    mergeEl.disabled = true;
-    if (hintEl) {
-      hintEl.textContent = '已安排教师后不可修改；如需调整请先删除全部教师安排后重新设置。';
-    }
-  } else {
-    mergeEl.checked = true;
-    mergeEl.disabled = false;
-    if (hintEl) {
-      hintEl.textContent = '开启后不再按学时类型分别安排，而是按课程总学时为各小组安排；保存后将无法修改，如需调整请先删除全部教师安排后重新设置。';
-    }
-  }
-  syncGroupAssignMergeHoursMode();
+/** @deprecated 兼容旧调用，改走 syncGroupAssignHourTypeModeUI */
+function syncGroupAssignMergeHoursMode() {
+  syncGroupAssignHourTypeModeUI();
 }
 
 function getGroupAssignSelectedHourType() {
-  const checked = document.querySelector('.group-assign-hour-type-radio:checked');
-  return checked?.value || '理论学时';
+  const checked = document.querySelector('.group-assign-hour-type-radio:checked:not(:disabled)');
+  return checked?.value || '';
 }
 
 function setGroupAssignSelectedHourType(value) {
+  let matched = false;
   document.querySelectorAll('.group-assign-hour-type-radio').forEach(el => {
     const selected = el.value === value && !el.disabled;
     el.checked = selected;
     el.closest('tr')?.classList.toggle('is-selected', selected);
+    if (selected) matched = true;
   });
+  if (!matched) {
+    const first = document.querySelector('.group-assign-hour-type-radio:not(:disabled)');
+    if (first) {
+      first.checked = true;
+      first.closest('tr')?.classList.add('is-selected');
+    }
+  }
 }
 
 function populateGroupAssignHourTypePicks(sec, selectedHourType) {
   const wrap = document.getElementById('group-assign-hour-type-picks');
   if (!wrap || !sec) return;
-  if (resolveGroupAssignFormMergeHours(sec)) {
+  if (isSectionGroupAssignHoursMerged(sec)) {
     wrap.innerHTML = '';
     return;
   }
-  const arrangeable = getOfferingSectionArrangeableHourTypes(sec);
-  const current = selectedHourType && isOfferingSectionHourTypeArrangeable(sec, selectedHourType)
+  const pickTypes = getSectionGroupAssignModeHourTypes(sec);
+  const current = selectedHourType && pickTypes.includes(selectedHourType)
     ? selectedHourType
-    : (arrangeable[0] || OFFERING_GROUP_HOUR_SUMMARY_TYPES[0]);
-  const rows = OFFERING_GROUP_HOUR_SUMMARY_TYPES.map(ht => {
+    : (pickTypes[0] || '');
+  const rows = pickTypes.map(ht => {
     const enabled = isOfferingSectionHourTypeArrangeable(sec, ht);
-    const hours = getOfferingSectionHoursByType(sec, ht) ?? 0;
+    const hours = getGroupAssignHourTypeTotal(sec, ht) ?? 0;
     const checked = ht === current && enabled ? ' checked' : '';
     const disabled = enabled ? '' : ' disabled';
     const rowClass = enabled ? '' : ' is-disabled';
     const selectedClass = ht === current && enabled ? ' is-selected' : '';
-    return `<tr class="group-assign-hour-type-row${rowClass}${selectedClass}" onclick="selectGroupAssignHourTypeRow(event, '${escapeHtml(ht)}')">
+    return `<tr class="group-assign-hour-type-row${rowClass}${selectedClass}" data-hour-type="${escapeHtml(ht)}" onclick="selectGroupAssignHourTypeRow(event, this.dataset.hourType)">
       <td class="col-check" onclick="event.stopPropagation()">
-        <input type="radio" class="group-assign-hour-type-radio" name="group-assign-hour-type" value="${escapeHtml(ht)}"${checked}${disabled} onchange="syncGroupAssignHoursByType()">
+        <input type="radio" class="group-assign-hour-type-radio" name="group-assign-hour-type" value="${escapeHtml(ht)}" data-hour-type="${escapeHtml(ht)}"${checked}${disabled} onchange="syncGroupAssignHoursByType()">
       </td>
-      <td>${escapeHtml(ht)}</td>
+      <td>${escapeHtml(getGroupAssignHourTypeDisplayLabel(sec, ht))}</td>
       <td class="col-center">${hours}</td>
     </tr>`;
   }).join('');
@@ -20936,13 +21755,15 @@ function populateGroupAssignHourTypePicks(sec, selectedHourType) {
       <tbody>${rows}</tbody>
     </table>
   </div>`;
-  setGroupAssignSelectedHourType(current);
+  if (current) setGroupAssignSelectedHourType(current);
 }
 
 function selectGroupAssignHourTypeRow(ev, hourType) {
-  if (resolveGroupAssignFormMergeHours(getOfferingGroupingSection())) return;
-  if (ev.target.closest('input, button, a, label')) return;
-  const radio = document.querySelector(`.group-assign-hour-type-radio[value="${CSS.escape(hourType)}"]:not(:disabled)`);
+  if (isSectionGroupAssignHoursMerged(getOfferingGroupingSection())) return;
+  if (ev?.target?.closest?.('input, button, a, label')) return;
+  const target = String(hourType || '');
+  const radio = [...document.querySelectorAll('.group-assign-hour-type-radio:not(:disabled)')]
+    .find(el => el.value === target || el.dataset.hourType === target);
   if (!radio) return;
   radio.checked = true;
   syncGroupAssignHoursByType();
@@ -21199,6 +22020,7 @@ function getOfferingSectionHoursByType(sec, hourType) {
 function isOfferingSectionHourTypeArrangeable(sec, hourType) {
   if (!sec || !hourType) return false;
   if (hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE) return true;
+  if (isGroupAssignPartialMergedHourType(hourType)) return true;
   if (!OFFERING_GROUP_HOUR_SUMMARY_TYPES.includes(hourType)) return false;
   // 计划学时为 0 仍可安排（允许超学时）；原先 Number(hours) > 0 会挡住论文课等 0 学时课
   return true;
@@ -21212,8 +22034,8 @@ function getOfferingSectionArrangeableHourTypes(sec) {
 
 /** 计划学时 > 0 的类型才强制齐套；0 学时可安排但不强制 */
 function isOfferingSectionHourTypeRequiredForSubmit(sec, hourType) {
-  if (hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE) {
-    return getOfferingSectionHoursTotalForAssign(sec) > 0;
+  if (hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE || isGroupAssignPartialMergedHourType(hourType)) {
+    return getGroupAssignHourTypeTotal(sec, hourType) > 0;
   }
   return (Number(getOfferingSectionHoursByType(sec, hourType)) || 0) > 0;
 }
@@ -21374,6 +22196,22 @@ function formatGroupAssignWeeklyHoursDisplay(row) {
   return row?.weeklyHours != null && row.weeklyHours !== '' ? String(row.weeklyHours) : '—';
 }
 
+function formatGroupAssignSimultaneousGroupsDisplay(row) {
+  return row?.simultaneousGroups ? '是' : '否';
+}
+
+function renderOfferingHourSummaryAssignRow(row, idx, sec) {
+  return `<tr>
+    <td class="col-index col-center">${idx + 1}</td>
+    <td class="col-teacher">${formatGroupAssignTeacherSummaryCell(row, 22, sec)}</td>
+    <td class="col-center col-simultaneous">${escapeHtml(formatGroupAssignSimultaneousGroupsDisplay(row))}</td>
+    <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
+    <td class="col-center col-weekly-hours">${escapeHtml(formatGroupAssignWeeklyHoursDisplay(row))}</td>
+    <td class="col-center col-week"><code>${escapeHtml(row.weekRange || '—')}</code></td>
+    <td class="actions col-sticky-actions"><a href="#" onclick="openOfferingHourSummaryAssignDetail('${row.id}');return false">Details</a></td>
+  </tr>`;
+}
+
 function getGroupAssignFormAllGroupIds(sec = getOfferingGroupingSection()) {
   const groups = sec?.groups || [];
   return groups.length ? groups.map(g => g.id) : ['__course__'];
@@ -21398,7 +22236,7 @@ function resolveGroupAssignFormScope(sec = getOfferingGroupingSection()) {
 
 function syncGroupAssignHoursByType() {
   const sec = getOfferingGroupingSection();
-  if (!sec || resolveGroupAssignFormMergeHours(sec)) return;
+  if (!sec || isSectionGroupAssignHoursMerged(sec)) return;
   const hourType = getGroupAssignSelectedHourType();
   document.querySelectorAll('.group-assign-hour-type-row').forEach(row => {
     const radio = row.querySelector('.group-assign-hour-type-radio');
@@ -21473,6 +22311,8 @@ function syncGroupAssignGroupPickSelection() {
       checkAll.indeterminate = false;
     }
   }
+  const multi = getGroupAssignFormSelectedGroupIds().length > 1;
+  if (!multi) groupAssignFormSimultaneousGroups = null;
 }
 
 function selectGroupAssignGroupPickRow(ev, groupId) {
@@ -21571,6 +22411,11 @@ function syncOfferingGroupingTeacherToolbar(sec = getOfferingGroupingSection()) 
     assignBtn.title = '';
     // assignBtn.disabled = locked || !hasGroups; // 原必须先分组，改未分组时按课程安排
   }
+  const hourTypeBtn = document.getElementById('ogg-btn-hour-type-settings');
+  if (hourTypeBtn) {
+    hourTypeBtn.disabled = locked;
+    hourTypeBtn.title = locked ? '' : '设置安排教师时的学时合并方式';
+  }
   const coordBtn = document.getElementById('ogg-btn-set-coordinator');
   if (coordBtn) {
     coordBtn.disabled = locked || !assignTeachers.length;
@@ -21616,7 +22461,7 @@ function syncOfferingGroupingReadOnly() {
     );
   }
   setContainerButtonsDisabled(document.querySelector('.offering-group-sidebar-actions'), structureLocked);
-  const teacherToolbar = document.querySelector('#offering-group-teacher-panel .offering-group-toolbar');
+  const teacherToolbar = document.getElementById('offering-group-assign-toolbar');
   if (structureLocked) {
     setContainerButtonsDisabled(teacherToolbar, true);
   } else {
@@ -21645,7 +22490,10 @@ function syncOfferingGroupingReadOnly() {
   if (studentToolbar) studentToolbar.hidden = isOfferingGroupingManifestViewContext();
   // if (studentToolbar) studentToolbar.hidden = isOfferingGroupingManifestViewContext() || isOfferingGroupingGeRosterViewContext(); // 原 GE 隐藏工具栏，改可管理名单
   const ogaCheckAllWrap = document.getElementById('oga-check-all-wrap');
-  if (ogaCheckAllWrap) ogaCheckAllWrap.hidden = structureLocked;
+  if (ogaCheckAllWrap) {
+    // 全选仅「教师安排」Tab 可见
+    ogaCheckAllWrap.hidden = offeringGroupingActiveTab !== 'teacher' || structureLocked;
+  }
   document.getElementById('oga-check-all') && (document.getElementById('oga-check-all').disabled = structureLocked);
   document.getElementById('ogg-check-all') && (document.getElementById('ogg-check-all').disabled = !studentEditable);
   syncOfferingGroupingHeaderActions();
@@ -21712,9 +22560,10 @@ function renderOfferingGroupAssignTableColgroup(readOnly, merged = false) {
     <col class="col-index">
     ${merged ? '' : '<col class="col-hour-type">'}
     <col class="col-week">
-    <col class="col-teacher">
-    <col class="col-groups">
     <col class="col-weekly-hours">
+    <col class="col-teacher">
+    <col class="col-simultaneous">
+    <col class="col-groups">
     ${readOnly ? '' : '<col class="col-sticky-actions">'}
   </colgroup>`;
 }
@@ -21725,9 +22574,10 @@ function renderOfferingGroupAssignTableHead(readOnly, merged = false) {
     <th class="col-index col-center">序号</th>
     ${merged ? '' : '<th class="col-hour-type">学时类型</th>'}
     <th class="col-center col-week">起止周</th>
-    <th class="col-teacher">任课教师</th>
-    <th class="col-groups">课程班/小组</th>
     <th class="col-center col-weekly-hours">周学时</th>
+    <th class="col-teacher">任课教师</th>
+    <th class="col-center col-simultaneous">是否同时多组授课</th>
+    <th class="col-groups">课程班/小组</th>
     ${readOnly ? '' : '<th class="col-sticky-actions">操作</th>'}
   </tr></thead>`;
 }
@@ -21757,17 +22607,22 @@ function renderOfferingGroupingTeacherPanel() {
   const buckets = collectOfferingGroupAssignBuckets(sec);
   const assignments = filterActiveGroupAssignments(sec, sec.groupAssignments);
   const zeroHours = areSectionHourTypesAllZero(sec);
-  const pendingHint = merged
-    ? (readOnly
-      ? '暂无教师安排。'
-      : (zeroHours
+  const pendingHint = (() => {
+    if (readOnly) return '暂无教师安排。';
+    if (merged) {
+      return zeroHours
         ? '暂无教师安排，请点击「安排教师」（总学时为 0，允许超学时安排）'
-        : '暂无教师安排，请点击「安排教师」按课程总学时为各小组指定任课教师与起止周'))
-    : (readOnly
-      ? '暂无教师安排。'
-      : (zeroHours
+        : '暂无教师安排，请点击「安排教师」按课程总学时为各小组指定任课教师与起止周';
+    }
+    if (isSectionGroupAssignHoursPartial(sec)) {
+      return zeroHours
         ? '暂无教师安排，请点击「安排教师」（计划学时为 0，允许超学时安排）'
-        : '暂无教师安排，请点击「安排教师」为理论/辅导/实践/其他学时指定任课教师与起止周'));
+        : '暂无教师安排，请点击「安排教师」为部分合并学时及未合并类型指定任课教师与起止周';
+    }
+    return zeroHours
+      ? '暂无教师安排，请点击「安排教师」（计划学时为 0，允许超学时安排）'
+      : '暂无教师安排，请点击「安排教师」为理论/辅导/实践/其他学时指定任课教师与起止周';
+  })();
   mount.innerHTML = `<div class="offering-group-assign-stack">${buckets.map(bucket => {
     const rows = assignments.filter(row => groupAssignRowMatchesGroupBucket(row, bucket, sec));
     const blockState = rows.length ? 'is-active' : 'is-pending';
@@ -21779,11 +22634,12 @@ function renderOfferingGroupingTeacherPanel() {
     const tbody = rows.map((row, idx) => `<tr>
         ${readOnly ? '' : `<td class="col-check"><input type="checkbox" class="oga-row-check" value="${row.id}" ${offeringGroupingAssignSelected.has(row.id) ? 'checked' : ''} onchange="updateOfferingGroupingAssignSelection(this)"></td>`}
         <td class="col-index">${idx + 1}</td>
-        ${merged ? '' : `<td class="col-hour-type">${escapeHtml(row.hourType || '—')}</td>`}
+        ${merged ? '' : `<td class="col-hour-type">${escapeHtml(getGroupAssignHourTypeDisplayLabel(sec, row.hourType))}</td>`}
         <td class="col-center col-week"><code>${escapeHtml(clampGroupAssignWeekRangeToSection(sec, row.weekRange) || row.weekRange || '—')}</code></td>
-        <td class="col-teacher">${formatOfferingGroupingEllipsisCell(formatGroupAssignTeacherNamesDisplay(row))}</td>
-        <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
         <td class="col-center col-weekly-hours">${escapeHtml(formatGroupAssignWeeklyHoursDisplay(row))}</td>
+        <td class="col-teacher">${formatOfferingGroupingEllipsisCell(formatGroupAssignTeacherNamesDisplay(row))}</td>
+        <td class="col-center col-simultaneous">${escapeHtml(formatGroupAssignSimultaneousGroupsDisplay(row))}</td>
+        <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
         ${readOnly ? '' : `<td class="actions col-sticky-actions"><a href="#" onclick="openGroupAssignForm('${row.id}');return false">修改</a></td>`}
       </tr>`).join('');
     const tableWrap = rows.length
@@ -22063,7 +22919,7 @@ function renderOfferingHourSummaryBlockHeader(hourType, plannedHours, rowCount, 
   return `<header class="offering-hour-summary-head">
       <div class="offering-hour-summary-title">
         <span class="offering-hour-type-badge is-${meta.tone}" aria-hidden="true">${escapeHtml(meta.abbr)}</span>
-        <strong>${escapeHtml(hourType)}</strong>
+        <strong>${escapeHtml(getGroupAssignHourTypeDisplayLabel(getOfferingGroupingSection(), hourType))}</strong>
       </div>
       <div class="offering-hour-summary-meta">
         <span class="offering-hour-stat-chip">课程学时 <b>${plannedHours ?? '—'}</b></span>
@@ -22111,7 +22967,7 @@ function openOfferingHourSummaryAssignDetail(assignId) {
     : '<tr><td colspan="4" class="text-muted" style="text-align:center;padding:12px">暂无授课教师</td></tr>';
   body.innerHTML = `
     <dl class="detail-dl offering-hour-assign-detail-dl">
-      <dt>学时类型</dt><dd>${escapeHtml(row.hourType || '—')}</dd>
+      <dt>学时类型</dt><dd>${escapeHtml(getGroupAssignHourTypeDisplayLabel(sec, row.hourType))}</dd>
       <dt>起止周</dt><dd><code>${escapeHtml(row.weekRange || '—')}</code></dd>
       <dt>周学时</dt><dd>${escapeHtml(row.weeklyHours != null && row.weeklyHours !== '' ? String(row.weeklyHours) : '—')}</dd>
       <dt>课程班/小组</dt><dd class="offering-hour-assign-detail-groups">${renderOfferingHourAssignDetailGroups(row, sec)}</dd>
@@ -22135,15 +22991,73 @@ function openOfferingHourSummaryAssignDetail(assignId) {
   openModal('modal-offering-hour-assign-detail');
 }
 
+/** 某课程班/小组在指定学时类型下的有效安排行 */
+function getOfferingGroupHourTypeAssignRows(sec, groupId, hourType) {
+  return filterActiveGroupAssignments(sec, sec?.groupAssignments).filter(row => {
+    if (row.hourType !== hourType) return false;
+    if (groupId === '__course__') return true;
+    return groupAssignRowMatchesGroup(row, groupId);
+  });
+}
+
+/** 学时详情单元格轻量摘要：每位教师一行（姓名 · 起止周），完整信息放 title */
+function formatOfferingGroupHourTypeAssignBrief(sec, groupId, hourType) {
+  const rows = getOfferingGroupHourTypeAssignRows(sec, groupId, hourType);
+  if (!rows.length) return { lines: [], tip: '' };
+
+  const teacherOrder = [];
+  const teacherWeeks = new Map();
+  const tipParts = [];
+
+  rows.forEach(row => {
+    const wr = clampGroupAssignWeekRangeToSection(sec, row.weekRange) || row.weekRange || '';
+    getGroupAssignTeachers(row).forEach(t => {
+      const key = t.staffId || t.name;
+      if (!key) return;
+      if (!teacherWeeks.has(key)) {
+        teacherWeeks.set(key, { name: t.name || t.staffId || '—', weeks: [] });
+        teacherOrder.push(key);
+      }
+      const entry = teacherWeeks.get(key);
+      if (wr && !entry.weeks.includes(wr)) entry.weeks.push(wr);
+    });
+    const names = formatGroupAssignTeacherNamesDisplay(row);
+    const weekLabel = wr || '—';
+    const weekly = formatGroupAssignWeeklyHoursDisplay(row);
+    tipParts.push(`${names} · ${weekLabel} · 周学时 ${weekly}`);
+  });
+
+  const lines = teacherOrder.map(key => {
+    const entry = teacherWeeks.get(key);
+    const weekText = entry.weeks.length ? entry.weeks.join('、') : '';
+    return weekText ? `${entry.name} · ${weekText}` : entry.name;
+  });
+
+  return {
+    lines,
+    tip: tipParts.join('\n')
+  };
+}
+
 function formatOfferingGroupHourTypeStatusCell(sec, group, hourType, groupIssues) {
-  const planned = hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE
-    ? getOfferingSectionHoursTotalForAssign(sec)
-    : Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
-  const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, group.id, hourType, '');
+  const planned = getGroupAssignHourTypeTotal(sec, hourType);
+  const recorded = group.id === '__course__'
+    ? sumGroupAssignRecordedHoursByType(sec, hourType, '')
+    : sumGroupAssignRecordedHoursForGroupByType(sec, group.id, hourType, '');
   const hasTeacher = groupHasHourTypeAssignment(sec, group.id, hourType);
+  const brief = formatOfferingGroupHourTypeAssignBrief(sec, group.id, hourType);
+
+  const wrapCell = (ratioHtml, statusCls) => {
+    const tip = brief.tip || '';
+    return `<div class="offering-group-hour-status-cell${statusCls ? ` ${statusCls}` : ''}"${tip ? ` title="${escapeHtml(tip)}"` : ''}>
+      ${ratioHtml}
+    </div>`;
+  };
+
   if (planned <= 0) {
     if (hasTeacher || recorded > 0) {
-      return `<span class="${recorded > planned ? 'offering-group-hour-status-warn' : 'offering-group-hour-status-ok'}">${recorded}/${planned}</span>`;
+      const cls = recorded > planned ? 'offering-group-hour-status-warn' : 'offering-group-hour-status-ok';
+      return wrapCell(`<span class="${cls}">${recorded}/${planned}</span>`);
     }
     return '<span class="text-muted">—</span>';
   }
@@ -22151,30 +23065,81 @@ function formatOfferingGroupHourTypeStatusCell(sec, group, hourType, groupIssues
   const ok = !typeIssues.length && hasTeacher && recorded === planned;
   // if (!typeIssues.length && hasTeacher && recorded >= planned) { // 原 >= 视为完成，超计划仍显示绿色
   if (ok) {
-    return `<span class="offering-group-hour-status-ok">${recorded}/${planned}</span>`;
+    return wrapCell(`<span class="offering-group-hour-status-ok">${recorded}/${planned}</span>`);
   }
   if (!hasTeacher || typeIssues.some(line => line.includes('尚未安排教师') || line.includes('未指定授课教师'))) {
-    return `<span class="offering-group-hour-status-warn">${recorded}/${planned}</span>`;
+    return wrapCell(`<span class="offering-group-hour-status-warn">${recorded}/${planned}</span>`);
     // return '<span class="offering-group-hour-status-warn">未安排</span>'; // 原显示「未安排」，改显示已录/计划如 0/10
   }
   if (recorded !== planned) {
-    return `<span class="offering-group-hour-status-warn">${recorded}/${planned}</span>`;
+    return wrapCell(`<span class="offering-group-hour-status-warn">${recorded}/${planned}</span>`);
   }
   const issue = typeIssues[0] || '未完成';
-  return `<span class="offering-group-hour-status-warn" title="${escapeHtml(issue)}">未完成</span>`;
+  return wrapCell(`<span class="offering-group-hour-status-warn" title="${escapeHtml(issue)}">未完成</span>`);
 }
 
 function getOfferingGroupStatusSummary(sec, group, hourTypes, issues) {
   const hasOver = hourTypes.some(hourType => {
-    const planned = hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE
-      ? getOfferingSectionHoursTotalForAssign(sec)
-      : Number(getOfferingSectionHoursByType(sec, hourType)) || 0;
-    const recorded = sumGroupAssignRecordedHoursForGroupByType(sec, group.id, hourType, '');
+    const planned = getGroupAssignHourTypeTotal(sec, hourType);
+    const recorded = group.id === '__course__'
+      ? sumGroupAssignRecordedHoursByType(sec, hourType, '')
+      : sumGroupAssignRecordedHoursForGroupByType(sec, group.id, hourType, '');
     return recorded > planned;
   });
   if (hasOver) return { key: 'over', label: '超出' };
   if (issues.length) return { key: 'under', label: '不足' };
   return { key: 'ok', label: '达标' };
+}
+
+/** 某课程班/小组下全部有效教师安排（跨学时类型） */
+function getOfferingGroupStatusAssignRows(sec, groupId) {
+  return filterActiveGroupAssignments(sec, sec?.groupAssignments).filter(row => {
+    if (groupId === '__course__') return true;
+    return groupAssignRowMatchesGroup(row, groupId);
+  });
+}
+
+function formatGroupAssignRowTotalHoursDisplay(row, sec) {
+  const hours = getGroupAssignRowRecordedHours(row, sec);
+  return hours > 0 ? String(hours) : '—';
+}
+
+/** 分组状态主表下方的教师安排二级表 */
+function renderOfferingGroupStatusAssignDetailRow(sec, groupId, colSpan) {
+  const rows = getOfferingGroupStatusAssignRows(sec, groupId);
+  const body = rows.length
+    ? rows.map(row => {
+        const week = clampGroupAssignWeekRangeToSection(sec, row.weekRange) || row.weekRange || '—';
+        const teachers = getGroupAssignTeachers(row);
+        const teacherHtml = teachers.length
+          ? teachers.map(t => escapeHtml(t.name || t.staffId || '—')).join('<br>')
+          : '—';
+        return `<tr>
+          <td class="col-center col-teacher">${teacherHtml}</td>
+          <td class="col-center col-week"><code>${escapeHtml(week)}</code></td>
+          <td class="col-center col-weekly-hours">${escapeHtml(formatGroupAssignWeeklyHoursDisplay(row))}</td>
+          <td class="col-center col-total-hours">${escapeHtml(formatGroupAssignRowTotalHoursDisplay(row, sec))}</td>
+          <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
+          <td class="col-center col-simultaneous">${escapeHtml(formatGroupAssignSimultaneousGroupsDisplay(row))}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" class="text-muted offering-group-status-subtable-empty">暂无教师安排</td></tr>';
+
+  return `<tr class="offering-group-status-detail-row">
+    <td colspan="${colSpan}">
+      <table class="data-table compact offering-group-status-subtable">
+        <thead><tr>
+          <th class="col-center">教师名称</th>
+          <th class="col-center">负责周次</th>
+          <th class="col-center">周学时</th>
+          <th class="col-center">总学时</th>
+          <th>负责小组</th>
+          <th class="col-center">同时授课</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </td>
+  </tr>`;
 }
 
 function renderOfferingGroupingGroupStatusPanel() {
@@ -22193,27 +23158,21 @@ function renderOfferingGroupingGroupStatusPanel() {
         label: sec.name || '课程班'
       }];
   const bucket = collectOfferingGroupingSaveWarnings(sec);
-  const hourTypes = isSectionGroupAssignHoursMerged(sec)
-    ? [GROUP_ASSIGN_MERGED_HOUR_TYPE]
-    : OFFERING_GROUP_HOUR_SUMMARY_TYPES;
+  const hourTypes = getSectionGroupAssignModeHourTypes(sec);
+  const colSpan = 2 + hourTypes.length;
   let completeCount = 0;
   const bodyRows = statusTargets.map((target, idx) => {
     const issues = bucket.byGroup.get(target.label) || [];
     const status = getOfferingGroupStatusSummary(sec, target, hourTypes, issues);
     if (status.key === 'ok') completeCount += 1;
     const typeCells = hourTypes.map(ht => formatOfferingGroupHourTypeStatusCell(sec, target, ht, issues));
-    // const issueHtml = complete
-    //   ? '<span class="text-muted">—</span>'
-    //   : `<ul class="offering-group-status-issues">${issues.map(line =>
-    //       `<li>${escapeHtml(line)}</li>`
-    //     ).join('')}</ul>`; // 原未完成项列，已移除
     const rowCls = status.key === 'ok' ? 'is-complete' : status.key === 'over' ? 'is-over' : 'is-incomplete';
     return `<tr class="${rowCls}">
       <td class="col-index">${idx + 1}</td>
       <td>${escapeHtml(target.label)}</td>
       ${typeCells.map(cell => `<td class="col-center">${cell}</td>`).join('')}
-    </tr>`;
-    // <!-- <td class="offering-group-status-detail">...</td> --> // 原未完成项列；勿在模板字符串注释内写 \${issueHtml}，会被插值
+    </tr>
+    ${renderOfferingGroupStatusAssignDetailRow(sec, target.id, colSpan)}`;
   }).join('');
   const summaryCls = completeCount === statusTargets.length ? 'is-ok' : 'is-warn';
   const targetLabel = groups.length ? '课程班/小组' : '课程班';
@@ -22224,8 +23183,14 @@ function renderOfferingGroupingGroupStatusPanel() {
         <thead><tr>
           <th class="col-index">序号</th>
           <th>课程班/小组</th>
-          ${hourTypes.map(ht => `<th class="col-center">${escapeHtml(OFFERING_HOUR_SUMMARY_TYPE_META[ht]?.abbr || ht.replace('学时', ''))}</th>`).join('')}
-          <!-- <th>未完成项</th> --> <!-- 列已移除 -->
+          ${hourTypes.map(ht => {
+            const label = isGroupAssignPartialMergedHourType(ht)
+              ? (getGroupAssignHourTypeDisplayLabel(sec, ht) || '—')
+              : (ht === '其他学时'
+                ? '其他'
+                : (OFFERING_HOUR_SUMMARY_TYPE_META[ht]?.abbr || String(ht).replace(/学时$/, '') || ht));
+            return `<th class="col-center">${escapeHtml(label)}</th>`;
+          }).join('')}
         </tr></thead>
         <tbody>${bodyRows}</tbody>
       </table>
@@ -22249,14 +23214,7 @@ function renderOfferingGroupingHourSummaryPanel() {
     const rows = assignments.filter(a => a.hourType === hourType);
     const meta = getOfferingHourSummaryTypeMeta(hourType);
     const blockState = rows.length ? 'is-active' : 'is-pending';
-    const tbody = rows.map((row, idx) => `<tr>
-        <td class="col-index col-center">${idx + 1}</td>
-        <td class="col-teacher">${formatGroupAssignTeacherSummaryCell(row, 22, sec)}</td>
-        <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
-        <td class="col-center col-weekly-hours">${escapeHtml(formatGroupAssignWeeklyHoursDisplay(row))}</td>
-        <td class="col-center col-week"><code>${escapeHtml(row.weekRange || '—')}</code></td>
-        <td class="actions col-sticky-actions"><a href="#" onclick="openOfferingHourSummaryAssignDetail('${row.id}');return false">Details</a></td>
-      </tr>`).join('');
+    const tbody = rows.map((row, idx) => renderOfferingHourSummaryAssignRow(row, idx, sec)).join('');
     const pendingBody = !rows.length
       ? `<div class="offering-hour-summary-pending-body text-muted">${plannedHours > 0 ? '尚未按总学时为各小组安排教师。' : '总学时为 0，可选安排教师（允许超学时）。'}</div>`
       : '';
@@ -22277,24 +23235,15 @@ function renderOfferingGroupingHourSummaryPanel() {
     bindOfferingHourTeacherTips(mount);
     return;
   }
-  const hourTypes = OFFERING_GROUP_HOUR_SUMMARY_TYPES;
+  const hourTypes = getSectionGroupAssignModeHourTypes(sec);
   // if (!assignments.length) { ... } 原无安排时整页空态，改由下方按类型展示
   mount.innerHTML = `<div class="offering-hour-summary-stack">${hourTypes.map(hourType => {
-    const plannedHours = getOfferingSectionHoursByType(sec, hourType);
+    const plannedHours = getGroupAssignHourTypeTotal(sec, hourType);
     const arrangeable = isOfferingSectionHourTypeArrangeable(sec, hourType);
     const rows = arrangeable ? assignments.filter(a => a.hourType === hourType) : [];
     const meta = getOfferingHourSummaryTypeMeta(hourType);
     const blockState = !arrangeable ? 'is-idle' : rows.length ? 'is-active' : 'is-pending';
-    const tbody = rows.map((row, idx) => `<tr>
-          <td class="col-index col-center">${idx + 1}</td>
-          <td class="col-teacher">${formatGroupAssignTeacherSummaryCell(row, 22, sec)}</td>
-          <!-- <td class="col-role col-center">${escapeHtml(formatGroupAssignTeacherRolesDisplay(row))}</td> --> <!-- 原授课角色列 -->
-          <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec)}</td>
-          <td class="col-center col-weekly-hours">${escapeHtml(formatGroupAssignWeeklyHoursDisplay(row))}</td>
-          <td class="col-center col-week"><code>${escapeHtml(row.weekRange || '—')}</code></td>
-          <td class="actions col-sticky-actions"><a href="#" onclick="openOfferingHourSummaryAssignDetail('${row.id}');return false">Details</a></td>
-          <!-- <td class="col-center col-actions"><a ...>Details</a></td> --> <!-- 原居中操作列 -->
-        </tr>`).join('');
+    const tbody = rows.map((row, idx) => renderOfferingHourSummaryAssignRow(row, idx, sec)).join('');
     // : `<tr class="offering-hour-summary-empty-row"><td colspan="5" class="text-muted">该学时类型尚未安排教师。</td></tr>`; // 原空态嵌在表格内，改独立 pending-body
     const idleBody = !arrangeable
       ? '<div class="offering-hour-summary-idle-body text-muted">该学时类型不可安排。</div>'
@@ -22339,10 +23288,13 @@ function renderOfferingGroupingPanel() {
       <div class="offering-grouping-meta-row">
         <div class="offering-grouping-meta-primary">
           <span class="offering-grouping-meta-counts"><strong>计划人数</strong> ${formatNullableNumberDisplay(getSectionPlannedStudentCount(sec))}<span class="offering-grouping-meta-sep" aria-hidden="true">·</span><strong>课程人数上限</strong> ${formatNullableNumberDisplay(getSectionCapacityLimit(sec))}</span>
-          <span><strong>专业批次</strong> <code>${escapeHtml(batches || '—')}</code></span>
+          <div class="offering-grouping-meta-batch-stack">
+            <span><strong>专业批次</strong> <code>${escapeHtml(batches || '—')}</code></span>
+            <span id="offering-grouping-meta-coordinator">${formatSectionCoordinatorMetaHtml(sec)}</span>
+          </div>
         </div>
       </div>`;
-    // 原完整 meta（课程号/名称/开课单位/学分/起止周/学时/Coordinator）已精简
+    // 原完整 meta（课程号/名称/开课单位/学分/起止周/学时/Coordinator）已精简；Coordinator 改挂专业批次下方
   }
   // <span><strong>教学班号</strong> ${escapeHtml(sec.teachingClassNo || '—')}</span> // 原展示授课码，已改为课程号
   const tree = document.getElementById('offering-group-tree');
@@ -22486,14 +23438,15 @@ function resetOfferingGroupingAll() {
   if (!assertOfferingGroupingEditable('重置分组')) return;
   const groupCount = sec.groups?.length || 0;
   const assignCount = filterActiveGroupAssignments(sec, sec.groupAssignments).length;
-  if (!groupCount && !assignCount) {
-    alert('当前没有可重置的分组或教师安排。');
+  const hasHourSettings = !!(sec.groupAssignHoursMode || sec.groupAssignPartialMergeGroups?.length);
+  if (!groupCount && !assignCount && !hasHourSettings) {
+    alert('当前没有可重置的分组、教师安排或学时类型设置。');
     return;
   }
   openDeleteConfirm({
     title: '重置分组',
     message: `确定要重置本教学班的全部分组吗？`,
-    hint: `将删除全部 ${groupCount} 个分组及 ${assignCount} 条教师安排，重置后需重新分组与安排教师。此操作不可撤销。`,
+    hint: `将删除全部 ${groupCount} 个分组及 ${assignCount} 条教师安排，并清空学时类型设置；重置后需重新设置学时类型、分组与安排教师。此操作不可撤销。`,
     hintWarn: true,
     confirmLabel: '确定重置',
     confirmDanger: true,
@@ -22501,6 +23454,9 @@ function resetOfferingGroupingAll() {
       sec.groups = [];
       sec.groupAssignments = [];
       delete sec.mergeGroupAssignHours;
+      delete sec.groupAssignHoursMode;
+      delete sec.groupAssignPartialMergeTypes;
+      delete sec.groupAssignPartialMergeGroups;
       sec.isGrouped = false;
       sec.coordinatorStaffId = '';
       sec.coordinatorStaffIds = [];
@@ -23271,23 +24227,29 @@ function openGroupAssignForm(assignId) {
   if (!sec) return;
   if (!assertOfferingGroupingEditable(assignId ? '修改教师安排' : '安排教师')) return;
   ensureSectionGroupAssignHoursMode(sec);
+  // switchOfferingGroupingTab('teacher'); // 原打开安排教师时强制切到教师安排 Tab
   const row = assignId ? (sec.groupAssignments || []).find(a => a.id === assignId) : null;
   document.getElementById('group-assign-edit-id').value = row?.id || '';
   const courseCodeEl = document.getElementById('group-assign-course-code');
   const offeringUnitEl = document.getElementById('group-assign-offering-unit');
   if (courseCodeEl) courseCodeEl.value = sec.code || '—';
   if (offeringUnitEl) offeringUnitEl.value = resolveMajorOfferingSectionOfferingUnit(sec) || '—';
-  syncGroupAssignMergeHoursField(sec, row);
-  const merged = resolveGroupAssignFormMergeHours(sec);
-  if (!merged) populateGroupAssignHourTypePicks(sec);
+  const merged = isSectionGroupAssignHoursMerged(sec);
+  const modeHourTypes = getSectionGroupAssignModeHourTypes(sec);
   // 学时为 0 亦可打开安排教师（允许超学时）
-  const arrangeable = getOfferingSectionArrangeableHourTypes(sec);
-  const hourType = row?.hourType && (merged
-    ? row.hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE
-    : isOfferingSectionHourTypeArrangeable(sec, row.hourType))
+  const hourType = row?.hourType && modeHourTypes.includes(row.hourType)
     ? row.hourType
-    : (merged ? GROUP_ASSIGN_MERGED_HOUR_TYPE : arrangeable[0]);
-  if (!merged) setGroupAssignSelectedHourType(hourType);
+    : (merged ? GROUP_ASSIGN_MERGED_HOUR_TYPE : modeHourTypes[0]);
+  if (!merged && !hourType) {
+    alert('请先在「学时类型设置」中配置有效的学时合并方式。');
+    openGroupAssignHourTypeSettings();
+    return;
+  }
+  syncGroupAssignHourTypeModeUI();
+  if (!merged) {
+    populateGroupAssignHourTypePicks(sec, hourType);
+    setGroupAssignSelectedHourType(hourType);
+  }
   let selectedGroupIds;
   if (row) {
     groupAssignFormSelectAll = false;
@@ -23305,6 +24267,13 @@ function openGroupAssignForm(assignId) {
   groupAssignFormTeachers = row
     ? getGroupAssignTeachers(row).map(t => enrichGroupAssignFormTeacher(t, sec))
     : [];
+  const multiGroups = selectedGroupIds.length > 1;
+  // 编辑回填；新建多选时留空，须在选教师弹窗中必选
+  if (row && multiGroups) {
+    setGroupAssignFormSimultaneousGroups(!!row.simultaneousGroups);
+  } else {
+    setGroupAssignFormSimultaneousGroups(null);
+  }
   syncGroupAssignFormTeachersWithSectionCoordinator(sec);
   bindGroupAssignFormFieldEvents();
   const planWeekly = getGroupAssignPlanWeeklyHours(sec);
@@ -23336,6 +24305,10 @@ function saveGroupAssignForm() {
     alert('请至少选择一个小组。');
     return;
   }
+  if (getGroupAssignFormSelectedGroupIds().length > 1 && groupAssignFormSimultaneousGroups == null) {
+    alert('已多选小组，请先添加教师并选择是否同时多组授课。');
+    return;
+  }
   if (!groupAssignFormTeachers.length) {
     alert('请至少选择一名授课教师。');
     return;
@@ -23345,7 +24318,7 @@ function saveGroupAssignForm() {
   //   return;
   // } // 原校验手动授课角色，改由教师类型自动带出
   if (!validateGroupAssignFormCoordinators()) return;
-  const merged = resolveGroupAssignFormMergeHours(sec);
+  const merged = isSectionGroupAssignHoursMerged(sec);
   const hourType = getGroupAssignFormHourType(sec);
   // 计划学时为 0 仍可保存（超学时）；原先会拦截
   // if (merged) {
@@ -23357,8 +24330,8 @@ function saveGroupAssignForm() {
   //   alert('该学时类型课程学时为 0，无法安排教师。');
   //   return;
   // }
-  if (!merged && !isOfferingSectionHourTypeArrangeable(sec, hourType)) {
-    alert('请选择有效的学时类型。');
+  if (!isGroupAssignFormHourTypeValid(sec, hourType)) {
+    alert('请选择与当前学时类型设置一致的学时类型。');
     return;
   }
   const weeklyHours = parseGroupAssignWeeklyHoursInput();
@@ -23390,7 +24363,9 @@ function saveGroupAssignForm() {
   const saveHint = [overRecordedHint, overPlanHint].filter(Boolean).join(' ')
     || (merged ? '保存后将更新所选小组的总学时教师安排。' : '保存后将更新所选小组的该学时类型教师安排。');
   const isEdit = !!editId;
-  const hourLabel = merged ? GROUP_ASSIGN_MERGED_HOUR_TYPE : hourType;
+  const hourLabel = merged
+    ? GROUP_ASSIGN_MERGED_HOUR_TYPE
+    : getGroupAssignHourTypeDisplayLabel(sec, hourType);
   openDeleteConfirm({
     title: isEdit ? '确认修改' : '确认安排',
     message: isEdit
@@ -23405,14 +24380,12 @@ function applyGroupAssignFormSave() {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec) return;
   const { deliveryScope, groupIds } = resolveGroupAssignFormScope(sec);
-  if (!isSectionGroupAssignHoursModeLocked(sec)) {
-    sec.mergeGroupAssignHours = isGroupAssignFormMergeHoursChecked();
-  }
+  ensureSectionGroupAssignHoursMode(sec);
   const merged = isSectionGroupAssignHoursMerged(sec);
   const hourType = getGroupAssignFormHourType(sec);
   // 计划学时为 0 仍可保存（超学时）
-  if (!merged && !isOfferingSectionHourTypeArrangeable(sec, hourType)) {
-    alert('请选择有效的学时类型。');
+  if (!isGroupAssignFormHourTypeValid(sec, hourType)) {
+    alert('请选择与当前学时类型设置一致的学时类型。');
     return;
   }
   const weeklyHours = parseGroupAssignWeeklyHoursInput();
@@ -23479,6 +24452,7 @@ function applyGroupAssignFormSave() {
     weekRange,
     hours: currentHours,
     // hours: existingRow?.hours ?? null, // 原学时，改由周学时×周数计算
+    simultaneousGroups: groupIds.length > 1 ? groupAssignFormSimultaneousGroups === true : false,
     teachers,
     staffId: teachers.map(t => t.staffId).filter(Boolean).join('、'),
     teacher: teachers.map(t => t.name).filter(Boolean).join('、'),
@@ -27571,6 +28545,9 @@ const SCHEDULE_HOUR_TYPES = [
 
 function getScheduleHourTypeLabel(key) {
   if (key === 'merged') return GROUP_ASSIGN_MERGED_HOUR_TYPE;
+  if (key === 'partial' || String(key || '').startsWith('partial-')) {
+    return GROUP_ASSIGN_PARTIAL_MERGED_HOUR_TYPE;
+  }
   return SCHEDULE_HOUR_TYPES.find(t => t.key === key)?.label || '其他学时';
 }
 
@@ -27588,6 +28565,27 @@ function getScheduleTaskHourUnits(task) {
       const total = getOfferingSectionHoursTotalForAssign(sec) || getScheduleTaskTotalHoursNum(task);
       if (total > 0) return [{ key: 'merged', label: GROUP_ASSIGN_MERGED_HOUR_TYPE, total }];
     }
+    if (isSectionGroupAssignHoursPartial(sec)) {
+      const list = [];
+      getSectionGroupAssignPartialMergeGroups(sec).forEach((group, idx) => {
+        const total = getSectionGroupAssignPartialMergedHours(sec, group);
+        if (total > 0) {
+          list.push({
+            key: `partial-${idx}`,
+            label: buildGroupAssignPartialMergeHourType(group),
+            total
+          });
+        }
+      });
+      getSectionGroupAssignPartialSeparateTypes(sec).forEach(ht => {
+        const total = Number(getOfferingSectionHoursByType(sec, ht)) || 0;
+        if (total > 0) {
+          const meta = OFFERING_HOUR_SUMMARY_TYPE_META[ht];
+          list.push({ key: meta?.key || 'other', label: ht, total });
+        }
+      });
+      if (list.length) return list;
+    }
   }
   let list = SCHEDULE_HOUR_TYPES
     .map(t => ({ key: t.key, label: t.label, total: Number(sec?.[t.field]) || 0 }))
@@ -27600,9 +28598,17 @@ function getScheduleTaskHourUnits(task) {
 function getScheduleUnitWeeklyHours(task, hourKey) {
   if (!task) return 0;
   const sec = getScheduleOfferingSection(task);
-  const offeringType = hourKey === 'merged'
+  let offeringType = hourKey === 'merged'
     ? GROUP_ASSIGN_MERGED_HOUR_TYPE
     : getScheduleHourTypeLabel(hourKey);
+  if (sec && String(hourKey || '').startsWith('partial-')) {
+    const idx = Number(String(hourKey).slice('partial-'.length));
+    const group = getSectionGroupAssignPartialMergeGroups(sec)[idx];
+    if (group) offeringType = buildGroupAssignPartialMergeHourType(group);
+  } else if (sec && hourKey === 'partial') {
+    const group = getSectionGroupAssignPartialMergeGroups(sec)[0];
+    if (group) offeringType = buildGroupAssignPartialMergeHourType(group);
+  }
   if (sec) {
     ensureSectionGroupAssignHoursMode(sec);
     for (const row of sec.groupAssignments || []) {
@@ -32926,7 +33932,8 @@ const COURSE_PAGE_IDS = new Set([
   'course-special-offering-roster',
   'course-offering-manifest',
   'course-shared-teaching-maintenance',
-  'course-offering-roster-change-log'
+  'course-offering-roster-change-log',
+  'course-teacher-teaching-load'
   // 'course-merge-split', // 已移除：合分班改由专业开课计划页操作列完成
   // 'course-section-arrange' // 已移除
 ]);
@@ -33221,6 +34228,7 @@ function goPage(id) {
   if (id === 'course-offering-manifest') renderCourseOfferingManifestPage();
   if (id === 'course-shared-teaching-maintenance') renderCourseSharedTeachingMaintenancePage();
   if (id === 'course-offering-roster-change-log') renderCourseOfferingRosterChangeLogPage();
+  if (id === 'course-teacher-teaching-load') renderCourseTeacherTeachingLoadPage();
   // if (id === 'course-merge-split') renderCourseMergeSplitPage(); // 模块已移除
   // if (id === 'course-section-arrange') renderCourseSectionArrangePage(); // 模块已移除
   if (id === 'schedule-workflow') renderScheduleWorkflowPage();
@@ -33571,6 +34579,8 @@ document.addEventListener('click', e => {
   if (geVenueTypeWrap && !geVenueTypeWrap.contains(e.target)) closeGeOfferingVenueTypeDropdown();
   const tahHourTypeWrap = document.getElementById('tah-hour-type-multiselect');
   if (tahHourTypeWrap && !tahHourTypeWrap.contains(e.target)) closeTeacherHourTypeDropdown();
+  const teacherLoadTermWrap = document.getElementById('teacher-load-filter-term-multiselect');
+  if (teacherLoadTermWrap && !teacherLoadTermWrap.contains(e.target)) closeTeacherTeachingLoadTermDropdown();
   if (!e.target.closest('.slt-info-tip')) closeSltInfoTip();
 });
 

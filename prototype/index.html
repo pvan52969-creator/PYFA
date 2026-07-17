@@ -77,16 +77,20 @@
       -->
     </nav>
     <nav class="sidebar-nav" id="sidebar-nav-schedule" hidden>
-      <div class="nav-group">排课管理</div>
+      <div class="nav-group">操作流程图</div>
       <a href="#" class="nav-item" data-page="schedule-workflow">操作流程图</a>
+      <div class="nav-group">排课基础设置</div>
       <a href="#" class="nav-item" data-page="schedule-period">课表节次维护</a>
       <a href="#" class="nav-item" data-page="schedule-time-setting">排课时间设置</a>
       <a href="#" class="nav-item" data-page="schedule-rule-setting">排课规则设置</a>
-      <div class="nav-group">排课安排</div>
-      <a href="#" class="nav-item" data-page="schedule-time">入学批次排课</a>
-      <a href="#" class="nav-item" data-page="schedule-teacher">教师排课</a>
-      <a href="#" class="nav-item" data-page="schedule-course">课程排课</a>
-      <a href="#" class="nav-item" data-page="schedule-room" style="display:none">教室排课</a>
+      <div class="nav-group">排课表时间</div>
+      <a href="#" class="nav-item" data-page="schedule-time">按入学批次排</a>
+      <a href="#" class="nav-item" data-page="schedule-teacher">按教师排</a>
+      <a href="#" class="nav-item" data-page="schedule-course">按课程排</a>
+      <div class="nav-group">排课表教室</div>
+      <a href="#" class="nav-item" data-page="schedule-room-intake">按入学批次排</a>
+      <a href="#" class="nav-item" data-page="schedule-room-teacher">按教师排</a>
+      <a href="#" class="nav-item" data-page="schedule-room-course">按课程排</a>
       <div class="nav-group">课表查询</div>
       <a href="#" class="nav-item" data-page="schedule-intake-timetable">入学批次课表</a>
       <a href="#" class="nav-item" data-page="schedule-teacher-timetable">教师课表</a>
@@ -2175,12 +2179,12 @@
       </div>
     </section>
 
-    <!-- ═══ 排课管理 · 操作流程图 ═══ -->
+    <!-- ═══ 排课 · 操作流程图 ═══ -->
     <section class="page schedule-page" id="page-schedule-workflow">
       <div class="page-header workflow-page-header">
         <div class="workflow-page-title">
-          <h1>排课管理 · 操作流程</h1>
-          <p class="subtitle">基础配置 → 排课安排 → 课表查询 → 调课管理（含公假日停课、批量调课）</p>
+          <h1>操作流程图</h1>
+          <p class="subtitle">排课基础设置 → 排课表时间（提交）→ 排课表教室 → 课表查询 → 调课管理</p>
         </div>
         <div class="workflow-zoom-toolbar">
           <button type="button" class="btn btn-ghost btn-sm workflow-zoom-btn" onclick="scheduleWorkflowZoomStep(-0.1)">−</button>
@@ -2402,10 +2406,10 @@
 
     <!-- 原「教学任务」页面已移除，教学任务改在专业批次排课页同步（见 app.js 注释） -->
 
-    <!-- ═══ 排课管理 · 入学批次排课 ═══ -->
+    <!-- ═══ 排课管理 · 排课表时间 · 按入学批次排 ═══ -->
     <section class="page schedule-page" id="page-schedule-time">
       <div class="page-header">
-        <div><h1>入学批次排课</h1><p class="subtitle">按学院、专业与入学批次查看排课进度，进入批次安排上课时间</p></div>
+        <div><h1>按入学批次排</h1><p class="subtitle">排课表时间 · 按学院、专业与入学批次安排上课时间，提交后进入排课表教室</p></div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -2444,23 +2448,34 @@
         </div>
       </div>
       <div class="legend-bar" id="schedule-time-hint"></div>
-      <div class="card schedule-card"><div class="table-scroll"><table class="data-table">
+      <div class="card schedule-card">
+        <div class="panel-toolbar schedule-arrange-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-time-batch-submit" onclick="submitScheduleTimeListSelection('batch')" disabled>提交</button>
+          <span class="hint">勾选批次后提交至排课表教室；也可在排课界面内提交</span>
+        </div>
+        <div class="table-scroll"><table class="data-table">
         <thead><tr>
+          <th class="col-center srf-col-pick"><input type="checkbox" id="schedule-time-check-all" onchange="toggleScheduleTimeListCheckAll('batch', this.checked)"></th>
           <th class="col-index">序号</th><th>入学批次</th><th>专业</th><th class="col-center">学院</th>
-          <th class="col-center">课程数</th><th class="col-center">已排完</th><th class="col-center">未排完</th><th class="col-center">操作</th>
+          <th class="col-center">课程数</th><th class="col-center">已排完</th><th class="col-center">未排完</th>
+          <th class="col-center">提交状态</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-time-body"></tbody>
       </table></div></div>
     </section>
 
-    <!-- ═══ 排课管理 · 入学批次排课详情 ═══ -->
-    <section class="page schedule-page" id="page-schedule-time-detail">
+    <!-- ═══ 排课管理 · 排课表时间 · 排课详情 ═══ -->
+    <section class="page schedule-page schedule-detail-page" id="page-schedule-time-detail">
       <div class="page-header compact">
         <div class="breadcrumb">
-          <a href="#" id="schedule-detail-breadcrumb-root" onclick="goPage(getScheduleDetailBackPage());return false">入学批次排课</a><span>/</span>
+          <a href="#" id="schedule-detail-breadcrumb-root" onclick="goPage(getScheduleDetailBackPage());return false">排课表时间</a><span>/</span>
+          <span id="schedule-detail-breadcrumb-mid">按入学批次排</span><span>/</span>
           <span id="schedule-time-detail-title">排课</span>
         </div>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="goPage(getScheduleDetailBackPage())">返回</button>
+        <div class="page-header-actions">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-detail-submit" onclick="submitScheduleTimeCurrentScope()">提交</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="goPage(getScheduleDetailBackPage())">返回</button>
+        </div>
       </div>
       <div class="schedule-detail-layout">
         <aside class="card schedule-detail-sidebar">
@@ -2526,10 +2541,10 @@
       </div>
     </section>
 
-    <!-- ═══ 排课管理 · 教师排课 ═══ -->
+    <!-- ═══ 排课管理 · 排课表时间 · 按教师排 ═══ -->
     <section class="page schedule-page" id="page-schedule-teacher">
       <div class="page-header">
-        <div><h1>教师排课</h1><p class="subtitle">维护教学班任课教师，支持主讲 / 助教</p></div>
+        <div><h1>按教师排</h1><p class="subtitle">排课表时间 · 按教师维度安排上课时间，提交后进入排课表教室</p></div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -2566,20 +2581,26 @@
         </div>
       </div>
       <div class="legend-bar" id="schedule-teacher-hint"></div>
-      <div class="card schedule-card"><div class="table-scroll"><table class="data-table">
+      <div class="card schedule-card">
+        <div class="panel-toolbar schedule-arrange-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-teacher-batch-submit" onclick="submitScheduleTimeListSelection('teacher')" disabled>提交</button>
+          <span class="hint">勾选教师后提交至排课表教室</span>
+        </div>
+        <div class="table-scroll"><table class="data-table">
         <thead><tr>
+          <th class="col-center srf-col-pick"><input type="checkbox" id="schedule-teacher-check-all" onchange="toggleScheduleTimeListCheckAll('teacher', this.checked)"></th>
           <th class="col-index">序号</th><th>教师工号</th><th>教师姓名</th><th>所在单位</th>
           <th class="col-center">教职工类型</th><th class="col-center">课程数</th><th class="col-center">已排完</th>
-          <th class="col-center">未排完</th><th class="col-center">操作</th>
+          <th class="col-center">未排完</th><th class="col-center">提交状态</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-teacher-body"></tbody>
       </table></div></div>
     </section>
 
-    <!-- ═══ 排课管理 · 课程排课 ═══ -->
+    <!-- ═══ 排课管理 · 排课表时间 · 按课程排 ═══ -->
     <section class="page schedule-page" id="page-schedule-course">
       <div class="page-header">
-        <div><h1>课程排课</h1><p class="subtitle">按课程维度查看排课进度并进入排课界面</p></div>
+        <div><h1>按课程排</h1><p class="subtitle">排课表时间 · 按课程维度安排上课时间，提交后进入排课表教室</p></div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -2616,18 +2637,178 @@
         </div>
       </div>
       <div class="legend-bar" id="schedule-course-hint"></div>
-      <div class="card schedule-card"><div class="table-scroll"><table class="data-table">
+      <div class="card schedule-card">
+        <div class="panel-toolbar schedule-arrange-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-course-batch-submit" onclick="submitScheduleTimeListSelection('course')" disabled>提交</button>
+          <span class="hint">勾选课程后提交至排课表教室</span>
+        </div>
+        <div class="table-scroll"><table class="data-table">
         <thead><tr>
+          <th class="col-center srf-col-pick"><input type="checkbox" id="schedule-course-check-all" onchange="toggleScheduleTimeListCheckAll('course', this.checked)"></th>
           <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th>开课单位</th>
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
-          <th class="col-center">未排完</th><th class="col-center">操作</th>
+          <th class="col-center">未排完</th><th class="col-center">提交状态</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-course-body"></tbody>
       </table></div></div>
     </section>
 
-    <!-- ═══ 排课管理 · 教室排课 ═══ -->
-    <section class="page schedule-page" id="page-schedule-room">
+    <!-- ═══ 排课管理 · 排课表教室 · 按入学批次排 ═══ -->
+    <section class="page schedule-page" id="page-schedule-room-intake">
+      <div class="page-header">
+        <div><h1>按入学批次排</h1><p class="subtitle">排课表教室 · 承接已提交任务，按学院、专业与入学批次安排上课教室</p></div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields">
+            <div class="schedule-query-field">
+              <label for="schedule-room-intake-filter-school">学院</label>
+              <select class="input input-sm" id="schedule-room-intake-filter-school" onchange="onScheduleRoomIntakeFilterSchoolChange()">
+                <option value="">全部学院</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-intake-filter-prog">专业</label>
+              <select class="input input-sm" id="schedule-room-intake-filter-prog" onchange="onScheduleRoomIntakeFilterProgrammeChange()">
+                <option value="">全部专业</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-intake-filter-intake">入学批次</label>
+              <select class="input input-sm" id="schedule-room-intake-filter-intake">
+                <option value="">全部入学批次</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-intake-filter-status">排教室状态</label>
+              <select class="input input-sm" id="schedule-room-intake-filter-status">
+                <option value="">全部</option>
+                <option value="done">已排完</option>
+                <option value="pending">未排完</option>
+              </select>
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomIntakePage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('intake')">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-room-intake-hint"></div>
+      <div class="card schedule-card"><div class="table-scroll"><table class="data-table">
+        <thead><tr>
+          <th class="col-index">序号</th><th>入学批次</th><th>专业</th><th class="col-center">学院</th>
+          <th class="col-center">课程数</th><th class="col-center">已排教室</th><th class="col-center">未排教室</th><th class="col-center">操作</th>
+        </tr></thead>
+        <tbody id="schedule-room-intake-body"></tbody>
+      </table></div></div>
+    </section>
+
+    <!-- ═══ 排课管理 · 排课表教室 · 按教师排 ═══ -->
+    <section class="page schedule-page" id="page-schedule-room-teacher">
+      <div class="page-header">
+        <div><h1>按教师排</h1><p class="subtitle">排课表教室 · 承接已提交任务，按教师维度安排上课教室</p></div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields">
+            <div class="schedule-query-field">
+              <label for="schedule-room-teacher-filter-term">学年学期</label>
+              <input class="input input-sm" id="schedule-room-teacher-filter-term" readonly placeholder="—">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-teacher-filter-id">教工号</label>
+              <input class="input input-sm" id="schedule-room-teacher-filter-id" placeholder="教工号">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-teacher-filter-name">教师姓名</label>
+              <input class="input input-sm" id="schedule-room-teacher-filter-name" placeholder="教师姓名">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-teacher-filter-dept">所在单位</label>
+              <input class="input input-sm" id="schedule-room-teacher-filter-dept" placeholder="所在单位">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-teacher-filter-status">排教室状态</label>
+              <select class="input input-sm" id="schedule-room-teacher-filter-status">
+                <option value="">全部</option>
+                <option value="done">已排完</option>
+                <option value="pending">未排完</option>
+              </select>
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomTeacherPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('teacher')">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-room-teacher-hint"></div>
+      <div class="card schedule-card"><div class="table-scroll"><table class="data-table">
+        <thead><tr>
+          <th class="col-index">序号</th><th>教师工号</th><th>教师姓名</th><th>所在单位</th>
+          <th class="col-center">教职工类型</th><th class="col-center">课程数</th><th class="col-center">已排教室</th>
+          <th class="col-center">未排教室</th><th class="col-center">操作</th>
+        </tr></thead>
+        <tbody id="schedule-room-teacher-body"></tbody>
+      </table></div></div>
+    </section>
+
+    <!-- ═══ 排课管理 · 排课表教室 · 按课程排 ═══ -->
+    <section class="page schedule-page" id="page-schedule-room-course">
+      <div class="page-header">
+        <div><h1>按课程排</h1><p class="subtitle">排课表教室 · 承接已提交任务，按课程维度安排上课教室</p></div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields">
+            <div class="schedule-query-field">
+              <label for="schedule-room-course-filter-term">学年学期</label>
+              <input class="input input-sm" id="schedule-room-course-filter-term" readonly placeholder="—">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-course-filter-code">课程号</label>
+              <input class="input input-sm" id="schedule-room-course-filter-code" placeholder="课程号">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-course-filter-name">课程名称</label>
+              <input class="input input-sm" id="schedule-room-course-filter-name" placeholder="课程名称">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-course-filter-dept">开课单位</label>
+              <input class="input input-sm" id="schedule-room-course-filter-dept" placeholder="开课单位">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-course-filter-status">排教室状态</label>
+              <select class="input input-sm" id="schedule-room-course-filter-status">
+                <option value="">全部</option>
+                <option value="done">已排完</option>
+                <option value="pending">未排完</option>
+              </select>
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomCoursePage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('course')">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-room-course-hint"></div>
+      <div class="card schedule-card"><div class="table-scroll"><table class="data-table">
+        <thead><tr>
+          <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th>开课单位</th>
+          <th class="col-center">小组数</th><th class="col-center">已排教室</th>
+          <th class="col-center">未排教室</th><th class="col-center">操作</th>
+        </tr></thead>
+        <tbody id="schedule-room-course-body"></tbody>
+      </table></div></div>
+    </section>
+
+    <!-- 排课表教室 · 排课详情（由脚本从时间侧详情页克隆） -->
+    <section class="page schedule-page schedule-detail-page" id="page-schedule-room-detail" hidden aria-hidden="true"></section>
+
+    <!-- ═══ 排课管理 · 教室排课（旧页，保留兼容） ═══ -->
+    <section class="page schedule-page" id="page-schedule-room" hidden aria-hidden="true">
       <div class="page-header">
         <div><h1>教室排课</h1><p class="subtitle">为教学班分配上课地点与容量校验</p></div>
       </div>

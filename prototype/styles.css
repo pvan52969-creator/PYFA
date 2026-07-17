@@ -11858,6 +11858,34 @@ code {
   margin: 0;
 }
 
+.schedule-arrange-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.schedule-page .page-header.compact {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.schedule-page .page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.badge.badge-green {
+  background: #dcfce7;
+  color: #166534;
+}
+.badge.badge-gray {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
 .adj-freeze-left-2 th.col-index,
 .adj-freeze-left-2 td.col-index {
   position: sticky;

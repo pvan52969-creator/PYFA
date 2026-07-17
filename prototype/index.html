@@ -989,10 +989,10 @@
                 <div class="offering-group-tabs">
                   <span class="offering-group-tab is-active" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
                   <span class="offering-group-tab is-muted" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
+                  <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">教师授课学时</span>
+                  <!-- <span class="offering-group-tab" data-tab="summary" ...>类型学时汇总</span> 原按学时类型汇总安排 -->
                   <span class="offering-group-tab is-muted" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
-                  <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示 -->
-                  <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">类型学时汇总</span>
-                  <!-- <span class="offering-group-tab" data-tab="summary" ...>学时安排情况汇总</span> 原 Tab 文案 -->
+                  <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示；排最右 -->
                 </div>
                 <div class="offering-group-toolbar offering-group-assign-toolbar" id="offering-group-assign-toolbar">
                   <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button>
@@ -1034,10 +1034,10 @@
                     </div>
                   </div>
                   <div class="offering-group-toolbar offering-group-student-toolbar">
-                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-adjust-group" onclick="adjustOfferingGroupingStudents()">调整分组</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-adjust-group" onclick="adjustOfferingGroupingStudents()" disabled>调整分组</button>
                     <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentPicker()">添加学生</button>
                     <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-preset-roster-grouping" onclick="openPresetRosterGroupingConfirm()">预置名单分配</button>
-                    <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-remove-roster" onclick="removeOfferingGroupingStudentsFromRoster()">移除</button>
+                    <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-remove-roster" onclick="removeOfferingGroupingStudentsFromRoster()" disabled>移除</button>
                     <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentRemovalLog()">名单移除记录</button>
                   </div>
                   <div class="table-scroll">
@@ -1066,7 +1066,7 @@
                   </div>
                 </div>
                 <div id="offering-group-hour-summary-panel" hidden>
-                  <p class="offering-group-teacher-hint text-muted">按学时类型汇总全部教师安排：展示各类型学时的任课教师、负责小组与起止周；数据来源于「教师安排」Tab 中的全部记录。</p>
+                  <p class="offering-group-teacher-hint text-muted">列出本课当前已安排的教师，并按开课安排汇总其本学期授课学时（周学时 × 周次；多组合班且「同时多组授课」时学时只计一次）。便于对照学院 Teaching Load 表核对工作量。</p>
                   <div class="offering-hour-summary-content" id="offering-group-hour-summary-content"></div>
                 </div>
                 <div id="offering-group-group-status-panel">

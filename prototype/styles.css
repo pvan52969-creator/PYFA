@@ -4526,6 +4526,18 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .cell-ellipsis-tip {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td.actions {
+  overflow: visible;
+  text-overflow: clip;
+}
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(1),
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(1) {
   width: 72px;
@@ -6596,6 +6608,211 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   overflow-y: auto;
   /* overflow: hidden; ???????????????? */
 }
+#offering-group-hour-summary-panel .offering-group-teacher-hint {
+  margin: 0 0 8px;
+  flex-shrink: 0;
+}
+#offering-group-hour-summary-panel .offering-hour-summary-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-card-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, var(--blue-50) 0%, #fff 100%);
+  border-bottom: 1px solid var(--border-light);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-card-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue-900);
+  letter-spacing: 0.01em;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-unit {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-meta-sep {
+  color: var(--text-3);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table {
+  margin: 0;
+  width: 100%;
+  min-width: 560px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table thead tr.offering-grouping-teacher-load-zone-row th {
+  top: 0;
+  z-index: 2;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table thead tr:not(.offering-grouping-teacher-load-zone-row) th {
+  top: 37px;
+  z-index: 1;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table thead th.col-section-zone {
+  text-align: center;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: #f1f5f9;
+  border-bottom-color: var(--border);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table thead th.col-term-zone {
+  vertical-align: middle;
+  letter-spacing: 0.02em;
+  white-space: normal;
+  line-height: 1.35;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tbody td,
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tfoot td {
+  padding: 11px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tbody tr:last-child td {
+  border-bottom: none;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tbody tr:hover td:not(.col-term-primary) {
+  background: #f8fafc;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tbody tr:hover td.col-term-primary {
+  background: #dbeafe;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table .col-index {
+  width: 56px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table .col-name {
+  width: 22%;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table .col-groups {
+  width: 34%;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-group-line {
+  display: block;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table .col-term {
+  width: 88px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  color: var(--text-2);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table .col-section-hours {
+  border-right: none;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table .col-term-primary {
+  width: 132px;
+  font-weight: 700;
+  color: var(--blue-900);
+  background: #eff6ff;
+  border-left: 3px solid var(--blue-600);
+  box-shadow: inset 8px 0 12px -10px rgba(37, 99, 235, 0.35);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table thead th.col-term-primary {
+  color: var(--blue-900);
+  background: #dbeafe;
+  border-left: 3px solid var(--blue-600);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tfoot td {
+  background: #f1f5f9;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: none;
+  border-top: 1px solid var(--border);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tfoot tr.is-average td {
+  background: #f8fafc;
+  font-weight: 600;
+  color: var(--text-2);
+  border-top: none;
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tfoot .col-term-primary {
+  background: #bfdbfe;
+  color: var(--blue-900);
+  border-left: 3px solid var(--blue-600);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-table tfoot tr.is-average .col-term-primary {
+  background: #dbeafe;
+  color: var(--blue-800);
+}
+#offering-group-hour-summary-panel .offering-grouping-teacher-load-empty {
+  padding: 40px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: #fafbfc;
+}
 #offering-group-group-status-panel {
   flex: 1;
   min-height: 0;
@@ -6950,10 +7167,6 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   margin: 0;
 }
 #offering-group-teacher-panel .offering-group-teacher-hint {
-  margin: 0 0 8px;
-  flex-shrink: 0;
-}
-#offering-group-hour-summary-panel .offering-group-teacher-hint {
   margin: 0 0 8px;
   flex-shrink: 0;
 }
@@ -7675,6 +7888,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   vertical-align: middle;
   cursor: pointer;
   accent-color: var(--blue-600);
+}
+.group-assign-group-picks-table-wrap.is-group-picks-locked .col-check input[type="checkbox"],
+#group-assign-groups-wrap.is-group-picks-locked .group-assign-group-picks-table .col-check input[type="checkbox"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.group-assign-group-picks-table-wrap.is-group-picks-locked .group-assign-group-pick-row {
+  cursor: default;
 }
 .group-assign-group-picks-table th.col-center,
 .group-assign-group-picks-table td.col-center {

@@ -46,10 +46,10 @@
       </div>
       <div class="nav-section">
         <div class="nav-section-title">通识选修课开课<span class="nav-section-status">（设计中）</span></div>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-demand">通识选修开课需求</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">通识选修小组配额</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课计划</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a>
+        <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-demand">通识选修开课需求</a> --> <!-- 已并入「通识选修小组配额」上段 -->
+        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">通识选修计划</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课</a>
+        <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a> --> <!-- 已并入「通识选修开课」下段 -->
         <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
       </div>
       <div class="nav-section">
@@ -908,7 +908,7 @@
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>提交</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
-          <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课计划」维护</span>
+          <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护</span>
         </div>
         <div class="table-scroll">
           <table class="data-table course-offering-major-table">
@@ -985,21 +985,22 @@
                 </div>
                 <div class="offering-group-tree" id="offering-group-tree"></div>
                 </aside>
-                <!-- <button type="button" class="offering-group-sidebar-rail" ...>收起分组信息</button> -->
-                <!-- 原侧栏折叠轨，改始终展开分组信息 -->
+                <button type="button" class="offering-group-sidebar-rail" id="offering-group-sidebar-toggle" aria-expanded="true" aria-label="收起分组信息" onclick="toggleOfferingGroupSidebar()">
+                  <span class="offering-group-sidebar-rail-icon" aria-hidden="true"></span>
+                </button>
               </div>
               <div class="offering-group-main">
                 <div class="offering-group-main-head">
                 <div class="offering-group-tabs">
                   <span class="offering-group-tab is-active" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
-                  <span class="offering-group-tab is-muted" data-tab="teacher" onclick="switchOfferingGroupingTab('teacher')">教师安排</span>
+                  <!-- 原「安排总览」(data-tab=teacher) 已下线；细改改在「课程班/小组学时详情」安排详情表内完成 -->
                   <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">教师授课学时</span>
                   <!-- <span class="offering-group-tab" data-tab="summary" ...>类型学时汇总</span> 原按学时类型汇总安排 -->
                   <span class="offering-group-tab is-muted" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
                   <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示；排最右 -->
                 </div>
                 <div class="offering-group-toolbar offering-group-assign-toolbar" id="offering-group-assign-toolbar">
-                  <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button>
+                  <!-- <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-set-coordinator" onclick="openSectionCoordinatorSettings()" disabled title="设置课程 Coordinator">设置 Coordinator</button> -->
                   <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-revoke-assign" onclick="removeOfferingGroupAssignSelected()" disabled hidden>删除</button>
                   <label class="offering-group-assign-check-all" id="oga-check-all-wrap" hidden>
                     <input type="checkbox" id="oga-check-all" aria-label="全选" onchange="toggleOfferingGroupingAssignCheckAll(this.checked)">
@@ -1074,7 +1075,6 @@
                   <div class="offering-hour-summary-content" id="offering-group-hour-summary-content"></div>
                 </div>
                 <div id="offering-group-group-status-panel">
-                  <p class="offering-group-teacher-hint text-muted">按小组查看各类型学时是否已安排完成：单元格展示已录/计划，并轻量带出教师与起止周；悬停可看全部安排明细。细改请到「教师安排」。</p>
                   <div class="offering-group-status-content" id="offering-group-group-status-content"></div>
                 </div>
               </div>
@@ -1324,37 +1324,44 @@
       -->
     </section>
 
-    <!-- ═══ 开课管理 · 通识选修 · 开课需求 ═══ -->
+    <!-- ═══ 开课管理 · 通识选修 · 开课需求（已并入「通识选修小组配额」上段） ═══ -->
+    <!--
     <section class="page" id="page-course-ge-offering-demand">
+      ...
+    </section>
+    -->
+
+    <!-- ═══ 开课管理 · 通识选修 · 小组配额（上段需求 + 下段配额） ═══ -->
+    <section class="page" id="page-course-ge-offering-quota">
       <div class="page-header">
         <div>
-          <h1>通识选修开课需求</h1>
-          <p class="subtitle">按学期汇总需修通识选修的专业批次与人数，供 AC 定组与学院开课参考</p>
+          <h1>通识选修计划</h1>
+          <p class="subtitle">上段查看开课需求，下段由 AC 定各学院需开课程班/小组数（下限）；学院可超额，无需确认</p>
         </div>
       </div>
       <div class="alert-info offering-module-hint">
         <p><strong>说明</strong></p>
         <ul class="offering-module-hint-list">
-          <li>本页为<strong>演示数据</strong>。正式环境将依据已提交执行计划详情中「选修类分类 · 修读要求」（4学年×3学期）汇总本学期需修 GE 的专业批次与人数。</li>
-          <li>学生侧文/商/理<strong>挂在专业</strong>上（学院本身不具有文商理类别）；汇总人数时按专业大类归并。</li>
-          <li>交叉规则：文科学生可选商科/理科 GE；商科学生可选文科/理科 GE；理科学生可选文科/商科 GE。</li>
+          <li>上段需求为<strong>演示数据</strong>。正式环境将依据已提交执行计划详情中「选修类分类 · 修读要求」汇总本学期需修 GE 的专业批次与人数；文/商/理挂在专业上。</li>
+          <li>下段保底组数为<strong>下限</strong>：学院至少开满，可以开多，不能开少；超额不需 AC 确认。</li>
+          <li>本模块只管组数与每组人数上限；学生名单由选课应用生成。交叉规则：文科可选商/理 GE，商科可选文/理，理科可选文/商。</li>
         </ul>
       </div>
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
-            <label for="ge-offering-demand-filter-term">开课学期</label>
-            <select class="input input-sm" id="ge-offering-demand-filter-term" onchange="onGeOfferingDemandTermFilterChange()"></select>
-          </div>
-          <div class="course-time-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderGeOfferingDemandPage()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="goPage('course-ge-offering-quota')">前往小组配额</button>
+            <label for="ge-offering-quota-filter-term">开课学期</label>
+            <select class="input input-sm" id="ge-offering-quota-filter-term" onchange="onGeOfferingQuotaTermFilterChange()"></select>
           </div>
         </div>
       </div>
-      <div class="legend-bar" id="ge-offering-demand-summary"></div>
-      <div class="card">
-        <div class="card-head"><span>按学院需求</span><span class="hint">学院仅汇总人数；文商理见上方按专业大类合计</span></div>
+      <div class="ge-offering-demand-summary" id="ge-offering-demand-summary"></div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-head"><span>开课需求 · 按学院</span><span class="hint">学院仅汇总人数；文商理见上方按专业大类合计</span></div>
+        <div class="panel-toolbar ge-offering-quota-section-toolbar">
+          <button class="btn btn-outline btn-sm" type="button" onclick="refreshGeOfferingDemandPage()">刷新</button>
+          <span class="form-hint">人数可能随执行计划更新，可点刷新重新汇总</span>
+        </div>
         <div class="table-scroll">
           <table class="data-table compact">
             <thead>
@@ -1369,46 +1376,20 @@
           </table>
         </div>
       </div>
-    </section>
-
-    <!-- ═══ 开课管理 · 通识选修 · 小组配额 ═══ -->
-    <section class="page" id="page-course-ge-offering-quota">
-      <div class="page-header">
-        <div>
-          <h1>通识选修小组配额</h1>
-          <p class="subtitle">AC 为各学院定保底组数（下限）；学院可超额，无需确认</p>
-        </div>
-      </div>
-      <div class="alert-info offering-module-hint">
-        <p><strong>规则</strong></p>
-        <ul class="offering-module-hint-list">
-          <li>保底组数为<strong>下限</strong>：学院至少开满，可以开多，不能开少；超额不需 AC 确认。</li>
-          <li>本模块只管组数与每组人数上限；学生名单由选课应用生成。</li>
-          <li>文商理挂在专业上，学院配额不区分文商理。</li>
-        </ul>
-      </div>
-      <div class="card course-major-query-card">
-        <div class="course-major-query-grid">
-          <div class="course-time-query-field">
-            <label for="ge-offering-quota-filter-term">开课学期</label>
-            <select class="input input-sm" id="ge-offering-quota-filter-term" onchange="onGeOfferingQuotaTermFilterChange()"></select>
-          </div>
-          <div class="course-time-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="saveGeOfferingQuotaPage()">保存配额</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="goPage('course-offering-ge')">前往开课计划</button>
-          </div>
-        </div>
-      </div>
       <div class="card">
-        <div class="card-head"><span>各学院保底组数</span><span class="hint">下限；可超额</span></div>
+        <div class="card-head"><span>各学院配额</span><span class="hint">需开为下限；可超额</span></div>
+        <div class="panel-toolbar ge-offering-quota-section-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="saveGeOfferingQuotaPage()">保存计划</button>
+          <span class="form-hint">修改需开课程班/小组数后点击保存计划</span>
+        </div>
         <div class="table-scroll">
           <table class="data-table compact">
             <thead>
               <tr>
                 <th class="col-index">序号</th>
                 <th>学院</th>
-                <th class="col-center">保底组数（下限）</th>
-                <th class="col-center">当前已开组数</th>
+                <th class="col-center">需开课程班/小组数</th>
+                <th class="col-center">已开课程班/小组数</th>
                 <th class="col-center">进度</th>
               </tr>
             </thead>
@@ -1418,10 +1399,18 @@
       </div>
     </section>
 
-    <!-- ═══ 开课管理 · 通识选修开课 ═══ -->
+    <!-- ═══ 开课管理 · 通识选修开课（计划 + 安排合表） ═══ -->
     <section class="page" id="page-course-offering-ge">
       <div class="page-header">
-        <div><h1>通识选修开课计划</h1><p class="subtitle">对照 AC 保底组数，从「校选课程管理」选择本学期要开设的通识选修课程</p></div>
+        <div><h1>通识选修开课</h1><p class="subtitle">学院自行维护开课课程、分组与教师安排；无合班环节，安排完成后一次提交</p></div>
+      </div>
+      <div class="alert-info offering-module-hint">
+        <p><strong>流程说明</strong></p>
+        <ol class="offering-module-hint-list">
+          <li>从「校选课程管理」添加本学期要开设的通识选修课程，维护拟开组数与修读范围。</li>
+          <li>在同一列表操作列中「安排教师」（含分组）、「申请 Support」；通识选修无合分班。</li>
+          <li>完成安排后勾选提交；学院已开组数须 ≥ AC 保底下限。开放选课名单由选课应用生成。</li>
+        </ol>
       </div>
       <div class="legend-bar" id="course-offering-hint-ge"></div>
       <div class="card" id="ge-offering-plan-quota-card" style="margin-bottom:12px">
@@ -1432,8 +1421,8 @@
             <thead>
               <tr>
                 <th>学院</th>
-                <th class="col-center">保底组数</th>
-                <th class="col-center">已开组数</th>
+                <th class="col-center">保底课程班/小组数</th>
+                <th class="col-center">已开课程班/组数</th>
                 <th class="col-center">状态</th>
               </tr>
             </thead>
@@ -1448,121 +1437,80 @@
             <select class="input input-sm" id="ge-offering-filter-term" onchange="onGeOfferingTermFilterChange()"></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-offering-filter-ge">课程号 / 名称</label>
-            <input class="input input-sm" id="course-offering-filter-ge" placeholder="课程号 / 课程名称" oninput="renderGeOfferingPlanPage()">
-          </div>
-          <div class="course-time-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderGeOfferingPlanPage()">查询</button>
-          </div>
-        </div>
-      </div>
-      <!-- <div class="toolbar-row"><div class="filter-bar inline">...</div></div> --> <!-- 原简易过滤栏，改与专业开课一致的开课学期查询区 -->
-      <div class="card">
-        <div class="panel-toolbar ge-offering-list-toolbar">
-          <button class="btn btn-primary btn-sm" type="button" onclick="openGeOfferingCourseAddModal()">添加开课课程</button>
-          <button class="btn btn-outline btn-sm" type="button" id="btn-ge-offering-submit" onclick="submitSelectedGeOfferingTasks()" disabled>提交</button>
-          <span class="form-hint">从校选课程库加课并维护拟开组数；学院已开组数须 ≥ AC 保底下限后方可提交；名单由选课应用生成</span>
-        </div>
-        <div class="table-scroll"><table class="data-table course-offering-table">
-          <thead><tr>
-            <th class="col-check"><input type="checkbox" id="ge-offering-check-all" aria-label="全选" onchange="toggleGeOfferingCheckAll(this.checked)"></th>
-            <th class="col-index">序号</th>
-            <th>负责人</th>
-            <th class="col-center">开课学期</th><th class="col-center">提交状态</th>
-            <th>课程号</th><th>课程名称</th><th class="col-center">开课单位</th>
-            <th class="col-center">拟开组数</th>
-            <th class="col-center">学分</th><th class="col-center">总学时</th>
-            <!-- <th class="col-center">上课批次</th> --> <!-- 暂不支持指定上课批次范围 -->
-            <!-- <th class="col-center">教学班</th> --> <!-- 通识选修无教学班概念 -->
-            <th>备注</th><th class="col-sticky-actions">操作</th>
-          </tr></thead>
-          <tbody id="course-offering-body-ge"></tbody>
-        </table></div>
-      </div>
-    </section>
-
-    <!-- ═══ 开课管理 · 通识选修 · 任务安排 ═══ -->
-    <section class="page" id="page-course-ge-offering-task">
-      <div class="page-header">
-        <div><h1>通识选修开课任务安排</h1><p class="subtitle">对已维护的通识选修开课计划进行分组、教师安排</p></div>
-      </div>
-      <div class="alert-info offering-module-hint">
-        <p><strong>流程说明</strong></p>
-        <ol class="offering-module-hint-list">
-          <li>在「通识选修开课计划」添加并<strong>提交</strong>课程后，本页将展示对应任务；无数据时也可进入本页。</li>
-          <li>通识选修无合分班环节，按课程进行分组并为各小组安排授课教师（学时类型、起止周等）。</li>
-          <li>完成安排后可点击「查看」核对计划人数、场地与排课设置；开放选课名单由选课应用生成。</li>
-        </ol>
-        <!-- <p>依据通识选修开课计划，安排各课程班的学时、任课教师与起止周。（原型占位，后续与计划页联动。）</p> -->
-      </div>
-      <div class="card course-major-query-card">
-        <div class="course-major-query-grid">
-          <div class="course-time-query-field">
-            <label for="ge-offering-task-filter-term">开课学期</label>
-            <select class="input input-sm" id="ge-offering-task-filter-term" onchange="onGeOfferingTaskTermFilterChange()"></select>
-          </div>
-          <div class="course-time-query-field">
             <label for="ge-offering-task-filter-offering-unit">开课单位</label>
             <select class="input input-sm" id="ge-offering-task-filter-offering-unit"><option value="">全部开课单位</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="ge-offering-task-filter-name">课程号</label>
-            <input class="input input-sm" id="ge-offering-task-filter-name" placeholder="课程号">
+            <label for="course-offering-filter-ge">课程号 / 名称</label>
+            <input class="input input-sm" id="course-offering-filter-ge" placeholder="课程号 / 课程名称" oninput="renderGeOfferingPlanPage()">
           </div>
           <div class="course-time-query-field">
             <label for="ge-offering-task-filter-task-submit">提交状态</label>
-            <select class="input input-sm" id="ge-offering-task-filter-task-submit">
+            <select class="input input-sm" id="ge-offering-task-filter-task-submit" onchange="renderGeOfferingPlanPage()">
               <option value="">全部</option>
               <option value="submitted">已提交</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
             </select>
           </div>
+          <!-- 兼容旧任务列表学期同步 -->
+          <select id="ge-offering-task-filter-term" hidden aria-hidden="true"></select>
+          <input id="ge-offering-task-filter-name" type="hidden" value="">
           <div class="course-time-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="queryGeOfferingTaskList()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="resetGeOfferingTaskFilters()">重置</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderGeOfferingPlanPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetGeOfferingUnifiedFilters()">重置</button>
           </div>
         </div>
       </div>
-      <div class="card course-ge-task-list-card">
-        <div class="panel-toolbar course-ge-task-toolbar">
+      <div class="card ge-offering-plan-list-card course-ge-task-list-card">
+        <div class="panel-toolbar ge-offering-list-toolbar course-ge-task-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openGeOfferingCourseAddModal()">添加开课课程</button>
           <button class="btn btn-primary btn-sm" type="button" id="btn-ge-task-submit" onclick="submitSelectedGeOfferingTaskArrangements()" disabled>提交</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-ge-task-revert" onclick="revertSelectedGeOfferingTaskArrangements()" disabled>退回</button>
-          <span class="form-hint">完成分组与教师安排后勾选课程批量提交；需修改计划信息时可退回至开课计划</span>
-          <!-- <span class="form-hint">完成分组与教师安排；如需修改计划人数、场地等请点击「查看」</span> --> <!-- 原仅提示文案，改与专业任务页一致提供提交/退回 -->
+          <span class="form-hint">加课后即可安排教师；完成后勾选批量提交；退回后可重新修改安排</span>
         </div>
         <div class="table-scroll">
           <table class="data-table course-offering-table course-ge-offering-task-table">
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="ge-offering-task-check-all" aria-label="全选" onchange="toggleGeOfferingTaskCheckAll(this.checked)"></th>
               <th class="col-index">序号</th>
-              <th class="col-center">提交状态</th>
+              <th>负责人</th>
               <th class="col-center">开课学期</th>
+              <th class="col-center">提交状态</th>
               <th>课程号</th><th>课程名称</th>
-              <th class="col-center">学分</th><th class="col-center">总学时</th>
               <th class="col-center">开课单位</th>
+              <th class="col-center">教师数</th>
+              <th>教师</th>
+              <th class="col-center">课程班/小组数</th>
+              <th>Course Coordinator</th>
+              <th class="col-center">学分</th><th class="col-center">总学时</th>
               <th class="col-center">起止周</th>
               <th class="col-center">课程名额上限</th>
+              <th class="col-center">Support历史</th>
+              <th class="col-center">Support学院</th>
+              <th>备注</th>
               <th class="col-sticky-actions">操作</th>
             </tr></thead>
-            <tbody id="course-ge-offering-task-body"></tbody>
+            <tbody id="course-offering-body-ge"></tbody>
           </table>
         </div>
         <div class="table-footer">
           <div class="pagination" id="course-ge-offering-task-pagination"></div>
         </div>
       </div>
+      <!-- 原上下两段双表（开课课程 + 分组与教师安排）已合为上表 -->
+      <!-- 原独立「通识选修开课任务安排」页已并入本页 -->
     </section>
 
     <!-- ═══ 开课管理 · 通识选修 · 开课名单管理 ═══ -->
     <section class="page" id="page-course-ge-offering-roster">
       <div class="page-header">
-        <div><h1>通识选修课开课名单管理</h1><p class="subtitle">任务安排提交后，按开课任务维护各小组学生名单</p></div>
+        <div><h1>通识选修课开课名单管理</h1><p class="subtitle">开课安排提交后，按开课任务维护各小组学生名单</p></div>
       </div>
       <div class="alert-info offering-module-hint">
         <p><strong>流程说明</strong></p>
         <ul class="offering-module-hint-list">
-          <li>任务安排提交后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
+          <li>「通识选修开课」提交安排后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
           <li>通识选修为<strong>开放选课</strong>，默认名单由选课应用生成；本页支持<strong>移除</strong>与<strong>手动添加</strong>学生，无预置批次名单。</li>
           <!-- <li>任务安排提交后，本页按开课任务展示；点击「查看名单」进入分组页，在左侧切换小组查看学生。</li> -->
           <!-- <li>通识选修为<strong>开放选课</strong>，学生名单由选课应用生成，本页<strong>仅支持查看</strong>，不可手工维护名单。</li> -->
@@ -4291,6 +4239,27 @@
         </div>
       </div>
     </section>
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">学时分类</h4>
+      <div class="form-grid-2">
+        <div class="form-item">
+          <label class="req">理论学时</label>
+          <input class="input input-sm readonly" id="ge-edit-theory-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req">辅导学时</label>
+          <input class="input input-sm readonly" id="ge-edit-tutorial-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req">实践学时</label>
+          <input class="input input-sm readonly" id="ge-edit-practice-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req">其他学时</label>
+          <input class="input input-sm readonly" id="ge-edit-other-hours" type="text" readonly tabindex="-1">
+        </div>
+      </div>
+    </section>
     <!-- 无合班信息：通识选修不按专业批次合班 -->
   </div>
   <div class="drawer-foot">
@@ -4464,6 +4433,13 @@
       <button class="modal-close" type="button" onclick="closeMajorOfferingTeacherPickerModal()">×</button>
     </div>
     <div class="modal-body teacher-picker-modal-body">
+      <div class="group-assign-prior-teachers" id="group-assign-prior-teachers" hidden>
+        <div class="group-assign-prior-teachers-head">
+          <strong>上学期任课参考</strong>
+          <span class="form-hint" id="group-assign-prior-teachers-term"></span>
+        </div>
+        <div class="group-assign-prior-teachers-list" id="group-assign-prior-teachers-list"></div>
+      </div>
       <div class="teacher-picker-filter-panel">
         <div class="teacher-picker-filter-grid">
           <div class="form-item">
@@ -4511,6 +4487,7 @@
             <th>教师类型</th>
             <th class="col-center">性别</th>
             <th class="col-center">所属部门</th>
+            <th class="col-center" id="teacher-picker-term-hours-th" hidden title="本学期已安排学时">本学期学时</th>
           </tr></thead>
           <tbody id="teacher-picker-tbody"></tbody>
         </table>
@@ -5474,13 +5451,7 @@
     </div>
     <div class="modal-body group-assign-form-body">
       <input type="hidden" id="group-assign-edit-id">
-      <div class="group-assign-prior-teachers" id="group-assign-prior-teachers" hidden>
-        <div class="group-assign-prior-teachers-head">
-          <strong>上学期任课参考</strong>
-          <span class="form-hint" id="group-assign-prior-teachers-term"></span>
-        </div>
-        <div class="group-assign-prior-teachers-list" id="group-assign-prior-teachers-list"></div>
-      </div>
+      <!-- 上学期任课参考已并入「添加教师」弹窗 -->
       <div class="group-assign-form-layout">
         <section class="group-assign-form-panel group-assign-form-panel-config">
           <header class="group-assign-form-panel-head">安排条件</header>
@@ -5499,32 +5470,23 @@
                 <label>学时类型 <span class="req">*</span></label>
                 <div class="group-assign-hour-type-picks" id="group-assign-hour-type-picks"></div>
               </div>
-              <div class="form-field">
-                <label for="group-assign-plan-weekly-hours">计划周学时</label>
-                <input class="input" id="group-assign-plan-weekly-hours" type="text" readonly tabindex="-1">
-                <p class="form-hint">参考教学任务计划周学时</p>
-              </div>
-              <div class="form-field">
-                <label for="group-assign-type-total-hours" id="group-assign-type-total-label">该类型学时总数</label>
-                <input class="input" id="group-assign-type-total-hours" type="text" readonly tabindex="-1">
-              </div>
               <div class="form-field form-field-span-2" id="group-assign-groups-wrap">
                 <label>指定小组 <span class="req">*</span></label>
-                <p class="form-hint" id="group-assign-groups-hint">可选择多个小组，表示合班安排；未分组时按课程整体安排教师</p>
+                <p class="form-hint" id="group-assign-groups-hint">可多选合班；未分组时按课程整体安排</p>
                 <div class="group-assign-group-picks" id="group-assign-group-picks"></div>
               </div>
               <div class="form-field form-field-span-2 group-assign-course-level-hint" id="group-assign-course-level-wrap" hidden>
                 <label>课程班学时安排情况</label>
                 <div class="group-assign-course-level-display" id="group-assign-course-level-display">—</div>
-                <p class="form-hint">未分组时按课程班安排；下方展示当前学时类型的已录入、剩余与状态。</p>
               </div>
-            </div>
-          </div>
-        </section>
-        <section class="group-assign-form-panel group-assign-form-panel-schedule">
-          <header class="group-assign-form-panel-head">时间与教师</header>
-          <div class="group-assign-form-panel-body">
-            <div class="form-grid-2 group-assign-form-grid">
+              <div class="form-field group-assign-time-block-start">
+                <label for="group-assign-plan-weekly-hours">计划周学时</label>
+                <input class="input" id="group-assign-plan-weekly-hours" type="text" readonly tabindex="-1">
+              </div>
+              <div class="form-field">
+                <label for="group-assign-type-total-hours" id="group-assign-type-total-label">计划学时总数</label>
+                <input class="input" id="group-assign-type-total-hours" type="text" readonly tabindex="-1">
+              </div>
               <div class="form-field group-assign-weekly-field">
                 <label for="group-assign-weekly-hours">周学时 <span class="req">*</span></label>
                 <input class="input" id="group-assign-weekly-hours" type="text" inputmode="decimal" placeholder="如 2">
@@ -5534,7 +5496,6 @@
                 <label for="group-assign-recorded-hours">本次录入总学时</label>
                 <input class="input" id="group-assign-recorded-hours" type="text" readonly tabindex="-1">
                 <p class="form-hint group-assign-recorded-warn is-empty" id="group-assign-recorded-hours-warn" aria-live="polite">&nbsp;</p>
-                <p class="form-hint">由周学时与起止周自动计算</p>
               </div>
               <div class="form-field form-field-span-2 group-assign-week-inline-wrap">
                 <label for="group-assign-week-range">起止周 <span class="req">*</span></label>
@@ -5550,26 +5511,54 @@
                     <input class="input input-sm week-range-display-input" id="group-assign-week-range" type="text" placeholder="如 1-16" oninput="onGroupAssignWeekRangeInput()" onblur="onGroupAssignWeekRangeInputBlur()">
                     <button class="week-range-clear-btn" type="button" aria-label="清空" onclick="clearGroupAssignWeekRangeDraft()">×</button>
                   </div>
-                  <p class="week-range-input-hint">可直接点选下方周次，或按格式填写「1-2,4,5-9」</p>
+                  <p class="week-range-input-hint">点选周次，或填写「1-2,4,5-9」</p>
                 </div>
                 <div class="week-picker-grid group-assign-week-picker-grid" id="group-assign-week-picker-grid"></div>
               </div>
-              <div class="form-field form-field-span-2 group-assign-teacher-field">
-                <div class="group-assign-teacher-head">
-                  <label>授课教师 <span class="req">*</span></label>
-                  <div class="group-assign-teacher-toolbar">
-                    <button type="button" class="btn btn-outline btn-sm" onclick="openGroupAssignTeacherPicker()">添加教师</button>
-                    <span class="form-hint">支持多选；Coordinator 请在分组页指定</span>
-                  </div>
+            </div>
+          </div>
+        </section>
+        <section class="group-assign-form-panel group-assign-form-panel-existing">
+          <header class="group-assign-form-panel-head">已安排情况</header>
+          <div class="group-assign-form-panel-body">
+            <p class="form-hint group-assign-existing-hint">按教师对照已保存安排（小组 / 周次 / 学时）。</p>
+            <div class="table-scroll group-assign-existing-table-wrap" id="group-assign-existing-assign-wrap">
+              <table class="data-table compact group-assign-existing-table">
+                <thead><tr>
+                  <th class="col-index">序号</th>
+                  <th>教师</th>
+                  <th>负责小组</th>
+                  <th class="col-center">起止周</th>
+                  <th class="col-center">周学时</th>
+                  <th class="col-center">总学时</th>
+                  <th class="col-center">学时类型</th>
+                  <th class="col-center">同时授课</th>
+                </tr></thead>
+                <tbody id="group-assign-existing-assign-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <section class="group-assign-form-panel group-assign-form-panel-schedule">
+          <header class="group-assign-form-panel-head">授课教师 <span class="req">*</span></header>
+          <div class="group-assign-form-panel-body">
+            <div class="group-assign-teacher-field">
+              <div class="group-assign-teacher-head">
+                <div class="group-assign-teacher-toolbar">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="openGroupAssignTeacherPicker()">添加教师</button>
+                  <span class="form-hint">本课/本学期学时为已保存安排</span>
                 </div>
-                <div class="table-scroll group-assign-teacher-table-wrap">
-                  <table class="data-table compact">
-                    <thead><tr>
-                      <th>工号</th><th>姓名</th><th class="col-center">所属单位</th><th>教师类型</th><th class="col-center">是否 Support 教师</th><th class="col-actions">操作</th>
-                    </tr></thead>
-                    <tbody id="group-assign-form-teachers-body"></tbody>
-                  </table>
-                </div>
+              </div>
+              <div class="table-scroll group-assign-teacher-table-wrap">
+                <table class="data-table compact">
+                  <thead><tr>
+                    <th>工号</th><th>姓名</th><th class="col-center">所属单位</th><th>教师类型</th>
+                    <th class="col-center" title="本课已安排学时">本课学时</th>
+                    <th class="col-center" title="本学期已安排学时">本学期学时</th>
+                    <th class="col-center">Support</th><th class="col-actions">操作</th>
+                  </tr></thead>
+                  <tbody id="group-assign-form-teachers-body"></tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -5593,6 +5582,20 @@
     <div class="modal-body" id="offering-hour-assign-detail-body"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-hour-assign-detail')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：教师本学期开课课时安排 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-offering-teacher-term-assign">
+  <div class="modal modal-xl offering-teacher-term-assign-modal">
+    <div class="modal-head">
+      <h3 id="offering-teacher-term-assign-title">教师本学期开课课时安排</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-offering-teacher-term-assign')">×</button>
+    </div>
+    <div class="modal-body" id="offering-teacher-term-assign-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-teacher-term-assign')">关闭</button>
     </div>
   </div>
 </div>

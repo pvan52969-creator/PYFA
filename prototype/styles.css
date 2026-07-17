@@ -1013,7 +1013,7 @@ body {
 .modal-md { width: 560px; }
 
 #modal-group-assign-form .modal.group-assign-form-modal {
-  width: calc(100vw - 12px);
+  width: calc(100vw - 16px);
   max-width: none;
 }
 
@@ -1049,6 +1049,7 @@ body {
 .form-item label.req::after { content: " *"; color: var(--red); }
 label .req,
 .form-field label .req,
+.group-assign-form-panel-head .req,
 th .req { color: var(--red); }
 .form-item.field-disabled label { color: var(--text-2); font-weight: 400; }
 .form-item.field-disabled label.req::after { content: none; }
@@ -3532,12 +3533,253 @@ code {
 #page-course-major-offering-task .course-major-offering-task-table td.col-nowrap {
   white-space: nowrap;
 }
-#page-course-ge-offering-task.active {
+#page-course-offering-ge.active {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 88px);
 }
-#page-course-ge-offering-task .course-ge-task-list-card {
+#page-course-offering-ge .ge-offering-plan-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+#page-course-ge-offering-quota .ge-offering-quota-section-toolbar {
+  margin: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-light);
+  background: #fff;
+}
+/* 通识选修计划 · 预计需修 GE 汇总（关键指标） */
+.ge-offering-demand-summary,
+#ge-offering-plan-demand-summary {
+  margin-bottom: 12px;
+}
+.ge-offering-demand-summary {
+  padding: 0;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(43, 124, 211, 0.12), transparent 55%),
+    linear-gradient(180deg, #f7faff 0%, #fff 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.ge-demand-summary-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  min-height: 88px;
+}
+.ge-demand-summary-total-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 22px;
+  min-width: 168px;
+  flex-shrink: 0;
+}
+.ge-demand-summary-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blue-500);
+}
+.ge-demand-summary-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ge-demand-summary-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+.ge-demand-summary-total {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--blue-900);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.ge-demand-summary-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue-700);
+}
+.ge-demand-summary-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 14px 0;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.ge-demand-summary-streams {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
+  gap: 10px;
+  flex: 1;
+  min-width: 280px;
+  padding: 14px 16px;
+  align-content: center;
+}
+.ge-demand-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+  border-top: 3px solid var(--blue-500);
+}
+.ge-demand-stream.is-arts { border-top-color: #3b82c4; }
+.ge-demand-stream.is-business { border-top-color: var(--orange); }
+.ge-demand-stream.is-science { border-top-color: var(--teal); }
+.ge-demand-stream-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ge-demand-stream-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.ge-demand-stream-pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+.ge-demand-stream-value {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--blue-900);
+  letter-spacing: -0.02em;
+}
+.ge-demand-stream-bar {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-light);
+  overflow: hidden;
+}
+.ge-demand-stream-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  color: var(--blue-500);
+}
+.ge-demand-stream.is-arts .ge-demand-stream-bar > span { color: #3b82c4; }
+.ge-demand-stream.is-business .ge-demand-stream-bar > span { color: var(--orange); }
+.ge-demand-stream.is-science .ge-demand-stream-bar > span { color: var(--teal); }
+.ge-demand-summary-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 18px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.ge-demand-summary-note {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.ge-demand-summary-badge {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue-700);
+  background: rgba(43, 124, 211, 0.1);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+#ge-offering-plan-demand-summary {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-hero {
+  min-height: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 8px;
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-total-block {
+  padding: 0;
+  min-width: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-kicker {
+  display: none;
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-label {
+  order: -1;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue-700);
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-total {
+  font-size: 22px;
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-divider {
+  display: none;
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-streams {
+  padding: 0;
+  min-width: 0;
+  gap: 8px;
+  flex: 0 1 auto;
+}
+#ge-offering-plan-demand-summary .ge-demand-stream {
+  padding: 6px 10px;
+  gap: 4px;
+  border-top-width: 2px;
+}
+#ge-offering-plan-demand-summary .ge-demand-stream-value {
+  font-size: 15px;
+}
+#ge-offering-plan-demand-summary .ge-demand-stream-bar {
+  display: none;
+}
+#ge-offering-plan-demand-summary .ge-demand-summary-meta {
+  flex-direction: row;
+  align-items: center;
+  padding: 0;
+  margin-left: 0;
+}
+@media (max-width: 900px) {
+  .ge-demand-summary-divider { display: none; }
+  .ge-demand-summary-meta {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 16px 14px;
+    margin-left: 0;
+  }
+}
+#page-course-offering-ge .ge-offering-arrange-query-card {
+  display: none; /* 原下段筛选卡，已并入统一查询区 */
+}
+#page-course-offering-ge .course-ge-task-list-card {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -3545,6 +3787,7 @@ code {
   overflow: hidden;
   margin-top: 12px;
 }
+/* 原 #page-course-ge-offering-task 独立页样式，已并入 #page-course-offering-ge */
 #page-course-offering-other .other-offering-list-card,
 #page-course-special-offering-task .other-offering-task-list-card,
 #page-course-special-offering-roster .other-offering-roster-list-card {
@@ -3885,18 +4128,21 @@ code {
   z-index: 3;
   background: var(--blue-50);
 }
-#page-course-ge-offering-task .table-scroll {
+#page-course-offering-ge .course-ge-task-list-card > .table-scroll {
   flex: 1;
   min-height: 360px;
   overflow: auto;
   padding-bottom: 4px;
 }
-#page-course-ge-offering-task .course-ge-offering-task-table {
-  min-width: 1100px;
-  --major-offering-actions-col-width: 120px;
+#page-course-offering-ge .course-ge-offering-task-table {
+  min-width: 1400px;
+  --major-offering-actions-col-width: 320px;
 }
-#page-course-ge-offering-task .course-ge-offering-task-table th.col-sticky-actions,
-#page-course-ge-offering-task .course-ge-offering-task-table td.col-sticky-actions {
+#page-course-offering-ge .course-ge-offering-task-table td.col-nowrap {
+  white-space: nowrap;
+}
+#page-course-offering-ge .course-ge-offering-task-table th.col-sticky-actions,
+#page-course-offering-ge .course-ge-offering-task-table td.col-sticky-actions {
   position: sticky;
   right: 0;
   z-index: 2;
@@ -3905,11 +4151,11 @@ code {
   background: #fff;
   box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
 }
-#page-course-ge-offering-task .course-ge-offering-task-table thead th.col-sticky-actions {
+#page-course-offering-ge .course-ge-offering-task-table thead th.col-sticky-actions {
   z-index: 3;
   background: var(--blue-50);
 }
-#page-course-ge-offering-task .course-ge-offering-task-table tr:hover td.col-sticky-actions {
+#page-course-offering-ge .course-ge-offering-task-table tr:hover td.col-sticky-actions {
   background: #fafbfc;
 }
 #page-course-ge-offering-roster.active {
@@ -4345,6 +4591,13 @@ code {
   align-self: stretch;
   min-height: 0;
 }
+#page-offering-grouping .offering-grouping-layout.is-sidebar-collapsed .offering-group-sidebar-wrap {
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  overflow: hidden;
+}
 #page-offering-grouping .offering-group-sidebar {
   min-width: 0;
   height: 100%;
@@ -4442,78 +4695,216 @@ code {
 }
 #modal-group-assign-form.modal-nested {
   z-index: 1110;
-  padding: 6px;
+  padding: 8px;
 }
 #modal-group-assign-form .modal.group-assign-form-modal,
 .group-assign-form-modal {
-  width: calc(100vw - 12px);
+  width: calc(100vw - 16px);
   max-width: none;
-  height: calc(100vh - 12px);
-  max-height: calc(100vh - 12px);
+  height: calc(100vh - 16px);
+  max-height: calc(100vh - 16px);
   display: flex;
   flex-direction: column;
+}
+#modal-group-assign-form .modal.group-assign-form-modal .modal-head {
+  padding: 8px 14px;
+}
+#modal-group-assign-form .modal.group-assign-form-modal .modal-foot {
+  padding: 8px 14px;
 }
 .group-assign-form-body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 16px 24px;
+  padding: 8px 12px;
   max-height: none;
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .group-assign-form-layout {
   display: grid;
-  grid-template-columns: minmax(700px, 1.18fr) minmax(560px, 0.9fr);
-  gap: 18px;
+  grid-template-columns: minmax(460px, 1.05fr) minmax(520px, 1.2fr);
+  grid-template-rows: minmax(0, 1.15fr) minmax(160px, 0.7fr);
+  gap: 8px;
   align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }
 .group-assign-form-panel {
   min-width: 0;
+  min-height: 0;
   border: 1px solid var(--border-light);
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: none;
+}
+.group-assign-form-panel-config {
+  grid-column: 1;
+  grid-row: 1 / -1;
+}
+.group-assign-form-panel-existing {
+  grid-column: 2;
+  grid-row: 1;
+}
+.group-assign-form-panel-schedule {
+  grid-column: 2;
+  grid-row: 2;
 }
 .group-assign-form-panel-head {
-  padding: 10px 14px;
-  font-size: 13px;
+  padding: 5px 10px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-1);
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  background: #f8fafc;
   border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
 }
 .group-assign-form-panel-body {
-  padding: 14px;
+  padding: 8px 10px;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: auto;
 }
 .group-assign-form-grid {
-  gap: 12px 14px;
+  gap: 6px 10px;
 }
 .group-assign-form-grid .form-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   min-width: 0;
 }
 .group-assign-form-grid .form-field > label {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-2);
-  line-height: 1.35;
+  line-height: 1.25;
 }
 .group-assign-form-grid .form-field > .form-hint {
   margin-top: 0;
+  font-size: 11px;
+  line-height: 1.3;
 }
-.group-assign-form-panel-config .group-assign-hour-type-picks-table-wrap,
+.group-assign-form-panel-config .group-assign-form-panel-body {
+  display: flex;
+  flex-direction: column;
+}
+.group-assign-form-panel-config .group-assign-form-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  align-content: stretch;
+}
+.group-assign-form-panel-config .group-assign-form-grid:has(#group-assign-hour-type-wrap:not([hidden])) {
+  grid-template-rows: max-content max-content minmax(200px, 1fr) repeat(5, max-content);
+}
+.group-assign-form-panel-config .group-assign-form-grid:not(:has(#group-assign-hour-type-wrap:not([hidden]))) {
+  grid-template-rows: max-content minmax(200px, 1fr) repeat(5, max-content);
+}
+.group-assign-form-panel-config #group-assign-groups-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.group-assign-form-panel-config #group-assign-groups-wrap .group-assign-group-picks {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.group-assign-form-panel-config .group-assign-hour-type-picks-table-wrap {
+  max-height: none;
+  overflow: visible;
+}
 .group-assign-form-panel-config .group-assign-group-picks-table-wrap {
-  max-height: 168px;
+  flex: 1 1 auto;
+  max-height: none !important;
+  min-height: 0;
+  height: 100%;
+}
+.group-assign-form-panel-config .group-assign-time-block-start {
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+.group-assign-form-panel-config .group-assign-time-block-start + .form-field {
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+}
+.group-assign-form-panel-existing .group-assign-existing-hint {
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.group-assign-form-panel-existing .group-assign-form-panel-body {
+  display: flex;
+  flex-direction: column;
+}
+.group-assign-existing-table-wrap {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+}
+.group-assign-existing-table {
+  width: 100%;
+  table-layout: fixed;
+}
+.group-assign-existing-table th,
+.group-assign-existing-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-assign-existing-table th.col-index,
+.group-assign-existing-table td.col-index {
+  width: 44px;
+}
+.group-assign-existing-table th:nth-child(2),
+.group-assign-existing-table td:nth-child(2) {
+  width: 180px;
+  min-width: 160px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+}
+.group-assign-existing-table th:nth-child(4),
+.group-assign-existing-table td:nth-child(4) {
+  width: 96px;
+}
+.group-assign-existing-table th:nth-child(5),
+.group-assign-existing-table td:nth-child(5),
+.group-assign-existing-table th:nth-child(6),
+.group-assign-existing-table td:nth-child(6),
+.group-assign-existing-table th:nth-child(7),
+.group-assign-existing-table td:nth-child(7),
+.group-assign-existing-table th:nth-child(8),
+.group-assign-existing-table td:nth-child(8) {
+  width: 72px;
+}
+.group-assign-existing-table tr.is-editing {
+  background: #f0f7ff;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-field {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.group-assign-form-panel-schedule .group-assign-form-panel-body {
+  display: flex;
+  flex-direction: column;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap {
-  max-height: 168px;
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table {
   width: 100%;
@@ -4540,50 +4931,76 @@ code {
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(1),
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(1) {
-  width: 72px;
+  width: 68px;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(2),
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(2) {
-  width: 66px;
+  width: 72px;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(3),
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(3) {
-  width: 135px;
+  width: 72px;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(4),
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(4) {
-  width: 82px;
+  width: 72px;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(5),
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(5) {
-  width: 92px;
+  width: 64px;
 }
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(6),
 .group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(6) {
-  width: 52px;
+  width: 64px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(7),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(7) {
+  width: 72px;
+}
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table th:nth-child(8),
+.group-assign-form-panel-schedule .group-assign-teacher-table-wrap .data-table td:nth-child(8) {
+  width: 48px;
 }
 .group-assign-form-modal .week-picker-cell {
-  width: 34px;
-  height: 34px;
-  font-size: 12px;
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
 }
 .group-assign-form-modal .week-range-input-hint {
   font-size: 11px;
 }
+#modal-group-assign-form .modal.group-assign-form-modal,
+.group-assign-form-modal {
+  width: calc(100vw - 16px);
+  max-width: none;
+}
 @media (max-width: 1100px) {
   .group-assign-form-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    overflow: auto;
   }
-  #modal-group-assign-form .modal.group-assign-form-modal,
-  .group-assign-form-modal {
-    width: min(98vw, 720px);
-    max-width: 720px;
+  .group-assign-form-panel-config,
+  .group-assign-form-panel-existing,
+  .group-assign-form-panel-schedule {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .group-assign-form-body {
+    overflow: auto;
+  }
+  .group-assign-existing-table-wrap,
+  .group-assign-form-panel-schedule .group-assign-teacher-table-wrap {
+    max-height: 180px;
   }
 }
 .group-assign-form-modal .form-grid-2 {
-  gap: 12px 18px;
+  gap: 8px 12px;
 }
-.group-assign-hour-type-picks-table-wrap,
+.group-assign-hour-type-picks-table-wrap {
+  max-height: none;
+  overflow: visible;
+}
 .group-assign-group-picks-table-wrap {
   max-height: 180px;
 }
@@ -4710,10 +5127,10 @@ code {
   width: min(560px, calc(100vw - 32px));
 }
 .group-assign-week-inline-wrap .week-picker-grid {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 .group-assign-week-inline-wrap .week-range-display-row {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 .group-assign-course-level-display {
   background: transparent;
@@ -4969,10 +5386,10 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .group-assign-prior-teachers {
   flex-shrink: 0;
-  margin-bottom: 14px;
-  padding: 10px 14px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
   border: 1px solid #bfdbfe;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #eff6ff;
 }
 .group-assign-prior-teachers[hidden] {
@@ -4982,7 +5399,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  gap: 4px 10px;
   margin-bottom: 6px;
 }
 .group-assign-prior-teachers-head > strong {
@@ -4996,17 +5413,36 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .group-assign-prior-teachers-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 6px 8px;
 }
 .group-assign-prior-teacher-chip {
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
   max-width: 100%;
-  padding: 2px 0;
+  padding: 4px 10px;
   font-size: 12px;
   color: var(--text-1);
   line-height: 1.35;
+  border: 1px solid #93c5fd;
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+.group-assign-prior-teacher-chip:hover:not(:disabled) {
+  border-color: #2563eb;
+  background: #dbeafe;
+}
+.group-assign-prior-teacher-chip.is-selected {
+  border-color: #1d4ed8;
+  background: #dbeafe;
+  box-shadow: inset 0 0 0 1px #2563eb;
+}
+.group-assign-prior-teacher-chip.is-disabled,
+.group-assign-prior-teacher-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .group-assign-prior-teacher-chip > strong {
   font-weight: 600;
@@ -6837,13 +7273,69 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+.offering-group-status-upper {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 42%;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 48px);
+}
+.offering-group-status-upper.is-expanded {
+  flex: 0 0 auto;
+  max-height: none;
+}
+.offering-group-status-upper.is-expanded .offering-group-status-table-wrap {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.offering-group-status-upper-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  color: var(--text-1);
+  font-size: 13px;
 }
 .offering-group-status-summary {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-2);
   flex-shrink: 0;
+}
+.offering-group-status-overview-toggle {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.offering-group-status-overview-toggle:hover {
+  border-color: var(--blue-400);
+  color: var(--blue-700);
+  background: var(--blue-50);
+}
+.offering-group-status-overview-toggle:focus-visible {
+  outline: 2px solid var(--blue-500);
+  outline-offset: 2px;
 }
 .offering-group-status-summary .is-ok { color: #15803d; }
 .offering-group-status-summary .is-warn { color: #c2410c; }
@@ -6851,6 +7343,35 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+}
+.offering-group-status-table {
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.offering-group-status-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #475569;
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  white-space: nowrap;
+}
+.offering-group-status-table tbody td {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.offering-group-status-table tbody tr:last-child > td {
+  border-bottom: none;
 }
 .offering-group-status-table td.offering-group-status-detail {
   white-space: normal;
@@ -6871,6 +7392,37 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-table tr.is-over + tr.offering-group-status-detail-row > td {
   background: #fff7ed;
+}
+.offering-group-status-table th.col-teacher-count,
+.offering-group-status-table td.col-teacher-count {
+  min-width: 72px;
+  width: 72px;
+  white-space: nowrap;
+}
+.offering-group-status-teacher-count {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  color: var(--blue-700);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.offering-group-status-teacher-count:hover {
+  color: var(--blue-900);
+}
+.offering-group-status-teacher-count.is-empty {
+  color: var(--text-3, #94a3b8);
+  font-weight: 500;
+  text-decoration: none;
+}
+.offering-group-status-teacher-count.is-expanded,
+.offering-group-status-teacher-count[aria-expanded="true"] {
+  text-decoration: underline;
 }
 .offering-group-status-subtable {
   width: 100%;
@@ -6904,7 +7456,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-subtable td.col-teacher {
   min-width: 120px;
   line-height: 1.4;
-  text-align: center;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
 }
 .offering-group-status-subtable td.col-groups {
   min-width: 140px;
@@ -6989,6 +7543,348 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-table td.col-center {
   min-width: 120px;
   vertical-align: middle;
+}
+.offering-group-status-assign-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: #fff;
+}
+.offering-group-status-upper.is-expanded + .offering-group-status-assign-section {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.offering-group-status-assign-section .offering-group-status-assign-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.offering-group-status-assign-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-1);
+  font-size: 13px;
+}
+.offering-group-status-assign-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.offering-group-status-assign-table th.col-check,
+.offering-group-status-assign-table td.col-check {
+  width: 36px;
+  min-width: 36px;
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.offering-group-status-assign-table th.col-check input[type="checkbox"],
+.offering-group-status-assign-table td.col-check input[type="checkbox"] {
+  display: block;
+  margin: 0 auto;
+}
+.offering-group-status-assign-table-wrap {
+  max-height: none;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+.offering-group-status-assign-table-wrap.table-scroll {
+  overflow: auto;
+}
+.offering-group-status-assign-table {
+  width: 100%;
+  min-width: 1020px;
+}
+.offering-group-status-assign-table th {
+  white-space: nowrap;
+  background: var(--blue-50);
+  color: var(--blue-900);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--border);
+}
+.offering-group-status-assign-table td {
+  vertical-align: middle;
+}
+.offering-group-status-assign-table .col-week {
+  min-width: 130px;
+  white-space: nowrap;
+}
+.offering-group-status-assign-table .col-actions {
+  min-width: 72px;
+  width: 72px;
+  white-space: nowrap;
+}
+.offering-group-status-assign-table .col-teacher {
+  min-width: 120px;
+  text-align: center;
+  vertical-align: middle;
+}
+.offering-group-status-teacher-line {
+  display: block;
+}
+.offering-group-status-teacher-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: var(--blue-700);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+.offering-group-status-teacher-link:hover {
+  color: var(--blue-900);
+  text-decoration: none;
+}
+.offering-group-status-assign-draft td {
+  vertical-align: top;
+}
+.offering-group-status-assign-table td.col-groups {
+  text-align: center;
+  vertical-align: middle;
+}
+.offering-group-status-assign-table td.col-actions,
+.offering-group-status-assign-table td.col-index,
+.offering-group-status-assign-draft td.col-actions {
+  vertical-align: middle;
+}
+.offering-group-status-row-actions-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.offering-group-status-inline-edit {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--blue-600, #2563eb);
+  padding: 1px 4px;
+  margin-left: 0;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 14px;
+}
+.offering-group-status-inline-edit:hover {
+  color: var(--blue-800, #1e40af);
+}
+.offering-group-status-inline-save {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #16a34a;
+  padding: 0 4px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 16px;
+  font-weight: 700;
+}
+.offering-group-status-inline-save:hover {
+  color: #15803d;
+}
+.offering-group-status-inline-delete {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #dc2626;
+  padding: 0 4px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 18px;
+  font-weight: 600;
+}
+.offering-group-status-inline-delete:hover {
+  color: #b91c1c;
+}
+.offering-group-status-week-edit {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.offering-group-status-week-edit .input {
+  min-width: 96px;
+}
+.offering-group-status-assign-draft td {
+  background: var(--blue-50, #eff6ff);
+  padding: 7px 6px;
+}
+.offering-group-status-assign-draft .input {
+  width: 100%;
+  min-width: 82px;
+}
+.offering-group-status-group-multiselect {
+  min-width: 190px;
+  max-width: 260px;
+}
+.offering-group-status-group-dropdown {
+  overflow-y: auto;
+  min-width: 240px;
+}
+.offering-group-status-group-check-all {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-light, #e5e7eb);
+}
+.offering-group-status-weekly-input.is-warning {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+.offering-group-status-inline-warning {
+  margin: 4px 0 0;
+  color: #c2410c;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: normal;
+}
+.offering-group-status-teacher-picker-btn {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.offering-group-status-add-assign {
+  width: 32px;
+  height: 32px;
+  border: 1px dashed var(--blue-500, #3b82f6);
+  border-radius: 6px;
+  background: var(--blue-50, #eff6ff);
+  color: var(--blue-600, #2563eb);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.offering-group-status-add-assign:hover:not(:disabled) {
+  background: #dbeafe;
+}
+.offering-group-status-add-assign:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+/* 教师本学期 Teaching Load 弹窗：淡化内外边框 */
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-card {
+  border: 1px solid #e8eef5;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, var(--blue-50) 0%, #fff 100%);
+  border-bottom: 1px solid #eef3f9;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-card-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue-900);
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-meta-sep {
+  color: var(--text-3);
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-scroll {
+  overflow: auto;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table {
+  margin: 0;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table thead th {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: #f8fafc;
+  border-bottom: 1px solid #e8eef5;
+  border-right: 1px solid #dbe4ee;
+  white-space: nowrap;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table thead th:last-child {
+  border-right: none;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table tbody td {
+  padding: 11px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #dbe4ee;
+  color: var(--text-2);
+  vertical-align: middle;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table tbody td:last-child {
+  border-right: none;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table tbody tr:last-child td {
+  border-bottom: none;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .col-name {
+  min-width: 120px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text);
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .col-term {
+  min-width: 120px;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .col-term-prev {
+  color: var(--text-2);
+  background: #fafbfc;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table thead th.col-term-prev {
+  background: #f3f6f9;
+  color: var(--text-2);
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .col-term-primary {
+  font-weight: 600;
+  color: var(--blue-900);
+  background: #f7faff;
+}
+#modal-offering-teacher-term-assign .offering-grouping-teacher-load-table thead th.col-term-primary {
+  background: var(--blue-50);
+  color: var(--blue-900);
+}
+.offering-group-status-assign-empty {
+  padding: 18px !important;
+  text-align: center;
 }
 .offering-group-status-empty {
   margin: 0;
@@ -8902,7 +9798,7 @@ input#group-assign-recorded-hours {
 .modal-md { width: 560px; }
 
 #modal-group-assign-form .modal.group-assign-form-modal {
-  width: calc(100vw - 12px);
+  width: calc(100vw - 16px);
   max-width: none;
 }
 

@@ -42,6 +42,7 @@
         <div class="nav-section-title">专业开课</div>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-major">专业开课计划</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">专业开课任务安排</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">专业开课任务安排（样式二）</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">专业开课学生名单管理</a>
       </div>
       <div class="nav-section">
@@ -914,14 +915,15 @@
           <table class="data-table course-offering-major-table">
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="course-major-check-all" aria-label="全选" onchange="toggleMajorOfferingCheckAll(this.checked)"></th>
-              <th class="col-index">序号</th>
+              <!-- <th class="col-index">序号</th> -->
+              <th class="col-center">开课学期</th>
               <th>负责人</th>
               <th class="col-center">提交状态</th>
               <!-- <th class="col-center">授课确认状态</th> 改由任务安排页 -->
               <!-- <th class="col-center">状态</th> 原开课状态列 -->
-              <th class="col-center">开课学期</th>
               <th>课程代码</th><th>课程名称</th><th>课程类别</th><th class="col-center">选课类型</th>
-              <th class="col-center">上课学院</th><th class="col-center">上课专业</th><th class="col-center">上课批次</th>
+              <!-- <th class="col-center">上课学院</th> -->
+              <th class="col-center">上课专业</th><th class="col-center">上课批次</th>
               <th class="col-center">是否新生批次</th>
               <th class="col-center">学分</th><th class="col-center">总学时</th>
               <!-- <th class="col-center">理论学时</th><th class="col-center">实践学时</th> -->
@@ -1213,7 +1215,6 @@
           <table class="data-table course-offering-major-table course-major-offering-task-table">
             <colgroup>
               <col class="col-check">
-              <col class="col-index">
               <col>
               <col>
               <col>
@@ -1229,41 +1230,110 @@
               <col>
               <col>
               <col>
-              <col class="col-sticky-count">
+              <col>
               <col class="col-sticky-actions">
             </colgroup>
-            <thead><tr>
-              <th class="col-check"><input type="checkbox" id="course-major-task-check-all" aria-label="全选" onchange="toggleMajorOfferingTaskCheckAll(this.checked)"></th>
-              <th class="col-index">序号</th>
-              <th class="col-center">提交状态</th>
-              <!-- <th class="col-center">任务安排状态</th> -->
-              <!-- <th class="col-center">是否提交</th> -->
-              <!-- <th class="col-center">授课确认状态</th> -->
-              <th class="col-center">开课学期</th>
-              <th>课程号</th>
-              <th>课程名称</th>
-              <th class="col-center">选课类型</th>
-              <th class="col-center">上课学院</th>
-              <th class="col-center">上课专业</th>
-              <th class="col-center">上课批次</th>
-              <th class="col-center">学分</th>
-              <th class="col-center">计划总学时</th>
-              <th class="col-center">教师数</th>
-              <!-- <th>教师</th> -->
-              <!-- <th class="col-center">小组数</th> -->
-              <th>Course Coordinator</th>
-              <th class="col-center">开课单位</th>
-              <th class="col-center">起止周</th>
-              <!-- <th class="col-center">课程名额上限</th> -->
-              <th class="col-center">Support历史</th>
-              <th class="col-center">Support学院</th>
-              <th class="col-sticky-actions">操作</th>
-            </tr></thead>
+            <thead>
+              <tr>
+                <th class="col-check" rowspan="2"><input type="checkbox" id="course-major-task-check-all" aria-label="全选" onchange="toggleMajorOfferingTaskCheckAll(this.checked)"></th>
+                <th class="col-center" rowspan="2">提交状态</th>
+                <th class="col-center" rowspan="2">开课学期</th>
+                <th rowspan="2">课程号</th>
+                <th rowspan="2">课程名称</th>
+                <th class="col-center" rowspan="2">选课类型</th>
+                <!-- <th class="col-center" rowspan="2">上课学院</th> -->
+                <th class="col-center" rowspan="2">上课专业</th>
+                <th class="col-center" rowspan="2">上课批次</th>
+                <th class="col-center" rowspan="2">学分</th>
+                <th class="col-center" rowspan="2">计划总学时</th>
+                <th class="col-center" rowspan="2">教师数</th>
+                <th rowspan="2">Course Coordinator</th>
+                <th class="col-center" rowspan="2">开课单位</th>
+                <th class="col-center" rowspan="2">起止周</th>
+                <th class="col-center col-support-group" colspan="3">Support</th>
+                <th class="col-sticky-actions" rowspan="2">操作</th>
+              </tr>
+              <tr class="mot-task-support-subhead">
+                <th class="col-center col-support-hist">历史</th>
+                <th class="col-center col-support-detail">详情</th>
+                <th class="col-center col-support-action">操作</th>
+              </tr>
+            </thead>
             <tbody id="course-major-offering-task-body"></tbody>
           </table>
         </div>
         <div class="table-footer">
           <div class="pagination" id="course-major-offering-task-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 专业开课 · 任务安排（样式二：分步引导） ═══ -->
+    <section class="page" id="page-course-major-offering-task-style2">
+      <div class="page-header">
+        <div>
+          <h1>专业开课任务安排（样式二）</h1>
+          <p class="subtitle">分三步完成课程班、其他学院 Support 与师资安排；提交/撤回/退回在各步骤均可操作</p>
+        </div>
+      </div>
+      <nav class="mot-style2-step-bar" id="mot-style2-step-bar" aria-label="任务安排步骤">
+        <button type="button" class="mot-style2-step is-active" data-step="1" onclick="goMajorOfferingTaskStyle2Step(1)">
+          <span class="mot-style2-step-num">1</span>
+          <span class="mot-style2-step-label">课程班</span>
+          <span class="mot-style2-step-desc">设置合班</span>
+        </button>
+        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
+        <button type="button" class="mot-style2-step" data-step="2" onclick="goMajorOfferingTaskStyle2Step(2)">
+          <span class="mot-style2-step-num">2</span>
+          <span class="mot-style2-step-label">其他学院Support</span>
+          <span class="mot-style2-step-desc">申请 · 历史 · 详情</span>
+        </button>
+        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
+        <button type="button" class="mot-style2-step" data-step="3" onclick="goMajorOfferingTaskStyle2Step(3)">
+          <span class="mot-style2-step-num">3</span>
+          <span class="mot-style2-step-label">师资安排</span>
+          <span class="mot-style2-step-desc">学时类型 · 任课教师</span>
+        </button>
+      </nav>
+      <div class="mot-style2-step-hint" id="mot-style2-step-hint" role="status"></div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-term">学年学期</label>
+            <select class="input input-sm" id="mot-style2-filter-term" onchange="onMajorOfferingTaskStyle2TermFilterChange()"></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-dept">上课学院</label>
+            <select class="input input-sm" id="mot-style2-filter-dept" onchange="onMajorOfferingTaskStyle2SchoolFilterChange()"><option value="">全部上课学院</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-prog">上课专业</label>
+            <select class="input input-sm" id="mot-style2-filter-prog"><option value="">全部上课专业</option></select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-name">课程号 / 名称</label>
+            <input class="input input-sm" id="mot-style2-filter-name" placeholder="课程号或名称" onkeydown="if(event.key==='Enter'){queryMajorOfferingTaskStyle2List()}">
+          </div>
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-task-submit">提交状态</label>
+            <select class="input input-sm" id="mot-style2-filter-task-submit">
+              <option value="">全部</option>
+              <option value="submitted">已提交</option>
+              <option value="draft">草稿</option>
+              <option value="reverted">回退</option>
+            </select>
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingTaskStyle2List()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingTaskStyle2Filters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card mot-style2-list-card">
+        <div class="panel-toolbar mot-style2-toolbar" id="mot-style2-toolbar"></div>
+        <div class="mot-style2-course-list" id="mot-style2-course-list" aria-label="Course List"></div>
+        <div class="table-footer">
+          <div class="pagination" id="mot-style2-pagination"></div>
         </div>
       </div>
     </section>
@@ -1533,12 +1603,12 @@
               <th>课程号</th><th>课程名称</th>
               <th class="col-center">开课单位</th>
               <th class="col-center">教师数</th>
-              <th>教师</th>
-              <th class="col-center">课程班/小组数</th>
+              <!-- <th>教师</th> -->
+              <!-- <th class="col-center">课程班/小组数</th> -->
               <th>Course Coordinator</th>
-              <th class="col-center">学分</th><th class="col-center">总学时</th>
+              <th class="col-center">学分</th><th class="col-center">计划总学时</th>
               <th class="col-center">起止周</th>
-              <th class="col-center">课程名额上限</th>
+              <!-- <th class="col-center">课程名额上限</th> -->
               <th class="col-center">Support历史</th>
               <th class="col-center">Support学院</th>
               <th>备注</th>
@@ -1994,6 +2064,40 @@
         </div>
         <div class="table-footer">
           <div class="pagination" id="course-offering-roster-change-log-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 课程班修改记录（新窗口） ═══ -->
+    <section class="page" id="page-course-section-change-log">
+      <div class="page-header compact">
+        <div>
+          <h1>课程班修改记录</h1>
+          <p class="subtitle" id="section-change-log-subtitle">查看课程班字段变更历史</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline btn-sm" type="button" onclick="closeSectionChangeLogPage()">返回</button>
+        </div>
+      </div>
+      <div class="card section-change-log-list-card">
+        <div class="table-scroll">
+          <table class="data-table course-offering-table section-change-log-table">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th class="col-center">修改时间</th>
+                <th class="col-center">类型</th>
+                <th>课程班名称</th>
+                <th>修改字段</th>
+                <th>修改前</th>
+                <th>修改后</th>
+              </tr>
+            </thead>
+            <tbody id="course-section-change-log-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="course-section-change-log-pagination"></div>
         </div>
       </div>
     </section>
@@ -5494,6 +5598,24 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingSupportApplyModal()">取消</button>
       <button class="btn btn-primary" type="button" onclick="confirmMajorOfferingSupportApply()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：Support 详情（已申请学院） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-major-offering-support-detail">
+  <div class="modal modal-sm section-coordinator-modal">
+    <div class="modal-head">
+      <h3>Support 详情</h3>
+      <button class="modal-close" type="button" onclick="closeMajorOfferingSupportDetailModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint section-coordinator-hint" id="support-detail-info"></p>
+      <p class="form-hint">以下为该开课任务已申请的 Support 学院。</p>
+      <div id="support-detail-units"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeMajorOfferingSupportDetailModal()">关闭</button>
     </div>
   </div>
 </div>

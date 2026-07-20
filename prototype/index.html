@@ -942,26 +942,35 @@
 
     <!-- ═══ 开课管理 · 专业开课 · 分组（独立页，原 modal-offering-grouping 弹窗） ═══ -->
     <section class="page" id="page-offering-grouping">
-      <div class="page-header compact">
-        <div class="breadcrumb">
-          <a href="#" id="offering-grouping-breadcrumb-link" onclick="closeOfferingGroupingPage();return false">专业开课计划</a><span>/</span>
-          <span id="offering-grouping-page-title">分组</span>
+      <div class="page-header compact offering-grouping-page-header">
+        <div class="offering-grouping-header-main">
+          <div class="breadcrumb">
+            <a href="#" id="offering-grouping-breadcrumb-link" onclick="closeOfferingGroupingPage();return false">专业开课计划</a><span>/</span>
+            <span id="offering-grouping-page-title">分组</span>
+          </div>
+          <div class="offering-grouping-view-tabs" role="tablist" aria-label="开课视角">
+            <button type="button" class="offering-grouping-view-tab is-active" role="tab" aria-selected="true" data-view="course" onclick="switchOfferingGroupingSidebarView('course')">Course</button>
+            <button type="button" class="offering-grouping-view-tab" role="tab" aria-selected="false" data-view="course-list" onclick="switchOfferingGroupingSidebarView('course-list')">Course List</button>
+            <button type="button" class="offering-grouping-view-tab" role="tab" aria-selected="false" data-view="teacher-load" onclick="switchOfferingGroupingSidebarView('teacher-load')">教师授课学时统计</button>
+          </div>
         </div>
         <div class="header-actions">
-          <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupingPage()">返回</button>
-          <button class="btn btn-primary" type="button" id="ogg-btn-save-roster-page" onclick="saveOfferingGroupingRosterPage()" hidden style="display:none">保存名单</button>
-          <button class="btn btn-primary" type="button" id="ogg-btn-submit-grouping-page" onclick="submitOfferingGroupingPage()">提交</button>
-          <!-- <button ... id="ogg-btn-save-grouping-page" onclick="saveOfferingGroupingPage()">保存</button> -->
-          <!-- 原「保存」需手动确认，改添加/安排后自动保存，右上角改为任务安排「提交」 -->
+          <div class="offering-grouping-header-btn-row">
+            <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupingPage()">返回</button>
+            <button class="btn btn-primary" type="button" id="ogg-btn-save-roster-page" onclick="saveOfferingGroupingRosterPage()" hidden style="display:none">保存名单</button>
+            <button class="btn btn-primary" type="button" id="ogg-btn-save-grouping-page" onclick="saveOfferingGroupingPage()">保存</button>
+          </div>
+          <span class="offering-grouping-last-saved" id="ogg-last-saved-hint">添加即自动保存</span>
+          <!-- 任务安排「提交」在列表页操作；本页仅保存分组与教师安排 -->
         </div>
       </div>
-      <div class="offering-grouping-page-row">
-        <aside class="offering-grouping-course-list" id="offering-grouping-course-list" aria-label="Course List">
-          <div class="offering-grouping-course-list-head">
-            <strong>Course List</strong>
-          </div>
+      <div class="offering-grouping-page-row" id="offering-grouping-page-row">
+        <aside class="offering-grouping-course-list" id="offering-grouping-course-list" aria-label="Course">
           <div class="offering-grouping-course-list-body" id="offering-grouping-course-list-body"></div>
-          <div class="offering-grouping-course-list-foot" id="offering-grouping-course-list-foot">共 0 条</div>
+          <div class="offering-grouping-course-list-foot" id="offering-grouping-course-list-foot">
+            <span class="offering-grouping-course-list-foot-text" id="offering-grouping-course-list-foot-text">共 0 条</span>
+            <div class="pagination" id="offering-grouping-global-course-pagination" hidden></div>
+          </div>
         </aside>
         <div class="card offering-grouping-page-card">
           <div class="offering-grouping-shell offering-grouping-body">
@@ -1083,6 +1092,48 @@
             </div>
           </div>
         </div>
+        <div class="offering-grouping-teacher-load" id="offering-grouping-teacher-load" data-ttl-root hidden>
+          <div class="card course-major-query-card">
+            <div class="course-major-query-grid">
+              <div class="course-time-query-field">
+                <label data-ttl="term-label">开课学期</label>
+                <div class="clo-multiselect" data-ttl="term-multiselect">
+                  <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadTermDropdown(event)">
+                    <span class="clo-multiselect-display placeholder" data-ttl="term-display">请选择</span>
+                    <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                  </button>
+                  <div class="clo-multiselect-dropdown" data-ttl="term-dropdown" hidden>
+                    <div class="clo-multiselect-options" data-ttl="term-options"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="course-time-query-field">
+                <label for="ogg-teacher-load-filter-name">教师姓名</label>
+                <input class="input input-sm" id="ogg-teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
+              </div>
+              <div class="course-time-query-field">
+                <label for="ogg-teacher-load-filter-staff">教师工号</label>
+                <input class="input input-sm" id="ogg-teacher-load-filter-staff" data-ttl="staff-filter" placeholder="工号">
+              </div>
+              <div class="course-time-query-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="queryTeacherTeachingLoadPage()">查询</button>
+                <button class="btn btn-outline btn-sm" type="button" onclick="resetTeacherTeachingLoadFilters()">重置</button>
+              </div>
+            </div>
+          </div>
+          <div class="card teacher-teaching-load-card">
+            <div class="panel-toolbar">
+              <span class="form-hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
+            </div>
+            <div class="table-scroll teacher-teaching-load-scroll">
+              <table class="data-table teacher-teaching-load-table">
+                <thead data-ttl="head"></thead>
+                <tbody data-ttl="body"></tbody>
+                <tfoot data-ttl="foot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1178,7 +1229,6 @@
               <col>
               <col>
               <col>
-              <col>
               <col class="col-sticky-count">
               <col class="col-sticky-actions">
             </colgroup>
@@ -1197,13 +1247,16 @@
               <th class="col-center">上课专业</th>
               <th class="col-center">上课批次</th>
               <th class="col-center">学分</th>
-              <th class="col-center">总学时</th>
+              <th class="col-center">计划总学时</th>
               <th class="col-center">教师数</th>
-              <th class="col-center">小组数</th>
+              <!-- <th>教师</th> -->
+              <!-- <th class="col-center">小组数</th> -->
               <th>Course Coordinator</th>
               <th class="col-center">开课单位</th>
               <th class="col-center">起止周</th>
-              <th class="col-center">课程名额上限</th>
+              <!-- <th class="col-center">课程名额上限</th> -->
+              <th class="col-center">Support历史</th>
+              <th class="col-center">Support学院</th>
               <th class="col-sticky-actions">操作</th>
             </tr></thead>
             <tbody id="course-major-offering-task-body"></tbody>
@@ -1946,7 +1999,7 @@
     </section>
 
     <!-- ═══ 开课管理 · 教师开课学时统计 ═══ -->
-    <section class="page" id="page-course-teacher-teaching-load">
+    <section class="page" id="page-course-teacher-teaching-load" data-ttl-root>
       <div class="page-header">
         <div>
           <h1>教师开课学时统计</h1>
@@ -1959,20 +2012,24 @@
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
-            <label id="teacher-load-filter-term-label">开课学期</label>
-            <div class="clo-multiselect" id="teacher-load-filter-term-multiselect">
+            <label id="teacher-load-filter-term-label" data-ttl="term-label">开课学期</label>
+            <div class="clo-multiselect" id="teacher-load-filter-term-multiselect" data-ttl="term-multiselect">
               <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadTermDropdown(event)" aria-labelledby="teacher-load-filter-term-label">
-                <span class="clo-multiselect-display placeholder" id="teacher-load-filter-term-display">请选择</span>
+                <span class="clo-multiselect-display placeholder" id="teacher-load-filter-term-display" data-ttl="term-display">请选择</span>
                 <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
               </button>
-              <div class="clo-multiselect-dropdown" id="teacher-load-filter-term-dropdown" hidden>
-                <div class="clo-multiselect-options" id="teacher-load-filter-term-options"></div>
+              <div class="clo-multiselect-dropdown" id="teacher-load-filter-term-dropdown" data-ttl="term-dropdown" hidden>
+                <div class="clo-multiselect-options" id="teacher-load-filter-term-options" data-ttl="term-options"></div>
               </div>
             </div>
           </div>
           <div class="course-time-query-field">
             <label for="teacher-load-filter-name">教师姓名</label>
-            <input class="input input-sm" id="teacher-load-filter-name" placeholder="姓名">
+            <input class="input input-sm" id="teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
+          </div>
+          <div class="course-time-query-field">
+            <label for="teacher-load-filter-staff">教师工号</label>
+            <input class="input input-sm" id="teacher-load-filter-staff" data-ttl="staff-filter" placeholder="工号">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryTeacherTeachingLoadPage()">查询</button>
@@ -1986,9 +2043,9 @@
         </div>
         <div class="table-scroll teacher-teaching-load-scroll">
           <table class="data-table teacher-teaching-load-table" id="teacher-teaching-load-table">
-            <thead id="teacher-teaching-load-head"></thead>
-            <tbody id="teacher-teaching-load-body"></tbody>
-            <tfoot id="teacher-teaching-load-foot"></tfoot>
+            <thead id="teacher-teaching-load-head" data-ttl="head"></thead>
+            <tbody id="teacher-teaching-load-body" data-ttl="body"></tbody>
+            <tfoot id="teacher-teaching-load-foot" data-ttl="foot"></tfoot>
           </table>
         </div>
       </div>

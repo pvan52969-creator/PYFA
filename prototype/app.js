@@ -287,7 +287,8 @@ const LIST_SORT_REFRESH = {
   courseOfferingRosterChangeLog: () => renderCourseOfferingRosterChangeLogPage(),
   courseSectionChangeLog: () => renderCourseSectionChangeLogPage(),
   majorOfferingStudentRoster: () => renderMajorOfferingStudentRosterDrawer(),
-  offeringGroupingStudent: () => renderOfferingGroupingStudentPanel()
+  offeringGroupingStudent: () => renderOfferingGroupingStudentPanel(),
+  schoolElectiveCourses: () => renderSchoolElectiveCoursePage()
 };
 
 function toggleListSort(listKey, key) {
@@ -2169,6 +2170,14 @@ function saveCourseTimeSettingEditModal() {
     alert('开课开始时间须早于截止时间。');
     return;
   }
+  if (isCourseUnitOfferingEndBeyondTermCalendar(row.termCode, endAt)) {
+    const calendarEndLabel = formatDateDisplayDdMmYyyy(getTermCalendarEndIso(row.termCode));
+    const ok = confirm(
+      `所选截止时间已超过开课学期校历结束日（${calendarEndLabel}）。\n\n`
+      + '仍可保存生效，是否继续？'
+    );
+    if (!ok) return;
+  }
   row.startAt = startAt;
   row.endAt = endAt;
   row.remark = document.getElementById('cts-edit-remark')?.value.trim() || '';
@@ -2458,7 +2467,7 @@ function snapMinuteToWheel(m) {
   return values.reduce((best, v) => Math.abs(v - m) < Math.abs(best - m) ? v : best, values[0]);
 }
 
-function renderCuotDatePickerPopover() {
+function renderCuotDatePickerPopover({ skipTimePanel = false } = {}) {
   syncCuotDatePickerChrome();
   const grid = document.getElementById('cuot-date-picker-grid');
   if (!grid || !cuotDatePickerState) return;
@@ -2488,10 +2497,10 @@ function renderCuotDatePickerPopover() {
       : `${day}`;
     cells.push(disabled
       ? `<span class="cuot-date-picker-day${disabledClass}">${day}</span>`
-      : `<button type="button" class="cuot-date-picker-day${selected}${todayClass}" data-iso="${iso}" onclick="selectCuotDatePickerDay('${iso}', event)">${inner}</button>`);
+      : `<button type="button" class="cuot-date-picker-day${selected}${todayClass}" data-iso="${iso}" onmousedown="event.preventDefault()" onclick="selectCuotDatePickerDay('${iso}', event)">${inner}</button>`);
   }
   grid.innerHTML = cells.join('');
-  if (mode === 'datetime') renderCuotDatetimeTimePanel();
+  if (mode === 'datetime' && !skipTimePanel) renderCuotDatetimeTimePanel();
 }
 
 function renderCuotWheelColumn(listEl, values, selected, kind) {
@@ -2503,7 +2512,9 @@ function renderCuotWheelColumn(listEl, values, selected, kind) {
   }).join('')}<div class="cuot-time-wheel-spacer"></div>`;
   const selectedEl = listEl.querySelector('.cuot-time-wheel-item.is-selected');
   if (selectedEl) {
-    selectedEl.scrollIntoView({ block: 'center', behavior: 'instant' in window ? 'instant' : 'auto' });
+    // 勿用 scrollIntoView：会滚动抽屉/页面祖先，导致 fixed 弹层相对输入框整体下移
+    const top = selectedEl.offsetTop - (listEl.clientHeight / 2) + (selectedEl.offsetHeight / 2);
+    listEl.scrollTop = Math.max(0, top);
   }
 }
 
@@ -2807,7 +2818,7 @@ function selectCuotDatePickerDay(iso, ev) {
   if (!anchor || !iso) return;
   if (cuotDatePickerState.mode === 'datetime') {
     cuotDatePickerState.pendingIso = iso;
-    renderCuotDatePickerPopover();
+    renderCuotDatePickerPopover({ skipTimePanel: true });
     return;
   }
   anchor.dataset.isoValue = iso;
@@ -2863,7 +2874,10 @@ function normalizeCuotDatetimeInput(el) {
   const min = el.dataset.min || '';
   const max = el.dataset.max || '';
   if ((min && parsed.iso < min) || (max && parsed.iso > max)) {
-    alert(`日期须在全校开课时间（${formatDateDisplayDdMmYyyy(min)} ~ ${formatDateDisplayDdMmYyyy(max)}）范围内`);
+    const rangeLabel = el.dataset.unitCode
+      ? `允许范围（${formatDateDisplayDdMmYyyy(min || parsed.iso)} ~ ${formatDateDisplayDdMmYyyy(max || parsed.iso)}）`
+      : `全校开课时间（${formatDateDisplayDdMmYyyy(min)} ~ ${formatDateDisplayDdMmYyyy(max)}）`;
+    alert(`日期须在${rangeLabel}内`);
     setCourseDatetimeInputValue(el, el.dataset.isoValue, el.dataset.hmValue || '08:00');
     return;
   }
@@ -2885,6 +2899,45 @@ function getCourseTimeSettingDateBounds(row) {
     startTime: extractTimeFromCourseDatetime(row?.startAt, '08:00:00'),
     endTime: extractTimeFromCourseDatetime(row?.endAt, '18:00:00')
   };
+}
+
+/** 开课学期校历：第 1 教学周周一（与排课推算一致） */
+function getTermCalendarStartDate(termCode) {
+  const code = String(termCode || '').replace(/\//g, '');
+  const p = parseIntake(code);
+  const year = p ? p.year : new Date().getFullYear();
+  let month = p ? parseInt(p.type, 10) : 9;
+  if (!month || month < 1 || month > 12) month = 9;
+  const d = new Date(year, month - 1, 1);
+  const day = d.getDay();
+  const offset = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
+  d.setDate(d.getDate() + offset);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** 开课学期校历结束日：末教学周周日 */
+function getTermCalendarEndDate(termCode) {
+  const start = getTermCalendarStartDate(termCode);
+  const weeks = getOfferingTermTeachingWeeks(termCode);
+  const end = new Date(start);
+  end.setDate(end.getDate() + Math.max(1, weeks) * 7 - 1);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
+function getTermCalendarEndIso(termCode) {
+  const end = getTermCalendarEndDate(termCode);
+  const y = end.getFullYear();
+  const mo = String(end.getMonth() + 1).padStart(2, '0');
+  const day = String(end.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${day}`;
+}
+
+function isCourseUnitOfferingEndBeyondTermCalendar(termCode, endAt) {
+  const end = parseCourseTimeDatetime(endAt);
+  if (!end || !termCode) return false;
+  return end.getTime() > getTermCalendarEndDate(termCode).getTime();
 }
 
 function isCourseUnitOfferingSlotWithinSchoolRange(row, startAt, endAt) {
@@ -3107,24 +3160,20 @@ function renderCourseUnitOfferingTimeTable() {
   const row = getCourseTimeSettingById(settingId);
   ensureCourseUnitOfferingTimes(settingId);
   const units = getCourseUnitOfferingConfiguredUnitCodes(settingId);
-  const bounds = getCourseTimeSettingDateBounds(row);
-  const editableCount = units.filter(code => isCourseUnitOfferingTimeEditable(settingId, code)).length;
+  const closedCount = units.filter(code => !isCourseUnitOfferingTimeEditable(settingId, code)).length;
   if (defaultEl && row) {
-    defaultEl.innerHTML = `<strong>全校开课时间</strong>：<code>${escapeHtml(formatCourseUnitOfferingSchoolWideRange(row))}</code>（未单独设置的单位默认按此范围操作）`;
+    defaultEl.innerHTML = `<strong>全校开课时间</strong>：<code>${escapeHtml(formatCourseUnitOfferingSchoolWideRange(row))}</code>（未单独设置的单位默认按此范围；已设置单位以学院时间为准，可超出全校时间）`;
   }
   if (hintEl) {
     if (!units.length) {
       hintEl.hidden = false;
-      hintEl.textContent = '可新增需要单独设置开放时间的开课单位；未新增的单位默认按全校开课时间范围操作。';
-    } else if (!editableCount) {
+      hintEl.textContent = '可新增需要单独设置开放时间的开课单位；未新增的单位默认按全校开课时间。已设置学院时间时以学院为准，可随时修改。';
+    } else if (closedCount) {
       hintEl.hidden = false;
-      hintEl.textContent = '已配置单位的开课模块开放操作时间均已截止，当前为只读查看。';
-    } else if (editableCount < units.length) {
-      hintEl.hidden = false;
-      hintEl.textContent = `已配置 ${units.length} 个开课单位；已截止的单位不可修改。未配置单位仍按全校开课时间范围操作。`;
+      hintEl.textContent = `已配置 ${units.length} 个开课单位；「已截止」仅表示相对学院截止时间的状态，仍可修改学院时间（可超出全校时间）。`;
     } else {
       hintEl.hidden = false;
-      hintEl.textContent = '请为已新增的开课单位设置开放起止时间；时间须在全校开课时间范围内，截止后该单位侧开课操作将变为只读。';
+      hintEl.textContent = '请为已新增的开课单位设置开放起止时间；学院时间可超出全校开课时间并以学院为准，可随时修改。';
     }
   }
   tbody.innerHTML = units.length
@@ -3132,49 +3181,46 @@ function renderCourseUnitOfferingTimeTable() {
     const slot = COURSE_UNIT_OFFERING_TIMES[settingId]?.[unitCode] || { startAt: '', endAt: '' };
     const startDt = formatCuotSlotDatetimeFields(slot.startAt, '08:00');
     const endDt = formatCuotSlotDatetimeFields(slot.endAt, '18:00');
-    const locked = !isCourseUnitOfferingTimeEditable(settingId, unitCode);
-    const statusLabel = locked ? '已截止' : '开放中';
-    const statusClass = locked ? 'is-closed' : 'is-open';
-    const pickerOpen = locked ? '' : 'onclick="openCourseDatetimePicker(this, event)" onblur="normalizeCuotDatetimeInput(this)"';
-    return `<tr class="${locked ? 'is-readonly-row' : ''}">
+    const closed = !isCourseUnitOfferingTimeEditable(settingId, unitCode);
+    const statusLabel = closed ? '已截止' : '开放中';
+    const statusClass = closed ? 'is-closed' : 'is-open';
+    const pickerOpen = 'onclick="openCourseDatetimePicker(this, event)" onblur="normalizeCuotDatetimeInput(this)"';
+    return `<tr>
       <td class="col-index col-center">${idx + 1}</td>
       <td class="col-center"><code>${escapeHtml(unitCode)}</code></td>
       <td>${escapeHtml(SCHOOL_NAME_MAP[unitCode] || unitCode)}</td>
       <td class="col-center"><span class="offering-module-time-status ${statusClass}">${statusLabel}</span></td>
       <td>
-        <input class="input input-sm cuot-date-input course-datetime-input ${locked ? 'readonly' : ''}" type="text"
+        <input class="input input-sm cuot-date-input course-datetime-input" type="text"
           id="cuot-start-${unitCode}"
           value="${escapeHtml(startDt.display)}"
           data-iso-value="${escapeHtml(startDt.iso)}"
           data-hm-value="${escapeHtml(startDt.hm)}"
-          data-min="${escapeHtml(bounds.minDate)}" data-max="${escapeHtml(bounds.maxDate)}"
+          data-min="" data-max=""
           data-unit-code="${escapeHtml(unitCode)}" data-field="start"
           data-picker-title="开放开始"
           placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
-          ${locked ? 'tabindex="-1" data-locked="1"' : pickerOpen}>
-        <!-- onclick="openCuotDatePicker(this, event)" placeholder="dd/mm/yyyy" 原仅日期选择 -->
+          ${pickerOpen}>
       </td>
       <td>
-        <input class="input input-sm cuot-date-input course-datetime-input ${locked ? 'readonly' : ''}" type="text"
+        <input class="input input-sm cuot-date-input course-datetime-input" type="text"
           id="cuot-end-${unitCode}"
           value="${escapeHtml(endDt.display)}"
           data-iso-value="${escapeHtml(endDt.iso)}"
           data-hm-value="${escapeHtml(endDt.hm)}"
-          data-min="${escapeHtml(startDt.iso || bounds.minDate)}" data-max="${escapeHtml(bounds.maxDate)}"
+          data-min="${escapeHtml(startDt.iso || '')}" data-max=""
           data-unit-code="${escapeHtml(unitCode)}" data-field="end"
           data-picker-title="开放截止"
           placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
-          ${locked ? 'tabindex="-1" data-locked="1"' : pickerOpen}>
+          ${pickerOpen}>
       </td>
       <td class="actions"><a href="#" onclick="removeCourseUnitOfferingTimeUnit('${escapeHtml(unitCode)}');return false">移除</a></td>
     </tr>`;
   }).join('')
     : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:20px">暂未单独设置开课单位</td></tr>';
-  // const units = [...SCHOOL_CODES].sort(); // 原展示全部开课单位
   const drawer = document.getElementById('drawer-course-unit-offering-time');
-  drawer?.classList.toggle('is-readonly', units.length > 0 && editableCount === 0);
-  units.filter(code => isCourseUnitOfferingTimeEditable(settingId, code))
-    .forEach(code => syncCourseUnitOfferingTimeRowDateBounds(code));
+  drawer?.classList.remove('is-readonly');
+  units.forEach(code => syncCourseUnitOfferingTimeRowDateBounds(code));
 }
 
 function syncCourseUnitOfferingTimeDrawerFoot() {
@@ -3182,17 +3228,15 @@ function syncCourseUnitOfferingTimeDrawerFoot() {
   const saveBtn = document.getElementById('btn-course-unit-offering-time-save');
   if (!saveBtn || !settingId) return;
   const units = getCourseUnitOfferingConfiguredUnitCodes(settingId);
-  const hasEditable = units.some(code => isCourseUnitOfferingTimeEditable(settingId, code));
-  // const hasEditable = [...SCHOOL_CODES].some(code => isCourseUnitOfferingTimeEditable(settingId, code)); // 原按全部单位判断
-  saveBtn.hidden = !hasEditable;
-  saveBtn.disabled = !hasEditable;
+  const hasUnits = units.length > 0;
+  saveBtn.hidden = !hasUnits;
+  saveBtn.disabled = !hasUnits;
 }
 
 function saveCourseUnitOfferingTimeDrawer() {
   const settingId = courseUnitOfferingTimeSettingId;
   if (!settingId) return;
   const row = getCourseTimeSettingById(settingId);
-  // const bounds = getCourseTimeSettingDateBounds(row); // 原拼接默认时分，改由输入框 data-hm-value 保存
   const store = ensureCourseUnitOfferingTimes(settingId);
   const units = getCourseUnitOfferingConfiguredUnitCodes(settingId);
   if (!units.length) {
@@ -3200,14 +3244,14 @@ function saveCourseUnitOfferingTimeDrawer() {
     return;
   }
   let invalid = false;
-  let outOfRange = false;
   let saved = 0;
+  const draft = {};
+  const beyondCalendarUnits = [];
+  const calendarEndIso = getTermCalendarEndIso(row?.termCode);
+  const calendarEndLabel = formatDateDisplayDdMmYyyy(calendarEndIso);
   units.forEach(unitCode => {
-    if (!isCourseUnitOfferingTimeEditable(settingId, unitCode)) return;
     const startVal = getCuotDatetimeInputValue(unitCode, 'start');
     const endVal = getCuotDatetimeInputValue(unitCode, 'end');
-    // const startDate = getCuotDateInputIso(unitCode, 'start'); // 原仅日期，改日期+时间
-    // const startVal = fromDateInputValue(startDate, bounds.startTime);
     if (!startVal || !endVal) {
       invalid = true;
       return;
@@ -3218,26 +3262,31 @@ function saveCourseUnitOfferingTimeDrawer() {
       invalid = true;
       return;
     }
-    if (!isCourseUnitOfferingSlotWithinSchoolRange(row, startVal, endVal)) {
-      outOfRange = true;
-      return;
+    if (isCourseUnitOfferingEndBeyondTermCalendar(row?.termCode, endVal)) {
+      beyondCalendarUnits.push(unitCode);
     }
-    store[unitCode] = { startAt: startVal, endAt: endVal };
+    draft[unitCode] = { startAt: startVal, endAt: endVal };
     saved += 1;
   });
-  // [...SCHOOL_CODES].sort().forEach(unitCode => { ... }); // 原保存全部单位
-  if (outOfRange) {
-    alert(`单位开放时间须在全校开课时间（${formatCourseUnitOfferingSchoolWideRange(row)}）范围内。`);
-    return;
-  }
   if (invalid) {
-    alert('请为开放期内的单位填写有效的起止时间（开始时间须早于截止时间）。');
+    alert('请为各单位填写有效的起止时间（开始时间须早于截止时间）。');
     return;
   }
   if (!saved) {
-    alert('当前无可保存的单位（均已截止）。');
+    alert('当前无可保存的单位。');
     return;
   }
+  if (beyondCalendarUnits.length) {
+    const ok = confirm(
+      `以下单位的截止时间已超过开课学期校历结束日（${calendarEndLabel}）：\n`
+      + `${beyondCalendarUnits.join('、')}\n\n`
+      + '仍可保存并以学院时间为准生效，是否继续？'
+    );
+    if (!ok) return;
+  }
+  Object.entries(draft).forEach(([unitCode, slot]) => {
+    store[unitCode] = slot;
+  });
   renderCourseUnitOfferingTimeTable();
   syncCourseUnitOfferingTimeDrawerFoot();
   alert(`已保存 ${saved} 个开课单位的开放时间。`);
@@ -3264,12 +3313,33 @@ const SCHOOL_ELECTIVE_GE_CATEGORIES = [
   { id: 'science', label: 'Science' }
 ];
 const SCHOOL_ELECTIVE_STUDENT_TYPES = ['Local', 'Chinese', 'International'];
+/** 不可选年级（多选；空 = 各年级均可选） */
+const SCHOOL_ELECTIVE_YEAR_OPTIONS = [
+  { id: 'Year1', label: 'Year1' },
+  { id: 'Year2', label: 'Year2' },
+  { id: 'Year3', label: 'Year3' },
+  { id: 'Year4+', label: 'Year4及以上' }
+];
 const SCHOOL_ELECTIVE_ALL_PROGRAMMES = '__all__';
 
 let SCHOOL_ELECTIVE_COURSES = null;
 let schoolElectiveEditId = null;
 let schoolElectiveEditExcludedDraft = [];
+let schoolElectiveEditEligibleDraft = [];
 let programmePickerTarget = 'school-elective';
+/** 专业选择弹窗中已收起的学院代码（左右分栏后基本不用） */
+let schoolElectiveProgrammePickerCollapsed = new Set();
+/** 左右分栏当前选中的学院代码 */
+let schoolElectiveProgrammePickerActiveSchool = '';
+/** 弹窗当前 Tab：eligible | excluded */
+let schoolElectiveProgrammePickerTab = 'excluded';
+/** 弹窗内各 Tab 工作勾选（未点确定前不写回摘要草稿） */
+let schoolElectiveProgrammePickerWorkingByTab = { eligible: null, excluded: null };
+let schoolElectiveEditConflictDraft = [];
+let schoolElectiveEditPrereqDraft = [];
+/** 'conflict' | 'prereq' | null */
+let schoolElectiveCourseLinkPickerMode = null;
+let schoolElectiveCourseLinkPickerSelected = new Set();
 let geOfferingScopeEditLineId = null;
 let geOfferingScopeExcludedDraft = [];
 let schoolElectiveSelectedIds = new Set();
@@ -3329,7 +3399,12 @@ function schoolElectiveEligibleToExcluded(eligibleKeys = []) {
 
 function getSchoolElectiveExcludedProgrammeKeys(row) {
   if (Array.isArray(row?.excludedProgrammeKeys)) return row.excludedProgrammeKeys;
-  return schoolElectiveEligibleToExcluded(row?.eligibleProgrammeKeys);
+  return [];
+}
+
+function getSchoolElectiveEligibleProgrammeKeys(row) {
+  if (!Array.isArray(row?.eligibleProgrammeKeys)) return [];
+  return row.eligibleProgrammeKeys.filter(k => k && k !== SCHOOL_ELECTIVE_ALL_PROGRAMMES);
 }
 
 function inferSchoolElectiveGeCategory(seed) {
@@ -3349,7 +3424,39 @@ function resolveSchoolElectiveType(row) {
 function normalizeSchoolElectiveCourseRow(row) {
   if (!row) return row;
   if (!Array.isArray(row.excludedProgrammeKeys)) {
-    row.excludedProgrammeKeys = schoolElectiveEligibleToExcluded(row.eligibleProgrammeKeys);
+    // 旧白名单数据：有 eligible 且非「全部」时保留为可选；否则按原逻辑反算不可选
+    if (Array.isArray(row.eligibleProgrammeKeys)
+      && row.eligibleProgrammeKeys.length
+      && !row.eligibleProgrammeKeys.includes(SCHOOL_ELECTIVE_ALL_PROGRAMMES)) {
+      row.excludedProgrammeKeys = [];
+    } else {
+      row.excludedProgrammeKeys = schoolElectiveEligibleToExcluded(row.eligibleProgrammeKeys);
+      row.eligibleProgrammeKeys = [];
+    }
+  }
+  if (!Array.isArray(row.eligibleProgrammeKeys)) row.eligibleProgrammeKeys = [];
+  row.eligibleProgrammeKeys = row.eligibleProgrammeKeys.filter(k => k && k !== SCHOOL_ELECTIVE_ALL_PROGRAMMES);
+  if (!Array.isArray(row.conditionalProgrammeKeys)) {
+    row.conditionalProgrammeKeys = [];
+  }
+  if (!Array.isArray(row.excludedYears)) {
+    row.excludedYears = [];
+  }
+  if (!Array.isArray(row.conflictCourseCodes)) {
+    row.conflictCourseCodes = [];
+  } else {
+    const own = String(row.code || '').toUpperCase();
+    row.conflictCourseCodes = [...new Set(
+      row.conflictCourseCodes.map(c => String(c).toUpperCase()).filter(c => c && c !== own)
+    )];
+  }
+  if (!Array.isArray(row.prereqCourseCodes)) {
+    row.prereqCourseCodes = resolveSchoolElectiveDefaultPrereqCodes(row);
+  } else {
+    const own = String(row.code || '').toUpperCase();
+    row.prereqCourseCodes = [...new Set(
+      row.prereqCourseCodes.map(c => String(c).toUpperCase()).filter(c => c && c !== own)
+    )];
   }
   if (row.remark == null) row.remark = '';
   row.electiveType = resolveSchoolElectiveType(row);
@@ -3382,36 +3489,128 @@ function buildSchoolElectiveCourseFromCatalog(cat, overrides = {}) {
     coordinator: cat.coordinator || '',
     status: overrides.status || 'active',
     excludedProgrammeKeys: overrides.excludedProgrammeKeys ?? [],
+    conditionalProgrammeKeys: overrides.conditionalProgrammeKeys ?? [],
+    eligibleProgrammeKeys: overrides.eligibleProgrammeKeys ?? [],
     // eligibleProgrammeKeys: overrides.eligibleProgrammeKeys || [SCHOOL_ELECTIVE_ALL_PROGRAMMES], // 原白名单字段，已改为 excludedProgrammeKeys
     eligibleStudentTypes: overrides.eligibleStudentTypes || [...SCHOOL_ELECTIVE_STUDENT_TYPES],
+    excludedYears: overrides.excludedYears ?? [],
+    conflictCourseCodes: overrides.conflictCourseCodes ?? [],
+    prereqCourseCodes: overrides.prereqCourseCodes ?? getCatalogPrereqCourseCodes(cat),
     ...overrides
   };
 }
 
+function buildSchoolElectiveCourseFromGeRestriction(item) {
+  const credits = Number(item.credits) || 0;
+  const hours = credits * 14;
+  return {
+    id: `sec-ge-${String(item.code || '').toLowerCase()}`,
+    code: item.code,
+    name: item.name,
+    categoryId: 'general',
+    electiveType: 'GE',
+    geCategory: item.geCategory || 'arts',
+    department: item.department || SCHOOL_NAME_MAP.SASS,
+    offeringUnitAbbr: item.offeringUnitAbbr || 'SASS',
+    coordinator: item.coordinator || '',
+    status: item.status || 'active',
+    ...buildSchoolElectiveCourseHours(credits, { theory: hours }),
+    // 灰底 → 不可选；红星(*) → 条件可选；全白 → 不进名单
+    excludedProgrammeKeys: [...(item.excludedProgrammeKeys || [])],
+    eligibleProgrammeKeys: [...(item.eligibleProgrammeKeys || [])],
+    conditionalProgrammeKeys: [...(item.conditionalProgrammeKeys || [])],
+    eligibleStudentTypes: [...SCHOOL_ELECTIVE_STUDENT_TYPES],
+    excludedYears: [...(item.excludedYears || [])],
+    conflictCourseCodes: (() => {
+      const own = String(item.code || '').toUpperCase();
+      const seeded = item.conflictCourseCodes
+        || extractSchoolElectiveConflictCodesFromRemark(item.remark || '');
+      return [...seeded].map(c => String(c).toUpperCase()).filter(c => c && c !== own);
+    })(),
+    prereqCourseCodes: (() => {
+      const own = String(item.code || '').toUpperCase();
+      const seeded = item.prereqCourseCodes
+        || extractSchoolElectivePrereqCodesFromRemark(item.remark || '');
+      return [...seeded].map(c => String(c).toUpperCase()).filter(c => c && c !== own);
+    })(),
+    remark: item.remark || ''
+  };
+}
+
+function extractSchoolElectiveConflictCodesFromRemark(remark) {
+  const text = String(remark || '');
+  if (!text) return [];
+  const codes = new Set();
+  const re = /\bG\d{4}\b/gi;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    codes.add(String(m[0]).toUpperCase());
+  }
+  return Array.from(codes);
+}
+
+function extractSchoolElectivePrereqCodesFromRemark(remark) {
+  const text = String(remark || '');
+  const m = text.match(/pre-?requisite\s*[:：]\s*([^\n*]+)/i);
+  if (!m) return [];
+  const codes = new Set();
+  const re = /\b([A-Z]{1,6}\d{3,5}[A-Z]?)\b/gi;
+  let hit;
+  while ((hit = re.exec(m[1])) !== null) {
+    codes.add(String(hit[1]).toUpperCase());
+  }
+  return Array.from(codes);
+}
+
+function getCatalogPrereqCourseCodes(catOrId) {
+  const cat = typeof catOrId === 'string'
+    ? COURSE_CATALOG.find(c => c.id === catOrId)
+    : catOrId;
+  if (!cat) return [];
+  if (Array.isArray(cat.prereqCodes) && cat.prereqCodes.length) {
+    return [...new Set(cat.prereqCodes.map(c => String(c).toUpperCase()).filter(Boolean))];
+  }
+  if (Array.isArray(cat.prereqIds) && cat.prereqIds.length) {
+    return [...new Set(cat.prereqIds.map(id => {
+      const p = COURSE_CATALOG.find(c => c.id === id);
+      return p ? String(p.code || '').toUpperCase() : '';
+    }).filter(Boolean))];
+  }
+  return [];
+}
+
+function resolveSchoolElectiveDefaultPrereqCodes(row) {
+  if (!row) return [];
+  const own = String(row.code || '').toUpperCase();
+  let codes = [];
+  if (row.catalogId) codes = getCatalogPrereqCourseCodes(row.catalogId);
+  if (!codes.length) {
+    const cat = COURSE_CATALOG.find(c =>
+      String(c.code || '').replace('*', '').toUpperCase() === own
+    );
+    if (cat) codes = getCatalogPrereqCourseCodes(cat);
+  }
+  if (!codes.length) codes = extractSchoolElectivePrereqCodesFromRemark(row.remark || '');
+  return codes.filter(c => c && c !== own);
+}
+
 function seedSchoolElectiveCourses() {
-  const catalogElectives = COURSE_CATALOG.filter(c => /elective/i.test(c.classification || ''));
-  const fromCatalog = catalogElectives.map(cat => buildSchoolElectiveCourseFromCatalog(cat, {
-    excludedProgrammeKeys: cat.classification === 'Major Elective'
-      ? pickSchoolElectiveDemoExcluded(cat.id, 3)
-      : [],
-    // excludedProgrammeKeys: cat.classification === 'Major Elective'
-    //   ? schoolElectiveEligibleToExcluded(['fin', 'acc', 'ibu']) // 原反算黑名单，会排除过多专业
-    //   : [],
-    eligibleStudentTypes: cat.classification === 'Major Elective'
-      ? ['Local', 'Chinese']
-      : [...SCHOOL_ELECTIVE_STUDENT_TYPES]
-  }));
-  const extra = [
-    { id: 'sec-adt016', code: 'ADT016*', name: 'Broadcast Advertising', categoryId: 'open', electiveType: 'GE', geCategory: 'arts', department: SCHOOL_NAME_MAP.SOC, offeringUnitAbbr: 'SOC', coordinator: 'Dr. Ahmad Rahman', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 42 }), excludedProgrammeKeys: [], eligibleStudentTypes: [...SCHOOL_ELECTIVE_STUDENT_TYPES] },
-    { id: 'sec-adt211', code: 'ADT211', name: 'Broadcast Advertising and Marketing', categoryId: 'open', electiveType: 'GE', geCategory: 'business', department: SCHOOL_NAME_MAP.SOC, offeringUnitAbbr: 'SOC', coordinator: 'Dr. Ahmad Rahman', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 42 }), excludedProgrammeKeys: ['fin', 'acc'], eligibleStudentTypes: ['Local', 'International'] },
-    { id: 'sec-ait102', code: 'AIT102', name: 'Discrete Mathematics', categoryId: 'general', electiveType: 'GE', geCategory: 'science', department: SCHOOL_NAME_MAP.SEEAI, offeringUnitAbbr: 'SEEAI', coordinator: 'Dr. Kumar Raj', status: 'suspended', ...buildSchoolElectiveCourseHours(4, { theory: 56 }), excludedProgrammeKeys: ['jrn', 'tcm'], eligibleStudentTypes: ['Local', 'Chinese', 'International'] },
-    { id: 'sec-ait201', code: 'AIT201', name: 'Python and Tensorflow Programming', categoryId: 'general', electiveType: 'GE', geCategory: 'science', department: SCHOOL_NAME_MAP.SEEAI, offeringUnitAbbr: 'SEEAI', coordinator: 'Dr. Kumar Raj', status: 'active', ...buildSchoolElectiveCourseHours(4, { theory: 28, practice: 28 }), excludedProgrammeKeys: ['fin', 'ibu', 'ecm'], eligibleStudentTypes: ['Local', 'International'] },
-    { id: 'sec-cst210', code: 'CST210', name: 'Probabilistic Graph and Agents', categoryId: 'general', electiveType: 'GE', geCategory: 'science', department: SCHOOL_NAME_MAP.SCDS, offeringUnitAbbr: 'SCDS', coordinator: 'Dr. Kumar Raj', status: 'suspended', ...buildSchoolElectiveCourseHours(4, { theory: 42, tutorial: 14 }), excludedProgrammeKeys: ['adt'], eligibleStudentTypes: ['Chinese', 'International'] },
-    { id: 'sec-ecm301', code: 'ECM301', name: 'Digital Marketing Analytics', categoryId: 'major', electiveType: 'ME', geCategory: null, department: SCHOOL_NAME_MAP.SEM, offeringUnitAbbr: 'SEM', coordinator: 'Prof. Lim Wei Jie', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 28, practice: 14 }), excludedProgrammeKeys: ['ait', 'cst'], eligibleStudentTypes: ['Local', 'Chinese'] },
-    { id: 'sec-eng220', code: 'ENG220', name: 'Creative Writing Workshop', categoryId: 'open', electiveType: 'GE', geCategory: 'arts', department: SCHOOL_NAME_MAP.SASS, offeringUnitAbbr: 'SASS', coordinator: 'Dr. Sarah Chen', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 42 }), excludedProgrammeKeys: [], eligibleStudentTypes: ['Local', 'Chinese', 'International'] },
-    { id: 'sec-mat180', code: 'MAT180', name: 'Mathematics for Data Science', categoryId: 'general', electiveType: 'GE', geCategory: 'science', department: SCHOOL_NAME_MAP.SMP, offeringUnitAbbr: 'SMP', coordinator: 'Dr. Lee Ming', status: 'active', ...buildSchoolElectiveCourseHours(4, { theory: 56 }), excludedProgrammeKeys: ['jrn', 'adt', 'cos'], eligibleStudentTypes: [...SCHOOL_ELECTIVE_STUDENT_TYPES] }
+  // GE：对照《GE with Restrictions List》——课程号均为 G 开头
+  const geFromList = (typeof GE_RESTRICTIONS_LIST !== 'undefined' ? GE_RESTRICTIONS_LIST : [])
+    .map(buildSchoolElectiveCourseFromGeRestriction);
+  // ME：仍从教务课程库 Major Elective 纳入
+  const meFromCatalog = COURSE_CATALOG
+    .filter(c => /Major Elective/i.test(c.classification || ''))
+    .map(cat => buildSchoolElectiveCourseFromCatalog(cat, {
+      excludedProgrammeKeys: pickSchoolElectiveDemoExcluded(cat.id, 3),
+      // excludedProgrammeKeys: schoolElectiveEligibleToExcluded(['fin', 'acc', 'ibu']), // 原反算黑名单，会排除过多专业
+      eligibleStudentTypes: ['Local', 'Chinese']
+    }));
+  const meExtra = [
+    { id: 'sec-ecm301', code: 'ECM301', name: 'Digital Marketing Analytics', categoryId: 'major', electiveType: 'ME', geCategory: null, department: SCHOOL_NAME_MAP.SEM, offeringUnitAbbr: 'SEM', coordinator: 'Prof. Lim Wei Jie', status: 'active', ...buildSchoolElectiveCourseHours(3, { theory: 28, practice: 14 }), excludedProgrammeKeys: ['ait', 'cst'], eligibleStudentTypes: ['Local', 'Chinese'] }
   ];
-  return [...fromCatalog, ...extra].sort((a, b) => a.code.localeCompare(b.code));
+  // 原 GE 演示课（ADT016* / AIT102 等非 G 课号）已废弃，改由 GE_RESTRICTIONS_LIST 提供
+  return [...geFromList, ...meFromCatalog, ...meExtra].sort((a, b) => a.code.localeCompare(b.code));
 }
 
 function ensureSchoolElectiveCourseStore() {
@@ -3437,13 +3636,84 @@ function formatSchoolElectiveGeCategoryDisplay(row) {
   return getSchoolElectiveGeCategoryLabel(row.geCategory);
 }
 
-function formatSchoolElectiveProgrammeScope(excludedKeys = []) {
-  if (!excludedKeys.length) return '—';
-  return excludedKeys.map(key => PROGRAMMES[key]?.code || key.toUpperCase()).filter(Boolean).join('、');
+function formatSchoolElectiveProgrammeScope(keys = []) {
+  if (!keys.length) return '—';
+  return keys.map(key => PROGRAMMES[key]?.code || key.toUpperCase()).filter(Boolean).join('、');
 }
 
+/** 列表 / 摘要：修读范围（可选 / 不可选；都不选 = 全开放） */
 function formatSchoolElectiveExcludedProgrammeDisplay(row) {
-  return formatSchoolElectiveProgrammeScope(getSchoolElectiveExcludedProgrammeKeys(row));
+  const eligible = getSchoolElectiveEligibleProgrammeKeys(row);
+  const excluded = getSchoolElectiveExcludedProgrammeKeys(row);
+  if (!eligible.length && !excluded.length) return '全开放';
+  const parts = [];
+  if (eligible.length) parts.push(`可选 ${formatSchoolElectiveProgrammeScope(eligible)}`);
+  if (excluded.length) parts.push(`不可选 ${formatSchoolElectiveProgrammeScope(excluded)}`);
+  return parts.join('；');
+}
+
+function formatSchoolElectiveExcludedYearsDisplay(years = []) {
+  if (!years?.length) return '各年级均可选';
+  const labelMap = Object.fromEntries(SCHOOL_ELECTIVE_YEAR_OPTIONS.map(o => [o.id, o.label]));
+  return years.map(y => labelMap[y] || y).join('、');
+}
+
+function formatSchoolElectiveConflictCoursesDisplay(codes = []) {
+  return formatSchoolElectiveLinkedCourseCodesDisplay(codes, '未设置');
+}
+
+function formatSchoolElectivePrereqCoursesDisplay(codes = []) {
+  return formatSchoolElectiveLinkedCourseCodesDisplay(codes, '未设置');
+}
+
+function formatSchoolElectiveLinkedCourseCodesDisplay(codes = [], emptyLabel = '未设置') {
+  const list = [...(codes || [])].map(c => String(c).toUpperCase()).filter(Boolean);
+  if (!list.length) return emptyLabel;
+  const byCode = new Map();
+  COURSE_CATALOG.forEach(cat => {
+    const code = String(cat.code || '').replace('*', '').toUpperCase();
+    if (code) byCode.set(code, cat);
+  });
+  ensureSchoolElectiveCourseStore().forEach(row => {
+    const code = String(row.code || '').toUpperCase();
+    if (code && !byCode.has(code)) byCode.set(code, row);
+  });
+  return list.map(code => {
+    const row = byCode.get(code);
+    return row?.name ? `${code} ${row.name}` : code;
+  }).join('；');
+}
+
+function formatSchoolElectiveEligibleProgrammeDisplay(row) {
+  const keys = getSchoolElectiveEligibleProgrammeKeys(row);
+  return keys.length ? formatSchoolElectiveProgrammeScope(keys) : '—（未限定可选名单）';
+}
+
+function formatSchoolElectiveExcludedOnlyProgrammeDisplay(row) {
+  const keys = getSchoolElectiveExcludedProgrammeKeys(row);
+  return keys.length ? formatSchoolElectiveProgrammeScope(keys) : '—（无不可选专业）';
+}
+
+function openSchoolElectiveScopeViewModal(courseId) {
+  const row = ensureSchoolElectiveCourseStore().find(r => r.id === courseId);
+  if (!row) return;
+  const setText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  setText('school-elective-scope-view-code', row.code || '—');
+  setText('school-elective-scope-view-name', row.name || '—');
+  setText('school-elective-scope-view-eligible', formatSchoolElectiveEligibleProgrammeDisplay(row));
+  setText('school-elective-scope-view-excluded', formatSchoolElectiveExcludedOnlyProgrammeDisplay(row));
+  setText('school-elective-scope-view-years', formatSchoolElectiveExcludedYearsDisplay(row.excludedYears));
+  setText('school-elective-scope-view-conflicts', formatSchoolElectiveConflictCoursesDisplay(row.conflictCourseCodes));
+  setText(
+    'school-elective-scope-view-prereqs',
+    formatSchoolElectiveLinkedCourseCodesDisplay(row.prereqCourseCodes, '未设置')
+  );
+  setText('school-elective-scope-view-student-types', formatSchoolElectiveStudentTypeScope(row.eligibleStudentTypes || []));
+  setText('school-elective-scope-view-remark', row.remark?.trim() ? row.remark : '—');
+  openModal('modal-school-elective-scope-view');
 }
 
 function formatSchoolElectiveStudentTypeScope(types = []) {
@@ -3481,11 +3751,13 @@ function ensureSchoolElectiveFilterOptions() {
 function getFilteredSchoolElectiveCourses() {
   ensureSchoolElectiveCourseStore();
   const dept = document.getElementById('school-elective-filter-dept')?.value || '';
+  const electiveType = document.getElementById('school-elective-filter-type')?.value || '';
   const category = document.getElementById('school-elective-filter-category')?.value || '';
   const status = document.getElementById('school-elective-filter-status')?.value || '';
   const keyword = (document.getElementById('school-elective-filter-keyword')?.value || '').trim().toLowerCase();
   return SCHOOL_ELECTIVE_COURSES.filter(row => {
     if (dept && row.department !== dept) return false;
+    if (electiveType && resolveSchoolElectiveType(row) !== electiveType) return false;
     if (category && (resolveSchoolElectiveType(row) !== 'GE' || row.geCategory !== category)) return false;
     // if (category && row.categoryId !== category) return false; // 原按 categoryId 过滤，改按 GE 校选课类别
     if (status && row.status !== status) return false;
@@ -3500,6 +3772,7 @@ function getFilteredSchoolElectiveCourses() {
 function resetSchoolElectiveCourseFilters() {
   const ids = [
     'school-elective-filter-dept',
+    'school-elective-filter-type',
     'school-elective-filter-category',
     'school-elective-filter-status',
     'school-elective-filter-keyword'
@@ -3527,7 +3800,8 @@ function getSchoolElectiveCatalogCandidates() {
   const existingCodes = new Set(SCHOOL_ELECTIVE_COURSES.map(r => String(r.code || '').replace('*', '')));
   return COURSE_CATALOG.filter(cat => {
     const cls = cat.classification || '';
-    if (!/elective/i.test(cls)) return false;
+    // GE 主数据已来自 Restrictions List（G 课号）；新增仅从课程库纳入 Major Elective
+    if (!/Major Elective/i.test(cls)) return false;
     if (existingCatalogIds.has(cat.id)) return false;
     if (existingCodes.has(cat.code)) return false;
     return true;
@@ -3575,8 +3849,11 @@ function updateSchoolElectiveSelection() {
   schoolElectiveSelectedIds = new Set(
     [...document.querySelectorAll('.school-elective-row-check:checked')].map(el => el.value)
   );
-  const btn = document.getElementById('btn-school-elective-delete');
-  if (btn) btn.disabled = !schoolElectiveSelectedIds.size;
+  const hasSelection = !!schoolElectiveSelectedIds.size;
+  const deleteBtn = document.getElementById('btn-school-elective-delete');
+  if (deleteBtn) deleteBtn.disabled = !hasSelection;
+  const statusBtn = document.getElementById('btn-school-elective-batch-status');
+  if (statusBtn) statusBtn.disabled = !hasSelection;
   const checkAll = document.getElementById('school-elective-check-all');
   const checks = [...document.querySelectorAll('.school-elective-row-check')];
   if (checkAll && checks.length) {
@@ -3592,6 +3869,44 @@ function updateSchoolElectiveSelection() {
 function toggleSchoolElectiveCheckAll(checked) {
   document.querySelectorAll('.school-elective-row-check').forEach(el => { el.checked = checked; });
   updateSchoolElectiveSelection();
+}
+
+function openSchoolElectiveBatchStatusModal() {
+  if (!schoolElectiveSelectedIds.size) {
+    alert('请先勾选需要修改状态的校选课程。');
+    return;
+  }
+  const hint = document.getElementById('school-elective-batch-status-hint');
+  if (hint) {
+    hint.textContent = `已选 ${schoolElectiveSelectedIds.size} 门课程，将统一设为下方状态。`;
+  }
+  const sel = document.getElementById('school-elective-batch-status');
+  if (sel) sel.value = 'active';
+  openModal('modal-school-elective-batch-status');
+}
+
+function confirmSchoolElectiveBatchStatus() {
+  if (!schoolElectiveSelectedIds.size) {
+    alert('请先勾选需要修改状态的校选课程。');
+    return;
+  }
+  const status = document.getElementById('school-elective-batch-status')?.value || 'active';
+  if (status !== 'active' && status !== 'suspended') {
+    alert('请选择有效状态。');
+    return;
+  }
+  const selectedIds = new Set(schoolElectiveSelectedIds);
+  ensureSchoolElectiveCourseStore();
+  let updated = 0;
+  SCHOOL_ELECTIVE_COURSES.forEach(row => {
+    if (!selectedIds.has(row.id)) return;
+    row.status = status;
+    updated += 1;
+  });
+  closeModal('modal-school-elective-batch-status');
+  renderSchoolElectiveCoursePage();
+  const label = status === 'suspended' ? '停课' : '正常';
+  alert(`已将 ${updated} 门校选课程状态设为「${label}」。`);
 }
 
 function deleteSelectedSchoolElectiveCourses() {
@@ -3615,39 +3930,81 @@ function deleteSelectedSchoolElectiveCourses() {
   });
 }
 
+function defaultSchoolElectiveCourseCompare(a, b) {
+  return (a.code || '').localeCompare(b.code || '', 'zh-CN', { numeric: true, sensitivity: 'base' });
+}
+
+const SCHOOL_ELECTIVE_COURSE_SORT_COLUMNS = {
+  code: { get: row => row.code || '' },
+  name: { get: row => row.name || '' },
+  electiveType: { get: row => getSchoolElectiveTypeLabel(resolveSchoolElectiveType(row)) },
+  geCategory: { get: row => formatSchoolElectiveGeCategoryDisplay(row) },
+  credits: { get: row => row.credits, type: 'number' },
+  totalHours: { get: row => row.totalHours, type: 'number' },
+  offeringUnit: { get: row => resolveSchoolElectiveOfferingUnitAbbr(row) },
+  status: { get: row => (row.status === 'suspended' ? '停课' : '正常') },
+  excludedProgrammes: { get: row => formatSchoolElectiveExcludedProgrammeDisplay(row) },
+  remark: { get: row => row.remark || '' }
+};
+
+function renderSchoolElectiveCourseTableHeader() {
+  const row = document.querySelector('#page-school-elective-courses .school-elective-course-table thead tr');
+  if (!row) return;
+  row.innerHTML =
+    '<th class="col-check"><input type="checkbox" id="school-elective-check-all" aria-label="全选" onchange="toggleSchoolElectiveCheckAll(this.checked)"></th>' +
+    '<th class="col-center col-index">序号</th>' +
+    renderListSortTh('schoolElectiveCourses', '课程代码', 'code', { extraClass: 'col-code' }) +
+    renderListSortTh('schoolElectiveCourses', '课程名称', 'name', { extraClass: 'col-course-name' }) +
+    renderListSortTh('schoolElectiveCourses', '类型', 'electiveType', { center: true, extraClass: 'col-type' }) +
+    renderListSortTh('schoolElectiveCourses', '校选课类别', 'geCategory', { center: true, extraClass: 'col-ge-category' }) +
+    renderListSortTh('schoolElectiveCourses', '学分', 'credits', { center: true, extraClass: 'col-credits' }) +
+    renderListSortTh('schoolElectiveCourses', '总学时', 'totalHours', { center: true, extraClass: 'col-hours' }) +
+    renderListSortTh('schoolElectiveCourses', '开课单位', 'offeringUnit', { center: true, extraClass: 'col-offering-unit' }) +
+    renderListSortTh('schoolElectiveCourses', '状态', 'status', { center: true, extraClass: 'col-status' }) +
+    renderListSortTh('schoolElectiveCourses', '备注', 'remark', { extraClass: 'col-remark' }) +
+    '<th class="col-center col-scope">修读范围</th>' +
+    '<th class="col-center col-sticky-actions">操作</th>';
+}
+
 function renderSchoolElectiveCoursePage() {
   ensureSchoolElectiveFilterOptions();
   const tbody = document.getElementById('school-elective-course-body');
   if (!tbody) return;
-  const rows = getFilteredSchoolElectiveCourses();
+  renderSchoolElectiveCourseTableHeader();
+  const rows = sortListWithState(
+    getFilteredSchoolElectiveCourses(),
+    'schoolElectiveCourses',
+    SCHOOL_ELECTIVE_COURSE_SORT_COLUMNS,
+    defaultSchoolElectiveCourseCompare
+  );
   const paged = paginateListItems(rows, 'schoolElectiveCourses');
   const rowOffset = (paged.page - 1) * paged.pageSize;
   tbody.innerHTML = paged.items.length
     ? paged.items.map((row, idx) => `<tr>
         <td class="col-check"><input type="checkbox" class="school-elective-row-check" value="${row.id}" ${schoolElectiveSelectedIds.has(row.id) ? 'checked' : ''} onchange="updateSchoolElectiveSelection()"></td>
-        <td class="col-index">${rowOffset + idx + 1}</td>
-        <td><code>${escapeHtml(row.code)}</code></td>
-        <td>${escapeHtml(row.name)}</td>
-        <td class="col-center">${escapeHtml(getSchoolElectiveTypeLabel(resolveSchoolElectiveType(row)))}</td>
-        <td class="col-center">${escapeHtml(formatSchoolElectiveGeCategoryDisplay(row))}</td>
+        <td class="col-index col-center">${rowOffset + idx + 1}</td>
+        <td class="col-code"><code>${escapeHtml(row.code)}</code></td>
+        <td class="col-course-name">${formatEllipsisTipCell(row.name || '—', row.name || '—', 'span')}</td>
+        <td class="col-center col-type">${escapeHtml(getSchoolElectiveTypeLabel(resolveSchoolElectiveType(row)))}</td>
+        <td class="col-center col-ge-category">${escapeHtml(formatSchoolElectiveGeCategoryDisplay(row))}</td>
         <!-- <td>${escapeHtml(getSchoolElectiveCategoryLabel(row.categoryId))}</td> --> <!-- 原校选课类别列，已拆分为类型 + 校选课类别 -->
-        <td class="col-center">${row.credits ?? '—'}</td>
-        <td class="col-center">${row.totalHours ?? '—'}</td>
+        <td class="col-center col-credits">${row.credits ?? '—'}</td>
+        <td class="col-center col-hours">${row.totalHours ?? '—'}</td>
         <!-- <td class="col-center">${row.theoryHours ?? '—'}</td> -->
         <!-- <td class="col-center">${row.tutorialHours ?? '—'}</td> -->
         <!-- <td class="col-center">${row.practiceHours ?? '—'}</td> -->
         <!-- <td class="col-center">${row.otherHours ?? '—'}</td> --> <!-- 原学时细分列，列表仅保留总学时 -->
-        <td class="col-center"><code>${escapeHtml(resolveSchoolElectiveOfferingUnitAbbr(row))}</code></td>
+        <td class="col-center col-offering-unit"><code>${escapeHtml(resolveSchoolElectiveOfferingUnitAbbr(row))}</code></td>
         <!-- <td>${escapeHtml(row.department || '—')}</td> --> <!-- 原管理单位全称，已改为开课单位代码 -->
-        <td class="col-center">${renderSchoolElectiveStatusTag(row.status)}</td>
-        <td class="school-elective-scope-cell" title="${escapeHtml(formatSchoolElectiveExcludedProgrammeDisplay(row))}">${escapeHtml(formatSchoolElectiveExcludedProgrammeDisplay(row))}</td>
-        <td class="school-elective-remark-cell">${formatEllipsisTipCell(row.remark || '—', row.remark || '—', 'span')}</td>
-        <td class="actions col-sticky-actions"><a href="#" onclick="openSchoolElectiveCourseEdit('${row.id}');return false">编辑</a></td>
+        <td class="col-center col-status">${renderSchoolElectiveStatusTag(row.status)}</td>
+        <td class="school-elective-remark-cell col-remark">${escapeHtml(row.remark || '—')}</td>
+        <td class="actions col-center col-scope"><a href="#" onclick="openSchoolElectiveScopeViewModal('${row.id}');return false">查看</a></td>
+        <td class="actions col-center col-sticky-actions"><a href="#" onclick="openSchoolElectiveCourseEdit('${row.id}');return false">编辑</a></td>
         <!-- 原操作文案：维护范围 -->
       </tr>`).join('')
     : '<tr><td colspan="13" class="text-muted" style="text-align:center;padding:24px">暂无校选课程</td></tr>';
   renderListPagination('school-elective-course-pagination', 'schoolElectiveCourses', paged.total);
-  bindCellFloatTips(tbody, '.school-elective-remark-cell .cell-ellipsis-tip[data-tip]', { alwaysShow: true });
+  bindCellFloatTips(tbody, '.col-course-name .cell-ellipsis-tip[data-tip]', { alwaysShow: true });
   updateSchoolElectiveSelection();
 }
 
@@ -3659,29 +4016,19 @@ function ensureSchoolElectiveEditCategoryOptions() {
   sel.dataset.built = '1';
 }
 
-function renderSchoolElectiveEditProgrammeSummary(excludedKeys = []) {
+function renderSchoolElectiveEditProgrammeSummary(eligibleKeys = [], excludedKeys = []) {
   const box = document.getElementById('school-elective-edit-programmes');
   if (!box) return;
+  schoolElectiveEditEligibleDraft = [...(eligibleKeys || [])].map(k => String(k).toLowerCase());
   schoolElectiveEditExcludedDraft = [...(excludedKeys || [])].map(k => String(k).toLowerCase());
-  const display = formatSchoolElectiveProgrammeScope(schoolElectiveEditExcludedDraft);
-  const empty = !schoolElectiveEditExcludedDraft.length;
-  box.textContent = empty ? '全部专业可选' : display;
+  const display = formatSchoolElectiveExcludedProgrammeDisplay({
+    eligibleProgrammeKeys: schoolElectiveEditEligibleDraft,
+    excludedProgrammeKeys: schoolElectiveEditExcludedDraft
+  });
+  const empty = display === '全开放';
+  box.textContent = display;
   box.classList.toggle('text-muted', empty);
 }
-
-// function renderSchoolElectiveEditProgrammePicks(excludedKeys = []) {
-//   const box = document.getElementById('school-elective-edit-programmes');
-//   if (!box) return;
-//   const excluded = new Set((excludedKeys || []).map(k => String(k).toLowerCase()));
-//   box.innerHTML = PROGRAMME_CATALOG.map(row => {
-//     const key = row.code.toLowerCase();
-//     const checked = excluded.has(key);
-//     return `<label class="school-elective-pick-option">
-//       <input type="checkbox" class="school-elective-programme-check" value="${escapeHtml(key)}" ${checked ? 'checked' : ''}>
-//       <span><code>${escapeHtml(row.code)}</code> ${escapeHtml(row.nameZh || row.name)}</span>
-//     </label>`;
-//   }).join('');
-// } // 原编辑弹窗内平铺复选框，已改为摘要 + 弹窗选择
 
 function getProgrammePickerExcludedDraft() {
   return programmePickerTarget === 'ge-offering-scope'
@@ -3695,49 +4042,223 @@ function setProgrammePickerExcludedDraft(keys) {
   else schoolElectiveEditExcludedDraft = draft;
 }
 
-function renderSchoolElectiveProgrammePickerList() {
+function getSchoolElectiveProgrammePickerGroups(keyword = '') {
+  const q = String(keyword || '').trim().toLowerCase();
+  const bySchool = new Map();
+  PROGRAMME_CATALOG.forEach(row => {
+    const schoolCode = row.schoolCode || '—';
+    const schoolName = SCHOOL_NAME_MAP[schoolCode] || schoolCode;
+    const progLabel = `${row.code} ${row.nameZh || row.name || ''}`.toLowerCase();
+    const schoolLabel = `${schoolCode} ${schoolName}`.toLowerCase();
+    if (q && !progLabel.includes(q) && !schoolLabel.includes(q)) return;
+    if (!bySchool.has(schoolCode)) {
+      bySchool.set(schoolCode, { schoolCode, schoolName, programmes: [] });
+    }
+    bySchool.get(schoolCode).programmes.push(row);
+  });
+  const order = typeof SCHOOL_CODES !== 'undefined' ? SCHOOL_CODES : [];
+  return [...bySchool.values()].sort((a, b) => {
+    const ia = order.indexOf(a.schoolCode);
+    const ib = order.indexOf(b.schoolCode);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1;
+    if (ib >= 0) return 1;
+    return a.schoolCode.localeCompare(b.schoolCode);
+  });
+}
+
+function getSchoolElectiveProgrammePickerWorking() {
+  return schoolElectiveProgrammePickerWorkingByTab[schoolElectiveProgrammePickerTab] || [];
+}
+
+function setSchoolElectiveProgrammePickerWorking(keys) {
+  schoolElectiveProgrammePickerWorkingByTab[schoolElectiveProgrammePickerTab] = [...(keys || [])];
+}
+
+function syncSchoolElectiveProgrammePickerTabsUi() {
+  const tabs = document.getElementById('school-elective-programme-picker-tabs');
+  const hint = document.getElementById('school-elective-programme-picker-hint');
+  const title = document.getElementById('school-elective-programme-picker-title');
+  const dual = programmePickerTarget === 'school-elective';
+  if (tabs) tabs.hidden = !dual;
+  if (hint) hint.hidden = !dual;
+  if (title) title.textContent = dual ? '修读范围' : '选择不可选专业';
+  if (tabs) {
+    tabs.querySelectorAll('.tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === schoolElectiveProgrammePickerTab);
+    });
+  }
+}
+
+function switchSchoolElectiveProgrammePickerTab(tab) {
+  if (programmePickerTarget !== 'school-elective') return;
+  if (tab !== 'eligible' && tab !== 'excluded') return;
+  if (tab === schoolElectiveProgrammePickerTab) return;
+  syncSchoolElectiveProgrammePickerWorkingFromDom();
+  schoolElectiveProgrammePickerTab = tab;
+  syncSchoolElectiveProgrammePickerTabsUi();
+  renderSchoolElectiveProgrammePickerList({ fromOpen: true });
+}
+
+function updateSchoolElectiveProgrammePickerCount() {
+  const el = document.getElementById('school-elective-programme-picker-count');
+  if (!el) return;
+  el.textContent = `已选 ${getSchoolElectiveProgrammePickerWorking().length}`;
+}
+
+function syncSchoolElectiveProgrammePickerSchoolChecks(root = document) {
+  root.querySelectorAll('.school-elective-picker-school').forEach(group => {
+    const schoolCheck = group.querySelector('.school-elective-programme-picker-school-check');
+    const progChecks = [...group.querySelectorAll('.school-elective-programme-picker-check')];
+    if (!schoolCheck || !progChecks.length) return;
+    const checkedCount = progChecks.filter(el => el.checked).length;
+    schoolCheck.checked = checkedCount === progChecks.length;
+    schoolCheck.indeterminate = checkedCount > 0 && checkedCount < progChecks.length;
+  });
+}
+
+function toggleSchoolElectiveProgrammePickerCollapse(schoolCode) {
+  const code = String(schoolCode || '');
+  if (!code) return;
+  if (schoolElectiveProgrammePickerCollapsed.has(code)) {
+    schoolElectiveProgrammePickerCollapsed.delete(code);
+  } else {
+    schoolElectiveProgrammePickerCollapsed.add(code);
+  }
+  const group = document.querySelector(`#school-elective-programme-picker-list .school-elective-picker-school[data-school="${CSS.escape(code)}"]`);
+  if (!group) {
+    renderSchoolElectiveProgrammePickerList();
+    return;
+  }
+  const collapsed = schoolElectiveProgrammePickerCollapsed.has(code);
+  group.classList.toggle('is-collapsed', collapsed);
+  const btn = group.querySelector('.school-elective-picker-toggle');
+  if (btn) {
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    btn.textContent = collapsed ? '▸' : '▾';
+  }
+}
+
+function onSchoolElectiveProgrammePickerSchoolChange(el) {
+  const group = el.closest('.school-elective-picker-school');
+  if (!group) return;
+  const checked = !!el.checked;
+  el.indeterminate = false;
+  group.querySelectorAll('.school-elective-programme-picker-check').forEach(prog => {
+    prog.checked = checked;
+  });
+  syncSchoolElectiveProgrammePickerWorkingFromDom();
+  updateSchoolElectiveProgrammePickerCount();
+}
+
+function onSchoolElectiveProgrammePickerProgrammeChange() {
+  syncSchoolElectiveProgrammePickerSchoolChecks();
+  syncSchoolElectiveProgrammePickerWorkingFromDom();
+  updateSchoolElectiveProgrammePickerCount();
+}
+
+function setSchoolElectiveProgrammePickerAll(checked) {
+  document.querySelectorAll('#school-elective-programme-picker-list .school-elective-programme-picker-check')
+    .forEach(el => { el.checked = !!checked; });
+  syncSchoolElectiveProgrammePickerSchoolChecks();
+  syncSchoolElectiveProgrammePickerWorkingFromDom();
+  updateSchoolElectiveProgrammePickerCount();
+}
+
+/** 仅更新当前 Tab 工作集，不写回摘要草稿 */
+function syncSchoolElectiveProgrammePickerWorkingFromDom() {
+  const visibleChecks = [...document.querySelectorAll('#school-elective-programme-picker-list .school-elective-programme-picker-check')];
+  if (!visibleChecks.length) return;
+  const visibleKeys = new Set(visibleChecks.map(el => el.value));
+  const checkedVisible = visibleChecks.filter(el => el.checked).map(el => el.value);
+  const base = getSchoolElectiveProgrammePickerWorking().filter(k => !visibleKeys.has(k));
+  setSchoolElectiveProgrammePickerWorking([...base, ...checkedVisible]);
+}
+
+function renderSchoolElectiveProgrammePickerList({ fromOpen = false } = {}) {
+  if (!fromOpen) syncSchoolElectiveProgrammePickerWorkingFromDom();
   const box = document.getElementById('school-elective-programme-picker-list');
   if (!box) return;
-  const selected = new Set(getProgrammePickerExcludedDraft().map(k => String(k).toLowerCase()));
-  const keyword = (document.getElementById('school-elective-programme-picker-search')?.value || '').trim().toLowerCase();
-  const rows = PROGRAMME_CATALOG.filter(row => {
-    if (!keyword) return true;
-    const key = row.code.toLowerCase();
-    const label = `${row.code} ${row.nameZh || row.name || ''}`.toLowerCase();
-    return key.includes(keyword) || label.includes(keyword);
-  });
-  box.innerHTML = rows.length
-    ? rows.map(row => {
-      const key = row.code.toLowerCase();
-      const checked = selected.has(key);
-      return `<label class="school-elective-pick-option">
-        <input type="checkbox" class="school-elective-programme-picker-check" value="${escapeHtml(key)}" ${checked ? 'checked' : ''}>
-        <span><code>${escapeHtml(row.code)}</code> ${escapeHtml(row.nameZh || row.name)}</span>
-      </label>`;
+  if (fromOpen || schoolElectiveProgrammePickerWorkingByTab[schoolElectiveProgrammePickerTab] == null) {
+    if (programmePickerTarget === 'ge-offering-scope') {
+      schoolElectiveProgrammePickerWorkingByTab.excluded = [...getProgrammePickerExcludedDraft()].map(k => String(k).toLowerCase());
+      schoolElectiveProgrammePickerTab = 'excluded';
+    } else if (fromOpen) {
+      // 已在 open 时初始化 workingByTab
+    } else {
+      setSchoolElectiveProgrammePickerWorking([...(getSchoolElectiveProgrammePickerWorking() || [])]);
+    }
+  }
+  const selected = new Set(getSchoolElectiveProgrammePickerWorking().map(k => String(k).toLowerCase()));
+  const groups = getSchoolElectiveProgrammePickerGroups();
+  box.innerHTML = groups.length
+    ? groups.map(group => {
+      const collapsed = schoolElectiveProgrammePickerCollapsed.has(group.schoolCode);
+      const keys = group.programmes.map(row => String(row.code || '').toLowerCase());
+      const checkedCount = keys.filter(k => selected.has(k)).length;
+      const schoolChecked = checkedCount === keys.length && keys.length > 0;
+      const schoolIndeterminate = checkedCount > 0 && checkedCount < keys.length;
+      const progHtml = group.programmes.map(row => {
+        const key = String(row.code || '').toLowerCase();
+        return `<label class="school-elective-picker-item">
+          <input type="checkbox" class="school-elective-programme-picker-check" value="${escapeHtml(key)}" ${selected.has(key) ? 'checked' : ''} onchange="onSchoolElectiveProgrammePickerProgrammeChange()">
+          <code>${escapeHtml(row.code)}</code>
+        </label>`;
+      }).join('');
+      return `<div class="school-elective-picker-school${collapsed ? ' is-collapsed' : ''}" data-school="${escapeHtml(group.schoolCode)}">
+        <div class="school-elective-picker-school-head">
+          <button type="button" class="school-elective-picker-toggle" aria-expanded="${collapsed ? 'false' : 'true'}" onclick="toggleSchoolElectiveProgrammePickerCollapse('${escapeHtml(group.schoolCode)}')">${collapsed ? '▸' : '▾'}</button>
+          <label class="school-elective-picker-school-label">
+            <input type="checkbox" class="school-elective-programme-picker-school-check" ${schoolChecked ? 'checked' : ''} ${schoolIndeterminate ? 'data-indeterminate="1"' : ''} onchange="onSchoolElectiveProgrammePickerSchoolChange(this)">
+            ${escapeHtml(group.schoolCode)}
+          </label>
+        </div>
+        <div class="school-elective-picker-school-body">${progHtml}</div>
+      </div>`;
     }).join('')
-    : '<p class="text-muted" style="padding:12px;text-align:center;margin:0">暂无匹配专业</p>';
+    : '<p class="school-elective-picker-empty text-muted">暂无专业</p>';
+  box.querySelectorAll('input[data-indeterminate="1"]').forEach(el => { el.indeterminate = true; });
+  updateSchoolElectiveProgrammePickerCount();
 }
 
 function openSchoolElectiveProgrammePickerModal() {
   programmePickerTarget = 'school-elective';
-  const search = document.getElementById('school-elective-programme-picker-search');
-  if (search) search.value = '';
-  renderSchoolElectiveProgrammePickerList();
+  schoolElectiveProgrammePickerCollapsed = new Set();
+  schoolElectiveProgrammePickerActiveSchool = '';
+  schoolElectiveProgrammePickerWorkingByTab = {
+    eligible: [...schoolElectiveEditEligibleDraft].map(k => String(k).toLowerCase()),
+    excluded: [...schoolElectiveEditExcludedDraft].map(k => String(k).toLowerCase())
+  };
+  schoolElectiveProgrammePickerTab = schoolElectiveEditEligibleDraft.length ? 'eligible' : 'excluded';
+  syncSchoolElectiveProgrammePickerTabsUi();
+  renderSchoolElectiveProgrammePickerList({ fromOpen: true });
   openModal('modal-school-elective-programme-picker');
 }
 
-function confirmSchoolElectiveProgrammePicker() {
-  const visibleChecks = [...document.querySelectorAll('.school-elective-programme-picker-check')];
-  const visibleKeys = new Set(visibleChecks.map(el => el.value));
-  const checkedVisible = visibleChecks.filter(el => el.checked).map(el => el.value);
-  const keptHidden = getProgrammePickerExcludedDraft().filter(k => !visibleKeys.has(k));
-  setProgrammePickerExcludedDraft([...keptHidden, ...checkedVisible]);
-  if (programmePickerTarget === 'ge-offering-scope') {
-    renderGeOfferingScopeProgrammeSummary(getProgrammePickerExcludedDraft());
-  } else {
-    renderSchoolElectiveEditProgrammeSummary(getProgrammePickerExcludedDraft());
+function closeSchoolElectiveProgrammePickerModal({ confirmed = false } = {}) {
+  if (!confirmed) {
+    schoolElectiveProgrammePickerWorkingByTab = { eligible: null, excluded: null };
   }
   closeModal('modal-school-elective-programme-picker');
+}
+
+function confirmSchoolElectiveProgrammePicker() {
+  syncSchoolElectiveProgrammePickerWorkingFromDom();
+  if (programmePickerTarget === 'ge-offering-scope') {
+    const draft = [...(schoolElectiveProgrammePickerWorkingByTab.excluded || [])];
+    setProgrammePickerExcludedDraft(draft);
+    renderGeOfferingScopeProgrammeSummary(draft);
+  } else {
+    const eligible = [...(schoolElectiveProgrammePickerWorkingByTab.eligible || [])];
+    const excluded = [...(schoolElectiveProgrammePickerWorkingByTab.excluded || [])];
+    if (eligible.length && excluded.length) {
+      alert('可选专业与不可选专业请只维护其一；两边都不选表示全开放。');
+      return;
+    }
+    renderSchoolElectiveEditProgrammeSummary(eligible, excluded);
+  }
+  schoolElectiveProgrammePickerWorkingByTab = { eligible: null, excluded: null };
+  closeSchoolElectiveProgrammePickerModal({ confirmed: true });
 }
 
 function renderSchoolElectiveEditStudentTypePicks(selectedTypes = []) {
@@ -3750,33 +4271,268 @@ function renderSchoolElectiveEditStudentTypePicks(selectedTypes = []) {
   </label>`).join('');
 }
 
-// function onSchoolElectiveAllProgrammesToggle() {
-//   const allSelected = document.getElementById('school-elective-edit-all-programmes')?.checked;
-//   document.querySelectorAll('.school-elective-programme-check').forEach(el => {
-//     el.disabled = !!allSelected;
-//     if (allSelected) el.checked = true;
-//   });
-// } // 原白名单「全部专业」切换，已改为黑名单维护
-
-// function onSchoolElectiveProgrammePickChange() {
-//   const allCheck = document.getElementById('school-elective-edit-all-programmes');
-//   if (!allCheck) return;
-//   const checks = [...document.querySelectorAll('.school-elective-programme-check')];
-//   if (checks.every(el => el.checked)) allCheck.checked = true;
-// } // 原白名单联动，已移除
+function renderSchoolElectiveEditExcludedYearPicks(excludedYears = []) {
+  const box = document.getElementById('school-elective-edit-excluded-years');
+  if (!box) return;
+  const selected = new Set((excludedYears || []).map(String));
+  box.innerHTML = SCHOOL_ELECTIVE_YEAR_OPTIONS.map(opt => `<label class="school-elective-pick-option">
+    <input type="checkbox" class="school-elective-excluded-year-check" value="${escapeHtml(opt.id)}" ${selected.has(opt.id) ? 'checked' : ''}>
+    <span>${escapeHtml(opt.label)}</span>
+  </label>`).join('');
+}
 
 function getSchoolElectiveEditExcludedProgrammeKeys() {
   return [...schoolElectiveEditExcludedDraft];
 }
 
-// function getSchoolElectiveEditProgrammeKeys() {
-//   const allSelected = document.getElementById('school-elective-edit-all-programmes')?.checked;
-//   if (allSelected) return [SCHOOL_ELECTIVE_ALL_PROGRAMMES];
-//   return [...document.querySelectorAll('.school-elective-programme-check:checked')].map(el => el.value);
-// } // 原白名单取值，已改为 getSchoolElectiveEditExcludedProgrammeKeys
+function getSchoolElectiveEditEligibleProgrammeKeys() {
+  return [...schoolElectiveEditEligibleDraft];
+}
 
 function getSchoolElectiveEditStudentTypes() {
   return [...document.querySelectorAll('.school-elective-student-type-check:checked')].map(el => el.value);
+}
+
+function getSchoolElectiveEditExcludedYears() {
+  return [...document.querySelectorAll('.school-elective-excluded-year-check:checked')].map(el => el.value);
+}
+
+function renderSchoolElectiveEditConflictCourseSummary(codes = []) {
+  const box = document.getElementById('school-elective-edit-conflict-courses');
+  if (!box) return;
+  schoolElectiveEditConflictDraft = [...(codes || [])].map(c => String(c).toUpperCase()).filter(Boolean);
+  const empty = !schoolElectiveEditConflictDraft.length;
+  box.textContent = empty
+    ? '未设置'
+    : formatSchoolElectiveConflictCoursesDisplay(schoolElectiveEditConflictDraft);
+  box.classList.toggle('text-muted', empty);
+}
+
+function renderSchoolElectiveEditPrereqCourseSummary(codes = []) {
+  const box = document.getElementById('school-elective-edit-prereq-courses');
+  if (!box) return;
+  schoolElectiveEditPrereqDraft = [...(codes || [])].map(c => String(c).toUpperCase()).filter(Boolean);
+  const empty = !schoolElectiveEditPrereqDraft.length;
+  box.textContent = empty
+    ? '未设置'
+    : formatSchoolElectivePrereqCoursesDisplay(schoolElectiveEditPrereqDraft);
+  box.classList.toggle('text-muted', empty);
+}
+
+function buildSchoolElectiveCourseLinkPickerRowFromSchoolElective(row) {
+  return {
+    code: String(row.code || '').toUpperCase(),
+    name: row.name || '',
+    electiveType: resolveSchoolElectiveType(row),
+    geCategoryLabel: formatSchoolElectiveGeCategoryDisplay(row),
+    credits: row.credits,
+    totalHours: row.totalHours,
+    offeringUnitAbbr: resolveSchoolElectiveOfferingUnitAbbr(row)
+  };
+}
+
+function buildSchoolElectiveCourseLinkPickerRowFromCatalog(cat) {
+  const meta = typeof getCatalogOfferingMeta === 'function' ? getCatalogOfferingMeta(cat.id) : {};
+  const classification = String(cat.classification || '');
+  let electiveType = '—';
+  if (/Major Elective/i.test(classification)) electiveType = 'ME';
+  else if (/General Elective/i.test(classification)) electiveType = 'GE';
+  return {
+    code: String(cat.code || '').replace('*', '').toUpperCase(),
+    name: cat.name || '',
+    electiveType,
+    geCategoryLabel: electiveType === 'GE'
+      ? getSchoolElectiveGeCategoryLabel(inferSchoolElectiveGeCategory(cat.id))
+      : '—',
+    credits: cat.credits,
+    totalHours: meta.totalHours ?? (Number(cat.credits) || 0) * 14,
+    offeringUnitAbbr: typeof getCatalogOfferingUnitAbbr === 'function'
+      ? getCatalogOfferingUnitAbbr(cat.id)
+      : (cat.offeringUnitAbbr || '—')
+  };
+}
+
+function getSchoolElectiveCourseLinkPickerCandidates() {
+  const current = ensureSchoolElectiveCourseStore().find(r => r.id === schoolElectiveEditId);
+  const currentCode = String(current?.code || '').toUpperCase();
+  const byCode = new Map();
+  const push = (row) => {
+    const code = String(row?.code || '').toUpperCase();
+    if (!code || code === currentCode || byCode.has(code)) return;
+    byCode.set(code, row);
+  };
+
+  if (schoolElectiveCourseLinkPickerMode === 'prereq') {
+    COURSE_CATALOG.forEach(cat => push(buildSchoolElectiveCourseLinkPickerRowFromCatalog(cat)));
+  }
+  ensureSchoolElectiveCourseStore().forEach(row => {
+    push(buildSchoolElectiveCourseLinkPickerRowFromSchoolElective(row));
+  });
+
+  const draftCodes = schoolElectiveCourseLinkPickerMode === 'prereq'
+    ? schoolElectiveEditPrereqDraft
+    : schoolElectiveEditConflictDraft;
+  (draftCodes || []).forEach(code => {
+    const c = String(code || '').toUpperCase();
+    if (!c || c === currentCode || byCode.has(c)) return;
+    byCode.set(c, {
+      code: c,
+      name: '',
+      electiveType: '—',
+      geCategoryLabel: '—',
+      credits: null,
+      totalHours: null,
+      offeringUnitAbbr: '—'
+    });
+  });
+
+  return Array.from(byCode.values()).sort((a, b) => String(a.code).localeCompare(String(b.code), 'en'));
+}
+
+function ensureSchoolElectiveCourseLinkUnitFilterOptions() {
+  const sel = document.getElementById('school-elective-course-link-unit');
+  if (!sel) return;
+  const prev = sel.value || '';
+  const units = [...new Set(
+    getSchoolElectiveCourseLinkPickerCandidates()
+      .map(r => r.offeringUnitAbbr)
+      .filter(u => u && u !== '—')
+  )].sort();
+  sel.innerHTML = '<option value="">全部</option>'
+    + units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
+  if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+}
+
+function getFilteredSchoolElectiveCourseLinkPickerRows() {
+  const keyword = (document.getElementById('school-elective-course-link-keyword')?.value || '').trim().toLowerCase();
+  const unit = document.getElementById('school-elective-course-link-unit')?.value || '';
+  return getSchoolElectiveCourseLinkPickerCandidates().filter(row => {
+    if (unit && row.offeringUnitAbbr !== unit) return false;
+    if (!keyword) return true;
+    return `${row.code || ''} ${row.name || ''}`.toLowerCase().includes(keyword);
+  });
+}
+
+function updateSchoolElectiveCourseLinkPickerSelection() {
+  document.querySelectorAll('.school-elective-course-link-row-check').forEach(el => {
+    const code = String(el.value || '').toUpperCase();
+    if (!code) return;
+    if (el.checked) schoolElectiveCourseLinkPickerSelected.add(code);
+    else schoolElectiveCourseLinkPickerSelected.delete(code);
+  });
+  const checkAll = document.getElementById('school-elective-course-link-check-all');
+  const rows = [...document.querySelectorAll('.school-elective-course-link-row-check')];
+  if (checkAll) {
+    checkAll.checked = rows.length > 0 && rows.every(el => el.checked);
+    checkAll.indeterminate = !checkAll.checked && rows.some(el => el.checked);
+  }
+  const countEl = document.getElementById('school-elective-course-link-count');
+  if (countEl) {
+    countEl.textContent = `共 ${rows.length} 门课程，已选 ${schoolElectiveCourseLinkPickerSelected.size}`;
+  }
+}
+
+function toggleSchoolElectiveCourseLinkCheckAll(checked) {
+  document.querySelectorAll('.school-elective-course-link-row-check').forEach(el => {
+    el.checked = checked;
+  });
+  updateSchoolElectiveCourseLinkPickerSelection();
+}
+
+function renderSchoolElectiveCourseLinkPicker() {
+  ensureSchoolElectiveCourseLinkUnitFilterOptions();
+  const tbody = document.getElementById('school-elective-course-link-tbody');
+  const list = getFilteredSchoolElectiveCourseLinkPickerRows();
+  if (tbody) {
+    tbody.innerHTML = list.length
+      ? list.map((row, idx) => {
+          const code = String(row.code || '').toUpperCase();
+          const checked = schoolElectiveCourseLinkPickerSelected.has(code) ? 'checked' : '';
+          return `<tr>
+            <td class="col-check"><input type="checkbox" class="school-elective-course-link-row-check" value="${escapeHtml(code)}" ${checked} onchange="updateSchoolElectiveCourseLinkPickerSelection()"></td>
+            <td class="col-index">${idx + 1}</td>
+            <td><code>${escapeHtml(code)}</code></td>
+            <td>${escapeHtml(row.name || '—')}</td>
+            <td class="col-center">${escapeHtml(getSchoolElectiveTypeLabel(row.electiveType) || row.electiveType || '—')}</td>
+            <td>${escapeHtml(row.geCategoryLabel || '—')}</td>
+            <td class="col-center">${row.credits ?? '—'}</td>
+            <td class="col-center">${row.totalHours ?? '—'}</td>
+            <td class="col-center"><code>${escapeHtml(row.offeringUnitAbbr || '—')}</code></td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">暂无匹配课程</td></tr>';
+  }
+  const checkAll = document.getElementById('school-elective-course-link-check-all');
+  const rows = [...document.querySelectorAll('.school-elective-course-link-row-check')];
+  if (checkAll) {
+    checkAll.checked = rows.length > 0 && rows.every(el => el.checked);
+    checkAll.indeterminate = !checkAll.checked && rows.some(el => el.checked);
+  }
+  const countEl = document.getElementById('school-elective-course-link-count');
+  if (countEl) {
+    countEl.textContent = `共 ${rows.length} 门课程，已选 ${schoolElectiveCourseLinkPickerSelected.size}`;
+  }
+}
+
+function resetSchoolElectiveCourseLinkPickerFilters() {
+  const keywordEl = document.getElementById('school-elective-course-link-keyword');
+  const unitEl = document.getElementById('school-elective-course-link-unit');
+  if (keywordEl) keywordEl.value = '';
+  if (unitEl) unitEl.value = '';
+  renderSchoolElectiveCourseLinkPicker();
+}
+
+function openSchoolElectiveCourseLinkPickerModal(mode) {
+  if (!schoolElectiveEditId || (mode !== 'conflict' && mode !== 'prereq')) return;
+  schoolElectiveCourseLinkPickerMode = mode;
+  const draft = mode === 'prereq' ? schoolElectiveEditPrereqDraft : schoolElectiveEditConflictDraft;
+  schoolElectiveCourseLinkPickerSelected = new Set((draft || []).map(c => String(c).toUpperCase()));
+  const titleEl = document.getElementById('school-elective-course-link-picker-title');
+  const hintEl = document.getElementById('school-elective-course-link-picker-hint');
+  if (titleEl) titleEl.textContent = mode === 'prereq' ? '选择先修课程' : '选择冲突课程';
+  if (hintEl) {
+    hintEl.textContent = mode === 'prereq'
+      ? '勾选须先修完才能选本课的课程；候选来自课程库与校选课程。'
+      : '勾选已修后不可再选本课的课程；候选来自校选课程。';
+  }
+  resetSchoolElectiveCourseLinkPickerFilters();
+  openModal('modal-school-elective-course-link-picker');
+}
+
+function closeSchoolElectiveCourseLinkPickerModal({ confirmed = false } = {}) {
+  if (!confirmed) {
+    schoolElectiveCourseLinkPickerMode = null;
+    schoolElectiveCourseLinkPickerSelected = new Set();
+  }
+  closeModal('modal-school-elective-course-link-picker');
+}
+
+function confirmSchoolElectiveCourseLinkPicker() {
+  const codes = [...schoolElectiveCourseLinkPickerSelected];
+  if (schoolElectiveCourseLinkPickerMode === 'prereq') {
+    renderSchoolElectiveEditPrereqCourseSummary(codes);
+  } else {
+    renderSchoolElectiveEditConflictCourseSummary(codes);
+  }
+  schoolElectiveCourseLinkPickerMode = null;
+  schoolElectiveCourseLinkPickerSelected = new Set();
+  closeSchoolElectiveCourseLinkPickerModal({ confirmed: true });
+}
+
+function openSchoolElectiveConflictCoursePickerModal() {
+  openSchoolElectiveCourseLinkPickerModal('conflict');
+}
+
+function closeSchoolElectiveConflictCoursePickerModal(opts) {
+  closeSchoolElectiveCourseLinkPickerModal(opts);
+}
+
+function openSchoolElectivePrereqCoursePickerModal() {
+  openSchoolElectiveCourseLinkPickerModal('prereq');
+}
+
+function closeSchoolElectivePrereqCoursePickerModal(opts) {
+  closeSchoolElectiveCourseLinkPickerModal(opts);
 }
 
 function openSchoolElectiveCourseEdit(courseId) {
@@ -3786,23 +4542,50 @@ function openSchoolElectiveCourseEdit(courseId) {
   // ensureSchoolElectiveEditCategoryOptions(); // 原校选课类别字段，弹窗已移除
   document.getElementById('school-elective-edit-code').textContent = row.code || '—';
   document.getElementById('school-elective-edit-name').textContent = row.name || '—';
-  document.getElementById('school-elective-edit-dept').textContent = row.department || '—';
+  document.getElementById('school-elective-edit-type').textContent =
+    getSchoolElectiveTypeLabel(resolveSchoolElectiveType(row));
+  const geEl = document.getElementById('school-elective-edit-ge-category');
+  if (geEl) geEl.textContent = formatSchoolElectiveGeCategoryDisplay(row) || '—';
+  document.getElementById('school-elective-edit-dept').textContent =
+    resolveSchoolElectiveOfferingUnitAbbr(row) || '—';
   // document.getElementById('school-elective-edit-category').value = row.categoryId || 'general'; // 原校选课类别
   document.getElementById('school-elective-edit-status').value = row.status || 'active';
-  renderSchoolElectiveEditProgrammeSummary(getSchoolElectiveExcludedProgrammeKeys(row));
+  renderSchoolElectiveEditProgrammeSummary(
+    getSchoolElectiveEligibleProgrammeKeys(row),
+    getSchoolElectiveExcludedProgrammeKeys(row)
+  );
   renderSchoolElectiveEditStudentTypePicks(row.eligibleStudentTypes || []);
+  renderSchoolElectiveEditExcludedYearPicks(row.excludedYears || []);
+  renderSchoolElectiveEditConflictCourseSummary(row.conflictCourseCodes || []);
+  renderSchoolElectiveEditPrereqCourseSummary(row.prereqCourseCodes || []);
   const remarkEl = document.getElementById('school-elective-edit-remark');
   if (remarkEl) remarkEl.value = row.remark || '';
-  openModal('modal-school-elective-edit');
+  document.getElementById('drawer-school-elective-edit-backdrop')?.classList.add('open');
+  document.getElementById('drawer-school-elective-edit')?.classList.add('open');
+}
+
+function closeSchoolElectiveCourseEditDrawer() {
+  document.getElementById('drawer-school-elective-edit-backdrop')?.classList.remove('open');
+  document.getElementById('drawer-school-elective-edit')?.classList.remove('open');
+  closeSchoolElectiveProgrammePickerModal();
+  closeSchoolElectiveCourseLinkPickerModal();
+  schoolElectiveEditId = null;
+  schoolElectiveEditConflictDraft = [];
+  schoolElectiveEditPrereqDraft = [];
 }
 
 function saveSchoolElectiveCourseEdit() {
   const row = ensureSchoolElectiveCourseStore().find(r => r.id === schoolElectiveEditId);
   if (!row) return;
   const excludedProgrammeKeys = getSchoolElectiveEditExcludedProgrammeKeys();
+  const eligibleProgrammeKeys = getSchoolElectiveEditEligibleProgrammeKeys();
   const studentTypes = getSchoolElectiveEditStudentTypes();
   if (!studentTypes.length) {
     alert('请至少选择一种可选学生类型。');
+    return;
+  }
+  if (eligibleProgrammeKeys.length && excludedProgrammeKeys.length) {
+    alert('可选专业与不可选专业请只维护其一；两边都不选表示全开放。');
     return;
   }
   // if (!programmeKeys.length) {
@@ -3812,10 +4595,14 @@ function saveSchoolElectiveCourseEdit() {
   // row.categoryId = document.getElementById('school-elective-edit-category')?.value || row.categoryId; // 原校选课类别，弹窗已移除
   row.status = document.getElementById('school-elective-edit-status')?.value || row.status;
   row.excludedProgrammeKeys = excludedProgrammeKeys;
+  row.eligibleProgrammeKeys = eligibleProgrammeKeys;
   // row.eligibleProgrammeKeys = programmeKeys; // 原白名单字段，已改为 excludedProgrammeKeys
   row.eligibleStudentTypes = studentTypes;
+  row.excludedYears = getSchoolElectiveEditExcludedYears();
+  row.conflictCourseCodes = [...schoolElectiveEditConflictDraft];
+  row.prereqCourseCodes = [...schoolElectiveEditPrereqDraft];
   row.remark = document.getElementById('school-elective-edit-remark')?.value.trim() || '';
-  closeModal('modal-school-elective-edit');
+  closeSchoolElectiveCourseEditDrawer();
   renderSchoolElectiveCoursePage();
 }
 
@@ -7501,22 +8288,29 @@ function renderMajorMergeSplitDrawerGuide(sec) {
     : '';
   const termDisplay = getSectionOfferingTermDisplay(sec);
   el.innerHTML = `
-    <p class="merge-split-guide-title"><strong>合班规则说明</strong></p>
-    <p><strong>同一开课学期</strong>的开课计划方可合并；不同<strong>专业·入学批次</strong>的计划，还须同时满足下列<strong>全部前提</strong>方可合并为同一课程班：</p>
-    <ul class="merge-split-guide-list">
-      <li><strong>开课学期</strong>相同（当前：<code>${escapeHtml(termDisplay)}</code>）</li>
-      <li><strong>课程号</strong>相同（当前：<code>${escapeHtml(sec.code)}</code>）</li>
-      <li><strong>学分</strong>相同（当前：${sec.credits ?? '—'}）</li>
-      <li><strong>总学时</strong>相同（当前：${totalHours} 学时）</li>
-      <li><strong>起止周</strong>相同（当前：<code>${escapeHtml(String(weekRange))}</code>）</li>
-      <li><strong>教学周数</strong>相同（当前：${teachingWeeks} 周）</li>
-      <li><strong>选课类型</strong>相同（不开放选课与开放选课无法合班）、以及<strong>是否排课 / 排场地 / 考勤 / 录入成绩 / 排考</strong>一致</li>
-      <li>${statusRuleText}</li>
-    </ul>
+    <p class="merge-split-guide-title">
+      <strong>合班规则说明</strong>
+      <span class="slt-info-tip merge-split-guide-tip">
+        <button type="button" class="slt-info-btn" aria-label="合班规则说明">!</button>
+        <div class="slt-info-popover">
+          <p class="merge-split-guide-tip-lead"><strong>同一开课学期</strong>的开课计划方可合并；不同<strong>专业·入学批次</strong>的计划，还须同时满足下列<strong>全部前提</strong>方可合并为同一课程班：</p>
+          <ul class="merge-split-guide-list">
+            <li><strong>开课学期</strong>相同（当前：<code>${escapeHtml(termDisplay)}</code>）</li>
+            <li><strong>课程号</strong>相同（当前：<code>${escapeHtml(sec.code)}</code>）</li>
+            <li><strong>学分</strong>相同（当前：${sec.credits ?? '—'}）</li>
+            <li><strong>总学时</strong>相同（当前：${totalHours} 学时）</li>
+            <li><strong>起止周</strong>相同（当前：<code>${escapeHtml(String(weekRange))}</code>）</li>
+            <li><strong>教学周数</strong>相同（当前：${teachingWeeks} 周）</li>
+            <li><strong>选课类型</strong>相同（不开放选课与开放选课无法合班）、以及<strong>是否排课 / 排场地 / 考勤 / 录入成绩 / 排考</strong>一致</li>
+            <li>${statusRuleText}</li>
+          </ul>
+        </div>
+      </span>
+    </p>
     <p class="merge-split-guide-compat"><strong>当前可合入本班的专业批次（${pendingLabels.length} 项）：</strong>${pendingHtml}</p>
     ${blockedHtml}
     <p class="merge-split-guide-compat"><strong>本班已合并的专业批次（${mergedLabels.length} 项）：</strong>${mergedHtml}</p>
-    <p class="merge-split-guide-ops">左侧仅列出${leftStatusText}符合上述条件且尚未并入本班的批次；右侧为本班当前包含的批次。勾选后点 <strong>&gt;</strong> 合入、<strong>&lt;</strong> 拆出，点击「确定」后二次确认生效。合班后为<strong>一条</strong>教学任务：计划人数、预留名额、课程名额上限均累加；合班/分班都会清空相关教学班原有教师安排与学时安排，需重新设置。右侧默认保留当前批次。</p>`;
+    <p class="merge-split-guide-ops">左侧仅列出${leftStatusText}符合规则且尚未并入本班的批次；右侧为本班当前包含的批次。勾选后点 <strong>&gt;</strong> 合入、<strong>&lt;</strong> 拆出，点击「确定」后二次确认生效。合班后为<strong>一条</strong>教学任务：计划人数、预留名额、课程名额上限均累加；合班/拆回都会清空相关教学班原有教师安排与学时安排，需重新设置。右侧默认保留当前批次。</p>`;
 }
 
 function renderMajorMergeSplitDrawerPane(side) {
@@ -12187,7 +12981,9 @@ function buildGeOfferingLineFromSchoolElective(course, intake, termCode) {
 }
 
 function getSchoolElectiveCoursesForGeOffering() {
-  return ensureSchoolElectiveCourseStore().filter(row => row.status === 'active');
+  return ensureSchoolElectiveCourseStore().filter(row =>
+    resolveSchoolElectiveType(row) === 'GE' && row.status === 'active'
+  );
   // return ensureSchoolElectiveCourseStore().filter(row =>
   //   row.categoryId === 'general' && row.status === 'active'
   // ); // 原仅通识选修类别（演示仅约 5 门），改与校选课程库一致展示全部正常状态课程
@@ -12759,10 +13555,16 @@ function openGeOfferingScopeModal(lineId) {
 function openGeOfferingScopeProgrammePickerModal() {
   if (document.getElementById('ge-offering-scope-save-btn')?.hidden) return;
   programmePickerTarget = 'ge-offering-scope';
+  schoolElectiveProgrammePickerCollapsed = new Set();
+  schoolElectiveProgrammePickerActiveSchool = '';
   geOfferingScopeExcludedDraft = [...(geOfferingScopeExcludedDraft || [])];
-  const search = document.getElementById('school-elective-programme-picker-search');
-  if (search) search.value = '';
-  renderSchoolElectiveProgrammePickerList();
+  schoolElectiveProgrammePickerTab = 'excluded';
+  schoolElectiveProgrammePickerWorkingByTab = {
+    eligible: [],
+    excluded: [...geOfferingScopeExcludedDraft].map(k => String(k).toLowerCase())
+  };
+  syncSchoolElectiveProgrammePickerTabsUi();
+  renderSchoolElectiveProgrammePickerList({ fromOpen: true });
   openModal('modal-school-elective-programme-picker');
 }
 
@@ -15583,9 +16385,8 @@ function setContainerButtonsDisabled(container, disabled) {
 }
 
 function renderMajorOfferingStructureActions(sec) {
-  const parts = [
-    `<a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>`
-  ];
+  const parts = [];
+  // `<a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>` // 改由「课程信息」列「编辑」
   if (isMajorOfferingPlanEditLocked(sec)) {
     parts.push(renderDisabledAction('合班', getMajorMergeSplitSelectableMessage('plan')));
   } else {
@@ -15595,9 +16396,6 @@ function renderMajorOfferingStructureActions(sec) {
     parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">回退说明</a>`);
   }
   return parts.join(' · ');
-  // return `<a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>`; // 原仅修改，回退任务增加回退说明
-  // <a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合分班</a> // 原计划页合分班，改由任务安排环节操作
-  // <a href="#" onclick="openOfferingGroupingModal('${sec.id}');return false">分组</a> // 原计划页分组，改由任务安排环节操作
 }
 
 function assertMajorOfferingStructureEditable(sec, actionLabel = '操作') {
@@ -18588,7 +19386,7 @@ function renderCourseOfferingMajorTableHeader() {
     // renderListSortTh('courseMajorOffering', '上课学院', 'school', { center: true, extraClass: 'col-school' }) +
     renderListSortTh('courseMajorOffering', '上课专业', 'programme', { center: true, extraClass: 'col-prog' }) +
     renderListSortTh('courseMajorOffering', '上课批次', 'intake', { center: true, extraClass: 'col-intake' }) +
-    renderListSortTh('courseMajorOffering', '是否新生批次', 'isNewIntake', { center: true, vertical: true, extraClass: 'col-new-intake' }) +
+    renderListSortTh('courseMajorOffering', '是否新生', 'isNewIntake', { center: true, vertical: true, extraClass: 'col-new-intake' }) +
     renderListSortTh('courseMajorOffering', '学分', 'credits', { center: true, vertical: true }) +
     renderListSortTh('courseMajorOffering', '总学时', 'totalHours', { center: true, vertical: true }) +
     // renderListSortTh('courseMajorOffering', '理论学时', 'theoryHours', { center: true }) +
@@ -18601,8 +19399,9 @@ function renderCourseOfferingMajorTableHeader() {
       extraClass: 'col-support-hist',
       title: MAJOR_OFFERING_SUPPORT_HISTORY_TIP
     }) +
-    '<th class="col-center col-sticky-changelog">操作记录</th>' +
     renderListSortTh('courseMajorOffering', '预置人数', 'presetStudents', { center: true, vertical: true, extraClass: 'col-sticky-count' }) +
+    '<th class="col-center col-sticky-changelog">操作<br>记录</th>' +
+    '<th class="col-center col-sticky-course-info">课程<br>信息</th>' +
     '<th class="col-sticky-actions">操作</th>';
 }
 
@@ -18740,7 +19539,7 @@ function renderCourseOfferingMajorPage() {
   renderCoursePlanOfferingHint('course-offering-hint-major');
   rebuildMajorOfferingFilterOptions();
   if (!ensureCourseOfferingPlan()) {
-    tbody.innerHTML = '<tr><td colspan="19" class="text-muted" style="text-align:center;padding:24px">请点击「生成开课任务」从已提交执行计划中选择课程</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="20" class="text-muted" style="text-align:center;padding:24px">请点击「生成开课任务」从已提交执行计划中选择课程</td></tr>';
     renderListPagination('course-major-offering-pagination', 'courseMajorOffering', 0);
     updateMajorOfferingSelection();
     return;
@@ -18776,14 +19575,15 @@ function renderCourseOfferingMajorPage() {
           <td class="col-center col-week"><code>${escapeHtml(sec.weekRange || '—')}</code></td>
           <td class="col-center col-unit"><code>${escapeHtml(unitAbbr)}</code></td>
           <td class="col-center col-support-hist"><code>${escapeHtml(formatMajorOfferingSupportHistoryDisplay(sec))}</code></td>
-          <td class="actions col-center col-sticky-changelog"><a href="#" onclick="event.preventDefault();openMajorOfferingPlanChangeLogInNewWindow('${sec.id}');return false">查看</a></td>
           <td class="col-center col-sticky-count"><a href="#" class="link-student-count" onclick="openMajorOfferingStudentRosterDrawer('${sec.id}');return false">${studentCount}</a></td>
+          <td class="actions col-center col-sticky-changelog"><a href="#" onclick="event.preventDefault();openMajorOfferingPlanChangeLogInNewWindow('${sec.id}');return false">查看</a></td>
+          <td class="actions col-center col-sticky-course-info"><a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">编辑</a></td>
           <td class="actions col-sticky-actions">
             ${renderMajorOfferingStructureActions(sec)}
           </td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="19" class="text-muted" style="text-align:center;padding:24px">暂无专业开课数据，请点击「生成开课任务」</td></tr>';
+    : '<tr><td colspan="20" class="text-muted" style="text-align:center;padding:24px">暂无专业开课数据，请点击「生成开课任务」</td></tr>';
   renderListPagination('course-major-offering-pagination', 'courseMajorOffering', paged.total);
   updateMajorOfferingSelection();
   bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]');
@@ -20248,7 +21048,7 @@ function openMajorOfferingDetail(sectionId) {
 
 const OFFERING_GROUPING_RETURN_LABELS = {
   'course-offering-major': '专业开课计划',
-  'course-major-offering-task': '专业开课任务安排',
+  'course-major-offering-task': '专业开课任务安排（样式一）',
   'course-major-offering-task-style2': '专业开课任务安排（样式二）',
   'course-major-offering-roster': '专业开课学生名单管理',
   'course-offering-ge': '通识选修开课',
@@ -38222,6 +39022,9 @@ function closeModal(id) {
   if (id === 'modal-delete-confirm') deleteConfirmCallback = null;
   if (id === 'modal-major-task-revert-remark') pendingMajorTaskRevertConfirm = null;
   if (id === 'modal-schedule-room-picker') scheduleRoomPickerMode = 'schedule';
+  if (id === 'modal-school-elective-programme-picker') {
+    schoolElectiveProgrammePickerWorkingByTab = { eligible: null, excluded: null };
+  }
 }
 
 let deleteConfirmCallback = null;
@@ -39061,12 +39864,12 @@ function activateVersionEditTab(tabId) {
 const COURSE_CATALOG = [
   { id: 'mpu3123', code: 'MPU3123', name: 'Malaysian Studies 3', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Ahmad Rahman', credits: 3, language: 'English', classification: 'Compulsory', synopsis: 'An overview of Malaysian history, politics and society.', references: 'Malaysia: History and Heritage.' },
   { id: 'fin101', code: 'FIN101', name: 'Introduction to Finance', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Fundamentals of finance and financial markets.', references: 'Berk & DeMarzo, Corporate Finance.', additionalInfo: 'Prerequisite waiver requires Programme Office approval.' },
-  { id: 'fin201', code: 'FIN201', name: 'Corporate Finance', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'This course introduces students to the principles of corporate finance, including valuation, capital budgeting, and risk management.', references: 'Berk & DeMarzo, Corporate Finance, 5th Ed.', additionalInfo: 'Includes case study tutorials; laptop required.' },
+  { id: 'fin201', code: 'FIN201', name: 'Corporate Finance', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'This course introduces students to the principles of corporate finance, including valuation, capital budgeting, and risk management.', references: 'Berk & DeMarzo, Corporate Finance, 5th Ed.', additionalInfo: 'Includes case study tutorials; laptop required.', prereqIds: ['fin101'] },
   { id: 'eng101', code: 'ENG101', name: 'English for Academic Writing', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Sarah Chen', credits: 3, language: 'English', classification: 'Compulsory', synopsis: 'Academic writing skills for undergraduate students.', references: '—' },
   { id: 'phy101', code: 'PHY101', name: 'Mechanics', department: 'School of Science', coordinator: 'Dr. Wong Kai', credits: 4, language: 'English', classification: 'Major Core', synopsis: 'Classical mechanics for science majors.', references: 'Halliday & Resnick, Fundamentals of Physics.' },
   { id: 'phy102', code: 'PHY102', name: 'Data Science Fundamentals', department: 'School of Science', coordinator: 'Dr. Lee Ming', credits: 2, language: 'English', classification: 'Common Core', synopsis: 'Introduction to data science concepts and tools.', references: '—' },
   { id: 'csc201', code: 'CSC201', name: 'Introduction to Programming', department: 'School of Computing', coordinator: 'Dr. Kumar Raj', credits: 3, language: 'English', classification: 'Common Core', synopsis: 'Programming fundamentals using Python.', references: '—' },
-  { id: 'fin301', code: 'FIN301', name: 'Investment Analysis', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Portfolio theory and security analysis.', references: 'Bodie, Kane & Marcus, Investments.' },
+  { id: 'fin301', code: 'FIN301', name: 'Investment Analysis', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Portfolio theory and security analysis.', references: 'Bodie, Kane & Marcus, Investments.', prereqIds: ['fin201'] },
   { id: 'int401', code: 'INT401', name: 'Industrial Training', department: 'School of Economics & Management', coordinator: 'Ms. Ooi Lay Kuan', credits: 6, language: 'English', classification: 'Industrial Training', synopsis: 'Supervised industrial placement.', references: '—' },
   { id: 'mpu3113', code: 'MPU3113', name: 'Ethnic Relations', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Ahmad Rahman', credits: 3, language: 'English', classification: 'Compulsory', synopsis: 'Ethnic relations in Malaysia.', references: '—' },
   { id: 'mpu3143', code: 'MPU3143', name: 'Islamic Civilisation and Asian Civilisation', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Ahmad Rahman', credits: 3, language: 'English', classification: 'Compulsory', synopsis: 'Islamic and Asian civilisation.', references: '—' },
@@ -39093,10 +39896,10 @@ const COURSE_CATALOG = [
   { id: 'art201', code: 'ART201', name: 'Introduction to Art History', department: 'School of Humanities and Social Sciences', coordinator: 'Dr. Sarah Chen', credits: 3, language: 'English', classification: 'General Elective', synopsis: 'Survey of art history.', references: '—' },
   { id: 'bus201', code: 'BUS201', name: 'International Business', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 3, language: 'English', classification: 'General Elective', synopsis: 'Global business environment.', references: '—' },
   { id: 'mkt201', code: 'MKT201', name: 'Marketing Principles', department: 'School of Economics & Management', coordinator: 'Prof. Lim Wei Jie', credits: 4, language: 'English', classification: 'General Elective', synopsis: 'Introduction to marketing.', references: '—' },
-  { id: 'fin401', code: 'FIN401', name: 'Derivative Markets', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Derivatives pricing and use.', references: '—' },
-  { id: 'fin402', code: 'FIN402', name: 'Risk Management', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Financial risk management.', references: '—' },
-  { id: 'fin403', code: 'FIN403', name: 'International Finance', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'International financial markets.', references: '—' },
-  { id: 'fin404', code: 'FIN404', name: 'Financial Modelling', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 3, language: 'English', classification: 'Major Elective', synopsis: 'Spreadsheet-based financial models.', references: '—' }
+  { id: 'fin401', code: 'FIN401', name: 'Derivative Markets', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Derivatives pricing and use.', references: '—', prereqIds: ['fin301'] },
+  { id: 'fin402', code: 'FIN402', name: 'Risk Management', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'Financial risk management.', references: '—', prereqIds: ['fin301'] },
+  { id: 'fin403', code: 'FIN403', name: 'International Finance', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 4, language: 'English', classification: 'Major Elective', synopsis: 'International financial markets.', references: '—', prereqIds: ['fin201'] },
+  { id: 'fin404', code: 'FIN404', name: 'Financial Modelling', department: 'School of Economics & Management', coordinator: 'Dr. Tan Mei Ling', credits: 3, language: 'English', classification: 'Major Elective', synopsis: 'Spreadsheet-based financial models.', references: '—', prereqIds: ['fin201'] }
 ];
 
 function getCatalogAdditionalInfo(catalogIdOrCat) {

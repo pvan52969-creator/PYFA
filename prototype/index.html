@@ -41,7 +41,7 @@
       <div class="nav-section">
         <div class="nav-section-title">专业开课</div>
         <a href="#" class="nav-item nav-item-sub" data-page="course-offering-major">专业开课计划</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">专业开课任务安排</a>
+        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">专业开课任务安排（样式一）</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">专业开课任务安排（样式二）</a>
         <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">专业开课学生名单管理</a>
       </div>
@@ -760,7 +760,7 @@
       <div class="page-header">
         <div>
           <h1>校选课程管理</h1>
-          <p class="subtitle">维护校内选修课程主数据，提前配置可选范围（允许选课的专业与学生类型）</p>
+          <p class="subtitle">维护校内选修课程主数据，提前配置修读范围与学生类型</p>
         </div>
       </div>
       <div class="card course-major-query-card">
@@ -769,6 +769,14 @@
             <label for="school-elective-filter-dept">课程管理单位</label>
             <select class="input input-sm" id="school-elective-filter-dept">
               <option value="">全部</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="school-elective-filter-type">类型</label>
+            <select class="input input-sm" id="school-elective-filter-type">
+              <option value="">全部</option>
+              <option value="GE">GE</option>
+              <option value="ME">ME</option>
             </select>
           </div>
           <div class="course-time-query-field">
@@ -798,6 +806,7 @@
       <div class="card">
         <div class="panel-toolbar school-elective-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openSchoolElectiveCourseAddModal()">新增</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-status" onclick="openSchoolElectiveBatchStatusModal()" disabled>修改状态</button>
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-school-elective-delete" onclick="deleteSelectedSchoolElectiveCourses()" disabled>删除</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" onclick="alert('导出 Excel（原型占位）')">导出 Excel</button> -->
         </div>
@@ -805,26 +814,7 @@
           <table class="data-table compact school-elective-course-table">
             <thead>
               <tr>
-                <th class="col-check"><input type="checkbox" id="school-elective-check-all" aria-label="全选" onchange="toggleSchoolElectiveCheckAll(this.checked)"></th>
-                <th class="col-index">序号</th>
-                <th>课程代码</th>
-                <th>课程名称</th>
-                <th class="col-center">类型</th>
-                <th class="col-center">校选课类别</th>
-                <!-- <th>校选课类别</th> --> <!-- 原单列，已拆分为类型 + 校选课类别 -->
-                <th class="col-center">学分</th>
-                <th class="col-center">总学时</th>
-                <!-- <th class="col-center">理论</th> -->
-                <!-- <th class="col-center">辅导</th> -->
-                <!-- <th class="col-center">实践</th> -->
-                <!-- <th class="col-center">其他</th> --> <!-- 原学时细分列，列表仅保留总学时 -->
-                <th class="col-center">开课单位</th>
-                <!-- <th>管理单位</th> --> <!-- 原列名，已改为开课单位代码 -->
-                <th class="col-center">状态</th>
-                <!-- <th>可选范围</th> --> <!-- 原列名，已改为仅展示不可选专业 -->
-                <th>不可选专业</th>
-                <th>备注</th>
-                <th class="col-sticky-actions">操作</th>
+                <!-- 表头由 renderSchoolElectiveCourseTableHeader 动态渲染（序号可排序） -->
               </tr>
             </thead>
             <tbody id="school-elective-course-body"></tbody>
@@ -924,15 +914,16 @@
               <th>课程代码</th><th>课程名称</th><th>课程类别</th><th class="col-center">选课类型</th>
               <!-- <th class="col-center">上课学院</th> -->
               <th class="col-center">上课专业</th><th class="col-center">上课批次</th>
-              <th class="col-center">是否新生批次</th>
+              <th class="col-center">是否新生</th>
               <th class="col-center">学分</th><th class="col-center">总学时</th>
               <!-- <th class="col-center">理论学时</th><th class="col-center">实践学时</th> -->
               <!-- <th class="col-center">教学周数</th> -->
               <th class="col-center">起止周</th>
               <th class="col-center">开课单位</th>
               <th class="col-center">Support历史</th>
-              <th class="col-center col-sticky-changelog">操作记录</th>
               <th class="col-center col-sticky-count">预置人数</th>
+              <th class="col-center col-sticky-changelog">操作<br>记录</th>
+              <th class="col-center col-sticky-course-info">课程<br>信息</th>
               <th class="col-sticky-actions">操作</th>
             </tr></thead>
             <tbody id="course-offering-body-major"></tbody>
@@ -1144,7 +1135,7 @@
     <!-- ═══ 开课管理 · 专业开课 · 任务安排 ═══ -->
     <section class="page" id="page-course-major-offering-task">
       <div class="page-header">
-        <div><h1>专业开课任务安排</h1><p class="subtitle">对已提交的开课计划进行合分班、分组、教师安排，完成后批量提交</p></div>
+        <div><h1>专业开课任务安排（样式一）</h1><p class="subtitle">对已提交的开课计划进行合分班、分组、教师安排，完成后批量提交</p></div>
       </div>
       <div class="alert-info offering-module-hint">
         <p><strong>流程说明</strong></p>
@@ -4066,7 +4057,7 @@
       </div>
       <div class="merge-split-actions">
         <button class="btn btn-outline btn-sm merge-split-action-btn" type="button" title="合班：合并到右侧" onclick="moveMajorMergeSplitDrawerLines('toRight')"><span class="merge-split-action-mark">&gt;</span><span class="merge-split-action-label">合班</span></button>
-        <button class="btn btn-outline btn-sm merge-split-action-btn" type="button" title="分班：移回左侧" onclick="moveMajorMergeSplitDrawerLines('toLeft')"><span class="merge-split-action-mark">&lt;</span><span class="merge-split-action-label">分班</span></button>
+        <button class="btn btn-outline btn-sm merge-split-action-btn" type="button" title="拆回：移回左侧" onclick="moveMajorMergeSplitDrawerLines('toLeft')"><span class="merge-split-action-mark">&lt;</span><span class="merge-split-action-label">拆回</span></button>
         <!-- 原仅 &gt; / &lt; 符号，改标注合班/分班 -->
       </div>
       <div class="merge-split-pane">
@@ -4682,7 +4673,7 @@
             <th>教师类型</th>
             <th class="col-center">性别</th>
             <th class="col-center">所属部门</th>
-            <th class="col-center" id="teacher-picker-term-hours-th" hidden title="本学期已安排学时">本学期学时</th>
+            <th class="col-center" id="teacher-picker-term-hours-th" hidden title="本学期已安排 Teaching Load">本学期Teaching Load</th>
           </tr></thead>
           <tbody id="teacher-picker-tbody"></tbody>
         </table>
@@ -5202,7 +5193,7 @@
     <button class="modal-close" type="button" onclick="closeCourseUnitOfferingTimeDrawer()">×</button>
   </div>
   <div class="drawer-body course-unit-offering-time-body">
-    <div class="alert-info" id="course-unit-offering-time-hint">可新增需要单独设置开放时间的开课单位；未新增的单位默认按全校开课时间范围操作。</div>
+    <div class="alert-info" id="course-unit-offering-time-hint">可新增需要单独设置开放时间的开课单位；未新增的单位默认按全校开课时间。已设置学院时间时以学院为准，可超出全校时间并随时修改。</div>
     <p class="course-unit-offering-time-default text-muted" id="course-unit-offering-time-default"></p>
     <div class="course-unit-offering-time-toolbar">
       <button class="btn btn-outline btn-sm" type="button" id="btn-course-unit-offering-time-add" onclick="openCourseUnitOfferingTimeAddModal()">新增</button>
@@ -7017,7 +7008,7 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-scope')">×</button>
     </div>
     <div class="modal-body school-elective-edit-body">
-      <dl class="detail-dl school-elective-edit-summary">
+      <dl class="detail-dl ge-offering-scope-summary">
         <dt>课程代码</dt><dd id="ge-offering-scope-code">—</dd>
         <dt>课程名称</dt><dd id="ge-offering-scope-name">—</dd>
         <dt>开课单位</dt><dd id="ge-offering-scope-dept">—</dd>
@@ -7131,84 +7122,208 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：校选课程 · 维护可选范围 ═══ -->
-<div class="modal-overlay" id="modal-school-elective-edit">
-  <div class="modal modal-md school-elective-edit-modal">
+<!-- ═══ 弹窗：校选课程 · 批量修改状态 ═══ -->
+<div class="modal-overlay" id="modal-school-elective-batch-status">
+  <div class="modal modal-sm">
     <div class="modal-head">
-      <h3>维护可选范围</h3>
-      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-edit')">×</button>
+      <h3>修改状态</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-batch-status')">×</button>
     </div>
-    <div class="modal-body school-elective-edit-body">
-      <dl class="detail-dl school-elective-edit-summary">
-        <dt>课程代码</dt><dd id="school-elective-edit-code">—</dd>
-        <dt>课程名称</dt><dd id="school-elective-edit-name">—</dd>
-        <dt>开课单位</dt><dd id="school-elective-edit-dept">—</dd>
-        <!-- <dt>管理单位</dt> --> <!-- 原字段名，已改为开课单位 -->
-      </dl>
-      <!-- 原校选课类别字段已移除
-      <div class="form-grid form-grid-2">
-        <div class="form-item">
-          <label class="req" for="school-elective-edit-category">校选课类别</label>
-          <select class="input input-sm" id="school-elective-edit-category"></select>
-        </div>
-        ...
-      </div>
-      -->
+    <div class="modal-body">
+      <p class="form-hint" id="school-elective-batch-status-hint">将所选课程统一设为指定状态。</p>
       <div class="form-item">
-        <label class="req" for="school-elective-edit-status">状态</label>
-        <select class="input input-sm" id="school-elective-edit-status">
+        <label class="req" for="school-elective-batch-status">状态</label>
+        <select class="input input-sm" id="school-elective-batch-status">
           <option value="active">正常</option>
           <option value="suspended">停课</option>
         </select>
       </div>
-      <div class="form-item">
-        <label class="req">不可选专业</label>
-        <!-- <div class="school-elective-programme-picks" id="school-elective-edit-programmes"></div> --> <!-- 原平铺复选框，已改为摘要 + 弹窗选择 -->
-        <div class="input-with-btn school-elective-excluded-programmes-field">
-          <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-programmes">全部专业可选</div>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectiveProgrammePickerModal()">选择</button>
-        </div>
-        <p class="form-hint">点击「选择」维护不可选课的专业；未设置表示全部专业均可选。</p>
-      </div>
-      <div class="form-item">
-        <label class="req">可选学生类型</label>
-        <div class="school-elective-student-type-picks" id="school-elective-edit-student-types"></div>
-        <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
-      </div>
-      <div class="form-item">
-        <label for="school-elective-edit-remark">备注信息</label>
-        <textarea class="input input-sm school-elective-edit-remark" id="school-elective-edit-remark" rows="3" placeholder="选填，维护该门校选课程的补充说明"></textarea>
-      </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-edit')">取消</button>
-      <button class="btn btn-primary" type="button" onclick="saveSchoolElectiveCourseEdit()">保存</button>
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-batch-status')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveBatchStatus()">确定</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ 弹窗：校选课程 · 选择不可选专业 ═══ -->
-<div class="modal-overlay modal-nested" id="modal-school-elective-programme-picker">
-  <div class="modal modal-sm school-elective-programme-picker-modal">
+<!-- ═══ 抽屉：校选课程 · 维护可选范围 ═══ -->
+<div class="drawer-backdrop" id="drawer-school-elective-edit-backdrop" onclick="closeSchoolElectiveCourseEditDrawer()"></div>
+<aside class="drawer-panel drawer-school-elective-edit" id="drawer-school-elective-edit">
+  <div class="drawer-head">
+    <h3>维护可选范围</h3>
+    <button class="modal-close" type="button" onclick="closeSchoolElectiveCourseEditDrawer()">×</button>
+  </div>
+  <div class="drawer-body school-elective-edit-body">
+    <div class="school-elective-edit-summary">
+      <dl class="detail-dl school-elective-edit-summary-col">
+        <dt>课程代码</dt><dd id="school-elective-edit-code">—</dd>
+        <dt>课程名称</dt><dd id="school-elective-edit-name">—</dd>
+        <dt>开课单位</dt><dd id="school-elective-edit-dept">—</dd>
+      </dl>
+      <dl class="detail-dl school-elective-edit-summary-col">
+        <dt>类型</dt><dd id="school-elective-edit-type">—</dd>
+        <dt>校选类别</dt><dd id="school-elective-edit-ge-category">—</dd>
+      </dl>
+    </div>
+    <div class="form-item">
+      <label class="req" for="school-elective-edit-status">状态</label>
+      <select class="input input-sm" id="school-elective-edit-status">
+        <option value="active">正常</option>
+        <option value="suspended">停课</option>
+      </select>
+    </div>
+    <div class="form-item">
+      <label class="req">修读范围</label>
+      <div class="input-with-btn school-elective-excluded-programmes-field">
+        <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-programmes">全开放</div>
+        <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectiveProgrammePickerModal()">选择</button>
+      </div>
+      <p class="form-hint">维护可选或不可选专业；两边都不选表示全开放。</p>
+    </div>
+    <div class="form-item">
+      <label class="req">可选学生类型</label>
+      <div class="school-elective-student-type-picks" id="school-elective-edit-student-types"></div>
+      <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
+    </div>
+    <div class="form-item">
+      <label>不可选年级</label>
+      <div class="school-elective-student-type-picks" id="school-elective-edit-excluded-years"></div>
+      <p class="form-hint">勾选不可选课的年级；不勾选表示各年级均可选。</p>
+    </div>
+    <div class="form-item">
+      <label>冲突课程</label>
+      <div class="input-with-btn school-elective-excluded-programmes-field">
+        <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-conflict-courses">未设置</div>
+        <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectiveConflictCoursePickerModal()">选择</button>
+      </div>
+      <p class="form-hint">已修过所选冲突课程的学生不可再选本课；未设置表示无此限制。</p>
+    </div>
+    <div class="form-item">
+      <label>先修课程</label>
+      <div class="input-with-btn school-elective-excluded-programmes-field">
+        <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-prereq-courses">未设置</div>
+        <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectivePrereqCoursePickerModal()">选择</button>
+      </div>
+      <p class="form-hint">默认带入课程库先修条件；未修完先修课程的学生不可选本课；未设置表示无此限制。</p>
+    </div>
+    <div class="form-item">
+      <label for="school-elective-edit-remark">备注信息（课程其他要求）</label>
+      <textarea class="input input-sm school-elective-edit-remark" id="school-elective-edit-remark" rows="3" placeholder="选填，维护该门校选课程的补充说明"></textarea>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeSchoolElectiveCourseEditDrawer()">取消</button>
+    <button class="btn btn-primary" type="button" onclick="saveSchoolElectiveCourseEdit()">保存</button>
+  </div>
+</aside>
+
+<!-- ═══ 弹窗：校选课程 · 查看修读范围 ═══ -->
+<div class="modal-overlay" id="modal-school-elective-scope-view">
+  <div class="modal modal-md school-elective-scope-view-modal">
     <div class="modal-head">
-      <h3>选择不可选专业</h3>
-      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-programme-picker')">×</button>
+      <h3>查看修读范围</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-scope-view')">×</button>
+    </div>
+    <div class="modal-body">
+      <dl class="detail-dl school-elective-scope-view-dl">
+        <dt>课程代码</dt><dd id="school-elective-scope-view-code">—</dd>
+        <dt>课程名称</dt><dd id="school-elective-scope-view-name">—</dd>
+        <dt>可选专业</dt><dd id="school-elective-scope-view-eligible">—</dd>
+        <dt>不可选专业</dt><dd id="school-elective-scope-view-excluded">—</dd>
+        <dt>不可选年级</dt><dd id="school-elective-scope-view-years">—</dd>
+        <dt>冲突课程</dt><dd id="school-elective-scope-view-conflicts">—</dd>
+        <dt>先修课程</dt><dd id="school-elective-scope-view-prereqs">—</dd>
+        <dt>可选学生类型</dt><dd id="school-elective-scope-view-student-types">—</dd>
+        <dt>备注信息</dt><dd id="school-elective-scope-view-remark" class="school-elective-scope-view-remark">—</dd>
+      </dl>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeModal('modal-school-elective-scope-view')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：校选课程 · 修读范围 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-school-elective-programme-picker">
+  <div class="modal modal-md school-elective-programme-picker-modal">
+    <div class="modal-head">
+      <h3 id="school-elective-programme-picker-title">修读范围</h3>
+      <button class="modal-close" type="button" onclick="closeSchoolElectiveProgrammePickerModal()">×</button>
     </div>
     <div class="modal-body school-elective-programme-picker-body">
-      <div class="form-item">
-        <label for="school-elective-programme-picker-search">搜索专业</label>
-        <input class="input input-sm" id="school-elective-programme-picker-search" type="text" placeholder="专业代码 / 名称" oninput="renderSchoolElectiveProgrammePickerList()">
+      <div class="tab-bar school-elective-programme-picker-tabs" id="school-elective-programme-picker-tabs">
+        <button type="button" class="tab" data-tab="excluded" onclick="switchSchoolElectiveProgrammePickerTab('excluded')">不可选专业</button>
+        <button type="button" class="tab" data-tab="eligible" onclick="switchSchoolElectiveProgrammePickerTab('eligible')">可选专业</button>
       </div>
-      <div class="school-elective-programme-picks" id="school-elective-programme-picker-list"></div>
-      <p class="form-hint">勾选不可选课的专业；不勾选任何专业表示全部专业均可选。</p>
+      <div class="school-elective-programme-picker-bar">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(true)">全选</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(false)">清空</button>
+      </div>
+      <div class="school-elective-programme-picker-tree" id="school-elective-programme-picker-list"></div>
+      <p class="form-hint school-elective-programme-picker-hint" id="school-elective-programme-picker-hint">两边都不选表示全开放；请只维护可选或不可选其一。</p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-programme-picker')">取消</button>
-      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveProgrammePicker()">确定</button>
+      <span class="school-elective-programme-picker-count text-muted" id="school-elective-programme-picker-count">已选 0</span>
+      <div class="school-elective-programme-picker-foot-actions">
+        <button class="btn btn-ghost" type="button" onclick="closeSchoolElectiveProgrammePickerModal()">取消</button>
+        <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveProgrammePicker()">确定</button>
+      </div>
     </div>
   </div>
 </div>
 
+
+<!-- ═══ 弹窗：校选课程 · 冲突 / 先修课程选择（表格选择器） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-school-elective-course-link-picker">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3 id="school-elective-course-link-picker-title">选择课程</h3>
+      <button class="modal-close" type="button" onclick="closeSchoolElectiveCourseLinkPickerModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="picker-filter-grid">
+        <div class="form-item">
+          <label for="school-elective-course-link-keyword">课程代码 / 名称</label>
+          <input class="input input-sm" id="school-elective-course-link-keyword" type="text" placeholder="课程代码 / 课程名称" oninput="renderSchoolElectiveCourseLinkPicker()">
+        </div>
+        <div class="form-item">
+          <label for="school-elective-course-link-unit">开课单位</label>
+          <select class="input input-sm" id="school-elective-course-link-unit" onchange="renderSchoolElectiveCourseLinkPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="picker-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="renderSchoolElectiveCourseLinkPicker()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetSchoolElectiveCourseLinkPickerFilters()">重置</button>
+        </div>
+      </div>
+      <p class="form-hint" id="school-elective-course-link-picker-hint">—</p>
+      <div class="picker-table-wrap" style="margin-top:12px">
+        <table class="data-table compact">
+          <thead><tr>
+            <th class="col-check"><input type="checkbox" id="school-elective-course-link-check-all" aria-label="全选当前列表" onchange="toggleSchoolElectiveCourseLinkCheckAll(this.checked)"></th>
+            <th class="col-index">序号</th>
+            <th>课程代码</th>
+            <th>课程名称</th>
+            <th class="col-center">类型</th>
+            <th>校选课类别</th>
+            <th class="col-center">学分</th>
+            <th class="col-center">总学时</th>
+            <th class="col-center">开课单位</th>
+          </tr></thead>
+          <tbody id="school-elective-course-link-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="school-elective-course-link-count">共 0 门课程，已选 0</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeSchoolElectiveCourseLinkPickerModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveCourseLinkPicker()">确定</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ 排课管理 · 弹窗表单 ═══ -->
 <div class="modal-overlay" id="modal-schedule-period">
@@ -7992,7 +8107,8 @@
     </div>
   </div>
 </div>
-<script src="mock-data.js"></script>
-<script src="app.js"></script>
+  <script src="mock-data.js"></script>
+  <script src="ge-restrictions-list.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

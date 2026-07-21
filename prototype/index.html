@@ -909,7 +909,7 @@
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>提交</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
-          <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护</span>
+          <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护。「操作记录」可查看字段变更（支持按用户过滤）。</span>
         </div>
         <div class="table-scroll">
           <table class="data-table course-offering-major-table">
@@ -930,7 +930,9 @@
               <!-- <th class="col-center">教学周数</th> -->
               <th class="col-center">起止周</th>
               <th class="col-center">开课单位</th>
-              <th class="col-center col-sticky-count">人数</th>
+              <th class="col-center">Support历史</th>
+              <th class="col-center col-sticky-changelog">操作记录</th>
+              <th class="col-center col-sticky-count">预置人数</th>
               <th class="col-sticky-actions">操作</th>
             </tr></thead>
             <tbody id="course-offering-body-major"></tbody>
@@ -1207,6 +1209,7 @@
           <button class="btn btn-primary btn-sm" type="button" id="btn-major-task-submit" onclick="submitSelectedMajorOfferingTaskArrangements()" disabled>提交</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-withdraw" onclick="withdrawSelectedMajorOfferingTaskArrangements()" disabled>撤回</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-revert" onclick="revertSelectedMajorOfferingTaskArrangements()" disabled>退回</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-import" onclick="alert('导入（原型占位）')">导入</button>
           <span class="form-hint">提交后可撤回任务安排并重置分组/名单分组；需修改计划信息时可退回至开课计划（合班将拆回单批次）</span>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-task-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> -->
           <!-- <span class="form-hint">完成合分班、分组与教师安排后，勾选教学班批量授课确认</span> -->
@@ -1250,12 +1253,13 @@
                 <th rowspan="2">Course Coordinator</th>
                 <th class="col-center" rowspan="2">开课单位</th>
                 <th class="col-center" rowspan="2">起止周</th>
-                <th class="col-center col-support-group" colspan="3">Support</th>
+                <th class="col-center col-change-log" rowspan="2">操作<br>记录</th>
+                <th class="col-center col-support-group" colspan="2">Support</th>
+                <th class="col-center col-course-info" rowspan="2">课程<br>信息</th>
                 <th class="col-sticky-actions" rowspan="2">操作</th>
               </tr>
               <tr class="mot-task-support-subhead">
-                <th class="col-center col-support-hist">历史</th>
-                <th class="col-center col-support-detail">详情</th>
+                <th class="col-center col-support-hist" title="开课计划维护的 Support 历史（Y/N）：该课历史上是否有过 Support，供学院开课时参考是否需要申请">历史</th>
                 <th class="col-center col-support-action">操作</th>
               </tr>
             </thead>
@@ -2068,15 +2072,40 @@
       </div>
     </section>
 
-    <!-- ═══ 开课管理 · 课程班修改记录（新窗口） ═══ -->
+    <!-- ═══ 开课管理 · 专业开课计划修改记录 ═══ -->
     <section class="page" id="page-course-section-change-log">
       <div class="page-header compact">
         <div>
-          <h1>课程班修改记录</h1>
-          <p class="subtitle" id="section-change-log-subtitle">查看课程班字段变更历史</p>
+          <h1>专业开课计划修改记录</h1>
+          <p class="subtitle" id="section-change-log-subtitle">查看专业开课计划字段变更历史</p>
         </div>
         <div class="header-actions">
           <button class="btn btn-outline btn-sm" type="button" onclick="closeSectionChangeLogPage()">返回</button>
+        </div>
+      </div>
+      <div class="card course-major-query-card section-change-log-filter-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="section-change-log-filter-operator">用户名</label>
+            <select class="input input-sm" id="section-change-log-filter-operator">
+              <option value="">全部用户</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="section-change-log-filter-type">类型</label>
+            <select class="input input-sm" id="section-change-log-filter-type">
+              <option value="">全部类型</option>
+              <option value="新增">新增</option>
+              <option value="编辑">编辑</option>
+              <option value="修改">修改</option>
+              <option value="导入">导入</option>
+              <option value="删除">删除</option>
+            </select>
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="querySectionChangeLogList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetSectionChangeLogFilters()">重置</button>
+          </div>
         </div>
       </div>
       <div class="card section-change-log-list-card">
@@ -2087,7 +2116,8 @@
                 <th>姓名</th>
                 <th class="col-center">修改时间</th>
                 <th class="col-center">类型</th>
-                <th>课程班名称</th>
+                <th>培养方案名称</th>
+                <th>课程名称</th>
                 <th>修改字段</th>
                 <th>修改前</th>
                 <th>修改后</th>
@@ -4135,6 +4165,7 @@
             <option value="N">N</option>
             <option value="Y">Y</option>
           </select>
+          <p class="form-hint">该课历史上是否有过 Support（Y/N），供学院开课时参考是否需要申请</p>
         </div>
         <!--
         <div class="form-item">
@@ -4596,8 +4627,11 @@
     <div class="modal-body teacher-picker-modal-body">
       <div class="group-assign-prior-teachers" id="group-assign-prior-teachers" hidden>
         <div class="group-assign-prior-teachers-head">
-          <strong>上学期任课参考</strong>
-          <span class="form-hint" id="group-assign-prior-teachers-term"></span>
+          <div class="group-assign-prior-teachers-title">
+            <strong>上学期任课参考</strong>
+            <span class="form-hint" id="group-assign-prior-teachers-term"></span>
+          </div>
+          <span class="form-hint group-assign-prior-teachers-tip">本学院可勾选；外院仅查看，需先申请 Support</span>
         </div>
         <div class="group-assign-prior-teachers-list" id="group-assign-prior-teachers-list"></div>
       </div>
@@ -5583,16 +5617,16 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：申请 Support（专业开课任务安排 · 跨学院协助） ═══ -->
+<!-- ═══ 弹窗：Support 管理（专业开课任务安排 · 跨学院协助） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-major-offering-support-apply">
   <div class="modal modal-sm section-coordinator-modal">
     <div class="modal-head">
-      <h3>申请 Support</h3>
+      <h3>Support 管理</h3>
       <button class="modal-close" type="button" onclick="closeMajorOfferingSupportApplyModal()">×</button>
     </div>
     <div class="modal-body">
       <p class="form-hint section-coordinator-hint" id="support-apply-info"></p>
-      <p class="form-hint">勾选需要申请协助（Support）的学院。申请后该开课任务将共享给对应 Support 学院，Support 学院管理员可看到该申请，并在「安排教师」时把本学院教师安排进来。</p>
+      <p class="form-hint">已勾选的为当前已申请的 Support 学院；可继续勾选新增，或取消勾选以移除。保存后该开课任务将共享给对应 Support 学院，其管理员可在「安排教师」时安排本学院教师。</p>
       <div class="section-coordinator-picks" id="support-apply-units"></div>
     </div>
     <div class="modal-foot">
@@ -5602,23 +5636,7 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：Support 详情（已申请学院） ═══ -->
-<div class="modal-overlay modal-nested" id="modal-major-offering-support-detail">
-  <div class="modal modal-sm section-coordinator-modal">
-    <div class="modal-head">
-      <h3>Support 详情</h3>
-      <button class="modal-close" type="button" onclick="closeMajorOfferingSupportDetailModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="form-hint section-coordinator-hint" id="support-detail-info"></p>
-      <p class="form-hint">以下为该开课任务已申请的 Support 学院。</p>
-      <div id="support-detail-units"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-primary" type="button" onclick="closeMajorOfferingSupportDetailModal()">关闭</button>
-    </div>
-  </div>
-</div>
+<!-- 原「Support 详情」弹窗已并入「Support 管理」 -->
 
 <!-- ═══ 弹窗：安排教师（分组弹窗 · 教师安排 Tab） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-group-assign-form">

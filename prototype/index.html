@@ -33,39 +33,69 @@
       <a href="#" class="nav-item" data-page="stats-exec">执行计划统计</a>
     </nav>
     <nav class="sidebar-nav" id="sidebar-nav-course" hidden>
-      <div class="nav-group">开课前置条件管理</div>
-      <a href="#" class="nav-item" data-page="course-workflow">操作流程图</a>
-      <a href="#" class="nav-item" data-page="course-time-setting">开课时间设置</a>
-      <a href="#" class="nav-item" data-page="school-elective-courses">校选课程管理</a>
+      <!-- <div class="nav-group">开课前置条件管理</div> --> <!-- 原灰色分组标题，改一级菜单白字并可收起 -->
+      <div class="nav-section">
+        <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
+          <span class="nav-section-title-text">开课设置</span>
+          <!-- 原：开课前置条件管理 -->
+          <span class="nav-section-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="nav-section-body">
+          <a href="#" class="nav-item nav-item-sub" data-page="course-workflow">操作流程图</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-time-setting">开课时间设置</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="school-elective-courses">校选课程管理</a>
+        </div>
+      </div>
       <!-- 已移除「开课计划生成」模块：生成开课任务改由「专业开课计划」页选择器完成 -->
       <div class="nav-section">
-        <div class="nav-section-title">专业开课</div>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-major">专业开课计划</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">专业开课任务安排（样式一）</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">专业开课任务安排（样式二）</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">专业开课学生名单管理</a>
+        <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
+          <span class="nav-section-title-text">专业开课</span>
+          <span class="nav-section-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="nav-section-body">
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-major">开课计划</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">开课安排（样式1）</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">开课安排（样式2）</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">开课名单</a>
+          <!-- 原：专业开课计划 / 专业开课任务安排（样式一/二） / 专业开课学生名单管理 -->
+        </div>
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">通识选修课开课<span class="nav-section-status">（设计中）</span></div>
-        <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-demand">通识选修开课需求</a> --> <!-- 已并入「通识选修小组配额」上段 -->
-        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">通识选修计划</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课</a>
-        <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a> --> <!-- 已并入「通识选修开课」下段 -->
-        <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
+        <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
+          <span class="nav-section-title-text">通识选修课开课<span class="nav-section-status">（设计中）</span></span>
+          <span class="nav-section-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="nav-section-body">
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-demand">通识选修开课需求</a> --> <!-- 已并入「通识选修小组配额」上段 -->
+          <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">通识选修计划</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课</a>
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a> --> <!-- 已并入「通识选修开课」下段 -->
+          <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
+        </div>
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">特殊开课<span class="nav-section-status">（设计中）</span></div>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-other">特殊开课计划</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-task">特殊开课任务安排</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-roster">特殊开课学生名单管理</a>
-        <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> --> <!-- 原挂于特殊开课下，改独立一级菜单 -->
+        <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
+          <span class="nav-section-title-text">特殊开课<span class="nav-section-status">（设计中）</span></span>
+          <span class="nav-section-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="nav-section-body">
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-other">特殊开课计划</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-task">特殊开课任务安排</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-roster">特殊开课学生名单管理</a>
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> --> <!-- 原挂于特殊开课下，改独立一级菜单 -->
+        </div>
       </div>
       <div class="nav-section">
-        <div class="nav-section-title">开课清单<span class="nav-section-status">（调整中）</span></div>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">教师开课学时统计</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a>
-        <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a>
+        <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
+          <span class="nav-section-title-text">开课清单<span class="nav-section-status">（调整中）</span></span>
+          <span class="nav-section-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="nav-section-body">
+          <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">教师开课学时统计</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a>
+        </div>
       </div>
       <!-- <div class="nav-group">开课类型</div> -->
       <!-- <a href="#" class="nav-item" data-page="course-offering-major">专业开课</a> -->
@@ -694,12 +724,14 @@
             <thead>
               <tr>
                 <th class="col-check"><input type="checkbox" id="course-time-check-all" aria-label="全选" onchange="toggleCourseTimeCheckAll(this.checked)"></th>
-                <th class="col-index">序号<span class="th-sort" aria-hidden="true">↕</span></th>
+                <th class="col-center col-expand" title="单位开课时间"></th>
+                <!-- <th class="col-index">序号<span class="th-sort" aria-hidden="true">↕</span></th> -->
                 <th>学年学期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">教学周数<span class="th-sort" aria-hidden="true">↕</span></th>
+                <th class="col-center">状态</th>
                 <th>开课时间范围<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">是否开课学期<span class="th-sort" aria-hidden="true">↕</span></th>
-                <th>备注<span class="th-sort" aria-hidden="true">↕</span></th>
+                <!-- <th>备注<span class="th-sort" aria-hidden="true">↕</span></th> -->
                 <th>操作</th>
               </tr>
             </thead>
@@ -829,7 +861,8 @@
     <!-- ═══ 开课管理 · 专业开课 ═══ -->
     <section class="page" id="page-course-offering-major">
       <div class="page-header">
-        <div><h1>专业开课计划</h1><p class="subtitle">教务处生成学期开课计划 · 一课一专业批次一条计划；提交后进入任务安排（合分班、分组、授课确认）</p></div>
+        <div><h1>开课计划</h1><p class="subtitle">教务处生成学期开课计划 · 一课一专业批次一条计划；提交后进入任务安排（合分班、分组、授课确认）</p></div>
+        <!-- <div><h1>专业开课计划</h1>... -->
       </div>
       <div class="legend-bar" id="course-offering-hint-major"></div>
       <div class="card course-major-query-card">
@@ -940,7 +973,8 @@
       <div class="page-header compact offering-grouping-page-header">
         <div class="offering-grouping-header-main">
           <div class="breadcrumb">
-            <a href="#" id="offering-grouping-breadcrumb-link" onclick="closeOfferingGroupingPage();return false">专业开课计划</a><span>/</span>
+            <a href="#" id="offering-grouping-breadcrumb-link" onclick="closeOfferingGroupingPage();return false">开课计划</a><span>/</span>
+            <!-- 原：专业开课计划；实际文案由 OFFERING_GROUPING_RETURN_LABELS 按来源页覆盖 -->
             <span id="offering-grouping-page-title">分组</span>
           </div>
           <div class="offering-grouping-view-tabs" role="tablist" aria-label="开课视角">
@@ -998,7 +1032,7 @@
                 <div class="offering-group-tabs">
                   <span class="offering-group-tab is-active" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
                   <!-- 原「安排总览」(data-tab=teacher) 已下线；细改改在「课程班/小组学时详情」安排详情表内完成 -->
-                  <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">教师授课学时</span>
+                  <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">Teaching Load</span>
                   <!-- <span class="offering-group-tab" data-tab="summary" ...>类型学时汇总</span> 原按学时类型汇总安排 -->
                   <span class="offering-group-tab is-muted" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
                   <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示；排最右 -->
@@ -1135,9 +1169,10 @@
     <!-- ═══ 开课管理 · 专业开课 · 任务安排 ═══ -->
     <section class="page" id="page-course-major-offering-task">
       <div class="page-header">
-        <div><h1>专业开课任务安排（样式一）</h1><p class="subtitle">对已提交的开课计划进行合分班、分组、教师安排，完成后批量提交</p></div>
+        <div><h1>开课安排（样式1）</h1><p class="subtitle">对已提交的开课计划进行合分班、分组、教师安排，完成后批量提交</p></div>
+        <!-- <div><h1>专业开课任务安排（样式一）</h1>... -->
       </div>
-      <div class="alert-info offering-module-hint">
+      <div class="alert-info offering-module-hint" hidden>
         <p><strong>流程说明</strong></p>
         <ol class="offering-module-hint-list">
           <li>须先在「专业开课计划」提交开课任务，方可进入本页。</li>
@@ -1267,7 +1302,9 @@
     <section class="page" id="page-course-major-offering-task-style2">
       <div class="page-header">
         <div>
-          <h1>专业开课任务安排（样式二）</h1>
+          <h1>开课安排（样式2）</h1>
+          <!-- <h1>开课安排（样式二）</h1> -->
+          <!-- <h1>专业开课任务安排（样式二）</h1> -->
           <p class="subtitle">分三步完成课程班、其他学院 Support 与师资安排；提交/撤回/退回在各步骤均可操作</p>
         </div>
       </div>
@@ -1336,9 +1373,10 @@
     <!-- ═══ 开课管理 · 专业开课 · 学生名单管理 ═══ -->
     <section class="page" id="page-course-major-offering-roster">
       <div class="page-header">
-        <div><h1>专业开课学生名单管理</h1><p class="subtitle">任务安排提交后，按开课任务维护各小组学生名单</p></div>
+        <div><h1>开课名单</h1><p class="subtitle">任务安排提交后，按开课任务维护各小组学生名单</p></div>
+        <!-- <div><h1>专业开课学生名单管理</h1>... -->
       </div>
-      <div class="alert-info offering-module-hint">
+      <div class="alert-info offering-module-hint" hidden>
         <p><strong>流程说明</strong></p>
         <ul class="offering-module-hint-list">
           <li>任务安排提交后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
@@ -1391,40 +1429,9 @@
           <span class="form-hint">勾选开课任务后可批量退回至「专业开课任务安排」；开放选课课程名单由选课应用生成，不在此维护</span>
         </div>
         <div class="table-scroll">
-          <table class="data-table course-offering-major-table course-major-offering-roster-table">
-            <colgroup>
-              <col class="col-check">
-              <col class="col-index">
-              <col>
-              <col>
-              <col>
-              <col>
-              <col>
-              <col>
-              <col>
-              <col>
-              <col>
-              <col>
-              <col class="col-sticky-actions">
-            </colgroup>
+          <table class="data-table compact course-major-offering-roster-table">
             <thead><tr>
-              <th class="col-check"><input type="checkbox" id="course-major-roster-check-all" aria-label="全选" onchange="toggleMajorOfferingRosterCheckAll(this.checked)"></th>
-              <th class="col-index">序号</th>
-              <!-- <th class="col-center">授课确认状态</th> -->
-              <th class="col-center">开课学期</th>
-              <th>课程号</th>
-              <th>课程名称</th>
-              <th>分组</th>
-              <!-- <th>小组</th> --> <!-- 原按小组拆行，改汇总展示 -->
-              <th class="col-center">上课学院</th>
-              <th class="col-center">上课专业</th>
-              <th class="col-center">上课批次</th>
-              <th class="col-center">学分</th>
-              <th class="col-center">总学时</th>
-              <th class="col-center">开课单位</th>
-              <th class="col-center">起止周</th>
-              <th class="col-center col-sticky-count">人数</th>
-              <th class="col-sticky-actions">操作</th>
+              <!-- 表头由 renderCourseMajorOfferingRosterTableHeader 动态渲染 -->
             </tr></thead>
             <tbody id="course-major-offering-roster-body"></tbody>
           </table>
@@ -1522,30 +1529,33 @@
       <div class="page-header">
         <div><h1>通识选修开课</h1><p class="subtitle">学院自行维护开课课程、分组与教师安排；无合班环节，安排完成后一次提交</p></div>
       </div>
-      <div class="alert-info offering-module-hint">
-        <p><strong>流程说明</strong></p>
-        <ol class="offering-module-hint-list">
-          <li>从「校选课程管理」添加本学期要开设的通识选修课程，维护拟开组数与修读范围。</li>
-          <li>在同一列表操作列中「安排教师」（含分组）、「申请 Support」；通识选修无合分班。</li>
-          <li>完成安排后勾选提交；学院已开组数须 ≥ AC 保底下限。开放选课名单由选课应用生成。</li>
-        </ol>
-      </div>
       <div class="legend-bar" id="course-offering-hint-ge"></div>
       <div class="card" id="ge-offering-plan-quota-card" style="margin-bottom:12px">
-        <div class="card-head"><span>需求与配额进度</span><span class="hint">提交前，所选课程所属学院须达到保底组数下限</span></div>
-        <div class="legend-bar" id="ge-offering-plan-demand-summary" style="border:0;padding:8px 16px 0"></div>
-        <div class="table-scroll" style="padding:0 0 8px">
-          <table class="data-table compact">
-            <thead>
-              <tr>
-                <th>学院</th>
-                <th class="col-center">保底课程班/小组数</th>
-                <th class="col-center">已开课程班/组数</th>
-                <th class="col-center">状态</th>
-              </tr>
-            </thead>
-            <tbody id="ge-offering-plan-quota-body"></tbody>
-          </table>
+        <div class="card-head ge-offering-plan-quota-head"
+          role="button" tabindex="0" aria-expanded="true" aria-controls="ge-offering-plan-quota-body-wrap"
+          onclick="toggleGeOfferingPlanQuotaCard()"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGeOfferingPlanQuotaCard();}">
+          <span class="ge-offering-plan-quota-title">
+            <span class="ge-offering-plan-quota-chevron" aria-hidden="true">▼</span>
+            需求与配额进度
+          </span>
+          <span class="hint">提交前，所选课程所属学院须达到保底组数下限</span>
+        </div>
+        <div id="ge-offering-plan-quota-body-wrap">
+          <div class="legend-bar" id="ge-offering-plan-demand-summary" style="border:0;padding:8px 16px 0"></div>
+          <div class="table-scroll" style="padding:0 0 8px">
+            <table class="data-table compact">
+              <thead>
+                <tr>
+                  <th>学院</th>
+                  <th class="col-center">保底课程班/小组数</th>
+                  <th class="col-center">已开课程班/组数</th>
+                  <th class="col-center">状态</th>
+                </tr>
+              </thead>
+              <tbody id="ge-offering-plan-quota-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
       <div class="card course-major-query-card">
@@ -4908,6 +4918,12 @@
         </select>
       </div>
       <div class="form-item">
+        <label for="mos-filter-nationality">国籍</label>
+        <select class="input input-sm" id="mos-filter-nationality">
+          <option value="">全部国籍</option>
+        </select>
+      </div>
+      <div class="form-item">
         <label for="mos-filter-student-no">学号</label>
         <input class="input input-sm" id="mos-filter-student-no" placeholder="学号">
       </div>
@@ -5065,6 +5081,7 @@
     <button class="modal-close" type="button" onclick="closePresetRosterGroupingDrawer()">×</button>
   </div>
   <div class="drawer-body student-picker-drawer-body">
+    <div class="merge-split-info-grid preset-roster-grouping-course-info" id="prg-course-info"></div>
     <p class="form-hint preset-roster-grouping-hint">仅展示预置名单中尚未分配的符合条件学生；请在下方选择所属课程班/小组，勾选后点击「确定分配」放入对应课程班/小组，不会覆盖来源为「手动添加」的学生。</p>
     <div class="picker-filter-grid preset-roster-grouping-filters">
       <div class="form-item">
@@ -5076,10 +5093,11 @@
         <input class="input input-sm" id="prg-filter-name" placeholder="姓名">
       </div>
       <div class="form-item">
-        <label for="prg-filter-school">学院</label>
-        <select class="input input-sm" id="prg-filter-school" onchange="onPresetRosterGroupingSchoolChange()">
-          <option value="">全部学院</option>
+        <label for="prg-filter-nationality">国籍</label>
+        <select class="input input-sm" id="prg-filter-nationality" onchange="renderPresetRosterGroupingDrawer()">
+          <option value="">全部国籍</option>
         </select>
+        <!-- <label for="prg-filter-school">学院</label> ... 原学院筛选，改国籍 -->
       </div>
       <div class="form-item">
         <label for="prg-filter-prog">专业</label>
@@ -5206,7 +5224,7 @@
           <tr>
             <th class="col-index col-center">序号</th>
             <th class="col-center">开课单位</th>
-            <th>单位名称</th>
+            <!-- <th>单位名称</th> -->
             <th class="col-center">状态</th>
             <th>开放开始</th>
             <th>开放截止</th>
@@ -5220,7 +5238,8 @@
   </div>
   <div class="drawer-foot">
     <button class="btn btn-ghost" type="button" onclick="closeCourseUnitOfferingTimeDrawer()">关闭</button>
-    <button class="btn btn-primary" type="button" id="btn-course-unit-offering-time-save" onclick="saveCourseUnitOfferingTimeDrawer()">保存</button>
+    <button class="btn btn-primary" type="button" id="btn-course-unit-offering-time-save" hidden onclick="saveCourseUnitOfferingTimeDrawer()">保存</button>
+    <!-- 原底部「保存」批量写入；改行内 ✓ 确认，底部保存先隐藏 -->
   </div>
 </aside>
 
@@ -5284,19 +5303,25 @@
 
 <!-- ═══ 弹窗：开课管理 · 新增开课单位 ═══ -->
 <div class="modal-overlay modal-nested" id="modal-course-unit-offering-time-add">
-  <div class="modal modal-sm course-unit-offering-time-add-modal">
+  <div class="modal modal-md course-unit-offering-time-add-modal">
+    <!-- class was modal-sm；加宽便于多看选项 -->
     <div class="modal-head">
-      <h3>新增开课单位</h3>
+      <h3>新增</h3>
       <button class="modal-close" type="button" onclick="closeCourseUnitOfferingTimeAddModal()">×</button>
     </div>
     <div class="modal-body">
       <div class="form-item">
-        <label class="req" for="course-unit-offering-time-add-select">开课单位</label>
-        <select class="input input-sm" id="course-unit-offering-time-add-select">
-          <option value="">请选择开课单位</option>
-        </select>
+        <label class="req">开课单位</label>
+        <div class="cuot-add-unit-checklist" id="cuot-add-unit-multiselect">
+          <div class="cuot-add-unit-list" id="cuot-add-unit-dropdown">
+            <div class="clo-multiselect-empty" id="cuot-add-unit-empty" hidden>暂无可新增单位</div>
+            <div class="clo-multiselect-options" id="cuot-add-unit-options"></div>
+          </div>
+        </div>
+        <!-- <select id="course-unit-offering-time-add-select" multiple>...</select> --> <!-- 原原生多选；曾改下拉多选，现改为直接展开勾选 -->
       </div>
-      <p class="form-hint">未单独设置的单位默认按全校开课时间范围操作。</p>
+      <p class="form-hint">勾选可一次新增多个单位；已单独设置的单位置灰不可选。未单独设置的单位默认按全校开课时间。</p>
+      <!-- <p class="form-hint">勾选可一次新增多个单位；已单独设置的单位不再出现。...</p> -->
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeCourseUnitOfferingTimeAddModal()">取消</button>
@@ -5610,15 +5635,42 @@
 
 <!-- ═══ 弹窗：Support 管理（专业开课任务安排 · 跨学院协助） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-major-offering-support-apply">
-  <div class="modal modal-sm section-coordinator-modal">
+  <div class="modal modal-md support-apply-modal">
+    <!-- class was modal-sm section-coordinator-modal；改字段表单 + 下拉多选 -->
     <div class="modal-head">
       <h3>Support 管理</h3>
       <button class="modal-close" type="button" onclick="closeMajorOfferingSupportApplyModal()">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint section-coordinator-hint" id="support-apply-info"></p>
-      <p class="form-hint">已勾选的为当前已申请的 Support 学院；可继续勾选新增，或取消勾选以移除。保存后该开课任务将共享给对应 Support 学院，其管理员可在「安排教师」时安排本学院教师。</p>
-      <div class="section-coordinator-picks" id="support-apply-units"></div>
+      <div class="form-item">
+        <label>开课任务</label>
+        <input class="input" id="support-apply-task" type="text" readonly tabindex="-1">
+      </div>
+      <div class="form-item">
+        <label>开课单位</label>
+        <input class="input" id="support-apply-offering-unit" type="text" readonly tabindex="-1">
+      </div>
+      <div class="form-item">
+        <label>当前 Support 学院</label>
+        <div class="support-apply-current" id="support-apply-current" aria-live="polite"></div>
+      </div>
+      <div class="form-item">
+        <label>选择 Support 学院</label>
+        <div class="clo-multiselect" id="support-apply-multiselect">
+          <button type="button" class="clo-multiselect-trigger input" onclick="toggleMajorOfferingSupportApplyDropdown(event)">
+            <span class="clo-multiselect-display placeholder" id="support-apply-display">请选择 Support 学院</span>
+            <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="clo-multiselect-dropdown" id="support-apply-dropdown" hidden>
+            <div class="clo-multiselect-empty" id="support-apply-empty" hidden>暂无可选学院</div>
+            <div class="clo-multiselect-options" id="support-apply-options"></div>
+          </div>
+        </div>
+        <!-- <div class="section-coordinator-picks" id="support-apply-units"></div> --> <!-- 原平铺勾选列表 -->
+      </div>
+      <p class="form-hint">保存后该开课任务将共享给对应 Support 学院，其管理员可在「安排教师」时安排本学院教师。</p>
+      <!-- <p class="form-hint">已勾选的为当前已申请的 Support 学院；...</p> -->
+      <!-- <p class="form-hint section-coordinator-hint" id="support-apply-info"></p> -->
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingSupportApplyModal()">取消</button>
@@ -6971,13 +7023,9 @@
       </div>
       <p class="form-hint" id="ge-offering-add-term-hint">—</p>
       <div class="picker-table-wrap" style="margin-top:12px">
-        <table class="data-table compact">
+        <table class="data-table compact ge-offering-add-table">
           <thead><tr>
-            <th class="col-check"><input type="checkbox" id="ge-offering-add-check-all" aria-label="全选" onchange="toggleGeOfferingAddCheckAll(this.checked)"></th>
-            <th class="col-index">序号</th>
-            <th>课程代码</th><th>课程名称</th><th>校选课类别</th>
-            <th class="col-center">学分</th><th class="col-center">总学时</th>
-            <th class="col-center">开课单位</th>
+            <!-- 表头由 renderGeOfferingAddModalPicker 动态渲染（可排序） -->
           </tr></thead>
           <tbody id="ge-offering-add-tbody"></tbody>
         </table>

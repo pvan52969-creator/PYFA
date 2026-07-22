@@ -11171,6 +11171,12 @@ input#group-assign-recorded-hours {
 .merge-split-guide {
   margin-bottom: 16px;
   line-height: 1.55;
+  overflow: visible;
+}
+.merge-split-guide-tip.slt-info-tip {
+  display: block;
+  position: relative;
+  align-items: stretch;
 }
 .merge-split-guide-title {
   display: flex;
@@ -11179,17 +11185,40 @@ input#group-assign-recorded-hours {
   margin: 0;
   font-size: 13px;
 }
-.merge-split-guide-tip .slt-info-popover {
-  left: 0;
-  transform: none;
-  width: min(520px, 78vw);
-  max-height: min(52vh, 420px);
-  overflow: auto;
-  z-index: 40;
+.merge-split-guide-tip-btn.slt-info-btn {
+  border-color: #1e3a8a;
+  background: #1e40af;
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+  cursor: help;
+  flex-shrink: 0;
 }
-.merge-split-guide-tip .slt-info-popover::before {
-  left: 10px;
-  transform: rotate(45deg);
+.merge-split-guide-tip:hover .merge-split-guide-tip-btn.slt-info-btn {
+  background: #1e3a8a;
+  border-color: #172554;
+  color: #fff;
+}
+/* 仅悬停显示；弹层改文档流，避免抽屉 overflow/transform 裁切 */
+.merge-split-guide-tip .merge-split-guide-popover.slt-info-popover {
+  display: none;
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  z-index: auto;
+  box-shadow: 0 6px 18px rgba(15, 52, 96, 0.12);
+  border-color: #93c5fd;
+}
+.merge-split-guide-tip:hover .merge-split-guide-popover.slt-info-popover {
+  display: block;
+}
+.merge-split-guide-tip .merge-split-guide-popover.slt-info-popover::before {
+  display: none;
 }
 .merge-split-guide-tip-lead {
   margin: 0 0 8px;

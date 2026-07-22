@@ -8197,6 +8197,7 @@ function openMajorMergeSplitDrawer() {
 }
 
 function closeMajorMergeSplitDrawer() {
+  document.querySelectorAll('body > .merge-split-guide-popover').forEach(el => el.remove());
   document.getElementById('drawer-major-merge-split')?.classList.remove('open');
   document.getElementById('drawer-major-merge-split-backdrop')?.classList.remove('open');
   majorMergeSplitDrawerSectionId = null;
@@ -8251,6 +8252,7 @@ function renderMajorMergeSplitDrawerInfo(sec) {
 }
 
 function renderMajorMergeSplitDrawerGuide(sec) {
+  document.querySelectorAll('body > .merge-split-guide-popover').forEach(el => el.remove());
   const el = document.getElementById('major-merge-split-guide');
   if (!el || !sec) return;
   const requireSubmitted = shouldMajorMergeSplitRequireSubmitted();
@@ -8267,7 +8269,6 @@ function renderMajorMergeSplitDrawerGuide(sec) {
   const pendingHtml = pendingLabels.length
     ? pendingLabels.map(l => `<code>${escapeHtml(l)}</code>`).join('、')
     : `<span class="text-muted">暂无（须为${planContext ? '未提交计划' : '计划已提交且任务安排未提交'}，且开课参数与当前班一致）</span>`;
-  // : '<span class="text-muted">暂无（其他专业批次与当前课程的开课参数不一致，或未生成独立计划行）</span>'; // 原未校验提交状态
   const mergedHtml = mergedLabels.length
     ? mergedLabels.map(l => `<code>${escapeHtml(l)}</code>`).join('、')
     : '—';
@@ -8288,25 +8289,25 @@ function renderMajorMergeSplitDrawerGuide(sec) {
     : '';
   const termDisplay = getSectionOfferingTermDisplay(sec);
   el.innerHTML = `
-    <p class="merge-split-guide-title">
-      <strong>合班规则说明</strong>
-      <span class="slt-info-tip merge-split-guide-tip">
-        <button type="button" class="slt-info-btn" aria-label="合班规则说明">!</button>
-        <div class="slt-info-popover">
-          <p class="merge-split-guide-tip-lead"><strong>同一开课学期</strong>的开课计划方可合并；不同<strong>专业·入学批次</strong>的计划，还须同时满足下列<strong>全部前提</strong>方可合并为同一课程班：</p>
-          <ul class="merge-split-guide-list">
-            <li><strong>开课学期</strong>相同（当前：<code>${escapeHtml(termDisplay)}</code>）</li>
-            <li><strong>课程号</strong>相同（当前：<code>${escapeHtml(sec.code)}</code>）</li>
-            <li><strong>学分</strong>相同（当前：${sec.credits ?? '—'}）</li>
-            <li><strong>总学时</strong>相同（当前：${totalHours} 学时）</li>
-            <li><strong>起止周</strong>相同（当前：<code>${escapeHtml(String(weekRange))}</code>）</li>
-            <li><strong>教学周数</strong>相同（当前：${teachingWeeks} 周）</li>
-            <li><strong>选课类型</strong>相同（不开放选课与开放选课无法合班）、以及<strong>是否排课 / 排场地 / 考勤 / 录入成绩 / 排考</strong>一致</li>
-            <li>${statusRuleText}</li>
-          </ul>
-        </div>
-      </span>
-    </p>
+    <div class="slt-info-tip merge-split-guide-tip">
+      <p class="merge-split-guide-title">
+        <strong>合班规则说明</strong>
+        <button type="button" class="slt-info-btn merge-split-guide-tip-btn" tabindex="-1" aria-hidden="true">!</button>
+      </p>
+      <div class="slt-info-popover merge-split-guide-popover">
+        <p class="merge-split-guide-tip-lead"><strong>同一开课学期</strong>的开课计划方可合并；不同<strong>专业·入学批次</strong>的计划，还须同时满足下列<strong>全部前提</strong>方可合并为同一课程班：</p>
+        <ul class="merge-split-guide-list">
+          <li><strong>开课学期</strong>相同（当前：<code>${escapeHtml(termDisplay)}</code>）</li>
+          <li><strong>课程号</strong>相同（当前：<code>${escapeHtml(sec.code)}</code>）</li>
+          <li><strong>学分</strong>相同（当前：${sec.credits ?? '—'}）</li>
+          <li><strong>总学时</strong>相同（当前：${totalHours} 学时）</li>
+          <li><strong>起止周</strong>相同（当前：<code>${escapeHtml(String(weekRange))}</code>）</li>
+          <li><strong>教学周数</strong>相同（当前：${teachingWeeks} 周）</li>
+          <li><strong>选课类型</strong>相同（不开放选课与开放选课无法合班）、以及<strong>是否排课 / 排场地 / 考勤 / 录入成绩 / 排考</strong>一致</li>
+          <li>${statusRuleText}</li>
+        </ul>
+      </div>
+    </div>
     <p class="merge-split-guide-compat"><strong>当前可合入本班的专业批次（${pendingLabels.length} 项）：</strong>${pendingHtml}</p>
     ${blockedHtml}
     <p class="merge-split-guide-compat"><strong>本班已合并的专业批次（${mergedLabels.length} 项）：</strong>${mergedHtml}</p>
@@ -42966,6 +42967,10 @@ function toggleSltSection(key) {
   if (body) body.hidden = !open;
 }
 
+function closeSltInfoTip() {
+  document.querySelectorAll('.slt-info-tip.open').forEach(el => el.classList.remove('open'));
+}
+
 function toggleSltInfoTip(event) {
   event.stopPropagation();
   const tip = event.currentTarget?.closest('.slt-info-tip');
@@ -42974,10 +42979,6 @@ function toggleSltInfoTip(event) {
     if (el !== tip) el.classList.remove('open');
   });
   tip.classList.toggle('open');
-}
-
-function closeSltInfoTip() {
-  document.querySelectorAll('.slt-info-tip.open').forEach(el => el.classList.remove('open'));
 }
 
 function renderSltAll() {

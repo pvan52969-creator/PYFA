@@ -792,7 +792,7 @@
       <div class="page-header">
         <div>
           <h1>校选课程管理</h1>
-          <p class="subtitle">维护校内选修课程主数据，提前配置修读范围与学生类型</p>
+          <p class="subtitle">维护校内选修课程主数据；「查看 / 设置」配置修读范围，「修改」维护开课默认教学设置</p>
         </div>
       </div>
       <div class="card course-major-query-card">
@@ -977,6 +977,7 @@
             <!-- 原：专业开课计划；实际文案由 OFFERING_GROUPING_RETURN_LABELS 按来源页覆盖 -->
             <span id="offering-grouping-page-title">分组</span>
           </div>
+          <div class="offering-grouping-ge-quota-hint" id="offering-grouping-ge-quota-hint" hidden role="status"></div>
           <div class="offering-grouping-view-tabs" role="tablist" aria-label="开课视角">
             <button type="button" class="offering-grouping-view-tab is-active" role="tab" aria-selected="true" data-view="course" onclick="switchOfferingGroupingSidebarView('course')">Course</button>
             <button type="button" class="offering-grouping-view-tab" role="tab" aria-selected="false" data-view="course-list" onclick="switchOfferingGroupingSidebarView('course-list')">Course List</button>
@@ -1480,25 +1481,36 @@
           </div>
         </div>
       </div>
-      <div class="ge-offering-demand-summary" id="ge-offering-demand-summary"></div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="card-head"><span>开课需求 · 按学院</span><span class="hint">学院仅汇总人数；文商理见上方按专业大类合计</span></div>
-        <div class="panel-toolbar ge-offering-quota-section-toolbar">
-          <button class="btn btn-outline btn-sm" type="button" onclick="refreshGeOfferingDemandPage()">刷新</button>
-          <span class="form-hint">人数可能随执行计划更新，可点刷新重新汇总</span>
+      <div class="card" id="ge-offering-demand-card" style="margin-bottom:12px">
+        <div class="card-head ge-offering-demand-card-head"
+          role="button" tabindex="0" aria-expanded="true" aria-controls="ge-offering-demand-body-wrap"
+          onclick="toggleGeOfferingDemandCard()"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGeOfferingDemandCard();}">
+          <span class="ge-offering-demand-card-title">
+            <span class="ge-offering-demand-card-chevron" aria-hidden="true">▼</span>
+            开课需求
+          </span>
+          <span class="hint">按专业大类合计 · 按学院明细</span>
         </div>
-        <div class="table-scroll">
-          <table class="data-table compact">
-            <thead>
-              <tr>
-                <th class="col-index">序号</th>
-                <th>学院</th>
-                <th class="col-center">预计人数</th>
-                <th>涉及专业批次</th>
-              </tr>
-            </thead>
-            <tbody id="ge-offering-demand-school-body"></tbody>
-          </table>
+        <div id="ge-offering-demand-body-wrap">
+          <div class="ge-offering-demand-summary" id="ge-offering-demand-summary"></div>
+          <div class="panel-toolbar ge-offering-quota-section-toolbar">
+            <button class="btn btn-outline btn-sm" type="button" onclick="event.stopPropagation();refreshGeOfferingDemandPage()">刷新</button>
+            <span class="form-hint">学院仅汇总人数；人数可能随执行计划更新，可点刷新重新汇总</span>
+          </div>
+          <div class="table-scroll" style="padding:0 0 8px">
+            <table class="data-table compact">
+              <thead>
+                <tr>
+                  <th class="col-index">序号</th>
+                  <th>学院</th>
+                  <th class="col-center">预计人数</th>
+                  <th>涉及专业批次</th>
+                </tr>
+              </thead>
+              <tbody id="ge-offering-demand-school-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -1527,8 +1539,31 @@
     <!-- ═══ 开课管理 · 通识选修开课（计划 + 安排合表） ═══ -->
     <section class="page" id="page-course-offering-ge">
       <div class="page-header">
-        <div><h1>通识选修开课</h1><p class="subtitle">学院自行维护开课课程、分组与教师安排；无合班环节，安排完成后一次提交</p></div>
+        <div>
+          <h1>通识选修开课</h1>
+          <p class="subtitle">分三步完成课程班、其他学院 Support 与师资安排；提交 / 退回在各步骤均可操作</p>
+        </div>
       </div>
+      <nav class="mot-style2-step-bar" id="ge-offering-step-bar" aria-label="通识选修开课步骤">
+        <button type="button" class="mot-style2-step is-active" data-step="1" onclick="goGeOfferingPlanStep(1)">
+          <span class="mot-style2-step-num">1</span>
+          <span class="mot-style2-step-label">课程班</span>
+          <span class="mot-style2-step-desc">添加课程 · 修读范围</span>
+        </button>
+        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
+        <button type="button" class="mot-style2-step" data-step="2" onclick="goGeOfferingPlanStep(2)">
+          <span class="mot-style2-step-num">2</span>
+          <span class="mot-style2-step-label">其他学院Support</span>
+          <span class="mot-style2-step-desc">申请 · 历史 · 详情</span>
+        </button>
+        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
+        <button type="button" class="mot-style2-step" data-step="3" onclick="goGeOfferingPlanStep(3)">
+          <span class="mot-style2-step-num">3</span>
+          <span class="mot-style2-step-label">师资安排</span>
+          <span class="mot-style2-step-desc">学时类型 · 任课教师</span>
+        </button>
+      </nav>
+      <div class="mot-style2-step-hint" id="ge-offering-step-hint" role="status"></div>
       <div class="legend-bar" id="course-offering-hint-ge"></div>
       <div class="card" id="ge-offering-plan-quota-card" style="margin-bottom:12px">
         <div class="card-head ge-offering-plan-quota-head"
@@ -1542,7 +1577,7 @@
           <span class="hint">提交前，所选课程所属学院须达到保底组数下限</span>
         </div>
         <div id="ge-offering-plan-quota-body-wrap">
-          <div class="legend-bar" id="ge-offering-plan-demand-summary" style="border:0;padding:8px 16px 0"></div>
+          <div class="ge-offering-demand-summary" id="ge-offering-plan-demand-summary"></div>
           <div class="table-scroll" style="padding:0 0 8px">
             <table class="data-table compact">
               <thead>
@@ -1590,35 +1625,11 @@
           </div>
         </div>
       </div>
-      <div class="card ge-offering-plan-list-card course-ge-task-list-card">
-        <div class="panel-toolbar ge-offering-list-toolbar course-ge-task-toolbar">
-          <button class="btn btn-primary btn-sm" type="button" onclick="openGeOfferingCourseAddModal()">添加开课课程</button>
-          <button class="btn btn-primary btn-sm" type="button" id="btn-ge-task-submit" onclick="submitSelectedGeOfferingTaskArrangements()" disabled>提交</button>
-          <button class="btn btn-outline btn-sm" type="button" id="btn-ge-task-revert" onclick="revertSelectedGeOfferingTaskArrangements()" disabled>退回</button>
-          <span class="form-hint">加课后即可安排教师；完成后勾选批量提交；退回后可重新修改安排</span>
-        </div>
-        <div class="table-scroll">
-          <table class="data-table course-offering-table course-ge-offering-task-table">
-            <thead><tr>
-              <th class="col-check"><input type="checkbox" id="ge-offering-task-check-all" aria-label="全选" onchange="toggleGeOfferingTaskCheckAll(this.checked)"></th>
-              <th class="col-index">序号</th>
-              <th>负责人</th>
-              <th class="col-center">开课学期</th>
-              <th class="col-center">提交状态</th>
-              <th>课程号</th><th>课程名称</th>
-              <th class="col-center">开课单位</th>
-              <th class="col-center">教师数</th>
-              <!-- <th>教师</th> -->
-              <!-- <th class="col-center">课程班/小组数</th> -->
-              <th>Course Coordinator</th>
-              <th class="col-center">学分</th><th class="col-center">计划总学时</th>
-              <th class="col-center">起止周</th>
-              <!-- <th class="col-center">课程名额上限</th> -->
-              <th class="col-center">Support历史</th>
-              <th class="col-center">Support学院</th>
-              <th>备注</th>
-              <th class="col-sticky-actions">操作</th>
-            </tr></thead>
+      <div class="card ge-offering-plan-list-card course-ge-task-list-card mot-style2-list-card">
+        <div class="panel-toolbar ge-offering-list-toolbar course-ge-task-toolbar mot-style2-toolbar" id="ge-offering-style2-toolbar"></div>
+        <div class="mot-style2-table-wrap ge-offering-table-wrap">
+          <table class="data-table compact mot-style2-table course-ge-offering-task-table">
+            <thead id="course-offering-head-ge"><tr></tr></thead>
             <tbody id="course-offering-body-ge"></tbody>
           </table>
         </div>
@@ -4346,14 +4357,9 @@
           <input class="input input-sm readonly" id="ge-edit-total-hours" type="text" readonly tabindex="-1">
         </div>
         <div class="form-item">
-          <label class="req" for="ge-edit-planned-group-count">拟开组数</label>
-          <input class="input input-sm" id="ge-edit-planned-group-count" type="number" min="1" step="1">
-          <p class="form-hint" id="ge-edit-planned-group-hint">计入学院保底组数进度；一门课可开多组</p>
-        </div>
-        <div class="form-item">
           <label class="req" for="ge-edit-student-total">计划总人数</label>
           <input class="input input-sm" id="ge-edit-student-total" type="number" min="0" step="1" oninput="updateGeOfferingEditCapacityLimitDisplay()">
-          <p class="form-hint">通识选修由选课应用生成名单，此处设置计划招生人数（可参考每组人数参考值 × 拟开组数）</p>
+          <p class="form-hint">通识选修由选课应用生成名单，此处设置计划招生人数</p>
         </div>
         <div class="form-item">
           <label class="req" for="ge-edit-reserved-spots">预留名额</label>
@@ -4364,6 +4370,14 @@
           <label for="ge-edit-capacity-limit">课程名额上限</label>
           <input class="input input-sm readonly" id="ge-edit-capacity-limit" type="text" readonly tabindex="-1">
           <p class="form-hint">计划总人数 + 预留名额</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-support-history">Support历史</label>
+          <select class="input input-sm" id="ge-edit-support-history">
+            <option value="N">N</option>
+            <option value="Y">Y</option>
+          </select>
+          <p class="form-hint">该课历史上是否有过 Support（Y/N），供学院开课时参考是否需要申请</p>
         </div>
         <div class="form-item">
           <label class="req" for="ge-edit-enrollment-type">选课类型</label>
@@ -7048,37 +7062,129 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：通识选修开课 · 修读范围 ═══ -->
-<div class="modal-overlay" id="modal-ge-offering-scope">
-  <div class="modal modal-md ge-offering-scope-modal">
-    <div class="modal-head">
-      <h3 id="ge-offering-scope-title">修读范围</h3>
-      <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-scope')">×</button>
-    </div>
-    <div class="modal-body school-elective-edit-body">
-      <dl class="detail-dl ge-offering-scope-summary">
+<!-- ═══ 抽屉：通识选修开课 · 修读范围（字段对齐校选课程修读范围，可按本学期开课计划调整） ═══ -->
+<div class="drawer-backdrop" id="drawer-ge-offering-scope-backdrop" onclick="closeGeOfferingScopeDrawer()"></div>
+<aside class="drawer-panel drawer-ge-offering-scope" id="drawer-ge-offering-scope">
+  <div class="drawer-head">
+    <h3 id="ge-offering-scope-title">修读范围</h3>
+    <button class="modal-close" type="button" onclick="closeGeOfferingScopeDrawer()">×</button>
+  </div>
+  <div class="drawer-body school-elective-edit-body">
+    <div class="school-elective-edit-summary">
+      <dl class="detail-dl school-elective-edit-summary-col">
         <dt>课程代码</dt><dd id="ge-offering-scope-code">—</dd>
         <dt>课程名称</dt><dd id="ge-offering-scope-name">—</dd>
         <dt>开课单位</dt><dd id="ge-offering-scope-dept">—</dd>
       </dl>
-      <p class="form-hint" id="ge-offering-scope-default-hint">默认读取「校选课程管理」中维护的不可选专业与可选学生类型；可按本学期开课计划单独调整。</p>
-      <div class="form-item">
-        <label class="req">不可选专业</label>
-        <div class="input-with-btn school-elective-excluded-programmes-field">
-          <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-programmes">全部专业可选</div>
-          <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
+      <dl class="detail-dl school-elective-edit-summary-col">
+        <dt>类型</dt><dd id="ge-offering-scope-type">—</dd>
+        <dt>校选类别</dt><dd id="ge-offering-scope-ge-category">—</dd>
+      </dl>
+    </div>
+    <p class="form-hint" id="ge-offering-scope-default-hint">默认从「校选课程管理」带入专业范围；可按本学期调整。专业批次为可选细化，不影响校选主数据。</p>
+    <div class="form-item">
+      <label class="req">修读范围</label>
+      <div class="ge-offering-scope-stack">
+        <div class="ge-offering-scope-stack-row">
+          <span class="ge-offering-scope-stack-label">专业</span>
+          <div class="input-with-btn school-elective-excluded-programmes-field">
+            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-programmes">全开放</div>
+            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
+          </div>
         </div>
-        <p class="form-hint">未设置表示全部专业均可选。</p>
+        <div class="ge-offering-scope-stack-row" id="ge-offering-scope-batch-step" hidden>
+          <span class="ge-offering-scope-stack-label">批次</span>
+          <div class="input-with-btn school-elective-excluded-programmes-field">
+            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-batches">未细化（该专业全部入学批次）</div>
+            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-batches-btn" onclick="openGeOfferingScopeBatchPickerModal()">选择</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-batches-clear-btn" onclick="clearGeOfferingScopeBatchRefinement()">清除</button>
+          </div>
+        </div>
       </div>
-      <div class="form-item">
-        <label class="req">可选学生类型</label>
-        <div class="school-elective-student-type-picks" id="ge-offering-scope-student-types"></div>
-        <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
+      <p class="form-hint">可选或不可选专业（两边都不选=全开放）；有专业后可再细化入学批次，不细化则该专业全部批次适用。</p>
+    </div>
+    <div class="form-item">
+      <label class="req">可选学生类型</label>
+      <div class="school-elective-student-type-picks" id="ge-offering-scope-student-types"></div>
+      <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
+    </div>
+    <div class="form-item">
+      <label>不可选年级</label>
+      <div class="school-elective-student-type-picks" id="ge-offering-scope-excluded-years"></div>
+      <p class="form-hint">勾选不可选课的年级；不勾选表示各年级均可选。</p>
+    </div>
+    <div class="form-item">
+      <label>冲突课程</label>
+      <div class="input-with-btn school-elective-excluded-programmes-field">
+        <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-conflict-courses">未设置</div>
+        <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-conflict-btn" onclick="openGeOfferingScopeConflictCoursePickerModal()">选择</button>
       </div>
+      <p class="form-hint">已修过所选冲突课程的学生不可再选本课；未设置表示无此限制。</p>
+    </div>
+    <div class="form-item">
+      <label>先修课程</label>
+      <div class="input-with-btn school-elective-excluded-programmes-field">
+        <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-prereq-courses">未设置</div>
+        <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-prereq-btn" onclick="openGeOfferingScopePrereqCoursePickerModal()">选择</button>
+      </div>
+      <p class="form-hint">未修完先修课程的学生不可选本课；未设置表示无此限制。</p>
+    </div>
+    <div class="form-item">
+      <label for="ge-offering-scope-remark">备注信息（课程其他要求）</label>
+      <textarea class="input input-sm school-elective-edit-remark" id="ge-offering-scope-remark" rows="3" placeholder="选填，维护本学期开课的补充说明"></textarea>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" id="ge-offering-scope-close-btn" onclick="closeGeOfferingScopeDrawer()">关闭</button>
+    <button class="btn btn-primary" type="button" id="ge-offering-scope-save-btn" onclick="saveGeOfferingScopeModal()">保存</button>
+  </div>
+</aside>
+<!-- 原 modal-ge-offering-scope / 仅不可选专业+学生类型，已对齐校选全量字段 -->
+
+<!-- ═══ 弹窗：通识选修开课 · 专业批次细化（按专业看其真实入学批次） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">
+  <div class="modal modal-lg ge-offering-batch-picker-modal">
+    <div class="modal-head">
+      <h3 id="ge-offering-batch-picker-title">细化专业批次</h3>
+      <button class="modal-close" type="button" onclick="closeGeOfferingScopeBatchPickerModal()">×</button>
+    </div>
+    <div class="modal-body ge-offering-batch-picker-body">
+      <div class="ge-offering-batch-picker-axes">
+        <div class="ge-offering-batch-picker-axis">
+          <div class="ge-offering-batch-picker-axis-head">
+            <strong>已选专业</strong>
+            <span class="text-muted ge-offering-batch-picker-axis-sub" id="ge-offering-batch-picker-prog-count">0</span>
+          </div>
+          <input class="input input-sm" id="ge-offering-batch-picker-programme-q" type="search" placeholder="筛选专业代码 / 名称" oninput="renderGeOfferingScopeBatchPickerProgrammes()">
+          <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-programmes"></div>
+        </div>
+        <div class="ge-offering-batch-picker-axis">
+          <div class="ge-offering-batch-picker-axis-head">
+            <strong id="ge-offering-batch-picker-intake-title">入学批次</strong>
+            <div class="ge-offering-batch-picker-axis-actions">
+              <button class="btn btn-ghost btn-sm" type="button" onclick="setGeOfferingScopeBatchPickerActiveProgrammeAll(true)">全选</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="setGeOfferingScopeBatchPickerActiveProgrammeAll(false)">清空</button>
+            </div>
+          </div>
+          <p class="form-hint ge-offering-batch-picker-intake-hint">仅显示该专业实际有的入学批次（来自执行计划），各专业互不相同。</p>
+          <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-intakes"></div>
+        </div>
+      </div>
+      <div class="ge-offering-batch-picker-preview">
+        <div class="ge-offering-batch-picker-preview-head">
+          <strong>已选专业批次</strong>
+          <span class="text-muted" id="ge-offering-batch-picker-count">已选 0</span>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="clearGeOfferingScopeBatchPickerWorking()">全部清空</button>
+        </div>
+        <div class="ge-offering-batch-picker-preview-list" id="ge-offering-batch-picker-preview-list"></div>
+      </div>
+      <p class="form-hint">先点左侧专业，再勾选该专业下的入学批次；不同专业的可选批次各自独立。</p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-ge-offering-scope')">关闭</button>
-      <button class="btn btn-primary" type="button" id="ge-offering-scope-save-btn" onclick="saveGeOfferingScopeModal()">保存</button>
+      <div class="school-elective-programme-picker-foot-actions" style="margin-left:auto">
+        <button class="btn btn-ghost" type="button" onclick="closeGeOfferingScopeBatchPickerModal()">取消</button>
+        <button class="btn btn-primary" type="button" onclick="confirmGeOfferingScopeBatchPicker()">确定</button>
+      </div>
     </div>
   </div>
 </div>
@@ -7194,11 +7300,12 @@
   </div>
 </div>
 
-<!-- ═══ 抽屉：校选课程 · 维护可选范围 ═══ -->
+<!-- ═══ 抽屉：校选课程 · 修读范围 ═══ -->
 <div class="drawer-backdrop" id="drawer-school-elective-edit-backdrop" onclick="closeSchoolElectiveCourseEditDrawer()"></div>
 <aside class="drawer-panel drawer-school-elective-edit" id="drawer-school-elective-edit">
   <div class="drawer-head">
-    <h3>维护可选范围</h3>
+    <h3>修读范围</h3>
+    <!-- <h3>维护可选范围</h3> -->
     <button class="modal-close" type="button" onclick="closeSchoolElectiveCourseEditDrawer()">×</button>
   </div>
   <div class="drawer-body school-elective-edit-body">
@@ -7262,6 +7369,120 @@
   <div class="drawer-foot">
     <button class="btn btn-ghost" type="button" onclick="closeSchoolElectiveCourseEditDrawer()">取消</button>
     <button class="btn btn-primary" type="button" onclick="saveSchoolElectiveCourseEdit()">保存</button>
+  </div>
+</aside>
+
+<!-- ═══ 抽屉：校选课程 · 开课默认信息（初始化通识开课「修改」字段，不含人数/预留/上限） ═══ -->
+<div class="drawer-backdrop" id="drawer-school-elective-offering-edit-backdrop" onclick="closeSchoolElectiveOfferingSettingsDrawer()"></div>
+<aside class="drawer-panel drawer-ge-offering-edit drawer-school-elective-offering-edit" id="drawer-school-elective-offering-edit">
+  <div class="drawer-head">
+    <h3>修改开课默认信息</h3>
+    <button class="modal-close" type="button" onclick="closeSchoolElectiveOfferingSettingsDrawer()">×</button>
+  </div>
+  <div class="drawer-body offering-edit-drawer-body">
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">课程信息</h4>
+      <p class="form-hint" style="margin:0 0 12px">此处维护加入通识选修开课时的默认教学设置；计划总人数、预留名额与课程名额上限在开课计划中再填。</p>
+      <div class="form-grid-2">
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-course-code">课程号</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-course-code" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-offering-unit">开课单位</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-offering-unit" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item full">
+          <label class="req" for="sec-offering-edit-course-name">课程名称</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-course-name" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-credits">学分</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-credits" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-total-hours">总学时</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-total-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-support-history">Support历史</label>
+          <select class="input input-sm" id="sec-offering-edit-support-history">
+            <option value="N">N</option>
+            <option value="Y">Y</option>
+          </select>
+          <p class="form-hint">该课历史上是否有过 Support（Y/N），供学院开课时参考是否需要申请</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-enrollment-type">选课类型</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-enrollment-type" type="text" readonly tabindex="-1" value="开放选课">
+          <p class="form-hint">通识选修固定为开放选课，名单由选课应用生成</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-is-scheduled">是否排课</label>
+          <select class="input input-sm" id="sec-offering-edit-is-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-is-venue-scheduled">是否排场地</label>
+          <select class="input input-sm" id="sec-offering-edit-is-venue-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-is-attendance">是否考勤（预留）</label>
+          <select class="input input-sm" id="sec-offering-edit-is-attendance">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-is-grade-entry">是否录入成绩（预留）</label>
+          <select class="input input-sm" id="sec-offering-edit-is-grade-entry">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="sec-offering-edit-is-exam-scheduled">是否排考（预留）</label>
+          <select class="input input-sm" id="sec-offering-edit-is-exam-scheduled">
+            <option value="yes">是</option>
+            <option value="no">否</option>
+          </select>
+        </div>
+        <div class="form-item full">
+          <label for="sec-offering-edit-remark">备注</label>
+          <textarea class="input input-sm offering-edit-remark" id="sec-offering-edit-remark" rows="3" placeholder="开课默认备注（加入通识开课时带入）"></textarea>
+        </div>
+      </div>
+    </section>
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">学时分类</h4>
+      <div class="form-grid-2">
+        <div class="form-item">
+          <label class="req">理论学时</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-theory-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req">辅导学时</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-tutorial-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req">实践学时</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-practice-hours" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label class="req">其他学时</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-other-hours" type="text" readonly tabindex="-1">
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeSchoolElectiveOfferingSettingsDrawer()">取消</button>
+    <button class="btn btn-primary" type="button" onclick="saveSchoolElectiveOfferingSettings()">保存</button>
   </div>
 </aside>
 

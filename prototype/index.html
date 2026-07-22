@@ -1649,7 +1649,7 @@
       <div class="alert-info offering-module-hint">
         <p><strong>流程说明</strong></p>
         <ul class="offering-module-hint-list">
-          <li>「通识选修开课」提交安排后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
+          <li>「通识选修开课」提交安排后，本页按开课任务展示；点击<strong>人数</strong>可打开抽屉查看名单，点击「管理名单」进入分组页维护学生。</li>
           <li>通识选修为<strong>开放选课</strong>，默认名单由选课应用生成；本页支持<strong>移除</strong>与<strong>手动添加</strong>学生，无预置批次名单。</li>
           <!-- <li>任务安排提交后，本页按开课任务展示；点击「查看名单」进入分组页，在左侧切换小组查看学生。</li> -->
           <!-- <li>通识选修为<strong>开放选课</strong>，学生名单由选课应用生成，本页<strong>仅支持查看</strong>，不可手工维护名单。</li> -->
@@ -1677,23 +1677,13 @@
       </div>
       <div class="card course-ge-roster-list-card">
         <div class="panel-toolbar course-ge-roster-toolbar">
-          <span class="form-hint">开放选课默认名单由选课应用生成；本页可按小组移除或手动添加学生</span>
+          <span class="form-hint">点击人数打开名单抽屉查看；「管理名单」进入分组页维护。开放选课默认名单由选课应用生成</span>
           <!-- <span class="form-hint">开放选课课程名单由选课应用生成；本页仅供查看各分组当前名单情况</span> -->
         </div>
         <div class="table-scroll">
-          <table class="data-table course-offering-table course-ge-offering-roster-table">
+          <table class="data-table compact course-ge-offering-roster-table">
             <thead><tr id="course-ge-offering-roster-table-head">
-              <th class="col-index">序号</th>
-              <th class="col-center">开课学期</th>
-              <th>课程号</th>
-              <th>课程名称</th>
-              <th class="col-center">小组数</th>
-              <th class="col-center">开课单位</th>
-              <th class="col-center">学分</th>
-              <th class="col-center">总学时</th>
-              <th class="col-center">起止周</th>
-              <th class="col-center">当前名单人数</th>
-              <th class="col-sticky-actions">操作</th>
+              <!-- 表头由 renderCourseGeOfferingRosterTableHeader 动态渲染 -->
             </tr></thead>
             <tbody id="course-ge-offering-roster-body"></tbody>
           </table>
@@ -5682,7 +5672,7 @@
         </div>
         <!-- <div class="section-coordinator-picks" id="support-apply-units"></div> --> <!-- 原平铺勾选列表 -->
       </div>
-      <p class="form-hint">保存后该开课任务将共享给对应 Support 学院，其管理员可在「安排教师」时安排本学院教师。</p>
+      <p class="form-hint">不可选择本课开课单位；保存后任务将共享给所选 Support 学院，其管理员可在「安排教师」时安排本学院教师。</p>
       <!-- <p class="form-hint">已勾选的为当前已申请的 Support 学院；...</p> -->
       <!-- <p class="form-hint section-coordinator-hint" id="support-apply-info"></p> -->
     </div>

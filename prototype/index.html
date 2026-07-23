@@ -1088,13 +1088,13 @@
                     <table class="data-table compact offering-group-student-table">
                       <thead><tr>
                         <th class="col-check"><input type="checkbox" id="ogg-check-all" aria-label="全选" onchange="toggleOfferingGroupingStudentCheckAll(this.checked)"></th>
-                        <th class="col-index">序号</th>
-                        <th>学号</th>
-                        <th>姓名</th>
+                        <th class="col-index col-center">序号</th>
+                        <th class="col-center">学号</th>
+                        <th class="col-center">姓名</th>
                         <th class="col-center">性别</th>
                         <th class="col-center">国籍</th>
                         <th class="col-center">学生类别</th>
-                        <th class="col-center">学院</th>
+                        <!-- <th class="col-center">学院</th> -->
                         <th class="col-center">专业</th>
                         <th class="col-center">入学批次</th>
                         <th>课程班/小组</th>
@@ -1427,7 +1427,7 @@
       <div class="card course-major-roster-list-card">
         <div class="panel-toolbar course-major-roster-toolbar">
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-roster-revert" onclick="revertSelectedMajorOfferingRosterArrangements()" disabled>退回</button>
-          <span class="form-hint">勾选开课任务后可批量退回至「专业开课任务安排」；开放选课课程名单由选课应用生成，不在此维护</span>
+          <span class="form-hint">勾选开课任务后可批量退回至「专业开课任务安排」；「操作记录」可查看字段变更；开放选课课程名单由选课应用生成，不在此维护</span>
         </div>
         <div class="table-scroll">
           <table class="data-table compact course-major-offering-roster-table">
@@ -1563,8 +1563,6 @@
           <span class="mot-style2-step-desc">学时类型 · 任课教师</span>
         </button>
       </nav>
-      <div class="mot-style2-step-hint" id="ge-offering-step-hint" role="status"></div>
-      <div class="legend-bar" id="course-offering-hint-ge"></div>
       <div class="card" id="ge-offering-plan-quota-card" style="margin-bottom:12px">
         <div class="card-head ge-offering-plan-quota-head"
           role="button" tabindex="0" aria-expanded="true" aria-controls="ge-offering-plan-quota-body-wrap"
@@ -4903,12 +4901,12 @@
   </div>
   <div class="drawer-body student-roster-drawer-body">
     <div class="student-roster-query-grid">
-      <div class="form-item">
+      <!-- <div class="form-item">
         <label for="mos-filter-school">学院</label>
         <select class="input input-sm" id="mos-filter-school" onchange="onMajorOfferingStudentRosterSchoolChange()">
           <option value="">全部学院</option>
         </select>
-      </div>
+      </div> -->
       <div class="form-item">
         <label for="mos-filter-prog">专业</label>
         <select class="input input-sm" id="mos-filter-prog">
@@ -4958,9 +4956,9 @@
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="mos-check-all" aria-label="全选" onchange="toggleMajorOfferingStudentRosterCheckAll(this.checked)"></th>
           <th class="col-index">序号</th>
-          <th>学号</th>
-          <th>姓名</th>
-          <th class="col-center">学院</th>
+          <th class="col-center">学号</th>
+          <th class="col-center">姓名</th>
+          <!-- <th class="col-center">学院</th> -->
           <th class="col-center">专业</th>
           <th class="col-center">入学批次</th>
           <th class="col-course-group">课程班/小组</th>
@@ -7082,12 +7080,12 @@
             <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
           </div>
         </div>
-        <div class="ge-offering-scope-stack-row" id="ge-offering-scope-batch-step" hidden>
+        <div class="ge-offering-scope-stack-row" id="ge-offering-scope-batch-step">
           <span class="ge-offering-scope-stack-label">批次</span>
           <div class="input-with-btn school-elective-excluded-programmes-field">
             <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-batches">未细化（该专业全部入学批次）</div>
-            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-batches-btn" onclick="openGeOfferingScopeBatchPickerModal()">选择</button>
-            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-batches-clear-btn" onclick="clearGeOfferingScopeBatchRefinement()">清除</button>
+            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-batches-btn" onclick="openGeOfferingScopeBatchPickerModal()" disabled>选择</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-batches-clear-btn" onclick="clearGeOfferingScopeBatchRefinement()" disabled>清除</button>
           </div>
         </div>
       </div>
@@ -7130,6 +7128,33 @@
   </div>
 </aside>
 <!-- 原 modal-ge-offering-scope / 仅不可选专业+学生类型，已对齐校选全量字段 -->
+
+<!-- ═══ 弹窗：通识选修开课 · 查看修读范围（只读，样式对齐校选查看） ═══ -->
+<div class="modal-overlay" id="modal-ge-offering-scope-view">
+  <div class="modal modal-md school-elective-scope-view-modal">
+    <div class="modal-head">
+      <h3>查看修读范围</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-scope-view')">×</button>
+    </div>
+    <div class="modal-body">
+      <dl class="detail-dl school-elective-scope-view-dl">
+        <dt>课程代码</dt><dd id="ge-offering-scope-view-code">—</dd>
+        <dt>课程名称</dt><dd id="ge-offering-scope-view-name">—</dd>
+        <dt>限制类型</dt><dd id="ge-offering-scope-view-limit-type">—</dd>
+        <dt>专业</dt><dd id="ge-offering-scope-view-programmes">—</dd>
+        <dt>专业批次</dt><dd id="ge-offering-scope-view-batches">—</dd>
+        <dt>不可选年级</dt><dd id="ge-offering-scope-view-years">—</dd>
+        <dt>冲突课程</dt><dd id="ge-offering-scope-view-conflicts">—</dd>
+        <dt>先修课程</dt><dd id="ge-offering-scope-view-prereqs">—</dd>
+        <dt>可选学生类型</dt><dd id="ge-offering-scope-view-student-types">—</dd>
+        <dt>备注信息</dt><dd id="ge-offering-scope-view-remark" class="school-elective-scope-view-remark">—</dd>
+      </dl>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeModal('modal-ge-offering-scope-view')">关闭</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ 弹窗：通识选修开课 · 专业批次细化（按专业看其真实入学批次） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">
@@ -7487,8 +7512,8 @@
       <dl class="detail-dl school-elective-scope-view-dl">
         <dt>课程代码</dt><dd id="school-elective-scope-view-code">—</dd>
         <dt>课程名称</dt><dd id="school-elective-scope-view-name">—</dd>
-        <dt>可选专业</dt><dd id="school-elective-scope-view-eligible">—</dd>
-        <dt>不可选专业</dt><dd id="school-elective-scope-view-excluded">—</dd>
+        <dt>限制类型</dt><dd id="school-elective-scope-view-limit-type">—</dd>
+        <dt>专业</dt><dd id="school-elective-scope-view-programmes">—</dd>
         <dt>不可选年级</dt><dd id="school-elective-scope-view-years">—</dd>
         <dt>冲突课程</dt><dd id="school-elective-scope-view-conflicts">—</dd>
         <dt>先修课程</dt><dd id="school-elective-scope-view-prereqs">—</dd>

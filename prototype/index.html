@@ -701,7 +701,7 @@
             </select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-time-filter-offering">是否开课学期</label>
+            <label for="course-time-filter-offering">默认展示学期</label>
             <select class="input input-sm" id="course-time-filter-offering">
               <option value="">请选择</option>
               <option value="yes">是</option>
@@ -730,7 +730,7 @@
                 <th class="col-center">教学周数<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">状态</th>
                 <th>开课时间范围<span class="th-sort" aria-hidden="true">↕</span></th>
-                <th class="col-center">是否开课学期<span class="th-sort" aria-hidden="true">↕</span></th>
+                <th class="col-center">默认展示学期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <!-- <th>备注<span class="th-sort" aria-hidden="true">↕</span></th> -->
                 <th>操作</th>
               </tr>
@@ -871,10 +871,12 @@
             <label for="course-major-filter-term">学年学期</label>
             <select class="input input-sm" id="course-major-filter-term" onchange="onMajorOfferingTermFilterChange()"></select>
           </div>
+          <!-- 学院筛选项暂隐
           <div class="course-time-query-field">
             <label for="course-major-filter-dept">学院</label>
             <select class="input input-sm" id="course-major-filter-dept" onchange="onMajorOfferingSchoolFilterChange()"><option value="">全部学院</option></select>
           </div>
+          -->
           <div class="course-time-query-field">
             <label for="course-major-filter-prog">专业</label>
             <select class="input input-sm" id="course-major-filter-prog"><option value="">全部专业</option></select>
@@ -1301,40 +1303,40 @@
 
     <!-- ═══ 开课管理 · 专业开课 · 任务安排（样式二：分步引导） ═══ -->
     <section class="page" id="page-course-major-offering-task-style2">
+      <!-- 页头标题 / 副标题暂隐
       <div class="page-header">
         <div>
           <h1>开课安排（样式2）</h1>
-          <!-- <h1>开课安排（样式二）</h1> -->
-          <!-- <h1>专业开课任务安排（样式二）</h1> -->
           <p class="subtitle">分三步完成课程班、其他学院 Support 与师资安排；提交/撤回/退回在各步骤均可操作</p>
         </div>
       </div>
+      -->
       <nav class="mot-style2-step-bar" id="mot-style2-step-bar" aria-label="任务安排步骤">
-        <button type="button" class="mot-style2-step is-active" data-step="1" onclick="goMajorOfferingTaskStyle2Step(1)">
+        <button type="button" class="mot-style2-step is-active" data-step="1" title="设置合班" onclick="goMajorOfferingTaskStyle2Step(1)">
           <span class="mot-style2-step-num">1</span>
           <span class="mot-style2-step-label">课程班</span>
-          <span class="mot-style2-step-desc">设置合班</span>
         </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
-        <button type="button" class="mot-style2-step" data-step="2" onclick="goMajorOfferingTaskStyle2Step(2)">
+        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
+        <button type="button" class="mot-style2-step" data-step="2" title="申请 · 历史 · 详情" onclick="goMajorOfferingTaskStyle2Step(2)">
           <span class="mot-style2-step-num">2</span>
-          <span class="mot-style2-step-label">其他学院Support</span>
-          <span class="mot-style2-step-desc">申请 · 历史 · 详情</span>
+          <span class="mot-style2-step-label">其他学院 Support</span>
         </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
-        <button type="button" class="mot-style2-step" data-step="3" onclick="goMajorOfferingTaskStyle2Step(3)">
+        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
+        <button type="button" class="mot-style2-step" data-step="3" title="学时类型 · 任课教师" onclick="goMajorOfferingTaskStyle2Step(3)">
           <span class="mot-style2-step-num">3</span>
           <span class="mot-style2-step-label">师资安排</span>
-          <span class="mot-style2-step-desc">学时类型 · 任课教师</span>
         </button>
       </nav>
+      <!-- 步骤提示暂隐
       <div class="mot-style2-step-hint" id="mot-style2-step-hint" role="status"></div>
+      -->
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
             <label for="mot-style2-filter-term">学年学期</label>
             <select class="input input-sm" id="mot-style2-filter-term" onchange="onMajorOfferingTaskStyle2TermFilterChange()"></select>
           </div>
+          <!-- 上课学院 / 上课专业筛选项暂隐
           <div class="course-time-query-field">
             <label for="mot-style2-filter-dept">上课学院</label>
             <select class="input input-sm" id="mot-style2-filter-dept" onchange="onMajorOfferingTaskStyle2SchoolFilterChange()"><option value="">全部上课学院</option></select>
@@ -1343,6 +1345,7 @@
             <label for="mot-style2-filter-prog">上课专业</label>
             <select class="input input-sm" id="mot-style2-filter-prog"><option value="">全部上课专业</option></select>
           </div>
+          -->
           <div class="course-time-query-field">
             <label for="mot-style2-filter-name">课程号 / 名称</label>
             <input class="input input-sm" id="mot-style2-filter-name" placeholder="课程号或名称" onkeydown="if(event.key==='Enter'){queryMajorOfferingTaskStyle2List()}">
@@ -1545,22 +1548,19 @@
         </div>
       </div>
       <nav class="mot-style2-step-bar" id="ge-offering-step-bar" aria-label="通识选修开课步骤">
-        <button type="button" class="mot-style2-step is-active" data-step="1" onclick="goGeOfferingPlanStep(1)">
+        <button type="button" class="mot-style2-step is-active" data-step="1" title="添加课程 · 修读范围" onclick="goGeOfferingPlanStep(1)">
           <span class="mot-style2-step-num">1</span>
           <span class="mot-style2-step-label">课程班</span>
-          <span class="mot-style2-step-desc">添加课程 · 修读范围</span>
         </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
-        <button type="button" class="mot-style2-step" data-step="2" onclick="goGeOfferingPlanStep(2)">
+        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
+        <button type="button" class="mot-style2-step" data-step="2" title="申请 · 历史 · 详情" onclick="goGeOfferingPlanStep(2)">
           <span class="mot-style2-step-num">2</span>
-          <span class="mot-style2-step-label">其他学院Support</span>
-          <span class="mot-style2-step-desc">申请 · 历史 · 详情</span>
+          <span class="mot-style2-step-label">其他学院 Support</span>
         </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true">→</span>
-        <button type="button" class="mot-style2-step" data-step="3" onclick="goGeOfferingPlanStep(3)">
+        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
+        <button type="button" class="mot-style2-step" data-step="3" title="学时类型 · 任课教师" onclick="goGeOfferingPlanStep(3)">
           <span class="mot-style2-step-num">3</span>
           <span class="mot-style2-step-label">师资安排</span>
-          <span class="mot-style2-step-desc">学时类型 · 任课教师</span>
         </button>
       </nav>
       <div class="card" id="ge-offering-plan-quota-card" style="margin-bottom:12px">
@@ -7335,13 +7335,7 @@
         <dt>校选类别</dt><dd id="school-elective-edit-ge-category">—</dd>
       </dl>
     </div>
-    <div class="form-item">
-      <label class="req" for="school-elective-edit-status">状态</label>
-      <select class="input input-sm" id="school-elective-edit-status">
-        <option value="active">正常</option>
-        <option value="suspended">停课</option>
-      </select>
-    </div>
+    <!-- 状态、备注信息已迁至「修改开课默认信息」抽屉 -->
     <div class="form-item">
       <label class="req">修读范围</label>
       <div class="input-with-btn school-elective-excluded-programmes-field">
@@ -7375,10 +7369,6 @@
         <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectivePrereqCoursePickerModal()">选择</button>
       </div>
       <p class="form-hint">默认带入课程库先修条件；未修完先修课程的学生不可选本课；未设置表示无此限制。</p>
-    </div>
-    <div class="form-item">
-      <label for="school-elective-edit-remark">备注信息（课程其他要求）</label>
-      <textarea class="input input-sm school-elective-edit-remark" id="school-elective-edit-remark" rows="3" placeholder="选填，维护该门校选课程的补充说明"></textarea>
     </div>
   </div>
   <div class="drawer-foot">
@@ -7433,6 +7423,13 @@
           <p class="form-hint">通识选修固定为开放选课，名单由选课应用生成</p>
         </div>
         <div class="form-item">
+          <label class="req" for="sec-offering-edit-status">状态</label>
+          <select class="input input-sm" id="sec-offering-edit-status">
+            <option value="active">正常</option>
+            <option value="suspended">停课</option>
+          </select>
+        </div>
+        <div class="form-item">
           <label class="req" for="sec-offering-edit-is-scheduled">是否排课</label>
           <select class="input input-sm" id="sec-offering-edit-is-scheduled">
             <option value="yes">是</option>
@@ -7468,8 +7465,8 @@
           </select>
         </div>
         <div class="form-item full">
-          <label for="sec-offering-edit-remark">备注</label>
-          <textarea class="input input-sm offering-edit-remark" id="sec-offering-edit-remark" rows="3" placeholder="开课默认备注（加入通识开课时带入）"></textarea>
+          <label for="sec-offering-edit-remark">备注信息（课程其他要求）</label>
+          <textarea class="input input-sm offering-edit-remark" id="sec-offering-edit-remark" rows="3" placeholder="选填，维护该门校选课程的补充说明"></textarea>
         </div>
       </div>
     </section>
@@ -7542,9 +7539,17 @@
       <div class="school-elective-programme-picker-bar">
         <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(true)">全选</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(false)">清空</button>
+        <button class="btn btn-outline btn-sm" type="button" onclick="initSchoolElectiveProgrammePickerScope()" title="GE：同大类专业不可选（Science 时 MAT 除外）；不限则全开放。ME：仅本学院专业可选">初始化</button>
+        <span class="school-elective-picker-stream-legend" aria-hidden="true">
+          <span class="school-elective-picker-stream school-elective-picker-stream--arts">文</span>
+          <span class="school-elective-picker-stream school-elective-picker-stream--business">商</span>
+          <span class="school-elective-picker-stream school-elective-picker-stream--science">理</span>
+        </span>
       </div>
       <div class="school-elective-programme-picker-tree" id="school-elective-programme-picker-list"></div>
-      <p class="form-hint school-elective-programme-picker-hint" id="school-elective-programme-picker-hint">两边都不选表示全开放；请只维护可选或不可选其一。</p>
+      <p class="school-elective-programme-picker-hint" id="school-elective-programme-picker-hint" role="note">
+        <strong>提示：</strong>两边都不选表示全开放；请只维护可选或不可选其一。
+      </p>
     </div>
     <div class="modal-foot">
       <span class="school-elective-programme-picker-count text-muted" id="school-elective-programme-picker-count">已选 0</span>

@@ -291,6 +291,7 @@ const LIST_SORT_REFRESH = {
   courseSectionChangeLog: () => renderCourseSectionChangeLogPage(),
   majorOfferingStudentRoster: () => renderMajorOfferingStudentRosterDrawer(),
   offeringGroupingStudent: () => renderOfferingGroupingStudentPanel(),
+  offeringGroupStatusAssign: () => renderOfferingGroupingGroupStatusPanel(),
   schoolElectiveCourses: () => renderSchoolElectiveCoursePage(),
   geOfferingAdd: () => renderGeOfferingAddModalPicker()
 };
@@ -364,7 +365,9 @@ const LIST_PAGE_REFRESH = {
   presetRosterGrouping: () => renderPresetRosterGroupingDrawer(),
   majorOfferingStudentRemovalLog: () => renderMajorOfferingStudentRemovalLogDrawer(),
   majorOfferingTeacherPicker: () => renderMajorOfferingTeacherPickerModal(),
-  offeringGroupingGlobalCourse: () => renderOfferingGroupingGlobalCourseList()
+  offeringGroupingGlobalCourse: () => renderOfferingGroupingGlobalCourseList(),
+  teacherCourseConfirmationAdmin: () => refreshTeacherCourseConfirmationViews(),
+  teacherCourseConfirmationPortal: () => renderTeacherCourseConfirmationPortalPage()
 };
 
 function goListPage(listKey, page) {
@@ -6084,49 +6087,6 @@ function normalizeOfferingGroupCapacityLimits(sec, { fillToPlanned = false } = {
   sec.isGrouped = sec.groups.length > 0;
 }
 
-function buildDemoOfferingGroupRemarks(sec, count) {
-  const n = Math.max(1, Number(count) || 1);
-  const metas = getSectionLineMetas(sec);
-  const fallback = [
-    '请优先放入 ACC 专业学生',
-    '请优先放入 FIN 专业学生',
-    '请优先放入 CHS / IBU 专业学生；可少量接收旁听',
-    '本小组按入学批次混排，注意人数上限'
-  ];
-  if (!metas.length) {
-    return Array.from({ length: n }, (_, i) => fallback[i] || `Group${i + 1}：请按专业批次分配学生`);
-  }
-  if (metas.length === 1) {
-    const code = metas[0].programmeCode || '本';
-    const batch = metas[0].batchLabel || '';
-    return Array.from({ length: n }, (_, i) => {
-      if (i === 0) return `请优先放入 ${code} 专业学生${batch ? `（${batch}）` : ''}`;
-      if (i === 1) return `本小组接收 ${code} 专业溢出及旁听学生`;
-      return `Group${i + 1}：容量缓冲组，优先补录 ${code} 专业学生`;
-    });
-  }
-  return Array.from({ length: n }, (_, i) => {
-    const assigned = metas.filter((_, mi) => mi % n === i);
-    const codes = [...new Set(assigned.map(m => m.programmeCode).filter(Boolean))];
-    if (codes.length === 1) return `请优先放入 ${codes[0]} 专业学生`;
-    if (codes.length > 1) return `请优先放入 ${codes.join(' / ')} 专业学生`;
-    return fallback[i] || `Group${i + 1}：请按专业批次分配学生`;
-  });
-}
-
-function ensureDemoOfferingGroupRemarks(sec) {
-  if (!sec?.groups?.length) return false;
-  // 仅展示课 / 演示分组：为空备注补样例，避免覆盖用户已填写内容
-  if (!sec.showcaseDemo && !sec._demoGroupsSeeded) return false;
-  const needFill = sec.groups.some(g => !(String(g.remark || '').trim()));
-  if (!needFill) return false;
-  const remarks = buildDemoOfferingGroupRemarks(sec, sec.groups.length);
-  sec.groups.forEach((g, i) => {
-    if (!(String(g.remark || '').trim())) g.remark = remarks[i] || '';
-  });
-  return true;
-}
-
 function seedDemoOfferingGroups(sec) {
   if (!sec || sec.groups?.length) return;
   const metas = getSectionLineMetas(sec);
@@ -6136,14 +6096,13 @@ function seedDemoOfferingGroups(sec) {
     || (metas.length ? metas.reduce((sum, meta) => sum + (getLineEstimatedStudents(meta.lineId) || 0), 0) : 0)
     || 60;
   const batchLabel = metas.length === 1 ? (metas[0].batchLabel || '') : '';
-  const remarks = buildDemoOfferingGroupRemarks(sec, 1);
   sec.groups = [{
     id: `grp-${offeringGroupSeq++}`,
     name: buildDefaultOfferingGroupName(1),
     // name: batchLabel || '小组01', // 原默认批次名，改 Group1/Group2...
     batchLabel,
     lineId: metas.length === 1 ? metas[0].lineId : '',
-    remark: remarks[0] || '',
+    remark: '',
     capacityLimit: defaultLimit,
     studentCount: 0
   }];
@@ -6159,7 +6118,6 @@ function seedDemoOfferingGroupsMulti(sec, groupCount = 2, { force = false } = {}
   const count = Math.max(1, Math.min(groupCount, 4));
   const batchLabel = metas.length === 1 ? (metas[0].batchLabel || '') : '';
   const groupLimits = splitSectionGroupCapacityLimits(sec, count);
-  const remarks = buildDemoOfferingGroupRemarks(sec, count);
   // const totalLimit = sec.estimatedStudents ... // 原按预估人数均分，可能超过课程人数上限
   // const perGroup = Math.max(20, Math.ceil(totalLimit / count));
   sec.groups = [];
@@ -6172,7 +6130,7 @@ function seedDemoOfferingGroupsMulti(sec, groupCount = 2, { force = false } = {}
       // name: count === 1 ? (groupBatchLabel || '小组01') : ... // 原默认批次/小组序号名
       batchLabel: groupBatchLabel,
       lineId: meta?.lineId || (metas.length === 1 && i === 0 ? metas[0].lineId : ''),
-      remark: remarks[i] || '',
+      remark: '',
       capacityLimit: groupLimits[i] || groupLimits[groupLimits.length - 1] || 20,
       // capacityLimit: isLast ? Math.max(20, totalLimit - perGroup * (count - 1)) : perGroup, // 原可能累计超上限
       studentCount: 0
@@ -6214,7 +6172,15 @@ function seedCompleteDemoOfferingGroupAssignments(sec, { hourMode = 'merged' } =
   const useMerged = hourMode !== 'classified';
 
   function teacherAt(idx, opts = {}) {
-    const t = pool[idx % pool.length];
+    // 优先取本课开课单位教师，避免演示师资落在外院后无法在选择器中出现
+    const offeringUnit = resolveSectionOfferingUnitForTeacherPicker(sec)
+      || resolveMajorOfferingSectionOfferingUnit(sec)
+      || '';
+    const unitPool = offeringUnit
+      ? pool.filter(t => t.departmentCode === offeringUnit)
+      : [];
+    const src = unitPool.length ? unitPool : pool;
+    const t = src[idx % src.length];
     const teacher = {
       staffId: t.staffId,
       name: t.name,
@@ -6413,7 +6379,7 @@ function seedMajorOfferingDemoTaskLayout() {
 }
 
 /** 演示：MPU3113 / OCE101 / MAT101 / CME440·CME441(论文课)；每课最多 2～3 专业批次 */
-const MAJOR_OFFERING_SHOWCASE_DEMO_VERSION = 'v5';
+const MAJOR_OFFERING_SHOWCASE_DEMO_VERSION = 'v7';
 const MAJOR_OFFERING_SHOWCASE_CATALOG_IDS = new Set(['mpu3113', 'oce101', 'mat101', 'cme440', 'cme441']);
 /** 演示数据上限：每门课最多 2～3 个专业批次；列表课程门数也控制 */
 const MAJOR_OFFERING_DEMO_MAX_BATCHES_PER_COURSE = 3;
@@ -6429,6 +6395,11 @@ const MAJOR_OFFERING_SHOWCASE_BATCH_SPECS = [
     ],
     merge: true,
     groupCount: 2,
+    // 仅 MPU3113 写死样例备注；其它课不自动生成
+    groupRemarks: [
+      '请优先放入 FIN 专业学生（FIN-2024/09）',
+      '请优先放入 ACC / CHS 专业学生（ACC-2024/09、CHS-2025/09）'
+    ],
     hourMode: 'merged',
     enrollmentType: 'open'
   },
@@ -6547,6 +6518,11 @@ function seedMajorOfferingShowcaseDemoIntoStore() {
       sec.showcaseDemo = true;
       if (spec.groupCount > 0) {
         seedDemoOfferingGroupsMulti(sec, spec.groupCount, { force: true });
+        if (Array.isArray(spec.groupRemarks) && spec.groupRemarks.length) {
+          (sec.groups || []).forEach((g, i) => {
+            g.remark = spec.groupRemarks[i] || '';
+          });
+        }
         seedCompleteDemoOfferingGroupAssignments(sec, { hourMode: spec.hourMode || 'merged' });
       }
       // 任务安排状态仍为草稿（教师学时已预置，须用户在任务页批量提交）
@@ -12960,8 +12936,2113 @@ function tryBootstrapSectionChangeLogPopup() {
   return true;
 }
 
+// ── 授课教师确认（系统内；非邮件） ──
+const TEACHER_COURSE_CONFIRMATION_BY_TERM = {};
+const TEACHER_COURSE_CONFIRMATION_DEMO_VERSION = 'v3';
+let teacherCourseConfirmationFocusStaffId = '';
+let teacherCourseConfirmationPortalTeacherId = '';
+/** 教师端 Tab：pending=待确认，history=历史 */
+let teacherCourseConfirmationPortalTab = 'pending';
+/** 教师端当前筛选开课学期（默认当前开课学期） */
+let teacherCourseConfirmationPortalTermCode = '';
+/** 管理端当前操作学院（仅可查看/下发本院教师；全部=所有学院） */
+let teacherCourseConfirmationAdminCollege = '';
+/** 管理端当前筛选开课学期（默认当前开课学期） */
+let teacherCourseConfirmationAdminTermCode = '';
+/** 管理端检索：教师名 / 工号 / 课程号 */
+let teacherCourseConfirmationAdminNameQuery = '';
+let teacherCourseConfirmationAdminStaffIdQuery = '';
+let teacherCourseConfirmationAdminCourseCodeQuery = '';
+/** 教师端决策弹窗：指定课程班（行内「授课确认」）；为空则按勾选/全部待确认 */
+let teacherCourseConfirmationDecisionSectionIds = null;
+/** 开课任务「管理」弹窗：当前课程班 sectionId */
+let teacherCourseConfirmationSectionManageSectionId = '';
+
+const TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL = '__all__';
+
+function getTeacherCourseConfirmationCollegeCodes() {
+  return [...(typeof OFFERING_UNIT_CODES !== 'undefined' ? OFFERING_UNIT_CODES : SCHOOL_CODES || [])].sort();
+}
+
+function getTeacherCourseConfirmationAdminTermCodes() {
+  return [...new Set((typeof COURSE_TIME_SETTINGS !== 'undefined' ? COURSE_TIME_SETTINGS : [])
+    .map(r => r?.termCode)
+    .filter(Boolean))].sort();
+}
+
+function resolveTeacherCourseConfirmationAdminTermCode() {
+  const codes = getTeacherCourseConfirmationAdminTermCodes();
+  if (teacherCourseConfirmationAdminTermCode && codes.includes(teacherCourseConfirmationAdminTermCode)) {
+    return teacherCourseConfirmationAdminTermCode;
+  }
+  const fallback = getDefaultOfferingTermCode() || codes[codes.length - 1] || '';
+  teacherCourseConfirmationAdminTermCode = fallback;
+  return fallback;
+}
+
+function onTeacherCourseConfirmationAdminTermChange(value) {
+  teacherCourseConfirmationAdminTermCode = String(value || '').trim();
+  teacherCourseConfirmationFocusStaffId = '';
+  resetListPage('teacherCourseConfirmationAdmin');
+  refreshTeacherCourseConfirmationViews();
+}
+
+function queryTeacherCourseConfirmationAdminList() {
+  teacherCourseConfirmationAdminNameQuery = document.getElementById('tcc-admin-name-input')?.value || '';
+  teacherCourseConfirmationAdminStaffIdQuery = document.getElementById('tcc-admin-staff-id-input')?.value || '';
+  teacherCourseConfirmationAdminCourseCodeQuery = document.getElementById('tcc-admin-course-code-input')?.value || '';
+  const termEl = document.getElementById('tcc-admin-term-select');
+  const collegeEl = document.getElementById('tcc-admin-college-select');
+  if (termEl) teacherCourseConfirmationAdminTermCode = String(termEl.value || '').trim();
+  if (collegeEl) {
+    const next = String(collegeEl.value || '').trim();
+    teacherCourseConfirmationAdminCollege = next === TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
+      ? TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
+      : next;
+  }
+  teacherCourseConfirmationFocusStaffId = '';
+  resetListPage('teacherCourseConfirmationAdmin');
+  refreshTeacherCourseConfirmationViews();
+}
+
+function resetTeacherCourseConfirmationAdminFilters() {
+  teacherCourseConfirmationAdminNameQuery = '';
+  teacherCourseConfirmationAdminStaffIdQuery = '';
+  teacherCourseConfirmationAdminCourseCodeQuery = '';
+  teacherCourseConfirmationAdminCollege = TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL;
+  teacherCourseConfirmationFocusStaffId = '';
+  const codes = getTeacherCourseConfirmationAdminTermCodes();
+  teacherCourseConfirmationAdminTermCode = getDefaultOfferingTermCode() || codes[codes.length - 1] || '';
+  resetListPage('teacherCourseConfirmationAdmin');
+  refreshTeacherCourseConfirmationViews();
+}
+
+function restoreTeacherCourseConfirmationAdminSearchFocus(inputId) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const len = el.value.length;
+  el.focus();
+  try { el.setSelectionRange(len, len); } catch (_) { /* ignore */ }
+}
+
+function filterTeacherCourseConfirmationAdminRows(rows) {
+  const nameQ = teacherCourseConfirmationAdminNameQuery.trim().toLowerCase();
+  const idQ = teacherCourseConfirmationAdminStaffIdQuery.trim().toLowerCase();
+  const codeQ = teacherCourseConfirmationAdminCourseCodeQuery.trim().toLowerCase();
+  if (!nameQ && !idQ && !codeQ) return rows || [];
+  return (rows || []).filter(row => {
+    const teacherName = String(row.teacherName || row.name || '').toLowerCase();
+    const staffId = String(row.staffId || '').toLowerCase();
+    const courseCode = String(row.code || '').toLowerCase();
+    if (nameQ && !teacherName.includes(nameQ)) return false;
+    if (idQ && !staffId.includes(idQ)) return false;
+    if (codeQ && !courseCode.includes(codeQ)) return false;
+    return true;
+  });
+}
+
+function resolveTeacherCourseConfirmationPortalTermCode() {
+  const codes = getTeacherCourseConfirmationAdminTermCodes();
+  if (teacherCourseConfirmationPortalTermCode && codes.includes(teacherCourseConfirmationPortalTermCode)) {
+    return teacherCourseConfirmationPortalTermCode;
+  }
+  const fallback = getDefaultOfferingTermCode() || codes[codes.length - 1] || '';
+  teacherCourseConfirmationPortalTermCode = fallback;
+  return fallback;
+}
+
+function onTeacherCourseConfirmationPortalTermChange(value) {
+  teacherCourseConfirmationPortalTermCode = String(value || '').trim();
+  teacherCourseConfirmationPortalTab = '';
+  resetListPage('teacherCourseConfirmationPortal');
+  renderTeacherCourseConfirmationPortalPage();
+}
+
+function getTeacherDepartmentCode(staffId) {
+  const id = String(staffId || '').trim();
+  if (!id) return '';
+  const fromPool = buildMockTeacherPickerPool().find(t => t.staffId === id);
+  if (fromPool?.departmentCode) return fromPool.departmentCode;
+  const term = resolveTeacherCourseConfirmationTermCode();
+  for (const sec of getOfferingSectionsForTerm(term)) {
+    const hit = collectSectionAssignTeachers(sec).find(t => t.staffId === id);
+    if (hit?.departmentCode) return hit.departmentCode;
+  }
+  return '';
+}
+
+function resolveTeacherCourseConfirmationAdminCollege() {
+  const codes = getTeacherCourseConfirmationCollegeCodes();
+  if (teacherCourseConfirmationAdminCollege === TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL) {
+    return TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL;
+  }
+  if (teacherCourseConfirmationAdminCollege && codes.includes(teacherCourseConfirmationAdminCollege)) {
+    return teacherCourseConfirmationAdminCollege;
+  }
+  const sec = typeof getOfferingGroupingSection === 'function' ? getOfferingGroupingSection() : null;
+  const fromSec = sec ? resolveMajorOfferingSectionOfferingUnit(sec) : '';
+  if (fromSec && codes.includes(fromSec)) {
+    teacherCourseConfirmationAdminCollege = fromSec;
+    return fromSec;
+  }
+  const focusDept = teacherCourseConfirmationFocusStaffId
+    ? getTeacherDepartmentCode(teacherCourseConfirmationFocusStaffId)
+    : '';
+  if (focusDept && codes.includes(focusDept)) {
+    teacherCourseConfirmationAdminCollege = focusDept;
+    return focusDept;
+  }
+  teacherCourseConfirmationAdminCollege = codes[0] || TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL;
+  return teacherCourseConfirmationAdminCollege;
+}
+
+function isTeacherCourseConfirmationAdminCollegeAll(collegeCode = resolveTeacherCourseConfirmationAdminCollege()) {
+  return collegeCode === TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL || collegeCode == null || collegeCode === '';
+}
+
+function isTeacherInCourseConfirmationAdminCollege(staffId, collegeCode = resolveTeacherCourseConfirmationAdminCollege()) {
+  if (!staffId) return false;
+  if (isTeacherCourseConfirmationAdminCollegeAll(collegeCode)) return true;
+  return getTeacherDepartmentCode(staffId) === collegeCode;
+}
+
+function assertTeacherCourseConfirmationAdminScope(staffId) {
+  const college = resolveTeacherCourseConfirmationAdminCollege();
+  if (isTeacherInCourseConfirmationAdminCollege(staffId, college)) return true;
+  alert(`仅可对本院（${college || '—'}）教师下发或代确认授课确认。`);
+  return false;
+}
+
+function onTeacherCourseConfirmationAdminCollegeChange(value) {
+  const next = String(value || '').trim();
+  teacherCourseConfirmationAdminCollege = next === TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
+    ? TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
+    : next;
+  teacherCourseConfirmationFocusStaffId = '';
+  resetListPage('teacherCourseConfirmationAdmin');
+  refreshTeacherCourseConfirmationViews();
+}
+
+function ensureTeacherCourseConfirmationTermStore(termCode) {
+  const code = String(termCode || '').trim();
+  if (!code) return null;
+  if (!TEACHER_COURSE_CONFIRMATION_BY_TERM[code]) {
+    TEACHER_COURSE_CONFIRMATION_BY_TERM[code] = { packages: {}, demoVersion: null };
+  }
+  return TEACHER_COURSE_CONFIRMATION_BY_TERM[code];
+}
+
+function resolveTeacherCourseConfirmationTermCode() {
+  const sec = typeof getOfferingGroupingSection === 'function' ? getOfferingGroupingSection() : null;
+  const fromSec = sec ? resolveSectionOfferingTermCode(sec) : '';
+  if (fromSec) return fromSec;
+  if (typeof getMajorOfferingOfferingTermCode === 'function') {
+    const major = getMajorOfferingOfferingTermCode();
+    if (major) return major;
+  }
+  return getDefaultOfferingTermCode() || '';
+}
+
+function getTeacherCourseConfirmationPackage(teacherId, termCode) {
+  const id = String(teacherId || '').trim();
+  const term = String(termCode || '').trim();
+  if (!id || !term) return null;
+  const store = ensureTeacherCourseConfirmationTermStore(term);
+  return store?.packages?.[id] || null;
+}
+
+function ensureTeacherCourseConfirmationPackage(teacherId, termCode) {
+  const id = String(teacherId || '').trim();
+  const term = String(termCode || '').trim();
+  if (!id || !term) return null;
+  const store = ensureTeacherCourseConfirmationTermStore(term);
+  if (!store) return null;
+  if (!store.packages[id]) {
+    store.packages[id] = {
+      teacherId: id,
+      teacherName: resolveOfferingTeacherDisplayName(id),
+      termCode: term,
+      status: 'draft',
+      confirmedBy: null,
+      confirmedAt: null,
+      proxyBy: null,
+      snapshotHash: '',
+      rows: [],
+      sectionStates: {},
+      feedback: '',
+      history: []
+    };
+  }
+  if (!store.packages[id].sectionStates || typeof store.packages[id].sectionStates !== 'object') {
+    store.packages[id].sectionStates = {};
+  }
+  return store.packages[id];
+}
+
+function ensureTeacherCourseConfirmationSectionStates(pkg) {
+  if (!pkg) return {};
+  if (!pkg.sectionStates || typeof pkg.sectionStates !== 'object') pkg.sectionStates = {};
+  return pkg.sectionStates;
+}
+
+/** 旧版整包状态迁移为按课程班状态（仅在尚无 sectionStates 时） */
+function migrateTeacherCourseConfirmationPackageSectionStates(pkg) {
+  if (!pkg) return;
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  if (Object.keys(states).length) return;
+  if (!pkg.status || pkg.status === 'draft' || !pkg.rows?.length) return;
+  const mapped = pkg.status === 'confirmed' && pkg.confirmedBy === 'admin-proxy'
+    ? 'admin-proxy'
+    : pkg.status;
+  pkg.rows.forEach(row => {
+    if (!row?.sectionId) return;
+    states[row.sectionId] = {
+      status: mapped,
+      confirmedBy: pkg.confirmedBy || null,
+      confirmedAt: pkg.confirmedAt || null,
+      proxyBy: pkg.proxyBy || null,
+      feedback: pkg.feedback || '',
+      snapshotHash: computeTeacherCourseConfirmationSnapshotHash([row])
+    };
+  });
+}
+
+function getTeacherCourseConfirmationSectionState(pkg, sectionId) {
+  if (!pkg || !sectionId) return { status: 'draft' };
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  return ensureTeacherCourseConfirmationSectionStates(pkg)[sectionId] || { status: 'draft' };
+}
+
+function isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sectionId) {
+  if (!pkg || !sectionId) return false;
+  const st = getTeacherCourseConfirmationSectionState(pkg, sectionId);
+  if (!st?.snapshotHash) return false;
+  const live = buildTeacherCourseConfirmationRows(pkg.teacherId, pkg.termCode)
+    .find(r => r.sectionId === sectionId);
+  if (!live) return false;
+  return st.snapshotHash === computeTeacherCourseConfirmationSnapshotHash([live]);
+}
+
+function getTeacherCourseConfirmationSectionStatus(staffId, termCode, sectionId, pkg) {
+  const p = pkg || getTeacherCourseConfirmationPackage(staffId, termCode);
+  if (!p || !sectionId) return 'draft';
+  const st = getTeacherCourseConfirmationSectionState(p, sectionId);
+  const status = st.status || 'draft';
+  if ((status === 'confirmed' || status === 'admin-proxy') && !isTeacherCourseConfirmationSectionSnapshotCurrent(p, sectionId)) {
+    return 'pending';
+  }
+  return status;
+}
+
+function recomputeTeacherCourseConfirmationPackageStatus(pkg) {
+  if (!pkg) return;
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const states = Object.values(ensureTeacherCourseConfirmationSectionStates(pkg)).map(s => s.status || 'draft');
+  if (!states.length) {
+    pkg.status = 'draft';
+    pkg.confirmedBy = null;
+    pkg.confirmedAt = null;
+    pkg.proxyBy = null;
+    return;
+  }
+  if (states.some(s => s === 'pending')) {
+    pkg.status = 'pending';
+    return;
+  }
+  if (states.some(s => s === 'disagreed')) {
+    pkg.status = 'disagreed';
+    const hit = Object.values(pkg.sectionStates).find(s => s.status === 'disagreed');
+    pkg.feedback = hit?.feedback || pkg.feedback || '';
+    return;
+  }
+  if (states.every(s => s === 'confirmed' || s === 'admin-proxy')) {
+    pkg.status = 'confirmed';
+    const first = Object.values(pkg.sectionStates)[0];
+    pkg.confirmedBy = first?.confirmedBy || null;
+    pkg.confirmedAt = first?.confirmedAt || null;
+    pkg.proxyBy = first?.proxyBy || null;
+    return;
+  }
+  if (states.some(s => s === 'confirmed' || s === 'admin-proxy')) {
+    pkg.status = 'confirmed';
+    return;
+  }
+  pkg.status = 'draft';
+}
+
+function countTeacherConfirmationLectureLabGroups(staffId, sec) {
+  let lecture = 0;
+  let lab = 0;
+  (sec?.groupAssignments || []).forEach(row => {
+    if (!getGroupAssignTeachers(row).some(t => t?.staffId === staffId)) return;
+    const ht = String(getGroupAssignHourTypeDisplayLabel(sec, row.hourType) || row.hourType || '').toLowerCase();
+    const isLecture = ht.includes('lecture') || ht.includes('理论') || ht === 'l';
+    if (isLecture) lecture += 1;
+    else lab += 1;
+  });
+  return { lectureGroups: lecture || (lab ? 0 : 1), labGroups: lab };
+}
+
+function computeTeacherWeeklyHoursOnSection(staffId, sec) {
+  if (!staffId || !sec) return 0;
+  let sum = 0;
+  (sec.groupAssignments || []).forEach(row => {
+    if (!getGroupAssignTeachers(row).some(t => t?.staffId === staffId)) return;
+    const weekly = Number(row.weeklyHours) || 0;
+    if (weekly <= 0) return;
+    if (row.simultaneousGroups) sum += weekly;
+    else sum += weekly * Math.max(1, getGroupAssignRowGroupIds(row).length);
+  });
+  return sum;
+}
+
+function countTeacherConfirmationResponsibleGroups(staffId, sec) {
+  const { lectureGroups, labGroups } = countTeacherConfirmationLectureLabGroups(staffId, sec);
+  return (Number(lectureGroups) || 0) + (Number(labGroups) || 0);
+}
+
+function resolveTeacherConfirmationWeekRange(sec) {
+  if (!sec) return '—';
+  if (typeof getSectionWeekRangeDisplay === 'function') {
+    const range = getSectionWeekRangeDisplay(sec);
+    if (range) return range;
+  }
+  const weeks = typeof getSectionSelectedWeeks === 'function'
+    ? getSectionSelectedWeeks(sec)
+    : parseWeekRangeToWeeks(sec.weekRange || sec.weeks, getSectionTermTeachingWeeks(sec));
+  if (weeks?.length) {
+    return typeof formatWeeksSegmentDisplay === 'function'
+      ? formatWeeksSegmentDisplay(weeks)
+      : `${weeks[0]}-${weeks[weeks.length - 1]}`;
+  }
+  return String(sec.weekRange || sec.weeks || '').trim() || '—';
+}
+
+function buildTeacherCourseConfirmationRows(teacherId, termCode) {
+  const id = String(teacherId || '').trim();
+  const term = String(termCode || '').trim();
+  if (!id || !term) return [];
+  return getOfferingSectionsForTerm(term)
+    .filter(sec => sec?.offeringType === 'major' && sec.submitStatus === 'submitted')
+    .filter(sec => collectSectionAssignTeachers(sec).some(t => t.staffId === id))
+    .map(sec => {
+      const others = collectSectionAssignTeachers(sec)
+        .filter(t => t.staffId !== id)
+        .map(t => t.name || t.staffId)
+        .filter(Boolean);
+      const groupCount = countTeacherConfirmationResponsibleGroups(id, sec);
+      const coord = getSectionCoordinator(sec);
+      return {
+        sectionId: sec.id,
+        code: sec.code || '—',
+        name: sec.name || '—',
+        classification: getOfferingSectionCategoryDisplay(sec),
+        credits: sec.credits ?? '—',
+        weekRange: resolveTeacherConfirmationWeekRange(sec),
+        groupCount,
+        totalStudentNo: getSectionCapacityLimit(sec),
+        weeklyHours: computeTeacherWeeklyHoursOnSection(id, sec),
+        coordinatorName: coord?.name || '—',
+        coTeachingStaff: others.length ? others.join('、') : '—'
+      };
+    })
+    .sort((a, b) => String(a.code).localeCompare(String(b.code), 'zh'));
+}
+
+function computeTeacherCourseConfirmationSnapshotHash(rows) {
+  return JSON.stringify(rows || []);
+}
+
+function syncTeacherCourseConfirmationPackageRows(teacherId, termCode) {
+  const pkg = ensureTeacherCourseConfirmationPackage(teacherId, termCode);
+  if (!pkg) return null;
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const rows = buildTeacherCourseConfirmationRows(teacherId, termCode);
+  pkg.teacherName = resolveOfferingTeacherDisplayName(teacherId, pkg.teacherName);
+  pkg.rows = rows;
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  if (!rows.length) {
+    pkg.sectionStates = {};
+    recomputeTeacherCourseConfirmationPackageStatus(pkg);
+    pkg.snapshotHash = '';
+    return pkg;
+  }
+  const liveIds = new Set(rows.map(r => r.sectionId).filter(Boolean));
+  Object.keys(states).forEach(sid => {
+    if (!liveIds.has(sid)) {
+      delete states[sid];
+      return;
+    }
+    const st = states[sid];
+    if (!st) return;
+    if ((st.status === 'confirmed' || st.status === 'admin-proxy')
+      && !isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sid)) {
+      st.status = 'pending';
+      st.confirmedBy = null;
+      st.confirmedAt = null;
+      st.proxyBy = null;
+  pushTeacherCourseConfirmationHistory(pkg, {
+    type: 'invalidated',
+    reason: 'arrangement-changed',
+    operator: '系统',
+    sectionIds: [sid]
+  });
+    }
+  });
+  recomputeTeacherCourseConfirmationPackageStatus(pkg);
+  pkg.snapshotHash = computeTeacherCourseConfirmationSnapshotHash(rows);
+  return pkg;
+}
+
+function isTeacherCourseConfirmationSnapshotCurrent(pkg) {
+  if (!pkg) return false;
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  const pendingIds = Object.keys(states).filter(id => states[id]?.status === 'pending');
+  if (pendingIds.length) {
+    return pendingIds.every(id => isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, id));
+  }
+  const rows = buildTeacherCourseConfirmationRows(pkg.teacherId, pkg.termCode);
+  return computeTeacherCourseConfirmationSnapshotHash(rows) === computeTeacherCourseConfirmationSnapshotHash(pkg.rows);
+}
+
+function pushTeacherCourseConfirmationHistory(pkg, entry) {
+  if (!pkg) return;
+  if (!Array.isArray(pkg.history)) pkg.history = [];
+  pkg.history.push({ at: new Date().toISOString(), ...entry });
+}
+
+function normalizeTeacherCourseConfirmationSectionIds(sectionIds, rows) {
+  if (sectionIds == null) return null;
+  const idSet = new Set((Array.isArray(sectionIds) ? sectionIds : [sectionIds]).map(String).filter(Boolean));
+  if (!idSet.size) return [];
+  return (rows || []).filter(r => idSet.has(String(r.sectionId)));
+}
+
+function issueTeacherCourseConfirmation(teacherId, termCode, { reissue = false, quiet = false, sectionIds = null } = {}) {
+  const pkg = syncTeacherCourseConfirmationPackageRows(teacherId, termCode);
+  if (!pkg?.rows?.length) {
+    if (!quiet) alert('该教师本学期暂无专业开课授课安排，无法下发确认。');
+    return false;
+  }
+  const rows = buildTeacherCourseConfirmationRows(teacherId, termCode);
+  pkg.rows = rows;
+  const targets = sectionIds == null
+    ? rows
+    : normalizeTeacherCourseConfirmationSectionIds(sectionIds, rows);
+  if (!targets.length) {
+    if (!quiet) alert('未找到可下发的课程。');
+    return false;
+  }
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  targets.forEach(row => {
+    states[row.sectionId] = {
+      status: 'pending',
+      confirmedBy: null,
+      confirmedAt: null,
+      proxyBy: null,
+      feedback: '',
+      snapshotHash: computeTeacherCourseConfirmationSnapshotHash([row])
+    };
+  });
+  recomputeTeacherCourseConfirmationPackageStatus(pkg);
+  pkg.snapshotHash = computeTeacherCourseConfirmationSnapshotHash(rows);
+  pushTeacherCourseConfirmationHistory(pkg, {
+    type: reissue ? 'reissued' : 'issued',
+    by: 'admin',
+    operator: '教务管理员',
+    sectionIds: targets.map(r => r.sectionId),
+    courseCodes: targets.map(r => r.code)
+  });
+  return true;
+}
+
+function confirmTeacherCourseConfirmation(teacherId, termCode, {
+  by = 'teacher',
+  proxyBy = '',
+  quiet = false,
+  sectionIds = null
+} = {}) {
+  const pkg = getTeacherCourseConfirmationPackage(teacherId, termCode)
+    || syncTeacherCourseConfirmationPackageRows(teacherId, termCode);
+  if (!pkg) {
+    if (!quiet) alert('当前无可确认的授课安排任务。');
+    return false;
+  }
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  const candidateIds = sectionIds == null
+    ? Object.keys(states).filter(id => states[id]?.status === 'pending')
+    : (Array.isArray(sectionIds) ? sectionIds : [sectionIds]).map(String).filter(Boolean);
+  const targets = candidateIds.filter(id => states[id]?.status === 'pending');
+  if (!targets.length) {
+    if (!quiet) alert('当前无可确认的授课安排任务。');
+    return false;
+  }
+  for (const sid of targets) {
+    if (!isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sid)) {
+      if (!quiet) alert('授课安排已变更，请教务重新下发确认后再操作。');
+      return false;
+    }
+  }
+  const now = new Date().toISOString();
+  const confirmedBy = by === 'admin-proxy' ? 'admin-proxy' : 'teacher';
+  const liveRows = buildTeacherCourseConfirmationRows(teacherId, termCode);
+  targets.forEach(sid => {
+    const row = (pkg.rows || []).find(r => r.sectionId === sid)
+      || liveRows.find(r => r.sectionId === sid);
+    states[sid] = {
+      status: confirmedBy === 'admin-proxy' ? 'admin-proxy' : 'confirmed',
+      confirmedBy,
+      confirmedAt: now,
+      proxyBy: by === 'admin-proxy' ? (proxyBy || '教务管理员') : null,
+      feedback: '',
+      snapshotHash: row
+        ? computeTeacherCourseConfirmationSnapshotHash([row])
+        : (states[sid]?.snapshotHash || '')
+    };
+  });
+  recomputeTeacherCourseConfirmationPackageStatus(pkg);
+  pushTeacherCourseConfirmationHistory(pkg, {
+    type: 'confirmed',
+    confirmedBy,
+    proxyBy: by === 'admin-proxy' ? (proxyBy || '教务管理员') : null,
+    operator: by === 'admin-proxy'
+      ? (proxyBy || '教务管理员')
+      : (pkg.teacherName || resolveOfferingTeacherDisplayName(teacherId) || '教师'),
+    sectionIds: targets,
+    courseCodes: targets.map(sid => {
+      const row = (pkg.rows || []).find(r => r.sectionId === sid)
+        || liveRows.find(r => r.sectionId === sid);
+      return row?.code || sid;
+    })
+  });
+  return true;
+}
+
+function disagreeTeacherCourseConfirmation(teacherId, termCode, feedback, { sectionIds = null } = {}) {
+  const text = String(feedback || '').trim();
+  if (!text) {
+    alert('请填写不同意原因或诉求。');
+    return false;
+  }
+  const pkg = getTeacherCourseConfirmationPackage(teacherId, termCode);
+  if (!pkg) {
+    alert('当前无可操作的授课确认任务。');
+    return false;
+  }
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  const candidateIds = sectionIds == null
+    ? Object.keys(states).filter(id => states[id]?.status === 'pending')
+    : (Array.isArray(sectionIds) ? sectionIds : [sectionIds]).map(String).filter(Boolean);
+  const targets = candidateIds.filter(id => states[id]?.status === 'pending');
+  if (!targets.length) {
+    alert('当前无可操作的授课确认任务。');
+    return false;
+  }
+  targets.forEach(sid => {
+    const prev = states[sid] || {};
+    states[sid] = {
+      status: 'disagreed',
+      confirmedBy: null,
+      confirmedAt: null,
+      proxyBy: null,
+      feedback: text,
+      snapshotHash: prev.snapshotHash || ''
+    };
+  });
+  recomputeTeacherCourseConfirmationPackageStatus(pkg);
+  pushTeacherCourseConfirmationHistory(pkg, {
+    type: 'disagreed',
+    feedback: text,
+    operator: pkg.teacherName || resolveOfferingTeacherDisplayName(teacherId) || '教师',
+    sectionIds: targets,
+    courseCodes: targets.map(sid => {
+      const row = (pkg.rows || []).find(r => r.sectionId === sid);
+      return row?.code || sid;
+    })
+  });
+  return true;
+}
+
+function encodeTeacherCourseConfirmationRowKey(staffId, sectionId) {
+  return `${String(staffId || '').trim()}||${String(sectionId || '').trim()}`;
+}
+
+function parseTeacherCourseConfirmationRowKey(value) {
+  const raw = String(value || '');
+  const sep = raw.indexOf('||');
+  if (sep < 0) return { staffId: raw.trim(), sectionId: '' };
+  return {
+    staffId: raw.slice(0, sep).trim(),
+    sectionId: raw.slice(sep + 2).trim()
+  };
+}
+
+function getTeacherCourseConfirmationLetterSelectedSectionIds() {
+  return [...document.querySelectorAll('.tcc-letter-row-check:checked')]
+    .map(el => String(el.value || '').trim())
+    .filter(Boolean);
+}
+
+function getSectionAssignedTeacherIds(sec) {
+  return collectSectionAssignTeachers(sec).map(t => t.staffId).filter(Boolean);
+}
+
+function getSectionTeacherConfirmationProgress(sec) {
+  const termCode = resolveSectionOfferingTermCode(sec);
+  const teacherIds = getSectionAssignedTeacherIds(sec);
+  const sectionId = sec?.id || sec?.sectionId || '';
+  if (!teacherIds.length) {
+    return { total: 0, confirmed: 0, pending: 0, disagreed: 0, proxyCount: 0, complete: true, teachers: [] };
+  }
+  let confirmed = 0;
+  let pending = 0;
+  let disagreed = 0;
+  let proxyCount = 0;
+  const teachers = teacherIds.map(id => {
+    syncTeacherCourseConfirmationPackageRows(id, termCode);
+    const pkg = getTeacherCourseConfirmationPackage(id, termCode);
+    const name = resolveOfferingTeacherDisplayName(id);
+    const state = sectionId
+      ? getTeacherCourseConfirmationSectionStatus(id, termCode, sectionId, pkg)
+      : getSectionTeacherConfirmationProgressForTeacher(id, termCode, pkg).status;
+    const st = sectionId ? getTeacherCourseConfirmationSectionState(pkg, sectionId) : null;
+    if (state === 'confirmed' || state === 'admin-proxy') {
+      confirmed += 1;
+      if (state === 'admin-proxy') proxyCount += 1;
+    } else if (state === 'disagreed') {
+      disagreed += 1;
+    } else {
+      pending += 1;
+    }
+    return { staffId: id, name, state, feedback: st?.feedback || pkg?.feedback || '' };
+  });
+  const complete = confirmed === teacherIds.length;
+  return { total: teacherIds.length, confirmed, pending, disagreed, proxyCount, complete, teachers };
+}
+
+function isSectionTeacherConfirmationComplete(sec) {
+  return getSectionTeacherConfirmationProgress(sec).complete;
+}
+
+function validateMajorOfferingTaskTeacherConfirmation(sec) {
+  const progress = getSectionTeacherConfirmationProgress(sec);
+  if (!progress.total) return { ok: true };
+  if (progress.complete) return { ok: true };
+  const lines = progress.teachers
+    .filter(t => t.state !== 'confirmed' && t.state !== 'admin-proxy')
+    .map(t => {
+      if (t.state === 'disagreed') return `${t.name}：已不同意（${t.feedback || '有诉求'}）`;
+      if (t.state === 'pending') return `${t.name}：待确认`;
+      return `${t.name}：尚未下发确认`;
+    });
+  return {
+    ok: false,
+    message: `授课教师尚未全部确认（${progress.confirmed}/${progress.total}）：\n${lines.map(l => `· ${l}`).join('\n')}`
+  };
+}
+
+function invalidateTeacherCourseConfirmationsForSection(sec) {
+  if (!sec) return;
+  const termCode = resolveSectionOfferingTermCode(sec);
+  getSectionAssignedTeacherIds(sec).forEach(id => syncTeacherCourseConfirmationPackageRows(id, termCode));
+}
+
+/** 管理端列表状态：未发送 / 待确认 / 退回 / 已确认 */
+function renderTeacherCourseConfirmationStatusPill(state) {
+  if (state === 'confirmed' || state === 'admin-proxy') {
+    return '<span class="offering-status-pill is-on">已确认</span>';
+  }
+  if (state === 'disagreed') {
+    return '<span class="offering-status-pill is-warn">退回</span>';
+  }
+  if (state === 'pending') return '<span class="offering-status-pill is-warn">待确认</span>';
+  return '<span class="offering-status-pill is-off">未发送</span>';
+}
+
+/** Teaching Load 弹窗：未发送 / 待确认 / 已确认 / 代确认 / 退回 */
+function renderTeacherCourseConfirmationTeachingLoadStatusPill(state) {
+  if (state === 'admin-proxy') {
+    return '<span class="offering-status-pill is-on is-proxy-confirm">代确认</span>';
+  }
+  if (state === 'confirmed') return '<span class="offering-status-pill is-on">已确认</span>';
+  if (state === 'disagreed') return '<span class="offering-status-pill is-warn">退回</span>';
+  if (state === 'pending') return '<span class="offering-status-pill is-warn">待确认</span>';
+  return '<span class="offering-status-pill is-off">未发送</span>';
+}
+
+/** 确认信表格行状态：待确认 / 已确认 / 管理端确认 / 退回 */
+function renderTeacherCourseConfirmationLetterRowStatus(state, feedback = '') {
+  if (state === 'admin-proxy') {
+    return '<span class="offering-status-pill is-on is-proxy-confirm">管理端确认</span>';
+  }
+  if (state === 'confirmed') return '<span class="offering-status-pill is-on">已确认</span>';
+  if (state === 'disagreed') return '<span class="offering-status-pill is-warn">退回</span>';
+  if (state === 'pending') return '<span class="offering-status-pill is-warn">待确认</span>';
+  return '<span class="text-muted">—</span>';
+}
+
+function renderSectionTeacherConfirmationProgressCell(sec) {
+  try {
+    const p = getSectionTeacherConfirmationProgress(sec);
+    if (!p.total) return '<span class="text-muted">—</span>';
+    if (p.complete) {
+      return '<span class="tcc-progress-pill is-complete">已确认</span>';
+    }
+    return '<span class="tcc-progress-pill is-none">未确认</span>';
+  } catch (err) {
+    console.warn('renderSectionTeacherConfirmationProgressCell failed', err);
+    return '<span class="text-muted">—</span>';
+  }
+}
+
+function getSectionTeacherConfirmationProgressForTeacher(staffId, termCode, pkg) {
+  const p = pkg || getTeacherCourseConfirmationPackage(staffId, termCode);
+  if (!p) return { status: 'draft' };
+  migrateTeacherCourseConfirmationPackageSectionStates(p);
+  const rows = p.rows?.length ? p.rows : buildTeacherCourseConfirmationRows(staffId, termCode);
+  if (!rows.length) return { status: 'draft' };
+  const statuses = rows.map(r => getTeacherCourseConfirmationSectionStatus(staffId, termCode, r.sectionId, p));
+  if (statuses.some(s => s === 'pending')) return { status: 'pending' };
+  if (statuses.some(s => s === 'disagreed')) return { status: 'disagreed' };
+  if (statuses.length && statuses.every(s => s === 'confirmed' || s === 'admin-proxy')) {
+    return { status: statuses.every(s => s === 'admin-proxy') ? 'admin-proxy' : 'confirmed' };
+  }
+  if (statuses.some(s => s === 'confirmed' || s === 'admin-proxy')) return { status: 'confirmed' };
+  return { status: 'draft' };
+}
+
+function listTeacherCourseConfirmationAdminRows(termCode, collegeCode = resolveTeacherCourseConfirmationAdminCollege()) {
+  const term = String(termCode || '').trim();
+  const college = isTeacherCourseConfirmationAdminCollegeAll(collegeCode)
+    ? ''
+    : String(collegeCode || '').trim();
+  if (!term) return [];
+  const map = new Map();
+  getOfferingSectionsForTerm(term)
+    .filter(sec => sec?.offeringType === 'major' && sec.submitStatus === 'submitted')
+    .forEach(sec => {
+      collectSectionAssignTeachers(sec).forEach(t => {
+        if (!t?.staffId || map.has(t.staffId)) return;
+        const dept = t.departmentCode || getTeacherDepartmentCode(t.staffId);
+        if (college && dept !== college) return;
+        syncTeacherCourseConfirmationPackageRows(t.staffId, term);
+        const pkg = getTeacherCourseConfirmationPackage(t.staffId, term);
+        const progress = getSectionTeacherConfirmationProgressForTeacher(t.staffId, term, pkg);
+        const rows = pkg?.rows?.length ? pkg.rows : buildTeacherCourseConfirmationRows(t.staffId, term);
+        const groupCount = rows.reduce((sum, r) => {
+          if (r.groupCount != null) return sum + (Number(r.groupCount) || 0);
+          return sum + (Number(r.lectureGroups) || 0) + (Number(r.labGroups) || 0);
+        }, 0);
+        map.set(t.staffId, {
+          staffId: t.staffId,
+          name: t.name || resolveOfferingTeacherDisplayName(t.staffId),
+          departmentCode: dept || '—',
+          pkg,
+          courseCount: rows.length,
+          groupCount,
+          teachingLoad: sumTeacherOfferingTeachingLoadHours(t.staffId, term),
+          status: progress.status,
+          confirmedBy: pkg?.confirmedBy || null,
+          feedback: pkg?.feedback || ''
+        });
+      });
+    });
+  return [...map.values()].sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh'));
+}
+
+/** 管理端列表：教师 + 课程 一行（与详情确认信表同维度） */
+function listTeacherCourseConfirmationAdminCourseRows(termCode, collegeCode = resolveTeacherCourseConfirmationAdminCollege()) {
+  const teachers = listTeacherCourseConfirmationAdminRows(termCode, collegeCode);
+  const out = [];
+  teachers.forEach(t => {
+    const courseRows = t.pkg?.rows?.length
+      ? t.pkg.rows
+      : buildTeacherCourseConfirmationRows(t.staffId, termCode);
+    courseRows.forEach(course => {
+      const groupCount = course.groupCount != null
+        ? course.groupCount
+        : (Number(course.lectureGroups) || 0) + (Number(course.labGroups) || 0);
+      const sectionStatus = getTeacherCourseConfirmationSectionStatus(
+        t.staffId,
+        termCode,
+        course.sectionId,
+        t.pkg
+      );
+      const sectionState = getTeacherCourseConfirmationSectionState(t.pkg, course.sectionId);
+      out.push({
+        staffId: t.staffId,
+        teacherName: t.name,
+        departmentCode: t.departmentCode,
+        status: sectionStatus,
+        confirmedBy: sectionState.confirmedBy || null,
+        feedback: sectionState.feedback || '',
+        sectionId: course.sectionId,
+        code: course.code,
+        courseName: course.name,
+        classification: course.classification,
+        credits: course.credits,
+        weekRange: course.weekRange,
+        groupCount,
+        totalStudentNo: course.totalStudentNo,
+        weeklyHours: course.weeklyHours,
+        coordinatorName: course.coordinatorName,
+        coTeachingStaff: course.coTeachingStaff
+      });
+    });
+  });
+  return out.sort((a, b) => {
+    const byTeacher = String(a.teacherName).localeCompare(String(b.teacherName), 'zh');
+    if (byTeacher) return byTeacher;
+    return String(a.code).localeCompare(String(b.code), 'zh');
+  });
+}
+
+function formatTeacherCourseConfirmationHistoryText(h, { sectionId = '', courseCode = '', scoped = false } = {}) {
+  if (!h) return '—';
+  let codes = (h.courseCodes || []).filter(Boolean);
+  if (scoped) {
+    const sid = String(sectionId || '').trim();
+    const code = String(courseCode || '').trim();
+    if (sid && Array.isArray(h.sectionIds) && Array.isArray(h.courseCodes)) {
+      const idx = h.sectionIds.map(String).indexOf(sid);
+      if (idx >= 0 && h.courseCodes[idx]) codes = [h.courseCodes[idx]];
+      else if (code) codes = codes.filter(c => c === code);
+      else codes = [];
+    } else if (code) {
+      codes = codes.filter(c => c === code);
+    }
+  }
+  const courseHint = scoped ? '' : codes.join('、');
+  if (h.type === 'disagreed') {
+    return courseHint
+      ? `退回（${courseHint}）：${h.feedback || ''}`
+      : `退回：${h.feedback || ''}`;
+  }
+  if (h.type === 'confirmed') {
+    const base = h.confirmedBy === 'admin-proxy'
+      ? `管理端确认（${h.proxyBy || '教务'}）`
+      : '教师已确认';
+    return courseHint ? `${base}：${courseHint}` : base;
+  }
+  if (h.type === 'reissued') return courseHint ? `重新发送：${courseHint}` : '重新发送';
+  if (h.type === 'issued') return courseHint ? `已发送：${courseHint}` : '已发送';
+  if (h.type === 'invalidated') return courseHint ? `安排变更，确认失效：${courseHint}` : '安排变更，确认失效';
+  return h.type || '—';
+}
+
+function filterTeacherCourseConfirmationHistory(history, { sectionId = '', courseCode = '' } = {}) {
+  const sid = String(sectionId || '').trim();
+  const code = String(courseCode || '').trim();
+  if (!sid && !code) return history || [];
+  return (history || []).filter(h => {
+    const ids = Array.isArray(h.sectionIds) ? h.sectionIds.map(String) : [];
+    const codes = Array.isArray(h.courseCodes) ? h.courseCodes.map(String) : [];
+    if (sid && ids.includes(sid)) return true;
+    if (code && codes.includes(code)) return true;
+    return false;
+  });
+}
+
+function resolveTeacherCourseConfirmationHistoryOperator(h, pkg = null) {
+  if (!h) return '—';
+  if (h.operator) return String(h.operator);
+  if (h.proxyBy) return String(h.proxyBy);
+  if (h.confirmedBy === 'admin-proxy') return '教务管理员';
+  if (h.confirmedBy === 'teacher' || h.type === 'disagreed') {
+    return pkg?.teacherName
+      || (pkg?.teacherId ? resolveOfferingTeacherDisplayName(pkg.teacherId) : '')
+      || '教师';
+  }
+  if (h.by === 'admin' || h.type === 'issued' || h.type === 'reissued') return '教务管理员';
+  if (h.type === 'invalidated') return '系统';
+  return h.by ? String(h.by) : '—';
+}
+
+function renderTeacherCourseConfirmationHistoryList(history, {
+  limit = 12,
+  sectionId = '',
+  courseCode = '',
+  scoped = false,
+  pkg = null
+} = {}) {
+  const items = (history || []).slice(-limit).reverse();
+  if (!items.length) return '<p class="text-muted">暂无操作记录。</p>';
+  const lis = items.map(h => {
+    const text = formatTeacherCourseConfirmationHistoryText(h, { sectionId, courseCode, scoped });
+    const operator = resolveTeacherCourseConfirmationHistoryOperator(h, pkg);
+    const at = h.at ? String(h.at).replace('T', ' ').slice(0, 16) : '';
+    return `<li>
+      <span class="tcc-history-text">${escapeHtml(text)}</span>
+      <span class="tcc-history-aside">
+        <span class="tcc-history-operator">${escapeHtml(operator)}</span>
+        ${at ? `<time>${escapeHtml(at)}</time>` : ''}
+      </span>
+    </li>`;
+  }).join('');
+  return `<div class="tcc-detail-history"><ul>${lis}</ul></div>`;
+}
+
+function openTeacherCourseConfirmationHistoryModal(staffId, termCode, sectionId = '', courseCode = '') {
+  const id = String(staffId || teacherCourseConfirmationPortalTeacherId || '').trim();
+  const term = String(termCode || resolveTeacherCourseConfirmationPortalTermCode() || '').trim();
+  const sid = String(sectionId || '').trim();
+  const code = String(courseCode || '').trim();
+  const titleEl = document.getElementById('tcc-history-modal-title');
+  const body = document.getElementById('tcc-history-modal-body');
+  if (!body || !id) return;
+  syncTeacherCourseConfirmationPackageRows(id, term);
+  const pkg = getTeacherCourseConfirmationPackage(id, term);
+  const name = resolveOfferingTeacherDisplayName(id);
+  let resolvedCode = code;
+  if (!resolvedCode && sid && pkg?.rows?.length) {
+    resolvedCode = pkg.rows.find(r => r.sectionId === sid)?.code || '';
+  }
+  const scoped = !!(sid || resolvedCode);
+  const history = scoped
+    ? filterTeacherCourseConfirmationHistory(pkg?.history, { sectionId: sid, courseCode: resolvedCode })
+    : (pkg?.history || []);
+  if (titleEl) titleEl.textContent = '操作记录';
+  const meta = `<div class="tcc-history-meta">
+    <div class="tcc-history-meta-item"><span class="tcc-history-meta-label">教师</span><span class="tcc-history-meta-value">${escapeHtml(name || '—')}</span></div>
+    <div class="tcc-history-meta-item"><span class="tcc-history-meta-label">工号</span><span class="tcc-history-meta-value">${escapeHtml(id || '—')}</span></div>
+    <div class="tcc-history-meta-item"><span class="tcc-history-meta-label">课程号</span><span class="tcc-history-meta-value">${escapeHtml(resolvedCode || '—')}</span></div>
+  </div>`;
+  body.innerHTML = meta + renderTeacherCourseConfirmationHistoryList(history, {
+    sectionId: sid,
+    courseCode: resolvedCode,
+    scoped,
+    pkg
+  });
+  openModal('modal-teacher-course-confirmation-history');
+}
+
+function toggleTeacherCourseConfirmationLetterSelectAll(el) {
+  const on = !!el?.checked;
+  document.querySelectorAll('.tcc-letter-row-check').forEach(cb => {
+    cb.checked = on;
+  });
+}
+
+function onTeacherCourseConfirmationLetterRowCheckChange() {
+  const boxes = [...document.querySelectorAll('.tcc-letter-row-check')];
+  const all = document.getElementById('tcc-letter-check-all');
+  if (!all || !boxes.length) return;
+  all.checked = boxes.every(cb => cb.checked);
+  all.indeterminate = !all.checked && boxes.some(cb => cb.checked);
+}
+
+function batchConfirmTeacherCourseConfirmationFromLetter() {
+  const selected = document.querySelectorAll('.tcc-letter-row-check:checked');
+  if (!selected.length) {
+    alert('请先勾选要确认的课程。');
+    return;
+  }
+  openTeacherCourseConfirmationDecisionModal();
+}
+
+function renderTeacherCourseConfirmationLetterTable(rows, termCode, {
+  showConfirmAction = false,
+  canConfirm = false,
+  showRowStatus = false,
+  rowStatus = '',
+  rowFeedback = '',
+  statusPerRow = true,
+  showHistoryAction = false,
+  historyStaffId = '',
+  historyTermCode = '',
+  showLetterHead = true,
+  rowOffset = 0,
+  emptyMessage = '暂无授课安排。'
+} = {}) {
+  const list = Array.isArray(rows) ? rows : [];
+  const termLabel = termCode ? formatCourseTermDisplay(termCode) : '—';
+  const histId = escapeHtml(String(historyStaffId || ''));
+  const histTerm = escapeHtml(String(historyTermCode || termCode || ''));
+  const showChecks = showConfirmAction;
+  const colCount = 11
+    + (showChecks ? 1 : 0)
+    + (showRowStatus ? 1 : 0)
+    + (showHistoryAction ? 1 : 0)
+    + (showConfirmAction ? 1 : 0);
+  const body = list.length
+    ? list.map((row, idx) => {
+      const groupCount = row.groupCount != null
+        ? row.groupCount
+        : (Number(row.lectureGroups) || 0) + (Number(row.labGroups) || 0);
+      const weekRange = row.weekRange ?? row.startWeek ?? '—';
+      const rowKey = escapeHtml(String(row.sectionId || row.code || idx));
+      const checkTd = showChecks
+        ? `<td class="col-center tcc-letter-check">
+            <input type="checkbox" class="tcc-letter-row-check" value="${rowKey}" aria-label="选择 ${escapeHtml(row.name || row.code || '')}" onchange="onTeacherCourseConfirmationLetterRowCheckChange()">
+          </td>`
+        : '';
+      const thisStatus = row.sectionStatus || row.status || rowStatus;
+      const thisFeedback = row.sectionFeedback || row.feedback || rowFeedback || '';
+      const statusTd = showRowStatus
+        ? `<td class="col-center tcc-letter-status">${renderTeacherCourseConfirmationLetterRowStatus(thisStatus, thisFeedback)}</td>`
+        : '';
+      const historyTd = showHistoryAction
+        ? `<td class="actions col-center tcc-letter-action tcc-letter-history"><a href="#" onclick="event.preventDefault();openTeacherCourseConfirmationHistoryModal('${histId}', '${histTerm}', '${rowKey}', '${escapeHtml(String(row.code || ''))}');return false">查看</a></td>`
+        : '';
+      const actionTd = showConfirmAction
+        ? `<td class="actions col-center tcc-letter-action">${
+            canConfirm
+              ? `<a href="#" onclick="event.preventDefault();openTeacherCourseConfirmationDecisionModal('${rowKey}');return false">授课确认</a>`
+              : '<span class="text-muted">—</span>'
+          }</td>`
+        : '';
+      return `<tr>
+      ${checkTd}
+      <td class="col-center tcc-letter-index">${rowOffset + idx + 1}</td>
+      ${statusTd}
+      <td class="col-center tcc-letter-code tcc-letter-nowrap"><code>${escapeHtml(row.code)}</code></td>
+      <td class="tcc-letter-course-name tcc-letter-nowrap">${escapeHtml(row.name)}</td>
+      <td class="col-center tcc-letter-class tcc-letter-nowrap">${escapeHtml(row.classification || '—')}</td>
+      <td class="col-center">${escapeHtml(String(row.credits ?? '—'))}</td>
+      <td class="col-center tcc-letter-nowrap">${escapeHtml(String(weekRange))}</td>
+      <td class="col-center">${escapeHtml(String(groupCount || '—'))}</td>
+      <td class="col-center">${escapeHtml(formatNullableNumberDisplay(row.totalStudentNo))}</td>
+      <td class="col-center">${escapeHtml(String(row.weeklyHours ?? '—'))}</td>
+      <td class="tcc-letter-nowrap">${escapeHtml(row.coordinatorName || '—')}</td>
+      <td class="tcc-letter-nowrap">${escapeHtml(row.coTeachingStaff || '—')}</td>
+      ${historyTd}
+      ${actionTd}
+    </tr>`;
+    }).join('')
+    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:28px">${escapeHtml(emptyMessage)}</td></tr>`;
+  const batchBar = showConfirmAction
+    ? `<div class="tcc-letter-batch-bar">
+        <button type="button" class="btn btn-primary btn-sm"${canConfirm && list.length ? '' : ' disabled'} onclick="${canConfirm && list.length ? 'batchConfirmTeacherCourseConfirmationFromLetter()' : 'return false'}">授课确认</button>
+      </div>`
+    : '';
+  return `<div class="tcc-letter">
+    ${showLetterHead ? `<div class="tcc-letter-head"><strong>Course Confirmation · ${escapeHtml(termLabel)}</strong></div>` : ''}
+    ${batchBar}
+    <div class="table-scroll">
+      <table class="data-table compact tcc-letter-table${showChecks ? ' has-row-check' : ''}${showConfirmAction ? ' has-confirm-action' : ''}${showRowStatus ? ' has-row-status' : ''}${showHistoryAction ? ' has-history-action' : ''}">
+        <thead><tr>
+          ${showChecks ? `<th class="col-center tcc-letter-check"><input type="checkbox" id="tcc-letter-check-all" aria-label="全选" ${canConfirm && list.length ? '' : 'disabled '}onchange="toggleTeacherCourseConfirmationLetterSelectAll(this)"></th>` : ''}
+          <th class="col-center tcc-letter-index">序号</th>
+          ${showRowStatus ? '<th class="col-center">状态</th>' : ''}
+          <th class="col-center">课程号</th>
+          <th>课程名称</th>
+          <th class="col-center">类别</th>
+          <th class="col-center">学分</th>
+          <th class="col-center">起止周</th>
+          <th class="col-center">负责小组数</th>
+          <th class="col-center">人数上限</th>
+          <th class="col-center">周学时</th>
+          <th>Course Coordinator</th>
+          <th>Co-teaching Staff</th>
+          ${showHistoryAction ? '<th class="col-center col-actions">操作记录</th>' : ''}
+          ${showConfirmAction ? '<th class="col-center col-actions">操作</th>' : ''}
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', focusStaffId = '' } = {}) {
+  const mount = document.getElementById(mountId);
+  if (!mount) return;
+  if (termCode) teacherCourseConfirmationAdminTermCode = String(termCode).trim();
+  const term = resolveTeacherCourseConfirmationAdminTermCode();
+  const college = resolveTeacherCourseConfirmationAdminCollege();
+  const collegeCodes = getTeacherCourseConfirmationCollegeCodes();
+  const termCodes = getTeacherCourseConfirmationAdminTermCodes();
+  const allRows = listTeacherCourseConfirmationAdminCourseRows(term, college);
+  const rows = filterTeacherCourseConfirmationAdminRows(allRows);
+  const paged = paginateListItems(rows, 'teacherCourseConfirmationAdmin');
+  const pageRows = paged.items;
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  const paginationId = `${mountId}-pagination`;
+  if (focusStaffId) teacherCourseConfirmationFocusStaffId = String(focusStaffId);
+  const termOptions = (termCodes.length ? termCodes : (term ? [term] : [])).map(code =>
+    `<option value="${escapeHtml(code)}"${code === term ? ' selected' : ''}>${escapeHtml(formatCourseTermDisplay(code))}</option>`
+  ).join('');
+  const collegeOptions = [
+    `<option value="${TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL}"${isTeacherCourseConfirmationAdminCollegeAll(college) ? ' selected' : ''}>全部</option>`,
+    ...collegeCodes.map(code =>
+      `<option value="${escapeHtml(code)}"${code === college ? ' selected' : ''}>${escapeHtml(code)}</option>`
+    )
+  ].join('');
+  const emptyMsg = allRows.length && !rows.length
+    ? '无匹配记录，请调整检索条件'
+    : (isTeacherCourseConfirmationAdminCollegeAll(college) ? '本学期暂无教师授课安排' : `本院（${escapeHtml(college || '—')}）本学期暂无教师授课安排`);
+  const body = pageRows.length
+    ? pageRows.map((row, idx) => {
+      const statusPill = renderTeacherCourseConfirmationStatusPill(row.status);
+      const id = escapeHtml(row.staffId);
+      const sectionId = escapeHtml(String(row.sectionId || ''));
+      const termEsc = escapeHtml(term);
+      const rowKey = escapeHtml(encodeTeacherCourseConfirmationRowKey(row.staffId, row.sectionId));
+      const canSend = row.status === 'draft' || row.status === 'disagreed';
+      const canProxy = row.status === 'pending';
+      const sendLink = canSend
+        ? `<a href="#" onclick="event.preventDefault();issueTeacherCourseConfirmationAction('${id}', '${termEsc}', ${row.status !== 'draft'}, '${sectionId}');return false">发送</a>`
+        : '<span class="is-disabled" aria-disabled="true">发送</span>';
+      const proxyLink = canProxy
+        ? `<a href="#" onclick="event.preventDefault();proxyConfirmTeacherCourseConfirmationAction('${id}', '${termEsc}', '${sectionId}');return false">代确认</a>`
+        : '<span class="is-disabled" aria-disabled="true">代确认</span>';
+      const historyLink = `<a href="#" onclick="event.preventDefault();openTeacherCourseConfirmationHistoryModal('${id}', '${termEsc}', '${sectionId}', '${escapeHtml(String(row.code || ''))}');return false">查看</a>`;
+      const groupCount = row.groupCount || '—';
+      const weekRange = row.weekRange ?? '—';
+      return `<tr>
+        <td class="col-center col-check">
+          <input type="checkbox" class="tcc-admin-row-check" value="${rowKey}" aria-label="选择 ${escapeHtml(row.teacherName)} · ${escapeHtml(row.code || '')}" onchange="onTeacherCourseConfirmationAdminRowCheckChange(this)">
+        </td>
+        <td class="col-center col-index">${rowOffset + idx + 1}</td>
+        <td class="col-center col-status">${statusPill}</td>
+        <td class="col-teacher tcc-letter-nowrap" title="${escapeHtml(row.teacherName)}">${escapeHtml(row.teacherName)}</td>
+        <td class="col-center col-code tcc-letter-nowrap"><code>${escapeHtml(row.code)}</code></td>
+        <td class="col-course-name tcc-letter-course-name tcc-letter-nowrap" title="${escapeHtml(row.courseName)}">${escapeHtml(row.courseName)}</td>
+        <td class="col-center col-class tcc-letter-nowrap" title="${escapeHtml(row.classification || '—')}">${escapeHtml(row.classification || '—')}</td>
+        <td class="col-center col-credits">${escapeHtml(String(row.credits ?? '—'))}</td>
+        <td class="col-center col-weeks tcc-letter-nowrap">${escapeHtml(String(weekRange))}</td>
+        <td class="col-center col-groups">${escapeHtml(String(groupCount))}</td>
+        <td class="col-center col-cap">${escapeHtml(formatNullableNumberDisplay(row.totalStudentNo))}</td>
+        <td class="col-center col-hours">${escapeHtml(String(row.weeklyHours ?? '—'))}</td>
+        <td class="col-coord tcc-letter-nowrap" title="${escapeHtml(row.coordinatorName || '—')}">${escapeHtml(row.coordinatorName || '—')}</td>
+        <td class="col-coteach tcc-letter-nowrap" title="${escapeHtml(row.coTeachingStaff || '—')}">${escapeHtml(row.coTeachingStaff || '—')}</td>
+        <td class="col-center col-dept tcc-letter-nowrap" title="${escapeHtml(row.departmentCode || '—')}">${escapeHtml(row.departmentCode || '—')}</td>
+        <td class="actions col-center col-history">${historyLink}</td>
+        <td class="actions col-center col-actions"><span class="tcc-admin-row-actions">${sendLink}<span class="tcc-admin-action-sep" aria-hidden="true">·</span>${proxyLink}</span></td>
+      </tr>`;
+    }).join('')
+    : `<tr><td colspan="17" class="text-muted" style="text-align:center;padding:28px">${emptyMsg}</td></tr>`;
+  mount.innerHTML = `<div class="tcc-admin is-list">
+    <div class="tcc-admin-toolbar">
+      <div class="tcc-admin-filters">
+        <div class="tcc-admin-field">
+          <label for="tcc-admin-term-select">开课学期</label>
+          <select class="input input-sm" id="tcc-admin-term-select" onchange="onTeacherCourseConfirmationAdminTermChange(this.value)">${termOptions || `<option value="">—</option>`}</select>
+        </div>
+        <div class="tcc-admin-field">
+          <label for="tcc-admin-college-select">学院</label>
+          <select class="input input-sm" id="tcc-admin-college-select" onchange="onTeacherCourseConfirmationAdminCollegeChange(this.value)">${collegeOptions}</select>
+        </div>
+        <div class="tcc-admin-field">
+          <label for="tcc-admin-name-input">教师</label>
+          <input type="search" class="input input-sm tcc-admin-search-input" id="tcc-admin-name-input" placeholder="姓名" value="${escapeHtml(teacherCourseConfirmationAdminNameQuery)}" onkeydown="if(event.key==='Enter'){queryTeacherCourseConfirmationAdminList()}">
+        </div>
+        <div class="tcc-admin-field">
+          <label for="tcc-admin-staff-id-input">教师号</label>
+          <input type="search" class="input input-sm tcc-admin-search-input" id="tcc-admin-staff-id-input" placeholder="工号" value="${escapeHtml(teacherCourseConfirmationAdminStaffIdQuery)}" onkeydown="if(event.key==='Enter'){queryTeacherCourseConfirmationAdminList()}">
+        </div>
+        <div class="tcc-admin-field">
+          <label for="tcc-admin-course-code-input">课程号</label>
+          <input type="search" class="input input-sm tcc-admin-search-input" id="tcc-admin-course-code-input" placeholder="课程号" value="${escapeHtml(teacherCourseConfirmationAdminCourseCodeQuery)}" onkeydown="if(event.key==='Enter'){queryTeacherCourseConfirmationAdminList()}">
+        </div>
+        <div class="tcc-admin-field tcc-admin-filter-actions">
+          <label class="tcc-admin-field-label-spacer" aria-hidden="true">&nbsp;</label>
+          <div class="tcc-admin-filter-btns">
+            <button type="button" class="btn btn-primary btn-sm" onclick="queryTeacherCourseConfirmationAdminList()">搜索</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="resetTeacherCourseConfirmationAdminFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tcc-admin-table-bar">
+      <div class="tcc-admin-batch-actions">
+        <button type="button" class="btn btn-primary btn-sm" onclick="batchIssueTeacherCourseConfirmation()">发送授课确认</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="batchProxyConfirmTeacherCourseConfirmation()">批量代确认</button>
+      </div>
+    </div>
+    <div class="table-scroll tcc-admin-table-wrap">
+      <table class="data-table compact tcc-admin-table tcc-admin-course-table">
+        <thead><tr>
+          <th class="col-center col-check">
+            <input type="checkbox" id="tcc-admin-check-all" aria-label="全选" ${pageRows.length ? '' : 'disabled '}onchange="toggleTeacherCourseConfirmationAdminSelectAll(this)">
+          </th>
+          <th class="col-center col-index">序号</th>
+          <th class="col-center col-status">状态</th>
+          <th class="col-teacher">教师</th>
+          <th class="col-center col-code">课程号</th>
+          <th class="col-course-name">课程名称</th>
+          <th class="col-center col-class">类别</th>
+          <th class="col-center col-credits">学分</th>
+          <th class="col-center col-weeks">起止周</th>
+          <th class="col-center col-groups">负责小组数</th>
+          <th class="col-center col-cap">人数上限</th>
+          <th class="col-center col-hours">周学时</th>
+          <th class="col-coord">Course Coordinator</th>
+          <th class="col-coteach">Co-teaching Staff</th>
+          <th class="col-center col-dept">所属单位</th>
+          <th class="col-center col-history">操作记录</th>
+          <th class="col-center col-actions">操作</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <div class="pagination" id="${paginationId}"></div>
+    </div>
+  </div>`;
+  renderListPagination(paginationId, 'teacherCourseConfirmationAdmin', paged.total);
+}
+
+function openTeacherCourseConfirmationDetailModal(staffId, termCode) {
+  const id = String(staffId || '').trim();
+  const term = String(termCode || resolveTeacherCourseConfirmationAdminTermCode() || resolveTeacherCourseConfirmationTermCode()).trim();
+  if (!id) return;
+  teacherCourseConfirmationFocusStaffId = id;
+  const titleEl = document.getElementById('tcc-admin-detail-modal-title');
+  const body = document.getElementById('tcc-admin-detail-modal-body');
+  if (!body) return;
+  syncTeacherCourseConfirmationPackageRows(id, term);
+  const pkg = getTeacherCourseConfirmationPackage(id, term);
+  const name = resolveOfferingTeacherDisplayName(id);
+  const baseRows = pkg?.rows?.length ? pkg.rows : buildTeacherCourseConfirmationRows(id, term);
+  const rows = baseRows.map(row => {
+    const st = getTeacherCourseConfirmationSectionState(pkg, row.sectionId);
+    return {
+      ...row,
+      sectionStatus: getTeacherCourseConfirmationSectionStatus(id, term, row.sectionId, pkg),
+      sectionFeedback: st.feedback || ''
+    };
+  });
+  if (titleEl) titleEl.textContent = `${name} · 授课安排详情`;
+  body.innerHTML = `<div class="tcc-detail-card">
+    <div class="tcc-detail-head">
+      <div class="tcc-detail-title">
+        <strong>${escapeHtml(name)}</strong>
+      </div>
+    </div>
+    <div class="tcc-detail-body">
+      ${renderTeacherCourseConfirmationLetterTable(rows, term, {
+        showRowStatus: true,
+        statusPerRow: true,
+        showHistoryAction: true,
+        historyStaffId: id,
+        historyTermCode: term
+      })}
+    </div>
+  </div>`;
+  openModal('modal-teacher-course-confirmation-detail');
+}
+
+function getTeacherCourseConfirmationAdminActions(staffId, termCode, status, sectionId = '') {
+  const id = escapeHtml(staffId);
+  const term = escapeHtml(termCode);
+  const sid = escapeHtml(String(sectionId || ''));
+  const canSend = status === 'draft' || status === 'disagreed';
+  const canProxy = status === 'pending';
+  const sidArg = sid ? `, '${sid}'` : '';
+  return [
+    `<button type="button" class="btn btn-primary btn-sm"${canSend ? '' : ' disabled'} onclick="${canSend ? `issueTeacherCourseConfirmationAction('${id}', '${term}', ${status !== 'draft'}${sidArg});closeModal('modal-teacher-course-confirmation-detail')` : 'return false'}">发送</button>`,
+    `<button type="button" class="btn btn-outline btn-sm"${canProxy ? '' : ' disabled'} onclick="${canProxy ? `proxyConfirmTeacherCourseConfirmationAction('${id}', '${term}'${sidArg});closeModal('modal-teacher-course-confirmation-detail')` : 'return false'}">代确认</button>`
+  ];
+}
+
+function renderTeacherCourseConfirmationDetailPanel(staffId, termCode) {
+  // 兼容旧主从布局调用；现统一走详情弹窗
+  openTeacherCourseConfirmationDetailModal(staffId, termCode);
+  return '';
+}
+
+function focusTeacherCourseConfirmationRow(staffId) {
+  teacherCourseConfirmationFocusStaffId = String(staffId || '');
+  const term = resolveTeacherCourseConfirmationTermCode();
+  openTeacherCourseConfirmationDetailModal(staffId, term);
+}
+
+function issueTeacherCourseConfirmationAction(staffId, termCode, reissue = false, sectionId = '') {
+  if (!assertTeacherCourseConfirmationAdminScope(staffId)) return;
+  const sid = String(sectionId || '').trim();
+  if (reissue && !confirm(sid ? '确定重新下发该课程的确认？将清除该课程当前确认状态。' : '确定重新下发确认？将清除当前确认状态。')) return;
+  if (!reissue && !confirm(sid ? '确定发送该课程的授课确认？' : '确定为该教师下发授课确认？')) return;
+  const opts = { reissue, sectionIds: sid ? [sid] : null };
+  if (issueTeacherCourseConfirmation(staffId, termCode, opts)) {
+    teacherCourseConfirmationFocusStaffId = staffId;
+    refreshTeacherCourseConfirmationViews();
+    alert(reissue ? '已重新下发确认。' : '已下发确认，请通知教师在系统内确认。');
+  }
+}
+
+function reissueTeacherCourseConfirmationAction(staffId, termCode, sectionId = '') {
+  issueTeacherCourseConfirmationAction(staffId, termCode, true, sectionId);
+}
+
+function proxyConfirmTeacherCourseConfirmationAction(staffId, termCode, sectionId = '') {
+  if (!assertTeacherCourseConfirmationAdminScope(staffId)) return;
+  const id = String(staffId || '').trim();
+  const term = String(termCode || resolveTeacherCourseConfirmationAdminTermCode() || resolveTeacherCourseConfirmationTermCode()).trim();
+  const sid = String(sectionId || '').trim();
+  const name = resolveOfferingTeacherDisplayName(id);
+  const courseHint = sid
+    ? (() => {
+      const row = (getTeacherCourseConfirmationPackage(id, term)?.rows || [])
+        .find(r => r.sectionId === sid)
+        || buildTeacherCourseConfirmationRows(id, term).find(r => r.sectionId === sid);
+      return row?.code ? `（${escapeHtml(row.code)}）` : '';
+    })()
+    : '';
+  openDeleteConfirm({
+    title: '二次确认：代确认',
+    message: `确定为 <strong>${escapeHtml(name)}</strong>${courseHint} 执行「管理端代确认」吗？`,
+    hint: sid
+      ? '将仅标记该课程为管理端代确认并记录操作人。'
+      : '将标记为管理端代确认并记录操作人，视同教师已确认本学期授课安排。',
+    hintWarn: true,
+    confirmLabel: '确认代确认',
+    onConfirm: () => {
+      if (confirmTeacherCourseConfirmation(id, term, {
+        by: 'admin-proxy',
+        proxyBy: '教务管理员',
+        sectionIds: sid ? [sid] : null
+      })) {
+        teacherCourseConfirmationFocusStaffId = id;
+        refreshTeacherCourseConfirmationViews();
+        renderCourseMajorOfferingTaskStyle2Page();
+        alert('已完成管理端代确认。');
+      }
+    }
+  });
+}
+
+function getTeacherCourseConfirmationAdminRoot() {
+  const adminPage = document.getElementById('page-course-teacher-confirmation-admin');
+  if (adminPage?.classList.contains('active')) {
+    return adminPage.querySelector('.tcc-admin.is-list');
+  }
+  const grouping = document.getElementById('offering-grouping-teacher-confirmation');
+  if (grouping && !grouping.hidden && grouping.offsetParent !== null) {
+    return grouping.querySelector('.tcc-admin.is-list');
+  }
+  return document.querySelector('#page-offering-grouping .tcc-admin.is-list')
+    || document.querySelector('.tcc-admin.is-list');
+}
+
+function getTeacherCourseConfirmationAdminSelectedStaffIds(rootEl) {
+  return [...new Set(
+    getTeacherCourseConfirmationAdminSelectedRowKeys(rootEl).map(r => r.staffId).filter(Boolean)
+  )];
+}
+
+function getTeacherCourseConfirmationAdminSelectedRowKeys(rootEl) {
+  const root = rootEl?.closest?.('.tcc-admin') || rootEl || getTeacherCourseConfirmationAdminRoot();
+  if (!root) return [];
+  return [...root.querySelectorAll('.tcc-admin-row-check:checked')]
+    .map(el => parseTeacherCourseConfirmationRowKey(el.value))
+    .filter(r => r.staffId && r.sectionId);
+}
+
+function toggleTeacherCourseConfirmationAdminSelectAll(checkbox) {
+  const root = checkbox?.closest?.('.tcc-admin');
+  if (!root) return;
+  const checked = !!checkbox.checked;
+  root.querySelectorAll('.tcc-admin-row-check').forEach(el => {
+    el.checked = checked;
+  });
+}
+
+function onTeacherCourseConfirmationAdminRowCheckChange(checkbox) {
+  const root = checkbox?.closest?.('.tcc-admin');
+  if (!root) return;
+  const all = [...root.querySelectorAll('.tcc-admin-row-check')];
+  const master = root.querySelector('#tcc-admin-check-all');
+  if (!master || !all.length) return;
+  const checkedCount = all.filter(el => el.checked).length;
+  master.checked = checkedCount === all.length;
+  master.indeterminate = checkedCount > 0 && checkedCount < all.length;
+}
+
+function batchIssueTeacherCourseConfirmation() {
+  const term = resolveTeacherCourseConfirmationAdminTermCode();
+  const selected = getTeacherCourseConfirmationAdminSelectedRowKeys();
+  if (!selected.length) {
+    alert('请先勾选要发送授课确认的课程。');
+    return;
+  }
+  const courseRows = listTeacherCourseConfirmationAdminCourseRows(term);
+  const byKey = new Map(courseRows.map(r => [encodeTeacherCourseConfirmationRowKey(r.staffId, r.sectionId), r]));
+  const targets = selected
+    .map(k => byKey.get(encodeTeacherCourseConfirmationRowKey(k.staffId, k.sectionId)))
+    .filter(row => row && (row.status === 'draft' || row.status === 'disagreed'));
+  if (!targets.length) {
+    alert('所选课程中没有可发送的记录（需为未发送或退回）。');
+    return;
+  }
+  const reissueCount = targets.filter(r => r.status !== 'draft').length;
+  const msg = reissueCount
+    ? `确定发送 ${targets.length} 条课程的授课确认？其中 ${reissueCount} 条将重新下发并清除该课程当前确认状态。`
+    : `确定发送 ${targets.length} 条课程的授课确认？`;
+  if (!confirm(msg)) return;
+  let ok = 0;
+  let fail = 0;
+  targets.forEach(row => {
+    if (!isTeacherInCourseConfirmationAdminCollege(row.staffId)) {
+      fail += 1;
+      return;
+    }
+    if (issueTeacherCourseConfirmation(row.staffId, term, {
+      reissue: row.status !== 'draft',
+      quiet: true,
+      sectionIds: [row.sectionId]
+    })) ok += 1;
+    else fail += 1;
+  });
+  refreshTeacherCourseConfirmationViews();
+  alert(fail ? `已发送 ${ok} 条，跳过 ${fail} 条。` : `已发送 ${ok} 条课程的授课确认。`);
+}
+
+function batchProxyConfirmTeacherCourseConfirmation() {
+  const term = resolveTeacherCourseConfirmationAdminTermCode();
+  const selected = getTeacherCourseConfirmationAdminSelectedRowKeys();
+  if (!selected.length) {
+    alert('请先勾选要代确认的课程。');
+    return;
+  }
+  const courseRows = listTeacherCourseConfirmationAdminCourseRows(term);
+  const byKey = new Map(courseRows.map(r => [encodeTeacherCourseConfirmationRowKey(r.staffId, r.sectionId), r]));
+  const targets = selected
+    .map(k => byKey.get(encodeTeacherCourseConfirmationRowKey(k.staffId, k.sectionId)))
+    .filter(row => row && row.status === 'pending');
+  if (!targets.length) {
+    alert('所选课程中没有可代确认的记录（仅待确认状态可代确认）。');
+    return;
+  }
+  const preview = targets.slice(0, 5)
+    .map(r => `${escapeHtml(r.teacherName)} · ${escapeHtml(r.code || '')}`)
+    .join('、');
+  const more = targets.length > 5 ? ` 等 ${targets.length} 条` : '';
+  openDeleteConfirm({
+    title: '二次确认：批量代确认',
+    message: `确定为 <strong>${targets.length}</strong> 条课程执行「管理端代确认」吗？${preview ? `<br><span class="text-muted">${preview}${more}</span>` : ''}`,
+    hint: '将仅标记所选课程为管理端代确认并记录操作人。',
+    hintWarn: true,
+    confirmLabel: '确认代确认',
+    onConfirm: () => {
+      let ok = 0;
+      let fail = 0;
+      targets.forEach(row => {
+        if (!isTeacherInCourseConfirmationAdminCollege(row.staffId)) {
+          fail += 1;
+          return;
+        }
+        if (confirmTeacherCourseConfirmation(row.staffId, term, {
+          by: 'admin-proxy',
+          proxyBy: '教务管理员',
+          quiet: true,
+          sectionIds: [row.sectionId]
+        })) ok += 1;
+        else fail += 1;
+      });
+      refreshTeacherCourseConfirmationViews();
+      renderCourseMajorOfferingTaskStyle2Page();
+      alert(fail ? `已代确认 ${ok} 条，跳过 ${fail} 条。` : `已完成 ${ok} 条课程的管理端代确认。`);
+    }
+  });
+}
+
+function viewTeacherCourseConfirmationDetail(staffId, termCode) {
+  teacherCourseConfirmationFocusStaffId = staffId;
+  refreshTeacherCourseConfirmationViews();
+}
+
+function refreshTeacherCourseConfirmationViews() {
+  if (offeringGroupingSidebarView === 'teacher-confirmation') renderOfferingGroupingTeacherConfirmationPage();
+  const adminPage = document.getElementById('page-course-teacher-confirmation-admin');
+  if (adminPage?.classList.contains('active')) renderTeacherCourseConfirmationAdminPage();
+  const portalPage = document.getElementById('page-teacher-course-confirmation');
+  if (portalPage?.classList.contains('active')) renderTeacherCourseConfirmationPortalPage();
+  refreshTeacherCourseConfirmationSectionManageModalIfOpen();
+}
+
+function renderOfferingGroupingTeacherConfirmationPage() {
+  renderTeacherCourseConfirmationAdminPanel('offering-grouping-teacher-confirmation-body', {
+    termCode: resolveTeacherCourseConfirmationAdminTermCode() || resolveTeacherCourseConfirmationTermCode(),
+    focusStaffId: teacherCourseConfirmationFocusStaffId
+  });
+}
+
+function renderTeacherCourseConfirmationAdminPage() {
+  renderTeacherCourseConfirmationAdminPanel('course-teacher-confirmation-admin-body', {
+    termCode: resolveTeacherCourseConfirmationAdminTermCode(),
+    focusStaffId: teacherCourseConfirmationFocusStaffId
+  });
+}
+
+function openTeacherCourseConfirmationAdminView(staffId = '') {
+  teacherCourseConfirmationFocusStaffId = String(staffId || '').trim();
+  goPage('course-teacher-confirmation-admin');
+}
+
+function jumpToTeacherCourseConfirmationFromTeachingLoad(staffId, termCode = '') {
+  const id = String(staffId || '').trim();
+  if (!id) return;
+  const teacherName = resolveOfferingTeacherDisplayName(id);
+  closeModal('modal-offering-teacher-term-assign');
+  teacherCourseConfirmationFocusStaffId = id;
+  // 与管理端搜索一致：姓名框填入该教师，并带工号精确过滤
+  teacherCourseConfirmationAdminNameQuery = (teacherName && teacherName !== '—' && teacherName !== id)
+    ? teacherName
+    : '';
+  teacherCourseConfirmationAdminStaffIdQuery = id;
+  teacherCourseConfirmationAdminCourseCodeQuery = '';
+  const term = String(termCode || '').trim()
+    || resolveTeacherCourseConfirmationAdminTermCode()
+    || getDefaultOfferingTermCode()
+    || '';
+  if (term) teacherCourseConfirmationAdminTermCode = term;
+  const dept = getTeacherDepartmentCode(id);
+  if (dept) teacherCourseConfirmationAdminCollege = dept;
+  resetListPage('teacherCourseConfirmationAdmin');
+  const groupingActive = document.getElementById('page-offering-grouping')?.classList.contains('active');
+  if (groupingActive) {
+    switchOfferingGroupingSidebarView('teacher-confirmation');
+    return;
+  }
+  openTeacherCourseConfirmationAdminView(id);
+}
+
+function jumpToTeacherCourseConfirmationFromCourse(courseCode, termCode = '') {
+  const code = String(courseCode || '').trim();
+  const term = String(termCode || '').trim()
+    || resolveTeacherCourseConfirmationAdminTermCode()
+    || getDefaultOfferingTermCode()
+    || '';
+  if (!code) return;
+  const sec = (COURSE_OFFERING_PLAN_STORE?.sections || []).find(s => {
+    if (String(s?.code || '').trim() !== code) return false;
+    if (!term) return true;
+    return resolveSectionOfferingTermCode(s) === term;
+  });
+  if (sec?.id) {
+    openTeacherCourseConfirmationSectionManageModal(sec.id);
+    return;
+  }
+  teacherCourseConfirmationFocusStaffId = '';
+  teacherCourseConfirmationAdminNameQuery = '';
+  teacherCourseConfirmationAdminStaffIdQuery = '';
+  teacherCourseConfirmationAdminCourseCodeQuery = code;
+  if (term) teacherCourseConfirmationAdminTermCode = term;
+  teacherCourseConfirmationAdminCollege = TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL;
+  resetListPage('teacherCourseConfirmationAdmin');
+  openTeacherCourseConfirmationAdminView();
+}
+
+function openTeacherCourseConfirmationSectionManageModal(sectionId) {
+  const sid = String(sectionId || '').trim();
+  if (!sid) return;
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections?.find(s => s.id === sid);
+  if (!sec) {
+    alert('未找到开课任务。');
+    return;
+  }
+  teacherCourseConfirmationSectionManageSectionId = sid;
+  renderTeacherCourseConfirmationSectionManageModal();
+  openModal('modal-teacher-course-confirmation-section');
+}
+
+function refreshTeacherCourseConfirmationSectionManageModalIfOpen() {
+  const overlay = document.getElementById('modal-teacher-course-confirmation-section');
+  if (!overlay?.classList.contains('open')) return;
+  if (!teacherCourseConfirmationSectionManageSectionId) return;
+  renderTeacherCourseConfirmationSectionManageModal();
+}
+
+function renderTeacherCourseConfirmationSectionManageModal() {
+  const titleEl = document.getElementById('tcc-section-manage-modal-title');
+  const body = document.getElementById('tcc-section-manage-modal-body');
+  const sid = String(teacherCourseConfirmationSectionManageSectionId || '').trim();
+  if (!body || !sid) return;
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections?.find(s => s.id === sid);
+  if (!sec) {
+    body.innerHTML = '<p class="text-muted">未找到开课任务。</p>';
+    return;
+  }
+  const term = resolveSectionOfferingTermCode(sec) || '';
+  const termLabel = term ? formatCourseTermDisplay(term) : '—';
+  const code = String(sec.code || '').trim() || '—';
+  const courseName = String(sec.name || '').trim() || '—';
+  if (titleEl) titleEl.textContent = '授课确认';
+  const teachers = collectSectionAssignTeachers(sec);
+  let sendableCount = 0;
+  const rows = teachers.map((t, idx) => {
+    const staffId = String(t?.staffId || '').trim();
+    if (!staffId) return '';
+    syncTeacherCourseConfirmationPackageRows(staffId, term);
+    const pkg = getTeacherCourseConfirmationPackage(staffId, term);
+    const status = getTeacherCourseConfirmationSectionStatus(staffId, term, sid, pkg);
+    const courseRow = (pkg?.rows || []).find(r => r.sectionId === sid)
+      || buildTeacherCourseConfirmationRows(staffId, term).find(r => r.sectionId === sid)
+      || null;
+    const name = t.name || resolveOfferingTeacherDisplayName(staffId);
+    const groupCount = courseRow?.groupCount != null
+      ? courseRow.groupCount
+      : ((Number(courseRow?.lectureGroups) || 0) + (Number(courseRow?.labGroups) || 0)) || '—';
+    const weekRange = courseRow?.weekRange ?? '—';
+    const classification = courseRow?.classification || getOfferingSectionCategoryDisplay(sec) || '—';
+    const credits = courseRow?.credits ?? sec.credits ?? '—';
+    const totalStudentNo = courseRow?.totalStudentNo ?? getSectionCapacityLimit(sec);
+    const weeklyHours = courseRow?.weeklyHours ?? computeTeacherWeeklyHoursOnSection(staffId, sec);
+    const coordinatorName = courseRow?.coordinatorName || getSectionCoordinator(sec)?.name || '—';
+    const coTeachingStaff = courseRow?.coTeachingStaff || '—';
+    const idEsc = escapeHtml(staffId);
+    const termEsc = escapeHtml(term);
+    const sidEsc = escapeHtml(sid);
+    const codeEsc = escapeHtml(code);
+    const canSend = status === 'draft' || status === 'disagreed';
+    if (canSend) sendableCount += 1;
+    const canProxy = status === 'pending';
+    const sendLink = canSend
+      ? `<a href="#" onclick="event.preventDefault();issueTeacherCourseConfirmationFromSectionManage('${idEsc}', '${termEsc}', ${status !== 'draft'}, '${sidEsc}');return false">发送</a>`
+      : '<span class="is-disabled" aria-disabled="true">发送</span>';
+    const proxyLink = canProxy
+      ? `<a href="#" onclick="event.preventDefault();proxyConfirmTeacherCourseConfirmationFromSectionManage('${idEsc}', '${termEsc}', '${sidEsc}');return false">代确认</a>`
+      : '<span class="is-disabled" aria-disabled="true">代确认</span>';
+    const historyLink = `<a href="#" onclick="event.preventDefault();openTeacherCourseConfirmationHistoryModal('${idEsc}', '${termEsc}', '${sidEsc}', '${codeEsc}');return false">查看</a>`;
+    return `<tr>
+      <td class="col-center col-index">${idx + 1}</td>
+      <td class="col-center col-status">${renderTeacherCourseConfirmationStatusPill(status)}</td>
+      <td class="col-teacher tcc-letter-nowrap">${formatOfferingGroupingEllipsisCell(name)}</td>
+      <td class="col-center col-code tcc-letter-nowrap"><code>${escapeHtml(code)}</code></td>
+      <td class="col-course-name tcc-letter-course-name tcc-letter-nowrap">${formatOfferingGroupingEllipsisCell(courseName)}</td>
+      <td class="col-center col-class tcc-letter-nowrap">${formatOfferingGroupingEllipsisCell(classification)}</td>
+      <td class="col-center col-credits">${escapeHtml(String(credits))}</td>
+      <td class="col-center col-weeks tcc-letter-nowrap">${escapeHtml(String(weekRange))}</td>
+      <td class="col-center col-groups">${escapeHtml(String(groupCount))}</td>
+      <td class="col-center col-cap">${escapeHtml(formatNullableNumberDisplay(totalStudentNo))}</td>
+      <td class="col-center col-hours">${escapeHtml(String(weeklyHours ?? '—'))}</td>
+      <td class="col-coord tcc-letter-nowrap">${formatOfferingGroupingEllipsisCell(coordinatorName)}</td>
+      <td class="col-coteach tcc-letter-nowrap">${formatOfferingGroupingEllipsisCell(coTeachingStaff)}</td>
+      <td class="actions col-center col-history">${historyLink}</td>
+      <td class="actions col-center col-actions"><span class="tcc-admin-row-actions">${sendLink}<span class="tcc-admin-action-sep" aria-hidden="true">·</span>${proxyLink}</span></td>
+    </tr>`;
+  }).filter(Boolean).join('');
+  const sidEsc = escapeHtml(sid);
+  body.innerHTML = `<div class="tcc-section-manage">
+    <div class="tcc-history-meta tcc-section-manage-meta">
+      <div class="tcc-history-meta-item"><span class="tcc-history-meta-label">课程号</span><span class="tcc-history-meta-value">${escapeHtml(code)}</span></div>
+      <div class="tcc-history-meta-item"><span class="tcc-history-meta-label">课程名称</span><span class="tcc-history-meta-value">${escapeHtml(courseName)}</span></div>
+      <div class="tcc-history-meta-item"><span class="tcc-history-meta-label">开课学期</span><span class="tcc-history-meta-value">${escapeHtml(termLabel)}</span></div>
+    </div>
+    <div class="tcc-section-manage-toolbar">
+      <button type="button" class="btn btn-primary btn-sm"${sendableCount ? '' : ' disabled'} onclick="${sendableCount ? `batchIssueTeacherCourseConfirmationFromSectionManage('${sidEsc}')` : 'return false'}">一键发送</button>
+    </div>
+    <div class="table-scroll tcc-section-manage-table-wrap tcc-admin-table-wrap">
+      <table class="data-table compact tcc-admin-table tcc-admin-course-table tcc-section-manage-table">
+        <thead>
+          <tr>
+            <th class="col-center col-index">序号</th>
+            <th class="col-center col-status">状态</th>
+            <th class="col-teacher">教师</th>
+            <th class="col-center col-code">课程号</th>
+            <th class="col-course-name">课程名称</th>
+            <th class="col-center col-class">类别</th>
+            <th class="col-center col-credits">学分</th>
+            <th class="col-center col-weeks">起止周</th>
+            <th class="col-center col-groups">负责小组数</th>
+            <th class="col-center col-cap">人数上限</th>
+            <th class="col-center col-hours">周学时</th>
+            <th class="col-coord">Course Coordinator</th>
+            <th class="col-coteach">Co-teaching Staff</th>
+            <th class="col-center col-history">操作记录</th>
+            <th class="col-center col-actions">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="15" class="text-muted" style="text-align:center;padding:24px">该课程暂无已安排教师</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  bindCellFloatTips(body, '.cell-ellipsis-tip[data-tip]');
+}
+
+function batchIssueTeacherCourseConfirmationFromSectionManage(sectionId = '') {
+  const sid = String(sectionId || teacherCourseConfirmationSectionManageSectionId || '').trim();
+  if (!sid) return;
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections?.find(s => s.id === sid);
+  if (!sec) {
+    alert('未找到开课任务。');
+    return;
+  }
+  const term = resolveSectionOfferingTermCode(sec) || '';
+  const teachers = collectSectionAssignTeachers(sec)
+    .map(t => String(t?.staffId || '').trim())
+    .filter(Boolean);
+  const targets = [];
+  teachers.forEach(staffId => {
+    syncTeacherCourseConfirmationPackageRows(staffId, term);
+    const pkg = getTeacherCourseConfirmationPackage(staffId, term);
+    const status = getTeacherCourseConfirmationSectionStatus(staffId, term, sid, pkg);
+    if (status === 'draft' || status === 'disagreed') {
+      targets.push({ staffId, reissue: status !== 'draft' });
+    }
+  });
+  if (!targets.length) {
+    alert('该课程下没有可发送的教师（需为未发送或退回）。');
+    return;
+  }
+  const reissueCount = targets.filter(t => t.reissue).length;
+  const msg = reissueCount
+    ? `确定向本课程 ${targets.length} 位教师发送授课确认？其中 ${reissueCount} 位将重新下发并清除该课程当前确认状态。`
+    : `确定向本课程 ${targets.length} 位教师发送授课确认？`;
+  if (!confirm(msg)) return;
+  let ok = 0;
+  targets.forEach(t => {
+    if (issueTeacherCourseConfirmation(t.staffId, term, {
+      reissue: t.reissue,
+      quiet: true,
+      sectionIds: [sid]
+    })) ok += 1;
+  });
+  refreshTeacherCourseConfirmationViews();
+  refreshTeacherCourseConfirmationSectionManageModalIfOpen();
+  renderCourseMajorOfferingTaskStyle2Page();
+  alert(`已向 ${ok} 位教师发送本课程的授课确认。`);
+}
+
+function issueTeacherCourseConfirmationFromSectionManage(staffId, termCode, reissue = false, sectionId = '') {
+  const id = String(staffId || '').trim();
+  const term = String(termCode || '').trim();
+  const sid = String(sectionId || '').trim();
+  if (!id || !sid) return;
+  if (reissue && !confirm('确定重新下发该课程的确认？将清除该课程当前确认状态。')) return;
+  if (!reissue && !confirm('确定发送该课程的授课确认？')) return;
+  if (!issueTeacherCourseConfirmation(id, term, { reissue, sectionIds: [sid] })) return;
+  refreshTeacherCourseConfirmationViews();
+  refreshTeacherCourseConfirmationSectionManageModalIfOpen();
+  renderCourseMajorOfferingTaskStyle2Page();
+  alert(reissue ? '已重新下发确认。' : '已下发确认，请通知教师在系统内确认。');
+}
+
+function proxyConfirmTeacherCourseConfirmationFromSectionManage(staffId, termCode, sectionId = '') {
+  const id = String(staffId || '').trim();
+  const term = String(termCode || '').trim();
+  const sid = String(sectionId || '').trim();
+  if (!id || !sid) return;
+  const name = resolveOfferingTeacherDisplayName(id);
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections?.find(s => s.id === sid);
+  const courseHint = sec?.code ? `（${escapeHtml(sec.code)}）` : '';
+  openDeleteConfirm({
+    title: '二次确认：代确认',
+    message: `确定为 <strong>${escapeHtml(name)}</strong>${courseHint} 执行「管理端代确认」吗？`,
+    hint: '将仅标记该课程为管理端代确认并记录操作人。',
+    hintWarn: true,
+    confirmLabel: '确认代确认',
+    onConfirm: () => {
+      if (!confirmTeacherCourseConfirmation(id, term, {
+        by: 'admin-proxy',
+        proxyBy: '教务管理员',
+        sectionIds: [sid]
+      })) return;
+      refreshTeacherCourseConfirmationViews();
+      refreshTeacherCourseConfirmationSectionManageModalIfOpen();
+      renderCourseMajorOfferingTaskStyle2Page();
+      alert('已完成管理端代确认。');
+    }
+  });
+}
+
+function openTeacherCourseConfirmationPortal(staffId = '') {
+  teacherCourseConfirmationPortalTeacherId = String(staffId || teacherCourseConfirmationPortalTeacherId || '').trim();
+  teacherCourseConfirmationPortalTab = '';
+  goPage('teacher-course-confirmation');
+}
+
+function listTeacherCourseConfirmationPortalTeachers(termCode, { scope = 'all' } = {}) {
+  const rows = listTeacherCourseConfirmationAdminRows(termCode, null);
+  return rows.filter(row => {
+    const courseRows = row.pkg?.rows?.length
+      ? row.pkg.rows
+      : buildTeacherCourseConfirmationRows(row.staffId, termCode);
+    const statuses = courseRows.map(c =>
+      getTeacherCourseConfirmationSectionStatus(row.staffId, termCode, c.sectionId, row.pkg)
+    );
+    if (scope === 'pending') return statuses.some(s => s === 'pending');
+    if (scope === 'history') {
+      return statuses.some(s => s === 'confirmed' || s === 'admin-proxy' || s === 'disagreed');
+    }
+    return statuses.some(s =>
+      s === 'pending' || s === 'confirmed' || s === 'admin-proxy' || s === 'disagreed'
+    );
+  });
+}
+
+function setTeacherCourseConfirmationPortalTab(tab) {
+  teacherCourseConfirmationPortalTab = tab === 'history' ? 'history' : 'pending';
+  resetListPage('teacherCourseConfirmationPortal');
+  renderTeacherCourseConfirmationPortalPage();
+}
+
+function annotateTeacherCourseConfirmationPortalRows(staffId, termCode, pkg, rows) {
+  return (rows || []).map(row => {
+    const st = getTeacherCourseConfirmationSectionState(pkg, row.sectionId);
+    return {
+      ...row,
+      sectionStatus: getTeacherCourseConfirmationSectionStatus(staffId, termCode, row.sectionId, pkg),
+      sectionFeedback: st.feedback || ''
+    };
+  });
+}
+
+function renderTeacherCourseConfirmationPortalPage() {
+  const mount = document.getElementById('teacher-course-confirmation-body');
+  const select = document.getElementById('teacher-course-confirmation-teacher-select');
+  if (!mount) return;
+  const term = resolveTeacherCourseConfirmationPortalTermCode();
+  const termCodes = getTeacherCourseConfirmationAdminTermCodes();
+  const allTeachers = listTeacherCourseConfirmationPortalTeachers(term, { scope: 'all' });
+
+  // 演示身份列出全部有任务的教师；切 Tab 不改身份
+  if (select) {
+    select.innerHTML = allTeachers.map(t =>
+      `<option value="${escapeHtml(t.staffId)}"${t.staffId === teacherCourseConfirmationPortalTeacherId ? ' selected' : ''}>${escapeHtml(t.name)}</option>`
+    ).join('') || '<option value="">暂无任务</option>';
+  }
+  if (!teacherCourseConfirmationPortalTeacherId || !allTeachers.some(t => t.staffId === teacherCourseConfirmationPortalTeacherId)) {
+    teacherCourseConfirmationPortalTeacherId = allTeachers[0]?.staffId || '';
+  }
+  if (select && teacherCourseConfirmationPortalTeacherId && select.value !== teacherCourseConfirmationPortalTeacherId) {
+    select.value = teacherCourseConfirmationPortalTeacherId;
+  }
+
+  const staffId = teacherCourseConfirmationPortalTeacherId || '';
+  let hasPending = false;
+  let hasHistory = false;
+  let pkg = null;
+  let pendingRows = [];
+  let historyRows = [];
+  if (staffId) {
+    syncTeacherCourseConfirmationPackageRows(staffId, term);
+    pkg = getTeacherCourseConfirmationPackage(staffId, term);
+    const baseRows = pkg?.rows?.length ? pkg.rows : buildTeacherCourseConfirmationRows(staffId, term);
+    const annotated = annotateTeacherCourseConfirmationPortalRows(staffId, term, pkg, baseRows);
+    pendingRows = annotated.filter(r => r.sectionStatus === 'pending');
+    historyRows = annotated.filter(r =>
+      r.sectionStatus === 'confirmed' || r.sectionStatus === 'admin-proxy' || r.sectionStatus === 'disagreed'
+    );
+    hasPending = pendingRows.length > 0;
+    hasHistory = historyRows.length > 0;
+  }
+
+  let tab = teacherCourseConfirmationPortalTab === 'history' ? 'history' : 'pending';
+  if (teacherCourseConfirmationPortalTab !== 'history' && teacherCourseConfirmationPortalTab !== 'pending') {
+    tab = hasPending ? 'pending' : (hasHistory ? 'history' : 'pending');
+  }
+  teacherCourseConfirmationPortalTab = tab;
+
+  const displayRows = tab === 'pending' ? pendingRows : historyRows;
+  const paged = paginateListItems(displayRows, 'teacherCourseConfirmationPortal');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  const paginationId = 'teacher-course-confirmation-body-pagination';
+
+  const termOptions = (termCodes.length ? termCodes : (term ? [term] : [])).map(code =>
+    `<option value="${escapeHtml(code)}"${code === term ? ' selected' : ''}>${escapeHtml(formatCourseTermDisplay(code))}</option>`
+  ).join('');
+
+  const toolbar = `<div class="tcc-portal-toolbar">
+    <div class="tcc-portal-field">
+      <label for="tcc-portal-term-select">开课学期</label>
+      <select class="input input-sm" id="tcc-portal-term-select" onchange="onTeacherCourseConfirmationPortalTermChange(this.value)">${termOptions || '<option value="">—</option>'}</select>
+    </div>
+  </div>`;
+
+  const tabs = `<div class="tcc-portal-tabs" role="tablist" aria-label="确认任务">
+    <button type="button" class="tcc-portal-tab${tab === 'pending' ? ' is-active' : ''}" role="tab" aria-selected="${tab === 'pending' ? 'true' : 'false'}" onclick="setTeacherCourseConfirmationPortalTab('pending')">待确认</button>
+    <button type="button" class="tcc-portal-tab${tab === 'history' ? ' is-active' : ''}" role="tab" aria-selected="${tab === 'history' ? 'true' : 'false'}" onclick="setTeacherCourseConfirmationPortalTab('history')">历史</button>
+  </div>`;
+
+  const canAct = tab === 'pending' && pendingRows.length > 0
+    && pendingRows.every(r => isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, r.sectionId));
+  const showHistoryAction = true;
+  const emptyMessage = tab === 'pending' ? '暂无待确认的授课安排' : '暂无历史确认记录';
+
+  const panel = `<div class="tcc-portal-panel${tab === 'history' ? ' is-history' : ''}">
+    ${renderTeacherCourseConfirmationLetterTable(paged.items, term, {
+      showConfirmAction: tab === 'pending',
+      canConfirm: canAct,
+      showRowStatus: true,
+      statusPerRow: true,
+      showHistoryAction,
+      historyStaffId: staffId,
+      historyTermCode: term,
+      showLetterHead: false,
+      rowOffset,
+      emptyMessage
+    })}
+    ${tab === 'pending' && pendingRows.length && !canAct ? '<p class="text-muted">安排已变更，请等待教务重新下发后再确认。</p>' : ''}
+    <div class="table-footer">
+      <div class="pagination" id="${paginationId}"></div>
+    </div>
+  </div>`;
+
+  const tabsHost = document.getElementById('teacher-course-confirmation-tabs');
+  if (tabsHost) tabsHost.innerHTML = tabs;
+
+  mount.innerHTML = `<div class="tcc-portal">
+    ${toolbar}
+    ${panel}
+  </div>`;
+  renderListPagination(paginationId, 'teacherCourseConfirmationPortal', paged.total);
+}
+
+function onTeacherCourseConfirmationPortalTeacherChange(value) {
+  teacherCourseConfirmationPortalTeacherId = String(value || '');
+  resetListPage('teacherCourseConfirmationPortal');
+  const term = resolveTeacherCourseConfirmationPortalTermCode();
+  if (teacherCourseConfirmationPortalTeacherId) {
+    syncTeacherCourseConfirmationPackageRows(teacherCourseConfirmationPortalTeacherId, term);
+    const pkg = getTeacherCourseConfirmationPackage(teacherCourseConfirmationPortalTeacherId, term);
+    const baseRows = pkg?.rows?.length
+      ? pkg.rows
+      : buildTeacherCourseConfirmationRows(teacherCourseConfirmationPortalTeacherId, term);
+    const annotated = annotateTeacherCourseConfirmationPortalRows(
+      teacherCourseConfirmationPortalTeacherId,
+      term,
+      pkg,
+      baseRows
+    );
+    if (annotated.some(r => r.sectionStatus === 'pending')) teacherCourseConfirmationPortalTab = 'pending';
+    else if (annotated.some(r =>
+      r.sectionStatus === 'confirmed' || r.sectionStatus === 'admin-proxy' || r.sectionStatus === 'disagreed'
+    )) {
+      teacherCourseConfirmationPortalTab = 'history';
+    }
+  }
+  renderTeacherCourseConfirmationPortalPage();
+}
+
+function resolveTeacherCourseConfirmationPortalActionSectionIds() {
+  if (Array.isArray(teacherCourseConfirmationDecisionSectionIds) && teacherCourseConfirmationDecisionSectionIds.length) {
+    return teacherCourseConfirmationDecisionSectionIds;
+  }
+  const selected = getTeacherCourseConfirmationLetterSelectedSectionIds();
+  return selected.length ? selected : null;
+}
+
+function teacherSelfConfirmCourseConfirmation() {
+  const staffId = teacherCourseConfirmationPortalTeacherId;
+  const term = resolveTeacherCourseConfirmationPortalTermCode();
+  if (!confirm('确认本学期授课安排无误？')) return;
+  if (confirmTeacherCourseConfirmation(staffId, term, {
+    by: 'teacher',
+    sectionIds: resolveTeacherCourseConfirmationPortalActionSectionIds()
+  })) {
+    teacherCourseConfirmationDecisionSectionIds = null;
+    renderTeacherCourseConfirmationPortalPage();
+    renderCourseMajorOfferingTaskStyle2Page();
+    alert('已确认授课安排。');
+  }
+}
+
+function openTeacherCourseConfirmationDecisionModal(sectionId = '') {
+  const sid = String(sectionId || '').trim();
+  teacherCourseConfirmationDecisionSectionIds = sid ? [sid] : null;
+  const agree = document.getElementById('tcc-decision-agree');
+  const disagree = document.getElementById('tcc-decision-disagree');
+  const feedback = document.getElementById('tcc-decision-feedback');
+  if (agree) agree.checked = true;
+  if (disagree) disagree.checked = false;
+  if (feedback) feedback.value = '';
+  onTeacherCourseConfirmationDecisionChange();
+  openModal('modal-teacher-course-confirmation-decision');
+}
+
+function onTeacherCourseConfirmationDecisionChange() {
+  const decision = document.querySelector('input[name="tcc-decision"]:checked')?.value;
+  const wrap = document.getElementById('tcc-decision-feedback-wrap');
+  if (wrap) wrap.hidden = decision !== 'disagree';
+}
+
+function submitTeacherCourseConfirmationDecision() {
+  const staffId = teacherCourseConfirmationPortalTeacherId;
+  const term = resolveTeacherCourseConfirmationPortalTermCode();
+  const decision = document.querySelector('input[name="tcc-decision"]:checked')?.value;
+  const sectionIds = resolveTeacherCourseConfirmationPortalActionSectionIds();
+  if (decision === 'disagree') {
+    const feedback = document.getElementById('tcc-decision-feedback')?.value || '';
+    if (!disagreeTeacherCourseConfirmation(staffId, term, feedback, { sectionIds })) return;
+    teacherCourseConfirmationDecisionSectionIds = null;
+    closeModal('modal-teacher-course-confirmation-decision');
+    renderTeacherCourseConfirmationPortalPage();
+    refreshTeacherCourseConfirmationViews();
+    alert('已提交不同意及需求反馈，教务将查看后调整安排。');
+    return;
+  }
+  if (!confirmTeacherCourseConfirmation(staffId, term, { by: 'teacher', sectionIds })) return;
+  teacherCourseConfirmationDecisionSectionIds = null;
+  closeModal('modal-teacher-course-confirmation-decision');
+  renderTeacherCourseConfirmationPortalPage();
+  renderCourseMajorOfferingTaskStyle2Page();
+  alert('已确认授课安排。');
+}
+
+function openTeacherCourseConfirmationDisagreeModal() {
+  openTeacherCourseConfirmationDecisionModal();
+  const disagree = document.getElementById('tcc-decision-disagree');
+  if (disagree) {
+    disagree.checked = true;
+    onTeacherCourseConfirmationDecisionChange();
+  }
+}
+
+function submitTeacherCourseConfirmationDisagree() {
+  const staffId = teacherCourseConfirmationPortalTeacherId;
+  const term = resolveTeacherCourseConfirmationPortalTermCode();
+  const feedback = document.getElementById('tcc-disagree-feedback')?.value || '';
+  if (!disagreeTeacherCourseConfirmation(staffId, term, feedback, {
+    sectionIds: resolveTeacherCourseConfirmationPortalActionSectionIds()
+  })) return;
+  closeModal('modal-teacher-course-confirmation-disagree');
+  renderTeacherCourseConfirmationPortalPage();
+  refreshTeacherCourseConfirmationViews();
+  alert('已提交不同意及诉求，教务将查看后调整安排。');
+}
+
+function seedTeacherCourseConfirmationDemoIfNeeded() {
+  try {
+    const term = getDefaultOfferingTermCode() || resolveTeacherCourseConfirmationTermCode();
+    if (!term) return;
+    const store = ensureTeacherCourseConfirmationTermStore(term);
+    if (store?.demoVersion === TEACHER_COURSE_CONFIRMATION_DEMO_VERSION) return;
+    ensureCourseOfferingPlan();
+    const secs = getMajorOfferingSections()
+      .filter(s => s.submitStatus === 'submitted' && collectSectionAssignTeachers(s).length)
+      .slice(0, 6);
+    const teacherIds = [];
+    secs.forEach(sec => {
+      collectSectionAssignTeachers(sec).forEach(t => {
+        if (t?.staffId && !teacherIds.includes(t.staffId)) teacherIds.push(t.staffId);
+      });
+    });
+    teacherIds.slice(0, 4).forEach((id, idx) => {
+      issueTeacherCourseConfirmation(id, term, { reissue: false, quiet: true });
+      if (idx === 1) confirmTeacherCourseConfirmation(id, term, { by: 'teacher', quiet: true });
+      if (idx === 2) confirmTeacherCourseConfirmation(id, term, { by: 'admin-proxy', proxyBy: '教务管理员', quiet: true });
+      if (idx === 3) {
+        disagreeTeacherCourseConfirmation(id, term, '希望调整 MPU3113 的周次安排，目前与其他课程冲突。');
+      }
+    });
+    // 稳定快照：避免后续 sync 因行字段细微变化把代确认等状态冲掉
+    teacherIds.slice(0, 4).forEach(id => {
+      const pkg = getTeacherCourseConfirmationPackage(id, term);
+      if (!pkg) return;
+      const rows = buildTeacherCourseConfirmationRows(id, term);
+      pkg.rows = rows;
+      pkg.snapshotHash = computeTeacherCourseConfirmationSnapshotHash(rows);
+      const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+      rows.forEach(row => {
+        if (!row.sectionId || !states[row.sectionId]) return;
+        states[row.sectionId].snapshotHash = computeTeacherCourseConfirmationSnapshotHash([row]);
+      });
+    });
+    if (store) store.demoVersion = TEACHER_COURSE_CONFIRMATION_DEMO_VERSION;
+  } catch (err) {
+    console.warn('seedTeacherCourseConfirmationDemoIfNeeded failed', err);
+  }
+}
+
 /** 教师开课学时统计 · Teaching Load 演示数据（对齐学院 Excel 示意表；学期与开课时间设置一致） */
 const TEACHER_TEACHING_LOAD_MAX_TERMS = 6;
+const TEACHER_TEACHING_LOAD_MAX_YEARS = 4;
 const TEACHER_TEACHING_LOAD_DEMO = {
   terms: ['202402', '202404', '202409', '202502', '202504', '202509', '202602', '202604', '202609'],
   teachers: [
@@ -12974,13 +15055,23 @@ const TEACHER_TEACHING_LOAD_DEMO = {
   ]
 };
 
+/** @type {'term'|'academic-year'} 按学期 / 按学年 */
+let teacherTeachingLoadDimension = 'term';
 /** @type {string[]|null} null 表示尚未初始化，首次进入按当前开课学期默认单选 */
 let teacherTeachingLoadSelectedTerms = null;
+/** @type {number[]|null} 学年起始年，如 2024 表示 2024学年 = 2024/09 + 2025/02 + 2025/04 */
+let teacherTeachingLoadSelectedYears = null;
 
 function formatTeacherTeachingLoadTermLabel(termCode) {
   const code = String(termCode || '');
   const short = code.length >= 4 ? code.slice(-4) : code;
   return `${short} semester`;
+}
+
+function formatTeacherTeachingLoadAcademicYearLabel(year) {
+  const y = Number(year);
+  if (!Number.isFinite(y)) return '—';
+  return `${y}学年`;
 }
 
 function formatTeacherTeachingLoadHours(value) {
@@ -12990,13 +15081,67 @@ function formatTeacherTeachingLoadHours(value) {
 }
 
 function getTeacherTeachingLoadAvailableTerms() {
-  return TEACHER_TEACHING_LOAD_DEMO.terms.slice();
+  const fromSettings = (typeof COURSE_TIME_SETTINGS !== 'undefined' ? COURSE_TIME_SETTINGS : [])
+    .map(r => r?.termCode)
+    .filter(Boolean);
+  const fromDemo = TEACHER_TEACHING_LOAD_DEMO.terms || [];
+  return [...new Set([...fromSettings, ...fromDemo])].sort();
+}
+
+/**
+ * 学年定义：9 月为第一学期、次年 2 月第二学期、次年 4 月第三学期。
+ * 例：2024学年 = 202409 + 202502 + 202504
+ */
+function getAcademicYearStartFromTermCode(termCode) {
+  const code = String(termCode || '');
+  if (code.length < 6) return null;
+  const year = Number(code.slice(0, 4));
+  const month = Number(code.slice(4, 6));
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
+  if (month === 9) return year;
+  if (month === 2 || month === 4) return year - 1;
+  return null;
+}
+
+function getTermCodesForAcademicYear(year) {
+  const y = Number(year);
+  if (!Number.isFinite(y)) return [];
+  return [`${y}09`, `${y + 1}02`, `${y + 1}04`];
+}
+
+/** 某学年在当前学期库中实际存在的学期（允许仅有 9 月等部分学期） */
+function getAvailableTermCodesForAcademicYear(year) {
+  const available = new Set(getTeacherTeachingLoadAvailableTerms());
+  return getTermCodesForAcademicYear(year).filter(code => available.has(code));
+}
+
+function getTeacherTeachingLoadAvailableAcademicYears() {
+  const terms = getTeacherTeachingLoadAvailableTerms();
+  const years = new Set();
+  terms.forEach(term => {
+    const y = getAcademicYearStartFromTermCode(term);
+    if (y != null) years.add(y);
+  });
+  // 连续补齐首尾学年，避免中间缺档；含仅有 9 月学期的学年（如 2026）
+  const sorted = [...years].sort((a, b) => a - b);
+  if (sorted.length < 2) return sorted;
+  const filled = [];
+  for (let y = sorted[0]; y <= sorted[sorted.length - 1]; y += 1) filled.push(y);
+  return filled;
 }
 
 function getDefaultTeacherTeachingLoadTerms() {
   const available = getTeacherTeachingLoadAvailableTerms();
   const def = getDefaultOfferingTermCode();
   if (def && available.includes(def)) return [def];
+  return available.length ? [available[available.length - 1]] : [];
+}
+
+function getDefaultTeacherTeachingLoadYears() {
+  const available = getTeacherTeachingLoadAvailableAcademicYears();
+  const defTerm = getDefaultOfferingTermCode();
+  const fromDef = defTerm ? getAcademicYearStartFromTermCode(defTerm) : null;
+  if (fromDef != null && available.includes(fromDef)) return [fromDef];
   return available.length ? [available[available.length - 1]] : [];
 }
 
@@ -13013,9 +15158,33 @@ function ensureTeacherTeachingLoadSelectedTerms() {
   return teacherTeachingLoadSelectedTerms.slice(0, TEACHER_TEACHING_LOAD_MAX_TERMS);
 }
 
+function ensureTeacherTeachingLoadSelectedYears() {
+  const available = getTeacherTeachingLoadAvailableAcademicYears();
+  if (!teacherTeachingLoadSelectedYears) {
+    teacherTeachingLoadSelectedYears = getDefaultTeacherTeachingLoadYears();
+  } else {
+    teacherTeachingLoadSelectedYears = teacherTeachingLoadSelectedYears
+      .map(Number)
+      .filter(y => available.includes(y));
+    if (!teacherTeachingLoadSelectedYears.length) {
+      teacherTeachingLoadSelectedYears = getDefaultTeacherTeachingLoadYears();
+    }
+  }
+  return teacherTeachingLoadSelectedYears.slice(0, TEACHER_TEACHING_LOAD_MAX_YEARS);
+}
+
 function getTeacherTeachingLoadTermIndices(selectedTerms) {
   const all = TEACHER_TEACHING_LOAD_DEMO.terms;
   return selectedTerms.map(term => all.indexOf(term)).filter(idx => idx >= 0);
+}
+
+function sumTeacherTeachingLoadHoursForTerms(row, termCodes) {
+  const all = TEACHER_TEACHING_LOAD_DEMO.terms;
+  return termCodes.reduce((sum, term) => {
+    const idx = all.indexOf(term);
+    if (idx < 0) return sum;
+    return sum + (Number(row.hours?.[idx]) || 0);
+  }, 0);
 }
 
 /** 学时统计挂载根：分组页 Tab 优先，否则独立页 */
@@ -13032,16 +15201,55 @@ function ttlEl(name, root = getTeacherTeachingLoadRoot()) {
   return root.querySelector(`[data-ttl="${name}"]`);
 }
 
+function syncTeacherTeachingLoadDimensionChrome(root = getTeacherTeachingLoadRoot()) {
+  if (!root) return;
+  const isYear = teacherTeachingLoadDimension === 'academic-year';
+  root.querySelectorAll('[data-ttl="dimension-tab"]').forEach(btn => {
+    const active = btn.dataset.dimension === teacherTeachingLoadDimension;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  const termLabel = ttlEl('term-label', root);
+  if (termLabel) termLabel.textContent = isYear ? '学年' : '开课学期';
+  const hint = ttlEl('hint', root);
+  if (hint) {
+    hint.textContent = isYear
+      ? '单位：学时（hour）；可多选学年（最多 4 个）；学年含 9/次年2/次年4，仅有部分学期时按已有数据汇总（如 2026学年可仅含 9 月）；底部为合计与人均均值'
+      : '单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值';
+  }
+}
+
+function setTeacherTeachingLoadDimension(dimension) {
+  const next = dimension === 'academic-year' ? 'academic-year' : 'term';
+  if (teacherTeachingLoadDimension === next) {
+    renderCourseTeacherTeachingLoadPage();
+    return;
+  }
+  teacherTeachingLoadDimension = next;
+  closeTeacherTeachingLoadTermDropdown();
+  renderCourseTeacherTeachingLoadPage();
+}
+
 function ensureTeacherTeachingLoadTermMultiselect(root = getTeacherTeachingLoadRoot()) {
   const options = ttlEl('term-options', root);
   if (!options) return;
-  const selected = new Set(ensureTeacherTeachingLoadSelectedTerms());
-  options.innerHTML = getTeacherTeachingLoadAvailableTerms().map(term =>
-    `<label class="clo-multiselect-option">
-      <input type="checkbox" class="teacher-load-term-check" value="${escapeHtml(term)}" ${selected.has(term) ? 'checked' : ''} onchange="onTeacherTeachingLoadTermToggle(this)">
-      <span>${escapeHtml(formatCourseTermDisplay(term))}</span>
-    </label>`
-  ).join('');
+  if (teacherTeachingLoadDimension === 'academic-year') {
+    const selected = new Set(ensureTeacherTeachingLoadSelectedYears().map(String));
+    options.innerHTML = getTeacherTeachingLoadAvailableAcademicYears().map(year => {
+      return `<label class="clo-multiselect-option">
+        <input type="checkbox" class="teacher-load-term-check" value="${escapeHtml(String(year))}" ${selected.has(String(year)) ? 'checked' : ''} onchange="onTeacherTeachingLoadTermToggle(this)">
+        <span>${escapeHtml(formatTeacherTeachingLoadAcademicYearLabel(year))}</span>
+      </label>`;
+    }).join('');
+  } else {
+    const selected = new Set(ensureTeacherTeachingLoadSelectedTerms());
+    options.innerHTML = getTeacherTeachingLoadAvailableTerms().map(term =>
+      `<label class="clo-multiselect-option">
+        <input type="checkbox" class="teacher-load-term-check" value="${escapeHtml(term)}" ${selected.has(term) ? 'checked' : ''} onchange="onTeacherTeachingLoadTermToggle(this)">
+        <span>${escapeHtml(formatCourseTermDisplay(term))}</span>
+      </label>`
+    ).join('');
+  }
   updateTeacherTeachingLoadTermDisplay(root);
 }
 
@@ -13054,6 +15262,17 @@ function getTeacherTeachingLoadTermChecks(root = getTeacherTeachingLoadRoot()) {
 function updateTeacherTeachingLoadTermDisplay(root = getTeacherTeachingLoadRoot()) {
   const display = ttlEl('term-display', root);
   if (!display) return;
+  if (teacherTeachingLoadDimension === 'academic-year') {
+    const selected = ensureTeacherTeachingLoadSelectedYears();
+    if (selected.length) {
+      display.textContent = selected.map(formatTeacherTeachingLoadAcademicYearLabel).join('、');
+      display.classList.remove('placeholder');
+    } else {
+      display.textContent = '请选择';
+      display.classList.add('placeholder');
+    }
+    return;
+  }
   const selected = ensureTeacherTeachingLoadSelectedTerms();
   if (selected.length) {
     display.textContent = selected.map(formatCourseTermDisplay).join('、');
@@ -13068,23 +15287,38 @@ function onTeacherTeachingLoadTermToggle(checkbox) {
   if (!checkbox) return;
   const root = checkbox.closest('[data-ttl-root]') || getTeacherTeachingLoadRoot();
   const checked = getTeacherTeachingLoadTermChecks(root).filter(el => el.checked).map(el => el.value);
-  if (checkbox.checked && checked.length > TEACHER_TEACHING_LOAD_MAX_TERMS) {
+  const isYear = teacherTeachingLoadDimension === 'academic-year';
+  const maxCount = isYear ? TEACHER_TEACHING_LOAD_MAX_YEARS : TEACHER_TEACHING_LOAD_MAX_TERMS;
+  const unitLabel = isYear ? '个学年' : '个学期';
+  if (checkbox.checked && checked.length > maxCount) {
     checkbox.checked = false;
-    alert(`最多同时展示 ${TEACHER_TEACHING_LOAD_MAX_TERMS} 个学期`);
+    alert(`最多同时展示 ${maxCount}${unitLabel}`);
     return;
   }
   if (!checked.length) {
     checkbox.checked = true;
-    alert('请至少选择 1 个开课学期');
+    alert(isYear ? '请至少选择 1 个学年' : '请至少选择 1 个开课学期');
     return;
   }
-  teacherTeachingLoadSelectedTerms = getTeacherTeachingLoadTermChecks(root)
-    .filter(el => el.checked)
-    .map(el => el.value);
+  if (isYear) {
+    teacherTeachingLoadSelectedYears = getTeacherTeachingLoadTermChecks(root)
+      .filter(el => el.checked)
+      .map(el => Number(el.value))
+      .filter(Number.isFinite);
+  } else {
+    teacherTeachingLoadSelectedTerms = getTeacherTeachingLoadTermChecks(root)
+      .filter(el => el.checked)
+      .map(el => el.value);
+  }
   updateTeacherTeachingLoadTermDisplay(root);
+  // 勾选后只刷新表格，避免重绘筛选项把下拉关掉
+  const dd = ttlEl('term-dropdown', root);
+  const keepOpen = dd && !dd.hidden;
+  renderCourseTeacherTeachingLoadPage({ preserveTermDropdown: keepOpen });
 }
 
 function toggleTeacherTeachingLoadTermDropdown(event) {
+  event.preventDefault();
   event.stopPropagation();
   const root = event.currentTarget?.closest?.('[data-ttl-root]') || getTeacherTeachingLoadRoot();
   const dd = ttlEl('term-dropdown', root);
@@ -13125,25 +15359,77 @@ function resetTeacherTeachingLoadFilters() {
   if (nameInput) nameInput.value = '';
   if (staffInput) staffInput.value = '';
   teacherTeachingLoadSelectedTerms = getDefaultTeacherTeachingLoadTerms();
+  teacherTeachingLoadSelectedYears = getDefaultTeacherTeachingLoadYears();
   ensureTeacherTeachingLoadTermMultiselect(root);
   closeTeacherTeachingLoadTermDropdown();
   renderCourseTeacherTeachingLoadPage();
 }
 
-function renderCourseTeacherTeachingLoadPage() {
+function renderCourseTeacherTeachingLoadPage(opts = {}) {
   const root = getTeacherTeachingLoadRoot();
   const head = ttlEl('head', root);
   const body = ttlEl('body', root);
   const foot = ttlEl('foot', root);
   if (!head || !body || !foot) return;
+  syncTeacherTeachingLoadDimensionChrome(root);
+  const dd = ttlEl('term-dropdown', root);
+  const keepOpen = !!(opts.preserveTermDropdown && dd && !dd.hidden);
   ensureTeacherTeachingLoadTermMultiselect(root);
+  if (keepOpen && dd) dd.hidden = false;
+  const rows = getFilteredTeacherTeachingLoadRows(root);
+  const isYear = teacherTeachingLoadDimension === 'academic-year';
+
+  if (isYear) {
+    const years = ensureTeacherTeachingLoadSelectedYears();
+    const colCount = years.length;
+    head.innerHTML = `
+      <tr>
+        <th class="teacher-load-title" colspan="${2 + colCount}">Teaching Load (hour) · 按学年</th>
+      </tr>
+      <tr>
+        <th class="col-index col-center">序号</th>
+        <th class="col-name">Name</th>
+        ${years.map(year => {
+          const tip = getAvailableTermCodesForAcademicYear(year).map(formatCourseTermDisplay).join('、') || '暂无学期';
+          return `<th class="col-term col-center" title="${escapeHtml(tip)}">${escapeHtml(formatTeacherTeachingLoadAcademicYearLabel(year))}</th>`;
+        }).join('')}
+      </tr>`;
+    if (!rows.length) {
+      body.innerHTML = `<tr><td colspan="${2 + colCount}" class="text-muted" style="text-align:center;padding:24px">暂无教师学时数据</td></tr>`;
+      foot.innerHTML = '';
+      return;
+    }
+    const yearValues = years.map(year => {
+      const terms = getAvailableTermCodesForAcademicYear(year);
+      return rows.map(row => sumTeacherTeachingLoadHoursForTerms(row, terms));
+    });
+    body.innerHTML = rows.map((row, idx) => `<tr>
+        <td class="col-index col-center">${idx + 1}</td>
+        <td class="col-name"><button type="button" class="offering-group-status-teacher-link" onclick="jumpToTeacherCourseConfirmationFromTeachingLoad('${escapeHtml(row.staffId)}')">${escapeHtml(row.name)}</button></td>
+        ${years.map((_, yi) => `<td class="col-term col-center">${escapeHtml(formatTeacherTeachingLoadHours(yearValues[yi][idx]))}</td>`).join('')}
+      </tr>`).join('');
+    const totals = yearValues.map(vals => vals.reduce((sum, v) => sum + v, 0));
+    const averages = totals.map(total => (rows.length ? total / rows.length : 0));
+    foot.innerHTML = `
+      <tr class="is-total">
+        <td class="col-index col-center"></td>
+        <td class="col-name">Grand Total</td>
+        ${totals.map(v => `<td class="col-term col-center">${escapeHtml(formatTeacherTeachingLoadHours(v))}</td>`).join('')}
+      </tr>
+      <tr class="is-average">
+        <td class="col-index col-center"></td>
+        <td class="col-name">AVERAGE</td>
+        ${averages.map(v => `<td class="col-term col-center">${escapeHtml(Number(v).toFixed(1))}</td>`).join('')}
+      </tr>`;
+    return;
+  }
+
   const terms = ensureTeacherTeachingLoadSelectedTerms();
   const termIndices = getTeacherTeachingLoadTermIndices(terms);
-  const rows = getFilteredTeacherTeachingLoadRows(root);
   const termColCount = terms.length;
   head.innerHTML = `
     <tr>
-      <th class="teacher-load-title" colspan="${2 + termColCount}">Teaching Load (hour)</th>
+      <th class="teacher-load-title" colspan="${2 + termColCount}">Teaching Load (hour) · 按学期</th>
     </tr>
     <tr>
       <th class="col-index col-center">序号</th>
@@ -13157,7 +15443,7 @@ function renderCourseTeacherTeachingLoadPage() {
   }
   body.innerHTML = rows.map((row, idx) => `<tr>
       <td class="col-index col-center">${idx + 1}</td>
-      <td class="col-name">${escapeHtml(row.name)}</td>
+      <td class="col-name"><button type="button" class="offering-group-status-teacher-link" onclick="jumpToTeacherCourseConfirmationFromTeachingLoad('${escapeHtml(row.staffId)}')">${escapeHtml(row.name)}</button></td>
       ${termIndices.map(termIdx => `<td class="col-term col-center">${escapeHtml(formatTeacherTeachingLoadHours(row.hours?.[termIdx]))}</td>`).join('')}
     </tr>`).join('');
   const totals = termIndices.map(termIdx =>
@@ -17956,14 +20242,13 @@ function confirmMajorOfferingStudentGrouping() {
 function renderMajorOfferingSubmitStatus(sec) {
   const status = sec.submitStatus || 'draft';
   if (status === 'submitted') {
-    return `<span class="offering-status-pill is-on">已提交</span>`;
+    return `<span class="offering-status-pill is-on">已生效</span>`;
   }
   if (status === 'reverted') {
     return `<span class="offering-status-pill is-warn">回退</span>`;
   }
   return `<span class="offering-status-pill is-off">草稿</span>`;
-  // const submitted = sec.submitStatus === 'submitted';
-  // return `<span class="offering-status-pill ${submitted ? 'is-on' : 'is-off'}">${submitted ? '已提交' : '草稿'}</span>`; // 原仅草稿/已提交，改增加回退
+  // return ... 已提交 → 已生效
 }
 
 function renderMajorOfferingTeachingConfirmStatus(sec) {
@@ -17974,14 +20259,13 @@ function renderMajorOfferingTeachingConfirmStatus(sec) {
 function renderMajorOfferingTaskSubmitDisplay(sec) {
   const key = getMajorOfferingTaskSubmitStatusKey(sec);
   if (key === 'submitted') {
-    return `<span class="offering-status-pill is-on">已提交</span>`;
+    return `<span class="offering-status-pill is-on">已生效</span>`;
   }
   if (key === 'reverted') {
     return `<span class="offering-status-pill is-warn">回退</span>`;
   }
   return `<span class="offering-status-pill is-off">草稿</span>`;
-  // return `<span class="offering-status-pill is-off">待提交</span>`; // 原待提交，改草稿（与开课计划页一致：草稿/已提交/回退）
-  // return renderMajorOfferingTeachingConfirmStatus(sec); // 原授课确认状态列，改是否提交
+  // 原已提交 / 待提交，改已生效 / 草稿
 }
 
 function getMajorOfferingTaskSubmitStatusKey(sec) {
@@ -18476,8 +20760,9 @@ function syncOfferingGroupingHeaderActions() {
   const saveRosterBtn = document.getElementById('ogg-btn-save-roster-page');
   const rosterMode = isOfferingGroupingStudentRosterMode(getOfferingGroupingSection());
   const teacherLoadView = offeringGroupingSidebarView === 'teacher-load';
-  const showSaveStructure = !teacherLoadView && !rosterMode && !offeringGroupingReadOnly;
-  const showSaveRoster = !teacherLoadView && shouldShowOfferingGroupingSaveRosterBtn();
+  const teacherConfirmationView = offeringGroupingSidebarView === 'teacher-confirmation';
+  const showSaveStructure = !teacherLoadView && !teacherConfirmationView && !rosterMode && !offeringGroupingReadOnly;
+  const showSaveRoster = !teacherLoadView && !teacherConfirmationView && shouldShowOfferingGroupingSaveRosterBtn();
   // const rosterContext = isOfferingGroupingRosterContext(); // 原仅名单管理入口隐藏「保存」
   if (savePageBtn) {
     savePageBtn.hidden = !showSaveStructure;
@@ -18920,6 +21205,7 @@ function buildMajorOfferingTaskSubmitConfirm(pendingSections) {
   pendingSections.forEach(sec => {
     ensureSectionOfferingFields(sec);
     const result = validateMajorOfferingTaskArrangementSubmit(sec);
+    const teacherConfirm = validateMajorOfferingTaskTeacherConfirmation(sec);
     const title = [sec.code, sec.name].filter(Boolean).join(' ') || '当前任务';
     if (!result.ok) {
       allOk = false;
@@ -18928,6 +21214,11 @@ function buildMajorOfferingTaskSubmitConfirm(pendingSections) {
         .replace(/^以下分组学时尚未安排完成：\n*/, '')
         .trim();
       failures.push(detail ? `${title}：\n${detail}` : title);
+      return;
+    }
+    if (!teacherConfirm.ok) {
+      allOk = false;
+      failures.push(`${title}：\n${teacherConfirm.message}`);
       return;
     }
     if (result.overHourWarning) {
@@ -18939,7 +21230,7 @@ function buildMajorOfferingTaskSubmitConfirm(pendingSections) {
   });
   const openEnrollmentCount = pendingSections.filter(isMajorOfferingOpenEnrollment).length;
   const closedCount = pendingSections.length - openEnrollmentCount;
-  let baseHint = '提交后将锁定合分班、分组与教师安排。';
+  let baseHint = '生效后将锁定合分班、分组与教师安排；须全部授课教师已在系统内完成确认（含管理端代确认）。';
   if (closedCount) {
     baseHint += '不开放选课的课程，教务处可在「专业开课学生名单管理」按小组维护学生名单。';
   }
@@ -18952,11 +21243,11 @@ function buildMajorOfferingTaskSubmitConfirm(pendingSections) {
     return {
       allOk: false,
       hint: [
-        '以下开课任务尚未满足提交条件（未安排教师、教师安排信息不完整，或有小组时分组人数上限未覆盖计划人数等），暂无法提交：',
+        '以下开课任务尚未满足生效条件（未安排教师、教师安排信息不完整、授课教师未全部确认，或有小组时分组人数上限未覆盖计划人数等），暂无法生效：',
         '',
         ...failures.map(text => `· ${text}`),
         '',
-        '请返回分组页完善后再提交。'
+        '请完善分组/师资安排并完成授课教师确认后再生效。'
       ].join('\n'),
       hasOverHour: false
     };
@@ -19008,11 +21299,11 @@ function submitSelectedMajorOfferingTaskArrangements(selectedIds = null) {
   //   return;
   // } // 原 alert 阻断，改二次弹窗内警示且禁用确认
   openDeleteConfirm({
-    title: '确认提交',
-    message: `确定提交选中的 <strong>${pending.length}</strong> 条开课任务安排吗？`,
+    title: '确认生效',
+    message: `确定对选中的 <strong>${pending.length}</strong> 条开课任务安排执行生效吗？`,
     hint,
     hintWarn: !allOk || !!hasOverHour || !!hasUnderHour,
-    confirmLabel: '提交',
+    confirmLabel: '生效',
     confirmDisabled: !allOk,
     onConfirm: allOk
       ? () => {
@@ -20726,15 +23017,29 @@ function getFilteredMajorOfferingTeacherPickerList() {
   const allowedUnits = teacherPickerContext === 'groupAssign'
     ? getGroupAssignTeacherPickerAllowedUnits()
     : [];
+  // 分组安排：已选教师仍展示并可取消勾选；专业开课编辑仍排除已分配
+  const keepAssignedVisible = teacherPickerContext === 'groupAssign';
   return buildMockTeacherPickerPool().filter(t => {
-    if (assignedIds.has(t.staffId)) return false;
-    if (allowedUnits.length && !allowedUnits.includes(t.departmentCode)) return false;
+    const isAssigned = assignedIds.has(t.staffId);
+    if (isAssigned && !keepAssignedVisible) return false;
+    if (!isAssigned && allowedUnits.length && !allowedUnits.includes(t.departmentCode)) return false;
     if (staffIdQ && !t.staffId.toLowerCase().includes(staffIdQ)) return false;
     if (nameQ && !t.name.toLowerCase().includes(nameQ)) return false;
     if (typeQ && t.teacherType !== typeQ) return false;
     if (genderQ && t.gender !== genderQ) return false;
-    if (deptQ && t.departmentCode !== deptQ) return false;
+    // 已选教师不受部门筛选限制，避免改安排时找不到当前教师
+    if (!isAssigned && deptQ && t.departmentCode !== deptQ) return false;
     return true;
+  });
+}
+
+function syncGroupAssignTeacherPickerSelectionFromForm() {
+  if (teacherPickerContext !== 'groupAssign') return;
+  majorOfferingTeacherPickerSelected.clear();
+  const byStaff = new Map(buildMockTeacherPickerPool().map(t => [t.staffId, t]));
+  groupAssignFormTeachers.forEach(t => {
+    const pick = byStaff.get(t.staffId);
+    if (pick) majorOfferingTeacherPickerSelected.add(pick.key);
   });
 }
 
@@ -20837,6 +23142,7 @@ function openMajorOfferingTeacherPickerModal() {
   if (titleEl) titleEl.textContent = '新增教师';
   resetListPage('majorOfferingTeacherPicker');
   resetMajorOfferingTeacherPickerFilters();
+  syncTeacherPickerAssignContext();
   openModal('modal-major-teacher-picker');
 }
 
@@ -20847,6 +23153,7 @@ function closeMajorOfferingTeacherPickerModal() {
   if (deptSel) deptSel.disabled = false;
   teacherPickerContext = null;
   offeringGroupStatusTeacherPickerForDraft = false;
+  syncTeacherPickerAssignContext();
 }
 
 function confirmMajorOfferingTeacherPickerModal() {
@@ -21384,7 +23691,7 @@ function renderCourseOfferingMajorTableHeader() {
     // renderListSortTh('courseMajorOffering', '序号', 'index', { center: true, extraClass: 'col-index', vertical: true }) +
     renderListSortTh('courseMajorOffering', '开课学期', 'offeringTerm', { center: true, extraClass: 'col-term' }) +
     renderListSortTh('courseMajorOffering', '负责人', 'owner', { extraClass: 'col-owner' }) +
-    renderListSortTh('courseMajorOffering', '提交状态', 'submitStatus', { center: true, extraClass: 'col-status' }) +
+    renderListSortTh('courseMajorOffering', '生效状态', 'submitStatus', { center: true, extraClass: 'col-status' }) +
     // renderListSortTh('courseMajorOffering', '授课确认状态', 'teachingConfirmStatus', { center: true }) + // 原计划页，改由任务安排页
     renderListSortTh('courseMajorOffering', '课程代码', 'code', { extraClass: 'col-code' }) +
     renderListSortTh('courseMajorOffering', '课程名称', 'name', { extraClass: 'col-course-name' }) +
@@ -21705,7 +24012,11 @@ function getMajorOfferingTaskPendingSelection() {
 function canSubmitMajorOfferingTaskSelection() {
   const pending = getMajorOfferingTaskPendingSelection();
   if (!pending.length) return false;
-  return pending.every(sec => validateMajorOfferingTaskArrangementSubmit(sec).ok);
+  return pending.every(sec => {
+    const arrangement = validateMajorOfferingTaskArrangementSubmit(sec);
+    const teachers = validateMajorOfferingTaskTeacherConfirmation(sec);
+    return arrangement.ok && teachers.ok;
+  });
 }
 
 function updateMajorOfferingTaskSelection() {
@@ -21844,7 +24155,7 @@ let majorOfferingTaskStyle2ExpandedIds = new Set();
 const MAJOR_OFFERING_TASK_STYLE2_STEP_HINTS = {
   1: '本步聚焦<strong>课程班</strong>：完成合班。勾选后可随时提交、撤回或退回。',
   2: '本步聚焦<strong>其他学院 Support</strong>：在 Support 列查看历史并用「管理」维护学院。勾选后可随时提交、撤回或退回。',
-  3: '本步聚焦<strong>师资安排</strong>：为各课程班/小组安排学时类型与任课教师。勾选后可随时提交、撤回或退回。'
+  3: '本步聚焦<strong>师资安排&授课确认</strong>：为各课程班/小组安排学时类型与任课教师，并可进入授课确认管理。勾选后可随时提交、撤回或退回。'
 };
 
 function getFilteredMajorOfferingTaskStyle2Sections() {
@@ -21894,6 +24205,16 @@ function defaultCourseMajorOfferingTaskStyle2Compare(a, b) {
 const COURSE_MAJOR_OFFERING_TASK_STYLE2_SORT_COLUMNS = {
   taskSubmitStatus: { get: row => getMajorOfferingTaskSubmitStatusKey(row.sec) },
   offeringStatus: { get: row => row.statusKey || '' },
+  teacherConfirm: {
+    get: row => {
+      const p = getSectionTeacherConfirmationProgress(row.sec);
+      if (!p.total) return -1;
+      if (p.complete) return 2;
+      if (p.confirmed > 0) return 1;
+      return 0;
+    },
+    type: 'number'
+  },
   code: { get: row => row.sec?.code || '' },
   name: { get: row => row.sec?.name || '' },
   classification: { get: row => row.classification || '' },
@@ -21986,7 +24307,7 @@ function renderMajorOfferingTaskStyle2Toolbar() {
   const step = majorOfferingTaskStyle2Step;
   const batchActions = `
     <div class="mot-style2-toolbar-row mot-style2-toolbar-batch">
-      <button class="btn btn-primary btn-sm" type="button" id="btn-mot-style2-submit" onclick="submitMajorOfferingTaskStyle2Selection()" disabled>提交</button>
+      <button class="btn btn-primary btn-sm" type="button" id="btn-mot-style2-submit" onclick="submitMajorOfferingTaskStyle2Selection()" disabled>生效</button>
       <button class="btn btn-outline btn-sm" type="button" id="btn-mot-style2-withdraw" onclick="withdrawMajorOfferingTaskStyle2Selection()" disabled>撤回</button>
       <button class="btn btn-outline btn-sm" type="button" id="btn-mot-style2-revert" onclick="revertMajorOfferingTaskStyle2Selection()" disabled>退回</button>
       <button class="btn btn-outline btn-sm" type="button" id="btn-mot-style2-import" onclick="alert('导入（原型占位）')">导入</button>
@@ -21995,7 +24316,7 @@ function renderMajorOfferingTaskStyle2Toolbar() {
     mount.innerHTML = `
       <div class="mot-style2-toolbar-row">
         <span class="mot-style2-toolbar-title">课程班</span>
-        <span class="form-hint">行内：合班；「操作记录」列可查看变更。勾选后可提交 / 撤回 / 退回。</span>
+        <span class="form-hint">行内：合班；「操作记录」列可查看变更。勾选后可生效 / 撤回 / 退回。</span>
         <button class="btn btn-outline btn-sm" type="button" onclick="goMajorOfferingTaskStyle2Step(2)">下一步：其他学院Support →</button>
       </div>
       ${batchActions}`;
@@ -22006,8 +24327,8 @@ function renderMajorOfferingTaskStyle2Toolbar() {
       <div class="mot-style2-toolbar-row">
         <button class="btn btn-outline btn-sm" type="button" onclick="goMajorOfferingTaskStyle2Step(1)">← 上一步</button>
         <span class="mot-style2-toolbar-title">其他学院Support</span>
-        <span class="form-hint">在 Support 列「管理」查看 / 新增学院；「操作记录」列可查看变更。勾选后可提交 / 撤回 / 退回。</span>
-        <button class="btn btn-outline btn-sm" type="button" onclick="goMajorOfferingTaskStyle2Step(3)">下一步：师资安排 →</button>
+        <span class="form-hint">在 Support 列「管理」查看 / 新增学院；「操作记录」列可查看变更。勾选后可生效 / 撤回 / 退回。</span>
+        <button class="btn btn-outline btn-sm" type="button" onclick="goMajorOfferingTaskStyle2Step(3)">下一步：师资安排&授课确认 →</button>
       </div>
       ${batchActions}`;
     return;
@@ -22015,14 +24336,22 @@ function renderMajorOfferingTaskStyle2Toolbar() {
   mount.innerHTML = `
     <div class="mot-style2-toolbar-row">
       <button class="btn btn-outline btn-sm" type="button" onclick="goMajorOfferingTaskStyle2Step(2)">← 上一步</button>
-      <span class="mot-style2-toolbar-title">师资安排</span>
-      <span class="form-hint">点击「安排教师」进入工作台；勾选后可提交 / 撤回 / 退回。</span>
+      <span class="mot-style2-toolbar-title">师资安排&授课确认</span>
+      <span class="form-hint">点击「安排教师」进入工作台；勾选后可生效 / 撤回 / 退回。</span>
     </div>
     ${batchActions}`;
 }
 
 function renderMajorOfferingTaskStyle2ChangeLogCell(sec) {
   return `<td class="actions col-center col-change-log"><a href="#" onclick="event.preventDefault();openSectionChangeLogInNewWindow('${sec.id}');return false">查看</a></td>`;
+}
+
+function renderMajorOfferingTaskStyle2TeacherConfirmAdminCell(sec) {
+  const sid = escapeHtml(String(sec?.id || '').trim());
+  if (!sid) {
+    return '<td class="actions col-center col-tcc-admin">—</td>';
+  }
+  return `<td class="actions col-center col-tcc-admin"><a href="#" onclick="event.preventDefault();openTeacherCourseConfirmationSectionManageModal('${sid}');return false">管理</a></td>`;
 }
 
 // function renderMajorOfferingTaskStyle2CourseInfoCell(sec) {
@@ -22119,8 +24448,8 @@ function updateMajorOfferingTaskStyle2Selection() {
   if (btnSubmit) {
     btnSubmit.disabled = !hasSelection || !pending.length;
     if (!hasSelection) btnSubmit.title = '';
-    else if (!pending.length) btnSubmit.title = '所选任务均已提交';
-    else if (!canSubmitMajorOfferingTaskSelection()) btnSubmit.title = '所选任务尚未满足提交条件，请完善分组与教师/学时安排';
+    else if (!pending.length) btnSubmit.title = '所选任务均已生效';
+    else if (!canSubmitMajorOfferingTaskSelection()) btnSubmit.title = '所选任务尚未满足生效条件，请完善分组/教师/学时安排并完成授课教师确认';
     else btnSubmit.title = '';
   }
   if (btnRevert) {
@@ -22186,6 +24515,7 @@ function renderCourseMajorOfferingTaskStyle2Page() {
     purgeMajorOfferingAutoSubmittedPlans();
     migrateResetInvalidMajorOfferingTaskArrangementStatuses();
     syncMajorOfferingTaskDemoSubmitStatuses();
+    seedTeacherCourseConfirmationDemoIfNeeded();
   }
   rebuildMajorOfferingTaskStyle2FilterOptions();
   syncMajorOfferingTaskStyle2StepChrome();
@@ -22218,9 +24548,9 @@ function renderCourseMajorOfferingTaskStyle2Page() {
 
   const showSupport = majorOfferingTaskStyle2Step === 2;
   const showActions = majorOfferingTaskStyle2Step !== 2;
-  // check+expand+status+submit+code+name+class+credits+week+batch+group+planned+lecturer+coordinator+changelog = 15
-  // + Support(2) when step 2；+ actions when not step 2（课程信息列已去掉）
-  const colCount = (showSupport ? 17 : 15) + (showActions ? 1 : 0);
+  const showTccAdmin = majorOfferingTaskStyle2Step === 3;
+  // check+expand+status+submit+tcc+code+name+...+changelog = 16；师资安排 +tccAdmin；step2 Support +2；+ actions
+  const colCount = 16 + (showTccAdmin ? 1 : 0) + (showSupport ? 2 : 0) + (showActions ? 1 : 0);
   const sortRs = showSupport ? { rowspan: 2 } : {};
   const rs = showSupport ? ' rowspan="2"' : '';
   const supportHead = showSupport
@@ -22239,6 +24569,9 @@ function renderCourseMajorOfferingTaskStyle2Page() {
   const actionsHead = showActions
     ? `<th class="col-sticky-actions"${rs}>操作</th>`
     : '';
+  const tccAdminHead = showTccAdmin
+    ? `<th class="col-center col-tcc-admin"${rs}>授课确认</th>`
+    : '';
 
   mount.innerHTML = `<div class="mot-style2-table-wrap">
     <table class="data-table compact offering-grouping-global-table mot-style2-table">
@@ -22247,18 +24580,20 @@ function renderCourseMajorOfferingTaskStyle2Page() {
           <th class="col-check"${rs}><input type="checkbox" id="mot-style2-check-all" aria-label="全选" onchange="toggleMajorOfferingTaskStyle2CheckAll(this.checked)"></th>
           <th class="col-center col-expand th-v"${rs}><span class="th-v-label">开课详情</span></th>
           ${renderListSortTh('courseMajorOfferingTaskStyle2', '开课状态', 'offeringStatus', { center: true, vertical: true, extraClass: 'col-status', ...sortRs })}
-          ${renderListSortTh('courseMajorOfferingTaskStyle2', '提交状态', 'taskSubmitStatus', { center: true, extraClass: 'col-task-submit', ...sortRs })}
+          ${renderListSortTh('courseMajorOfferingTaskStyle2', '生效状态', 'taskSubmitStatus', { center: true, extraClass: 'col-task-submit', ...sortRs })}
+          ${renderListSortTh('courseMajorOfferingTaskStyle2', '授课确认', 'teacherConfirm', { center: true, extraClass: 'col-tcc-progress', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Course Code', 'code', { extraClass: 'col-code', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Course Name', 'name', { extraClass: 'col-name', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Classification', 'classification', { extraClass: 'col-class', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Credits', 'credits', { center: true, extraClass: 'col-num', ...sortRs })}
-          ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Teaching Week', 'weekRange', { center: true, extraClass: 'col-num mot-style2-col-week', ...sortRs })}
+          ${renderListSortTh('courseMajorOfferingTaskStyle2', '起止周', 'weekRange', { center: true, extraClass: 'col-num mot-style2-col-week', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Prog. Batch', 'programmeBatch', { extraClass: 'col-batch', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', '小组数', 'groupCount', { center: true, extraClass: 'col-num mot-style2-col-group', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', '计划总人数', 'planned', { center: true, vertical: true, extraClass: 'col-num', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Lecturer', 'lecturer', { extraClass: 'col-lecturer mot-style2-col-lecturer', ...sortRs })}
           ${renderListSortTh('courseMajorOfferingTaskStyle2', 'Coordinator', 'coordinator', { extraClass: 'col-coordinator', ...sortRs })}
           <th class="col-center col-change-log"${rs}>操作记录</th>
+          ${tccAdminHead}
           ${supportHead}
           ${actionsHead}
         </tr>
@@ -22275,11 +24610,15 @@ function renderCourseMajorOfferingTaskStyle2Page() {
           const actionsCell = showActions
             ? `<td class="actions col-sticky-actions">${renderMajorOfferingTaskStyle2RowActions(sec)}</td>`
             : '';
+          const tccAdminCell = showTccAdmin
+            ? renderMajorOfferingTaskStyle2TeacherConfirmAdminCell(sec)
+            : '';
           const mainRow = `<tr class="offering-grouping-global-course-row${expanded ? ' is-expanded' : ''}">
             <td class="col-check"><input type="checkbox" class="mot-style2-row-check" value="${escapeHtml(sec.id)}" ${courseMajorTaskSelectedSectionIds.has(sec.id) ? 'checked' : ''} onchange="updateMajorOfferingTaskStyle2Selection()"></td>
             <td class="col-center col-expand">${expandBtn}</td>
             <td class="col-center col-status"><span ${statusAttrs}>${row.status.symbol}</span></td>
             <td class="col-center col-task-submit">${renderMajorOfferingTaskSubmitDisplay(sec)}</td>
+            <td class="col-center col-tcc-progress">${renderSectionTeacherConfirmationProgressCell(sec)}</td>
             <td class="col-code">${escapeHtml(sec.code || '—')}</td>
             <td class="col-name">${escapeHtml(sec.name || '—')}</td>
             <td class="col-class">${escapeHtml(row.classification || '—')}</td>
@@ -22291,6 +24630,7 @@ function renderCourseMajorOfferingTaskStyle2Page() {
             <td class="col-lecturer mot-style2-col-lecturer">${formatOfferingGroupingGlobalLecturersCell(sec)}</td>
             <td class="col-coordinator">${escapeHtml(row.coordinator || '—')}</td>
             ${renderMajorOfferingTaskStyle2ChangeLogCell(sec)}
+            ${tccAdminCell}
             ${showSupport ? renderMajorOfferingTaskSupportCells(sec) : ''}
             ${actionsCell}
           </tr>`;
@@ -23560,6 +25900,7 @@ function getOfferingGroupingCourseListSections() {
 function normalizeOfferingGroupingSidebarView(view) {
   if (view === 'course-list') return 'course-list';
   if (view === 'teacher-load') return 'teacher-load';
+  if (view === 'teacher-confirmation') return 'teacher-confirmation';
   return 'course';
 }
 
@@ -23569,9 +25910,13 @@ function syncOfferingGroupingSidebarViewChrome() {
   const teacherLoad = document.getElementById('offering-grouping-teacher-load');
   const isGlobal = offeringGroupingSidebarView === 'course-list';
   const isTeacherLoad = offeringGroupingSidebarView === 'teacher-load';
+  const isTeacherConfirmation = offeringGroupingSidebarView === 'teacher-confirmation';
   row?.classList.toggle('is-course-list-view', isGlobal);
   row?.classList.toggle('is-teacher-load-view', isTeacherLoad);
+  row?.classList.toggle('is-teacher-confirmation-view', isTeacherConfirmation);
   if (teacherLoad) teacherLoad.hidden = !isTeacherLoad;
+  const teacherConfirmation = document.getElementById('offering-grouping-teacher-confirmation');
+  if (teacherConfirmation) teacherConfirmation.hidden = !isTeacherConfirmation;
   aside?.setAttribute('aria-label', isGlobal ? 'Course List' : 'Course');
   document.querySelectorAll('.offering-grouping-view-tab').forEach(btn => {
     const active = btn.dataset.view === offeringGroupingSidebarView;
@@ -23585,6 +25930,7 @@ function switchOfferingGroupingSidebarView(view) {
   const next = normalizeOfferingGroupingSidebarView(view);
   if (offeringGroupingSidebarView === next) {
     if (next === 'teacher-load') renderCourseTeacherTeachingLoadPage();
+    else if (next === 'teacher-confirmation') renderOfferingGroupingTeacherConfirmationPage();
     else renderOfferingGroupingCourseList();
     return;
   }
@@ -23592,6 +25938,10 @@ function switchOfferingGroupingSidebarView(view) {
   syncOfferingGroupingSidebarViewChrome();
   if (next === 'teacher-load') {
     renderCourseTeacherTeachingLoadPage();
+    return;
+  }
+  if (next === 'teacher-confirmation') {
+    renderOfferingGroupingTeacherConfirmationPage();
     return;
   }
   renderOfferingGroupingCourseList();
@@ -24266,6 +26616,7 @@ function applyOfferingGroupingPageSave({ hasIncomplete = false, closePage = true
   sec.isGrouped = (sec.groups?.length || 0) > 0;
   syncSectionCoordinatorsFromAssignments(sec);
   syncOfferingGroupStudentCounts(sec);
+  invalidateTeacherCourseConfirmationsForSection(sec);
   refreshOfferingGroupingLeaveSnapshot();
   if (stamp) markOfferingGroupingLastSaved();
   if (!closePage) {
@@ -25456,7 +27807,7 @@ function renderGroupAssignPriorTermTeachers() {
   const termEl = document.getElementById('group-assign-prior-teachers-term');
   const listEl = document.getElementById('group-assign-prior-teachers-list');
   if (!wrap || !listEl) return;
-  // 仅在「安排教师 → 添加教师」选人弹窗中展示
+  // 仅在「安排教师 / 安排详情·更多」选人弹窗中展示
   if (teacherPickerContext !== 'groupAssign') {
     wrap.hidden = true;
     listEl.innerHTML = '';
@@ -25575,6 +27926,72 @@ function removeGroupAssignFormTeacher(staffId) {
   refreshGroupAssignFormPanels();
 }
 
+function getTeacherPickerAssignContextInfo(sec = getOfferingGroupingSection()) {
+  if (!sec || teacherPickerContext !== 'groupAssign') return null;
+  const draft = offeringGroupStatusTeacherPickerForDraft ? offeringGroupStatusAssignDraft : null;
+  const groupIds = draft
+    ? (draft.groupIds || []).filter(Boolean)
+    : getGroupAssignFormSelectedGroupIds();
+  const groups = sec.groups || [];
+  let groupText = '—';
+  if (!groups.length) {
+    groupText = sec.name || '课程班';
+  } else if (groupIds.length) {
+    groupText = groupIds.map(id => {
+      const g = groups.find(x => x.id === id);
+      return g ? formatMajorOfferingGroupName(sec.name, g.name) : id;
+    }).join('、');
+  } else {
+    groupText = '未选择小组';
+  }
+  const hourType = draft?.hourType || getGroupAssignSelectedHourType() || '';
+  const weekRange = (draft?.weekRange
+    || document.getElementById('group-assign-week-range')?.value
+    || sec.weekRange
+    || getDefaultSectionWeekRange(sec)
+    || '').toString().trim();
+  const weeklyRaw = draft?.weeklyHours ?? document.getElementById('group-assign-weekly-hours')?.value ?? '';
+  const weeklyHours = Number(weeklyRaw);
+  const weeklyText = Number.isFinite(weeklyHours) && weeklyHours > 0 ? String(weeklyHours) : (weeklyRaw ? String(weeklyRaw) : '—');
+  const totalHours = Number.isFinite(weeklyHours) && weeklyHours > 0
+    ? calcGroupAssignRowHours(weeklyHours, weekRange, sec)
+    : 0;
+  return {
+    courseCode: sec.code || '—',
+    groupText,
+    hourTypeText: hourType ? (getGroupAssignHourTypeDisplayLabel(sec, hourType) || hourType) : '—',
+    weekRange: weekRange || '—',
+    weeklyHours: weeklyText,
+    totalHours: totalHours || '—'
+  };
+}
+
+function syncTeacherPickerAssignContext() {
+  const wrap = document.getElementById('teacher-picker-assign-context');
+  const grid = document.getElementById('teacher-picker-assign-context-grid');
+  if (!wrap || !grid) return;
+  const info = getTeacherPickerAssignContextInfo();
+  if (!info) {
+    wrap.hidden = true;
+    grid.innerHTML = '';
+    return;
+  }
+  const items = [
+    { label: '课程号', value: `<code>${escapeHtml(info.courseCode)}</code>` },
+    { label: '小组', value: escapeHtml(info.groupText) },
+    { label: '学时类型', value: escapeHtml(info.hourTypeText) },
+    { label: '周次', value: `<code>${escapeHtml(info.weekRange)}</code>` },
+    { label: '周学时', value: escapeHtml(String(info.weeklyHours)) },
+    { label: '本次录入学时总数', value: escapeHtml(String(info.totalHours)) }
+  ];
+  grid.innerHTML = items.map(item => `
+    <div class="teacher-picker-assign-context-item">
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${item.value}</span>
+    </div>`).join('');
+  wrap.hidden = false;
+}
+
 function openGroupAssignTeacherPicker() {
   teacherPickerContext = 'groupAssign';
   majorOfferingTeacherPickerSelected.clear();
@@ -25605,6 +28022,8 @@ function openGroupAssignTeacherPicker() {
   ensureMajorOfferingTeacherPickerDeptFilter();
   syncGroupAssignTeacherPickerOfferingUnitFilter();
   syncTeacherPickerSimultaneousVisibility();
+  syncTeacherPickerAssignContext();
+  syncGroupAssignTeacherPickerSelectionFromForm();
   renderMajorOfferingTeacherPickerModal();
   openModal('modal-major-teacher-picker');
 }
@@ -25634,22 +28053,30 @@ function confirmGroupAssignTeacherPickerModal() {
   const sec = getOfferingGroupingSection();
   const allowedUnits = getGroupAssignTeacherPickerAllowedUnits();
   const poolMap = new Map(buildMockTeacherPickerPool().map(t => [t.key, t]));
-  const existingIds = new Set(groupAssignFormTeachers.map(t => t.staffId));
-  let added = 0;
+  const existingByStaff = new Map(groupAssignFormTeachers.map(t => [t.staffId, t]));
+  const nextTeachers = [];
+  const seen = new Set();
   keys.forEach(key => {
     const pick = poolMap.get(key);
-    if (!pick || existingIds.has(pick.staffId)) return;
-    if (allowedUnits.length && !allowedUnits.includes(pick.departmentCode)) return;
-    groupAssignFormTeachers.push(enrichGroupAssignFormTeacher({
+    if (!pick || seen.has(pick.staffId)) return;
+    const existing = existingByStaff.get(pick.staffId);
+    // 已选教师可保留；新选教师须在开课单位 / Support 范围内
+    if (!existing && allowedUnits.length && !allowedUnits.includes(pick.departmentCode)) return;
+    nextTeachers.push(enrichGroupAssignFormTeacher({
       staffId: pick.staffId,
-      name: pick.name,
-      teacherType: pick.teacherType,
-      departmentCode: pick.departmentCode
+      name: existing?.name || pick.name,
+      teacherType: existing?.teacherType || pick.teacherType,
+      departmentCode: existing?.departmentCode || pick.departmentCode,
+      role: existing?.role,
+      isCoordinator: !!existing?.isCoordinator
     }, sec));
-    // groupAssignFormTeachers.push({ staffId, name, role: '' }); // 原需手动选择授课角色
-    existingIds.add(pick.staffId);
-    added += 1;
+    seen.add(pick.staffId);
   });
+  if (!nextTeachers.length) {
+    alert('请至少勾选一名可选教师。');
+    return;
+  }
+  groupAssignFormTeachers = nextTeachers;
   if (isStatusDraftPicker && offeringGroupStatusAssignDraft) {
     offeringGroupStatusAssignDraft.teachers = groupAssignFormTeachers.map(t => ({ ...t }));
   }
@@ -25661,14 +28088,12 @@ function confirmGroupAssignTeacherPickerModal() {
   syncGroupAssignFormTeachersWithSectionCoordinator(sec);
   refreshGroupAssignFormPanels();
   syncGroupAssignHoursSummary();
-  if (added) {
-    const multiHint = getGroupAssignFormSelectedGroupIds().length > 1
-      ? (groupAssignFormSimultaneousGroups === true
-        ? '（已设为同时多组授课，学时只计一次）'
-        : '（已设为各小组分别计入学时）')
-      : '';
-    alert(`已添加 ${added} 名授课教师${multiHint}。`);
-  }
+  const multiHint = getGroupAssignFormSelectedGroupIds().length > 1
+    ? (groupAssignFormSimultaneousGroups === true
+      ? '（已设为同时多组授课，学时只计一次）'
+      : '（已设为各小组分别计入学时）')
+    : '';
+  alert(`已选择 ${groupAssignFormTeachers.length} 名授课教师${multiHint}。`);
 }
 
 // function onGroupAssignGroupPickToggle() {
@@ -28134,6 +30559,41 @@ function getOfferingGroupStatusAssignRows(sec, groupId) {
   });
 }
 
+function getOfferingGroupStatusAssignSortColumns(sec) {
+  return {
+    groups: { get: row => getGroupAssignRowGroupLabels(row, sec).join('、') },
+    hourType: { get: row => getGroupAssignHourTypeDisplayLabel(sec, row.hourType) || row.hourType || '' },
+    weekRange: { get: row => clampGroupAssignWeekRangeToSection(sec, row.weekRange) || row.weekRange || '' },
+    weeklyHours: { get: row => Number(row.weeklyHours) || 0, type: 'number' },
+    totalHours: { get: row => getGroupAssignRowRecordedHours(row, sec) || 0, type: 'number' },
+    teacher: { get: row => formatGroupAssignTeacherNamesDisplay(row) },
+    simultaneous: { get: row => (row.simultaneousGroups ? 1 : 0), type: 'number' }
+  };
+}
+
+function renderOfferingGroupStatusAssignSimulSortTh() {
+  const listKey = 'offeringGroupStatusAssign';
+  const key = 'simultaneous';
+  const state = getListSortState(listKey);
+  const tip = '选择多个课程班/小组时为「是」：合班同时授课，学时只计一次；仅一个小组时为「否」。新增安排时按所选小组数自动判定，无需填写。';
+  const cls = ['col-center', 'col-simul', 'th-sortable', state.key === key ? 'is-sorted' : '']
+    .filter(Boolean).join(' ');
+  return `<th class="${cls}" role="button" tabindex="0"
+    onclick="toggleListSort('${listKey}','${key}')"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleListSort('${listKey}','${key}')}">
+    <span class="offering-group-status-th-with-tip">
+      同时授课
+      <span class="offering-group-status-th-tip cell-ellipsis-tip" tabindex="0"
+        onclick="event.stopPropagation()"
+        onkeydown="event.stopPropagation()"
+        data-tip="${escapeHtml(tip)}"
+        title="${escapeHtml(tip)}"
+        aria-label="同时授课说明">?</span>
+      <span class="th-sort" aria-hidden="true">${listSortToggleIcon(state, key)}</span>
+    </span>
+  </th>`;
+}
+
 function getOfferingGroupStatusTeacherCount(sec, groupId) {
   const ids = new Set();
   getOfferingGroupStatusAssignRows(sec, groupId).forEach(row => {
@@ -28224,7 +30684,7 @@ function renderOfferingGroupStatusAssignDetailRow(sec, groupId, colSpan) {
 function getOfferingGroupStatusDraftDefault(sec) {
   const groups = sec?.groups || [];
   const hourTypes = getSectionGroupAssignModeHourTypes(sec);
-  return {
+  const draft = {
     id: '',
     mode: 'add',
     groupIds: groups.length === 1 ? [groups[0].id] : [],
@@ -28234,11 +30694,13 @@ function getOfferingGroupStatusDraftDefault(sec) {
     teachers: [],
     simultaneousGroups: false
   };
+  syncOfferingGroupStatusDraftSimultaneousFromGroups(draft);
+  return draft;
 }
 
 function buildOfferingGroupStatusDraftFromAssignRow(sec, row) {
   if (!row) return getOfferingGroupStatusDraftDefault(sec);
-  return {
+  const draft = {
     id: row.id || '',
     mode: 'edit',
     groupIds: getGroupAssignRowGroupIds(row).slice(),
@@ -28248,6 +30710,8 @@ function buildOfferingGroupStatusDraftFromAssignRow(sec, row) {
     teachers: getGroupAssignTeachers(row).map(t => enrichGroupAssignFormTeacher({ ...t }, sec)),
     simultaneousGroups: !!row.simultaneousGroups
   };
+  syncOfferingGroupStatusDraftSimultaneousFromGroups(draft);
+  return draft;
 }
 
 function addOfferingGroupStatusAssignDraft() {
@@ -28317,9 +30781,8 @@ function updateOfferingGroupStatusAssignDraftField(field, value, rerender = true
     offeringGroupStatusAssignDraft.weekRange = value;
   } else if (field === 'hourType') {
     offeringGroupStatusAssignDraft.hourType = value;
-  } else if (field === 'simultaneousGroups') {
-    offeringGroupStatusAssignDraft.simultaneousGroups = value === 'yes';
   }
+  // simultaneousGroups：由所选小组数量自动判定，不单独填写
   if (rerender) renderOfferingGroupingGroupStatusPanel();
   else syncOfferingGroupStatusAssignDraftCalculatedFields();
 }
@@ -28347,27 +30810,9 @@ function syncOfferingGroupStatusDraftGroupDisplay() {
     allCheck.checked = selectedCount === allIds.length;
     allCheck.indeterminate = selectedCount > 0 && selectedCount < allIds.length;
   }
-  const simSwitch = document.querySelector('.offering-group-status-assign-draft .offering-group-status-simul-switch');
-  if (simSwitch) {
-    const multi = draft.groupIds.length > 1;
-    if (!multi) draft.simultaneousGroups = false;
-    const input = simSwitch.querySelector('input[type="checkbox"]');
-    const track = simSwitch.querySelector('.table-bool-track');
-    const text = simSwitch.querySelector('.table-bool-text');
-    if (input) {
-      input.disabled = !multi;
-      input.checked = !!draft.simultaneousGroups;
-    }
-    simSwitch.classList.toggle('is-disabled', !multi);
-    simSwitch.title = multi ? '同时授课' : '请先选择多个小组';
-    if (track) {
-      track.classList.toggle('is-on', !!draft.simultaneousGroups);
-      track.classList.toggle('is-off', !draft.simultaneousGroups);
-    }
-    if (text) text.textContent = draft.simultaneousGroups ? '是' : '否';
-  }
-  // const simToggle = ... // 原分段「否|是」
-  // const simSel = ... // 原下拉
+  syncOfferingGroupStatusDraftSimultaneousFromGroups(draft);
+  const simCell = document.querySelector('.offering-group-status-assign-draft .col-simul');
+  if (simCell) simCell.textContent = draft.simultaneousGroups ? '是' : '否';
 }
 
 function positionOfferingGroupStatusDraftGroupDropdown() {
@@ -28426,19 +30871,20 @@ function closeOfferingGroupStatusDraftGroupDropdown() {
   clearOfferingGroupStatusDraftGroupDropdownPosition();
 }
 
+function syncOfferingGroupStatusDraftSimultaneousFromGroups(draft = offeringGroupStatusAssignDraft) {
+  if (!draft) return;
+  // 多组即同时授课，单组/未选则否；新增时不单独填写
+  draft.simultaneousGroups = (draft.groupIds?.length || 0) > 1;
+}
+
 function onOfferingGroupStatusDraftGroupToggle(checkbox) {
   if (!offeringGroupStatusAssignDraft || !checkbox) return;
-  const prevCount = offeringGroupStatusAssignDraft.groupIds?.length || 0;
   const id = checkbox.value;
   const selected = new Set(offeringGroupStatusAssignDraft.groupIds || []);
   if (checkbox.checked) selected.add(id);
   else selected.delete(id);
   offeringGroupStatusAssignDraft.groupIds = [...selected];
-  if (offeringGroupStatusAssignDraft.groupIds.length <= 1) {
-    offeringGroupStatusAssignDraft.simultaneousGroups = false;
-  } else if (prevCount <= 1) {
-    offeringGroupStatusAssignDraft.simultaneousGroups = true;
-  }
+  syncOfferingGroupStatusDraftSimultaneousFromGroups();
   syncOfferingGroupStatusDraftGroupDisplay();
   syncOfferingGroupStatusAssignDraftCalculatedFields();
 }
@@ -28446,13 +30892,8 @@ function onOfferingGroupStatusDraftGroupToggle(checkbox) {
 function toggleOfferingGroupStatusDraftGroupCheckAll(checked) {
   const sec = getOfferingGroupingSection();
   if (!offeringGroupStatusAssignDraft || !sec?.groups?.length) return;
-  const prevCount = offeringGroupStatusAssignDraft.groupIds?.length || 0;
   offeringGroupStatusAssignDraft.groupIds = checked ? sec.groups.map(g => g.id) : [];
-  if (offeringGroupStatusAssignDraft.groupIds.length <= 1) {
-    offeringGroupStatusAssignDraft.simultaneousGroups = false;
-  } else if (prevCount <= 1 || checked) {
-    offeringGroupStatusAssignDraft.simultaneousGroups = true;
-  }
+  syncOfferingGroupStatusDraftSimultaneousFromGroups();
   document.querySelectorAll('#offering-group-status-group-dropdown .offering-group-status-group-check')
     .forEach(el => { el.checked = checked; });
   syncOfferingGroupStatusDraftGroupDisplay();
@@ -28490,7 +30931,8 @@ function syncOfferingGroupStatusDraftToAssignForm(sec) {
     setGroupAssignSelectedHourType(draft.hourType);
   }
   groupAssignFormTeachers = (draft.teachers || []).map(t => enrichGroupAssignFormTeacher(t, sec));
-  setGroupAssignFormSimultaneousGroups(draft.groupIds.length > 1 ? !!draft.simultaneousGroups : null);
+  syncOfferingGroupStatusDraftSimultaneousFromGroups(draft);
+  setGroupAssignFormSimultaneousGroups(draft.simultaneousGroups ? true : null);
 }
 
 function openOfferingGroupStatusDraftTeacherPicker() {
@@ -28567,7 +31009,7 @@ function saveOfferingGroupStatusAssignDraft() {
     mergeHours: isSectionGroupAssignHoursMerged(sec),
     weekRange,
     hours: calcGroupAssignRowHours(weeklyHours, weekRange, sec),
-    simultaneousGroups: groupIds.length > 1 ? !!draft.simultaneousGroups : false,
+    simultaneousGroups: groupIds.length > 1,
     teachers,
     staffId: teachers.map(t => t.staffId).filter(Boolean).join('、'),
     teacher: teachers.map(t => t.name).filter(Boolean).join('、'),
@@ -28632,6 +31074,77 @@ function syncOfferingGroupStatusAssignDraftCalculatedFields() {
   weeklyEl?.classList.toggle('is-warning', !!warning);
 }
 
+function renderOfferingGroupStatusDraftTeacherCell(sec, draft) {
+  const { teachers: priorTeachers } = getGroupAssignPriorTermTeachers(sec);
+  const selected = draft?.teachers || [];
+  const selectedIds = selected.map(t => t.staffId).filter(Boolean);
+  const singleId = selectedIds.length === 1 ? selectedIds[0] : '';
+  const matchPrior = !!(singleId && priorTeachers.some(t => t.staffId === singleId && canSelectGroupAssignPriorTeacher(sec, t)));
+  const options = [`<option value="">请选择历史教师</option>`];
+  if (selected.length && !matchPrior) {
+    const names = selected.map(t => t.name).filter(Boolean).join('、') || '已选教师';
+    options.push(`<option value="__current__" selected title="${escapeHtml(names)}">${escapeHtml(names)}</option>`);
+  }
+  priorTeachers.forEach(t => {
+    const canPick = canSelectGroupAssignPriorTeacher(sec, t);
+    const external = isGroupAssignPriorTeacherExternal(sec, t);
+    const label = t.name || t.staffId || '—';
+    let optionTitle = '';
+    if (external && !canPick) optionTitle = '外院教师，需先申请 Support';
+    else if (external && canPick) optionTitle = '外院 · 已申请 Support';
+    else if (t.departmentCode) optionTitle = t.departmentCode;
+    const selectedAttr = matchPrior && t.staffId === singleId ? ' selected' : '';
+    const disabledAttr = canPick ? '' : ' disabled';
+    const titleAttr = optionTitle ? ` title="${escapeHtml(optionTitle)}"` : '';
+    options.push(`<option value="${escapeHtml(t.staffId || '')}"${selectedAttr}${disabledAttr}${titleAttr}>${escapeHtml(label)}</option>`);
+  });
+  const tip = priorTeachers.length
+    ? '上学期任课教师；外院需先申请 Support。非历史教师请点「更多」。'
+    : '暂无历史任课教师，请通过「更多」选择。';
+  return `<div class="offering-group-status-teacher-edit">
+    <select class="input input-sm offering-group-status-prior-teacher-select" aria-label="历史任课教师"
+      title="${escapeHtml(tip)}"
+      onchange="onOfferingGroupStatusDraftPriorTeacherChange(this)">
+      ${options.join('')}
+    </select>
+    <button type="button" class="offering-group-status-teacher-more-btn"
+      onclick="openOfferingGroupStatusDraftTeacherPicker()"
+      title="选择其他教师" aria-label="选择其他教师">
+      <span class="offering-group-status-teacher-more-icon" aria-hidden="true"></span>
+    </button>
+  </div>`;
+}
+
+function onOfferingGroupStatusDraftPriorTeacherChange(sel) {
+  if (!offeringGroupStatusAssignDraft || !sel) return;
+  const staffId = sel.value;
+  if (staffId === '__current__') return;
+  if (!staffId) {
+    offeringGroupStatusAssignDraft.teachers = [];
+    groupAssignFormTeachers = [];
+    renderOfferingGroupingGroupStatusPanel();
+    return;
+  }
+  const sec = getOfferingGroupingSection();
+  const { teachers: priorTeachers } = getGroupAssignPriorTermTeachers(sec);
+  const prior = priorTeachers.find(t => t.staffId === staffId);
+  if (!prior || !canSelectGroupAssignPriorTeacher(sec, prior)) {
+    alert('该教师为外院教师，需先申请 Support 后方可选入。');
+    renderOfferingGroupingGroupStatusPanel();
+    return;
+  }
+  const pick = buildMockTeacherPickerPool().find(t => t.staffId === staffId) || prior;
+  const teacher = enrichGroupAssignFormTeacher({
+    staffId: pick.staffId,
+    name: pick.name || prior.name,
+    teacherType: pick.teacherType || prior.teacherType || '',
+    departmentCode: pick.departmentCode || prior.departmentCode || ''
+  }, sec);
+  offeringGroupStatusAssignDraft.teachers = [teacher];
+  groupAssignFormTeachers = [teacher];
+  renderOfferingGroupingGroupStatusPanel();
+}
+
 function renderOfferingGroupStatusDraftGroupCell(sec, draft) {
   const groups = sec.groups || [];
   if (!groups.length) return `<span>${escapeHtml(sec.name || '课程班')}</span>`;
@@ -28664,7 +31177,11 @@ function renderOfferingGroupStatusDraftGroupCell(sec, draft) {
 }
 
 function renderOfferingGroupStatusAssignmentTable(sec) {
-  const rows = getOfferingGroupStatusAssignRows(sec, '__course__');
+  const rows = sortListWithState(
+    getOfferingGroupStatusAssignRows(sec, '__course__'),
+    'offeringGroupStatusAssign',
+    getOfferingGroupStatusAssignSortColumns(sec)
+  );
   const hourTypes = getSectionGroupAssignModeHourTypes(sec);
   const draft = offeringGroupStatusAssignDraft;
   const editingId = draft?.id || '';
@@ -28684,9 +31201,8 @@ function renderOfferingGroupStatusAssignmentTable(sec) {
       : draftMode === 'edit'
         ? '放弃本次修改，不会删除已有安排'
         : '放弃本次新增，不会删除已有安排';
-    const cancelBtn = draftMode === 'copy'
-      ? `<button type="button" class="offering-group-status-inline-delete" title="${escapeHtml(cancelHint)}" aria-label="${escapeHtml(cancelHint)}" onclick="cancelOfferingGroupStatusAssignDraft()">×</button>`
-      : `<button type="button" class="offering-group-status-inline-cancel" title="${escapeHtml(cancelHint)}" aria-label="${escapeHtml(cancelHint)}" onclick="cancelOfferingGroupStatusAssignDraft()">取消</button>`;
+    const cancelBtn = `<button type="button" class="offering-group-status-inline-cancel" title="${escapeHtml(cancelHint)}" aria-label="${escapeHtml(cancelHint)}" onclick="cancelOfferingGroupStatusAssignDraft()"><span class="offering-group-status-cancel-icon" aria-hidden="true"></span></button>`;
+    // 原 copy 用 ×、edit/add 用「取消」文案，统一为灰色圆形关闭图标
     return `<tr class="offering-group-status-assign-draft">
       <td class="col-check"></td>
       <td class="col-index col-center">${rowIndex}</td>
@@ -28714,22 +31230,8 @@ function renderOfferingGroupStatusAssignmentTable(sec) {
         </div>
       </td>
       <td class="col-center offering-group-status-draft-total col-total">${totalHours || '—'}</td>
-      <td class="col-teacher">
-        <button type="button" class="btn btn-outline btn-sm offering-group-status-teacher-picker-btn" onclick="openOfferingGroupStatusDraftTeacherPicker()">${draft.teachers?.length ? escapeHtml(draft.teachers.map(t => t.name).join('、')) : '选择教师'}</button>
-      </td>
-      <td class="col-center col-simul">
-        <label class="table-bool-switch offering-group-status-simul-switch${draft.groupIds.length > 1 ? '' : ' is-disabled'}" title="${draft.groupIds.length > 1 ? '同时授课' : '请先选择多个小组'}">
-          <input type="checkbox" aria-label="同时授课"
-            ${draft.simultaneousGroups ? 'checked' : ''}
-            ${draft.groupIds.length > 1 ? '' : 'disabled'}
-            onchange="updateOfferingGroupStatusAssignDraftField('simultaneousGroups', this.checked ? 'yes' : 'no')">
-          <span class="table-bool-track ${draft.simultaneousGroups ? 'is-on' : 'is-off'}">
-            <span class="table-bool-thumb"></span>
-            <span class="table-bool-text">${draft.simultaneousGroups ? '是' : '否'}</span>
-          </span>
-        </label>
-        <!-- 原分段「否|是」/下拉，改紧凑开关 -->
-      </td>
+      <td class="col-teacher">${renderOfferingGroupStatusDraftTeacherCell(sec, draft)}</td>
+      <td class="col-center col-simul">${draft.groupIds.length > 1 ? '是' : '否'}</td>
       <td class="col-center col-actions">
         <span class="offering-group-status-row-actions-inner">
           <button type="button" class="offering-group-status-inline-save" title="保存" aria-label="保存" onclick="saveOfferingGroupStatusAssignDraft()">✓</button>
@@ -28768,7 +31270,7 @@ function renderOfferingGroupStatusAssignmentTable(sec) {
         <span class="offering-group-status-row-actions-inner">
           <button type="button" class="offering-group-status-inline-edit" title="修改" aria-label="修改" onclick="editOfferingGroupStatusAssignRow('${escapeHtml(row.id)}')">✎</button>
           <button type="button" class="offering-group-status-inline-copy" title="复制" aria-label="复制" onclick="copyOfferingGroupStatusAssignRow('${escapeHtml(row.id)}')">⧉</button>
-          <button type="button" class="offering-group-status-inline-delete" title="删除" aria-label="删除" onclick="removeOfferingGroupStatusAssignRow('${escapeHtml(row.id)}')">×</button>
+          <button type="button" class="offering-group-status-inline-delete" title="删除" aria-label="删除" onclick="removeOfferingGroupStatusAssignRow('${escapeHtml(row.id)}')"><span class="offering-group-status-delete-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.25 2.5h5.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><path d="M7 2.5v-.6a1 1 0 0 1 1-1h0a1 1 0 0 1 1 1v.6" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><path d="M3.5 4.25h9" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><path d="M4.5 4.25v8A1.25 1.25 0 0 0 5.75 13.5h4.5A1.25 1.25 0 0 0 11.5 12.25v-8" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5v4M8 6.5v4M9.5 6.5v4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg></span></button>
         </span>
       </td>` : ''}
     </tr>`);
@@ -28797,13 +31299,13 @@ function renderOfferingGroupStatusAssignmentTable(sec) {
         <thead><tr>
           ${checkHead}
           <th class="col-index col-center">序号</th>
-          <th class="col-center col-groups">课程班/小组</th>
-          <th class="col-center col-hour-type">学时类型</th>
-          <th class="col-center col-week">周次</th>
-          <th class="col-center col-weekly">周学时</th>
-          <th class="col-center col-total">总学时</th>
-          <th class="col-center col-teacher">教师</th>
-          <th class="col-center col-simul">同时授课</th>
+          ${renderListSortTh('offeringGroupStatusAssign', '课程班/小组', 'groups', { center: true, extraClass: 'col-groups' })}
+          ${renderListSortTh('offeringGroupStatusAssign', '学时类型', 'hourType', { center: true, extraClass: 'col-hour-type' })}
+          ${renderListSortTh('offeringGroupStatusAssign', '周次', 'weekRange', { center: true, extraClass: 'col-week' })}
+          ${renderListSortTh('offeringGroupStatusAssign', '周学时', 'weeklyHours', { center: true, extraClass: 'col-weekly' })}
+          ${renderListSortTh('offeringGroupStatusAssign', '总学时', 'totalHours', { center: true, extraClass: 'col-total' })}
+          ${renderListSortTh('offeringGroupStatusAssign', '教师', 'teacher', { center: true, extraClass: 'col-teacher' })}
+          ${renderOfferingGroupStatusAssignSimulSortTh()}
           ${actionsHead}
         </tr></thead>
         <tbody>${bodyHtml}${empty}</tbody>
@@ -28897,6 +31399,7 @@ function renderOfferingGroupingGroupStatusPanel() {
     ${renderOfferingGroupStatusAssignmentTable(sec)}`;
   if (offeringGroupStatusAssignDraft) syncOfferingGroupStatusDraftGroupDisplay();
   bindCellFloatTips(mount, '.offering-group-status-weekly-warn.cell-ellipsis-tip[data-tip]', { alwaysShow: true });
+  bindCellFloatTips(mount, '.offering-group-status-th-tip.cell-ellipsis-tip[data-tip]', { alwaysShow: true });
   bindOfferingGroupStatusGroupDropdownReposition();
   updateOfferingGroupingAssignSelection();
 }
@@ -28991,18 +31494,27 @@ function openOfferingTeacherTermAssignModal(staffId) {
     : formatTeacherTeachingLoadHours(prevTermHours);
   const courseRows = getTeacherOfferingTermSectionDetailRows(id, termCode);
   if (titleEl) titleEl.textContent = `${teacherName} · 本学期开课课时安排`;
+  if (termCode) syncTeacherCourseConfirmationPackageRows(id, termCode);
   const courseBody = courseRows.length
-    ? courseRows.map((row, idx) => `<tr>
+    ? courseRows.map((row, idx) => {
+      const confirmStatus = getTeacherCourseConfirmationSectionStatus(id, termCode, row.sectionId);
+      return `<tr>
         <td class="col-center">${idx + 1}</td>
         <td><button type="button" class="offering-grouping-global-course-link" onclick="jumpOfferingGroupingToSectionAssign('${escapeHtml(row.sectionId)}')">${escapeHtml(row.code)}</button></td>
         <td>${escapeHtml(row.name)}</td>
         <td>${formatTeacherOfferingSectionGroupsCell(row.groupLabels)}</td>
         <td class="col-center">${escapeHtml(formatTeacherTeachingLoadHours(row.hours))}</td>
+        <td class="col-center col-tcc-status">${renderTeacherCourseConfirmationTeachingLoadStatusPill(confirmStatus)}</td>
         <td class="col-center">
-          <button type="button" class="btn btn-outline btn-sm" onclick="jumpOfferingGroupingToSectionAssign('${escapeHtml(row.sectionId)}')">前往安排</button>
+          <span class="offering-teacher-term-course-actions">
+            <a href="#" onclick="event.preventDefault();jumpOfferingGroupingToSectionAssign('${escapeHtml(row.sectionId)}');return false">编辑</a>
+            <span class="offering-teacher-term-course-action-sep" aria-hidden="true">·</span>
+            <a href="#" onclick="event.preventDefault();jumpToTeacherCourseConfirmationFromTeachingLoad('${escapeHtml(id)}', '${escapeHtml(termCode)}');return false">授课确认</a>
+          </span>
         </td>
-      </tr>`).join('')
-    : `<tr><td colspan="6" class="text-muted">本学期尚未安排该教师的开课课时。</td></tr>`;
+      </tr>`;
+    }).join('')
+    : `<tr><td colspan="7" class="text-muted">本学期尚未安排该教师的开课课时。</td></tr>`;
   body.innerHTML = `<div class="offering-grouping-teacher-load-card">
     <div class="offering-grouping-teacher-load-card-head">
       <div class="offering-grouping-teacher-load-card-title">
@@ -29039,7 +31551,7 @@ function openOfferingTeacherTermAssignModal(staffId) {
           <strong>已初分配课程</strong>
         </div>
         <div class="offering-grouping-teacher-load-card-meta">
-          <span>点击课程号或「前往安排」可跳转修改学时/教师</span>
+          <span>「编辑」跳转修改学时/教师；「授课确认」进入该教师确认管理</span>
         </div>
       </div>
       <div class="table-scroll offering-grouping-teacher-load-scroll">
@@ -29051,6 +31563,7 @@ function openOfferingTeacherTermAssignModal(staffId) {
               <th>Course Name</th>
               <th>负责课程班/小组</th>
               <th class="col-center">本课课时</th>
+              <th class="col-center">授课确认状态</th>
               <th class="col-center">操作</th>
             </tr>
           </thead>
@@ -29272,7 +31785,6 @@ function renderOfferingGroupingPanel() {
   const tree = document.getElementById('offering-group-tree');
   ensureOfferingGroupingGroupSelection(sec);
   (sec.groups || []).forEach(g => migrateLegacyOfferingGroupCapacity(g));
-  ensureDemoOfferingGroupRemarks(sec);
   normalizeOfferingGroupCapacityLimits(sec);
   syncOfferingGroupStudentCounts(sec);
   if (tree) {
@@ -40539,7 +43051,9 @@ const COURSE_PAGE_IDS = new Set([
   'course-shared-teaching-maintenance',
   'course-offering-roster-change-log',
   'course-section-change-log',
-  'course-teacher-teaching-load'
+  'course-teacher-teaching-load',
+  'course-teacher-confirmation-admin',
+  'teacher-course-confirmation'
   // 'course-merge-split', // 已移除：合分班改由专业开课计划页操作列完成
   // 'course-section-arrange' // 已移除
 ]);
@@ -40892,6 +43406,8 @@ function goPage(id) {
   if (id === 'course-offering-roster-change-log') renderCourseOfferingRosterChangeLogPage();
   if (id === 'course-section-change-log') renderCourseSectionChangeLogPage();
   if (id === 'course-teacher-teaching-load') renderCourseTeacherTeachingLoadPage();
+  if (id === 'course-teacher-confirmation-admin') renderTeacherCourseConfirmationAdminPage();
+  if (id === 'teacher-course-confirmation') renderTeacherCourseConfirmationPortalPage();
   // if (id === 'course-merge-split') renderCourseMergeSplitPage(); // 模块已移除
   // if (id === 'course-section-arrange') renderCourseSectionArrangePage(); // 模块已移除
   if (id === 'schedule-workflow') renderScheduleWorkflowPage();

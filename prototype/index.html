@@ -54,8 +54,10 @@
         </button>
         <div class="nav-section-body">
           <a href="#" class="nav-item nav-item-sub" data-page="course-offering-major">开课计划</a>
-          <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">开课安排（样式1）</a>
-          <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">开课安排（样式2）</a>
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">开课安排（样式1）</a> -->
+          <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">开课安排</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-confirmation-admin">授课确认管理</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="teacher-course-confirmation">授课确认（教师端）</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">开课名单</a>
           <!-- 原：专业开课计划 / 专业开课任务安排（样式一/二） / 专业开课学生名单管理 -->
         </div>
@@ -890,11 +892,11 @@
             <input class="input input-sm" id="course-major-filter-name" placeholder="课程号">
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-filter-submit-status">提交状态</label>
+            <label for="course-major-filter-submit-status">生效状态</label>
             <select class="input input-sm" id="course-major-filter-submit-status">
               <option value="">全部</option>
               <option value="draft">草稿</option>
-              <option value="submitted">已提交</option>
+              <option value="submitted">已生效</option>
               <option value="reverted">回退</option>
             </select>
           </div>
@@ -931,7 +933,7 @@
         <div class="panel-toolbar course-major-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openGenerateMajorOfferingTaskModal()">生成开课任务</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> --> <!-- 改由任务安排页 -->
-          <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>提交</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>生效</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
           <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护。「操作记录」可查看字段变更（支持按用户过滤）。</span>
@@ -943,7 +945,7 @@
               <!-- <th class="col-index">序号</th> -->
               <th class="col-center">开课学期</th>
               <th>负责人</th>
-              <th class="col-center">提交状态</th>
+              <th class="col-center">生效状态</th>
               <!-- <th class="col-center">授课确认状态</th> 改由任务安排页 -->
               <!-- <th class="col-center">状态</th> 原开课状态列 -->
               <th>课程代码</th><th>课程名称</th><th>课程类别</th><th class="col-center">选课类型</th>
@@ -984,6 +986,7 @@
             <button type="button" class="offering-grouping-view-tab is-active" role="tab" aria-selected="true" data-view="course" onclick="switchOfferingGroupingSidebarView('course')">Course</button>
             <button type="button" class="offering-grouping-view-tab" role="tab" aria-selected="false" data-view="course-list" onclick="switchOfferingGroupingSidebarView('course-list')">Course List</button>
             <button type="button" class="offering-grouping-view-tab" role="tab" aria-selected="false" data-view="teacher-load" onclick="switchOfferingGroupingSidebarView('teacher-load')">教师授课学时统计</button>
+            <button type="button" class="offering-grouping-view-tab" role="tab" aria-selected="false" data-view="teacher-confirmation" onclick="switchOfferingGroupingSidebarView('teacher-confirmation')">授课确认</button>
           </div>
         </div>
         <div class="header-actions">
@@ -1021,7 +1024,8 @@
                   <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupMergeModal()">合并分组</button> -->
                   <button class="btn btn-outline btn-sm btn-danger-text" type="button" onclick="resetOfferingGroupingAll()">重置</button>
                   <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-hour-type-settings" onclick="openGroupAssignHourTypeSettings()">学时类型设置</button>
-                  <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()">安排教师</button>
+                  <!-- 安排教师入口暂隐藏，改由安排详情内新增 -->
+                  <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()" hidden>安排教师</button>
                   <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingAutoGroupModal()">自动分组</button> --> <!-- 功能暂下线 -->
                 </div>
                 <div class="offering-group-tree" id="offering-group-tree"></div>
@@ -1125,8 +1129,14 @@
           </div>
         </div>
         <div class="offering-grouping-teacher-load" id="offering-grouping-teacher-load" data-ttl-root hidden>
+          <div class="teacher-load-dimension-bar">
+            <div class="teacher-load-dimension-tabs" role="tablist" aria-label="Teaching Load 统计维度">
+              <button type="button" class="teacher-load-dimension-tab is-active" role="tab" aria-selected="true" data-ttl="dimension-tab" data-dimension="term" onclick="setTeacherTeachingLoadDimension('term')">按学期</button>
+              <button type="button" class="teacher-load-dimension-tab" role="tab" aria-selected="false" data-ttl="dimension-tab" data-dimension="academic-year" onclick="setTeacherTeachingLoadDimension('academic-year')">按学年</button>
+            </div>
+          </div>
           <div class="card course-major-query-card">
-            <div class="course-major-query-grid">
+            <div class="course-major-query-grid teacher-load-query-grid">
               <div class="course-time-query-field">
                 <label data-ttl="term-label">开课学期</label>
                 <div class="clo-multiselect" data-ttl="term-multiselect">
@@ -1155,7 +1165,7 @@
           </div>
           <div class="card teacher-teaching-load-card">
             <div class="panel-toolbar">
-              <span class="form-hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
+              <span class="form-hint" data-ttl="hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
             </div>
             <div class="table-scroll teacher-teaching-load-scroll">
               <table class="data-table teacher-teaching-load-table">
@@ -1164,6 +1174,11 @@
                 <tfoot data-ttl="foot"></tfoot>
               </table>
             </div>
+          </div>
+        </div>
+        <div class="offering-grouping-teacher-confirmation" id="offering-grouping-teacher-confirmation" hidden>
+          <div class="card tcc-admin-card">
+            <div id="offering-grouping-teacher-confirmation-body"></div>
           </div>
         </div>
       </div>
@@ -1306,7 +1321,7 @@
       <!-- 页头标题 / 副标题暂隐
       <div class="page-header">
         <div>
-          <h1>开课安排（样式2）</h1>
+          <h1>开课安排</h1>
           <p class="subtitle">分三步完成课程班、其他学院 Support 与师资安排；提交/撤回/退回在各步骤均可操作</p>
         </div>
       </div>
@@ -1322,9 +1337,9 @@
           <span class="mot-style2-step-label">其他学院 Support</span>
         </button>
         <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="3" title="学时类型 · 任课教师" onclick="goMajorOfferingTaskStyle2Step(3)">
+        <button type="button" class="mot-style2-step" data-step="3" title="学时类型 · 任课教师 · 授课确认" onclick="goMajorOfferingTaskStyle2Step(3)">
           <span class="mot-style2-step-num">3</span>
-          <span class="mot-style2-step-label">师资安排</span>
+          <span class="mot-style2-step-label">师资安排&授课确认</span>
         </button>
       </nav>
       <!-- 步骤提示暂隐
@@ -1351,10 +1366,10 @@
             <input class="input input-sm" id="mot-style2-filter-name" placeholder="课程号或名称" onkeydown="if(event.key==='Enter'){queryMajorOfferingTaskStyle2List()}">
           </div>
           <div class="course-time-query-field">
-            <label for="mot-style2-filter-task-submit">提交状态</label>
+            <label for="mot-style2-filter-task-submit">生效状态</label>
             <select class="input input-sm" id="mot-style2-filter-task-submit">
               <option value="">全部</option>
-              <option value="submitted">已提交</option>
+              <option value="submitted">已生效</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
             </select>
@@ -2140,11 +2155,17 @@
           <p class="subtitle">Teaching Load (hour) · 按教师汇总各学期已安排授课学时</p>
         </div>
       </div>
+      <div class="teacher-load-dimension-bar">
+        <div class="teacher-load-dimension-tabs" role="tablist" aria-label="Teaching Load 统计维度">
+          <button type="button" class="teacher-load-dimension-tab is-active" role="tab" aria-selected="true" data-ttl="dimension-tab" data-dimension="term" onclick="setTeacherTeachingLoadDimension('term')">按学期</button>
+          <button type="button" class="teacher-load-dimension-tab" role="tab" aria-selected="false" data-ttl="dimension-tab" data-dimension="academic-year" onclick="setTeacherTeachingLoadDimension('academic-year')">按学年</button>
+        </div>
+      </div>
       <div class="alert-info offering-module-hint">
         <p>按教师横向展示各学期授课学时（周学时 × 周次）。原型数据示意学院 Teaching Load 表结构；后续可与开课清单中已提交的教师安排联动。</p>
       </div>
       <div class="card course-major-query-card">
-        <div class="course-major-query-grid">
+        <div class="course-major-query-grid teacher-load-query-grid">
           <div class="course-time-query-field">
             <label id="teacher-load-filter-term-label" data-ttl="term-label">开课学期</label>
             <div class="clo-multiselect" id="teacher-load-filter-term-multiselect" data-ttl="term-multiselect">
@@ -2173,7 +2194,7 @@
       </div>
       <div class="card teacher-teaching-load-card">
         <div class="panel-toolbar">
-          <span class="form-hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
+          <span class="form-hint" data-ttl="hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
         </div>
         <div class="table-scroll teacher-teaching-load-scroll">
           <table class="data-table teacher-teaching-load-table" id="teacher-teaching-load-table">
@@ -2182,6 +2203,39 @@
             <tfoot id="teacher-teaching-load-foot" data-ttl="foot"></tfoot>
           </table>
         </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 授课教师确认（管理端） ═══ -->
+    <section class="page" id="page-course-teacher-confirmation-admin">
+      <div class="page-header">
+        <div>
+          <h1>授课确认管理</h1>
+          <p class="subtitle">按教师维度下发系统内授课确认；支持管理端代确认</p>
+        </div>
+      </div>
+      <div class="card tcc-admin-card">
+        <div id="course-teacher-confirmation-admin-body"></div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 授课教师确认（教师端） ═══ -->
+    <section class="page" id="page-teacher-course-confirmation">
+      <div class="page-header compact">
+        <div>
+          <h1>授课确认（教师端）</h1>
+          <p class="subtitle">请在系统内确认本学期授课安排，或提交不同意及诉求</p>
+        </div>
+        <div class="header-actions">
+          <label class="tcc-portal-switch">
+            <span>演示身份</span>
+            <select class="input input-sm" id="teacher-course-confirmation-teacher-select" onchange="onTeacherCourseConfirmationPortalTeacherChange(this.value)"></select>
+          </label>
+        </div>
+      </div>
+      <div id="teacher-course-confirmation-tabs" class="tcc-portal-tabs-host"></div>
+      <div class="card tcc-portal-card">
+        <div id="teacher-course-confirmation-body"></div>
       </div>
     </section>
 
@@ -4628,6 +4682,9 @@
       <button class="modal-close" type="button" onclick="closeMajorOfferingTeacherPickerModal()">×</button>
     </div>
     <div class="modal-body teacher-picker-modal-body">
+      <div class="teacher-picker-assign-context" id="teacher-picker-assign-context" hidden>
+        <div class="teacher-picker-assign-context-grid" id="teacher-picker-assign-context-grid"></div>
+      </div>
       <div class="group-assign-prior-teachers" id="group-assign-prior-teachers" hidden>
         <div class="group-assign-prior-teachers-head">
           <div class="group-assign-prior-teachers-title">
@@ -4642,16 +4699,16 @@
         <div class="teacher-picker-filter-grid">
           <div class="form-item">
             <label for="teacher-picker-filter-staff-id">教师工号</label>
-            <input class="input input-sm" id="teacher-picker-filter-staff-id" type="text" placeholder="please input">
+            <input class="input input-sm" id="teacher-picker-filter-staff-id" type="text" placeholder="工号">
           </div>
           <div class="form-item">
             <label for="teacher-picker-filter-name">教师姓名</label>
-            <input class="input input-sm" id="teacher-picker-filter-name" type="text" placeholder="please input">
+            <input class="input input-sm" id="teacher-picker-filter-name" type="text" placeholder="姓名">
           </div>
           <div class="form-item">
             <label for="teacher-picker-filter-type">教师类型</label>
             <select class="input input-sm" id="teacher-picker-filter-type">
-              <option value="">please select</option>
+              <option value="">全部类型</option>
               <!-- 选项由 ensureMajorOfferingTeacherPickerTypeFilter 按代码集简写生成 -->
               <!-- <option value="Full-time">Full-time</option><option value="Part-time">Part-time</option><option value="Visiting">Visiting</option> -->
             </select>
@@ -4659,7 +4716,7 @@
           <div class="form-item">
             <label for="teacher-picker-filter-gender">性别</label>
             <select class="input input-sm" id="teacher-picker-filter-gender">
-              <option value="">please select</option>
+              <option value="">全部</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
@@ -4667,13 +4724,13 @@
           <div class="form-item">
             <label for="teacher-picker-filter-dept">所属部门</label>
             <select class="input input-sm" id="teacher-picker-filter-dept">
-              <option value="">please select</option>
+              <option value="">全部部门</option>
             </select>
           </div>
-        </div>
-        <div class="teacher-picker-filter-actions">
-          <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingTeacherPicker()">Search</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingTeacherPickerFilters()">Reset</button>
+          <div class="teacher-picker-filter-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingTeacherPicker()">Search</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingTeacherPickerFilters()">Reset</button>
+          </div>
         </div>
       </div>
       <div class="teacher-picker-table-wrap">
@@ -5838,6 +5895,103 @@
     <div class="modal-body" id="offering-teacher-term-assign-body"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-teacher-term-assign')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：授课教师确认 · 课程师资确认管理 ═══ -->
+<div class="modal-overlay" id="modal-teacher-course-confirmation-section">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3 id="tcc-section-manage-modal-title">授课确认</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-course-confirmation-section')">×</button>
+    </div>
+    <div class="modal-body" id="tcc-section-manage-modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-course-confirmation-section')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：授课教师确认 · 详情 ═══ -->
+<div class="modal-overlay" id="modal-teacher-course-confirmation-detail">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3 id="tcc-admin-detail-modal-title">授课安排详情</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-course-confirmation-detail')">×</button>
+    </div>
+    <div class="modal-body" id="tcc-admin-detail-modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-course-confirmation-detail')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：授课教师确认 · 操作记录 ═══ -->
+<div class="modal-overlay" id="modal-teacher-course-confirmation-history">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="tcc-history-modal-title">操作记录</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-course-confirmation-history')">×</button>
+    </div>
+    <div class="modal-body" id="tcc-history-modal-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-course-confirmation-history')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：授课教师确认 · 同意/不同意 ═══ -->
+<div class="modal-overlay" id="modal-teacher-course-confirmation-decision">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>授课确认</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-course-confirmation-decision')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint">请确认本学期授课安排。选择「不同意」时可填写需求反馈，教务将查看后调整安排并重新下发。</p>
+      <div class="form-item">
+        <label>确认结果</label>
+        <div class="tcc-decision-options" role="radiogroup" aria-label="确认结果">
+          <label class="tcc-decision-option">
+            <input type="radio" name="tcc-decision" id="tcc-decision-agree" value="agree" checked onchange="onTeacherCourseConfirmationDecisionChange()">
+            <span>同意</span>
+          </label>
+          <label class="tcc-decision-option">
+            <input type="radio" name="tcc-decision" id="tcc-decision-disagree" value="disagree" onchange="onTeacherCourseConfirmationDecisionChange()">
+            <span>不同意</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-item" id="tcc-decision-feedback-wrap" hidden>
+        <label for="tcc-decision-feedback">需求反馈</label>
+        <textarea class="input" id="tcc-decision-feedback" rows="4" placeholder="请填写不同意原因或调整需求"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-course-confirmation-decision')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="submitTeacherCourseConfirmationDecision()">提交</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：授课教师确认 · 不同意（兼容旧入口） ═══ -->
+<div class="modal-overlay" id="modal-teacher-course-confirmation-disagree">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>不同意授课安排</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-course-confirmation-disagree')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint">请说明不同意原因或您的诉求，教务将查看后调整安排并重新下发确认。</p>
+      <div class="form-item">
+        <label for="tcc-disagree-feedback">诉求</label>
+        <textarea class="input" id="tcc-disagree-feedback" rows="4" placeholder="请填写不同意原因或调整诉求"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-course-confirmation-disagree')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="submitTeacherCourseConfirmationDisagree()">提交</button>
     </div>
   </div>
 </div>

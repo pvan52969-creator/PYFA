@@ -5016,6 +5016,7 @@ code {
   word-break: break-word;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-change-log,
+#page-course-major-offering-task-style2 .mot-style2-table .col-tcc-admin,
 #page-course-major-offering-task-style2 .mot-style2-table .col-course-info {
   min-width: 64px;
   max-width: 80px;
@@ -5024,6 +5025,7 @@ code {
   vertical-align: middle;
 }
 #page-course-major-offering-task-style2 .mot-style2-table td.col-change-log a,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-tcc-admin a,
 #page-course-major-offering-task-style2 .mot-style2-table td.col-course-info a {
   display: inline-block;
   white-space: nowrap;
@@ -5206,7 +5208,7 @@ code {
 #page-course-major-offering-task-style2 .offering-grouping-global-assign-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -7030,7 +7032,9 @@ code {
   display: none;
 }
 #page-offering-grouping .offering-grouping-page-row.is-teacher-load-view .offering-grouping-course-list,
-#page-offering-grouping .offering-grouping-page-row.is-teacher-load-view .offering-grouping-page-card {
+#page-offering-grouping .offering-grouping-page-row.is-teacher-load-view .offering-grouping-page-card,
+#page-offering-grouping .offering-grouping-page-row.is-teacher-confirmation-view .offering-grouping-course-list,
+#page-offering-grouping .offering-grouping-page-row.is-teacher-confirmation-view .offering-grouping-page-card {
   display: none;
 }
 #page-offering-grouping .offering-grouping-teacher-load {
@@ -7051,6 +7055,82 @@ code {
   position: relative;
   z-index: 5;
 }
+#page-offering-grouping .offering-grouping-teacher-load .course-major-query-grid {
+  grid-template-columns: minmax(168px, 200px) repeat(2, minmax(108px, 140px)) auto;
+  align-items: end;
+  gap: 6px 12px;
+}
+#page-offering-grouping .offering-grouping-teacher-load .course-major-query-grid.teacher-load-query-grid {
+  grid-template-columns: minmax(168px, 220px) repeat(2, minmax(108px, 140px)) auto;
+}
+.teacher-load-dimension-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+#page-offering-grouping .offering-grouping-teacher-load > .teacher-load-dimension-bar {
+  margin-bottom: 2px;
+}
+#page-course-teacher-teaching-load > .teacher-load-dimension-bar {
+  margin: 0 0 12px;
+}
+.teacher-load-dimension-tabs {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  min-height: 32px;
+}
+.teacher-load-dimension-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0 14px;
+  font-size: 12px;
+  color: var(--text-2, #475569);
+  cursor: pointer;
+  line-height: 30px;
+}
+.teacher-load-dimension-tab + .teacher-load-dimension-tab {
+  border-left: 1px solid var(--border, #cbd5e1);
+}
+.teacher-load-dimension-tab.is-active {
+  background: var(--blue-50, #eff6ff);
+  color: var(--blue-800, #1e40af);
+  font-weight: 600;
+}
+.teacher-load-dimension-tab:hover:not(.is-active) {
+  background: #f8fafc;
+}
+#page-course-teacher-teaching-load .course-major-query-grid.teacher-load-query-grid {
+  grid-template-columns: minmax(200px, 260px) repeat(2, minmax(120px, 160px)) auto;
+  align-items: end;
+}
+#page-offering-grouping .offering-grouping-teacher-load .course-time-query-field {
+  min-width: 0;
+  overflow: visible;
+}
+#page-offering-grouping .offering-grouping-teacher-load [data-ttl="term-multiselect"] {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+#page-offering-grouping .offering-grouping-teacher-load [data-ttl="term-multiselect"] .clo-multiselect-trigger {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#page-offering-grouping .offering-grouping-teacher-load [data-ttl="term-dropdown"] {
+  z-index: 40;
+  min-width: 220px;
+  width: max-content;
+  max-width: min(420px, 70vw);
+  right: auto;
+}
 #page-offering-grouping .offering-grouping-teacher-load .teacher-teaching-load-card {
   flex: 1;
   min-height: 0;
@@ -7069,12 +7149,1083 @@ code {
   min-height: 0;
   overflow: auto;
 }
-#page-offering-grouping .offering-grouping-teacher-load [data-ttl="term-multiselect"] {
-  position: relative;
-  min-width: 220px;
+#page-offering-grouping .offering-grouping-teacher-confirmation {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-#page-offering-grouping .offering-grouping-teacher-load [data-ttl="term-dropdown"] {
-  z-index: 30;
+#page-offering-grouping .offering-grouping-teacher-confirmation[hidden] {
+  display: none !important;
+}
+#page-offering-grouping .offering-grouping-teacher-confirmation .tcc-admin-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 14px 16px;
+}
+#page-offering-grouping .offering-grouping-teacher-confirmation .tcc-admin {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tcc-admin-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+}
+.tcc-admin-batch-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tcc-admin-table-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.tcc-admin-table .col-check {
+  width: 36px;
+  min-width: 36px;
+}
+.tcc-admin-table {
+  width: 100%;
+  table-layout: fixed;
+}
+.tcc-admin-table.tcc-admin-course-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.tcc-admin-table th,
+.tcc-admin-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tcc-admin-course-table thead th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+  padding: 8px 6px;
+  text-align: center;
+  white-space: nowrap;
+  border-right: 1px solid var(--border-light, #e2e8f0);
+  border-bottom: 2px solid var(--border, #cbd5e1);
+}
+.tcc-admin-course-table tbody td {
+  padding: 6px 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  vertical-align: middle;
+  border-right: 1px solid var(--border-light, #e2e8f0);
+}
+.tcc-admin-course-table thead th:last-child,
+.tcc-admin-course-table tbody td:last-child {
+  border-right: 0;
+}
+.tcc-admin-course-table thead th.col-teacher,
+.tcc-admin-course-table tbody td.col-teacher,
+.tcc-admin-course-table thead th.col-course-name,
+.tcc-admin-course-table tbody td.col-course-name,
+.tcc-admin-course-table thead th.col-coord,
+.tcc-admin-course-table tbody td.col-coord,
+.tcc-admin-course-table thead th.col-coteach,
+.tcc-admin-course-table tbody td.col-coteach {
+  text-align: left;
+}
+.tcc-admin-course-table .col-check {
+  width: 32px;
+  min-width: 32px;
+}
+.tcc-admin-course-table .col-index {
+  width: 40px;
+  min-width: 40px;
+}
+.tcc-admin-course-table .col-status {
+  width: 72px;
+  min-width: 72px;
+  overflow: visible;
+}
+.tcc-admin-course-table .col-teacher {
+  width: 84px;
+  min-width: 84px;
+}
+.tcc-admin-course-table .col-code {
+  width: 80px;
+  min-width: 80px;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.tcc-admin-course-table .col-code code {
+  white-space: nowrap;
+}
+.tcc-admin-course-table .col-course-name {
+  width: 150px;
+  min-width: 120px;
+}
+.tcc-admin-course-table .col-class {
+  width: 100px;
+  min-width: 88px;
+}
+.tcc-admin-course-table .col-credits,
+.tcc-admin-course-table .col-hours {
+  width: 48px;
+  min-width: 48px;
+}
+.tcc-admin-course-table .col-weeks {
+  width: 56px;
+  min-width: 56px;
+}
+.tcc-admin-course-table .col-groups {
+  width: 78px;
+  min-width: 72px;
+}
+.tcc-admin-course-table .col-cap {
+  width: 64px;
+  min-width: 56px;
+}
+.tcc-admin-course-table .col-coord {
+  width: 120px;
+  min-width: 100px;
+}
+.tcc-admin-course-table .col-coteach {
+  width: 120px;
+  min-width: 100px;
+}
+.tcc-admin-course-table .col-dept {
+  width: 88px;
+  min-width: 72px;
+  text-align: center;
+}
+.tcc-admin-course-table .col-history {
+  width: 64px;
+  min-width: 64px;
+  overflow: visible;
+}
+.tcc-admin-course-table .col-actions {
+  width: 100px;
+  min-width: 96px;
+  overflow: visible;
+}
+.tcc-admin-table .col-index {
+  width: 40px;
+}
+.tcc-admin-table .col-status {
+  width: 76px;
+  overflow: visible;
+}
+.tcc-admin-table .col-teacher {
+  width: 88px;
+  max-width: 88px;
+}
+.tcc-admin-table .col-name {
+  width: 160px;
+  max-width: 160px;
+}
+.tcc-admin-table .col-staff-id {
+  width: auto;
+  min-width: 118px;
+}
+.tcc-admin-table .col-dept {
+  width: 96px;
+}
+.tcc-admin-table .col-num {
+  width: 72px;
+}
+.tcc-admin-table .col-group {
+  width: 96px;
+}
+.tcc-admin-table .col-load {
+  width: 112px;
+}
+.tcc-admin-table .col-history {
+  width: 72px;
+  overflow: visible;
+}
+.tcc-admin-table .col-history a {
+  color: var(--blue-700, #1d4ed8);
+  text-decoration: none;
+}
+.tcc-admin-table .col-history a:hover {
+  text-decoration: underline;
+}
+.tcc-admin-table .col-actions {
+  width: 108px;
+  overflow: visible;
+}
+.tcc-admin-course-table .tcc-admin-row-actions a,
+.tcc-admin-course-table .tcc-admin-row-actions .is-disabled {
+  min-width: 0;
+  padding: 0 1px;
+}
+.tcc-admin-course-table .tcc-letter-course-name,
+.tcc-admin-course-table .tcc-letter-nowrap {
+  max-width: none;
+}
+.tcc-admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 16px;
+}
+.tcc-admin-field-label-spacer {
+  display: block;
+  font-size: 11px;
+  line-height: 1.2;
+  visibility: hidden;
+}
+.tcc-admin-filter-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.tcc-admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.tcc-admin-field > label,
+.tcc-admin-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  line-height: 1.2;
+}
+.tcc-admin-field > select {
+  min-width: 140px;
+  width: 140px;
+}
+.tcc-admin-field > .tcc-admin-search-input {
+  min-width: 120px;
+  width: 120px;
+}
+.tcc-admin-field-value {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 29px;
+  height: 29px;
+  padding: 0 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 6px;
+  background: #f8fafc;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--text, #0f172a);
+  white-space: nowrap;
+}
+.tcc-admin-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.4;
+}
+.tcc-admin.is-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  flex: 1;
+}
+.tcc-admin-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+}
+.tcc-admin .table-footer {
+  flex-shrink: 0;
+  padding: 10px 0 0;
+  border-top: 0;
+  background: transparent;
+}
+.tcc-admin-table {
+  width: 100%;
+}
+.tcc-admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+}
+.tcc-admin-table td.col-actions {
+  vertical-align: middle;
+}
+.tcc-admin-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+.tcc-admin-row-actions a,
+.tcc-admin-row-actions .is-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25em;
+  padding: 0 2px;
+  box-sizing: border-box;
+  text-align: center;
+}
+.tcc-admin-row-actions a {
+  color: var(--blue-700, #1d4ed8);
+  text-decoration: none;
+}
+.tcc-admin-row-actions a:hover {
+  text-decoration: underline;
+}
+.tcc-admin-row-actions .is-disabled {
+  color: var(--text-muted, #94a3b8);
+  cursor: not-allowed;
+  user-select: none;
+}
+.tcc-admin-row-actions .tcc-admin-action-sep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+.tcc-admin-feedback-col {
+  max-width: 280px;
+}
+.tcc-admin-feedback-cell {
+  display: inline-block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #9a3412;
+}
+#page-offering-grouping .offering-grouping-teacher-confirmation .tcc-admin.is-list,
+#page-course-teacher-confirmation-admin .tcc-admin.is-list {
+  height: 100%;
+}
+.tcc-admin-list-wrap {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+.tcc-admin-list-head {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2, #475569);
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.tcc-admin-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.tcc-admin-list-item {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  background: #fff;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  align-items: center;
+}
+.tcc-admin-list-item:hover {
+  background: #f8fafc;
+}
+.tcc-admin-list-item.is-focused {
+  background: var(--blue-50, #eff6ff);
+  box-shadow: inset 3px 0 0 var(--blue-500, #3b82f6);
+}
+.tcc-admin-list-item.is-disagreed:not(.is-focused) {
+  background: #fffbeb;
+}
+.tcc-admin-list-name {
+  grid-column: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tcc-admin-list-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tcc-admin-list-courses {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+}
+.tcc-admin-list-feedback-flag {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 11px;
+  color: #b45309;
+  background: #ffedd5;
+  border-radius: 999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.tcc-admin-empty,
+.tcc-detail-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 13px;
+}
+.tcc-admin-detail {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+}
+.tcc-detail-card {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+}
+.tcc-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+}
+.tcc-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.tcc-detail-title strong {
+  font-size: 15px;
+}
+.tcc-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.tcc-detail-feedback {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.tcc-detail-feedback strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #9a3412;
+}
+.tcc-detail-feedback p {
+  margin: 0;
+  color: var(--text, #0f172a);
+  line-height: 1.45;
+}
+.tcc-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tcc-detail-history {
+  font-size: 12px;
+  color: var(--text-2, #475569);
+}
+.tcc-history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin: 0 0 12px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.tcc-history-meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.tcc-history-meta-label {
+  flex-shrink: 0;
+  color: var(--text-2, #475569);
+  font-size: 13px;
+  font-weight: 700;
+}
+.tcc-history-meta-label::after {
+  content: '：';
+}
+.tcc-history-meta-value {
+  color: var(--text, #0f172a);
+  font-size: 13px;
+  font-weight: 400;
+  font-family: inherit;
+}
+.tcc-detail-history ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tcc-detail-history li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+.tcc-history-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.tcc-history-operator {
+  font-size: 12px;
+  color: var(--text-2, #475569);
+  white-space: nowrap;
+}
+.tcc-detail-history time {
+  color: var(--text-muted, #94a3b8);
+  white-space: nowrap;
+  font-size: 12px;
+}
+.tcc-letter-batch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+.tcc-letter-table .tcc-letter-check {
+  width: 36px;
+  min-width: 36px;
+}
+.tcc-letter-table .tcc-letter-index {
+  width: 52px;
+  min-width: 52px;
+}
+.tcc-letter-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.tcc-letter .table-scroll {
+  overflow: auto;
+  border: 1px solid var(--border-light, #f1f5f9);
+  border-radius: 6px;
+}
+.tcc-letter-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+  font-size: 12px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.tcc-letter-table.has-confirm-action {
+  min-width: 0;
+}
+.tcc-letter-table th,
+.tcc-letter-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+  border-right: 1px solid var(--border-light, #e2e8f0);
+}
+.tcc-letter-table thead th {
+  border-bottom: 2px solid var(--border, #cbd5e1);
+}
+.tcc-letter-table thead th:last-child,
+.tcc-letter-table tbody td:last-child {
+  border-right: 0;
+}
+.tcc-letter-table .tcc-letter-course-name,
+.tcc-letter-table .tcc-letter-nowrap {
+  white-space: nowrap;
+}
+.tcc-letter-table .tcc-letter-code,
+.tcc-letter-table .tcc-letter-class {
+  text-align: center;
+}
+.tcc-letter-status {
+  vertical-align: middle;
+  min-width: 88px;
+  max-width: 160px;
+}
+.tcc-letter-status-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: 140px;
+}
+.tcc-letter-feedback {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #9a3412;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+}
+.tcc-letter-action {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.tcc-letter-action a {
+  color: var(--blue-700, #1d4ed8);
+  text-decoration: none;
+}
+.tcc-letter-action a:hover {
+  text-decoration: underline;
+}
+#modal-teacher-course-confirmation-detail .modal.modal-xl {
+  width: min(96vw, 1280px);
+  max-width: 1280px;
+}
+#modal-teacher-course-confirmation-section .modal.modal-xl {
+  width: min(98vw, 1480px);
+  max-width: 1480px;
+}
+#modal-teacher-course-confirmation-section .modal-body {
+  max-height: min(72vh, 680px);
+  overflow: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.tcc-section-manage-meta {
+  margin-bottom: 12px;
+}
+.tcc-section-manage-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.tcc-section-manage-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 6px;
+  max-height: min(52vh, 480px);
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table.tcc-admin-course-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table th,
+#modal-teacher-course-confirmation-section .tcc-section-manage-table td {
+  padding: 6px 4px;
+  font-size: 11px;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-index {
+  width: 36px;
+  min-width: 36px;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-status {
+  width: 64px;
+  min-width: 64px;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-teacher {
+  width: 7%;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-code {
+  width: 72px;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-course-name {
+  width: 11%;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-class {
+  width: 7%;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-credits,
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-hours {
+  width: 40px;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-weeks {
+  width: 48px;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-groups {
+  width: 64px;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-cap {
+  width: 52px;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-coord,
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-coteach {
+  width: 9%;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-history {
+  width: 56px;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-actions {
+  width: 88px;
+  min-width: 0;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .cell-ellipsis-tip {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .tcc-admin-row-actions a,
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .tcc-admin-row-actions .is-disabled,
+#modal-teacher-course-confirmation-section .tcc-section-manage-table td.actions a {
+  color: var(--blue-700, #1d4ed8);
+  text-decoration: none;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .tcc-admin-row-actions a:hover,
+#modal-teacher-course-confirmation-section .tcc-section-manage-table td.actions a:hover {
+  text-decoration: underline;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .tcc-admin-row-actions .is-disabled {
+  color: var(--text-muted, #94a3b8);
+  cursor: default;
+}
+#modal-teacher-course-confirmation-detail .modal-body {
+  max-height: min(78vh, 820px);
+}
+#modal-teacher-course-confirmation-detail .tcc-letter .table-scroll {
+  overflow-x: auto;
+}
+.tcc-decision-options {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.tcc-decision-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+#modal-teacher-course-confirmation-decision .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+#modal-teacher-course-confirmation-decision .modal-body > .form-hint {
+  margin: 0;
+  line-height: 1.5;
+}
+#modal-teacher-course-confirmation-decision #tcc-decision-feedback-wrap {
+  margin-top: 4px;
+}
+#modal-teacher-course-confirmation-decision #tcc-decision-feedback-wrap[hidden] {
+  display: none !important;
+  margin: 0;
+}
+.tcc-portal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 16px;
+  margin-bottom: 12px;
+}
+.tcc-portal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.tcc-portal-field > label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  line-height: 1.2;
+}
+.tcc-portal-field > select {
+  min-width: 140px;
+  width: 140px;
+}
+.tcc-portal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.tcc-portal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.tcc-portal-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+.tcc-portal-switch > span {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tcc-portal-switch > select {
+  min-width: 160px;
+  max-width: 240px;
+}
+#page-teacher-course-confirmation .page-header.compact {
+  align-items: center;
+}
+#page-teacher-course-confirmation .header-actions {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.tcc-portal-tabs {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  align-self: flex-start;
+  margin: 0;
+  padding: 5px;
+  border: 1px solid #c9d7e8;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 52, 96, 0.06);
+  box-sizing: border-box;
+}
+.tcc-portal-tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  padding: 7px 14px;
+  min-width: 88px;
+  min-height: 0;
+  font-size: 13px;
+  color: var(--text-2, #475569);
+  cursor: pointer;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+.tcc-portal-tab:hover {
+  background: var(--blue-50, #f7faff);
+  color: var(--blue-700, #1e5a9e);
+}
+.tcc-portal-tab + .tcc-portal-tab {
+  border-left: 0;
+}
+.tcc-portal-tab.is-active {
+  background: var(--blue-700, #1e5a9e);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15, 52, 96, 0.22);
+}
+.tcc-portal-tab em {
+  font-style: normal;
+  margin-left: 4px;
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.85;
+}
+.tcc-portal-empty {
+  padding: 28px 12px;
+  text-align: center;
+  font-size: 13px;
+}
+.tcc-portal-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.tcc-portal-panel .table-footer {
+  flex-shrink: 0;
+  padding: 10px 0 0;
+  border-top: 0;
+  background: transparent;
+}
+.tcc-portal-panel.is-history .tcc-letter {
+  opacity: 0.98;
+}
+.tcc-progress-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tcc-progress-pill.is-complete {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.tcc-progress-pill.is-partial {
+  background: #fff3e0;
+  color: #e65100;
+}
+.tcc-progress-pill.is-none,
+.tcc-progress-pill.is-pending {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.offering-status-pill.is-proxy-confirm {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px dashed #64b5f6;
+}
+.tcc-admin-card,
+.tcc-portal-card {
+  padding: 16px 18px;
+}
+#page-course-teacher-confirmation-admin.active,
+#page-teacher-course-confirmation.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-teacher-confirmation-admin .tcc-admin-card,
+#page-teacher-course-confirmation .tcc-portal-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#page-course-teacher-confirmation-admin .tcc-admin-card {
+  height: calc(100vh - 180px);
+}
+#page-teacher-course-confirmation .tcc-portal-card {
+  height: calc(100vh - 220px);
+}
+#page-teacher-course-confirmation .tcc-portal-tabs-host {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin: 0 0 12px;
+}
+#page-teacher-course-confirmation .tcc-portal-tabs-host .tcc-portal-tabs {
+  margin: 0;
+}
+#page-course-teacher-confirmation-admin #course-teacher-confirmation-admin-body,
+#page-teacher-course-confirmation #teacher-course-confirmation-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#page-course-teacher-confirmation-admin .tcc-admin,
+#page-teacher-course-confirmation .tcc-portal {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#page-course-teacher-confirmation-admin .tcc-admin-table-wrap {
+  flex: 1;
+  min-height: 0;
+}
+#page-teacher-course-confirmation .tcc-portal-toolbar,
+#page-teacher-course-confirmation .tcc-portal-tabs {
+  flex-shrink: 0;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+}
+#page-teacher-course-confirmation .tcc-portal-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#page-teacher-course-confirmation .tcc-portal-panel .tcc-letter {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#page-teacher-course-confirmation .tcc-portal-panel .tcc-letter-batch-bar {
+  flex-shrink: 0;
+}
+#page-teacher-course-confirmation .tcc-portal-panel .tcc-letter .table-scroll {
+  flex: 1;
+  min-height: 0;
+}
+.mot-style2-table .col-tcc-progress {
+  min-width: 88px;
 }
 #page-offering-grouping .offering-grouping-course-list-body {
   flex: 1;
@@ -8982,35 +10133,86 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .teacher-picker-modal-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+.teacher-picker-assign-context {
+  padding: 8px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+.teacher-picker-assign-context[hidden] {
+  display: none !important;
+}
+.teacher-picker-assign-context-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.teacher-picker-assign-context-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+.teacher-picker-assign-context-item strong {
+  font-weight: 700;
+  color: var(--text-1);
+  flex-shrink: 0;
+}
+.teacher-picker-assign-context-item span {
+  color: var(--text-1);
+  word-break: break-word;
+}
+.teacher-picker-assign-context-item code {
+  font-size: 12px;
 }
 .teacher-picker-filter-panel {
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: #f8fafc;
   border: 1px solid var(--border-light);
   border-radius: 8px;
 }
 .teacher-picker-filter-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 128px));
+  gap: 6px 10px;
+  align-items: end;
 }
 .teacher-picker-filter-grid .form-item {
   margin: 0;
+  min-width: 0;
+  gap: 3px;
 }
 .teacher-picker-filter-grid .form-item label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
+  margin-bottom: 0;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 500;
   color: var(--text-2);
+}
+.teacher-picker-filter-grid .form-item .input,
+.teacher-picker-filter-grid .form-item .input-sm {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 3px 6px;
+  font-size: 12px;
 }
 .teacher-picker-filter-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-light);
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  white-space: nowrap;
 }
 .teacher-picker-pagination {
   padding-top: 4px;
@@ -10574,11 +11776,11 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   overflow: hidden;
 }
 .offering-group-status-assign-table .col-week {
-  width: 96px;
-  min-width: 88px;
-  max-width: 112px;
-  padding-left: 10px;
-  padding-right: 6px;
+  width: 84px;
+  min-width: 76px;
+  max-width: 96px;
+  padding-left: 6px;
+  padding-right: 4px;
   white-space: nowrap;
 }
 .offering-group-status-assign-table .col-weekly {
@@ -10591,20 +11793,58 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   text-align: center;
 }
 .offering-group-status-assign-table .col-index {
-  width: 56px;
-  min-width: 56px;
-  max-width: 64px;
-  padding-left: 8px;
-  padding-right: 12px;
+  width: 40px;
+  min-width: 40px;
+  max-width: 44px;
+  padding-left: 4px;
+  padding-right: 4px;
   text-align: center;
 }
 .offering-group-status-assign-table .col-simul {
-  width: 64px;
-  min-width: 64px;
-  max-width: 72px;
-  padding-left: 6px;
-  padding-right: 6px;
+  width: 96px;
+  min-width: 92px;
+  max-width: 108px;
+  padding-left: 4px;
+  padding-right: 4px;
   white-space: nowrap;
+  overflow: visible;
+}
+.offering-group-status-assign-table th.col-simul {
+  overflow: visible;
+}
+.offering-group-status-assign-table td.col-simul {
+  overflow: hidden;
+}
+.offering-group-status-th-with-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.offering-group-status-assign-table th.th-sortable .offering-group-status-th-with-tip .th-sort {
+  margin-left: 0;
+}
+.offering-group-status-th-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--text-3, #94a3b8);
+  color: var(--text-3, #64748b);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  flex-shrink: 0;
+  user-select: none;
+}
+.offering-group-status-th-tip:hover,
+.offering-group-status-th-tip:focus {
+  border-color: var(--blue-600, #2563eb);
+  color: var(--blue-600, #2563eb);
 }
 .offering-group-status-simul-switch {
   margin: 0 auto;
@@ -10656,16 +11896,22 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   padding-right: 4px;
 }
 .offering-group-status-assign-table .col-actions {
-  min-width: 112px;
-  width: 112px;
+  min-width: 80px;
+  width: 84px;
+  max-width: 88px;
+  padding-left: 4px;
+  padding-right: 4px;
   white-space: nowrap;
 }
 .offering-group-status-assign-table .col-teacher {
-  min-width: 140px;
-  width: 18%;
+  min-width: 160px;
+  width: 20%;
+  max-width: 240px;
   text-align: center;
   vertical-align: middle;
-  padding-left: 16px;
+  padding-left: 8px;
+  padding-right: 8px;
+  overflow: hidden;
 }
 .offering-group-status-assign-table .col-total {
   width: 72px;
@@ -10684,7 +11930,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   padding-left: 14px;
 }
 .offering-group-status-assign-draft td.col-groups {
-  vertical-align: top;
+  vertical-align: middle;
 }
 .offering-group-status-group-multiselect {
   width: 100%;
@@ -10699,6 +11945,13 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-teacher-line {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.offering-group-status-assign-table td.col-teacher .offering-group-status-teachers {
+  max-width: 100%;
+  overflow: hidden;
 }
 .offering-group-status-teacher-link {
   appearance: none;
@@ -10717,7 +11970,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   text-decoration: none;
 }
 .offering-group-status-assign-draft td {
-  vertical-align: top;
+  vertical-align: middle;
 }
 .offering-group-status-assign-table td.col-groups {
   text-align: left;
@@ -10730,11 +11983,6 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-assign-table td.col-actions,
 .offering-group-status-assign-table td.col-index {
   vertical-align: middle;
-}
-.offering-group-status-assign-draft td.col-actions,
-.offering-group-status-assign-draft td.col-index,
-.offering-group-status-assign-draft td.col-teacher {
-  vertical-align: top;
 }
 .offering-group-status-row-actions-inner {
   display: inline-flex;
@@ -10798,6 +12046,41 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-inline-cancel:hover {
   color: #334155;
 }
+.offering-group-status-assign-table .offering-group-status-inline-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: #6b7280;
+}
+.offering-group-status-assign-table .offering-group-status-inline-cancel:hover {
+  color: #4b5563;
+}
+.offering-group-status-assign-table .offering-group-status-cancel-icon {
+  display: block;
+  width: 12px;
+  height: 12px;
+  position: relative;
+}
+.offering-group-status-assign-table .offering-group-status-cancel-icon::before,
+.offering-group-status-assign-table .offering-group-status-cancel-icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 1.8px;
+  background: currentColor;
+  border-radius: 999px;
+}
+.offering-group-status-assign-table .offering-group-status-cancel-icon::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.offering-group-status-assign-table .offering-group-status-cancel-icon::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
 .offering-group-status-inline-delete {
   appearance: none;
   border: 0;
@@ -10812,17 +12095,54 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-inline-delete:hover {
   color: #b91c1c;
 }
+.offering-group-status-assign-table .offering-group-status-inline-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: #e11d48;
+  font-size: 0;
+  line-height: 0;
+}
+.offering-group-status-assign-table .offering-group-status-inline-delete:hover {
+  color: #be123c;
+}
+.offering-group-status-assign-table .offering-group-status-delete-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+.offering-group-status-assign-table .offering-group-status-delete-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
 .offering-group-status-week-edit {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 2px;
 }
 .offering-group-status-week-edit .input {
-  min-width: 96px;
+  min-width: 0;
 }
 .offering-group-status-assign-table .offering-group-status-week-edit .input {
-  min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  width: 48px;
+  min-width: 48px;
+  max-width: 56px;
+  text-align: center;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+.offering-group-status-assign-draft .offering-group-status-week-edit .input {
+  width: 48px;
+  min-width: 48px;
+  max-width: 52px;
 }
 .offering-group-status-assign-table .col-weekly .offering-group-status-weekly-input {
   width: 44px;
@@ -10844,10 +12164,82 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-assign-draft .col-teacher {
   text-align: center;
+  overflow: hidden;
+}
+.offering-group-status-teacher-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+.offering-group-status-prior-teacher-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  width: auto;
+}
+.offering-group-status-teacher-more-btn {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  box-shadow: none;
+  cursor: pointer;
+}
+.offering-group-status-teacher-more-btn:hover,
+.offering-group-status-teacher-more-btn:focus {
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  box-shadow: none;
+  cursor: pointer;
+}
+.offering-group-status-teacher-more-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 1.4px solid currentColor;
+  border-radius: 3px;
+  position: relative;
+  pointer-events: none;
+}
+.offering-group-status-teacher-more-icon::before,
+.offering-group-status-teacher-more-icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: currentColor;
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+.offering-group-status-teacher-more-icon::before {
+  width: 9px;
+  height: 1.4px;
+}
+.offering-group-status-teacher-more-icon::after {
+  width: 1.4px;
+  height: 9px;
 }
 .offering-group-status-assign-draft .offering-group-status-teacher-picker-btn {
-  display: inline-flex;
-  margin: 0 auto;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 .offering-group-status-group-dropdown {
   overflow-y: auto;
@@ -11013,6 +12405,34 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-offering-teacher-term-assign .offering-teacher-term-course-table td {
   font-size: 12px;
   vertical-align: middle;
+}
+#modal-offering-teacher-term-assign .offering-teacher-term-course-table .col-tcc-status {
+  white-space: nowrap;
+  min-width: 88px;
+}
+#modal-offering-teacher-term-assign .offering-teacher-term-course-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.2;
+}
+#modal-offering-teacher-term-assign .offering-teacher-term-course-actions a {
+  color: var(--blue-700, #1d4ed8);
+  text-decoration: none;
+  padding: 0 2px;
+}
+#modal-offering-teacher-term-assign .offering-teacher-term-course-actions a:hover {
+  text-decoration: underline;
+}
+#modal-offering-teacher-term-assign .offering-teacher-term-course-action-sep {
+  display: inline-block;
+  margin: 0 2px;
+  color: var(--text-3, #94a3b8);
+  font-weight: 400;
 }
 #modal-offering-teacher-term-assign .offering-grouping-global-course-link {
   appearance: none;

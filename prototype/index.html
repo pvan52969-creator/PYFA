@@ -671,7 +671,7 @@
       <div class="page-header workflow-page-header">
         <div class="workflow-page-title">
           <h1>开课管理 · 操作流程</h1>
-          <p class="subtitle">正常开课 → 合班 / 分班 / 合分班 → 学生·教师·地点·周次（参考教务系统视频）</p>
+          <p class="subtitle">开课设置 → 专业开课（计划 · 安排 · 授课确认 · 名单）→ 开课清单 / 共同授课 → 排课选课</p>
         </div>
         <div class="workflow-zoom-toolbar">
           <button type="button" class="btn btn-ghost btn-sm workflow-zoom-btn" onclick="courseWorkflowZoomStep(-0.1)">−</button>
@@ -732,6 +732,7 @@
                 <th class="col-center">教学周数<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">状态</th>
                 <th>开课时间范围<span class="th-sort" aria-hidden="true">↕</span></th>
+                <th class="col-center">授课确认截止日期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">默认展示学期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <!-- <th>备注<span class="th-sort" aria-hidden="true">↕</span></th> -->
                 <th>操作</th>
@@ -771,6 +772,15 @@
           placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
           data-picker-title="开课截止"
           onclick="openCourseDatetimePicker(this, event)">
+      </div>
+      <div class="form-item">
+        <label for="cts-edit-teacher-confirm-deadline">授课确认截止日期</label>
+        <input class="input cuot-date-input course-datetime-input" type="text" id="cts-edit-teacher-confirm-deadline"
+          placeholder="dd/mm/yyyy" autocomplete="off" readonly
+          data-picker-title="授课确认截止日期"
+          data-unbounded="1"
+          onclick="openCuotDatePicker(this, event)">
+        <p class="form-hint">仅日期，无需具体到时间；可自由设置（含已过期日期），不随开课时间是否已截止而锁定；教师端确认信函 Notes 取自此设置</p>
       </div>
       <div class="form-item">
         <label for="cts-edit-remark">备注</label>
@@ -863,10 +873,13 @@
     <!-- ═══ 开课管理 · 专业开课 ═══ -->
     <section class="page" id="page-course-offering-major">
       <div class="page-header">
-        <div><h1>开课计划</h1><p class="subtitle">教务处生成学期开课计划 · 一课一专业批次一条计划；提交后进入任务安排（合分班、分组、授课确认）</p></div>
+        <div><h1>开课计划</h1></div>
+        <!-- <div><h1>开课计划</h1><p class="subtitle">教务处生成学期开课计划 · 一课一专业批次一条计划；提交后进入任务安排（合分班、分组、授课确认）</p></div> -->
         <!-- <div><h1>专业开课计划</h1>... -->
       </div>
+      <!-- 页顶说明暂隐
       <div class="legend-bar" id="course-offering-hint-major"></div>
+      -->
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
@@ -936,7 +949,7 @@
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>生效</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
-          <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护。「操作记录」可查看字段变更（支持按用户过滤）。</span>
+          <!-- <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护。「操作记录」可查看字段变更（支持按用户过滤）。</span> -->
         </div>
         <div class="table-scroll">
           <table class="data-table course-offering-major-table">
@@ -1001,6 +1014,15 @@
       </div>
       <div class="offering-grouping-page-row" id="offering-grouping-page-row">
         <aside class="offering-grouping-course-list" id="offering-grouping-course-list" aria-label="Course">
+          <div class="offering-grouping-course-list-toolbar" id="offering-grouping-course-list-toolbar" hidden>
+            <div class="filter-bar inline offering-grouping-global-code-filter-bar">
+              <label for="offering-grouping-global-code-filter">课程号</label>
+              <input class="input input-sm" id="offering-grouping-global-code-filter" placeholder="课程号"
+                onkeydown="if(event.key==='Enter'){queryOfferingGroupingGlobalCourseList()}">
+              <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingGroupingGlobalCourseList()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingGroupingGlobalCourseListFilter()">重置</button>
+            </div>
+          </div>
           <div class="offering-grouping-course-list-body" id="offering-grouping-course-list-body"></div>
           <div class="offering-grouping-course-list-foot" id="offering-grouping-course-list-foot">
             <span class="offering-grouping-course-list-foot-text" id="offering-grouping-course-list-foot-text">共 0 条</span>
@@ -1039,7 +1061,9 @@
                 <div class="offering-group-tabs">
                   <span class="offering-group-tab is-active" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
                   <!-- 原「安排总览」(data-tab=teacher) 已下线；细改改在「课程班/小组学时详情」安排详情表内完成 -->
+                  <!-- Teaching Load tab 暂隐
                   <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">Teaching Load</span>
+                  -->
                   <!-- <span class="offering-group-tab" data-tab="summary" ...>类型学时汇总</span> 原按学时类型汇总安排 -->
                   <span class="offering-group-tab is-muted" data-tab="student" id="offering-group-tab-student" hidden onclick="switchOfferingGroupingTab('student')">学生名单</span>
                   <!-- 学生名单 Tab 默认隐藏，仅从「专业开课学生名单管理」进入时展示；排最右 -->
@@ -1084,9 +1108,10 @@
                     </div>
                   </div>
                   <div class="offering-group-toolbar offering-group-student-toolbar">
-                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-adjust-group" onclick="adjustOfferingGroupingStudents()" disabled>调整分组</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-one-click-assign" onclick="startOfferingGroupingOneClickAssign()">一键分配</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-preset-roster-grouping" onclick="openPresetRosterGroupingConfirm()">预置名单</button>
                     <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentPicker()">添加学生</button>
-                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-preset-roster-grouping" onclick="openPresetRosterGroupingConfirm()">预置名单分配</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-adjust-group" onclick="adjustOfferingGroupingStudents()" disabled>调整分组</button>
                     <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-remove-roster" onclick="removeOfferingGroupingStudentsFromRoster()" disabled>移除</button>
                     <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentRemovalLog()">名单移除记录</button>
                   </div>
@@ -1150,12 +1175,26 @@
                 </div>
               </div>
               <div class="course-time-query-field">
-                <label for="ogg-teacher-load-filter-name">教师姓名</label>
-                <input class="input input-sm" id="ogg-teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
+                <label for="ogg-teacher-load-filter-unit">所属部门</label>
+                <select class="input input-sm" id="ogg-teacher-load-filter-unit" data-ttl="unit-filter">
+                  <option value="">全部所属部门</option>
+                </select>
               </div>
               <div class="course-time-query-field">
-                <label for="ogg-teacher-load-filter-staff">教师工号</label>
-                <input class="input input-sm" id="ogg-teacher-load-filter-staff" data-ttl="staff-filter" placeholder="工号">
+                <label>课程类型</label>
+                <div class="clo-multiselect" data-ttl="course-type-multiselect">
+                  <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadCourseTypeDropdown(event)">
+                    <span class="clo-multiselect-display" data-ttl="course-type-display">全部</span>
+                    <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                  </button>
+                  <div class="clo-multiselect-dropdown" data-ttl="course-type-dropdown" hidden>
+                    <div class="clo-multiselect-options" data-ttl="course-type-options"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="course-time-query-field">
+                <label for="ogg-teacher-load-filter-name">教师姓名</label>
+                <input class="input input-sm" id="ogg-teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
               </div>
               <div class="course-time-query-actions">
                 <button class="btn btn-primary btn-sm" type="button" onclick="queryTeacherTeachingLoadPage()">查询</button>
@@ -1399,6 +1438,7 @@
         <p><strong>流程说明</strong></p>
         <ul class="offering-module-hint-list">
           <li>任务安排提交后，本页按开课任务展示；点击「管理名单」进入分组页，在左侧切换小组并维护学生。</li>
+          <li>开放选课课程默认名单由选课应用生成，仍可通过「管理名单」手动添加、调整或移除学生。</li>
           <!-- <li>任务安排提交后，本页展示各小组并维护学生名单；暂无数据时列表为空。</li> --> <!-- 原按小组拆行展示 -->
           <!-- <li>须先在「专业开课任务安排」完成合分班、分组与教师安排并提交，方可进入本页。</li> --> <!-- 原强制前置条件，改允许空态进入 -->
           <li>老生：计划人数读取当前批次可修该课程的预置名单人数；名单管理只维护当前学生名单与分配结果，不改变计划人数或课程名额上限。</li>
@@ -2179,12 +2219,26 @@
             </div>
           </div>
           <div class="course-time-query-field">
-            <label for="teacher-load-filter-name">教师姓名</label>
-            <input class="input input-sm" id="teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
+            <label for="teacher-load-filter-unit">所属部门</label>
+            <select class="input input-sm" id="teacher-load-filter-unit" data-ttl="unit-filter">
+              <option value="">全部所属部门</option>
+            </select>
           </div>
           <div class="course-time-query-field">
-            <label for="teacher-load-filter-staff">教师工号</label>
-            <input class="input input-sm" id="teacher-load-filter-staff" data-ttl="staff-filter" placeholder="工号">
+            <label>课程类型</label>
+            <div class="clo-multiselect" data-ttl="course-type-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadCourseTypeDropdown(event)">
+                <span class="clo-multiselect-display" data-ttl="course-type-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" data-ttl="course-type-dropdown" hidden>
+                <div class="clo-multiselect-options" data-ttl="course-type-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="course-time-query-field">
+            <label for="teacher-load-filter-name">教师姓名</label>
+            <input class="input input-sm" id="teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryTeacherTeachingLoadPage()">查询</button>
@@ -2233,7 +2287,8 @@
           </label>
         </div>
       </div>
-      <div id="teacher-course-confirmation-tabs" class="tcc-portal-tabs-host"></div>
+      <div id="teacher-course-confirmation-term" class="tcc-portal-term-host"></div>
+      <div class="approval-tab-bar" id="teacher-course-confirmation-tabs" role="tablist" aria-label="确认任务"></div>
       <div class="card tcc-portal-card">
         <div id="teacher-course-confirmation-body"></div>
       </div>
@@ -5506,6 +5561,41 @@
 </div>
 -->
 
+<!-- ═══ 弹窗：专业开课 · 一键分配 · 自定义规则 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-one-click-assign-rules">
+  <div class="modal modal-md one-click-assign-rules-modal">
+    <div class="modal-head">
+      <h3>一键分配</h3>
+      <button class="modal-close" type="button" onclick="closeOneClickAssignRulesModal()">×</button>
+    </div>
+    <div class="modal-body one-click-assign-rules-body">
+      <div class="oca-rule-block">
+        <div class="oca-rule-block-label-row">
+          <div class="oca-rule-block-label">分配规则</div>
+          <button type="button"
+            class="offering-teacher-term-group-rule-btn oca-rules-help-btn"
+            id="oca-rules-help-btn"
+            aria-label="规则说明">!</button>
+        </div>
+        <div class="oca-rule-dims" id="oca-rule-dims"></div>
+      </div>
+      <div class="form-item">
+        <label class="req" for="oca-sort-by-student-id">按学号顺序</label>
+        <select class="input input-sm" id="oca-sort-by-student-id">
+          <option value="Y">Y（学号升序）</option>
+          <option value="N">N（打散）</option>
+        </select>
+      </div>
+      <p class="form-hint" id="oca-rule-pool-hint"></p>
+    </div>
+    <div class="modal-foot one-click-assign-rules-foot">
+      <button class="btn btn-outline btn-danger-text" type="button" onclick="resetOneClickAssignStudentGroupsFromRulesModal()">重置分组</button>
+      <button class="btn btn-ghost" type="button" onclick="closeOneClickAssignRulesModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmOneClickAssignRulesModal()">开始分配</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：专业开课 · 合并分组 ═══ -->
 <div class="modal-overlay modal-nested" id="modal-offering-group-merge">
   <div class="modal modal-sm offering-group-merge-modal">
@@ -5889,12 +5979,26 @@
 <div class="modal-overlay modal-nested" id="modal-offering-teacher-term-assign">
   <div class="modal modal-xl offering-teacher-term-assign-modal">
     <div class="modal-head">
-      <h3 id="offering-teacher-term-assign-title">教师本学期开课课时安排</h3>
+      <h3 id="offering-teacher-term-assign-title">课时详情</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-offering-teacher-term-assign')">×</button>
     </div>
     <div class="modal-body" id="offering-teacher-term-assign-body"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-teacher-term-assign')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：课程安排详情（只读） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-offering-section-assign-readonly">
+  <div class="modal modal-xl offering-section-assign-readonly-modal">
+    <div class="modal-head">
+      <h3 id="offering-section-assign-readonly-title">安排详情</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-offering-section-assign-readonly')">×</button>
+    </div>
+    <div class="modal-body" id="offering-section-assign-readonly-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-section-assign-readonly')">关闭</button>
     </div>
   </div>
 </div>
@@ -6079,38 +6183,86 @@
       <button class="modal-close" type="button" onclick="closeSharedTeachingSetupModal()">×</button>
     </div>
     <div class="modal-body shared-teaching-setup-body">
-      <p class="form-hint" id="shared-teaching-setup-term-hint">从本学期开课清单中选择两门及以上课程，且须至少有一名相同任课教师。</p>
-      <p class="form-hint shared-teaching-setup-teacher-hint" id="shared-teaching-setup-teacher-hint"></p>
-      <div class="shared-teaching-setup-toolbar">
-        <input class="input input-sm" id="shared-teaching-setup-keyword" placeholder="课程号 / 课程名称" oninput="renderSharedTeachingSetupModalTable()">
-        <span class="form-hint" id="shared-teaching-setup-count-hint"></span>
+      <p class="form-hint" id="shared-teaching-setup-term-hint">请在右侧点击「添加」选择与本课有相同任课教师的其他课程；添加后系统自动打上共同授课标记。</p>
+      <div class="shared-teaching-setup-split">
+        <div class="shared-teaching-setup-pane shared-teaching-setup-pane-left">
+          <div class="shared-teaching-setup-current" id="shared-teaching-setup-current" hidden>
+            <div class="shared-teaching-setup-section-label">课程信息</div>
+            <div class="shared-teaching-setup-current-grid" id="shared-teaching-setup-current-body"></div>
+          </div>
+          <div class="shared-teaching-setup-configured">
+            <div class="shared-teaching-setup-section-label">已设置共同授课</div>
+            <div class="table-scroll shared-teaching-setup-configured-wrap">
+              <table class="data-table compact course-offering-table">
+                <thead>
+                  <tr>
+                    <th>课程号</th>
+                    <th>课程名称</th>
+                    <th class="col-center">开课类型</th>
+                    <th class="col-center">开课单位</th>
+                    <th>任课教师</th>
+                    <th>专业批次</th>
+                    <th class="col-center col-sticky-actions">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="shared-teaching-setup-configured-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="shared-teaching-setup-pane shared-teaching-setup-pane-right">
+          <div class="shared-teaching-setup-section-label-row">
+            <div class="shared-teaching-setup-section-label">开课安排清单</div>
+            <div class="slt-info-tip shared-teaching-setup-rules-tip">
+              <button type="button" class="slt-info-btn shared-teaching-setup-rules-btn" aria-label="共同授课规则" onclick="toggleSharedTeachingSetupRulesTip(event)">!</button>
+              <div class="slt-info-popover shared-teaching-setup-rules-popover">
+                <p class="slt-info-item"><strong>共同授课规则</strong></p>
+                <p class="slt-info-formula">1. 须选择两门及以上<strong>不同课程号</strong>的课程。</p>
+                <p class="slt-info-formula">2. 所选课程须至少有一名<strong>相同任课教师</strong>。</p>
+                <p class="slt-info-formula">3. 右侧列表仅展示与当前课程有相同任课教师、且尚未与本课共同授课的开课记录。</p>
+                <p class="slt-info-formula">4. 点击「添加」后系统自动打上共同授课标记；排课时该教师可为这些课程忽略时间冲突。</p>
+              </div>
+            </div>
+          </div>
+          <div class="shared-teaching-setup-toolbar">
+            <div class="course-time-query-field">
+              <label for="shared-teaching-setup-keyword">课程号 / 名称</label>
+              <input class="input input-sm" id="shared-teaching-setup-keyword" placeholder="课程号或名称" onkeydown="if(event.key==='Enter'){querySharedTeachingSetupModalList()}">
+            </div>
+            <div class="course-time-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="querySharedTeachingSetupModalList()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetSharedTeachingSetupModalFilters()">重置</button>
+            </div>
+          </div>
+          <div class="table-scroll shared-teaching-setup-table-wrap">
+            <table class="data-table course-offering-table">
+              <thead>
+                <tr id="shared-teaching-setup-head-row">
+                  <th>课程号</th>
+                  <th>课程名称</th>
+                  <th class="col-center">开课类型</th>
+                  <th class="col-center">课程类型</th>
+                  <th class="col-center">开课单位</th>
+                  <th>任课教师</th>
+                  <th>专业批次</th>
+                  <th class="col-center col-sticky-actions">操作</th>
+                </tr>
+              </thead>
+              <tbody id="shared-teaching-setup-body"></tbody>
+            </table>
+          </div>
+          <div class="table-footer shared-teaching-setup-footer">
+            <div class="pagination" id="shared-teaching-setup-pagination"></div>
+          </div>
+        </div>
       </div>
-      <div class="table-scroll shared-teaching-setup-table-wrap">
-        <table class="data-table course-offering-table">
-          <thead>
-            <tr>
-              <th class="col-check"><input type="checkbox" id="shared-teaching-setup-check-all" aria-label="全选" onchange="toggleSharedTeachingSetupCheckAll(this.checked)"></th>
-              <th class="col-index">序号</th>
-              <th>课程号</th>
-              <th>课程名称</th>
-              <th class="col-center">开课类型</th>
-              <th class="col-center">开课单位</th>
-              <th>任课教师</th>
-              <th class="col-center">当前共同授课码</th>
-            </tr>
-          </thead>
-          <tbody id="shared-teaching-setup-body"></tbody>
-        </table>
-      </div>
-      <div class="form-item shared-teaching-setup-code-field">
-        <label class="req" for="shared-teaching-setup-code-input">共同授课码</label>
-        <input class="input" id="shared-teaching-setup-code-input" placeholder="如 CST-ACC-240001" oninput="this.dataset.userEdited='1'">
-        <p class="form-hint">须勾选 2 门及以上课程，且所选课程至少有一名相同任课教师；课程号可不同。</p>
-      </div>
+      <!-- 共同授课码改为系统自动打标记，不再手填 -->
+      <!-- <div class="form-item shared-teaching-setup-code-field">...</div> -->
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeSharedTeachingSetupModal()">取消</button>
-      <button class="btn btn-primary" type="button" id="btn-shared-teaching-setup-confirm" onclick="confirmSharedTeachingSetup()" disabled>确定</button>
+    <div class="modal-foot shared-teaching-setup-foot">
+      <div class="shared-teaching-setup-foot-actions">
+        <button class="btn btn-primary" type="button" onclick="closeSharedTeachingSetupModal()">关闭</button>
+      </div>
     </div>
   </div>
 </div>

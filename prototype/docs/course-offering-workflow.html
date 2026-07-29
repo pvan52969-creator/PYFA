@@ -15,7 +15,7 @@
   .sheet { max-width: 980px; margin: 0 auto; padding: 14px 16px 18px; display: flex; flex-direction: column; background: #f8fafc; }
   .header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
   .header-left h1 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
-  .header-left p { margin: 0; font-size: 11px; color: #64748b; line-height: 1.45; max-width: 560px; }
+  .header-left p { margin: 0; font-size: 11px; color: #64748b; line-height: 1.45; max-width: 600px; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
   .legend-item { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; font-size: 10px; color: #475569; border: 1px solid #e2e8f0; }
   .legend-dot { width: 7px; height: 7px; border-radius: 999px; }
@@ -40,7 +40,7 @@
   <div class="header">
     <div class="header-left">
       <h1>XMUM 开课管理 · 操作流程</h1>
-      <p>主路径：开课设置 → 专业开课（计划 · 安排 · 授课确认 · 名单）→ 开课清单 / 共同授课 → 排课选课；通识与特殊开课并行（设计中）</p>
+      <p>三类开课均须：计划 → 安排 → 授课确认 → 名单；授课确认完成后，提交方可生效至管理名单与排课 / 选课；再汇入开课清单 / 共同授课</p>
     </div>
     <div class="legend">
       <span class="legend-item" style="background:#eff6ff"><span class="legend-dot" style="background:#2563eb"></span>开课设置</span>
@@ -60,10 +60,10 @@
         <marker id="arr-c" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#0891b2"/></marker>
       </defs>
 
-      <!-- 泳道弱底 -->
+      <!-- 泳道弱底（三类均为计划→安排→授课确认→名单） -->
       <rect x="36" y="268" width="208" height="430" rx="10" fill="#f0fdf4" opacity="0.45"/>
-      <rect x="396" y="268" width="208" height="350" rx="10" fill="#fff7ed" opacity="0.45"/>
-      <rect x="756" y="268" width="208" height="350" rx="10" fill="#faf5ff" opacity="0.45"/>
+      <rect x="396" y="268" width="208" height="430" rx="10" fill="#fff7ed" opacity="0.45"/>
+      <rect x="756" y="268" width="208" height="430" rx="10" fill="#faf5ff" opacity="0.45"/>
       <text x="140" y="290" text-anchor="middle" class="lane-label">专业开课</text>
       <text x="500" y="290" text-anchor="middle" class="lane-label">通识选修（设计中）</text>
       <text x="860" y="290" text-anchor="middle" class="lane-label">特殊开课（设计中）</text>
@@ -80,21 +80,23 @@
       <path d="M 500 236 L 500 304" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
       <path d="M 860 236 L 860 304" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
 
-      <!-- 专业竖链 -->
+      <!-- 专业竖链：计划 → 安排 → 授课确认 → 名单 -->
       <path d="M 140 356 L 140 384" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
       <path d="M 140 436 L 140 464" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
       <path d="M 140 516 L 140 544" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
       <path d="M 140 596 L 140 656" fill="none" stroke="#16a34a" stroke-width="1.15"/>
 
-      <!-- 通识竖链 -->
+      <!-- 通识竖链：计划 → 开课 → 授课确认 → 名单 -->
       <path d="M 500 356 L 500 384" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
       <path d="M 500 436 L 500 464" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
-      <path d="M 500 516 L 500 656" fill="none" stroke="#ea580c" stroke-width="1.15"/>
+      <path d="M 500 516 L 500 544" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
+      <path d="M 500 596 L 500 656" fill="none" stroke="#ea580c" stroke-width="1.15"/>
 
-      <!-- 特殊竖链 -->
+      <!-- 特殊竖链：计划 → 任务安排 → 授课确认 → 名单 -->
       <path d="M 860 356 L 860 384" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
       <path d="M 860 436 L 860 464" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
-      <path d="M 860 516 L 860 656" fill="none" stroke="#9333ea" stroke-width="1.15"/>
+      <path d="M 860 516 L 860 544" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
+      <path d="M 860 596 L 860 656" fill="none" stroke="#9333ea" stroke-width="1.15"/>
 
       <!-- 汇入开课清单 -->
       <path d="M 140 656 L 860 656" fill="none" stroke="#0891b2" stroke-width="1.15" stroke-linecap="round"/>
@@ -144,7 +146,7 @@
       <foreignObject x="60" y="464" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
           <div class="node-title">授课确认</div>
-          <div class="node-sub">管理端下发 · 教师确认 / 代确认</div>
+          <div class="node-sub">确认后提交方可生效</div>
         </div>
       </foreignObject>
       <foreignObject x="60" y="544" width="160" height="52">
@@ -169,6 +171,12 @@
       </foreignObject>
       <foreignObject x="420" y="464" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">授课确认</div>
+          <div class="node-sub">确认后提交方可生效</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="420" y="544" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
           <div class="node-title">通识选修名单</div>
           <div class="node-sub">开放选课 · 选课应用（设计中）</div>
         </div>
@@ -184,10 +192,16 @@
       <foreignObject x="780" y="384" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
           <div class="node-title">特殊开课任务安排</div>
-          <div class="node-sub">分组 · 教师 · 提交（设计中）</div>
+          <div class="node-sub">分组 · 教师（设计中）</div>
         </div>
       </foreignObject>
       <foreignObject x="780" y="464" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">授课确认</div>
+          <div class="node-sub">确认后提交方可生效</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="780" y="544" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
           <div class="node-title">特殊开课名单</div>
           <div class="node-sub">无预置 · 手工添加（设计中）</div>
@@ -198,7 +212,7 @@
       <foreignObject x="420" y="688" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
           <div class="node-title">开课清单</div>
-          <div class="node-sub">已提交任务汇总（调整中）</div>
+          <div class="node-sub">已生效任务汇总（调整中）</div>
         </div>
       </foreignObject>
       <foreignObject x="700" y="688" width="160" height="52">
@@ -222,7 +236,7 @@
       <foreignObject x="420" y="856" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
           <div class="node-title">排课 / 选课应用</div>
-          <div class="node-sub">下游消费开课与共同授课数据</div>
+          <div class="node-sub">仅消费已授课确认生效的数据</div>
         </div>
       </foreignObject>
     </svg>
@@ -231,15 +245,15 @@
   <div class="workflow-phases">
     <div class="workflow-phases-title">阶段说明（对照当前原型侧栏）</div>
     <p><strong>开课设置：</strong>维护开课学期与授课确认截止日期；专业开课依赖已提交执行计划；通识选修依赖校选课程库。</p>
-    <p><strong>专业开课（主路径）：</strong>开课计划（生成/合分班/提交）→ 开课安排（课程班 · Support · 师资）→ 授课确认（管理端下发 / 教师确认或代确认）→ 开课名单（预置、分组、一键分配）。</p>
-    <p><strong>通识 / 特殊（设计中）：</strong>通识为「计划 → 开课 → 名单」；特殊为「计划 → 任务安排 → 名单」，与专业并行汇入开课清单。</p>
-    <p><strong>开课清单（调整中）：</strong>汇总已提交任务；维护共同授课；可查看教师学时统计与名单变更日志；数据供排课/选课消费。已移除独立「开课计划生成」「合分班管理」「开课明细安排」页。</p>
+    <p><strong>专业 / 通识 / 特殊（统一门槛）：</strong>计划 → 安排（或任务安排）→ <strong>授课确认</strong> → 名单。各开课安排在「提交生效」时，须已完成授课确认，方可生效到管理名单与排课 / 选课。</p>
+    <p><strong>通识 / 特殊（设计中）：</strong>节点结构与专业对齐，均含授课确认；通识侧重开放选课名单，特殊侧重手工名单。</p>
+    <p><strong>开课清单（调整中）：</strong>汇总已授课确认并生效的任务；维护共同授课；可查看教师学时统计与名单变更日志；下游排课 / 选课仅消费已生效数据。</p>
   </div>
 
   <div class="footer">
-    <div class="footer-item"><strong>数据粒度</strong><br>计划按类型维护；任务提交后清单一门课一条</div>
-    <div class="footer-item"><strong>前置依赖</strong><br>当前开课学期有效 · 专业依赖执行计划</div>
-    <div class="footer-item"><strong>下游</strong><br>开课清单 · 共同授课 · 排课/选课</div>
+    <div class="footer-item"><strong>数据粒度</strong><br>计划按类型维护；授课确认生效后清单一门课一条</div>
+    <div class="footer-item"><strong>前置依赖</strong><br>当前开课学期有效 · 提交生效须授课确认</div>
+    <div class="footer-item"><strong>下游</strong><br>管理名单 · 开课清单 · 排课/选课</div>
   </div>
   <div class="meta">开课管理原型流程图 · 对齐当前侧栏导航</div>
 </div>

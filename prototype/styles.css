@@ -6480,6 +6480,11 @@ code {
 .teacher-load-expand-table td {
   font-size: 12px;
 }
+.teacher-load-expand-table th.col-term,
+.teacher-load-expand-table td.col-term {
+  white-space: nowrap;
+  min-width: 108px;
+}
 .teacher-teaching-load-table tfoot td {
   background: #ffedd5;
   font-weight: 600;
@@ -7849,6 +7854,37 @@ code {
   vertical-align: middle;
   text-align: center;
 }
+.tcc-admin-course-table thead th .th-inner-with-tip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 4px;
+  line-height: 1.2;
+}
+.tcc-admin-course-table thead th .offering-teacher-term-group-rule-btn {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1.5px solid var(--amber-600, #d97706);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--amber-700, #b45309);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.tcc-admin-course-table thead th .offering-teacher-term-group-rule-btn:hover,
+.tcc-admin-course-table thead th .offering-teacher-term-group-rule-btn:focus-visible {
+  background: #fffbeb;
+  outline: none;
+}
 .tcc-admin-course-table thead th .th-sort {
   display: inline;
   margin-left: 1px;
@@ -7928,11 +7964,14 @@ code {
 /* 数字列宽以表头最长整词为准（如 Teaching / Combined），禁止单词内断行 */
 .tcc-admin-course-table .col-hours,
 .tcc-admin-course-table .col-weeks,
-.tcc-admin-course-table .col-groups,
 .tcc-admin-course-table .col-cap,
 .tcc-admin-course-table .col-total-hours {
   width: 58px;
   min-width: 56px;
+}
+.tcc-admin-course-table .col-groups {
+  width: 68px;
+  min-width: 64px;
 }
 .tcc-admin-course-table .col-combined {
   width: 66px;
@@ -10561,6 +10600,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 #modal-delete-confirm.modal-nested {
   z-index: 1180;
+}
+#modal-delete-confirm .modal-foot #delete-confirm-reset-btn {
+  margin-right: auto;
 }
 #modal-delete-confirm .delete-confirm-hint.is-warn {
   margin-top: 10px;

@@ -95,8 +95,8 @@
         <div class="nav-section-body">
           <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">教师开课学时统计</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a>
-          <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a>
-          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a>
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a> -->
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a> -->
         </div>
       </div>
       <!-- <div class="nav-group">开课类型</div> -->
@@ -6300,6 +6300,7 @@
       <p class="form-hint delete-confirm-hint" id="delete-confirm-hint" style="display:none"></p>
     </div>
     <div class="modal-foot">
+      <button class="btn btn-outline btn-danger-text" type="button" id="delete-confirm-reset-btn" hidden onclick="resetDeleteConfirmAction()">重置</button>
       <button class="btn btn-ghost" type="button" onclick="cancelDeleteConfirm()">取消</button>
       <button class="btn btn-primary" type="button" id="delete-confirm-btn" onclick="confirmDeleteConfirm()">确认</button>
       <!-- <button class="btn btn-primary" type="button" onclick="confirmDeleteConfirm()">确认</button> --> <!-- 原无 id，改支持禁用确认 -->

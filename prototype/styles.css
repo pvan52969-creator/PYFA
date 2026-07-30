@@ -11090,45 +11090,18 @@ code {
   min-height: 0;
   overflow: hidden;
 }
-.schedule-detail-layout.is-room-phase {
-  grid-template-columns: minmax(280px, 340px) minmax(280px, 360px) minmax(0, 1fr);
-}
-.schedule-detail-room-list-panel {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-  min-height: 0;
-  height: 100%;
-}
-.schedule-detail-room-list-panel[hidden] {
-  display: none !important;
-}
-.schedule-detail-room-list-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-.schedule-detail-room-list-table {
-  font-size: 12px;
-}
-.schedule-detail-room-list-table th,
-.schedule-detail-room-list-table td {
-  white-space: nowrap;
-}
-.schedule-detail-room-list-table tr.is-active {
-  background: #eff6ff;
-}
-/* 排教室课表：横标题=节次；取消原左侧「节次」纵列，星期作行标识 */
+/* 排教室课表：行=教室；横标题=节次；末列=备注 */
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols {
-  --sch-period-w: 52px;
+  --sch-room-meta-w: 492px;
   --sch-day-count: 10;
-  --sch-day-col-w: calc((100cqw - var(--sch-period-w)) / var(--sch-day-count));
+  --sch-day-col-w: calc((100cqw - var(--sch-room-meta-w) - 96px) / var(--sch-day-count));
+  font-size: 12px;
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead th {
   font-size: 12px;
   line-height: 1.25;
   padding: 6px 4px;
+  white-space: nowrap;
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead th small {
   display: block;
@@ -11137,22 +11110,43 @@ code {
   font-size: 10px;
   margin-top: 2px;
 }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-grid-weekday-row {
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta {
   position: sticky;
-  left: 0;
   z-index: 3;
-  width: var(--sch-period-w);
-  min-width: var(--sch-period-w);
-  max-width: var(--sch-period-w);
-  background: #f1f5f9;
+  background: #f8fafc;
   box-shadow: 1px 0 0 var(--border);
   font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  padding: 6px 4px;
+  white-space: nowrap;
+  padding: 4px 6px;
 }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .schedule-grid-weekday-row {
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta {
   z-index: 5;
+  background: #f1f5f9;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-room { left: 0; min-width: 88px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-building { left: 88px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-rtype { left: 160px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-vtype { left: 232px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-seats { left: 304px; min-width: 44px; text-align: center; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-equip { left: 348px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-soft {
+  left: 420px;
+  min-width: 72px;
+  max-width: 96px;
+  box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-remark {
+  min-width: 88px;
+  max-width: 140px;
+  white-space: normal;
+  font-size: 12px;
+  color: var(--text-2);
+  background: #fafafa;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active {
+  background: #eff6ff;
 }
 @media (max-width: 960px) {
   .main:has(> .schedule-detail-page.active) {
@@ -11163,14 +11157,12 @@ code {
     height: auto;
     overflow: visible;
   }
-  .schedule-detail-layout,
-  .schedule-detail-layout.is-room-phase {
+  .schedule-detail-layout {
     grid-template-columns: 1fr;
     flex: none;
     overflow: visible;
   }
-  .schedule-detail-sidebar,
-  .schedule-detail-room-list-panel {
+  .schedule-detail-sidebar {
     max-height: min(48vh, 420px);
   }
   .schedule-detail-main .schedule-timetable-wrap {

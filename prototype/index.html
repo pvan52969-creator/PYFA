@@ -44,6 +44,7 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-workflow">操作流程图</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-time-setting">开课时间设置</a>
           <a href="#" class="nav-item nav-item-sub" data-page="school-elective-courses">校选课程管理</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="special-course-settings">特殊课程设置</a>
         </div>
       </div>
       <!-- 已移除「开课计划生成」模块：生成开课任务改由「专业开课计划」页选择器完成 -->
@@ -75,7 +76,8 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
         </div>
       </div>
-      <div class="nav-section">
+      <!-- 特殊开课（模块暂下线）：侧栏隐，页面与逻辑保留空壳 -->
+      <div class="nav-section" hidden>
         <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
           <span class="nav-section-title-text">特殊开课<span class="nav-section-status">（设计中）</span></span>
           <span class="nav-section-chevron" aria-hidden="true">▾</span>
@@ -870,6 +872,54 @@
       </div>
     </section>
 
+    <!-- ═══ 开课管理 · 特殊课程设置 ═══ -->
+    <section class="page" id="page-special-course-settings">
+      <div class="page-header">
+        <div>
+          <h1>特殊课程设置</h1>
+          <p class="subtitle">从教务课程库手动纳入课号，维护教室属性/偏好与默认 Support 学院；专业开课安排新建或仍为系统默认的班会自动带出。通识等其它开课后续复用同一配置。</p>
+        </div>
+      </div>
+      <div class="legend-bar text-muted" style="margin-bottom:12px">
+        课号默认仅影响<strong>此后新建</strong>或教室仍为「全普通、无偏好」/ Support 仍为空的教学班；已在开课安排中改过的班不会被覆盖。
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid school-elective-query-grid">
+          <div class="course-time-query-field">
+            <label for="special-course-filter-unit">开课单位</label>
+            <select class="input input-sm" id="special-course-filter-unit">
+              <option value="">全部</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="special-course-filter-keyword">课程号</label>
+            <input class="input input-sm" id="special-course-filter-keyword" placeholder="课程号">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderSpecialCourseSettingsPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetSpecialCourseSettingsFilters()">清除过滤</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="panel-toolbar school-elective-list-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openSpecialCourseSettingsAddModal()">添加课程</button>
+          <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-special-course-delete" onclick="deleteSelectedSpecialCourseSettings()" disabled>删除</button>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table compact school-elective-course-table special-course-settings-table">
+            <thead>
+              <tr></tr>
+            </thead>
+            <tbody id="special-course-settings-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="special-course-settings-pagination"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ 开课管理 · 专业开课 ═══ -->
     <section class="page" id="page-course-offering-major">
       <div class="page-header">
@@ -970,7 +1020,7 @@
               <!-- <th class="col-center">教学周数</th> -->
               <th class="col-center">起止周</th>
               <th class="col-center">开课单位</th>
-              <th class="col-center">Support历史</th>
+              <!-- <th class="col-center">Support历史</th> --> <!-- 计划列表暂隐 -->
               <th class="col-center col-sticky-count">预置人数</th>
               <th class="col-center col-sticky-changelog">操作<br>记录</th>
               <th class="col-center col-sticky-course-info">课程<br>信息</th>
@@ -1181,6 +1231,12 @@
                 </select>
               </div>
               <div class="course-time-query-field">
+                <label for="ogg-teacher-load-filter-type">教师类型</label>
+                <select class="input input-sm" id="ogg-teacher-load-filter-type" data-ttl="type-filter">
+                  <option value="">全部教师类型</option>
+                </select>
+              </div>
+              <div class="course-time-query-field">
                 <label>课程类型</label>
                 <div class="clo-multiselect" data-ttl="course-type-multiselect">
                   <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadCourseTypeDropdown(event)">
@@ -1361,24 +1417,24 @@
       <div class="page-header">
         <div>
           <h1>开课安排</h1>
-          <p class="subtitle">分三步完成课程班、其他学院 Support 与师资安排；提交/撤回/退回在各步骤均可操作</p>
+          <p class="subtitle">分三步完成开课前期设置、课程班与师资安排；提交/撤回/退回在各步骤均可操作</p>
         </div>
       </div>
       -->
       <nav class="mot-style2-step-bar" id="mot-style2-step-bar" aria-label="任务安排步骤">
-        <button type="button" class="mot-style2-step is-active" data-step="1" title="设置合班" onclick="goMajorOfferingTaskStyle2Step(1)">
+        <button type="button" class="mot-style2-step is-active" data-step="1" title="设置课程基础信息（含教室等）" onclick="goMajorOfferingTaskStyle2Step(1)">
           <span class="mot-style2-step-num">1</span>
+          <span class="mot-style2-step-label">开课前期设置</span>
+        </button>
+        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
+        <button type="button" class="mot-style2-step" data-step="2" title="合班 · Support" onclick="goMajorOfferingTaskStyle2Step(2)">
+          <span class="mot-style2-step-num">2</span>
           <span class="mot-style2-step-label">课程班</span>
         </button>
         <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="2" title="申请 · 历史 · 详情" onclick="goMajorOfferingTaskStyle2Step(2)">
-          <span class="mot-style2-step-num">2</span>
-          <span class="mot-style2-step-label">其他学院 Support</span>
-        </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="3" title="学时类型 · 任课教师 · 授课确认" onclick="goMajorOfferingTaskStyle2Step(3)">
+        <button type="button" class="mot-style2-step" data-step="3" title="安排老师 · 授课确认 · 共同授课" onclick="goMajorOfferingTaskStyle2Step(3)">
           <span class="mot-style2-step-num">3</span>
-          <span class="mot-style2-step-label">师资安排&授课确认</span>
+          <span class="mot-style2-step-label">师资安排</span>
         </button>
       </nav>
       <!-- 步骤提示暂隐
@@ -1411,6 +1467,23 @@
               <option value="submitted">已生效</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-shared-teaching">共同授课状态</label>
+            <select class="input input-sm" id="mot-style2-filter-shared-teaching">
+              <option value="">全部</option>
+              <option value="Y">Y</option>
+              <option value="N">N</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-teacher-confirm">授课确认</label>
+            <select class="input input-sm" id="mot-style2-filter-teacher-confirm">
+              <option value="">全部</option>
+              <option value="confirmed">已确认</option>
+              <option value="unconfirmed">未确认</option>
+              <option value="none">无教师</option>
             </select>
           </div>
           <div class="course-time-query-actions">
@@ -1747,8 +1820,8 @@
       </div>
     </section>
 
-    <!-- ═══ 开课管理 · 特殊开课 ═══ -->
-    <section class="page" id="page-course-offering-other">
+    <!-- ═══ 开课管理 · 特殊开课（模块暂下线：侧栏与入口已隐，页面保留空壳） ═══ -->
+    <section class="page" id="page-course-offering-other" hidden>
       <div class="page-header">
         <div><h1>特殊开课计划</h1><p class="subtitle">不在专业执行计划、通识选修流程内，需教务手动添加的开课计划</p></div>
       </div>
@@ -1798,8 +1871,8 @@
       </div>
     </section>
 
-    <!-- ═══ 开课管理 · 特殊开课 · 任务安排 ═══ -->
-    <section class="page" id="page-course-special-offering-task">
+    <!-- ═══ 开课管理 · 特殊开课 · 任务安排（模块暂下线） ═══ -->
+    <section class="page" id="page-course-special-offering-task" hidden>
       <div class="page-header">
         <div><h1>特殊开课任务安排</h1><p class="subtitle">对已提交的特殊开课计划进行分组、教师安排</p></div>
       </div>
@@ -1874,8 +1947,8 @@
       </div>
     </section>
 
-    <!-- ═══ 开课管理 · 特殊开课 · 学生名单管理 ═══ -->
-    <section class="page" id="page-course-special-offering-roster">
+    <!-- ═══ 开课管理 · 特殊开课 · 学生名单管理（模块暂下线） ═══ -->
+    <section class="page" id="page-course-special-offering-roster" hidden>
       <div class="page-header">
         <div><h1>特殊开课学生名单管理</h1><p class="subtitle">任务安排提交后，向各小组手动添加学生</p></div>
       </div>
@@ -1934,10 +2007,10 @@
     <!-- ═══ 开课管理 · 开课清单（任务安排已提交汇总） ═══ -->
     <section class="page" id="page-course-offering-manifest">
       <div class="page-header">
-        <div><h1>开课清单</h1><p class="subtitle">汇总专业、通识选修、特殊开课中任务安排已提交的课程信息</p></div>
+        <div><h1>开课清单</h1><p class="subtitle">汇总专业、通识选修中任务安排已提交的课程信息</p></div>
       </div>
       <div class="alert-info offering-module-hint">
-        <p>本页自动汇总三类开课流程中<strong>任务安排已提交</strong>的数据，便于教务统一查阅课程、课程人数上限、当前学生名单人数与任课教师；如需调整请返回对应任务安排页。</p>
+        <p>本页自动汇总专业与通识选修开课流程中<strong>任务安排已提交</strong>的数据，便于教务统一查阅课程、课程人数上限、当前学生名单人数与任课教师；如需调整请返回对应任务安排页。</p>
       </div>
       <div class="legend-bar" id="course-offering-hint-manifest"></div>
       <div class="card course-major-query-card">
@@ -1954,7 +2027,7 @@
               <option value="">全部类型</option>
               <option value="major">专业开课</option>
               <option value="ge">通识选修</option>
-              <option value="other">特殊开课</option>
+              <!-- <option value="other">特殊开课</option> --> <!-- 特殊开课模块暂下线 -->
             </select>
           </div>
           <div class="course-time-query-field">
@@ -2042,7 +2115,7 @@
               <option value="">全部类型</option>
               <option value="major">专业开课</option>
               <option value="ge">通识选修</option>
-              <option value="other">特殊开课</option>
+              <!-- <option value="other">特殊开课</option> --> <!-- 特殊开课模块暂下线 -->
             </select>
           </div>
           <div class="course-time-query-field">
@@ -2222,6 +2295,12 @@
             <label for="teacher-load-filter-unit">所属部门</label>
             <select class="input input-sm" id="teacher-load-filter-unit" data-ttl="unit-filter">
               <option value="">全部所属部门</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="teacher-load-filter-type">教师类型</label>
+            <select class="input input-sm" id="teacher-load-filter-type" data-ttl="type-filter">
+              <option value="">全部教师类型</option>
             </select>
           </div>
           <div class="course-time-query-field">
@@ -4211,15 +4290,18 @@
     <section class="offering-edit-section">
       <h4 class="offering-edit-section-title">课程信息</h4>
       <div class="form-grid-2">
+        <!-- 授课码由系统生成，不可自定义，字段隐藏保留 id 供读写
         <div class="form-item">
           <label class="req" for="mos-edit-teaching-code">授课码</label>
           <input class="input input-sm" id="mos-edit-teaching-code" type="text">
         </div>
+        -->
+        <input type="hidden" id="mos-edit-teaching-code" value="">
         <div class="form-item">
           <label class="req" for="mos-edit-course-code">课程号</label>
           <input class="input input-sm readonly" id="mos-edit-course-code" type="text" readonly tabindex="-1">
         </div>
-        <div class="form-item full">
+        <div class="form-item">
           <label class="req" for="mos-edit-course-name">课程名称</label>
           <input class="input input-sm readonly" id="mos-edit-course-name" type="text" readonly tabindex="-1">
         </div>
@@ -4238,7 +4320,7 @@
         <div class="form-item">
           <label class="req" for="mos-edit-week-range">起止周</label>
           <div class="input-with-btn">
-            <input class="input input-sm" id="mos-edit-week-range" type="text" placeholder="请选择" readonly tabindex="-1">
+            <input class="input input-sm readonly" id="mos-edit-week-range" type="text" placeholder="请选择" readonly tabindex="-1">
             <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingWeekRangeModal()">选择</button>
           </div>
         </div>
@@ -4269,12 +4351,12 @@
           <p class="form-hint">计划总人数 + 预留名额</p>
         </div>
         <div class="form-item">
-          <label class="req" for="mos-edit-support-history">Support历史</label>
-          <select class="input input-sm" id="mos-edit-support-history">
+          <label for="mos-edit-support-history">Support历史</label>
+          <select class="input input-sm readonly" id="mos-edit-support-history" disabled tabindex="-1">
             <option value="N">N</option>
             <option value="Y">Y</option>
           </select>
-          <p class="form-hint">该课历史上是否有过 Support（Y/N），供学院开课时参考是否需要申请</p>
+          <p class="form-hint">自动取自「特殊课程设置」；未维护该课号时为 N，不可在此修改</p>
         </div>
         <!--
         <div class="form-item">
@@ -4390,6 +4472,14 @@
         </div>
       </div>
     </section>
+    <section class="offering-edit-section" id="mos-edit-classroom-section">
+      <h4 class="offering-edit-section-title">教室信息</h4>
+      <div class="form-item mos-edit-classroom-attr-block">
+        <label>教室属性与参考教室</label>
+        <p class="form-hint">四种学时依次设置；教室属性默认「普通教室」，参考教室非必填、默认无偏好</p>
+        <div class="mos-edit-classroom-hour-attrs" id="mos-edit-classroom-hour-attrs" data-classroom-hour-attrs="mos-edit-classroom-hour-attrs"></div>
+      </div>
+    </section>
     <section class="offering-edit-section">
       <h4 class="offering-edit-section-title">合班信息</h4>
       <div class="form-item">
@@ -4419,6 +4509,62 @@
   <div class="drawer-foot">
     <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingEditDrawer()">取消</button>
     <button class="btn btn-primary" type="button" onclick="confirmMajorOfferingEditDrawer()">确定</button>
+  </div>
+</aside>
+
+<!-- ═══ 抽屉：特殊课程设置 · 编辑 ═══ -->
+<div class="drawer-backdrop" id="drawer-special-course-edit-backdrop" onclick="closeSpecialCourseSettingsEdit()"></div>
+<aside class="drawer-panel drawer-special-course-edit" id="drawer-special-course-edit">
+  <div class="drawer-head">
+    <h3>编辑特殊课程设置</h3>
+    <button class="modal-close" type="button" onclick="closeSpecialCourseSettingsEdit()">×</button>
+  </div>
+  <div class="drawer-body offering-edit-drawer-body">
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">课程信息</h4>
+      <div class="form-grid-2">
+        <div class="form-item">
+          <label>课程代码</label>
+          <input class="input input-sm readonly" id="scs-edit-code" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item">
+          <label>开课单位</label>
+          <input class="input input-sm readonly" id="scs-edit-offering-unit" type="text" readonly tabindex="-1">
+        </div>
+        <div class="form-item full">
+          <label>课程名称</label>
+          <input class="input input-sm readonly" id="scs-edit-name" type="text" readonly tabindex="-1">
+        </div>
+      </div>
+    </section>
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">教室信息（默认）</h4>
+      <div class="form-item mos-edit-classroom-attr-block">
+        <label>教室属性与参考教室</label>
+        <p class="form-hint">四种学时依次设置；开课安排时默认带出，可在教学班抽屉中覆盖</p>
+        <div class="mos-edit-classroom-hour-attrs" id="scs-edit-classroom-hour-attrs" data-classroom-hour-attrs="scs-edit-classroom-hour-attrs"></div>
+      </div>
+    </section>
+    <section class="offering-edit-section">
+      <h4 class="offering-edit-section-title">Support（默认）</h4>
+      <div class="form-item">
+        <label class="req" for="scs-edit-support-history">Support历史</label>
+        <select class="input input-sm" id="scs-edit-support-history">
+          <option value="N">N</option>
+          <option value="Y">Y</option>
+        </select>
+        <p class="form-hint">该课历史上是否有过 Support（Y/N）；开课计划抽屉只读展示，未纳入本清单的课号视为 N</p>
+      </div>
+      <div class="form-item">
+        <label>默认 Support 学院</label>
+        <p class="form-hint">一般不同于开课单位；开课安排中 Support 为空时自动带出，仍可按班管理</p>
+        <div class="clo-multiselect-options scs-edit-support-options" id="scs-edit-support-options"></div>
+      </div>
+    </section>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeSpecialCourseSettingsEdit()">取消</button>
+    <button class="btn btn-primary" type="button" onclick="confirmSpecialCourseSettingsEdit()">确定</button>
   </div>
 </aside>
 
@@ -4740,6 +4886,26 @@
       <div class="teacher-picker-assign-context" id="teacher-picker-assign-context" hidden>
         <div class="teacher-picker-assign-context-grid" id="teacher-picker-assign-context-grid"></div>
       </div>
+      <div class="group-assign-current-assignments" id="group-assign-current-assignments" hidden>
+        <div class="group-assign-current-assignments-panel" id="group-assign-current-assignments-panel">
+          <div class="group-assign-current-assignments-head">
+            <div class="group-assign-current-assignments-title">
+              <strong>本课当前安排</strong>
+              <span class="form-hint" id="group-assign-current-assignments-meta"></span>
+            </div>
+            <button type="button"
+              class="group-assign-current-assignments-toggle"
+              id="group-assign-current-assignments-toggle"
+              onclick="toggleGroupAssignTeacherPickerCurrentAssignments()"
+              aria-expanded="false"
+              title="展开本课当前安排">
+              <span aria-hidden="true">⌄</span>
+              展开
+            </button>
+          </div>
+          <div class="group-assign-current-assignments-body" id="group-assign-current-assignments-body" hidden></div>
+        </div>
+      </div>
       <div class="group-assign-prior-teachers" id="group-assign-prior-teachers" hidden>
         <div class="group-assign-prior-teachers-head">
           <div class="group-assign-prior-teachers-title">
@@ -4790,11 +4956,11 @@
       </div>
       <div class="teacher-picker-table-wrap">
         <table class="data-table compact teacher-picker-table">
-          <thead><tr>
+          <thead><tr id="teacher-picker-thead-row">
             <th class="col-check"><input type="checkbox" id="teacher-picker-check-all" aria-label="全选" onchange="toggleMajorOfferingTeacherPickerCheckAll(this.checked)"></th>
-            <th>教师工号</th>
-            <th>教师姓名</th>
-            <th>教师类型</th>
+            <th class="col-center col-staff-id">教师工号</th>
+            <th class="col-center th-sortable">教师姓名</th>
+            <th class="col-center th-sortable">教师类型</th>
             <th class="col-center">性别</th>
             <th class="col-center">所属部门</th>
             <th class="col-center" id="teacher-picker-term-hours-th" hidden title="本学期已安排 Teaching Load">本学期Teaching Load</th>
@@ -7594,6 +7760,48 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-add')">取消</button>
       <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveCourseAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：特殊课程设置 · 添加课程 ═══ -->
+<div class="modal-overlay" id="modal-special-course-add">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3>添加特殊课程</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-special-course-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint">从教务课程库勾选课号纳入维护清单；添加后默认教室为全普通、无偏好，Support 为空，可再编辑。</p>
+      <div class="picker-filter-grid">
+        <div class="form-item">
+          <label for="scs-add-filter-unit">开课单位</label>
+          <select class="input input-sm" id="scs-add-filter-unit" onchange="renderSpecialCourseAddPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label for="scs-add-filter-code">课程号</label>
+          <input class="input input-sm" id="scs-add-filter-code" placeholder="课程号" onkeydown="if(event.key==='Enter'){renderSpecialCourseAddPicker()}">
+        </div>
+        <div class="picker-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="renderSpecialCourseAddPicker()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetSpecialCourseAddFilters()">重置</button>
+        </div>
+      </div>
+      <div class="picker-table-wrap" style="margin-top:12px">
+        <table class="data-table compact scs-add-picker-table">
+          <thead><tr></tr></thead>
+          <tbody id="scs-add-picker-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="scs-add-picker-count">共 0 条记录</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-special-course-add')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSpecialCourseSettingsAdd()">确定</button>
     </div>
   </div>
 </div>

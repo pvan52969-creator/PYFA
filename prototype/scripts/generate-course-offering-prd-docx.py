@@ -14,7 +14,7 @@ from prd_course_offering_build import build_document
 OUT = (
     Path(__file__).resolve().parent.parent
     / "参考文档"
-    / "2、开课管理&排课管理"
+    / "2、开课管理"
     / "开课管理系统产品需求文档.docx"
 )
 SCRIPT_DIR = Path(__file__).resolve().parent

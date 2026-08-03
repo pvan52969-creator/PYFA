@@ -857,7 +857,7 @@ def build_document(
         doc,
         "原型入口：Academic Portal → 教学运行 → 开课管理。"
         "流程图：docs/course-offering-workflow.html。"
-        "评审纪要：参考文档/2、开课管理&排课管理/开课管理与排课管理原型评审0710汇总.md。"
+        "评审纪要：参考文档/2、开课管理/开课管理与排课管理原型评审0710汇总.md。"
         "相关 OpenSpec：ge-offering-quota-flow、design-offering-grouping-hours、immersive-offering-grouping-shell。",
     )
 

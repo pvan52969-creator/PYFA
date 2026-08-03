@@ -57,10 +57,9 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-offering-major">开课计划</a>
           <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task">开课安排（样式1）</a> -->
           <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">开课安排</a>
-          <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-confirmation-admin">授课确认管理</a>
-          <a href="#" class="nav-item nav-item-sub" data-page="teacher-course-confirmation">授课确认（教师端）</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">开课名单</a>
           <!-- 原：专业开课计划 / 专业开课任务安排（样式一/二） / 专业开课学生名单管理 -->
+          <!-- 授课确认管理 / 授课确认（教师端）已迁至「开课清单」分组 -->
         </div>
       </div>
       <div class="nav-section">
@@ -97,6 +96,9 @@
         <div class="nav-section-body">
           <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">教师开课学时统计</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-confirmation-admin">授课确认管理</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="teacher-course-confirmation">授课确认（教师端）</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-teacher-replace">授课教师替换</a>
           <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a> -->
           <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a> -->
         </div>
@@ -1014,7 +1016,7 @@
               <th>课程代码</th><th>课程名称</th><th>课程类别</th><th class="col-center">选课类型</th>
               <!-- <th class="col-center">上课学院</th> -->
               <th class="col-center">上课专业</th><th class="col-center">上课批次</th>
-              <th class="col-center">是否新生</th>
+              <th class="col-center">存在新生</th>
               <th class="col-center">学分</th><th class="col-center">总学时</th>
               <!-- <th class="col-center">理论学时</th><th class="col-center">实践学时</th> -->
               <!-- <th class="col-center">教学周数</th> -->
@@ -2088,6 +2090,118 @@
         </div>
         <div class="table-footer">
           <div class="pagination" id="course-offering-manifest-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 授课教师替换（仅已生效开课 · 整行替换） ═══ -->
+    <section class="page" id="page-course-offering-teacher-replace">
+      <div class="page-header">
+        <div>
+          <h1>授课教师替换</h1>
+        </div>
+      </div>
+      <div class="approval-tab-bar" role="tablist" aria-label="授课教师替换">
+        <button type="button" class="approval-tab active" role="tab" aria-selected="true" data-otr-tab="replace" onclick="setOfferingTeacherReplaceTab('replace')">教师替换</button>
+        <button type="button" class="approval-tab" role="tab" aria-selected="false" data-otr-tab="log" onclick="setOfferingTeacherReplaceTab('log')">替换记录</button>
+      </div>
+      <div class="tab-panel active" id="otr-tab-replace" role="tabpanel" data-otr-panel="replace">
+        <div class="card course-major-query-card">
+          <div class="course-major-query-grid">
+            <div class="course-time-query-field">
+              <label for="otr-filter-term">开课学期</label>
+              <select class="input input-sm" id="otr-filter-term" onchange="onOfferingTeacherReplaceTermChange()"></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="otr-filter-unit">开课单位</label>
+              <select class="input input-sm" id="otr-filter-unit">
+                <option value="">全部开课单位</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="otr-filter-code">课程号</label>
+              <input class="input input-sm" id="otr-filter-code" placeholder="课程号" onkeydown="if(event.key==='Enter'){queryOfferingTeacherReplacePage()}">
+            </div>
+            <div class="course-time-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingTeacherReplacePage()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingTeacherReplaceFilters()">重置</button>
+            </div>
+          </div>
+        </div>
+        <div class="card otr-list-card">
+          <div class="panel-toolbar">
+            <span class="form-hint">点击「查看安排」展开明细；每行可「替换教师」。多人行将整组替换为新选教师。</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table compact otr-course-table">
+              <thead>
+                <tr>
+                  <th class="col-index">序号</th>
+                  <th class="col-center">开课学期</th>
+                  <th class="col-center">开课类型</th>
+                  <th>课程号</th>
+                  <th>课程名称</th>
+                  <th class="col-center">开课单位</th>
+                  <th>任课教师（摘要）</th>
+                  <th class="col-center">安排行数</th>
+                  <th class="col-sticky-actions">操作</th>
+                </tr>
+              </thead>
+              <tbody id="otr-course-body"></tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="pagination" id="otr-course-pagination"></div>
+          </div>
+        </div>
+        <div class="card otr-detail-card" id="otr-detail-card" hidden>
+          <div class="panel-toolbar otr-detail-toolbar">
+            <strong id="otr-detail-title">开课安排明细</strong>
+            <span class="form-hint" id="otr-detail-hint">整行替换：不改起止周、学时类型与学时</span>
+            <button class="btn btn-outline btn-sm" type="button" onclick="clearOfferingTeacherReplaceDetail()">收起</button>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table compact otr-assign-table">
+              <thead>
+                <tr>
+                  <th class="col-index">序号</th>
+                  <th>课程班/小组</th>
+                  <th class="col-center">学时类型</th>
+                  <th class="col-center">起止周</th>
+                  <th class="col-center">周学时</th>
+                  <th class="col-center">总学时</th>
+                  <th>教师</th>
+                  <th class="col-center">同时授课</th>
+                  <th class="col-sticky-actions">操作</th>
+                </tr>
+              </thead>
+              <tbody id="otr-assign-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="otr-tab-log" role="tabpanel" data-otr-panel="log">
+        <div class="card otr-log-card">
+          <div class="panel-toolbar">
+            <strong>最近替换记录</strong>
+            <span class="form-hint">本机原型日志，刷新后仍保留（localStorage）</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table compact otr-log-table">
+              <thead>
+                <tr>
+                  <th class="col-index">序号</th>
+                  <th class="col-center">操作时间</th>
+                  <th class="col-center">学期</th>
+                  <th>课程号</th>
+                  <th>安排行</th>
+                  <th>原教师</th>
+                  <th>新教师</th>
+                </tr>
+              </thead>
+              <tbody id="otr-log-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -4178,7 +4292,7 @@
         </div>
         <div class="form-item">
           <label for="gmot-filter-intake">批次</label>
-          <select class="input input-sm" id="gmot-filter-intake" onchange="renderGenerateMajorOfferingTaskPicker()">
+          <select class="input input-sm" id="gmot-filter-intake" onchange="resetListPage('gmotPicker');renderGenerateMajorOfferingTaskPicker()">
             <option value="">全部批次</option>
           </select>
         </div>
@@ -4187,18 +4301,18 @@
           <input class="input input-sm" id="gmot-filter-code" placeholder="课程号">
         </div>
         <div class="picker-filter-actions">
-          <button class="btn btn-primary btn-sm" type="button" onclick="renderGenerateMajorOfferingTaskPicker()">查询</button>
+          <button class="btn btn-primary btn-sm" type="button" onclick="resetListPage('gmotPicker');renderGenerateMajorOfferingTaskPicker()">查询</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="resetGenerateMajorOfferingTaskFilters()">重置</button>
         </div>
       </div>
-      <div class="picker-table-wrap" style="margin-top:12px">
+      <div class="picker-table-wrap gmot-picker-table-wrap" style="margin-top:12px">
         <table class="data-table compact gmot-picker-table">
           <thead><tr></tr></thead>
           <tbody id="gmot-picker-tbody"></tbody>
         </table>
       </div>
-      <div class="picker-table-footer">
-        <span id="gmot-picker-count">共 0 条记录</span>
+      <div class="picker-table-footer gmot-picker-footer">
+        <div class="pagination" id="gmot-picker-pagination"></div>
       </div>
     </div>
     <div class="modal-foot gmot-modal-foot">
@@ -4210,18 +4324,19 @@
 </div>
 
 <!-- ═══ 弹窗：专业开课 · 一键生成二次确认 ═══ -->
-<div class="modal-overlay modal-nested" id="modal-generate-all-major-offering-confirm">
+<div class="modal-overlay" id="modal-generate-all-major-offering-confirm">
   <div class="modal modal-sm">
     <div class="modal-head">
       <h3>一键生成开课任务</h3>
-      <button class="modal-close" type="button" onclick="closeModal('modal-generate-all-major-offering-confirm')">×</button>
+      <button class="modal-close" type="button" onclick="cancelGenerateAllMajorOfferingConfirm()">×</button>
     </div>
     <div class="modal-body">
       <p id="generate-all-major-offering-confirm-msg">你确定需要一键全部生成该学年学期的开课任务吗？</p>
-      <p class="form-hint">将按当前学年学期写入开课计划（含列表中的 FIN401/FIN402 等全部候选）；已存在的「课+专业+批次」会自动跳过。</p>
+      <p class="form-hint">将按当前学年学期写入开课计划（含列表中的 FIN401/FIN402 等全部候选）；已存在的「课+专业+批次」会自动跳过。生成后默认不合班；若需一并合班，请点「生成并合班」（仅未生效草稿互合，不与已生效班合并）。</p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-generate-all-major-offering-confirm')">取消</button>
+      <button class="btn btn-ghost" type="button" onclick="cancelGenerateAllMajorOfferingConfirm()">取消</button>
+      <button class="btn btn-outline" type="button" onclick="confirmGenerateAndMergeMajorOfferingTasks()">生成并合班</button>
       <button class="btn btn-primary" type="button" onclick="confirmGenerateAllMajorOfferingTasks()">确定生成</button>
     </div>
   </div>

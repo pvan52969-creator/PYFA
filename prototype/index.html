@@ -722,7 +722,7 @@
       </div>
       <div class="card">
         <div class="panel-toolbar course-time-list-toolbar">
-          <button class="btn btn-primary btn-sm" type="button" onclick="alert('新增开课时间（原型占位）')">新增</button>
+          <button class="btn btn-primary btn-sm" type="button" onclick="openCourseTimeSettingAddModal()">新增</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-course-time-delete" onclick="deleteSelectedCourseTimeSettings()" disabled>删除</button>
         </div>
         <div class="table-scroll">
@@ -759,7 +759,7 @@
       <div class="form-item course-time-setting-edit-term">
         <label>学年学期</label>
         <p class="form-static" id="cts-edit-term">—</p>
-        <p class="form-hint">教学周数按学期类型固定：2 月学期 6 周，4/9 月学期 17 周</p>
+        <p class="form-hint">教学周数按学期类型固定：2 月学期 5 周，4/9 月学期 14 周</p>
       </div>
       <!-- 教学周数不在此设置，改由 resolveTermTypeDefaultTeachingWeeks 按学期类型推导 -->
       <div class="form-item">
@@ -794,6 +794,55 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeCourseTimeSettingEditModal()">取消</button>
       <button class="btn btn-primary" type="button" onclick="saveCourseTimeSettingEditModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：开课管理 · 新增开课时间（选择开课学期） ═══ -->
+<div class="modal-overlay" id="modal-course-time-setting-add">
+  <div class="modal course-time-setting-edit-modal course-time-setting-add-modal">
+    <div class="modal-head">
+      <h3>新增开课时间</h3>
+      <button class="modal-close" type="button" onclick="closeCourseTimeSettingAddModal()">×</button>
+    </div>
+    <div class="modal-body course-time-setting-edit-body">
+      <div class="form-item">
+        <label class="req" for="cts-add-term">开课学期</label>
+        <select class="input" id="cts-add-term" aria-label="开课学期" onchange="onCourseTimeSettingAddTermChange()"></select>
+        <p class="form-hint">仅列出尚未配置开课时间的学期；教学周数按学期类型固定。</p>
+      </div>
+      <div class="form-item course-time-setting-edit-term">
+        <label>教学周数</label>
+        <p class="form-static" id="cts-add-weeks">—</p>
+      </div>
+      <div class="form-item">
+        <label class="req">开课开始</label>
+        <input class="input course-datetime-input" type="text" id="cts-add-start"
+          placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
+          data-picker-title="开课开始"
+          onclick="openCourseDatetimePicker(this, event)">
+      </div>
+      <div class="form-item">
+        <label class="req">开课截止</label>
+        <input class="input course-datetime-input" type="text" id="cts-add-end"
+          placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
+          data-picker-title="开课截止"
+          onclick="openCourseDatetimePicker(this, event)">
+      </div>
+      <div class="form-item">
+        <label for="cts-add-teacher-confirm-deadline">授课确认截止日期</label>
+        <input class="input cuot-date-input course-datetime-input" type="text" id="cts-add-teacher-confirm-deadline"
+          placeholder="dd/mm/yyyy" autocomplete="off" readonly
+          data-picker-title="授课确认截止日期"
+          data-unbounded="1"
+          onclick="openCuotDatePicker(this, event)">
+        <p class="form-hint">仅日期；可自由设置（含已过期日期）</p>
+      </div>
+      <!-- 新增不展示备注；修改弹窗仍可维护 -->
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeCourseTimeSettingAddModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmCourseTimeSettingAdd()">确定</button>
     </div>
   </div>
 </div>
@@ -999,6 +1048,7 @@
           <button class="btn btn-primary btn-sm" type="button" onclick="openGenerateMajorOfferingTaskModal()">生成开课任务</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> --> <!-- 改由任务安排页 -->
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>生效</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-one-click-merge" onclick="oneClickMergeMajorOfferingSections()">一键合班</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
           <!-- <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护。「操作记录」可查看字段变更（支持按用户过滤）。</span> -->
@@ -1024,8 +1074,8 @@
               <th class="col-center">开课单位</th>
               <!-- <th class="col-center">Support历史</th> --> <!-- 计划列表暂隐 -->
               <th class="col-center col-sticky-count">预置人数</th>
-              <th class="col-center col-sticky-changelog">操作<br>记录</th>
-              <th class="col-center col-sticky-course-info">课程<br>信息</th>
+              <th class="col-center col-sticky-changelog th-v"><span class="th-v-label">操作记录</span></th>
+              <th class="col-center col-sticky-course-info th-v"><span class="th-v-label">课程信息</span></th>
               <th class="col-sticky-actions">操作</th>
             </tr></thead>
             <tbody id="course-offering-body-major"></tbody>
@@ -1261,8 +1311,15 @@
             </div>
           </div>
           <div class="card teacher-teaching-load-card">
-            <div class="panel-toolbar">
+            <div class="panel-toolbar teacher-load-table-toolbar">
               <span class="form-hint" data-ttl="hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
+              <label class="teacher-load-include-current-term" data-ttl="include-current-term-wrap" hidden>
+                <span class="teacher-load-include-current-term-label">本学期计入</span>
+                <span class="toggle-switch">
+                  <input type="checkbox" data-ttl="include-current-term" onchange="onTeacherTeachingLoadIncludeCurrentTermChange(this)" aria-label="按学年汇总时是否计入本学期">
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </span>
+              </label>
             </div>
             <div class="table-scroll teacher-teaching-load-scroll">
               <table class="data-table teacher-teaching-load-table">
@@ -1384,7 +1441,7 @@
                 <th class="col-center" rowspan="2">开课学期</th>
                 <th rowspan="2">课程号</th>
                 <th rowspan="2">课程名称</th>
-                <th class="col-center" rowspan="2">选课类型</th>
+                <th class="col-center" rowspan="2">选修/必修</th>
                 <!-- <th class="col-center" rowspan="2">上课学院</th> -->
                 <th class="col-center" rowspan="2">上课专业</th>
                 <th class="col-center" rowspan="2">上课批次</th>
@@ -2136,15 +2193,15 @@
             <table class="data-table compact otr-course-table">
               <thead>
                 <tr>
-                  <th class="col-index">序号</th>
+                  <th class="col-index col-center">序号</th>
                   <th class="col-center">开课学期</th>
                   <th class="col-center">开课类型</th>
-                  <th>课程号</th>
+                  <th class="col-center col-code">课程号</th>
                   <th>课程名称</th>
+                  <th class="col-center">选课类型</th>
                   <th class="col-center">开课单位</th>
-                  <th>任课教师（摘要）</th>
-                  <th class="col-center">安排行数</th>
-                  <th class="col-sticky-actions">操作</th>
+                  <th>任课教师</th>
+                  <th class="col-center col-sticky-actions">操作</th>
                 </tr>
               </thead>
               <tbody id="otr-course-body"></tbody>
@@ -2172,7 +2229,7 @@
                   <th class="col-center">总学时</th>
                   <th>教师</th>
                   <th class="col-center">同时授课</th>
-                  <th class="col-sticky-actions">操作</th>
+                  <th class="col-center col-sticky-actions">操作</th>
                 </tr>
               </thead>
               <tbody id="otr-assign-body"></tbody>
@@ -2440,8 +2497,15 @@
         </div>
       </div>
       <div class="card teacher-teaching-load-card">
-        <div class="panel-toolbar">
+        <div class="panel-toolbar teacher-load-table-toolbar">
           <span class="form-hint" data-ttl="hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
+          <label class="teacher-load-include-current-term" data-ttl="include-current-term-wrap" hidden>
+            <span class="teacher-load-include-current-term-label">本学期计入</span>
+            <span class="toggle-switch">
+              <input type="checkbox" data-ttl="include-current-term" onchange="onTeacherTeachingLoadIncludeCurrentTermChange(this)" aria-label="按学年汇总时是否计入本学期">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </span>
+          </label>
         </div>
         <div class="table-scroll teacher-teaching-load-scroll">
           <table class="data-table teacher-teaching-load-table" id="teacher-teaching-load-table">
@@ -4332,11 +4396,11 @@
     </div>
     <div class="modal-body">
       <p id="generate-all-major-offering-confirm-msg">你确定需要一键全部生成该学年学期的开课任务吗？</p>
-      <p class="form-hint">将按当前学年学期写入开课计划（含列表中的 FIN401/FIN402 等全部候选）；已存在的「课+专业+批次」会自动跳过。生成后默认不合班；若需一并合班，请点「生成并合班」（仅未生效草稿互合，不与已生效班合并）。</p>
+      <p class="form-hint">将按当前学年学期写入开课计划（含列表中的 FIN401/FIN402 等全部候选）；已存在的「课+专业+批次」会自动跳过。生成后默认不合班；若需一并合班，请点「生成并自动合班」（仅未生效草稿互合，不与已生效班合并）。</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="cancelGenerateAllMajorOfferingConfirm()">取消</button>
-      <button class="btn btn-outline" type="button" onclick="confirmGenerateAndMergeMajorOfferingTasks()">生成并合班</button>
+      <button class="btn btn-outline" type="button" onclick="confirmGenerateAndMergeMajorOfferingTasks()">生成并自动合班</button>
       <button class="btn btn-primary" type="button" onclick="confirmGenerateAllMajorOfferingTasks()">确定生成</button>
     </div>
   </div>
@@ -4509,10 +4573,10 @@
         </div>
         -->
         <div class="form-item">
-          <label class="req" for="mos-edit-enrollment-type">选课类型</label>
+          <label class="req" for="mos-edit-enrollment-type">选修/必修</label>
           <select class="input input-sm" id="mos-edit-enrollment-type" onchange="onMajorOfferingEditEnrollmentTypeChange()">
-            <option value="closed">不开放选课</option>
-            <option value="open">开放选课</option>
+            <option value="closed">必修</option>
+            <option value="open">选修</option>
           </select>
         </div>
         <div class="form-item">
@@ -5354,7 +5418,7 @@
           <!-- <th class="col-center">学院</th> -->
           <th class="col-center">专业</th>
           <th class="col-center">入学批次</th>
-          <th class="col-course-group">课程班/小组</th>
+          <th class="col-course-group">小组</th>
           <th class="col-center">国籍</th>
           <th class="col-center">学生类型</th>
           <th class="col-center">学籍状态</th>
@@ -5953,7 +6017,7 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：专业开课 · 分组（按组数 / 按人数） ═══ -->
+<!-- ═══ 弹窗：专业开课 · 分组（按组数 / 按人数 / 按专业） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-offering-group-batch-add">
   <div class="modal modal-sm offering-group-batch-add-modal">
     <div class="modal-head">
@@ -5976,6 +6040,13 @@
             <span class="offering-auto-group-option-text">
               <strong>按人数分</strong>
               <span>填写每组人数上限，系统自动计算组数并尽量平均分配</span>
+            </span>
+          </label>
+          <label class="offering-auto-group-option">
+            <input type="radio" name="offering-group-split-mode" value="byProgramme" onchange="syncOfferingGroupSplitModeUi()">
+            <span class="offering-auto-group-option-text">
+              <strong>按专业分组</strong>
+              <span>按上课专业自动建组，组名为专业代码，人数上限为该专业批次计划总人数</span>
             </span>
           </label>
         </div>

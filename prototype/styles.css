@@ -3735,11 +3735,11 @@ code {
   table-layout: auto;
   border-collapse: separate;
   border-spacing: 0;
-  --major-offering-actions-col-width: 80px;
-  --major-offering-count-col-width: 64px;
-  --major-offering-changelog-col-width: 48px;
-  --major-offering-course-info-col-width: 48px;
-  /* --major-offering-actions-col-width: 240px; */ /* ???????????????/????? */
+  /* 右侧冻结列固定宽度，须与 sticky right 偏移一致，避免横向滚动时错位/重叠 */
+  --major-offering-actions-col-width: 110px;
+  --major-offering-count-col-width: 52px;
+  --major-offering-changelog-col-width: 44px;
+  --major-offering-course-info-col-width: 44px;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-weight: 400;
   color: #000;
@@ -3893,6 +3893,12 @@ code {
 }
 #page-course-offering-major .course-offering-major-table th.col-sticky-actions,
 #page-course-offering-major .course-offering-major-table td.col-sticky-actions {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  min-width: var(--major-offering-actions-col-width);
+  width: var(--major-offering-actions-col-width);
+  max-width: var(--major-offering-actions-col-width);
   white-space: nowrap;
   padding-left: 8px;
   padding-right: 8px;
@@ -3900,34 +3906,82 @@ code {
   overflow: visible;
   font-size: 11px;
   text-align: center;
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
 }
 #page-course-offering-major .course-offering-major-table td.col-sticky-actions a,
 #page-course-offering-major .course-offering-major-table td.col-sticky-actions .action-disabled {
   margin-right: 0;
   margin-left: 0;
 }
+#page-course-offering-major .course-offering-major-table th.col-sticky-course-info,
+#page-course-offering-major .course-offering-major-table td.col-sticky-course-info {
+  position: sticky;
+  right: var(--major-offering-actions-col-width);
+  z-index: 3;
+  min-width: var(--major-offering-course-info-col-width);
+  width: var(--major-offering-course-info-col-width);
+  max-width: var(--major-offering-course-info-col-width);
+  border-left: 1px solid var(--border, #94a3b8);
+  font-size: 11px;
+  text-align: center;
+  vertical-align: middle;
+  background: #fff;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-major .course-offering-major-table th.col-sticky-changelog,
+#page-course-offering-major .course-offering-major-table td.col-sticky-changelog {
+  position: sticky;
+  right: calc(var(--major-offering-actions-col-width) + var(--major-offering-course-info-col-width));
+  z-index: 3;
+  min-width: var(--major-offering-changelog-col-width);
+  width: var(--major-offering-changelog-col-width);
+  max-width: var(--major-offering-changelog-col-width);
+  border-left: 1px solid var(--border, #94a3b8);
+  font-size: 11px;
+  text-align: center;
+  vertical-align: middle;
+  background: #fff;
+  padding-left: 2px;
+  padding-right: 2px;
+}
 #page-course-offering-major .course-offering-major-table th.col-sticky-count,
 #page-course-offering-major .course-offering-major-table td.col-sticky-count {
+  position: sticky;
+  right: calc(
+    var(--major-offering-actions-col-width)
+    + var(--major-offering-course-info-col-width)
+    + var(--major-offering-changelog-col-width)
+  );
+  z-index: 3;
+  min-width: var(--major-offering-count-col-width);
+  width: var(--major-offering-count-col-width);
+  max-width: var(--major-offering-count-col-width);
   border-left: 1px solid var(--border, #94a3b8);
   box-shadow:
     -1px 0 0 var(--border, #94a3b8),
     -10px 0 16px rgba(15, 23, 42, 0.12);
   overflow: visible;
+  background: #fff;
+  padding-left: 4px;
+  padding-right: 4px;
 }
-#page-course-offering-major .course-offering-major-table th.col-sticky-changelog,
-#page-course-offering-major .course-offering-major-table td.col-sticky-changelog,
-#page-course-offering-major .course-offering-major-table th.col-sticky-course-info,
-#page-course-offering-major .course-offering-major-table td.col-sticky-course-info {
-  border-left: 1px solid var(--border, #94a3b8);
-  font-size: 11px;
-  text-align: center;
-  vertical-align: middle;
+#page-course-offering-major .course-offering-major-table thead th.col-sticky-actions {
+  z-index: 6;
+  background: var(--blue-50, #eff6ff);
 }
+#page-course-offering-major .course-offering-major-table thead th.col-sticky-count,
 #page-course-offering-major .course-offering-major-table thead th.col-sticky-changelog,
 #page-course-offering-major .course-offering-major-table thead th.col-sticky-course-info {
-  font-size: 11px;
-  line-height: 1.25;
-  white-space: normal;
+  z-index: 5;
+  background: var(--blue-50, #eff6ff);
+}
+#page-course-offering-major .course-offering-major-table tr:hover td.col-sticky-actions,
+#page-course-offering-major .course-offering-major-table tr:hover td.col-sticky-count,
+#page-course-offering-major .course-offering-major-table tr:hover td.col-sticky-changelog,
+#page-course-offering-major .course-offering-major-table tr:hover td.col-sticky-course-info {
+  background: #fafbfc;
 }
 #page-course-offering-major .course-offering-major-table td.col-sticky-changelog a,
 #page-course-offering-major .course-offering-major-table td.col-sticky-course-info a {
@@ -3935,6 +3989,8 @@ code {
   white-space: nowrap;
   margin-right: 0;
   margin-left: 0;
+  font-size: 11px;
+  font-weight: 400;
   color: var(--blue-500);
   text-decoration: none;
 }
@@ -3943,9 +3999,25 @@ code {
   text-decoration: underline;
 }
 #page-course-offering-major .course-offering-major-table thead th.col-sticky-count.th-v {
-  width: 2.6em;
-  min-width: 2.6em;
-  max-width: 3em;
+  width: var(--major-offering-count-col-width);
+  min-width: var(--major-offering-count-col-width);
+  max-width: var(--major-offering-count-col-width);
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-major .course-offering-major-table thead th.col-sticky-changelog.th-v {
+  width: var(--major-offering-changelog-col-width);
+  min-width: var(--major-offering-changelog-col-width);
+  max-width: var(--major-offering-changelog-col-width);
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-major .course-offering-major-table thead th.col-sticky-course-info.th-v {
+  width: var(--major-offering-course-info-col-width);
+  min-width: var(--major-offering-course-info-col-width);
+  max-width: var(--major-offering-course-info-col-width);
+  padding-left: 2px;
+  padding-right: 2px;
 }
 #page-course-major-offering-task.active {
   display: flex;
@@ -4106,6 +4178,51 @@ code {
 #page-course-major-offering-roster .course-major-offering-roster-table thead th.col-index.th-v {
   min-width: 2.6em;
   width: 2.6em;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .col-status {
+  width: 2.4em;
+  min-width: 2.4em;
+  max-width: 2.8em;
+  white-space: nowrap;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-status.th-v {
+  width: 2.4em;
+  min-width: 2.4em;
+  max-width: 2.8em;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .offering-grouping-course-status {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .offering-grouping-course-status.is-ok {
+  color: #fff;
+  background: var(--green);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .offering-grouping-course-status.is-warn {
+  color: #fff;
+  background: var(--orange);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .offering-grouping-course-status.is-missing {
+  color: #fff;
+  background: #c2410c;
+  border-radius: 4px;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .col-assign {
+  min-width: 64px;
+  max-width: 88px;
+  white-space: nowrap;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table .col-term {
   min-width: 64px;
@@ -4891,8 +5008,9 @@ code {
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
-  padding: 5px 8px;
+  padding: 6px 8px;
   text-align: center;
+  vertical-align: middle;
   border-bottom: 2px solid var(--border, #cbd5e1);
   border-right: 1px solid var(--border-light);
 }
@@ -4901,9 +5019,17 @@ code {
   width: 2.8em;
   min-width: 2.8em;
   max-width: 3.2em;
-  padding: 8px 4px 6px;
+  padding: 6px 4px;
   text-align: center;
-  vertical-align: bottom;
+  vertical-align: middle;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.th-v .th-inner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 100%;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.th-v .th-v-label {
   display: inline-block;
@@ -4926,7 +5052,7 @@ code {
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.th-v .th-sort {
   display: block;
-  margin: 2px auto 0;
+  margin: 0;
   line-height: 1;
   text-align: center;
 }
@@ -4965,18 +5091,64 @@ code {
   padding-right: 4px;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-task-submit {
-  width: 104px;
-  min-width: 104px;
-  max-width: 120px;
+  width: 3.2em;
+  min-width: 3.2em;
+  max-width: 3.6em;
   white-space: nowrap;
+}
+#page-course-major-offering-task-style2 .mot-style2-table td.col-task-submit {
+  overflow: visible;
+  max-width: none;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit {
   overflow: visible;
-  padding-left: 6px;
-  padding-right: 6px;
+  padding: 6px 2px;
+  white-space: normal;
+  line-height: 1.2;
+  vertical-align: middle;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit .offering-group-status-th-with-tip {
   max-width: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: normal;
+  min-height: 100%;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit .mot-task-submit-th-main {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit .mot-task-submit-th-label {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  white-space: nowrap;
+  word-break: keep-all;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit .offering-group-status-th-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  line-height: 1;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit .th-sort {
+  display: inline-block;
+  line-height: 1;
+  margin: 0;
 }
 #page-course-major-offering-task-style2 .mot-style2-table td.col-task-submit .offering-status-pill {
   display: inline-block;
@@ -5002,12 +5174,19 @@ code {
 #page-course-major-offering-task-style2 .mot-style2-table thead th.col-expand.th-v {
   text-align: center;
   vertical-align: middle;
+  padding: 6px 4px;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.col-expand.th-v .th-v-label {
-  display: block;
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
   max-height: none;
   height: auto;
   overflow: visible;
+  white-space: nowrap;
+  word-break: keep-all;
   margin: 0 auto;
   text-align: center;
 }
@@ -5900,9 +6079,46 @@ code {
 #page-course-offering-teacher-replace .otr-course-table tr.is-selected td {
   background: var(--blue-50, #eff6ff);
 }
+#page-course-offering-teacher-replace .otr-course-table.data-table.compact th,
+#page-course-offering-teacher-replace .otr-course-table.data-table.compact td,
+#page-course-offering-teacher-replace .otr-assign-table.data-table.compact th,
+#page-course-offering-teacher-replace .otr-assign-table.data-table.compact td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+#page-course-offering-teacher-replace .otr-course-table.data-table.compact th:last-child,
+#page-course-offering-teacher-replace .otr-course-table.data-table.compact td:last-child,
+#page-course-offering-teacher-replace .otr-assign-table.data-table.compact th:last-child,
+#page-course-offering-teacher-replace .otr-assign-table.data-table.compact td:last-child {
+  border-right: none;
+}
+#page-course-offering-teacher-replace .otr-course-table .col-index,
+#page-course-offering-teacher-replace .otr-course-table .col-code {
+  text-align: center;
+}
+#page-course-offering-teacher-replace .otr-course-table .col-teachers {
+  min-width: 120px;
+  max-width: 220px;
+  vertical-align: middle;
+}
+#page-course-offering-teacher-replace .otr-course-table .otr-teacher-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  line-height: 1.35;
+}
+#page-course-offering-teacher-replace .otr-course-table .otr-teacher-summary-line {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
 #page-course-offering-teacher-replace .otr-assign-table .col-sticky-actions,
 #page-course-offering-teacher-replace .otr-course-table .col-sticky-actions {
   white-space: nowrap;
+  text-align: center;
 }
 #page-course-section-change-log .section-change-log-filter-card {
   margin-bottom: 0;
@@ -6381,6 +6597,11 @@ code {
 #page-course-teacher-teaching-load .teacher-teaching-load-card > .panel-toolbar {
   margin-bottom: 0;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 #page-course-teacher-teaching-load .teacher-teaching-load-card > .panel-toolbar .form-hint {
   margin-top: 0;
@@ -6486,6 +6707,14 @@ code {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.teacher-teaching-load-table td.col-name .teacher-load-name-link {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  vertical-align: baseline;
 }
 .teacher-teaching-load-table th.col-dept,
 .teacher-teaching-load-table td.col-dept {
@@ -7952,6 +8181,32 @@ code {
 #page-offering-grouping .offering-grouping-teacher-load .teacher-teaching-load-card > .panel-toolbar {
   margin-bottom: 0;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.teacher-load-include-current-term {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-2, #475569);
+  cursor: pointer;
+  user-select: none;
+}
+.teacher-load-include-current-term[hidden] {
+  display: none !important;
+}
+.teacher-load-include-current-term-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.teacher-load-include-current-term .toggle-switch {
+  gap: 0;
 }
 #page-offering-grouping .offering-grouping-teacher-load .teacher-teaching-load-scroll {
   flex: 1;
@@ -9313,9 +9568,25 @@ code {
 .mot-style2-table .col-tcc-progress {
   min-width: 88px;
 }
+#page-course-major-offering-task-style2 .mot-style2-table .col-tcc-progress {
+  width: 5.6em;
+  min-width: 5.2em;
+  max-width: 6.5em;
+  white-space: nowrap;
+  text-align: center;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-tcc-progress.th-v {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#page-course-major-offering-task-style2 .mot-style2-table td.col-tcc-progress {
+  overflow: visible;
+  max-width: none;
+}
 #page-course-major-offering-task-style2 .mot-style2-table tbody td .tcc-progress-pill {
   font-size: 10px;
   padding: 1px 6px;
+  white-space: nowrap;
 }
 #page-offering-grouping .offering-grouping-course-list-body {
   flex: 1;
@@ -9812,10 +10083,10 @@ code {
   margin: 0 0 12px;
   padding: 6px 10px;
   font-size: 11px;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.4;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
 }
 .offering-grouping-shell.is-readonly .offering-group-sidebar-actions .btn[disabled],
 .offering-grouping-shell.is-readonly .offering-group-toolbar .btn[disabled],
@@ -11059,6 +11330,19 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-generate-major-offering-task .picker-table-wrap {
   max-height: none;
   overflow: visible;
+}
+#modal-generate-major-offering-task .gmot-picker-table {
+  border-collapse: collapse;
+  border: 1px solid var(--border, #cbd5e1);
+}
+#modal-generate-major-offering-task .gmot-picker-table thead th,
+#modal-generate-major-offering-task .gmot-picker-table tbody td {
+  border-right: 1px solid var(--border-light, #e2e8f0);
+  border-bottom: 1px solid var(--border-light, #e2e8f0);
+}
+#modal-generate-major-offering-task .gmot-picker-table thead th:last-child,
+#modal-generate-major-offering-task .gmot-picker-table tbody td:last-child {
+  border-right: 0;
 }
 #modal-generate-major-offering-task .gmot-picker-footer {
   margin-top: 10px;
@@ -13190,13 +13474,13 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-assign-table.data-table,
 .offering-group-status-assign-table {
-  width: max-content;
-  min-width: 1180px;
+  width: 100%;
+  min-width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
 .offering-group-status-assign-table.is-editing-draft {
-  min-width: 1360px;
+  min-width: max(100%, 1360px);
 }
 .offering-group-status-assign-table.data-table.compact th,
 .offering-group-status-assign-table.data-table.compact td {
@@ -13275,25 +13559,25 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   text-align: center;
 }
 .offering-group-status-assign-table .col-simul {
-  width: 72px;
-  min-width: 64px;
-  max-width: 80px;
+  width: 108px;
+  min-width: 100px;
+  max-width: 120px;
   padding-left: 2px;
   padding-right: 2px;
   white-space: nowrap;
   overflow: visible;
 }
 .offering-group-status-assign-table .col-classroom-attr {
-  width: 92px;
-  min-width: 88px;
-  max-width: 96px;
+  width: 100px;
+  min-width: 96px;
+  max-width: 112px;
   padding-left: 3px;
   padding-right: 3px;
 }
 .offering-group-status-assign-table .col-classroom-pref {
-  width: 110px;
-  min-width: 96px;
-  max-width: 130px;
+  width: 120px;
+  min-width: 110px;
+  max-width: 140px;
   border-right: 1px solid var(--border-light);
 }
 .offering-group-status-assign-draft .offering-group-status-classroom-attr-select,
@@ -13437,9 +13721,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   background: #fff;
 }
 .offering-group-status-assign-table .col-teacher {
-  min-width: 100px;
-  width: 120px;
-  max-width: 140px;
+  min-width: 120px;
+  width: 140px;
+  max-width: 168px;
   text-align: center;
   vertical-align: middle;
   padding-left: 4px;
@@ -13463,7 +13747,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-assign-table th.col-groups,
 .offering-group-status-assign-table td.col-groups {
-  min-width: 150px;
+  min-width: 140px;
   width: 168px;
   max-width: 200px;
   overflow: hidden;
@@ -13473,9 +13757,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-assign-table.is-editing-draft th.col-groups,
 .offering-group-status-assign-table.is-editing-draft td.col-groups {
-  min-width: 280px;
-  width: 280px;
-  max-width: none;
+  min-width: 200px;
+  width: 220px;
+  max-width: 280px;
 }
 .offering-group-status-assign-draft td.col-groups {
   vertical-align: middle;
@@ -13558,8 +13842,58 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   background: rgba(185, 28, 28, 0.08);
 }
 .offering-group-status-assign-draft .offering-group-status-group-multiselect .clo-multiselect-arrow,
-.offering-group-status-assign-draft .offering-group-status-prior-teacher-multiselect .clo-multiselect-arrow {
-  margin-top: 2px;
+.offering-group-status-assign-draft .offering-group-status-prior-teacher-multiselect .clo-multiselect-arrow,
+.offering-group-status-assign-draft .offering-group-status-pref-multiselect .clo-multiselect-arrow,
+.offering-group-status-assign-draft .offering-group-status-group-multiselect .clo-multiselect-clear,
+.offering-group-status-assign-draft .offering-group-status-prior-teacher-multiselect .clo-multiselect-clear,
+.offering-group-status-assign-draft .offering-group-status-pref-multiselect .clo-multiselect-clear {
+  margin-top: 3px;
+}
+.clo-multiselect-clear {
+  flex: 0 0 auto;
+  position: relative;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #c0c4cc;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
+}
+.clo-multiselect-clear::before,
+.clo-multiselect-clear::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 1.2px;
+  background: #fff;
+  border-radius: 1px;
+}
+.clo-multiselect-clear::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.clo-multiselect-clear::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+.clo-multiselect-clear:hover {
+  background: #909399;
+}
+.clo-multiselect-clear:focus-visible {
+  outline: 2px solid rgba(64, 158, 255, 0.45);
+  outline-offset: 1px;
+}
+.clo-multiselect-clear[hidden] {
+  display: none !important;
 }
 .offering-group-status-assign-draft .offering-group-status-teacher-edit {
   align-items: flex-start;
@@ -13832,6 +14166,13 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-prior-teacher-multiselect .clo-multiselect-dropdown {
   z-index: 40;
   max-height: 220px;
+  right: auto;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(280px, 70vw);
+}
+.offering-group-status-prior-teacher-dropdown .clo-multiselect-option > span {
+  white-space: nowrap;
 }
 .offering-group-status-prior-teacher-select {
   flex: 1 1 auto;
@@ -14070,7 +14411,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   color: var(--text);
 }
 #modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .col-term {
-  min-width: 120px;
+  min-width: 96px;
 }
 #modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .col-term-prev {
   color: var(--text-2);
@@ -14081,7 +14422,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   color: var(--text-2);
 }
 #modal-offering-teacher-term-assign .offering-teacher-term-compare-scroll {
-  overflow: visible;
+  overflow-x: auto;
 }
 #modal-offering-teacher-term-assign .offering-teacher-term-th-with-tip {
   display: inline-flex;
@@ -14133,16 +14474,16 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   width: 100%;
 }
 #modal-offering-teacher-term-assign .offering-teacher-term-compare-table .col-name {
-  width: 168px;
-  max-width: 180px;
-  min-width: 140px;
+  width: 140px;
+  max-width: 160px;
+  min-width: 110px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 #modal-offering-teacher-term-assign .offering-teacher-term-compare-table .col-term {
-  width: auto;
-  min-width: 140px;
+  width: 20.5%;
+  min-width: 110px;
 }
 #modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .teacher-load-hours-cell {
   display: inline-flex;

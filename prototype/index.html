@@ -2654,7 +2654,6 @@
               <span class="sch-leg-item is-room" data-sch-leg="room" hidden>教室时间冲突</span>
               <span class="sch-leg-item is-room-seats" data-sch-leg="room" hidden>座位数冲突</span>
               <span class="sch-leg-item is-room-type" data-sch-leg="room" hidden>场地类型不一致</span>
-              <span class="sch-leg-item is-mixed" data-sch-leg="both">综合冲突</span>
             </div>
             <div class="schedule-timetable-toolbar">
               <div class="schedule-scope-switch">
@@ -2670,7 +2669,7 @@
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-name" onchange="onScheduleViewSettingChange()"> 课程名称</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">排课场地</span></label>
+              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" onchange="onScheduleViewSettingChange()"> 上课小组</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
             </div>
@@ -2678,8 +2677,35 @@
               <label class="schedule-detail-field-label">排课周次</label>
               <div class="schedule-week-grid" id="schedule-detail-week-grid"></div>
             </div>
+            <div class="schedule-detail-field schedule-detail-room-filter-panel" id="schedule-detail-room-filter-panel" hidden>
+              <label class="schedule-detail-field-label">教室筛选</label>
+              <div class="schedule-room-filter-grid schedule-room-timetable-filter-grid">
+                <div class="srf-item"><label for="srtf-building">楼栋</label><select class="input input-sm" id="srtf-building"></select></div>
+                <div class="srf-item"><label for="srtf-room-type">教室类型</label><select class="input input-sm" id="srtf-room-type"></select></div>
+                <div class="srf-item"><label for="srtf-venue-type">场地类型</label><select class="input input-sm" id="srtf-venue-type"></select></div>
+                <div class="srf-item"><label for="srtf-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srtf-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srtf-seats-max" type="number" min="0" placeholder="最大"></div></div>
+                <div class="srf-item"><label for="srtf-equipment">教室设备</label><select class="input input-sm" id="srtf-equipment"></select></div>
+                <div class="srf-item"><label for="srtf-software">教室软件</label><select class="input input-sm" id="srtf-software"></select></div>
+                <div class="srf-item"><label for="srtf-remark">备注</label><select class="input input-sm" id="srtf-remark"></select></div>
+                <div class="srf-actions">
+                  <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleRoomTimetableFilter()">查询</button>
+                  <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomTimetableFilter()">重置</button>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-detail-field schedule-room-hold-bar" id="schedule-room-hold-bar" hidden>
+              <div class="schedule-room-hold-actions" id="schedule-room-hold-actions">
+                <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-room-hold-lock" disabled onclick="lockScheduleRoomHold()">锁定</button>
+                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-room-hold-revoke" disabled onclick="revokeScheduleRoomHold()">撤回</button>
+              </div>
+              <div class="schedule-room-lock-legend" id="schedule-room-lock-legend">
+                <span class="sch-leg-title" id="schedule-lock-legend-title">锁定状态：</span>
+                <span class="sch-leg-item is-room-locked">锁定</span>
+                <span class="sch-leg-item is-room-pending">待定</span>
+              </div>
+            </div>
             <div class="schedule-detail-field schedule-detail-venue-field" hidden>
-              <label class="schedule-detail-field-label" id="schedule-detail-venue-field-label">排课场地</label>
+              <label class="schedule-detail-field-label" id="schedule-detail-venue-field-label">场地类型</label>
               <div class="schedule-detail-venue-controls" id="schedule-detail-venue-type-block">
                 <div class="clo-multiselect" id="schedule-detail-venue-types-multiselect">
                   <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-detail-venue-types-btn" onclick="toggleScheduleVenueTypeDropdown(event)">
@@ -2751,9 +2777,15 @@
             </div>
             <div class="schedule-detail-op-hint is-warn schedule-detail-room-clear-hint" id="schedule-detail-room-clear-hint" hidden></div>
             <input type="hidden" id="schedule-detail-weeks">
+            <div class="schedule-room-grid-shell" id="schedule-room-grid-shell">
             <div class="schedule-timetable-scroll">
               <div id="schedule-timetable-grid" class="schedule-timetable-grid"></div>
             </div>
+            <div class="schedule-room-grid-footer" id="schedule-room-grid-footer" hidden>
+              <button type="button" class="btn btn-ghost btn-sm sch-room-expand-btn" id="btn-schedule-room-grid-expand" onclick="toggleScheduleRoomTimetableExpand()">展开更多教室</button>
+            </div>
+            </div>
+            <div id="schedule-room-cell-toast" class="schedule-room-cell-toast" hidden role="status" aria-live="polite"></div>
           </div>
         </div>
       </div>

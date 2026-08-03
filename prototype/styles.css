@@ -11090,9 +11090,9 @@ code {
   min-height: 0;
   overflow: hidden;
 }
-/* 排教室课表：行=教室；横标题=节次；末列=备注 */
+/* 排教室课表：行=教室；横标题=节次；教室软件后=备注 */
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols {
-  --sch-room-meta-w: 492px;
+  --sch-room-meta-w: 580px;
   --sch-day-count: 10;
   --sch-day-col-w: calc((100cqw - var(--sch-room-meta-w) - 96px) / var(--sch-day-count));
   font-size: 12px;
@@ -11133,20 +11133,184 @@ code {
   left: 420px;
   min-width: 72px;
   max-width: 96px;
-  box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08);
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-remark,
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-remark {
+  left: 492px;
   min-width: 88px;
   max-width: 140px;
+  box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08);
   white-space: normal;
   font-size: 12px;
   color: var(--text-2);
   background: #fafafa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta-remark,
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-remark {
+  background: #f1f5f9;
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active {
   background: #eff6ff;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-locked {
+  background: #f3f4f6;
+  color: var(--text-2);
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-locked .sch-room-meta {
+  background: #f3f4f6;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-pending {
+  background: #fefce8;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-pending .sch-room-meta {
+  background: #fefce8;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.sch-room-expand-row td {
+  text-align: center;
+  padding: 10px 8px;
+  background: #fafafa;
+  border-top: 1px dashed var(--border);
+}
+.schedule-detail-field.schedule-detail-room-filter-panel {
+  margin-top: 4px;
+}
+.schedule-room-timetable-filter-grid {
+  align-items: end;
+}
+.schedule-conflict-legend .sch-leg-sep {
+  color: var(--text-3);
+  margin: 0 4px;
+  user-select: none;
+}
+.schedule-conflict-legend .sch-leg-item.is-room-locked {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.schedule-conflict-legend .sch-leg-item.is-room-locked::before {
+  background: #9ca3af;
+}
+.schedule-conflict-legend .sch-leg-item.is-room-pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+.schedule-conflict-legend .sch-leg-item.is-room-pending::before {
+  background: #eab308;
+}
+/* 排时间/排教室共用：壳层占满剩余高度，内部课表区才能出现上下滚动 */
+.schedule-detail-main .schedule-room-grid-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.schedule-detail-main .schedule-room-grid-shell > .schedule-timetable-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.schedule-room-grid-footer {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  padding: 8px 12px;
+  text-align: center;
+  background: #fafafa;
+  border-top: 1px dashed var(--border);
+}
+.schedule-room-hold-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.schedule-room-hold-bar .schedule-room-hold-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.schedule-room-lock-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 14px;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.schedule-room-lock-legend .sch-leg-title {
+  font-weight: 600;
+  color: var(--text-1);
+}
+.schedule-room-lock-legend .sch-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.schedule-room-lock-legend .sch-leg-item::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.schedule-room-lock-legend .sch-leg-item.is-room-locked {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.schedule-room-lock-legend .sch-leg-item.is-room-locked::before {
+  background: #9ca3af;
+}
+.schedule-room-lock-legend .sch-leg-item.is-room-pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+.schedule-room-lock-legend .sch-leg-item.is-room-pending::before {
+  background: #eab308;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-empty {
+  cursor: pointer;
+  background: #fff;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending {
+  background: #fef9c3;
+  cursor: not-allowed;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked {
+  background: #f3f4f6;
+  color: var(--text-2);
+  cursor: not-allowed;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-room-cell-hold-label {
+  display: inline-block;
+  font-size: 11px;
+  color: #854d0e;
+  font-weight: 600;
+}
+.schedule-room-cell-toast {
+  position: fixed;
+  left: 50%;
+  top: 72px;
+  transform: translateX(-50%);
+  z-index: 1200;
+  max-width: min(480px, 90vw);
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  font-size: 13px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  pointer-events: none;
 }
 @media (max-width: 960px) {
   .main:has(> .schedule-detail-page.active) {
@@ -11305,6 +11469,20 @@ code {
   text-overflow: unset;
   word-break: break-word;
 }
+/* 排教室侧课程列表：字段值超出时换行显示（不截断省略） */
+#page-schedule-room-detail .schedule-detail-course-fields .sdc-field {
+  align-items: flex-start;
+}
+#page-schedule-room-detail .schedule-detail-course-fields .sdc-k {
+  padding-top: 1px;
+}
+#page-schedule-room-detail .schedule-detail-course-fields .sdc-v {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 .schedule-detail-course-fields .sdc-v.sdc-v-teachers {
   color: #2563eb;
 }
@@ -11379,6 +11557,16 @@ code {
   align-items: flex-start;
   gap: 10px;
   margin-bottom: 12px;
+}
+.schedule-detail-field[hidden],
+.schedule-room-hold-bar[hidden],
+.schedule-room-grid-footer[hidden] {
+  display: none !important;
+}
+/* 排时间侧不展示排教室专用区域（教室筛选、锁定操作栏） */
+#page-schedule-time-detail .schedule-detail-room-filter-panel,
+#page-schedule-time-detail .schedule-room-hold-bar {
+  display: none !important;
 }
 .schedule-detail-field-label {
   flex: 0 0 auto;
@@ -11742,6 +11930,21 @@ code {
   z-index: 30;
   max-height: 240px;
   overflow: auto;
+}
+.schedule-room-filter-grid .clo-multiselect-option.is-disabled,
+.schedule-room-filter-grid .clo-multiselect-option:has(input:disabled) {
+  color: var(--text-3);
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+.schedule-room-filter-grid .clo-multiselect-option.is-disabled:hover,
+.schedule-room-filter-grid .clo-multiselect-option:has(input:disabled):hover {
+  background: #f8fafc;
+}
+.schedule-room-filter-grid .clo-multiselect-option.is-disabled input,
+.schedule-room-filter-grid .clo-multiselect-option input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 .schedule-room-filter-grid .srf-actions { display: flex; gap: 8px; align-items: center; }
 .schedule-room-modal-table th,
@@ -12646,7 +12849,13 @@ code {
   width: 100%;
 }
 .schedule-prog-time-table .col-index { width: 48px; }
-.schedule-prog-time-table .actions { width: 72px; white-space: nowrap; }
+.schedule-prog-time-table .actions {
+  width: 96px;
+  white-space: nowrap;
+}
+.schedule-prog-time-table .actions a + a {
+  margin-left: 8px;
+}
 .schedule-prog-time-table select.input,
 .schedule-prog-time-table .schedule-prog-time-dt {
   width: 100%;

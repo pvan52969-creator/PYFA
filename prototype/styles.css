@@ -21,6 +21,21 @@
   --header-h: 56px;
   --radius: 8px;
   --shadow: 0 1px 4px rgba(15,52,96,.08);
+  /* 列表字号基准（标准=12px 表体 / 11px 表头）；仅列表消费，侧栏框架不受影响 */
+  --ui-list-font: 12px;
+  --ui-list-th-font: 11px;
+}
+html[data-ui-font="sm"] {
+  --ui-list-font: 11px;
+  --ui-list-th-font: 10px;
+}
+html[data-ui-font="md"] {
+  --ui-list-font: 12px;
+  --ui-list-th-font: 11px;
+}
+html[data-ui-font="lg"] {
+  --ui-list-font: 13px;
+  --ui-list-th-font: 12px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -143,6 +158,48 @@ body {
   flex: 1; overflow-y: auto;
   padding: 20px 24px;
   background: #f0f4f8;
+  position: relative;
+}
+
+/* 列表字号：仅 Academic Portal 主菜单显示，进入子模块后隐藏 */
+.global-ui-font-control {
+  display: none;
+  position: fixed;
+  top: 84px;
+  right: 40px;
+  z-index: 200;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 13px;
+  color: var(--text, #1a2332);
+  line-height: 1.2;
+  height: 29px;
+  white-space: nowrap;
+}
+.app.portal-mode .global-ui-font-control {
+  display: inline-flex;
+}
+.global-ui-font-control label {
+  font-weight: 400;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: inherit;
+  font-size: 13px;
+}
+.global-ui-font-control select {
+  width: auto;
+  min-width: 72px;
+  height: auto;
+  min-height: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .page { display: none; }
@@ -157,22 +214,29 @@ body {
 .workflow-page-header {
   position: relative;
   width: 100%;
-  max-width: 1000px;
-  margin: 0 auto 16px;
-  padding-right: 140px;
+  max-width: none;
+  margin: 0 0 16px;
+  padding-right: 200px; /* 避开右上角缩放条 */
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
 }
 .workflow-page-title {
-  text-align: center;
+  text-align: left;
 }
-.workflow-page-header h1 { font-size: 17px; }
+.workflow-page-header h1 { font-size: 17px; line-height: 1.3; margin: 0; }
 .workflow-page-header .subtitle { font-size: 11px; margin-top: 4px; }
 .workflow-zoom-toolbar {
   position: absolute;
   right: 0;
-  top: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: 6px;
+  height: 29px;
 }
 .workflow-zoom-label {
   min-width: 44px;
@@ -481,15 +545,17 @@ body {
 }
 .overflow-x { overflow-x: auto; }
 
-.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: var(--ui-list-font, 12px); }
 .data-table th {
   background: var(--blue-50); padding: 10px 12px;
   text-align: left; font-weight: 600; color: var(--blue-900);
   border-bottom: 1px solid var(--border); white-space: nowrap;
+  font-size: var(--ui-list-th-font, 11px);
 }
 .data-table td {
   padding: 9px 12px; border-bottom: 1px solid var(--border-light);
   color: var(--text-2); vertical-align: middle;
+  font-size: var(--ui-list-font, 12px);
 }
 .data-table th.col-center,
 .data-table td.col-center {
@@ -521,7 +587,8 @@ body {
   color: var(--blue-600);
 }
 .data-table tr:hover td { background: #fafbfc; }
-.data-table.compact th, .data-table.compact td { padding: 6px 10px; font-size: 12px; }
+.data-table.compact th, .data-table.compact td { padding: 6px 10px; font-size: var(--ui-list-font, 12px); }
+.data-table.compact th { font-size: var(--ui-list-th-font, 11px); }
 .data-table.editable td input { width: 80px; }
 
 .actions a,
@@ -3756,7 +3823,7 @@ code {
   border-right: 0;
 }
 #page-course-offering-major .course-offering-major-table thead th {
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   line-height: 1.25;
   padding: 7px 6px;
   vertical-align: middle;
@@ -3778,7 +3845,7 @@ code {
   color: var(--blue-900, #1e3a8a);
 }
 #page-course-offering-major .course-offering-major-table tbody td {
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   line-height: 1.35;
   padding: 6px 7px;
   vertical-align: middle;
@@ -3788,7 +3855,7 @@ code {
   font-weight: 400;
 }
 #page-course-offering-major .course-offering-major-table .link-student-count {
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
 }
 #page-course-offering-major .course-offering-major-table thead th.th-v {
   white-space: nowrap;
@@ -3811,7 +3878,7 @@ code {
   white-space: nowrap;
   word-break: keep-all;
   margin: 0 auto;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   color: var(--blue-900, #1e3a8a);
 }
@@ -3884,7 +3951,7 @@ code {
 #page-course-offering-major .course-offering-major-table td .cell-ellipsis-tip,
 #page-course-offering-major .course-offering-major-table td strong {
   font-family: inherit;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   white-space: nowrap;
   color: #000;
@@ -3904,7 +3971,7 @@ code {
   padding-right: 8px;
   border-left: 1px solid var(--border, #94a3b8);
   overflow: visible;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   text-align: center;
   background: #fff;
   box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
@@ -3923,7 +3990,7 @@ code {
   width: var(--major-offering-course-info-col-width);
   max-width: var(--major-offering-course-info-col-width);
   border-left: 1px solid var(--border, #94a3b8);
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   text-align: center;
   vertical-align: middle;
   background: #fff;
@@ -3939,7 +4006,7 @@ code {
   width: var(--major-offering-changelog-col-width);
   max-width: var(--major-offering-changelog-col-width);
   border-left: 1px solid var(--border, #94a3b8);
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   text-align: center;
   vertical-align: middle;
   background: #fff;
@@ -3989,7 +4056,7 @@ code {
   white-space: nowrap;
   margin-right: 0;
   margin-left: 0;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   color: var(--blue-500);
   text-decoration: none;
@@ -4083,7 +4150,7 @@ code {
   background: var(--blue-50, #eff6ff);
   color: var(--blue-900, #1e3a8a);
   white-space: nowrap;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -4110,7 +4177,7 @@ code {
   overflow: hidden;
   white-space: nowrap;
   margin: 0 auto;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table thead th.th-sortable {
@@ -4136,7 +4203,7 @@ code {
   padding: 3px 8px;
   vertical-align: middle;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   line-height: 1.25;
   color: #000;
@@ -4199,7 +4266,7 @@ code {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 700;
   line-height: 1;
   vertical-align: middle;
@@ -4470,7 +4537,7 @@ code {
   border-right: 0;
 }
 #page-course-major-offering-task .course-major-offering-task-table thead th {
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   line-height: 1.25;
   padding: 7px 6px;
   vertical-align: middle;
@@ -4493,7 +4560,7 @@ code {
   font-size: 10px;
 }
 #page-course-major-offering-task .course-major-offering-task-table tbody td {
-  font-size: 12px;
+  font-size: var(--ui-list-font, 12px);
   line-height: 1.35;
   padding: 6px 7px;
   vertical-align: middle;
@@ -4523,7 +4590,7 @@ code {
   white-space: nowrap;
   word-break: keep-all;
   margin: 0 auto;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
 }
 #page-course-major-offering-task .course-major-offering-task-table thead th.th-v .th-sort {
@@ -4574,7 +4641,7 @@ code {
 #page-course-major-offering-task .course-major-offering-task-table td.col-enroll .offering-status-pill {
   display: inline-block;
   max-width: 100%;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   line-height: 1.2;
   padding: 1px 4px;
   white-space: nowrap;
@@ -4641,7 +4708,7 @@ code {
 }
 #page-course-major-offering-task .course-major-offering-task-table thead th.col-change-log,
 #page-course-major-offering-task .course-major-offering-task-table thead th.col-course-info {
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
 }
 #page-course-major-offering-task .course-major-offering-task-table td.col-change-log a,
 #page-course-major-offering-task .course-major-offering-task-table td.col-course-info a {
@@ -4750,7 +4817,7 @@ code {
   padding: 0;
 }
 #page-course-major-offering-task .course-major-offering-task-table thead th .th-v-label {
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
 }
 #page-course-major-offering-task .course-major-offering-task-table thead th .th-sort {
@@ -5004,7 +5071,7 @@ code {
   background: var(--blue-50, #eff6ff);
   color: var(--blue-900, #1e3a8a);
   white-space: nowrap;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -5043,7 +5110,7 @@ code {
   white-space: nowrap;
   word-break: keep-all;
   margin: 0 auto;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.th-sortable {
@@ -5060,7 +5127,7 @@ code {
   padding: 3px 8px;
   vertical-align: middle;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   line-height: 1.25;
   color: #000;
@@ -5133,7 +5200,7 @@ code {
   white-space: nowrap;
   word-break: keep-all;
   margin: 0;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   text-align: center;
 }
@@ -5159,7 +5226,7 @@ code {
 }
 #page-course-major-offering-task-style2 .mot-style2-table tbody td .offering-status-pill {
   padding: 0 5px;
-  font-size: 10px;
+  font-size: calc(var(--ui-list-font, 12px) - 2px);
   line-height: 1.25;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-expand {
@@ -5393,7 +5460,7 @@ code {
   vertical-align: middle;
 }
 #page-course-major-offering-task-style2 .mot-style2-table td.col-support-action {
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   text-align: center;
 }
 #page-course-major-offering-task-style2 .mot-style2-table td.col-support-action a {
@@ -5410,7 +5477,7 @@ code {
 #page-course-major-offering-task-style2 .mot-style2-table td.col-support-action .action-disabled {
   color: var(--text-3);
   cursor: not-allowed;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   text-decoration: none;
   pointer-events: none;
 }
@@ -5482,7 +5549,7 @@ code {
 }
 #page-course-major-offering-task-style2 .mot-style2-table .offering-grouping-global-lecturer-line,
 #page-course-major-offering-task-style2 .mot-style2-table .offering-group-status-teacher-link {
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
 }
 #page-course-major-offering-task-style2 .mot-style2-table .offering-grouping-global-lecturer-more {
   font-size: 10px;
@@ -5551,7 +5618,7 @@ code {
   box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
   white-space: nowrap;
   line-height: 1.3;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   padding-left: 6px;
   padding-right: 6px;
   text-align: center;
@@ -6932,7 +6999,7 @@ code {
   background: var(--blue-50, #eff6ff);
   color: var(--blue-900, #1e3a8a);
   white-space: nowrap;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.25;
@@ -6945,7 +7012,7 @@ code {
   padding: 7px 8px;
   vertical-align: middle;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 12px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   line-height: 1.35;
   color: #000;
@@ -6996,7 +7063,7 @@ code {
   overflow: hidden;
   white-space: nowrap;
   margin: 0 auto;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
 }
 #page-course-offering-ge .course-ge-offering-task-table.mot-style2-table .col-status {
@@ -7426,7 +7493,7 @@ code {
   background: var(--blue-50, #eff6ff);
   color: var(--blue-900, #1e3a8a);
   white-space: nowrap;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.25;
@@ -7453,7 +7520,7 @@ code {
   overflow: hidden;
   white-space: nowrap;
   margin: 0 auto;
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
 }
 #page-course-ge-offering-roster .course-ge-offering-roster-table thead th.th-sortable {
@@ -7478,7 +7545,7 @@ code {
 #page-course-ge-offering-roster .course-ge-offering-roster-table tbody td {
   padding: 7px 6px;
   vertical-align: middle;
-  font-size: 12px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   line-height: 1.35;
   color: #000;
@@ -8282,7 +8349,7 @@ code {
 }
 .tcc-admin-course-table thead th,
 .tcc-admin-course-table thead th.th-sortable {
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -8343,7 +8410,7 @@ code {
 .tcc-admin-course-table.compact tbody td,
 .tcc-admin-course-table tbody td {
   padding: 4px 3px;
-  font-size: 10px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   line-height: 1.3;
   vertical-align: middle;
@@ -8352,7 +8419,7 @@ code {
 }
 .tcc-admin-course-table.compact tbody td .offering-status-pill,
 .tcc-admin-course-table tbody td .offering-status-pill {
-  font-size: 10px;
+  font-size: calc(var(--ui-list-font, 12px) - 1px);
   padding: 1px 6px;
 }
 .tcc-admin-course-table tbody td.tcc-cell-wrap {
@@ -8367,11 +8434,14 @@ code {
 }
 .tcc-admin-course-table tbody td.col-teacher,
 .tcc-admin-course-table tbody td.col-course-name,
-.tcc-admin-course-table tbody td.col-coord,
 .tcc-admin-course-table tbody td.col-coteach,
 .tcc-admin-course-table tbody td.col-email,
 .tcc-admin-course-table tbody td.col-coteach-email {
   text-align: left;
+}
+.tcc-admin-course-table thead th.col-coord,
+.tcc-admin-course-table tbody td.col-coord {
+  text-align: center;
 }
 .tcc-admin-course-table .col-check {
   width: 28px;
@@ -8412,20 +8482,54 @@ code {
   min-width: 48px;
 }
 /* 数字列宽以表头最长整词为准（如 Teaching / Combined），禁止单词内断行 */
-.tcc-admin-course-table .col-hours,
-.tcc-admin-course-table .col-weeks,
-.tcc-admin-course-table .col-cap,
-.tcc-admin-course-table .col-total-hours {
-  width: 58px;
-  min-width: 56px;
+.tcc-admin-course-table .col-combined-groups {
+  width: 72px;
+  min-width: 64px;
 }
 .tcc-admin-course-table .col-groups {
   width: 68px;
   min-width: 64px;
 }
+.tcc-admin-course-table .col-hours,
+.tcc-admin-course-table .col-weeks,
+.tcc-admin-course-table .col-cap,
+.tcc-admin-course-table .col-total-hours {
+  width: 72px;
+  min-width: 68px;
+}
+.tcc-admin-course-table .col-hours,
+.tcc-admin-course-table .col-total-hours {
+  min-width: 64px;
+  width: 72px;
+}
 .tcc-admin-course-table .col-combined {
   width: 66px;
   min-width: 62px;
+}
+.tcc-admin-course-table .tcc-hours-combined-with,
+.tcc-letter-table .tcc-hours-combined-with {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  color: var(--text, #1f2937);
+  font-size: 11.5px;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+}
+.tcc-admin-course-table .tcc-hours-combined-with-word,
+.tcc-letter-table .tcc-hours-combined-with-word,
+.tcc-admin-course-table .tcc-hours-combined-with-code,
+.tcc-letter-table .tcc-hours-combined-with-code {
+  display: block;
+  white-space: nowrap;
+  text-align: center;
+}
+.tcc-admin-course-table .tcc-hours-combined-with-code,
+.tcc-letter-table .tcc-hours-combined-with-code {
+  font-weight: 600;
 }
 .tcc-admin-course-table .col-method {
   width: 72px;
@@ -9005,7 +9109,7 @@ code {
 }
 .tcc-letter-table thead th,
 .tcc-letter-table thead th.th-sortable {
-  font-size: 11px;
+  font-size: var(--ui-list-th-font, 11px);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -9029,6 +9133,37 @@ code {
   vertical-align: middle;
   text-align: center;
 }
+.tcc-letter-table thead th .th-inner-with-tip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 4px;
+  line-height: 1.2;
+}
+.tcc-letter-table thead th .offering-teacher-term-group-rule-btn {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1.5px solid var(--amber-600, #d97706);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--amber-700, #b45309);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.tcc-letter-table thead th .offering-teacher-term-group-rule-btn:hover,
+.tcc-letter-table thead th .offering-teacher-term-group-rule-btn:focus-visible {
+  background: #fffbeb;
+  border-color: var(--amber-700, #b45309);
+}
 .tcc-letter-table thead th .th-sort {
   display: inline;
   margin-left: 1px;
@@ -9036,13 +9171,13 @@ code {
 }
 .tcc-letter-table.compact tbody td,
 .tcc-letter-table tbody td {
-  font-size: 10px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 400;
   color: #000;
 }
 .tcc-letter-table.compact tbody td .offering-status-pill,
 .tcc-letter-table tbody td .offering-status-pill {
-  font-size: 10px;
+  font-size: calc(var(--ui-list-font, 12px) - 1px);
   padding: 1px 6px;
 }
 .tcc-letter-table tbody td.tcc-cell-wrap {
@@ -9073,7 +9208,7 @@ code {
 }
 .tcc-letter-table tfoot .tcc-letter-totals-label strong {
   display: block;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   font-weight: 700;
   margin-bottom: 4px;
   color: #000;
@@ -9089,7 +9224,7 @@ code {
 .tcc-letter-table tfoot .tcc-letter-totals-num {
   text-align: center;
   font-weight: 700;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   white-space: nowrap;
 }
 .tcc-letter-table tfoot .tcc-letter-totals-hint {
@@ -9196,14 +9331,17 @@ code {
   max-height: min(52vh, 480px);
 }
 #modal-teacher-course-confirmation-section .tcc-section-manage-table.tcc-admin-course-table {
-  width: 100%;
-  min-width: 0;
-  table-layout: fixed;
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
 }
 #modal-teacher-course-confirmation-section .tcc-section-manage-table th,
 #modal-teacher-course-confirmation-section .tcc-section-manage-table td {
   padding: 6px 4px;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table th {
+  font-size: var(--ui-list-th-font, 11px);
 }
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-index {
   width: 36px;
@@ -9238,14 +9376,30 @@ code {
   vertical-align: middle;
 }
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-credits,
-#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-hours,
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-weeks,
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-combined,
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-groups,
-#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-cap,
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-cap {
+  width: 48px;
+  min-width: 44px;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-combined-groups {
+  width: 64px;
+  min-width: 56px;
+  white-space: normal;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .col-hours,
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-total-hours {
-  width: 40px;
-  min-width: 0;
+  width: 64px;
+  min-width: 56px;
+  white-space: normal;
+}
+#modal-teacher-course-confirmation-section .tcc-section-manage-table .tcc-hours-combined-with {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: none;
+  white-space: normal;
 }
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-coord {
   width: 9%;
@@ -9766,7 +9920,7 @@ code {
 }
 #page-offering-grouping .offering-grouping-global-table tbody td .offering-status-pill {
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   line-height: 1.3;
 }
 #page-offering-grouping .offering-grouping-global-table tbody td:last-child {
@@ -9826,7 +9980,7 @@ code {
 #page-offering-grouping .offering-grouping-global-table td.col-enrollment-type .offering-status-pill {
   display: inline-block;
   max-width: 100%;
-  font-size: 11px;
+  font-size: var(--ui-list-font, 12px);
   line-height: 1.2;
   padding: 1px 4px;
   white-space: nowrap;
@@ -11850,6 +12004,20 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+.teacher-picker-replace-conflict-hint {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.teacher-picker-replace-conflict-hint[hidden] {
+  display: none !important;
 }
 .teacher-picker-assign-context {
   padding: 8px 12px;

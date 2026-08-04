@@ -14087,13 +14087,13 @@ function renderCourseOfferingManifestTableHeader() {
   row.innerHTML =
     '<th class="col-check"><input type="checkbox" id="offering-manifest-check-all" aria-label="全选" onchange="toggleOfferingManifestCheckAll(this.checked)"></th>' +
     renderListSortTh('courseOfferingManifest', '序号', 'index', { center: true, extraClass: 'col-index' }) +
-    renderListSortTh('courseOfferingManifest', '负责人', 'owner') +
+    renderListSortTh('courseOfferingManifest', '负责人', 'owner', { center: true }) +
     renderListSortTh('courseOfferingManifest', '开课学期', 'offeringTerm', { center: true }) +
     renderListSortTh('courseOfferingManifest', '开课类型', 'offeringType', { center: true }) +
-    renderListSortTh('courseOfferingManifest', '课程号', 'code') +
+    renderListSortTh('courseOfferingManifest', '课程号', 'code', { center: true }) +
     renderListSortTh('courseOfferingManifest', '课程名称', 'courseName') +
     // renderListSortTh('courseOfferingManifest', '课程班名称', 'className') + // 原列名
-    renderListSortTh('courseOfferingManifest', '开课单位', 'offeringUnit') +
+    renderListSortTh('courseOfferingManifest', '开课单位', 'offeringUnit', { center: true }) +
     renderListSortTh('courseOfferingManifest', '选课类型', 'enrollmentType', { center: true }) +
     renderListSortTh('courseOfferingManifest', '学分', 'credits', { center: true }) +
     renderListSortTh('courseOfferingManifest', '小组数', 'groupCount', { center: true }) +
@@ -14178,12 +14178,12 @@ function renderCourseOfferingManifestPage() {
         return `<tr>
         <td class="col-check"><input type="checkbox" class="offering-manifest-row-check" value="${escapeHtml(rowKey)}" ${offeringManifestSelectedKeys.has(rowKey) ? 'checked' : ''} onchange="updateOfferingManifestSelection()"></td>
         <td class="col-index">${rowOffset + idx + 1}</td>
-        <td class="col-nowrap">${escapeHtml(row.owner)}</td>
+        <td class="col-center col-nowrap">${escapeHtml(row.owner)}</td>
         <td class="col-center">${escapeHtml(row.termDisplay)}</td>
         <td class="col-center">${escapeHtml(row.typeLabel)}</td>
-        <td><strong>${escapeHtml(row.code)}</strong></td>
+        <td class="col-center"><strong>${escapeHtml(row.code)}</strong></td>
         <td class="col-nowrap">${escapeHtml(row.courseName || row.className || '—')}</td>
-        <td class="col-nowrap">${escapeHtml(row.offeringUnit || '—')}</td>
+        <td class="col-center col-nowrap">${escapeHtml(row.offeringUnit || '—')}</td>
         <td class="col-center">${escapeHtml(row.enrollmentTypeLabel || '—')}</td>
         <td class="col-center">${row.credits ?? '—'}</td>
         <td class="col-center">${row.groupCount ? row.groupCount : '—'}</td>
@@ -15424,6 +15424,8 @@ function getTeacherCourseConfirmationArrangementFingerprint(row) {
     teachingMethod: row.teachingMethod,
     combinedClass: row.combinedClass,
     groupCount: row.groupCount,
+    combinedGroupsCount: row.combinedGroupsCount,
+    hoursCombinedWithCode: row.hoursCombinedWithCode || '',
     totalStudentNo: row.totalStudentNo,
     weeklyHours: row.weeklyHours,
     totalTeachingHours: row.totalTeachingHours
@@ -15640,6 +15642,183 @@ function teacherHasSimultaneousGroupsOnSection(staffId, sec) {
   });
 }
 
+/**
+ * No. of Combined Groups：该教师在本课同时授课的「合并组」个数。
+ * 取互不包含的最大合并组集合数；若某周带 1–4 组、另一周仅带 1–2 组，只计 1 个大组。
+ * 无合并组（仅单独小组）返回 0，展示为 —。
+ */
+function countTeacherConfirmationCombinedGroups(staffId, sec) {
+  if (!staffId || !sec) return 0;
+  const staffKey = String(staffId || '').trim();
+  const sets = [];
+  (sec.groupAssignments || []).forEach(row => {
+    if (!getGroupAssignTeachers(row).some(t => String(t?.staffId || '').trim() === staffKey)) return;
+    let ids = getGroupAssignRowGroupIds(row).map(id => String(id)).filter(Boolean);
+    if (!ids.length && row.deliveryScope === 'section') {
+      ids = (sec.groups || []).map(g => String(g.id)).filter(Boolean);
+    }
+    const isCombined = !!row.simultaneousGroups || ids.length > 1;
+    if (!isCombined || ids.length < 2) return;
+    sets.push(new Set(ids));
+  });
+  if (!sets.length) return 0;
+  const isSubset = (a, b) => {
+    if (a.size > b.size) return false;
+    for (const v of a) if (!b.has(v)) return false;
+    return true;
+  };
+  const maximal = sets.filter((s, i) =>
+    !sets.some((other, j) => j !== i && other.size > s.size && isSubset(s, other))
+  );
+  const seen = new Set();
+  let count = 0;
+  maximal.forEach(s => {
+    const key = [...s].sort().join('\0');
+    if (seen.has(key)) return;
+    seen.add(key);
+    count += 1;
+  });
+  return count;
+}
+
+function formatTeacherCourseConfirmationCombinedGroupsCell(count) {
+  const n = Number(count) || 0;
+  return n > 0 ? escapeHtml(String(n)) : '—';
+}
+
+/**
+ * 共同授课学时展示：仅「共同授课组内相同任课教师」显示 Combined with {对端课号}。
+ * 教师同一性与共同授课设置一致：工号相同，或清单姓名相同（忽略 Dr./Prof. 前缀）。
+ * 同课其他教师仍显示正常学时。
+ */
+function normalizeSharedTeachingTeacherNameKey(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^(dr\.?|prof\.?|professor|mr\.?|ms\.?|mrs\.?)\s+/i, '')
+    .replace(/\s+/g, ' ');
+}
+
+function collectSharedTeachingSectionTeacherKeys(sec) {
+  const ids = new Set();
+  const names = new Set();
+  const push = (staffId, name) => {
+    const id = String(staffId || '').trim();
+    if (id) ids.add(id);
+    const nk = normalizeSharedTeachingTeacherNameKey(name);
+    if (nk) names.add(nk);
+  };
+  if (typeof collectSectionAssignTeachers === 'function') {
+    collectSectionAssignTeachers(sec).forEach(t => push(t?.staffId, t?.name));
+  }
+  if (typeof collectMajorOfferingSectionAssignedTeachers === 'function') {
+    collectMajorOfferingSectionAssignedTeachers(sec).forEach(t => push(t?.staffId, t?.name));
+  }
+  // 与共同授课设置同源：开课清单教师姓名
+  if (typeof getOfferingManifestTeachersForSection === 'function'
+    && typeof parseOfferingManifestTeacherNames === 'function') {
+    parseOfferingManifestTeacherNames(getOfferingManifestTeachersForSection(sec))
+      .forEach(n => push('', n));
+  }
+  return { ids, names };
+}
+
+function teacherBelongsToSharedTeachingSection(sec, staffId, teacherName) {
+  const keys = collectSharedTeachingSectionTeacherKeys(sec);
+  const staffKey = String(staffId || '').trim();
+  if (staffKey && keys.ids.has(staffKey)) return true;
+  const nameKey = normalizeSharedTeachingTeacherNameKey(teacherName);
+  return !!(nameKey && keys.names.has(nameKey));
+}
+
+function resolveTeacherConfirmationHoursCombinedWithCode(staffId, termCode, sec) {
+  if (!sec) return '';
+  const staffKey = String(staffId || '').trim();
+  if (!staffKey) return '';
+  if (!(sec.sharedTeachingCode || '').trim()) return '';
+
+  // 先取对端课号（与原先可展示 Combined with 的数据源一致）
+  const peerCodes = typeof getSectionSharedTeachingPeerCourseCodes === 'function'
+    ? getSectionSharedTeachingPeerCourseCodes(sec)
+    : [];
+  if (!peerCodes.length) return '';
+
+  const selfTeachers = typeof collectSectionAssignTeachers === 'function'
+    ? collectSectionAssignTeachers(sec)
+    : [];
+  const selfHit = selfTeachers.find(t => String(t?.staffId || '').trim() === staffKey);
+  const teacherName = String(
+    selfHit?.name
+    || (typeof resolveOfferingTeacherDisplayName === 'function'
+      ? resolveOfferingTeacherDisplayName(staffKey)
+      : '')
+    || ''
+  ).trim();
+  if (!teacherBelongsToSharedTeachingSection(sec, staffKey, teacherName)) return '';
+
+  const mark = (sec.sharedTeachingCode || '').trim();
+  const selfCode = String(sec.code || '').trim().toUpperCase();
+  const term = String(
+    sec.termCode
+    || COURSE_OFFERING_PLAN_STORE?.termCode
+    || termCode
+    || (typeof resolveSectionOfferingTermCode === 'function' ? resolveSectionOfferingTermCode(sec) : '')
+    || ''
+  ).trim();
+  const peerCodeSet = new Set(peerCodes.map(c => String(c).trim().toUpperCase()).filter(Boolean));
+  const matchedCodes = [];
+  const seen = new Set();
+  const consider = (s) => {
+    if (!s || s.id === sec.id) return;
+    if ((s.sharedTeachingCode || '').trim() !== mark) return;
+    if (term && String(s.termCode || '').trim() && String(s.termCode || '').trim() !== term) return;
+    const code = String(s.code || '').trim();
+    if (!code || code.toUpperCase() === selfCode) return;
+    if (!peerCodeSet.has(code.toUpperCase())) return;
+    if (!teacherBelongsToSharedTeachingSection(s, staffKey, teacherName)) return;
+    const key = code.toUpperCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    matchedCodes.push(code);
+  };
+  const scan = (sections) => (sections || []).forEach(consider);
+  scan(COURSE_OFFERING_PLAN_STORE?.sections);
+  if (typeof COURSE_OFFERING_PLAN_BY_TERM !== 'undefined') {
+    Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).forEach(st => {
+      if (st && st !== COURSE_OFFERING_PLAN_STORE) scan(st.sections);
+    });
+  }
+  if (term && typeof getOfferingSectionsForTerm === 'function') {
+    scan(getOfferingSectionsForTerm(term));
+  }
+
+  if (!matchedCodes.length) return '';
+  matchedCodes.sort((a, b) => a.localeCompare(b, 'en'));
+  return matchedCodes.length === 1 ? matchedCodes[0] : matchedCodes.join(' / ');
+}
+
+function formatTeacherCourseConfirmationHoursCell(row, field) {
+  const withCode = String(row?.hoursCombinedWithCode || '').trim();
+  if (withCode) {
+    return `<span class="tcc-hours-combined-with">`
+      + `<span class="tcc-hours-combined-with-word">Combined</span>`
+      + `<span class="tcc-hours-combined-with-word">with</span>`
+      + `<span class="tcc-hours-combined-with-code">${escapeHtml(withCode)}</span>`
+      + `</span>`;
+  }
+  const val = field === 'weekly' ? row?.weeklyHours : row?.totalTeachingHours;
+  return escapeHtml(String(val ?? '—'));
+}
+
+function getTeacherCombinedGroupsFieldTipText() {
+  return [
+    '所带小组中「同时多组合并授课」的合并组数量',
+    '· 不同周次的合并组若存在包含关系，只计最大合并组',
+    '· 例：某周带 1–4 组、另周仅带 1–2 组 → 计 1',
+    '· 无合并组（仅单独小组）显示 —'
+  ].join('\n');
+}
+
 function resolveTeacherConfirmationCombinedClass(staffId, sec) {
   if ((sec?.sharedTeachingCode || '').trim()) return 'Y';
   if (teacherHasSimultaneousGroupsOnSection(staffId, sec)) return 'Y';
@@ -15754,6 +15933,7 @@ function buildTeacherCourseConfirmationRows(teacherId, termCode) {
       const coordId = String(coord?.staffId || '').trim();
       const coordName = coord?.name || '—';
       const coTeaching = collectCoTeachingStaffForCourseCode(id, term, sec.code, coordId);
+      const hoursCombinedWithCode = resolveTeacherConfirmationHoursCombinedWithCode(id, term, sec);
       return {
         sectionId: sec.id,
         code: sec.code || '—',
@@ -15766,10 +15946,12 @@ function buildTeacherCourseConfirmationRows(teacherId, termCode) {
         teachingMethod: resolveTeacherConfirmationTeachingMethod(id, sec),
         combinedClass: resolveTeacherConfirmationCombinedClass(id, sec),
         groupCount,
+        combinedGroupsCount: countTeacherConfirmationCombinedGroups(id, sec),
         totalStudentNo: getSectionPlannedStudentCount(sec),
         // totalStudentNo: getSectionCapacityLimit(sec), // 原人数上限，改计划人数（不含预留）
         weeklyHours,
         totalTeachingHours: totalTeachingHours > 0 ? Math.round(totalTeachingHours * 100) / 100 : '—',
+        hoursCombinedWithCode,
         coordinatorName: coordName,
         coordinatorEmail: coordId || coordName !== '—'
           ? resolveOfferingTeacherEmail(coordId, coordName)
@@ -16335,18 +16517,31 @@ function renderOfferingTeacherReplaceCourseList() {
   if (!tbody) return;
   const list = getFilteredOfferingTeacherReplaceSections();
   const paged = paginateListItems(list, 'offeringTeacherReplace');
-  const offset = (paged.page - 1) * paged.pageSize;
   tbody.innerHTML = paged.items.length
-    ? paged.items.map((sec, idx) => {
+    ? paged.items.map((sec) => {
       const termCode = resolveSectionOfferingTermCode(sec);
       const typeLabel = OFFERING_TEACHER_REPLACE_TYPE_LABELS[sec.offeringType] || sec.offeringType || '—';
       const focused = sec.id === offeringTeacherReplaceFocusSectionId;
+      const isGe = sec.offeringType === 'ge';
+      const progCell = isGe
+        ? '-'
+        : formatEllipsisTipCell(
+          getSectionMergedProgrammeDisplay(sec),
+          getSectionMergedProgrammeDisplayFull(sec)
+        );
+      const intakeCell = isGe
+        ? '-'
+        : formatEllipsisTipCell(
+          getSectionMergedIntakeDisplay(sec),
+          getSectionMergedIntakeDisplayFull(sec)
+        );
       return `<tr class="${focused ? 'is-selected' : ''}">
-        <td class="col-index col-center">${offset + idx + 1}</td>
         <td class="col-center">${escapeHtml(formatCourseTermDisplay(termCode) || termCode || '—')}</td>
         <td class="col-center">${escapeHtml(typeLabel)}</td>
         <td class="col-center col-code"><strong>${escapeHtml(sec.code || '—')}</strong></td>
         <td>${escapeHtml(sec.name || '—')}</td>
+        <td class="col-center col-prog">${progCell}</td>
+        <td class="col-center col-intake">${intakeCell}</td>
         <td class="col-center col-enrollment-type">${renderMajorOfferingEnrollmentTypeDisplay(sec)}</td>
         <td class="col-center"><code>${escapeHtml(getOfferingTeacherReplaceSectionUnit(sec) || '—')}</code></td>
         <td class="col-teachers">${formatOfferingTeacherReplaceSectionTeachersSummary(sec)}</td>
@@ -16357,7 +16552,7 @@ function renderOfferingTeacherReplaceCourseList() {
         </td>
       </tr>`;
     }).join('')
-    : '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:24px">暂无已生效开课可替换；请先在「开课安排」完成任务安排生效</td></tr>';
+    : '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:24px">暂无已生效开课可替换；请先在「开课安排」完成任务安排生效</td></tr>';
   renderListPagination('otr-course-pagination', 'offeringTeacherReplace', paged.total);
 }
 
@@ -16387,7 +16582,9 @@ function renderOfferingTeacherReplaceDetail() {
         <td class="col-center"><code>${escapeHtml(view.weekRange)}</code></td>
         <td class="col-center">${escapeHtml(String(view.weeklyHours))}</td>
         <td class="col-center">${escapeHtml(String(view.totalHours))}</td>
-        <td>${escapeHtml(view.teacherNames)}</td>
+        <td>${typeof formatGroupAssignTeachersSummaryCell === 'function'
+          ? formatGroupAssignTeachersSummaryCell(view.row)
+          : escapeHtml(view.teacherNames)}</td>
         <td class="col-center">${view.simultaneous ? '是' : '否'}</td>
         <td class="actions col-sticky-actions">
           <a href="#" onclick="openOfferingTeacherReplacePicker('${escapeHtml(sec.id)}','${escapeHtml(view.assignRowId)}');return false">替换教师</a>
@@ -16807,9 +17004,11 @@ function listTeacherCourseConfirmationAdminCourseRows(termCode, collegeCode = re
         teachingMethod: course.teachingMethod || '—',
         combinedClass: course.combinedClass || 'N',
         groupCount,
+        combinedGroupsCount: course.combinedGroupsCount ?? 0,
         totalStudentNo: course.totalStudentNo,
         weeklyHours: course.weeklyHours,
         totalTeachingHours: course.totalTeachingHours,
+        hoursCombinedWithCode: course.hoursCombinedWithCode || '',
         coordinatorName: course.coordinatorName,
         coordinatorEmail: course.coordinatorEmail || '—',
         coTeachingStaff: course.coTeachingStaff,
@@ -16849,9 +17048,14 @@ const TEACHER_COURSE_CONFIRMATION_ADMIN_SORT_COLUMNS = {
   teachingMethod: { get: row => row.teachingMethod || '' },
   combinedClass: { get: row => row.combinedClass || '' },
   groupCount: { get: row => row.groupCount ?? 0, type: 'number' },
+  combinedGroupsCount: { get: row => row.combinedGroupsCount ?? 0, type: 'number' },
   totalStudentNo: { get: row => row.totalStudentNo ?? 0, type: 'number' },
-  weeklyHours: { get: row => row.weeklyHours ?? 0, type: 'number' },
-  totalTeachingHours: { get: row => row.totalTeachingHours ?? 0, type: 'number' },
+  weeklyHours: {
+    get: row => (row.hoursCombinedWithCode ? `Combined with ${row.hoursCombinedWithCode}` : (row.weeklyHours ?? 0))
+  },
+  totalTeachingHours: {
+    get: row => (row.hoursCombinedWithCode ? `Combined with ${row.hoursCombinedWithCode}` : (row.totalTeachingHours ?? 0))
+  },
   coordinatorName: { get: row => row.coordinatorName || '' },
   coordinatorEmail: { get: row => row.coordinatorEmail || '' },
   coTeachingStaff: { get: row => row.coTeachingStaff || '' },
@@ -16883,9 +17087,14 @@ const TEACHER_COURSE_CONFIRMATION_LETTER_SORT_COLUMNS = {
       : ((Number(row.lectureGroups) || 0) + (Number(row.labGroups) || 0)),
     type: 'number'
   },
+  combinedGroupsCount: { get: row => row.combinedGroupsCount ?? 0, type: 'number' },
   totalStudentNo: { get: row => row.totalStudentNo ?? 0, type: 'number' },
-  weeklyHours: { get: row => row.weeklyHours ?? 0, type: 'number' },
-  totalTeachingHours: { get: row => row.totalTeachingHours ?? 0, type: 'number' },
+  weeklyHours: {
+    get: row => (row.hoursCombinedWithCode ? `Combined with ${row.hoursCombinedWithCode}` : (row.weeklyHours ?? 0))
+  },
+  totalTeachingHours: {
+    get: row => (row.hoursCombinedWithCode ? `Combined with ${row.hoursCombinedWithCode}` : (row.totalTeachingHours ?? 0))
+  },
   coordinatorName: { get: row => row.coordinatorName || '' },
   coordinatorEmail: { get: row => row.coordinatorEmail || '' },
   coTeachingStaff: {
@@ -17052,11 +17261,30 @@ function batchConfirmTeacherCourseConfirmationFromLetter() {
 function sumTeacherCourseConfirmationLetterHours(rows) {
   let weekly = 0;
   let total = 0;
+  const sharedGroupHours = new Map(); // groupKey -> { weekly, total }
   (Array.isArray(rows) ? rows : []).forEach(row => {
+    const withCode = String(row?.hoursCombinedWithCode || '').trim();
     const w = Number(row?.weeklyHours);
     const t = Number(row?.totalTeachingHours);
+    if (withCode) {
+      // 共同授课：同组只计一次（取组内数值较大者），避免双计且不因全部显示 Combined with 而漏计
+      const self = String(row?.code || '').trim().toUpperCase();
+      const peers = withCode.split(/\s*\/\s*/).map(s => s.trim().toUpperCase()).filter(Boolean);
+      const groupKey = [self, ...peers].filter(Boolean).sort().join('|');
+      if (!groupKey) return;
+      const prev = sharedGroupHours.get(groupKey) || { weekly: 0, total: 0 };
+      sharedGroupHours.set(groupKey, {
+        weekly: Math.max(prev.weekly, Number.isFinite(w) ? w : 0),
+        total: Math.max(prev.total, Number.isFinite(t) ? t : 0)
+      });
+      return;
+    }
     if (Number.isFinite(w)) weekly += w;
     if (Number.isFinite(t)) total += t;
+  });
+  sharedGroupHours.forEach(v => {
+    weekly += v.weekly;
+    total += v.total;
   });
   return { weekly, total };
 }
@@ -17138,7 +17366,7 @@ function renderTeacherCourseConfirmationLetterTable(rows, termCode, {
         ? row.groupCount
         : (Number(row.lectureGroups) || 0) + (Number(row.labGroups) || 0);
       const teachingWeeks = row.teachingWeeks ?? row.weekRange ?? '—';
-      const combinedClass = row.combinedClass || 'N';
+      const combinedGroupsCount = row.combinedGroupsCount;
       const coTeachNames = row.coTeachingStaffList?.length
         ? row.coTeachingStaffList.map(t => t.name)
         : String(row.coTeachingStaff || '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
@@ -17175,11 +17403,11 @@ function renderTeacherCourseConfirmationLetterTable(rows, termCode, {
       <td class="col-center">${escapeHtml(String(row.credits ?? '—'))}</td>
       <td class="col-center tcc-letter-nowrap">${escapeHtml(String(teachingWeeks))}</td>
       <td class="col-center tcc-cell-wrap">${escapeHtml(String(row.teachingMethod || '—'))}</td>
-      <td class="col-center">${escapeHtml(String(combinedClass))}</td>
       <td class="col-center">${escapeHtml(String(groupCount || '—'))}</td>
+      <td class="col-center col-combined-groups">${formatTeacherCourseConfirmationCombinedGroupsCell(combinedGroupsCount)}</td>
       <td class="col-center">${escapeHtml(formatNullableNumberDisplay(row.totalStudentNo))}</td>
-      <td class="col-center">${escapeHtml(String(row.weeklyHours ?? '—'))}</td>
-      <td class="col-center">${escapeHtml(String(row.totalTeachingHours ?? '—'))}</td>
+      <td class="col-center col-hours">${formatTeacherCourseConfirmationHoursCell(row, 'weekly')}</td>
+      <td class="col-center col-total-hours">${formatTeacherCourseConfirmationHoursCell(row, 'total')}</td>
       <td class="col-center tcc-letter-nowrap">${escapeHtml(row.coordinatorName || '—')}</td>
       <td class="col-center tcc-letter-nowrap">${escapeHtml(row.coordinatorEmail || '—')}</td>
       <td class="col-center tcc-letter-nowrap">${formatTccStackedCell(coTeachNames)}</td>
@@ -17234,8 +17462,8 @@ function renderTeacherCourseConfirmationLetterTable(rows, termCode, {
           ${th('Credits', 'credits')}
           ${th('Teaching\nWeeks', 'teachingWeeks')}
           ${th('Teaching\nMethod', 'teachingMethod')}
-          ${th('Combined\nClass', 'combinedClass')}
-          ${th('No. of\nGroup', 'groupCount')}
+          ${renderTeacherCourseConfirmationGroupCountSortTh(sk)}
+          ${th('No. of\nCombined\nGroups', 'combinedGroupsCount')}
           ${th('Total\nStudent\nNo.', 'totalStudentNo')}
           ${th('Weekly\nTeaching\nHours', 'weeklyHours')}
           ${th('Total\nTeaching\nHours', 'totalTeachingHours')}
@@ -17305,8 +17533,8 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
         : '<span class="is-disabled" aria-disabled="true">代确认</span>';
       const historyLink = `<a href="#" onclick="event.preventDefault();openTeacherCourseConfirmationHistoryModal('${id}', '${termEsc}', '${sectionId}', '${escapeHtml(String(row.code || ''))}');return false">查看</a>`;
       const groupCount = row.groupCount || '—';
+      const combinedGroupsCount = row.combinedGroupsCount;
       const teachingWeeks = row.teachingWeeks ?? row.weekRange ?? '—';
-      const combinedClass = row.combinedClass || 'N';
       const coTeachNames = row.coTeachingStaffList?.length
         ? row.coTeachingStaffList.map(t => t.name)
         : String(row.coTeachingStaff || '').split(/[、,]/).map(s => s.trim()).filter(Boolean);
@@ -17325,12 +17553,12 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
         <td class="col-center col-credits">${escapeHtml(String(row.credits ?? '—'))}</td>
         <td class="col-center col-weeks tcc-letter-nowrap">${escapeHtml(String(teachingWeeks))}</td>
         <td class="col-center col-method tcc-cell-wrap" title="${escapeHtml(String(row.teachingMethod || '—'))}">${escapeHtml(String(row.teachingMethod || '—'))}</td>
-        <td class="col-center col-combined">${escapeHtml(String(combinedClass))}</td>
         <td class="col-center col-groups">${escapeHtml(String(groupCount))}</td>
+        <td class="col-center col-combined-groups">${formatTeacherCourseConfirmationCombinedGroupsCell(combinedGroupsCount)}</td>
         <td class="col-center col-cap">${escapeHtml(formatNullableNumberDisplay(row.totalStudentNo))}</td>
-        <td class="col-center col-hours">${escapeHtml(String(row.weeklyHours ?? '—'))}</td>
-        <td class="col-center col-total-hours">${escapeHtml(String(row.totalTeachingHours ?? '—'))}</td>
-        <td class="col-coord tcc-letter-nowrap" title="${escapeHtml(row.coordinatorName || '—')}">${escapeHtml(row.coordinatorName || '—')}</td>
+        <td class="col-center col-hours">${formatTeacherCourseConfirmationHoursCell(row, 'weekly')}</td>
+        <td class="col-center col-total-hours">${formatTeacherCourseConfirmationHoursCell(row, 'total')}</td>
+        <td class="col-center col-coord tcc-letter-nowrap" title="${escapeHtml(row.coordinatorName || '—')}">${escapeHtml(row.coordinatorName || '—')}</td>
         <td class="col-email tcc-letter-nowrap" title="${escapeHtml(row.coordinatorEmail || '—')}">${escapeHtml(row.coordinatorEmail || '—')}</td>
         <td class="col-coteach tcc-letter-nowrap">${formatTccStackedCell(coTeachNames)}</td>
         <td class="col-coteach-email tcc-letter-nowrap">${formatTccStackedCell(coTeachEmails)}</td>
@@ -17392,12 +17620,12 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
           ${renderListSortTh(listKey, 'Credits', 'credits', { center: true, extraClass: 'col-credits' })}
           ${renderListSortTh(listKey, 'Teaching\nWeeks', 'teachingWeeks', { center: true, extraClass: 'col-weeks' })}
           ${renderListSortTh(listKey, 'Teaching\nMethod', 'teachingMethod', { center: true, extraClass: 'col-method' })}
-          ${renderListSortTh(listKey, 'Combined\nClass', 'combinedClass', { center: true, extraClass: 'col-combined' })}
           ${renderTeacherCourseConfirmationAdminGroupCountSortTh(listKey)}
+          ${renderTeacherCourseConfirmationAdminCombinedGroupsSortTh(listKey)}
           ${renderListSortTh(listKey, 'Total\nStudent\nNo.', 'totalStudentNo', { center: true, extraClass: 'col-cap' })}
           ${renderListSortTh(listKey, 'Weekly\nTeaching\nHours', 'weeklyHours', { center: true, extraClass: 'col-hours' })}
           ${renderListSortTh(listKey, 'Total\nTeaching\nHours', 'totalTeachingHours', { center: true, extraClass: 'col-total-hours' })}
-          ${renderListSortTh(listKey, 'Course\nCoordinator', 'coordinatorName', { extraClass: 'col-coord' })}
+          ${renderListSortTh(listKey, 'Course\nCoordinator', 'coordinatorName', { center: true, extraClass: 'col-coord' })}
           ${renderListSortTh(listKey, 'Email Address', 'coordinatorEmail', { extraClass: 'col-email' })}
           ${renderListSortTh(listKey, 'Co-teaching\nStaff', 'coTeachingStaff', { extraClass: 'col-coteach' })}
           ${renderListSortTh(listKey, 'Co-teaching Staff\nEmail Address', 'coTeachingStaffEmails', { extraClass: 'col-coteach-email' })}
@@ -17416,20 +17644,53 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
   bindCellFloatTips(mount, '.offering-teacher-term-group-rule-btn[data-tip]', { alwaysShow: true });
 }
 
-/** 授课确认管理表：No. of Group 表头 + Groups 计算规则感叹号提示 */
-function renderTeacherCourseConfirmationAdminGroupCountSortTh(listKey) {
-  const state = getListSortState(listKey);
+/** 授课确认表：No. of Group 表头 + Groups 计算规则感叹号提示（管理端/教师端确认信共用） */
+function renderTeacherCourseConfirmationGroupCountSortTh(listKey = '') {
   const key = 'groupCount';
+  const sk = String(listKey || '').trim();
+  if (!sk) {
+    return `<th class="col-center col-groups" title="No. of Group">` +
+      `<span class="th-inner th-inner-with-tip">` +
+      `<span class="th-label-lines">No. of<br>Group</span>` +
+      `<button type="button" class="offering-teacher-term-group-rule-btn" ` +
+      `data-tip="${escapeHtml(getTeacherNoOfGroupsFieldTipText())}" ` +
+      `aria-label="No. of Groups 说明">!</button>` +
+      `</span></th>`;
+  }
+  const state = getListSortState(sk);
   const cls = ['col-center', 'col-groups', 'th-sortable', state.key === key ? 'is-sorted' : '']
     .filter(Boolean).join(' ');
   return `<th class="${cls}" title="No. of Group" role="button" tabindex="0" ` +
-    `onclick="toggleListSort('${listKey}','${key}')" ` +
-    `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleListSort('${listKey}','${key}')}">` +
+    `onclick="toggleListSort('${sk}','${key}')" ` +
+    `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleListSort('${sk}','${key}')}">` +
     `<span class="th-inner th-inner-with-tip">` +
     `<span class="th-label-lines">No. of<br>Group</span>` +
     `<button type="button" class="offering-teacher-term-group-rule-btn" ` +
     `data-tip="${escapeHtml(getTeacherNoOfGroupsFieldTipText())}" ` +
     `aria-label="No. of Groups 说明" ` +
+    `onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">!</button>` +
+    `<span class="th-sort" aria-hidden="true">${listSortToggleIcon(state, key)}</span></span></th>`;
+}
+
+/** @deprecated 别名：与 renderTeacherCourseConfirmationGroupCountSortTh 相同 */
+function renderTeacherCourseConfirmationAdminGroupCountSortTh(listKey) {
+  return renderTeacherCourseConfirmationGroupCountSortTh(listKey);
+}
+
+/** 授课确认管理表：No. of Combined Groups 表头 + 说明 */
+function renderTeacherCourseConfirmationAdminCombinedGroupsSortTh(listKey) {
+  const state = getListSortState(listKey);
+  const key = 'combinedGroupsCount';
+  const cls = ['col-center', 'col-combined-groups', 'th-sortable', state.key === key ? 'is-sorted' : '']
+    .filter(Boolean).join(' ');
+  return `<th class="${cls}" title="No. of Combined Groups" role="button" tabindex="0" ` +
+    `onclick="toggleListSort('${listKey}','${key}')" ` +
+    `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleListSort('${listKey}','${key}')}">` +
+    `<span class="th-inner th-inner-with-tip">` +
+    `<span class="th-label-lines">No. of<br>Combined<br>Groups</span>` +
+    `<button type="button" class="offering-teacher-term-group-rule-btn" ` +
+    `data-tip="${escapeHtml(getTeacherCombinedGroupsFieldTipText())}" ` +
+    `aria-label="No. of Combined Groups 说明" ` +
     `onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">!</button>` +
     `<span class="th-sort" aria-hidden="true">${listSortToggleIcon(state, key)}</span></span></th>`;
 }
@@ -17471,6 +17732,7 @@ function openTeacherCourseConfirmationDetailModal(staffId, termCode) {
       })}
     </div>
   </div>`;
+  bindCellFloatTips(body, '.offering-teacher-term-group-rule-btn[data-tip]', { alwaysShow: true });
   openModal('modal-teacher-course-confirmation-detail');
 }
 
@@ -17825,20 +18087,27 @@ function renderTeacherCourseConfirmationSectionManageModal() {
     const groupCount = courseRow?.groupCount != null
       ? courseRow.groupCount
       : ((Number(courseRow?.lectureGroups) || 0) + (Number(courseRow?.labGroups) || 0)) || '—';
+    const combinedGroupsCount = courseRow?.combinedGroupsCount != null
+      ? courseRow.combinedGroupsCount
+      : countTeacherConfirmationCombinedGroups(staffId, sec);
     const teachingWeeks = courseRow?.teachingWeeks ?? courseRow?.weekRange ?? '—';
-    const combinedClass = courseRow?.combinedClass
-      || resolveTeacherConfirmationCombinedClass(staffId, sec);
     const teachingMethod = courseRow?.teachingMethod
       || resolveTeacherConfirmationTeachingMethod(staffId, sec);
     const classification = courseRow?.classification || getOfferingSectionCategoryDisplay(sec) || '—';
     const credits = courseRow?.credits ?? sec.credits ?? '—';
     const totalStudentNo = courseRow?.totalStudentNo ?? getSectionPlannedStudentCount(sec);
+    const hoursCombinedWithCode = resolveTeacherConfirmationHoursCombinedWithCode(staffId, term, sec);
     const weeklyHours = courseRow?.weeklyHours
       ?? computeTeacherConfirmationWeeklyHours(staffId, sec, Number(teachingWeeks) || undefined);
     const totalTeachingHours = courseRow?.totalTeachingHours
       ?? (typeof sumTeacherOfferingTeachingLoadHoursOnSection === 'function'
         ? (sumTeacherOfferingTeachingLoadHoursOnSection(staffId, sec) || '—')
         : '—');
+    const hoursRow = {
+      weeklyHours,
+      totalTeachingHours,
+      hoursCombinedWithCode
+    };
     const coord = getSectionCoordinator(sec);
     const coordinatorName = courseRow?.coordinatorName || coord?.name || '—';
     const idEsc = escapeHtml(staffId);
@@ -17866,12 +18135,12 @@ function renderTeacherCourseConfirmationSectionManageModal() {
       <td class="col-center col-credits">${escapeHtml(String(credits))}</td>
       <td class="col-center col-weeks tcc-letter-nowrap">${escapeHtml(String(teachingWeeks))}</td>
       <td class="col-center col-method tcc-cell-wrap">${escapeHtml(String(teachingMethod))}</td>
-      <td class="col-center col-combined">${escapeHtml(String(combinedClass))}</td>
       <td class="col-center col-groups">${escapeHtml(String(groupCount))}</td>
+      <td class="col-center col-combined-groups">${formatTeacherCourseConfirmationCombinedGroupsCell(combinedGroupsCount)}</td>
       <td class="col-center col-cap">${escapeHtml(formatNullableNumberDisplay(totalStudentNo))}</td>
-      <td class="col-center col-hours">${escapeHtml(String(weeklyHours ?? '—'))}</td>
-      <td class="col-center col-total-hours">${escapeHtml(String(totalTeachingHours ?? '—'))}</td>
-      <td class="col-coord tcc-letter-nowrap">${formatOfferingGroupingEllipsisCell(coordinatorName)}</td>
+      <td class="col-center col-hours">${formatTeacherCourseConfirmationHoursCell(hoursRow, 'weekly')}</td>
+      <td class="col-center col-total-hours">${formatTeacherCourseConfirmationHoursCell(hoursRow, 'total')}</td>
+      <td class="col-center col-coord tcc-letter-nowrap">${formatOfferingGroupingEllipsisCell(coordinatorName)}</td>
       <td class="actions col-center col-history">${historyLink}</td>
       <td class="actions col-center col-actions"><span class="tcc-admin-row-actions">${sendLink}<span class="tcc-admin-action-sep" aria-hidden="true">·</span>${proxyLink}</span></td>
     </tr>`;
@@ -17900,12 +18169,12 @@ function renderTeacherCourseConfirmationSectionManageModal() {
             <th class="col-center col-credits">Credits</th>
             <th class="col-center col-weeks">Teaching<br>Weeks</th>
             <th class="col-center col-method">Teaching<br>Method</th>
-            <th class="col-center col-combined">Combined<br>Class</th>
             <th class="col-center col-groups">No. of<br>Group</th>
+            <th class="col-center col-combined-groups">No. of<br>Combined<br>Groups</th>
             <th class="col-center col-cap">Total<br>Student<br>No.</th>
             <th class="col-center col-hours">Weekly<br>Teaching<br>Hours</th>
             <th class="col-center col-total-hours">Total<br>Teaching<br>Hours</th>
-            <th class="col-coord">Course<br>Coordinator</th>
+            <th class="col-center col-coord">Course<br>Coordinator</th>
             <th class="col-center col-history">History</th>
             <th class="col-center col-actions">Actions</th>
           </tr>
@@ -18208,6 +18477,7 @@ function renderTeacherCourseConfirmationPortalPage() {
     ${panel}
   </div>`;
   renderListPagination(paginationId, 'teacherCourseConfirmationPortal', paged.total);
+  bindCellFloatTips(mount, '.offering-teacher-term-group-rule-btn[data-tip]', { alwaysShow: true });
 }
 
 function onTeacherCourseConfirmationPortalTeacherChange(value) {
@@ -28185,8 +28455,15 @@ function renderMajorOfferingTeacherPickerModal() {
   renderListPagination('teacher-picker-pagination', listKey, paged.total);
   updateMajorOfferingTeacherPickerSelection();
   syncTeacherPickerSimultaneousVisibility();
+  syncTeacherPickerReplaceConflictHint();
   renderGroupAssignTeacherPickerCurrentAssignments();
   renderGroupAssignPriorTermTeachers();
+}
+
+function syncTeacherPickerReplaceConflictHint() {
+  const el = document.getElementById('teacher-picker-replace-conflict-hint');
+  if (!el) return;
+  el.hidden = teacherPickerContext !== 'teacherReplace';
 }
 
 function updateMajorOfferingTeacherPickerSelection() {
@@ -37812,9 +38089,6 @@ function openOfferingTeacherTermAssignModal(staffId) {
       <div class="offering-grouping-teacher-load-card-head" style="margin-top:14px">
         <div class="offering-grouping-teacher-load-card-title">
           <strong>开课安排详情</strong>
-        </div>
-        <div class="offering-grouping-teacher-load-card-meta">
-          <span>「编辑」跳转修改学时/教师；「授课确认」进入该教师确认管理</span>
         </div>
       </div>
       <div class="table-scroll offering-grouping-teacher-load-scroll">
@@ -49762,6 +50036,35 @@ const PORTAL_APPS = [
   }
 ];
 
+const GLOBAL_UI_FONT_KEY = 'pyfa-global-ui-font-v1';
+const GLOBAL_UI_FONT_SIZES = new Set(['sm', 'md', 'lg']);
+
+function getGlobalUiFontSize() {
+  try {
+    const v = localStorage.getItem(GLOBAL_UI_FONT_KEY);
+    if (GLOBAL_UI_FONT_SIZES.has(v)) return v;
+  } catch (_) { /* ignore */ }
+  return 'md';
+}
+
+function setGlobalUiFontSize(size) {
+  const next = GLOBAL_UI_FONT_SIZES.has(size) ? size : 'md';
+  document.documentElement.setAttribute('data-ui-font', next);
+  const mainEl = document.querySelector('.main');
+  if (mainEl) mainEl.removeAttribute('data-ui-font');
+  const appEl = document.querySelector('.app');
+  if (appEl) appEl.removeAttribute('data-ui-font');
+  const sel = document.getElementById('global-ui-font-select');
+  if (sel && sel.value !== next) sel.value = next;
+  try {
+    localStorage.setItem(GLOBAL_UI_FONT_KEY, next);
+  } catch (_) { /* ignore */ }
+}
+
+function initGlobalUiFontSize() {
+  setGlobalUiFontSize(getGlobalUiFontSize());
+}
+
 function goPortal() {
   const appEl = document.querySelector('.app');
   appEl?.classList.add('portal-mode');
@@ -59957,5 +60260,6 @@ function resetAdjustmentRecordQuery() {
 // renderPortalApps(); // 原初始化后直接展示培养方案侧栏，改由 goPortal 默认进入主菜单
 // setActiveModule('curriculum');
 hydrateMajorOfferingStudentRosterStoreFromStorage();
+initGlobalUiFontSize();
 goPortal();
 tryBootstrapSectionChangeLogPopup() || tryBootstrapOfferingGroupingPopup();

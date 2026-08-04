@@ -152,6 +152,14 @@
   </aside>
 
   <main class="main">
+    <div class="global-ui-font-control" id="global-ui-font-control" title="列表字体大小（仅 Portal 主菜单）">
+      <label for="global-ui-font-select">字体</label>
+      <select id="global-ui-font-select" class="input input-sm" aria-label="全局字体大小" onchange="setGlobalUiFontSize(this.value)">
+        <option value="sm">小</option>
+        <option value="md">标准</option>
+        <option value="lg">大</option>
+      </select>
+    </div>
     <!-- ═══ Academic Portal 主菜单 ═══ -->
     <section class="page active" id="page-portal">
       <div class="portal-shell">
@@ -675,7 +683,6 @@
       <div class="page-header workflow-page-header">
         <div class="workflow-page-title">
           <h1>开课管理 · 操作流程</h1>
-          <p class="subtitle">开课设置 → 专业开课（计划 · 安排 · 授课确认 · 名单）→ 开课清单 / 共同授课 → 排课选课</p>
         </div>
         <div class="workflow-zoom-toolbar">
           <button type="button" class="btn btn-ghost btn-sm workflow-zoom-btn" onclick="courseWorkflowZoomStep(-0.1)">−</button>
@@ -2186,18 +2193,16 @@
           </div>
         </div>
         <div class="card otr-list-card">
-          <div class="panel-toolbar">
-            <span class="form-hint">点击「查看安排」展开明细；每行可「替换教师」。多人行将整组替换为新选教师。</span>
-          </div>
           <div class="table-scroll">
             <table class="data-table compact otr-course-table">
               <thead>
                 <tr>
-                  <th class="col-index col-center">序号</th>
                   <th class="col-center">开课学期</th>
                   <th class="col-center">开课类型</th>
                   <th class="col-center col-code">课程号</th>
                   <th>课程名称</th>
+                  <th class="col-center">上课专业</th>
+                  <th class="col-center">上课批次</th>
                   <th class="col-center">选课类型</th>
                   <th class="col-center">开课单位</th>
                   <th>任课教师</th>
@@ -5062,6 +5067,9 @@
       <button class="modal-close" type="button" onclick="closeMajorOfferingTeacherPickerModal()">×</button>
     </div>
     <div class="modal-body teacher-picker-modal-body">
+      <div class="teacher-picker-replace-conflict-hint" id="teacher-picker-replace-conflict-hint" hidden role="note">
+        替换教师时会校验是否存在时间冲突，如存在冲突无法替换成功；（维护了共同授课的除外）
+      </div>
       <div class="teacher-picker-assign-context" id="teacher-picker-assign-context" hidden>
         <div class="teacher-picker-assign-context-grid" id="teacher-picker-assign-context-grid"></div>
       </div>

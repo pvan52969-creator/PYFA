@@ -1,0 +1,29 @@
+---
+description: 排课表时间与排课表教室详情页改动必须相互独立，禁止一侧需求牵连改另一侧行为
+alwaysApply: true
+---
+
+# 排课 / 排教室页面独立性
+
+排课表时间（`scheduleDetailPhase === 'time'`，`#page-schedule-time-detail`）与排课表教室（`scheduleDetailPhase === 'room'`，`#page-schedule-room-detail`）是**两个独立产品面**。
+
+## 硬性约定
+
+1. **需求只改一侧时，禁止改另一侧的交互、菜单项、文案、显隐、校验、默认态。**
+2. 会话说「排教室」→ 只动教室侧分支 / `#page-schedule-room-detail` / 教室专用 DOM；不要顺手改时间侧右键菜单、场地设置、提交逻辑等。
+3. 会话说「排课 / 排时间」→ 只动时间侧；不要改教室侧锁定/待定/撤回、教室列表筛选等。
+4. **禁止**为教室侧需求去改共享菜单 `#schedule-grid-context-menu` 的条目集合或时间侧 `applyScheduleContextMenuVisibility` 行为。教室侧右键用独立菜单 `#schedule-room-grid-context-menu`。
+5. 共享函数里若必须分支：用清晰的 `if (scheduleDetailPhase === 'room')` **早返回 / 隔离块**，教室逻辑写在教室块内，时间逻辑保持原样，避免「统一重写」一条路径。
+6. 教室详情页由时间详情 **clone** 而来（`ensureScheduleRoomDetailPage`）。改时间详情 HTML 时，评估是否会被 clone 带进教室页；教室页专属 UI 优先用：
+   - `#page-schedule-room-detail …` 的 CSS
+   - clone 后补丁 / `data-sch-phase-tab="room"` 显隐
+   - 不要靠改时间模板「顺便」满足教室需求
+
+## 自检
+
+改完前问自己：
+
+- 若用户只测排时间侧，行为是否与改前一致？
+- 若用户只测排教室侧，是否只出现本次教室需求的变化？
+
+任一为「否」→ 拆开改动，撤回对另一侧的影响。

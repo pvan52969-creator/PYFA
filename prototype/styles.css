@@ -11092,7 +11092,7 @@ code {
 }
 /* 排教室课表：行=教室；横标题=节次；教室软件后=备注 */
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols {
-  --sch-room-meta-w: 580px;
+  --sch-room-meta-w: 616px;
   --sch-day-count: 10;
   --sch-day-col-w: calc((100cqw - var(--sch-room-meta-w) - 96px) / var(--sch-day-count));
   font-size: 12px;
@@ -11123,14 +11123,15 @@ code {
   z-index: 5;
   background: #f1f5f9;
 }
+/* 列序：教室 | 有效座位数 | 教室类型 | 场地类型 | 楼栋 | 设备 | 软件 | 备注 */
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-room { left: 0; min-width: 88px; }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-building { left: 88px; min-width: 72px; }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-rtype { left: 160px; min-width: 72px; }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-vtype { left: 232px; min-width: 72px; }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-seats { left: 304px; min-width: 44px; text-align: center; }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-equip { left: 348px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-seats { left: 88px; min-width: 80px; text-align: center; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-rtype { left: 168px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-vtype { left: 240px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-building { left: 312px; min-width: 72px; }
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-equip { left: 384px; min-width: 72px; }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-soft {
-  left: 420px;
+  left: 456px;
   min-width: 72px;
   max-width: 96px;
   overflow: hidden;
@@ -11138,7 +11139,7 @@ code {
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-remark,
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-remark {
-  left: 492px;
+  left: 528px;
   min-width: 88px;
   max-width: 140px;
   box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08);
@@ -11265,37 +11266,109 @@ code {
   border-radius: 2px;
 }
 .schedule-room-lock-legend .sch-leg-item.is-room-locked {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: #e5e7eb;
+  color: #374151;
 }
 .schedule-room-lock-legend .sch-leg-item.is-room-locked::before {
-  background: #9ca3af;
+  background: #6b7280;
 }
 .schedule-room-lock-legend .sch-leg-item.is-room-pending {
-  background: #fef9c3;
-  color: #854d0e;
+  background: #fde68a;
+  color: #78350f;
 }
 .schedule-room-lock-legend .sch-leg-item.is-room-pending::before {
-  background: #eab308;
+  background: #d97706;
 }
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-empty {
   cursor: pointer;
   background: #fff;
 }
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-outside-time {
+  background: #f8fbff;
+  cursor: default;
+}
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending {
-  background: #fef9c3;
+  background: #fde68a;
   cursor: not-allowed;
 }
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked {
-  background: #f3f4f6;
-  color: var(--text-2);
+  background: #e5e7eb;
+  color: #374151;
   cursor: not-allowed;
+}
+/* 联排节次合并卡片：跨多节次列显示为同一格 */
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-linked-span {
+  vertical-align: middle;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-linked-span .schedule-grid-multi,
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-linked-span .schedule-room-hold-block {
+  min-height: 100%;
+  height: 100%;
+  justify-content: center;
 }
 .schedule-detail-grid-table.is-room-period-cols .schedule-room-cell-hold-label {
   display: inline-block;
   font-size: 11px;
-  color: #854d0e;
+  color: #78350f;
   font-weight: 600;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-room-hold-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  min-width: 0;
+  text-align: left;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-room-hold-block .schedule-grid-code {
+  font-weight: 600;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-room-hold-block .schedule-grid-group {
+  color: inherit;
+  opacity: 0.92;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending .schedule-room-hold-block .schedule-grid-code {
+  color: #78350f;
+}
+/* 排教室节次格：内容超出单元格宽度时换行（覆盖全局 nowrap / max-content） */
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols td.schedule-grid-cell {
+  vertical-align: top;
+  height: auto;
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  word-break: break-word;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  grid-template-columns: minmax(0, 1fr);
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-room-hold-block,
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi .schedule-grid-block {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-room-hold-block .schedule-grid-line,
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi .schedule-grid-block .schedule-grid-line {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .schedule-room-cell-toast {
   position: fixed;
@@ -11415,11 +11488,19 @@ code {
 .schedule-detail-course-code .sdc-hours-icon.is-todo {
   background: #2563eb;
 }
+.schedule-detail-course-code .sdc-hours-icon.is-hold {
+  background: #ca8a04;
+  letter-spacing: -1px;
+}
 .schedule-detail-course-code .sdc-hours-icon.is-done {
   background: #16a34a;
 }
 .schedule-detail-course-code .sdc-hours-icon.is-over {
   background: #dc2626;
+}
+.schedule-detail-course-item.is-hold {
+  border-color: #fde68a;
+  background: #fffbeb;
 }
 /* ???????????? + ?????? */
 .schedule-detail-course-fields {
@@ -11482,6 +11563,9 @@ code {
   text-overflow: unset;
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+#page-schedule-room-detail #schedule-detail-view-settings {
+  display: none !important;
 }
 .schedule-detail-course-fields .sdc-v.sdc-v-teachers {
   color: #2563eb;
@@ -12609,6 +12693,11 @@ code {
   border-left: 0;
   border-top: 0;
   box-shadow: 2px 2px 4px rgba(15, 23, 42, 0.06);
+}
+/* display:block 会盖掉原生 [hidden]，须显式隐藏 */
+.schedule-ctx-item[hidden],
+.schedule-ctx-sep[hidden] {
+  display: none !important;
 }
 .schedule-ctx-item {
   display: block;

@@ -2624,8 +2624,11 @@
         <aside class="card schedule-detail-sidebar">
           <div class="schedule-detail-tabs" id="schedule-detail-course-tabs">
             <button type="button" class="schedule-detail-tab is-active" data-tab="all" onclick="setScheduleCourseTab('all')">全部 <span id="schedule-tab-all-count">0</span></button>
-            <button type="button" class="schedule-detail-tab" data-tab="pending" onclick="setScheduleCourseTab('pending')"><span data-sch-tab-pending-label>未排完</span> <span id="schedule-tab-pending-count">0</span></button>
-            <button type="button" class="schedule-detail-tab" data-tab="done" onclick="setScheduleCourseTab('done')"><span data-sch-tab-done-label>已排完</span> <span id="schedule-tab-done-count">0</span></button>
+            <button type="button" class="schedule-detail-tab" data-tab="pending" data-sch-phase-tab="time" onclick="setScheduleCourseTab('pending')"><span data-sch-tab-pending-label>未排完</span> <span id="schedule-tab-pending-count">0</span></button>
+            <button type="button" class="schedule-detail-tab" data-tab="done" data-sch-phase-tab="time" onclick="setScheduleCourseTab('done')"><span data-sch-tab-done-label>已排完</span> <span id="schedule-tab-done-count">0</span></button>
+            <button type="button" class="schedule-detail-tab" data-tab="unset" data-sch-phase-tab="room" hidden onclick="setScheduleCourseTab('unset')">未排 <span id="schedule-tab-unset-count">0</span></button>
+            <button type="button" class="schedule-detail-tab" data-tab="hold" data-sch-phase-tab="room" hidden onclick="setScheduleCourseTab('hold')">待定 <span id="schedule-tab-hold-count">0</span></button>
+            <button type="button" class="schedule-detail-tab" data-tab="locked" data-sch-phase-tab="room" hidden onclick="setScheduleCourseTab('locked')">锁定 <span id="schedule-tab-locked-count">0</span></button>
           </div>
           <ul class="schedule-detail-course-list" id="schedule-detail-course-list"></ul>
           <div class="schedule-detail-sidebar-foot">
@@ -2660,9 +2663,8 @@
                 <label class="schedule-scope-label" id="schedule-scope-label" for="schedule-scope-select">入学批次</label>
                 <select class="input input-sm" id="schedule-scope-select" onchange="onScheduleScopeSwitch(this.value)"></select>
               </div>
-              <div class="schedule-timetable-active" id="schedule-detail-active-course">请从左侧选择课程</div>
             </div>
-            <div class="schedule-detail-view-settings">
+            <div class="schedule-detail-view-settings" id="schedule-detail-view-settings">
               <label class="schedule-view-opt"><input type="checkbox" id="sch-show-weekend" onchange="onScheduleViewSettingChange()"> 显示周末</label>
               <span class="schedule-view-sep">课表卡片显示：</span>
               <label class="schedule-view-opt is-required"><input type="checkbox" id="sch-card-code" checked disabled> 课程号</label>
@@ -2680,6 +2682,7 @@
             <div class="schedule-detail-field schedule-detail-room-filter-panel" id="schedule-detail-room-filter-panel" hidden>
               <label class="schedule-detail-field-label">教室筛选</label>
               <div class="schedule-room-filter-grid schedule-room-timetable-filter-grid">
+                <div class="srf-item"><label for="srtf-room">教室</label><input class="input input-sm" id="srtf-room" type="text" placeholder="教室名称"></div>
                 <div class="srf-item"><label for="srtf-building">楼栋</label><select class="input input-sm" id="srtf-building"></select></div>
                 <div class="srf-item"><label for="srtf-room-type">教室类型</label><select class="input input-sm" id="srtf-room-type"></select></div>
                 <div class="srf-item"><label for="srtf-venue-type">场地类型</label><select class="input input-sm" id="srtf-venue-type"></select></div>
@@ -8105,7 +8108,7 @@
     </div>
   </div>
 </div>
-<!-- 排课课表：已排课程卡片右键菜单 -->
+<!-- 排课表时间：课表右键菜单（勿往此菜单加教室侧项） -->
 <div class="schedule-ctx-menu" id="schedule-grid-context-menu" hidden role="menu" aria-label="课表卡片操作">
   <span class="schedule-ctx-arrow" aria-hidden="true"></span>
   <button type="button" class="schedule-ctx-item" data-sch-ctx="viewConflict" role="menuitem">查看冲突</button>
@@ -8115,6 +8118,12 @@
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoSlot" role="menuitem">撤销本节次</button>
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoCourse" role="menuitem">撤销本课程</button>
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoAll" role="menuitem">撤销全部课程</button>
+</div>
+<!-- 排课表教室：教室格右键菜单（与时间侧菜单完全独立） -->
+<div class="schedule-ctx-menu" id="schedule-room-grid-context-menu" hidden role="menu" aria-label="教室格操作">
+  <span class="schedule-ctx-arrow" aria-hidden="true"></span>
+  <button type="button" class="schedule-ctx-item" data-sch-ctx="roomLock" role="menuitem">锁定</button>
+  <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="roomRevoke" role="menuitem">撤回</button>
 </div>
 <script src="mock-data.js"></script>
 <script src="app.js"></script>

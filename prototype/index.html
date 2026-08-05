@@ -1155,6 +1155,7 @@
                   <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupMergeModal()">合并分组</button> -->
                   <button class="btn btn-outline btn-sm btn-danger-text" type="button" onclick="resetOfferingGroupingAll()">重置</button>
                   <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-hour-type-settings" onclick="openGroupAssignHourTypeSettings()">学时类型设置</button>
+                  <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-copy-history" onclick="openOfferingGroupingHistoryCopyModal()" title="从以往学期该课程的开课安排复制小组与学时/教师/教室配置">复制</button>
                   <!-- 安排教师入口暂隐藏，改由安排详情内新增 -->
                   <button class="btn btn-primary btn-sm" type="button" id="ogg-btn-assign-teacher" onclick="openGroupAssignForm()" hidden>安排教师</button>
                   <!-- <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingAutoGroupModal()">自动分组</button> --> <!-- 功能暂下线 -->
@@ -1265,6 +1266,7 @@
         <div class="offering-grouping-teacher-load" id="offering-grouping-teacher-load" data-ttl-root hidden>
           <div class="teacher-load-dimension-bar">
             <div class="teacher-load-dimension-tabs" role="tablist" aria-label="Teaching Load 统计维度">
+              <button type="button" class="teacher-load-dimension-tab" role="tab" aria-selected="false" data-ttl="dimension-tab" data-dimension="week" onclick="setTeacherTeachingLoadDimension('week')">按周次</button>
               <button type="button" class="teacher-load-dimension-tab is-active" role="tab" aria-selected="true" data-ttl="dimension-tab" data-dimension="term" onclick="setTeacherTeachingLoadDimension('term')">按学期</button>
               <button type="button" class="teacher-load-dimension-tab" role="tab" aria-selected="false" data-ttl="dimension-tab" data-dimension="academic-year" onclick="setTeacherTeachingLoadDimension('academic-year')">按学年</button>
             </div>
@@ -1320,13 +1322,16 @@
           <div class="card teacher-teaching-load-card">
             <div class="panel-toolbar teacher-load-table-toolbar">
               <span class="form-hint" data-ttl="hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
-              <label class="teacher-load-include-current-term" data-ttl="include-current-term-wrap" hidden>
-                <span class="teacher-load-include-current-term-label">本学期计入</span>
-                <span class="toggle-switch">
-                  <input type="checkbox" data-ttl="include-current-term" onchange="onTeacherTeachingLoadIncludeCurrentTermChange(this)" aria-label="按学年汇总时是否计入本学期">
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                </span>
-              </label>
+              <div class="teacher-load-toolbar-actions">
+                <label class="teacher-load-include-current-term" data-ttl="include-current-term-wrap" hidden>
+                  <span class="teacher-load-include-current-term-label">本学期计入</span>
+                  <span class="toggle-switch">
+                    <input type="checkbox" data-ttl="include-current-term" onchange="onTeacherTeachingLoadIncludeCurrentTermChange(this)" aria-label="按学年汇总时是否计入本学期">
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  </span>
+                </label>
+                <button class="btn btn-outline btn-sm" type="button" onclick="exportTeacherTeachingLoad()">导出</button>
+              </div>
             </div>
             <div class="table-scroll teacher-teaching-load-scroll">
               <table class="data-table teacher-teaching-load-table">
@@ -1774,7 +1779,7 @@
             <table class="data-table compact">
               <thead>
                 <tr>
-                  <th>学院</th>
+                  <th class="col-center">学院</th>
                   <th class="col-center">保底课程班/小组数</th>
                   <th class="col-center">已开课程班/组数</th>
                   <th class="col-center">状态</th>
@@ -2446,6 +2451,7 @@
       </div>
       <div class="teacher-load-dimension-bar">
         <div class="teacher-load-dimension-tabs" role="tablist" aria-label="Teaching Load 统计维度">
+          <button type="button" class="teacher-load-dimension-tab" role="tab" aria-selected="false" data-ttl="dimension-tab" data-dimension="week" onclick="setTeacherTeachingLoadDimension('week')">按周次</button>
           <button type="button" class="teacher-load-dimension-tab is-active" role="tab" aria-selected="true" data-ttl="dimension-tab" data-dimension="term" onclick="setTeacherTeachingLoadDimension('term')">按学期</button>
           <button type="button" class="teacher-load-dimension-tab" role="tab" aria-selected="false" data-ttl="dimension-tab" data-dimension="academic-year" onclick="setTeacherTeachingLoadDimension('academic-year')">按学年</button>
         </div>
@@ -2504,13 +2510,16 @@
       <div class="card teacher-teaching-load-card">
         <div class="panel-toolbar teacher-load-table-toolbar">
           <span class="form-hint" data-ttl="hint">单位：学时（hour）；默认展示当前开课学期，最多可选 6 个学期；底部为学期合计与人均均值</span>
-          <label class="teacher-load-include-current-term" data-ttl="include-current-term-wrap" hidden>
-            <span class="teacher-load-include-current-term-label">本学期计入</span>
-            <span class="toggle-switch">
-              <input type="checkbox" data-ttl="include-current-term" onchange="onTeacherTeachingLoadIncludeCurrentTermChange(this)" aria-label="按学年汇总时是否计入本学期">
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-            </span>
-          </label>
+          <div class="teacher-load-toolbar-actions">
+            <label class="teacher-load-include-current-term" data-ttl="include-current-term-wrap" hidden>
+              <span class="teacher-load-include-current-term-label">本学期计入</span>
+              <span class="toggle-switch">
+                <input type="checkbox" data-ttl="include-current-term" onchange="onTeacherTeachingLoadIncludeCurrentTermChange(this)" aria-label="按学年汇总时是否计入本学期">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </span>
+            </label>
+            <button class="btn btn-outline btn-sm" type="button" onclick="exportTeacherTeachingLoad()">导出</button>
+          </div>
         </div>
         <div class="table-scroll teacher-teaching-load-scroll">
           <table class="data-table teacher-teaching-load-table" id="teacher-teaching-load-table">
@@ -4273,6 +4282,78 @@
   </div>
 </div>
 
+<!-- ═══ 弹窗：开课安排导入 ═══ -->
+<div class="modal-overlay" id="modal-major-offering-arrange-import">
+  <div class="modal modal-lg major-offering-arrange-import-modal">
+    <div class="modal-head">
+      <h3>导入开课安排</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-major-offering-arrange-import')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" id="mot-arrange-import-hint">下载模板后按说明填写，再上传导入。仅未生效任务可导入覆盖；已生效任务不会被覆盖，并提示导入失败。</p>
+      <div class="mot-arrange-import-block">
+        <div class="mot-arrange-import-block-head">
+          <div class="mot-arrange-import-block-title">① 下载模板</div>
+          <div class="mot-arrange-import-scope-row">
+            <button class="btn btn-outline btn-sm" type="button" id="mot-arrange-import-scope-btn"
+              onclick="openMajorOfferingArrangeImportScopePicker()">选择开课任务</button>
+            <p class="form-hint mot-arrange-import-scope-summary" id="mot-arrange-import-scope-summary">未选择 · 将导出空白模板</p>
+          </div>
+        </div>
+        <p class="form-hint">不选则下载空白模板；可点按钮勾选要写入的开课任务。主列表已勾选时会自动带入。</p>
+        <div class="mot-arrange-import-download-row">
+          <button class="btn btn-outline btn-sm" type="button" id="mot-arrange-import-download" onclick="downloadMajorOfferingArrangeImportTemplateFromModal()">下载导入模板</button>
+          <p class="form-hint" id="mot-arrange-import-download-meta"></p>
+        </div>
+      </div>
+      <div class="mot-arrange-import-block">
+        <div class="mot-arrange-import-block-title">② 上传文件并导入</div>
+        <p class="form-hint">支持本系统导出的 Excel 模板（.xls）。导入按开课任务匹配键覆盖未生效任务的分组与安排；已生效任务导入失败且不覆盖。</p>
+        <label class="mot-arrange-import-dropzone" id="mot-arrange-import-dropzone" for="mot-arrange-import-file"
+          ondragover="event.preventDefault();this.classList.add('is-dragover')"
+          ondragleave="this.classList.remove('is-dragover')"
+          ondrop="onMajorOfferingArrangeImportDrop(event)">
+          <input type="file" id="mot-arrange-import-file" class="mot-arrange-import-file-input"
+            accept=".xls,.xlsx,.xml,application/vnd.ms-excel,text/xml"
+            onchange="onMajorOfferingArrangeImportFileChange(this)">
+          <span class="mot-arrange-import-dropzone-icon" aria-hidden="true">↑</span>
+          <span class="mot-arrange-import-dropzone-title" id="mot-arrange-import-file-title">点击选择或拖拽文件到此处</span>
+          <span class="mot-arrange-import-dropzone-sub text-muted" id="mot-arrange-import-file-name">支持 .xls 模板文件</span>
+        </label>
+        <div class="mot-arrange-import-result" id="mot-arrange-import-result" hidden></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-major-offering-arrange-import')">取消</button>
+      <button class="btn btn-primary" type="button" id="mot-arrange-import-confirm" onclick="confirmMajorOfferingArrangeImport()" disabled>确定导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：开课安排导入 · 选择开课任务 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-major-offering-arrange-import-scope">
+  <div class="modal modal-xl major-offering-arrange-import-scope-modal">
+    <div class="modal-head">
+      <h3>选择开课任务</h3>
+      <button class="modal-close" type="button" onclick="closeMajorOfferingArrangeImportScopePicker()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="mot-arrange-import-scope-picker-toolbar">
+        <button type="button" class="btn btn-ghost btn-sm" id="mot-arrange-import-scope-use-list"
+          onclick="applyMajorOfferingArrangeImportScopeFromList()">使用主列表已选</button>
+        <span class="form-hint" id="mot-arrange-import-scope-picker-meta"></span>
+      </div>
+      <div class="mot-arrange-import-task-list table-scroll" id="mot-arrange-import-scope-list" role="group" aria-label="勾选开课任务"></div>
+      <div class="table-footer mot-arrange-import-scope-pagination" id="mot-arrange-import-scope-pagination"></div>
+      <p class="form-hint">不勾选任何任务并确定，等同导出空白模板。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingArrangeImportScopePicker()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmMajorOfferingArrangeImportScopePicker()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：删除分类确认 ═══ -->
 <div class="modal-overlay" id="modal-delete-category">
   <div class="modal">
@@ -4526,8 +4607,8 @@
         <!-- <label for="mos-edit-student-total">总人数</label> 原字段名 -->
         <div class="form-item">
           <label class="req" for="mos-edit-reserved-spots">预留名额</label>
-          <input class="input input-sm" id="mos-edit-reserved-spots" type="number" min="0" step="1" placeholder="5" required oninput="updateMajorOfferingEditCapacityLimitDisplay()">
-          <p class="form-hint">默认 5，可修改；计入课程名额上限</p>
+          <input class="input input-sm" id="mos-edit-reserved-spots" type="number" step="1" placeholder="5" required oninput="updateMajorOfferingEditCapacityLimitDisplay()">
+          <p class="form-hint">默认 5，可修改（可为负）；计入课程名额上限。下调上限不减少预置人数，预置仍可分进课程班/小组；超出上限时分配情况会显示如 139/138。</p>
         </div>
         <div class="form-item">
           <label for="mos-edit-capacity-limit">课程名额上限</label>
@@ -4721,11 +4802,46 @@
         </div>
       </div>
     </section>
-    <section class="offering-edit-section">
+    <section class="offering-edit-section" id="scs-edit-hour-type-section">
+      <h4 class="offering-edit-section-title">学时类型设置</h4>
+      <p class="form-hint">先设定学时合并方式，再按合并后的学时类型配置下方教室属性与偏好；开课安排时作为默认带出，可在教学班覆盖。</p>
+      <div class="group-assign-hour-type-settings-options scs-edit-hour-type-options" id="scs-edit-hour-type-options" role="radiogroup" aria-label="学时类型设置">
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="scs-edit-hours-mode" value="all" onchange="onSpecialCourseEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>全部合并</strong>
+            <span class="form-hint">合为总学时统一配置教室，不再区分学时类型</span>
+          </span>
+        </label>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="scs-edit-hours-mode" value="partial" onchange="onSpecialCourseEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>部分学时合并</strong>
+            <span class="form-hint">可建多组合并；未入组的类型单独配置教室</span>
+          </span>
+        </label>
+        <div class="group-assign-partial-merge-types-wrap" id="scs-edit-partial-merge-types-wrap" hidden>
+          <p class="form-hint group-assign-partial-merge-types-hint">每组至少勾选 2 种；同一学时类型只能属于一组。</p>
+          <div class="group-assign-partial-merge-groups" id="scs-edit-partial-merge-groups"></div>
+          <div class="group-assign-partial-merge-groups-foot">
+            <button type="button" class="btn btn-outline btn-sm" id="scs-edit-partial-merge-add-group" onclick="addSpecialCourseEditPartialMergeGroup()">添加合并组</button>
+            <p class="form-hint group-assign-partial-merge-separate-hint" id="scs-edit-partial-merge-separate-hint"></p>
+          </div>
+        </div>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="scs-edit-hours-mode" value="separate" checked onchange="onSpecialCourseEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>按学时类型分别安排</strong>
+            <span class="form-hint">理论 / 辅导 / 实践 / 其他学时各自配置教室</span>
+          </span>
+        </label>
+      </div>
+    </section>
+    <section class="offering-edit-section" id="scs-edit-classroom-section">
       <h4 class="offering-edit-section-title">教室信息（默认）</h4>
       <div class="form-item mos-edit-classroom-attr-block">
         <label>教室属性与参考教室</label>
-        <p class="form-hint">四种学时依次设置；开课安排时默认带出，可在教学班抽屉中覆盖</p>
+        <p class="form-hint" id="scs-edit-classroom-hint">按上方学时类型设置逐项配置；偏好教室展示设备与软件，便于按教学需求选择</p>
         <div class="mos-edit-classroom-hour-attrs" id="scs-edit-classroom-hour-attrs" data-classroom-hour-attrs="scs-edit-classroom-hour-attrs"></div>
       </div>
     </section>
@@ -6072,6 +6188,42 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeOfferingGroupSplitModal()">取消</button>
       <button class="btn btn-primary" type="button" onclick="confirmOfferingGroupSplit()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：复制以往学期开课安排 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-offering-grouping-history-copy">
+  <div class="modal modal-xl offering-grouping-history-copy-modal">
+    <div class="modal-head">
+      <h3 id="offering-grouping-history-copy-title">复制以往安排</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-offering-grouping-history-copy')">×</button>
+    </div>
+    <div class="modal-body offering-grouping-history-copy-body">
+      <p class="form-hint" id="offering-grouping-history-copy-hint">从该课程以往学期的开课安排中选择一份，复制小组数、学时安排、教师与教室配置到本学期，减少重复录入。</p>
+      <div class="offering-grouping-history-copy-layout">
+        <div class="offering-grouping-history-copy-filters">
+          <label class="offering-grouping-history-copy-filter-item">
+            <span>学期</span>
+            <select class="input input-sm" id="offering-grouping-history-copy-term-filter"
+              aria-label="按学期筛选"
+              onchange="onOfferingGroupingHistoryCopyTermFilterChange()">
+              <option value="">全部学期</option>
+            </select>
+          </label>
+        </div>
+        <div class="offering-grouping-history-copy-term-bar">
+          <span class="offering-grouping-history-copy-term-label">可选安排</span>
+          <div class="offering-grouping-history-copy-list" id="offering-grouping-history-copy-list" role="listbox" aria-label="以往学期安排"></div>
+        </div>
+        <div class="offering-grouping-history-copy-detail" id="offering-grouping-history-copy-detail">
+          <p class="text-muted offering-grouping-history-copy-empty">请先选择一项查看详情</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-grouping-history-copy')">取消</button>
+      <button class="btn btn-primary" type="button" id="offering-grouping-history-copy-confirm" onclick="confirmOfferingGroupingHistoryCopy()" disabled>确定</button>
     </div>
   </div>
 </div>
@@ -7736,7 +7888,7 @@
         <dt>校选类别</dt><dd id="ge-offering-scope-ge-category">—</dd>
       </dl>
     </div>
-    <p class="form-hint" id="ge-offering-scope-default-hint">默认从「校选课程管理」带入专业范围；可按本学期调整。专业批次为可选细化，不影响校选主数据。</p>
+    <p class="form-hint" id="ge-offering-scope-default-hint">默认从「校选课程管理」带入专业范围；可按本学期调整。范围按专业维护，该专业全部入学批次适用。</p>
     <div class="form-item">
       <label class="req">修读范围</label>
       <div class="ge-offering-scope-stack">
@@ -7747,16 +7899,9 @@
             <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
           </div>
         </div>
-        <div class="ge-offering-scope-stack-row" id="ge-offering-scope-batch-step">
-          <span class="ge-offering-scope-stack-label">批次</span>
-          <div class="input-with-btn school-elective-excluded-programmes-field">
-            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-batches">未细化（该专业全部入学批次）</div>
-            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-batches-btn" onclick="openGeOfferingScopeBatchPickerModal()" disabled>选择</button>
-            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-batches-clear-btn" onclick="clearGeOfferingScopeBatchRefinement()" disabled>清除</button>
-          </div>
-        </div>
+        <!-- 原「批次」细化行已去掉：不再按入学批次收窄修读范围 -->
       </div>
-      <p class="form-hint">可选或不可选专业（两边都不选=全开放）；有专业后可再细化入学批次，不细化则该专业全部批次适用。</p>
+      <p class="form-hint">可选或不可选专业（两边都不选=全开放）；所选专业下全部入学批次均适用。</p>
     </div>
     <div class="form-item">
       <label class="req">可选学生类型</label>
@@ -7764,9 +7909,9 @@
       <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
     </div>
     <div class="form-item">
-      <label>不可选年级</label>
+      <label>不可选年级学期</label>
       <div class="school-elective-student-type-picks" id="ge-offering-scope-excluded-years"></div>
-      <p class="form-hint">勾选不可选课的年级；不勾选表示各年级均可选。</p>
+      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -7809,8 +7954,8 @@
         <dt>课程名称</dt><dd id="ge-offering-scope-view-name">—</dd>
         <dt>限制类型</dt><dd id="ge-offering-scope-view-limit-type">—</dd>
         <dt>专业</dt><dd id="ge-offering-scope-view-programmes">—</dd>
-        <dt>专业批次</dt><dd id="ge-offering-scope-view-batches">—</dd>
-        <dt>不可选年级</dt><dd id="ge-offering-scope-view-years">—</dd>
+        <!-- <dt>专业批次</dt><dd id="ge-offering-scope-view-batches">—</dd> --> <!-- 已取消批次细化 -->
+        <dt>不可选年级学期</dt><dd id="ge-offering-scope-view-years">—</dd>
         <dt>冲突课程</dt><dd id="ge-offering-scope-view-conflicts">—</dd>
         <dt>先修课程</dt><dd id="ge-offering-scope-view-prereqs">—</dd>
         <dt>可选学生类型</dt><dd id="ge-offering-scope-view-student-types">—</dd>
@@ -7823,53 +7968,9 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：通识选修开课 · 专业批次细化（按专业看其真实入学批次） ═══ -->
-<div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">
-  <div class="modal modal-lg ge-offering-batch-picker-modal">
-    <div class="modal-head">
-      <h3 id="ge-offering-batch-picker-title">细化专业批次</h3>
-      <button class="modal-close" type="button" onclick="closeGeOfferingScopeBatchPickerModal()">×</button>
-    </div>
-    <div class="modal-body ge-offering-batch-picker-body">
-      <div class="ge-offering-batch-picker-axes">
-        <div class="ge-offering-batch-picker-axis">
-          <div class="ge-offering-batch-picker-axis-head">
-            <strong>已选专业</strong>
-            <span class="text-muted ge-offering-batch-picker-axis-sub" id="ge-offering-batch-picker-prog-count">0</span>
-          </div>
-          <input class="input input-sm" id="ge-offering-batch-picker-programme-q" type="search" placeholder="筛选专业代码 / 名称" oninput="renderGeOfferingScopeBatchPickerProgrammes()">
-          <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-programmes"></div>
-        </div>
-        <div class="ge-offering-batch-picker-axis">
-          <div class="ge-offering-batch-picker-axis-head">
-            <strong id="ge-offering-batch-picker-intake-title">入学批次</strong>
-            <div class="ge-offering-batch-picker-axis-actions">
-              <button class="btn btn-ghost btn-sm" type="button" onclick="setGeOfferingScopeBatchPickerActiveProgrammeAll(true)">全选</button>
-              <button class="btn btn-ghost btn-sm" type="button" onclick="setGeOfferingScopeBatchPickerActiveProgrammeAll(false)">清空</button>
-            </div>
-          </div>
-          <p class="form-hint ge-offering-batch-picker-intake-hint">仅显示该专业实际有的入学批次（来自执行计划），各专业互不相同。</p>
-          <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-intakes"></div>
-        </div>
-      </div>
-      <div class="ge-offering-batch-picker-preview">
-        <div class="ge-offering-batch-picker-preview-head">
-          <strong>已选专业批次</strong>
-          <span class="text-muted" id="ge-offering-batch-picker-count">已选 0</span>
-          <button class="btn btn-ghost btn-sm" type="button" onclick="clearGeOfferingScopeBatchPickerWorking()">全部清空</button>
-        </div>
-        <div class="ge-offering-batch-picker-preview-list" id="ge-offering-batch-picker-preview-list"></div>
-      </div>
-      <p class="form-hint">先点左侧专业，再勾选该专业下的入学批次；不同专业的可选批次各自独立。</p>
-    </div>
-    <div class="modal-foot">
-      <div class="school-elective-programme-picker-foot-actions" style="margin-left:auto">
-        <button class="btn btn-ghost" type="button" onclick="closeGeOfferingScopeBatchPickerModal()">取消</button>
-        <button class="btn btn-primary" type="button" onclick="confirmGeOfferingScopeBatchPicker()">确定</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- 原「通识选修开课 · 专业批次细化」弹窗已去掉：修读范围不再按入学批次细化
+<div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">...</div>
+-->
 
 <!-- ═══ 弹窗：特殊开课 · 添加计划（课程库选择器） ═══ -->
 <div class="modal-overlay" id="modal-other-offering-add">
@@ -8059,9 +8160,9 @@
       <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
     </div>
     <div class="form-item">
-      <label>不可选年级</label>
+      <label>不可选年级学期</label>
       <div class="school-elective-student-type-picks" id="school-elective-edit-excluded-years"></div>
-      <p class="form-hint">勾选不可选课的年级；不勾选表示各年级均可选。</p>
+      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -8220,7 +8321,7 @@
         <dt>课程名称</dt><dd id="school-elective-scope-view-name">—</dd>
         <dt>限制类型</dt><dd id="school-elective-scope-view-limit-type">—</dd>
         <dt>专业</dt><dd id="school-elective-scope-view-programmes">—</dd>
-        <dt>不可选年级</dt><dd id="school-elective-scope-view-years">—</dd>
+        <dt>不可选年级学期</dt><dd id="school-elective-scope-view-years">—</dd>
         <dt>冲突课程</dt><dd id="school-elective-scope-view-conflicts">—</dd>
         <dt>先修课程</dt><dd id="school-elective-scope-view-prereqs">—</dd>
         <dt>可选学生类型</dt><dd id="school-elective-scope-view-student-types">—</dd>

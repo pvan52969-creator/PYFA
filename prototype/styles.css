@@ -2894,6 +2894,15 @@ code {
 .course-time-table th.col-check,
 .course-time-table td.col-expand,
 .course-time-table th.col-expand { vertical-align: middle; }
+/* 开课时间设置表：加纵向框线 */
+.course-time-table th,
+.course-time-table td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+.course-time-table th:last-child,
+.course-time-table td:last-child {
+  border-right: none;
+}
 .course-time-expand-btn {
   appearance: none;
   width: 20px;
@@ -4137,7 +4146,7 @@ code {
   border-spacing: 0;
   --major-offering-actions-col-width: 148px;
   --major-offering-count-col-width: 40px;
-  --major-offering-course-info-col-width: 0px;
+  --major-offering-course-info-col-width: 48px;
   --major-offering-changelog-col-width: 64px;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-weight: 400;
@@ -4305,6 +4314,7 @@ code {
   white-space: nowrap;
   padding-left: 4px;
   padding-right: 4px;
+  text-align: center;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table .col-name {
   min-width: 120px;
@@ -4408,6 +4418,7 @@ code {
   position: sticky;
   right: calc(
     var(--major-offering-actions-col-width)
+    + var(--major-offering-course-info-col-width, 48px)
     + var(--major-offering-changelog-col-width, 64px)
   );
   z-index: 3;
@@ -4437,7 +4448,10 @@ code {
 #page-course-major-offering-roster .course-major-offering-roster-table th.col-sticky-changelog,
 #page-course-major-offering-roster .course-major-offering-roster-table td.col-sticky-changelog {
   position: sticky;
-  right: var(--major-offering-actions-col-width);
+  right: calc(
+    var(--major-offering-actions-col-width)
+    + var(--major-offering-course-info-col-width, 48px)
+  );
   z-index: 3;
   min-width: var(--major-offering-changelog-col-width, 64px);
   width: var(--major-offering-changelog-col-width, 64px);
@@ -4466,6 +4480,45 @@ code {
   text-decoration: none;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table td.col-sticky-changelog a:hover {
+  text-decoration: underline;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-sticky-course-info,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-sticky-course-info {
+  position: sticky;
+  right: var(--major-offering-actions-col-width);
+  z-index: 3;
+  min-width: var(--major-offering-course-info-col-width, 48px);
+  width: var(--major-offering-course-info-col-width, 48px);
+  max-width: var(--major-offering-course-info-col-width, 48px);
+  padding-left: 2px;
+  padding-right: 2px;
+  background: #fff;
+  border-left: 1px solid var(--border, #cbd5e1);
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-sticky-course-info {
+  z-index: 4;
+  background: var(--blue-50);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-sticky-course-info.th-v {
+  width: var(--major-offering-course-info-col-width, 48px);
+  min-width: var(--major-offering-course-info-col-width, 48px);
+  max-width: var(--major-offering-course-info-col-width, 48px);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-sticky-course-info {
+  background: #fafbfc;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-sticky-course-info a {
+  display: inline-block;
+  white-space: nowrap;
+  margin: 0;
+  font-size: inherit;
+  color: var(--blue-500);
+  text-decoration: none;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-sticky-course-info a:hover {
   text-decoration: underline;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table th.col-sticky-actions,
@@ -5022,6 +5075,321 @@ code {
 #page-course-major-offering-task-style2 .mot-style2-toolbar-batch {
   padding-top: 2px;
 }
+#modal-major-offering-arrange-import .mot-arrange-import-block {
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  background: var(--bg-2, #f8fafc);
+}
+#modal-major-offering-arrange-import .mot-arrange-import-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-block-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 0;
+  color: var(--text-1, #0f172a);
+  flex-shrink: 0;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-scope-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-scope-summary {
+  margin: 0;
+  min-width: 0;
+}
+#modal-major-offering-arrange-import-scope.modal-nested {
+  z-index: 1200;
+}
+#modal-major-offering-arrange-import-scope .major-offering-arrange-import-scope-modal {
+  width: min(1100px, 96vw);
+  max-width: 1100px;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-picker-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-picker-toolbar .form-hint {
+  margin: 0;
+  margin-left: auto;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-pagination {
+  margin-top: 8px;
+  padding: 6px 0 0;
+  border-top: none;
+  background: transparent;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-task-list {
+  max-height: min(420px, 58vh);
+  overflow: auto;
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table {
+  min-width: 880px;
+  margin: 0;
+  font-size: 11px;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table th,
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table th:last-child,
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table td:last-child {
+  border-right: none;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--blue-50, #eff6ff);
+  white-space: nowrap;
+  font-size: 10px;
+  padding: 4px 6px;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1.2;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th.th-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th .th-sort {
+  display: inline;
+  margin-left: 2px;
+  vertical-align: baseline;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th.th-v .th-sort {
+  display: block;
+  margin: 3px auto 0;
+  line-height: 1;
+  text-align: center;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th.th-v {
+  width: 2.2em;
+  min-width: 2.2em;
+  padding: 4px 2px;
+  vertical-align: bottom;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th.th-v .th-v-label {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  max-height: 4.6em;
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0 auto;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table tbody td {
+  padding: 3px 6px;
+  font-size: 11px;
+  vertical-align: middle;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .col-check {
+  width: 32px;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .col-code {
+  text-align: center;
+  font-weight: 600;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .col-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .col-batch {
+  min-width: 110px;
+  max-width: 170px;
+  white-space: normal;
+  vertical-align: middle;
+  text-align: center;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th.col-batch {
+  vertical-align: middle;
+  text-align: center;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table thead th.col-batch .th-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 100%;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .mot-style2-batch-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.2;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .mot-style2-batch-line {
+  display: block;
+  white-space: nowrap;
+  text-align: center;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .col-class {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .col-unit {
+  min-width: 56px;
+  white-space: nowrap;
+  text-align: center;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .offering-grouping-course-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .offering-status-pill,
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .tcc-progress-pill {
+  font-size: 10px;
+  padding: 1px 5px;
+  line-height: 1.3;
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .offering-grouping-course-status.is-ok {
+  color: #fff;
+  background: var(--green);
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .offering-grouping-course-status.is-warn {
+  color: #fff;
+  background: var(--orange);
+}
+#modal-major-offering-arrange-import-scope .mot-arrange-import-scope-table .offering-grouping-course-status.is-missing {
+  color: #fff;
+  background: #c2410c;
+  border-radius: 4px;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-download-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-download-row .form-hint {
+  margin: 0;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 108px;
+  margin-top: 8px;
+  padding: 18px 16px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-dropzone:hover,
+#modal-major-offering-arrange-import .mot-arrange-import-dropzone.is-dragover {
+  border-color: var(--primary, #2563eb);
+  background: color-mix(in srgb, var(--primary, #2563eb) 6%, #fff);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary, #2563eb) 25%, transparent);
+}
+#modal-major-offering-arrange-import .mot-arrange-import-dropzone.has-file {
+  border-style: solid;
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+#modal-major-offering-arrange-import .mot-arrange-import-dropzone-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: var(--primary, #2563eb);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-dropzone-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1, #0f172a);
+}
+#modal-major-offering-arrange-import .mot-arrange-import-dropzone-sub {
+  font-size: 12px;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-result {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: #fff;
+  border: 1px solid var(--border-light, #e2e8f0);
+  white-space: pre-wrap;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-result.is-ok {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-result.is-warn {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+#modal-major-offering-arrange-import .mot-arrange-import-result.is-error {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+}
 #page-course-major-offering-task-style2 .mot-style2-toolbar-title {
   font-size: 13px;
   font-weight: 700;
@@ -5322,6 +5690,7 @@ code {
   max-width: 180px;
   white-space: normal;
   vertical-align: middle;
+  text-align: center;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-batch code {
   display: block;
@@ -5332,10 +5701,12 @@ code {
   color: #000;
   background: transparent;
   padding: 0;
+  text-align: center;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .mot-style2-batch-lines {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0;
   line-height: 1.2;
 }
@@ -5344,6 +5715,7 @@ code {
   font-size: inherit;
   white-space: nowrap;
   color: #000;
+  text-align: center;
 }
 #page-course-major-offering-task-style2 .mot-style2-table th.col-num,
 #page-course-major-offering-task-style2 .mot-style2-table td.col-num {
@@ -5857,6 +6229,32 @@ code {
   padding: 8px 16px;
   border-bottom: 1px solid var(--border-light);
   background: #fff;
+}
+/* 开课需求 / 各学院配额表：加纵向框线 */
+#page-course-ge-offering-quota .data-table.compact th,
+#page-course-ge-offering-quota .data-table.compact td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+#page-course-ge-offering-quota .data-table.compact th:last-child,
+#page-course-ge-offering-quota .data-table.compact td:last-child {
+  border-right: none;
+}
+#page-course-ge-offering-quota .data-table.compact th.col-index,
+#page-course-ge-offering-quota .data-table.compact td.col-index {
+  text-align: center;
+}
+/* 通识选修开课 · 需求与配额进度表：加纵向框线 */
+#page-course-offering-ge #ge-offering-plan-quota-card .data-table.compact th,
+#page-course-offering-ge #ge-offering-plan-quota-card .data-table.compact td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+#page-course-offering-ge #ge-offering-plan-quota-card .data-table.compact th:last-child,
+#page-course-offering-ge #ge-offering-plan-quota-card .data-table.compact td:last-child {
+  border-right: none;
+}
+#page-course-offering-ge #ge-offering-plan-quota-card .data-table.compact th:first-child,
+#page-course-offering-ge #ge-offering-plan-quota-card .data-table.compact td:first-child {
+  text-align: center;
 }
 /* 通识选修计划 · 预计需修 GE 汇总（关键指标） */
 .ge-offering-demand-summary,
@@ -6758,6 +7156,21 @@ code {
 }
 .teacher-teaching-load-table > colgroup > .col-term {
   width: auto;
+}
+.teacher-teaching-load-table > colgroup > .col-week-load {
+  width: 52px;
+}
+.teacher-teaching-load-table th.col-week-load,
+.teacher-teaching-load-table td.col-week-load {
+  min-width: 44px;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.teacher-teaching-load-table th.col-term-group {
+  text-align: center;
+  border-bottom: 1px solid var(--border-light, #e2e8f0);
 }
 .teacher-teaching-load-table th.col-expand,
 .teacher-teaching-load-table td.col-expand {
@@ -7875,6 +8288,11 @@ code {
 .student-roster-table th,
 .student-roster-table td {
   white-space: nowrap;
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+.student-roster-table th:last-child,
+.student-roster-table td:last-child {
+  border-right: none;
 }
 .student-roster-table .col-index {
   width: 56px;
@@ -8254,12 +8672,18 @@ code {
   gap: 12px;
   flex-wrap: wrap;
 }
+.teacher-load-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
 .teacher-load-include-current-term {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  margin-left: auto;
   font-size: 13px;
   color: var(--text-2, #475569);
   cursor: pointer;
@@ -11921,7 +12345,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .mos-edit-classroom-special-head,
 .mos-edit-classroom-special-row {
   display: grid;
-  grid-template-columns: minmax(88px, 100px) minmax(120px, 140px) minmax(0, 1fr);
+  grid-template-columns: minmax(100px, 132px) minmax(120px, 140px) minmax(0, 1fr);
   gap: 8px;
   align-items: center;
 }
@@ -11946,12 +12370,39 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-1);
+  line-height: 1.35;
   white-space: nowrap;
 }
 .mos-edit-classroom-special-row select,
 .mos-edit-classroom-special-row .clo-multiselect {
   width: 100%;
   min-width: 0;
+}
+.mos-edit-classroom-ref-option {
+  align-items: flex-start;
+}
+.mos-edit-classroom-ref-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mos-edit-classroom-ref-option-main {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text-1, #0f172a);
+}
+.mos-edit-classroom-ref-option-meta {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-3, #64748b);
+  white-space: nowrap;
+}
+.drawer-special-course-edit .scs-edit-hour-type-options {
+  margin-top: 4px;
+}
+.drawer-special-course-edit #scs-edit-partial-merge-types-wrap {
+  margin: 0 0 8px 28px;
 }
 .mos-edit-classroom-ref-multiselect .clo-multiselect-dropdown {
   z-index: 40;
@@ -12811,6 +13262,167 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   margin-bottom: 10px;
   flex-shrink: 0;
   /* flex-direction: column; ?????????? */
+}
+#modal-offering-grouping-history-copy.modal-nested {
+  z-index: 1110;
+}
+#modal-offering-grouping-history-copy .offering-grouping-history-copy-modal.modal-xl {
+  width: min(96vw, 1280px);
+  max-width: 1280px;
+}
+.offering-grouping-history-copy-modal .modal-body {
+  max-height: min(82vh, 780px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.offering-grouping-history-copy-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  flex: 1;
+}
+.offering-grouping-history-copy-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+}
+.offering-grouping-history-copy-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-2, #334155);
+  font-weight: 600;
+}
+.offering-grouping-history-copy-filter-item .input {
+  min-width: 160px;
+  font-weight: 400;
+}
+.offering-grouping-history-copy-term-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.offering-grouping-history-copy-term-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2, #334155);
+}
+.offering-grouping-history-copy-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow-x: auto;
+  max-height: none;
+  padding: 0;
+}
+.offering-grouping-history-copy-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 168px;
+  width: auto;
+  text-align: left;
+  border: 1px solid var(--border-light, #e2e8f0);
+  background: var(--bg-1, #fff);
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.offering-grouping-history-copy-item:hover {
+  border-color: var(--border, #cbd5e1);
+  background: var(--bg-2, #f8fafc);
+}
+.offering-grouping-history-copy-item.is-selected {
+  border-color: var(--primary, #2563eb);
+  box-shadow: inset 0 0 0 1px var(--primary, #2563eb);
+  background: color-mix(in srgb, var(--primary, #2563eb) 6%, #fff);
+}
+.offering-grouping-history-copy-item-term {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+.offering-grouping-history-copy-item-meta {
+  display: block;
+  font-size: 12px;
+  color: var(--text-3, #64748b);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.offering-grouping-history-copy-detail {
+  min-width: 0;
+  min-height: 320px;
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow: auto;
+  flex: 1;
+  max-height: min(62vh, 560px);
+  background: var(--bg-2, #f8fafc);
+}
+.offering-grouping-history-copy-empty {
+  margin: 40px 0;
+  text-align: center;
+}
+.offering-grouping-history-copy-detail-head {
+  margin-bottom: 10px;
+}
+.offering-grouping-history-copy-detail-head strong {
+  font-size: 14px;
+}
+.offering-grouping-history-copy-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.offering-grouping-history-copy-groups li {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--border-light, #e2e8f0);
+}
+.offering-grouping-history-copy-detail .offering-group-status-assign-table-wrap {
+  margin-top: 4px;
+  overflow-x: auto;
+}
+.offering-grouping-history-copy-detail .offering-group-status-assign-table {
+  min-width: 980px;
+  width: 100%;
+}
+.offering-grouping-history-copy-detail .offering-group-status-assign-table th,
+.offering-grouping-history-copy-detail .offering-group-status-assign-table td {
+  white-space: nowrap;
+}
+.offering-grouping-history-copy-detail .offering-group-status-assign-table td.col-groups {
+  white-space: normal;
+  vertical-align: top;
+}
+.offering-grouping-history-copy-detail .offering-group-status-assign-table td.col-classroom-pref,
+.offering-grouping-history-copy-detail .offering-group-status-assign-table th.col-classroom-pref {
+  white-space: normal;
+  min-width: 120px;
+}
+@media (max-width: 900px) {
+  .offering-grouping-history-copy-detail {
+    min-height: 240px;
+    max-height: 50vh;
+  }
 }
 .offering-group-tree {
   font-size: 12px;
@@ -13760,7 +14372,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-pref-multiselect .clo-multiselect-dropdown {
   z-index: 40;
-  max-height: 220px;
+  max-height: 240px;
+  min-width: 260px;
 }
 .offering-group-status-pref-disabled {
   font-size: 12px;
@@ -13913,15 +14526,22 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   padding-right: 4px;
   white-space: nowrap;
 }
-.offering-group-status-assign-table th.col-groups,
-.offering-group-status-assign-table td.col-groups {
-  min-width: 140px;
-  width: 168px;
-  max-width: 200px;
-  overflow: hidden;
+.offering-group-status-assign-table th.col-groups {
+  min-width: 160px;
+  width: 200px;
   padding-left: 8px;
   padding-right: 6px;
   white-space: nowrap;
+}
+.offering-group-status-assign-table td.col-groups {
+  min-width: 160px;
+  width: 200px;
+  max-width: 280px;
+  overflow: visible;
+  padding-left: 8px;
+  padding-right: 6px;
+  white-space: normal;
+  word-break: break-word;
 }
 .offering-group-status-assign-table.is-editing-draft th.col-groups,
 .offering-group-status-assign-table.is-editing-draft td.col-groups {
@@ -14112,9 +14732,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-status-assign-table td.col-groups .offering-hour-summary-group-line {
   display: block;
   text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  word-break: break-word;
 }
 .offering-group-status-assign-table td.col-actions,
 .offering-group-status-assign-table td.col-index {
@@ -16202,6 +16822,49 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border: 1px solid var(--border-light);
   border-radius: 8px;
   background: #fff;
+}
+.school-elective-student-type-picks.school-elective-excluded-year-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px 12px;
+}
+.school-elective-excluded-year-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.school-elective-excluded-year-parent-label {
+  font-weight: 600;
+  min-height: 22px;
+}
+.school-elective-excluded-year-label {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.school-elective-excluded-year-semesters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-left: 22px;
+  padding: 8px 10px 8px 12px;
+  border-left: 2px solid #cbd5e1;
+  background: #fff;
+  border-radius: 0 6px 6px 0;
+}
+.school-elective-excluded-year-semesters .school-elective-pick-option {
+  min-width: 96px;
+}
+@media (max-width: 900px) {
+  .school-elective-student-type-picks.school-elective-excluded-year-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .school-elective-pick-option {
   display: flex;
@@ -19170,6 +19833,15 @@ code {
 .course-time-table th.col-check,
 .course-time-table td.col-expand,
 .course-time-table th.col-expand { vertical-align: middle; }
+/* 开课时间设置表：加纵向框线 */
+.course-time-table th,
+.course-time-table td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+.course-time-table th:last-child,
+.course-time-table td:last-child {
+  border-right: none;
+}
 .course-time-expand-btn {
   appearance: none;
   width: 20px;

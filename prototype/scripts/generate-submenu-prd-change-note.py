@@ -24,14 +24,15 @@ TEMPLATE = (
     ROOT
     / "参考文档"
     / "0、模板"
-    / "厦大马来分校本科教务系统——需求调整变更说明模板（简版）.docx"
+    / "需求调整变更说明模板（简版）.docx"
 )
 
-MENUS = ("开课时间设置", "特殊课程设置", "开课计划", "开课安排", "开课名单")
+MENUS = ("开课时间设置", "特殊课程设置", "校选课程管理", "开课计划", "开课安排", "开课名单")
 
 MENU_PARENT = {
     "开课时间设置": "开课设置",
     "特殊课程设置": "开课设置",
+    "校选课程管理": "开课设置",
     "开课计划": "专业开课",
     "开课安排": "专业开课",
     "开课名单": "专业开课",
@@ -40,6 +41,7 @@ MENU_PARENT = {
 MENU_PATH = {
     "开课时间设置": "开课管理 → 开课设置 → 开课时间设置",
     "特殊课程设置": "开课管理 → 开课设置 → 特殊课程设置",
+    "校选课程管理": "开课管理 → 开课设置 → 校选课程管理",
     "开课计划": "开课管理 → 专业开课 → 开课计划",
     "开课安排": "开课管理 → 专业开课 → 开课安排",
     "开课名单": "开课管理 → 专业开课 → 开课名单",
@@ -61,19 +63,40 @@ def set_cell_text(cell, text: str, bold: bool = False):
 
 
 def find_version_files(menu: str, version: str) -> tuple[Path | None, Path | None, str | None]:
-    """返回 (md, docx, date_in_name)。version 如 V1。"""
+    """返回 (md, docx, date_in_name)。version 如 V1。
+
+    优先在版本文件夹 `<菜单><日期><Vn>/` 内查找；兼容二级菜单根目录平铺旧布局。
+    """
     folder = menu_dir(menu)
     if not folder.is_dir():
         return None, None, None
-    pat = re.compile(rf"^{re.escape(menu)}(\d{{8}}){re.escape(version)}\.(md|docx)$")
+    dir_pat = re.compile(rf"^{re.escape(menu)}(\d{{8}}){re.escape(version)}$")
+    file_pat = re.compile(rf"^{re.escape(menu)}(\d{{8}}){re.escape(version)}\.(md|docx)$")
     found: dict[str, Path] = {}
     ver_date = None
+
     for p in folder.iterdir():
-        m = pat.match(p.name)
-        if not m:
-            continue
-        ver_date = m.group(1)
-        found[m.group(2)] = p
+        if p.is_dir():
+            m = dir_pat.match(p.name)
+            if not m:
+                continue
+            ver_date = m.group(1)
+            for child in p.iterdir():
+                cm = file_pat.match(child.name)
+                if cm:
+                    found[cm.group(2)] = child
+            break
+
+    if not found:
+        for p in folder.iterdir():
+            if not p.is_file():
+                continue
+            m = file_pat.match(p.name)
+            if not m:
+                continue
+            ver_date = m.group(1)
+            found[m.group(2)] = p
+
     return found.get("md"), found.get("docx"), ver_date
 
 
@@ -244,10 +267,11 @@ def main():
         )
 
     stem = f"{menu}{from_date}{from_ver}→{to_date}{to_ver}变更说明"
-    folder = menu_dir(menu)
-    folder.mkdir(parents=True, exist_ok=True)
-    md_out = folder / f"{stem}.md"
-    docx_out = folder / f"{stem}.docx"
+    # 变更说明写入新版本文件夹
+    ver_dir = menu_dir(menu) / f"{menu}{to_date}{to_ver}"
+    ver_dir.mkdir(parents=True, exist_ok=True)
+    md_out = ver_dir / f"{stem}.md"
+    docx_out = ver_dir / f"{stem}.docx"
 
     rows: list[dict] = []
     if not args.stub_only and from_md and to_md:

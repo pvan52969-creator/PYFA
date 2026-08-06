@@ -26208,7 +26208,7 @@ function renderMajorOfferingStudentRosterDrawer() {
         <!-- <td class="col-center"><code>${escapeHtml(stu.schoolCode)}</code></td> -->
         <td class="col-center"><code>${escapeHtml(stu.programmeCode)}</code></td>
         <td class="col-center"><code>${formatIntakeDisplay(stu.intake)}</code></td>
-        <td class="col-course-group">${escapeHtml(formatMajorOfferingStudentRosterGroupCell(stu, sec))}</td>
+        <td class="col-center col-course-group">${escapeHtml(formatMajorOfferingStudentRosterGroupCell(stu, sec))}</td>
         <td class="col-center col-nationality">${escapeHtml(getStudentNationality(stu) || '—')}</td>
         <td class="col-center">${escapeHtml(getStudentType(stu) || '—')}</td>
         <td class="col-center">${escapeHtml(formatStudentRegistryStatus(stu))}</td>
@@ -30854,7 +30854,7 @@ function renderMajorOfferingStudentRosterTableHeader() {
     // renderListSortTh('majorOfferingStudentRoster', '学院', 'schoolCode', { center: true }) + // 学院列先隐藏
     renderListSortTh('majorOfferingStudentRoster', '专业', 'programmeCode', { center: true }) +
     renderListSortTh('majorOfferingStudentRoster', '入学批次', 'intake', { center: true }) +
-    renderListSortTh('majorOfferingStudentRoster', '小组', 'groupName', { extraClass: 'col-course-group' }) +
+    renderListSortTh('majorOfferingStudentRoster', '小组', 'groupName', { center: true, extraClass: 'col-course-group' }) +
     renderListSortTh('majorOfferingStudentRoster', '国籍', 'nationality', { center: true, extraClass: 'col-nationality' }) +
     renderListSortTh('majorOfferingStudentRoster', '学生类型', 'studentType', { center: true }) +
     renderListSortTh('majorOfferingStudentRoster', '学籍状态', 'registryStatus', { center: true }) +
@@ -41023,6 +41023,9 @@ function openOfferingTeacherTermAssignModal(staffId) {
   const titleEl = document.getElementById('offering-teacher-term-assign-title');
   if (!body) return;
   const teacherName = resolveOfferingTeacherDisplayName(id);
+  const teacherHeroLabel = (teacherName && teacherName !== '—' && teacherName !== id)
+    ? `${teacherName}（${id}）`
+    : (id || teacherName || '—');
   const termDisplay = termCode ? formatCourseTermDisplay(termCode) : '本学期';
   const courseRows = termCode ? getTeacherOfferingTermSectionDetailRows(id, termCode) : [];
   const termCells = recentTerms.map((code, idx) => {
@@ -41069,7 +41072,7 @@ function openOfferingTeacherTermAssignModal(staffId) {
     ? termCells.map(c => c.td).join('')
     : `<td class="col-term col-center col-term-primary">—</td>`;
   body.innerHTML = `<div class="offering-teacher-term-assign-hero">
-    <div class="offering-teacher-term-assign-hero-name">${escapeHtml(teacherName)}</div>
+    <div class="offering-teacher-term-assign-hero-name">${escapeHtml(teacherHeroLabel)}</div>
     <div class="offering-teacher-term-assign-hero-term">${escapeHtml(termDisplay)}</div>
   </div>
   <div class="offering-grouping-teacher-load-card">

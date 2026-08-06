@@ -19760,6 +19760,12 @@ let teacherTeachingLoadSelectedYears = null;
 let teacherTeachingLoadSelectedCourseTypes = ['__all__'];
 /** 学期维度：已展开开课安排详情的教师工号 */
 const teacherTeachingLoadExpandedStaffIds = new Set();
+/** 超限标红阈值：按维度各自独立；null/空 = 不标红 */
+const teacherTeachingLoadHighlightThresholds = {
+  week: null,
+  term: null,
+  'academic-year': null
+};
 /** Teaching Load 表排序：默认按 Name 首字母升序 */
 listSortStates.teacherTeachingLoad = { key: 'name', dir: 'asc' };
 
@@ -19787,6 +19793,87 @@ function formatTeacherTeachingLoadHours(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '—';
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function getTeacherTeachingLoadHighlightThreshold(dimension = teacherTeachingLoadDimension) {
+  const key = dimension === 'academic-year'
+    ? 'academic-year'
+    : (dimension === 'week' ? 'week' : 'term');
+  const raw = teacherTeachingLoadHighlightThresholds[key];
+  if (raw === '' || raw == null) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function isTeacherTeachingLoadHoursOverThreshold(hours, dimension = teacherTeachingLoadDimension) {
+  const threshold = getTeacherTeachingLoadHighlightThreshold(dimension);
+  if (threshold == null) return false;
+  const n = Number(hours);
+  return Number.isFinite(n) && n > threshold;
+}
+
+function formatTeacherTeachingLoadHoursValueHtml(hours, dimension = teacherTeachingLoadDimension) {
+  const over = isTeacherTeachingLoadHoursOverThreshold(hours, dimension);
+  return `<span class="teacher-load-hours-value${over ? ' is-over-threshold' : ''}">${escapeHtml(formatTeacherTeachingLoadHours(hours))}</span>`;
+}
+
+function formatTeacherTeachingLoadThresholdValueText(dimension = teacherTeachingLoadDimension) {
+  const threshold = getTeacherTeachingLoadHighlightThreshold(dimension);
+  if (threshold == null) return '当前未设阈值';
+  return `当前阈值设置为：${threshold}`;
+}
+
+function getTeacherTeachingLoadThresholdDimensionKey(dimension = teacherTeachingLoadDimension) {
+  if (dimension === 'academic-year') return 'academic-year';
+  if (dimension === 'week') return 'week';
+  return 'term';
+}
+
+function getTeacherTeachingLoadThresholdDimensionLabel(dimension = teacherTeachingLoadDimension) {
+  if (dimension === 'academic-year') return '按学年';
+  if (dimension === 'week') return '按周次';
+  return '按学期';
+}
+
+function parseTeacherTeachingLoadThresholdInputValue(raw) {
+  const text = String(raw ?? '').trim();
+  if (text === '') return { ok: true, value: null };
+  const n = Number(text);
+  if (!Number.isFinite(n)) return { ok: false, value: null };
+  return { ok: true, value: n };
+}
+
+function openTeacherTeachingLoadThresholdModal() {
+  const key = getTeacherTeachingLoadThresholdDimensionKey();
+  const dimLabel = getTeacherTeachingLoadThresholdDimensionLabel();
+  const titleEl = document.getElementById('ttl-threshold-modal-title');
+  const hintEl = document.getElementById('ttl-threshold-modal-hint');
+  const labelEl = document.getElementById('ttl-threshold-value-label');
+  const inputEl = document.getElementById('ttl-threshold-value');
+  const current = getTeacherTeachingLoadHighlightThreshold(key);
+  if (titleEl) titleEl.textContent = `设置超限阈值 · ${dimLabel}`;
+  if (hintEl) {
+    hintEl.textContent = `仅作用于当前「${dimLabel}」列表：超过阈值的学时标红加粗；留空表示不标红。合计与人均不受影响。`;
+  }
+  if (labelEl) labelEl.textContent = `${dimLabel}阈值`;
+  if (inputEl) inputEl.value = current == null ? '' : String(current);
+  openModal('modal-teacher-teaching-load-threshold');
+  inputEl?.focus();
+}
+
+function confirmTeacherTeachingLoadThresholdModal() {
+  const key = getTeacherTeachingLoadThresholdDimensionKey();
+  const parsed = parseTeacherTeachingLoadThresholdInputValue(
+    document.getElementById('ttl-threshold-value')?.value
+  );
+  if (!parsed.ok) {
+    alert('请填写有效的数字阈值，或留空表示不标红。');
+    document.getElementById('ttl-threshold-value')?.focus();
+    return;
+  }
+  teacherTeachingLoadHighlightThresholds[key] = parsed.value;
+  closeModal('modal-teacher-teaching-load-threshold');
+  renderCourseTeacherTeachingLoadPage();
 }
 
 function getTeacherTeachingLoadAvailableTerms() {
@@ -19900,19 +19987,19 @@ function getTeacherTeachingLoadScopeTermCodes() {
   return ensureTeacherTeachingLoadSelectedTerms().slice();
 }
 
-/** 按周次表头列：每学期展开为 W1..Wn */
+/** 按周次表头列：每学期展开为 W1..Wn（学期已在上层分组表头，周列仅显示 W#） */
 function getTeacherTeachingLoadWeekColumns(terms = ensureTeacherTeachingLoadSelectedTerms()) {
   const list = (terms || []).filter(Boolean);
   return list.flatMap(term => {
     const n = Math.max(1, Number(getOfferingTermTeachingWeeks(term)) || 14);
-    const short = String(term).length >= 4 ? String(term).slice(-4) : String(term);
     return Array.from({ length: n }, (_, i) => {
       const week = i + 1;
       return {
         termCode: term,
         week,
         key: `week:${term}:${week}`,
-        label: list.length > 1 ? `${short} W${week}` : `W${week}`,
+        label: `W${week}`,
+        // label: list.length > 1 ? `${String(term).slice(-4)} W${week}` : `W${week}`, // 原多学期时带学期短码，改由上层学期分组表头区分
         title: `${formatCourseTermDisplay(term)} · 第${week}周`
       };
     });
@@ -20329,7 +20416,7 @@ function formatTeacherTeachingLoadHoursCell(hours, courseRowsOrSummary) {
     const courseLabel = courses <= 1 ? 'Course' : 'Courses';
     const groupLabel = groups <= 1 ? 'Group' : 'Groups';
     return `<span class="teacher-load-hours-cell">`
-      + `<span class="teacher-load-hours-value">${escapeHtml(formatTeacherTeachingLoadHours(hours))}</span>`
+      + formatTeacherTeachingLoadHoursValueHtml(hours)
       + `<span class="offering-teacher-term-load-summary">(${courses} ${courseLabel}, ${groups} ${groupLabel})</span>`
       + `</span>`;
   }
@@ -20440,6 +20527,19 @@ function syncTeacherTeachingLoadDimensionChrome(root = getTeacherTeachingLoadRoo
   if (includeWrap) includeWrap.hidden = !isYear;
   const includeInput = ttlEl('include-current-term', root);
   if (includeInput) includeInput.checked = !!teacherTeachingLoadIncludeCurrentTermInYear;
+  const thresholdBtn = ttlEl('threshold-btn', root);
+  const thresholdValueEl = ttlEl('threshold-value', root);
+  const threshold = getTeacherTeachingLoadHighlightThreshold();
+  if (thresholdBtn) {
+    thresholdBtn.textContent = '超限阈值';
+    thresholdBtn.title = threshold == null
+      ? '设置各维度超限标红阈值（当前维度未设置）'
+      : `当前维度阈值 ${threshold}；点击修改`;
+  }
+  if (thresholdValueEl) {
+    thresholdValueEl.textContent = formatTeacherTeachingLoadThresholdValueText();
+    thresholdValueEl.classList.toggle('is-empty', threshold == null);
+  }
 }
 
 function onTeacherTeachingLoadIncludeCurrentTermChange(input) {
@@ -20662,11 +20762,13 @@ function closeTeacherTeachingLoadCourseTypeDropdown() {
 }
 
 function getFilteredTeacherTeachingLoadRows(root = getTeacherTeachingLoadRoot()) {
+  const staffIdQ = (ttlEl('staff-id-filter', root)?.value || '').trim().toLowerCase();
   const nameQ = (ttlEl('name-filter', root)?.value || '').trim().toLowerCase();
   const unitQ = (ttlEl('unit-filter', root)?.value || '').trim();
   const typeQ = (ttlEl('type-filter', root)?.value || '').trim();
   const scopeTerms = getTeacherTeachingLoadScopeTermCodes();
   return buildLiveTeacherTeachingLoadRows(scopeTerms).filter(row => {
+    if (staffIdQ && !String(row.staffId || '').toLowerCase().includes(staffIdQ)) return false;
     if (nameQ && !String(row.name || '').toLowerCase().includes(nameQ)) return false;
     if (unitQ && String(row.departmentCode || '').trim() !== unitQ) return false;
     if (typeQ && resolveTeacherTeachingLoadTeacherType(row) !== typeQ) return false;
@@ -20735,9 +20837,11 @@ function queryTeacherTeachingLoadPage() {
 
 function resetTeacherTeachingLoadFilters() {
   const root = getTeacherTeachingLoadRoot();
+  const staffIdInput = ttlEl('staff-id-filter', root);
   const nameInput = ttlEl('name-filter', root);
   const unitSel = ttlEl('unit-filter', root);
   const typeSel = ttlEl('type-filter', root);
+  if (staffIdInput) staffIdInput.value = '';
   if (nameInput) nameInput.value = '';
   if (unitSel) unitSel.value = '';
   if (typeSel) typeSel.value = '';
@@ -20856,55 +20960,67 @@ function renderCourseTeacherTeachingLoadPage(opts = {}) {
     const weekCols = getTeacherTeachingLoadWeekColumns(terms);
     const colCount = weekCols.length;
     const fixedCols = 3;
-    syncTeacherTeachingLoadColgroup(root, { showExpand: false, metricCount: Math.max(1, colCount), compactMetric: true });
+    const termGroups = terms.map(term => ({
+      term,
+      count: Math.max(1, Number(getOfferingTermTeachingWeeks(term)) || 14)
+    }));
+    const spacerCount = Math.max(0, termGroups.length - 1);
+    const displayColCount = colCount + spacerCount;
+    syncTeacherTeachingLoadColgroup(root, {
+      showExpand: false,
+      compactMetric: true,
+      weekTermGroups: termGroups.map(g => g.count)
+    });
     const rows = sortListWithState(
       filteredRows,
       listKey,
       buildTeacherTeachingLoadWeekSortColumns(weekCols),
       defaultTeacherTeachingLoadCompare
     );
-    const termGroups = terms.map(term => ({
-      term,
-      count: Math.max(1, Number(getOfferingTermTeachingWeeks(term)) || 14)
-    }));
+    const termSpacerTh = '<th class="col-term-spacer" rowspan="2" aria-hidden="true"></th>';
+    const termSpacerTd = '<td class="col-term-spacer" aria-hidden="true"></td>';
     head.innerHTML = `
       <tr>
-        ${formatTeacherTeachingLoadTitleHtml('Teaching Load (hour) · 按周次', fixedCols + colCount)}
+        ${formatTeacherTeachingLoadTitleHtml('Teaching Load (hour) · 按周次', fixedCols + displayColCount, { showGroupRuleTip: false })}
       </tr>
       <tr>
         ${renderListSortTh(listKey, 'Name', 'name', { extraClass: 'col-name', rowspan: 2 })}
         ${renderListSortTh(listKey, '所属部门', 'dept', { center: true, extraClass: 'col-dept', rowspan: 2 })}
         ${renderListSortTh(listKey, '教师类型', 'teacherType', { center: true, extraClass: 'col-teacher-type', rowspan: 2 })}
-        ${termGroups.map(g =>
-          `<th class="col-center col-term-group" colspan="${g.count}" title="${escapeHtml(formatCourseTermDisplay(g.term))}">${escapeHtml(formatTeacherTeachingLoadTermLabel(g.term))}</th>`
+        ${termGroups.map((g, gi) =>
+          `${gi > 0 ? termSpacerTh : ''}<th class="col-center col-term-group" colspan="${g.count}" title="${escapeHtml(formatCourseTermDisplay(g.term))}">${escapeHtml(formatTeacherTeachingLoadTermLabel(g.term))}</th>`
         ).join('')}
       </tr>
       <tr>
-        ${weekCols.map(col => renderListSortTh(
+        ${weekCols.map((col, ci) => renderListSortTh(
           listKey,
           col.label,
           col.key,
           { center: true, extraClass: 'col-term col-week-load', title: col.title }
         )).join('')}
       </tr>`;
-    bindCellFloatTips(root, '.offering-teacher-term-group-rule-btn[data-tip]', { alwaysShow: true });
+    // 周次行不插空列：学期交界空列已在上一行用 rowspan=2 占位
     if (!rows.length) {
-      body.innerHTML = `<tr><td colspan="${fixedCols + Math.max(1, colCount)}" class="text-muted" style="text-align:center;padding:24px">暂无教师学时数据</td></tr>`;
+      body.innerHTML = `<tr><td colspan="${fixedCols + Math.max(1, displayColCount)}" class="text-muted" style="text-align:center;padding:24px">暂无教师学时数据</td></tr>`;
       foot.innerHTML = '';
       return;
     }
     const weekValues = weekCols.map(col =>
       rows.map(row => getTeacherTeachingLoadHoursForWeek(row, col.termCode, col.week))
     );
+    const joinWeekMetricCells = (renderCell) => weekCols.map((col, ci) => {
+      const spacer = ci > 0 && weekCols[ci - 1].termCode !== col.termCode ? termSpacerTd : '';
+      return spacer + renderCell(ci);
+    }).join('');
     body.innerHTML = rows.map((row, idx) => {
       const teacherType = resolveTeacherTeachingLoadTeacherType(row);
       return `<tr>
         <td class="col-name">${formatTeacherTeachingLoadNameCell(row)}</td>
         <td class="col-dept col-center">${formatTeacherTeachingLoadDepartmentCell(row)}</td>
         <td class="col-teacher-type col-center">${escapeHtml(teacherType)}</td>
-        ${weekValues.map(vals =>
-          `<td class="col-term col-week-load col-center">${escapeHtml(formatTeacherTeachingLoadHours(vals[idx]))}</td>`
-        ).join('')}
+        ${joinWeekMetricCells(ci =>
+          `<td class="col-term col-week-load col-center">${formatTeacherTeachingLoadHoursValueHtml(weekValues[ci][idx])}</td>`
+        )}
       </tr>`;
     }).join('');
     const totals = weekValues.map(vals => vals.reduce((sum, v) => sum + v, 0));
@@ -20912,11 +21028,15 @@ function renderCourseTeacherTeachingLoadPage(opts = {}) {
     foot.innerHTML = `
       <tr class="is-total">
         <td class="col-name col-center" colspan="3">Grand Total</td>
-        ${totals.map(v => `<td class="col-term col-week-load col-center">${escapeHtml(formatTeacherTeachingLoadHours(v))}</td>`).join('')}
+        ${joinWeekMetricCells(ci =>
+          `<td class="col-term col-week-load col-center">${escapeHtml(formatTeacherTeachingLoadHours(totals[ci]))}</td>`
+        )}
       </tr>
       <tr class="is-average">
         <td class="col-name col-center" colspan="3">AVERAGE</td>
-        ${averages.map(v => `<td class="col-term col-week-load col-center">${escapeHtml(Number(v).toFixed(1))}</td>`).join('')}
+        ${joinWeekMetricCells(ci =>
+          `<td class="col-term col-week-load col-center">${escapeHtml(Number(averages[ci]).toFixed(1))}</td>`
+        )}
       </tr>`;
     return;
   }
@@ -40927,7 +41047,7 @@ function openOfferingTeacherTermAssignModal(staffId) {
         <td class="col-center col-term">${escapeHtml(rowTerm ? formatCourseTermDisplay(rowTerm) : '—')}</td>
         <td class="col-center"><button type="button" class="offering-grouping-global-course-link" onclick="openOfferingSectionAssignReadonlyModal('${escapeHtml(row.sectionId)}')">${escapeHtml(row.code)}</button></td>
         <td>${escapeHtml(row.name)}</td>
-        <td class="col-center">${escapeHtml(row.classification || '—')}</td>
+        <td class="col-center col-classification">${escapeHtml(row.classification || '—')}</td>
         <td class="col-center col-enrollment-type">${renderMajorOfferingEnrollmentTypeDisplay({ enrollmentType: row.enrollmentTypeKey || 'closed' })}</td>
         <td class="col-center col-groups">${formatTeacherOfferingNoOfGroupsCell(row)}</td>
         <td class="col-center">${escapeHtml(formatTeacherTeachingLoadHours(row.hours))}</td>
@@ -40993,8 +41113,8 @@ function openOfferingTeacherTermAssignModal(staffId) {
               <th class="col-center col-term">开课学期</th>
               <th class="col-center">Course Code</th>
               <th>Course Name</th>
-              <th class="col-center">课程类型</th>
-              <th class="col-center">选课方式</th>
+              <th class="col-center col-classification">课程类型</th>
+              <th class="col-center col-enrollment-type">选课方式</th>
               <th class="col-center col-groups">
                 No. of Groups
                 <button type="button"
@@ -41039,20 +41159,28 @@ function formatTeacherOfferingNoOfGroupsCell(row) {
   return escapeHtml(String(n));
 }
 
-function formatTeacherTeachingLoadTitleHtml(label, colspan) {
+function formatTeacherTeachingLoadTitleHtml(label, colspan, { showGroupRuleTip = true } = {}) {
+  const tipBtn = showGroupRuleTip
+    ? `<button type="button"
+        class="offering-teacher-term-group-rule-btn"
+        data-tip="${escapeHtml(getTeacherTermLoadGroupRuleTipText())}"
+        aria-label="Groups 计算规则">!</button>`
+    : '';
   return `<th class="teacher-load-title" colspan="${colspan}">
     <span class="teacher-load-title-inner">
       ${escapeHtml(label)}
-      <button type="button"
-        class="offering-teacher-term-group-rule-btn"
-        data-tip="${escapeHtml(getTeacherTermLoadGroupRuleTipText())}"
-        aria-label="Groups 计算规则">!</button>
+      ${tipBtn}
     </span>
   </th>`;
 }
 
 /** 标题行 colspan 会让 fixed 布局均分列宽；用 colgroup 钉住详情/姓名等固定列 */
-function syncTeacherTeachingLoadColgroup(root, { showExpand = false, metricCount = 1, compactMetric = false } = {}) {
+function syncTeacherTeachingLoadColgroup(root, {
+  showExpand = false,
+  metricCount = 1,
+  compactMetric = false,
+  weekTermGroups = null
+} = {}) {
   const table = root?.querySelector?.('.teacher-teaching-load-table');
   if (!table) return;
   let colgroup = table.querySelector(':scope > colgroup');
@@ -41063,9 +41191,17 @@ function syncTeacherTeachingLoadColgroup(root, { showExpand = false, metricCount
   const parts = [];
   if (showExpand) parts.push('<col class="col-expand">');
   parts.push('<col class="col-name">', '<col class="col-dept">', '<col class="col-teacher-type">');
-  const n = Math.max(1, Number(metricCount) || 1);
   const metricClass = compactMetric ? 'col-week-load' : 'col-term';
-  for (let i = 0; i < n; i += 1) parts.push(`<col class="${metricClass}">`);
+  if (Array.isArray(weekTermGroups) && weekTermGroups.length) {
+    weekTermGroups.forEach((count, gi) => {
+      if (gi > 0) parts.push('<col class="col-term-spacer">');
+      const n = Math.max(0, Number(count) || 0);
+      for (let i = 0; i < n; i += 1) parts.push(`<col class="${metricClass}">`);
+    });
+  } else {
+    const n = Math.max(1, Number(metricCount) || 1);
+    for (let i = 0; i < n; i += 1) parts.push(`<col class="${metricClass}">`);
+  }
   colgroup.innerHTML = parts.join('');
 }
 
@@ -41120,7 +41256,7 @@ function formatTeacherTeachingLoadHoursWithCourseGroupSummary(hours, courseRows)
   const courseLabel = courses <= 1 ? 'Course' : 'Courses';
   const groupLabel = groups <= 1 ? 'Group' : 'Groups';
   return `<span class="teacher-load-hours-cell">`
-    + `<span class="teacher-load-hours-value">${escapeHtml(formatTeacherTeachingLoadHours(hours))}</span>`
+    + formatTeacherTeachingLoadHoursValueHtml(hours)
     + `<span class="offering-teacher-term-load-summary">`
     + `(${courses} ${courseLabel}, ${groups} ${groupLabel})`
     + `</span>`

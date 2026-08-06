@@ -7058,11 +7058,30 @@ code {
   position: relative;
   z-index: 5;
 }
-#page-course-teacher-teaching-load #teacher-load-filter-term-multiselect {
-  min-width: 220px;
+#page-course-teacher-teaching-load .course-major-query-grid.teacher-load-query-grid .course-time-query-field {
+  min-width: 0;
+  overflow: visible;
 }
-#page-course-teacher-teaching-load #teacher-load-filter-term-dropdown {
+#page-course-teacher-teaching-load #teacher-load-filter-term-multiselect,
+#page-course-teacher-teaching-load [data-ttl="course-type-multiselect"] {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+#page-course-teacher-teaching-load #teacher-load-filter-term-multiselect .clo-multiselect-trigger,
+#page-course-teacher-teaching-load [data-ttl="course-type-multiselect"] .clo-multiselect-trigger {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#page-course-teacher-teaching-load #teacher-load-filter-term-dropdown,
+#page-course-teacher-teaching-load [data-ttl="course-type-dropdown"] {
   z-index: 30;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(420px, 70vw);
 }
 #page-course-teacher-teaching-load .teacher-teaching-load-card {
   flex: 1;
@@ -7174,6 +7193,9 @@ code {
 .teacher-teaching-load-table > colgroup > .col-week-load {
   width: 52px;
 }
+.teacher-teaching-load-table > colgroup > .col-term-spacer {
+  width: 16px;
+}
 .teacher-teaching-load-table th.col-week-load,
 .teacher-teaching-load-table td.col-week-load {
   min-width: 44px;
@@ -7185,6 +7207,24 @@ code {
 .teacher-teaching-load-table th.col-term-group {
   text-align: center;
   border-bottom: 1px solid var(--border-light, #e2e8f0);
+}
+/* 学期交界：纯白空列隔断，保留左右边框线 */
+.teacher-teaching-load-table th.col-term-spacer,
+.teacher-teaching-load-table td.col-term-spacer {
+  width: 16px;
+  min-width: 12px;
+  max-width: 20px;
+  padding: 0 !important;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 1px solid var(--border-light, #e2e8f0);
+  border-right: 1px solid var(--border-light, #e2e8f0);
+  background: #fff !important;
+  pointer-events: none;
+}
+.teacher-teaching-load-table th.col-week-load:has(+ .col-term-spacer),
+.teacher-teaching-load-table td.col-week-load:has(+ .col-term-spacer) {
+  border-right: 0;
 }
 .teacher-teaching-load-table th.col-expand,
 .teacher-teaching-load-table td.col-expand {
@@ -7336,7 +7376,7 @@ code {
   white-space: nowrap;
   min-width: 108px;
 }
-.teacher-teaching-load-table tfoot td {
+.teacher-teaching-load-table tfoot td:not(.col-term-spacer) {
   background: #ffedd5;
   font-weight: 600;
   color: #9a3412;
@@ -7344,7 +7384,7 @@ code {
 .teacher-teaching-load-table tfoot td.col-name.col-center {
   text-align: center;
 }
-.teacher-teaching-load-table tfoot tr.is-average td {
+.teacher-teaching-load-table tfoot tr.is-average td:not(.col-term-spacer) {
   background: #ffedd5;
   font-weight: 600;
 }
@@ -8626,10 +8666,10 @@ code {
   gap: 6px 12px;
 }
 #page-offering-grouping .offering-grouping-teacher-load .course-major-query-grid.teacher-load-query-grid {
-  grid-template-columns: minmax(140px, 180px) minmax(90px, 120px) minmax(110px, 140px) minmax(110px, 140px) minmax(90px, 120px) auto;
+  grid-template-columns: minmax(140px, 180px) minmax(90px, 120px) minmax(110px, 140px) minmax(110px, 140px) minmax(90px, 120px) minmax(90px, 120px) auto;
 }
 #page-course-teacher-teaching-load .course-major-query-grid.teacher-load-query-grid {
-  grid-template-columns: minmax(150px, 200px) minmax(100px, 130px) minmax(120px, 150px) minmax(120px, 150px) minmax(100px, 130px) auto;
+  grid-template-columns: minmax(160px, 220px) minmax(100px, 130px) minmax(120px, 150px) minmax(120px, 150px) minmax(100px, 130px) minmax(100px, 130px) auto;
   align-items: end;
 }
 .teacher-load-dimension-bar {
@@ -8726,6 +8766,38 @@ code {
   gap: 12px;
   flex-shrink: 0;
   margin-left: auto;
+}
+.teacher-load-threshold-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.teacher-load-threshold-value {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--text-2, #475569);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  pointer-events: none;
+}
+.teacher-load-threshold-value.is-empty {
+  color: var(--text-3, #94a3b8);
+}
+.panel-toolbar.teacher-load-table-toolbar {
+  padding-bottom: 18px;
+}
+.teacher-load-threshold-modal-field {
+  margin-top: 8px;
+}
+.teacher-teaching-load-table .teacher-load-hours-value.is-over-threshold,
+.teacher-teaching-load-table td.col-term .teacher-load-hours-value.is-over-threshold {
+  color: #dc2626;
+  font-weight: 700;
 }
 .teacher-load-include-current-term {
   display: inline-flex;
@@ -15377,8 +15449,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   color: var(--blue-900);
 }
 #modal-offering-teacher-term-assign .modal.offering-teacher-term-assign-modal {
-  width: min(96vw, 1100px);
-  max-width: 1100px;
+  width: min(98vw, 1280px);
+  max-width: 1280px;
 }
 #modal-offering-teacher-term-assign .modal-body {
   max-height: min(78vh, 720px);
@@ -15406,6 +15478,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-offering-teacher-term-assign .offering-teacher-term-course-table .col-tcc-status {
   white-space: nowrap;
   min-width: 88px;
+}
+#modal-offering-teacher-term-assign .offering-teacher-term-course-table .col-classification {
+  white-space: nowrap;
+  min-width: 132px;
+}
+#modal-offering-teacher-term-assign .offering-teacher-term-course-table .col-enrollment-type {
+  white-space: nowrap;
+  min-width: 96px;
 }
 #modal-offering-teacher-term-assign .offering-teacher-term-course-table .col-term {
   white-space: nowrap;

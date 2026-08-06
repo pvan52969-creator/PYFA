@@ -870,7 +870,7 @@
       <div class="card course-major-query-card">
         <div class="course-major-query-grid school-elective-query-grid">
           <div class="course-time-query-field">
-            <label for="school-elective-filter-dept">课程管理单位</label>
+            <label for="school-elective-filter-dept">开课单位</label>
             <select class="input input-sm" id="school-elective-filter-dept">
               <option value="">全部</option>
             </select>
@@ -1312,6 +1312,10 @@
                 </div>
               </div>
               <div class="course-time-query-field">
+                <label for="ogg-teacher-load-filter-staff-id">教师工号</label>
+                <input class="input input-sm" id="ogg-teacher-load-filter-staff-id" data-ttl="staff-id-filter" placeholder="工号">
+              </div>
+              <div class="course-time-query-field">
                 <label for="ogg-teacher-load-filter-name">教师姓名</label>
                 <input class="input input-sm" id="ogg-teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
               </div>
@@ -1332,6 +1336,10 @@
                     <span class="toggle-track"><span class="toggle-thumb"></span></span>
                   </span>
                 </label>
+                <div class="teacher-load-threshold-control">
+                  <button type="button" class="btn btn-outline btn-sm" data-ttl="threshold-btn" onclick="openTeacherTeachingLoadThresholdModal()" title="设置各维度超限标红阈值">超限阈值</button>
+                  <span class="teacher-load-threshold-value" data-ttl="threshold-value"></span>
+                </div>
                 <button class="btn btn-outline btn-sm" type="button" onclick="exportTeacherTeachingLoad()">导出</button>
               </div>
             </div>
@@ -2501,6 +2509,10 @@
             </div>
           </div>
           <div class="course-time-query-field">
+            <label for="teacher-load-filter-staff-id">教师工号</label>
+            <input class="input input-sm" id="teacher-load-filter-staff-id" data-ttl="staff-id-filter" placeholder="工号">
+          </div>
+          <div class="course-time-query-field">
             <label for="teacher-load-filter-name">教师姓名</label>
             <input class="input input-sm" id="teacher-load-filter-name" data-ttl="name-filter" placeholder="姓名">
           </div>
@@ -2521,6 +2533,10 @@
                 <span class="toggle-track"><span class="toggle-thumb"></span></span>
               </span>
             </label>
+            <div class="teacher-load-threshold-control">
+              <button type="button" class="btn btn-outline btn-sm" data-ttl="threshold-btn" onclick="openTeacherTeachingLoadThresholdModal()" title="设置各维度超限标红阈值">超限阈值</button>
+              <span class="teacher-load-threshold-value" data-ttl="threshold-value"></span>
+            </div>
             <button class="btn btn-outline btn-sm" type="button" onclick="exportTeacherTeachingLoad()">导出</button>
           </div>
         </div>
@@ -6595,6 +6611,27 @@
     <div class="modal-body" id="offering-hour-assign-detail-body"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-offering-hour-assign-detail')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：Teaching Load · 超限阈值 ═══ -->
+<div class="modal-overlay" id="modal-teacher-teaching-load-threshold">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="ttl-threshold-modal-title">设置超限阈值</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-teaching-load-threshold')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" id="ttl-threshold-modal-hint">超过阈值的学时在当前维度列表中标红加粗；留空表示不标红。合计与人均不受影响。</p>
+      <div class="form-item teacher-load-threshold-modal-field">
+        <label for="ttl-threshold-value" id="ttl-threshold-value-label">阈值</label>
+        <input class="input input-sm" id="ttl-threshold-value" type="number" step="any" placeholder="留空不标红">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-teaching-load-threshold')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmTeacherTeachingLoadThresholdModal()">确定</button>
     </div>
   </div>
 </div>

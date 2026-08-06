@@ -4147,7 +4147,7 @@ code {
   --major-offering-actions-col-width: 148px;
   --major-offering-count-col-width: 40px;
   --major-offering-course-info-col-width: 48px;
-  --major-offering-changelog-col-width: 64px;
+  --major-offering-changelog-col-width: 48px;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-weight: 400;
   color: #000;
@@ -4419,7 +4419,7 @@ code {
   right: calc(
     var(--major-offering-actions-col-width)
     + var(--major-offering-course-info-col-width, 48px)
-    + var(--major-offering-changelog-col-width, 64px)
+    + var(--major-offering-changelog-col-width, 48px)
   );
   z-index: 3;
   min-width: var(--major-offering-count-col-width);
@@ -4453,9 +4453,9 @@ code {
     + var(--major-offering-course-info-col-width, 48px)
   );
   z-index: 3;
-  min-width: var(--major-offering-changelog-col-width, 64px);
-  width: var(--major-offering-changelog-col-width, 64px);
-  max-width: var(--major-offering-changelog-col-width, 64px);
+  min-width: var(--major-offering-changelog-col-width, 48px);
+  width: var(--major-offering-changelog-col-width, 48px);
+  max-width: var(--major-offering-changelog-col-width, 48px);
   padding-left: 4px;
   padding-right: 4px;
   background: #fff;
@@ -4467,6 +4467,13 @@ code {
 #page-course-major-offering-roster .course-major-offering-roster-table thead th.col-sticky-changelog {
   z-index: 4;
   background: var(--blue-50);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-sticky-changelog.th-v {
+  width: var(--major-offering-changelog-col-width, 48px);
+  min-width: var(--major-offering-changelog-col-width, 48px);
+  max-width: var(--major-offering-changelog-col-width, 48px);
+  padding-left: 2px;
+  padding-right: 2px;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-sticky-changelog {
   background: #fafbfc;
@@ -5768,11 +5775,18 @@ code {
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-change-log,
 #page-course-major-offering-task-style2 .mot-style2-table .col-course-info {
-  min-width: 64px;
-  max-width: 80px;
+  min-width: 48px;
+  max-width: 64px;
   white-space: nowrap;
   text-align: center;
   vertical-align: middle;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-change-log.th-v {
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 #page-course-major-offering-task-style2 .mot-style2-table td.col-change-log a,
 #page-course-major-offering-task-style2 .mot-style2-table td.col-course-info a {
@@ -8099,12 +8113,46 @@ code {
 #page-special-course-settings .table-scroll {
   padding-bottom: 4px;
 }
+/* 特殊课程设置：勾选列固定、课程名称偏宽，其余列尽量平分 */
+#page-special-course-settings .special-course-settings-table {
+  width: 100%;
+  min-width: 100%;
+  table-layout: fixed;
+}
+#page-special-course-settings .special-course-settings-table .col-check {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+#page-special-course-settings .special-course-settings-table .col-course-name {
+  width: 32%;
+  min-width: 0;
+  max-width: none;
+}
+#page-special-course-settings .special-course-settings-table .col-code,
+#page-special-course-settings .special-course-settings-table .col-offering-unit,
+#page-special-course-settings .special-course-settings-table .col-support-summary,
+#page-special-course-settings .special-course-settings-table .col-support-hist,
+#page-special-course-settings .special-course-settings-table th.col-sticky-actions,
+#page-special-course-settings .special-course-settings-table td.col-sticky-actions {
+  width: 13%;
+  min-width: 0;
+  max-width: none;
+}
+#page-special-course-settings .special-course-settings-table .col-code,
+#page-special-course-settings .special-course-settings-table .col-offering-unit,
+#page-special-course-settings .special-course-settings-table .col-support-summary,
+#page-special-course-settings .special-course-settings-table .col-support-hist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .special-course-settings-table .col-classroom-summary {
   min-width: 180px;
   max-width: 280px;
 }
 .special-course-settings-table .col-support-summary {
-  min-width: 100px;
+  min-width: 0;
 }
 .drawer-special-course-edit {
   width: min(920px, 96vw);
@@ -11897,6 +11945,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .offering-group-edit-body .form-item:last-child {
   margin-bottom: 0;
 }
+#offering-group-edit-capacity-hint.is-warn {
+  color: #b45309;
+}
 .offering-group-edit-remark {
   min-height: 88px;
   resize: vertical;
@@ -12223,14 +12274,20 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   }
 }
 /* #modal-major-student-picker { ... } ??? drawer-major-student-picker */
-.drawer-major-student-removal-log {
+.drawer-major-student-removal-log,
+.drawer-major-student-retake-roster {
   width: min(980px, 96vw);
 }
-.student-removal-log-drawer-body {
+.student-removal-log-drawer-body,
+.student-retake-roster-drawer-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
+}
+.student-retake-roster-drawer-body > .form-hint {
+  margin: 0;
+  flex-shrink: 0;
 }
 .student-removal-log-table-wrap {
   flex: 1;
@@ -12294,6 +12351,15 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   font-size: 13px;
   color: var(--text-1);
   cursor: pointer;
+}
+.form-radio-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+.mot-style2-one-click-history-copy-modal .form-item {
+  margin-top: 12px;
 }
 .drawer-major-offering-edit {
   width: min(760px, 96vw);
@@ -13262,6 +13328,13 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   margin-bottom: 10px;
   flex-shrink: 0;
   /* flex-direction: column; ?????????? */
+}
+.offering-grouping-shell.is-roster-student-mode .offering-group-sidebar-actions,
+.offering-grouping-modal.is-roster-student-mode .offering-group-sidebar-actions {
+  display: none !important;
+}
+.offering-group-sidebar-actions[hidden] {
+  display: none !important;
 }
 #modal-offering-grouping-history-copy.modal-nested {
   z-index: 1110;
@@ -16138,6 +16211,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-student-table { min-width: 1280px; }
 /* .offering-group-student-table { min-width: 1360px; } */ /* 原含学院列 */
+.offering-group-student-table th,
+.offering-group-student-table td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+.offering-group-student-table th:last-child,
+.offering-group-student-table td:last-child {
+  border-right: none;
+}
 .offering-group-student-table th.col-index,
 .offering-group-student-table td.col-index {
   text-align: center;
@@ -17483,10 +17564,10 @@ input#group-assign-recorded-hours {
 .drawer-major-offering-edit.is-readonly textarea:not(.readonly),
 .drawer-major-offering-edit.is-readonly input:not(.readonly):not([readonly]),
 .drawer-major-offering-edit.is-readonly select,
-.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section) select.input:disabled,
-.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section) .input.readonly,
-.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section) .input[readonly],
-.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section) .input:disabled {
+.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section):not(#mos-edit-hour-type-section) select.input:disabled,
+.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section):not(#mos-edit-hour-type-section) .input.readonly,
+.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section):not(#mos-edit-hour-type-section) .input[readonly],
+.drawer-major-offering-edit.is-classroom-only .offering-edit-section:not(#mos-edit-classroom-section):not(#mos-edit-hour-type-section) .input:disabled {
   pointer-events: none;
   background: #f1f5f9;
   color: var(--text-2, #475569);

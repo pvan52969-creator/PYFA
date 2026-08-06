@@ -739,10 +739,10 @@
                 <th class="col-check"><input type="checkbox" id="course-time-check-all" aria-label="全选" onchange="toggleCourseTimeCheckAll(this.checked)"></th>
                 <th class="col-center col-expand" title="单位开课时间"></th>
                 <!-- <th class="col-index">序号<span class="th-sort" aria-hidden="true">↕</span></th> -->
-                <th>学年学期<span class="th-sort" aria-hidden="true">↕</span></th>
+                <th class="col-center">学年学期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">教学周数<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">状态</th>
-                <th>开课时间范围<span class="th-sort" aria-hidden="true">↕</span></th>
+                <th class="col-center">开课时间范围<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">授课确认截止日期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <th class="col-center">默认展示学期<span class="th-sort" aria-hidden="true">↕</span></th>
                 <!-- <th>备注<span class="th-sort" aria-hidden="true">↕</span></th> -->
@@ -1054,8 +1054,9 @@
         <div class="panel-toolbar course-major-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openGenerateMajorOfferingTaskModal()">生成开课任务</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> --> <!-- 改由任务安排页 -->
-          <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>生效</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-one-click-merge" onclick="oneClickMergeMajorOfferingSections()">一键合班</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>生效</button>
+          <!-- 原顺序：生效 → 一键合班，改一键合班在生效左侧 -->
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
           <!-- <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护。「操作记录」可查看字段变更（支持按用户过滤）。</span> -->
@@ -1224,6 +1225,7 @@
                     <button class="btn btn-outline btn-sm" type="button" id="ogg-btn-adjust-group" onclick="adjustOfferingGroupingStudents()" disabled>调整分组</button>
                     <button class="btn btn-outline btn-sm btn-danger-text" type="button" id="ogg-btn-remove-roster" onclick="removeOfferingGroupingStudentsFromRoster()" disabled>移除</button>
                     <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingStudentRemovalLog()">名单移除记录</button>
+                    <button class="btn btn-outline btn-sm" type="button" onclick="openOfferingGroupingRetakeRoster()">预重修名单</button>
                   </div>
                   <div class="table-scroll">
                     <table class="data-table compact offering-group-student-table">
@@ -1629,7 +1631,8 @@
       <div class="card course-major-roster-list-card">
         <div class="panel-toolbar course-major-roster-toolbar">
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-roster-revert" onclick="revertSelectedMajorOfferingRosterArrangements()" disabled>退回</button>
-          <span class="form-hint">勾选开课任务后可批量退回至「专业开课任务安排」；「操作记录」可查看字段变更；开放选课课程名单由选课应用生成，不在此维护</span>
+          <!-- <span class="form-hint">勾选开课任务后可批量退回…；开放选课…不在此维护</span> -->
+          <!-- 原工具栏说明文案，开放选课也可在此维护，整行提示已去掉 -->
         </div>
         <div class="table-scroll">
           <table class="data-table compact course-major-offering-roster-table">
@@ -4282,6 +4285,41 @@
   </div>
 </div>
 
+<!-- ═══ 弹窗：专业开课任务安排 · 一键复制以往学期安排 ═══ -->
+<div class="modal-overlay" id="modal-mot-style2-one-click-history-copy">
+  <div class="modal modal-sm mot-style2-one-click-history-copy-modal">
+    <div class="modal-head">
+      <h3>一键复制</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-mot-style2-one-click-history-copy')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" id="mot-style2-one-click-history-copy-hint">将最近一个学期同课号的开课任务安排（分组、学时、学时类型、教师、教室等）复制到所选任务；复制后可再调整。已生效，或授课确认已发出 / 部分确认 / 已确认的任务将复制失败。</p>
+      <div class="form-item">
+        <label class="req">复制范围</label>
+        <div class="form-radio-col" role="radiogroup" aria-label="一键复制范围">
+          <label class="form-radio-option">
+            <input type="radio" name="mot-style2-one-click-history-copy-scope" value="selected" checked>
+            <span>按已勾选数据</span>
+          </label>
+          <label class="form-radio-option">
+            <input type="radio" name="mot-style2-one-click-history-copy-scope" value="page">
+            <span>按本页数据</span>
+          </label>
+          <label class="form-radio-option">
+            <input type="radio" name="mot-style2-one-click-history-copy-scope" value="all">
+            <span>全部数据</span>
+          </label>
+        </div>
+      </div>
+      <p class="form-hint" id="mot-style2-one-click-history-copy-scope-meta"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-mot-style2-one-click-history-copy')">取消</button>
+      <button class="btn btn-primary" type="button" id="mot-style2-one-click-history-copy-confirm" onclick="confirmMajorOfferingTaskOneClickHistoryCopy()">确定复制</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：开课安排导入 ═══ -->
 <div class="modal-overlay" id="modal-major-offering-arrange-import">
   <div class="modal modal-lg major-offering-arrange-import-modal">
@@ -4608,12 +4646,12 @@
         <div class="form-item">
           <label class="req" for="mos-edit-reserved-spots">预留名额</label>
           <input class="input input-sm" id="mos-edit-reserved-spots" type="number" step="1" placeholder="5" required oninput="updateMajorOfferingEditCapacityLimitDisplay()">
-          <p class="form-hint">默认 5，可修改（可为负）；计入课程名额上限。下调上限不减少预置人数，预置仍可分进课程班/小组；超出上限时分配情况会显示如 139/138。</p>
+          <p class="form-hint">默认 5，可修改（可为负）；计入课程名额上限。课程名额上限须大于 0。下调上限不减少预置人数，预置仍可分进课程班/小组；超出上限时分配情况会显示如 139/138。</p>
         </div>
         <div class="form-item">
           <label for="mos-edit-capacity-limit">课程名额上限</label>
           <input class="input input-sm readonly" id="mos-edit-capacity-limit" type="text" readonly tabindex="-1">
-          <p class="form-hint">计划总人数 + 预留名额</p>
+          <p class="form-hint">计划总人数 + 预留名额，须大于 0</p>
         </div>
         <div class="form-item">
           <label for="mos-edit-support-history">Support历史</label>
@@ -4737,11 +4775,46 @@
         </div>
       </div>
     </section>
+    <section class="offering-edit-section" id="mos-edit-hour-type-section">
+      <h4 class="offering-edit-section-title">学时类型设置</h4>
+      <p class="form-hint">先设定学时合并方式，再按合并后的学时类型配置下方教室属性与偏好；开课安排时作为默认带出，可在教学班覆盖。</p>
+      <div class="group-assign-hour-type-settings-options mos-edit-hour-type-options" id="mos-edit-hour-type-options" role="radiogroup" aria-label="学时类型设置">
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="mos-edit-hours-mode" value="all" onchange="onMajorOfferingEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>全部合并</strong>
+            <span class="form-hint">合为总学时统一配置教室，不再区分学时类型</span>
+          </span>
+        </label>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="mos-edit-hours-mode" value="partial" onchange="onMajorOfferingEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>部分学时合并</strong>
+            <span class="form-hint">可建多组合并；未入组的类型单独配置教室</span>
+          </span>
+        </label>
+        <div class="group-assign-partial-merge-types-wrap" id="mos-edit-partial-merge-types-wrap" hidden>
+          <p class="form-hint group-assign-partial-merge-types-hint">每组至少勾选 2 种；同一学时类型只能属于一组。</p>
+          <div class="group-assign-partial-merge-groups" id="mos-edit-partial-merge-groups"></div>
+          <div class="group-assign-partial-merge-groups-foot">
+            <button type="button" class="btn btn-outline btn-sm" id="mos-edit-partial-merge-add-group" onclick="addMajorOfferingEditPartialMergeGroup()">添加合并组</button>
+            <p class="form-hint group-assign-partial-merge-separate-hint" id="mos-edit-partial-merge-separate-hint"></p>
+          </div>
+        </div>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="mos-edit-hours-mode" value="separate" checked onchange="onMajorOfferingEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>按学时类型分别安排</strong>
+            <span class="form-hint">理论 / 辅导 / 实践 / 其他学时各自配置教室</span>
+          </span>
+        </label>
+      </div>
+    </section>
     <section class="offering-edit-section" id="mos-edit-classroom-section">
       <h4 class="offering-edit-section-title">教室信息</h4>
       <div class="form-item mos-edit-classroom-attr-block">
         <label>教室属性与参考教室</label>
-        <p class="form-hint">四种学时依次设置；教室属性默认「普通教室」，参考教室非必填、默认无偏好</p>
+        <p class="form-hint" id="mos-edit-classroom-hint">四种学时依次设置；教室属性默认「普通教室」，参考教室非必填、默认无偏好</p>
         <div class="mos-edit-classroom-hour-attrs" id="mos-edit-classroom-hour-attrs" data-classroom-hour-attrs="mos-edit-classroom-hour-attrs"></div>
       </div>
     </section>
@@ -5529,6 +5602,7 @@
       <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentPickerModal()">新增</button>
       <button class="btn btn-outline btn-sm btn-danger-outline" type="button" onclick="deleteMajorOfferingStudentRosterSelected()">删除</button>
       <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentRemovalLog()">名单移除记录</button>
+      <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingRetakeRoster()">预重修名单</button>
       <button class="btn btn-outline btn-sm student-roster-preset-grouping-btn" type="button" id="mos-btn-preset-roster-grouping" onclick="openMajorOfferingStudentRosterPresetGrouping()">预置名单分配</button>
       <button class="btn btn-outline btn-sm student-roster-adjust-group-btn" type="button" id="mos-btn-adjust-group" onclick="adjustMajorOfferingStudentGrouping()">调整分组</button>
     </div>
@@ -5783,6 +5857,41 @@
   </div>
   <div class="drawer-foot">
     <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingStudentRemovalLogDrawer()">取消</button>
+  </div>
+</aside>
+
+<!-- ═══ 二次抽屉：专业开课 · 预重修名单 ═══ -->
+<div class="drawer-backdrop drawer-backdrop-nested-2" id="drawer-major-student-retake-roster-backdrop" onclick="closeMajorOfferingRetakeRosterDrawer()"></div>
+<aside class="drawer-panel drawer-major-student-retake-roster drawer-panel-nested-2" id="drawer-major-student-retake-roster">
+  <div class="drawer-head">
+    <h3>预重修名单</h3>
+    <button class="modal-close" type="button" onclick="closeMajorOfferingRetakeRosterDrawer()">×</button>
+  </div>
+  <div class="drawer-body student-retake-roster-drawer-body">
+    <p class="form-hint" id="mos-retake-roster-hint">查看曾挂科本课程、可能需要重修的学生（只读）。</p>
+    <div class="student-removal-log-table-wrap">
+      <table class="data-table compact student-retake-roster-table">
+        <thead><tr>
+          <th class="col-index">序号</th>
+          <th>学号</th>
+          <th>学生姓名</th>
+          <th class="col-center">学院</th>
+          <th class="col-center">专业</th>
+          <th class="col-center">入学批次</th>
+          <th class="col-center">挂科学期</th>
+          <th class="col-center">成绩</th>
+          <th class="col-center">挂科次数</th>
+          <th class="col-center">本课名单</th>
+        </tr></thead>
+        <tbody id="mos-retake-roster-tbody"></tbody>
+      </table>
+    </div>
+    <div class="student-removal-log-pagination">
+      <div class="pagination" id="mos-retake-roster-pagination"></div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingRetakeRosterDrawer()">关闭</button>
   </div>
 </aside>
 
@@ -6121,8 +6230,11 @@
       </div>
       <div class="form-item">
         <label class="req" for="offering-group-edit-capacity-limit">人数上限</label>
-        <input class="input input-sm" id="offering-group-edit-capacity-limit" type="number" min="1" step="1" placeholder="请输入">
-        <p class="form-hint">不得超过课程人数上限</p>
+        <input class="input input-sm" id="offering-group-edit-capacity-limit" type="number" min="0" step="1" placeholder="请输入"
+          oninput="syncOfferingGroupEditCapacityHint()">
+        <!-- min="1" // 原须 >0，改允许 0 -->
+        <p class="form-hint" id="offering-group-edit-capacity-hint">不得超过课程人数上限</p>
+        <!-- 名单管理超过课程上限时，hint 会改为预留名额提升提示 -->
         <!-- placeholder="如 60" 原示例占位；hint：该组最多可容纳的学生人数，学生名单管理环节将参考此上限 -->
       </div>
       <!-- <div class="form-item">

@@ -2655,8 +2655,9 @@
               <span class="sch-leg-item is-retake" data-sch-leg="retake">预重修冲突</span>
               <span class="sch-leg-item is-prereq" data-sch-leg="time">先修冲突</span>
               <span class="sch-leg-item is-room" data-sch-leg="room" hidden>教室时间冲突</span>
-              <span class="sch-leg-item is-room-seats" data-sch-leg="room" hidden>座位数冲突</span>
-              <span class="sch-leg-item is-room-type" data-sch-leg="room" hidden>场地类型不一致</span>
+              <!-- 座位数/场地类型不一致仅弹窗提示，不参与课表格着色/图例 -->
+              <span class="sch-leg-item is-room-seats" data-sch-leg="none" hidden>座位数冲突</span>
+              <span class="sch-leg-item is-room-type" data-sch-leg="none" hidden>场地类型不一致</span>
             </div>
             <div class="schedule-timetable-toolbar">
               <div class="schedule-scope-switch">
@@ -2728,8 +2729,8 @@
                   <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-lock-room-btn" onclick="openScheduleLockRoomPicker()">选择锁定教室</button>
                 </div>
                 <div class="schedule-venue-remark-field" id="schedule-venue-remark-field" hidden>
-                  <label class="schedule-venue-remark-label" for="schedule-detail-venue-remark">场地备注</label>
-                  <input class="input input-sm schedule-venue-remark-input" id="schedule-detail-venue-remark" type="text" placeholder="请输入场地备注" oninput="onScheduleVenueRemarkInput()">
+                  <label class="schedule-venue-remark-label" for="schedule-detail-venue-remark">教室偏好</label>
+                  <input class="input input-sm schedule-venue-remark-input" id="schedule-detail-venue-remark" type="text" placeholder="请输入教室偏好" oninput="onScheduleVenueRemarkInput()">
                   <button class="btn btn-primary btn-sm" id="btn-schedule-venue-save" type="button" onclick="saveScheduleVenueFields()" hidden>保存</button>
                 </div>
               </div>
@@ -7575,7 +7576,11 @@
           <select class="input" id="adjustment-apply-to-period" hidden onchange="updateAdjustmentApplyPreview()"></select>
           <div id="adjustment-apply-to-period-dd"></div>
         </div>
-        <div class="form-item" id="adjustment-apply-to-room-wrap"><label>目标教室</label><select class="input" id="adjustment-apply-to-room" onchange="updateAdjustmentApplyPreview()"></select></div>
+        <div class="form-item" id="adjustment-apply-to-room-wrap">
+          <label>目标教室</label>
+          <button class="input adj-pick-btn" type="button" id="adjustment-apply-to-room-btn" onclick="openAdjustmentSharedRoomPicker()">不指定</button>
+          <input type="hidden" id="adjustment-apply-to-room" value="">
+        </div>
         <div class="form-item full" id="adjustment-apply-conflict-wrap">
           <label>冲突检测（教师 / 学生 / 场地）</label>
           <div class="adj-conflict-panel" id="adjustment-apply-conflict"></div>
@@ -7649,8 +7654,8 @@
 </div>
 
 <!-- 弹窗：选择原上课节次（查询字段 + 课表表格） -->
-<div class="modal-overlay modal-nested" id="modal-adjustment-slot-picker">
-  <div class="modal modal-xl">
+<div class="modal-overlay modal-drawer modal-nested" id="modal-adjustment-slot-picker">
+  <div class="modal modal-xl adj-picker-drawer-modal">
     <div class="modal-head"><h3 id="adjustment-slot-picker-title">选择上课节次</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-slot-picker')">×</button></div>
     <div class="modal-body">
       <div class="schedule-room-filter-grid">
@@ -7692,9 +7697,9 @@
   </div>
 </div>
 
-<!-- 弹窗：调后教师选择 -->
-<div class="modal-overlay modal-nested" id="modal-adjustment-teacher-picker">
-  <div class="modal modal-lg">
+<!-- 抽屉：调后教师选择 -->
+<div class="modal-overlay modal-drawer modal-nested" id="modal-adjustment-teacher-picker">
+  <div class="modal modal-lg adj-picker-drawer-modal">
     <div class="modal-head"><h3>选择调后教师</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-teacher-picker')">×</button></div>
     <div class="modal-body">
       <div class="schedule-room-filter-grid">
@@ -7725,8 +7730,8 @@
 </div>
 
 <!-- 抽屉：目标教室选择 -->
-<div class="modal-overlay modal-drawer" id="modal-adjustment-room-picker">
-  <div class="modal modal-lg">
+<div class="modal-overlay modal-drawer modal-nested" id="modal-adjustment-room-picker">
+  <div class="modal modal-lg adj-picker-drawer-modal">
     <div class="modal-head"><h3>选择目标教室</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-room-picker')">×</button></div>
     <div class="modal-body">
       <div class="schedule-room-filter-grid">
@@ -7766,7 +7771,7 @@
       <div class="adj-conflict-panel" id="adjustment-conflict-detail"></div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-primary" type="button" onclick="closeModal('modal-adjustment-conflict')">知道了</button>
+      <button class="btn btn-primary" type="button" onclick="closeModal('modal-adjustment-conflict')">关闭</button>
     </div>
   </div>
 </div>
@@ -7882,7 +7887,7 @@
     <div class="modal-body" id="schedule-place-conflict-body"></div>
     <div class="modal-foot">
       <button class="btn btn-outline" type="button" id="schedule-place-conflict-force" hidden onclick="forceSchedulePlaceDespiteConflict()">继续排课</button>
-      <button class="btn btn-primary" type="button" onclick="closeSchedulePlaceConflictModal()">我知道了</button>
+      <button class="btn btn-primary" type="button" onclick="closeSchedulePlaceConflictModal()">关闭</button>
     </div>
   </div>
 </div>
@@ -8039,8 +8044,8 @@
 </div>
 
 <!-- ═══ 抽屉：选择教室（排教室 / 批量调教室共用） ═══ -->
-<div class="modal-overlay modal-drawer" id="modal-schedule-room-picker">
-  <div class="modal modal-lg">
+<div class="modal-overlay modal-drawer modal-nested" id="modal-schedule-room-picker">
+  <div class="modal modal-lg adj-picker-drawer-modal">
     <div class="modal-head">
       <h3 id="modal-schedule-room-picker-title">选择教室</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-schedule-room-picker')">×</button>

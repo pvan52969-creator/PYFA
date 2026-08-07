@@ -6630,6 +6630,13 @@ code {
   margin-left: 0;
   flex-shrink: 0;
 }
+#modal-otr-batch-replace .otr-batch-replace-modal {
+  width: min(92vw, 780px);
+}
+#modal-otr-batch-replace .otr-batch-replace-intro {
+  margin: 0 0 12px;
+  white-space: nowrap;
+}
 #modal-otr-batch-replace .otr-batch-replace-meta {
   display: flex;
   flex-wrap: wrap;
@@ -6650,6 +6657,12 @@ code {
 #modal-otr-batch-replace .otr-batch-replace-meta-label {
   color: var(--text-muted, #64748b);
 }
+#modal-otr-batch-replace .form-item {
+  margin-bottom: 14px;
+}
+#modal-otr-batch-replace .form-item + .form-item {
+  margin-top: 0;
+}
 #modal-otr-batch-replace .otr-batch-to-teacher-row {
   display: flex;
   align-items: center;
@@ -6668,7 +6681,28 @@ code {
   color: var(--text-muted, #94a3b8);
 }
 #modal-otr-batch-replace #otr-batch-replace-impact {
-  margin-top: 4px;
+  margin: 0 0 12px;
+}
+#modal-otr-batch-replace .otr-batch-replace-email-hint {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+  box-shadow: inset 3px 0 0 #2563eb;
+}
+#modal-otr-batch-replace .otr-batch-replace-email-hint::before {
+  content: '邮件通知';
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1d4ed8;
 }
 #page-course-offering-teacher-replace .otr-assign-panel .offering-grouping-global-assign-table-wrap {
   overflow-x: auto;

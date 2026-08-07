@@ -94,7 +94,7 @@
           <span class="nav-section-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="nav-section-body">
-          <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">教师开课学时统计</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">Teaching Load</a>
           <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> -->
           <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-confirmation-admin">授课确认管理</a>
           <a href="#" class="nav-item nav-item-sub" data-page="teacher-course-confirmation">授课确认（教师端）</a>
@@ -2261,13 +2261,13 @@
 
     <!-- ═══ 弹窗：授课教师替换 · 一键替换（课内某教师 → 另一教师） ═══ -->
     <div class="modal-overlay" id="modal-otr-batch-replace">
-      <div class="modal modal-md">
+      <div class="modal modal-lg otr-batch-replace-modal">
         <div class="modal-head">
           <h3 id="otr-batch-replace-title">一键替换教师</h3>
           <button class="modal-close" type="button" onclick="closeOfferingTeacherReplaceBatchModal()">×</button>
         </div>
         <div class="modal-body" id="otr-batch-replace-body">
-          <p class="form-hint" style="margin-top:0">将本课程内某一教师在所有安排行中的出现，统一替换为另一名教师；学时类型、起止周、学时等字段不变。</p>
+          <p class="form-hint otr-batch-replace-intro">将本课程内某一教师在所有安排行中的出现，统一替换为另一名教师；学时类型、起止周、学时等字段不变。</p>
           <div class="otr-batch-replace-meta" id="otr-batch-replace-meta"></div>
           <div class="form-item">
             <label class="req" for="otr-batch-from-teacher">原教师</label>
@@ -2276,11 +2276,12 @@
           <div class="form-item">
             <label class="req">新教师</label>
             <div class="otr-batch-to-teacher-row">
-              <div class="otr-batch-to-teacher-display input" id="otr-batch-to-teacher-display" aria-live="polite">尚未选择</div>
+              <div class="otr-batch-to-teacher-display input is-empty" id="otr-batch-to-teacher-display" aria-live="polite">尚未选择</div>
               <button type="button" class="btn btn-outline btn-sm" id="otr-batch-pick-to-btn" onclick="openOfferingTeacherReplaceBatchToPicker()">选择</button>
             </div>
           </div>
           <p class="form-hint" id="otr-batch-replace-impact">请先选择原教师与新教师。</p>
+          <p class="otr-batch-replace-email-hint" role="status">确认替换后，系统将向被替换教师发送邮件，告知其原有安排已取消或调整。</p>
         </div>
         <div class="modal-foot">
           <button type="button" class="btn btn-ghost" onclick="closeOfferingTeacherReplaceBatchModal()">取消</button>

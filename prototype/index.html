@@ -2232,31 +2232,6 @@
             <div class="pagination" id="otr-course-pagination"></div>
           </div>
         </div>
-        <div class="card otr-detail-card" id="otr-detail-card" hidden>
-          <div class="panel-toolbar otr-detail-toolbar">
-            <strong id="otr-detail-title">开课安排明细</strong>
-            <span class="form-hint" id="otr-detail-hint">整行替换：不改起止周、学时类型与学时</span>
-            <button class="btn btn-outline btn-sm" type="button" onclick="clearOfferingTeacherReplaceDetail()">收起</button>
-          </div>
-          <div class="table-scroll">
-            <table class="data-table compact otr-assign-table">
-              <thead>
-                <tr>
-                  <th class="col-index">序号</th>
-                  <th>课程班/小组</th>
-                  <th class="col-center">学时类型</th>
-                  <th class="col-center">起止周</th>
-                  <th class="col-center">周学时</th>
-                  <th class="col-center">总学时</th>
-                  <th>教师</th>
-                  <th class="col-center">同时授课</th>
-                  <th class="col-center col-sticky-actions">操作</th>
-                </tr>
-              </thead>
-              <tbody id="otr-assign-body"></tbody>
-            </table>
-          </div>
-        </div>
       </div>
       <div class="tab-panel" id="otr-tab-log" role="tabpanel" data-otr-panel="log">
         <div class="card otr-log-card">
@@ -2283,6 +2258,36 @@
         </div>
       </div>
     </section>
+
+    <!-- ═══ 弹窗：授课教师替换 · 一键替换（课内某教师 → 另一教师） ═══ -->
+    <div class="modal-overlay" id="modal-otr-batch-replace">
+      <div class="modal modal-md">
+        <div class="modal-head">
+          <h3 id="otr-batch-replace-title">一键替换教师</h3>
+          <button class="modal-close" type="button" onclick="closeOfferingTeacherReplaceBatchModal()">×</button>
+        </div>
+        <div class="modal-body" id="otr-batch-replace-body">
+          <p class="form-hint" style="margin-top:0">将本课程内某一教师在所有安排行中的出现，统一替换为另一名教师；学时类型、起止周、学时等字段不变。</p>
+          <div class="otr-batch-replace-meta" id="otr-batch-replace-meta"></div>
+          <div class="form-item">
+            <label class="req" for="otr-batch-from-teacher">原教师</label>
+            <select class="input" id="otr-batch-from-teacher" onchange="onOfferingTeacherReplaceBatchFromChange()"></select>
+          </div>
+          <div class="form-item">
+            <label class="req">新教师</label>
+            <div class="otr-batch-to-teacher-row">
+              <div class="otr-batch-to-teacher-display input" id="otr-batch-to-teacher-display" aria-live="polite">尚未选择</div>
+              <button type="button" class="btn btn-outline btn-sm" id="otr-batch-pick-to-btn" onclick="openOfferingTeacherReplaceBatchToPicker()">选择</button>
+            </div>
+          </div>
+          <p class="form-hint" id="otr-batch-replace-impact">请先选择原教师与新教师。</p>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-ghost" onclick="closeOfferingTeacherReplaceBatchModal()">取消</button>
+          <button type="button" class="btn btn-primary" id="otr-batch-replace-confirm-btn" onclick="confirmOfferingTeacherReplaceBatch()">确认替换</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ═══ 开课管理 · 共同授课维护 ═══ -->
     <section class="page" id="page-course-shared-teaching-maintenance">
@@ -4309,7 +4314,12 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-mot-style2-one-click-history-copy')">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint" id="mot-style2-one-click-history-copy-hint">将最近一个学期同课号的开课任务安排（分组、学时、学时类型、教师、教室等）复制到所选任务；复制后可再调整。已生效，或授课确认已发出 / 部分确认 / 已确认的任务将复制失败。</p>
+      <p class="form-hint" id="mot-style2-one-click-history-copy-hint">从所选学期复制同课号开课任务安排（分组、学时、学时类型、教师、教室等）到当前任务；复制后可再调整。下拉仅列出最近一个学年的学期；当前开课学期为 26/04 时默认选中 25/04。已生效，或授课确认已发出 / 部分确认 / 已确认的任务，以及所选学期无可用安排的课号，将提示不适用并跳过；其余可继续复制。</p>
+      <div class="form-item">
+        <label class="req" for="mot-style2-one-click-history-copy-term">复制来源学期</label>
+        <select class="input" id="mot-style2-one-click-history-copy-term" aria-label="复制来源学期"></select>
+        <p class="form-hint" id="mot-style2-one-click-history-copy-term-meta"></p>
+      </div>
       <div class="form-item">
         <label class="req">复制范围</label>
         <div class="form-radio-col" role="radiogroup" aria-label="一键复制范围">
@@ -6959,6 +6969,7 @@
     <div class="modal-body">
       <p id="delete-confirm-msg">确定删除吗？此操作不可撤销。</p>
       <p class="form-hint delete-confirm-hint" id="delete-confirm-hint" style="display:none"></p>
+      <p class="delete-confirm-email-hint" id="delete-confirm-email-hint" style="display:none" role="status"></p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline btn-danger-text" type="button" id="delete-confirm-reset-btn" hidden onclick="resetDeleteConfirmAction()">重置</button>
@@ -7167,7 +7178,7 @@
         课程分类选项来自 TAB1 已建设的分类树；若尚未建设分类，则无法新增课程。
       </div>
       <div class="course-form-details" id="course-form-details">
-        <div class="course-form-section">
+        <div class="course-form-section" id="course-form-section-classification">
           <h4 class="course-form-section-title">分类与开课</h4>
           <div class="form-grid">
             <div class="form-item" id="course-h1-wrap"><label class="req">课程分类 H1</label>
@@ -7244,7 +7255,7 @@
               <textarea class="input textarea readonly" id="course-synopsis-input" rows="3" readonly placeholder="选择课程后自动带出，不可修改"></textarea>
             </div>
             <div class="form-item full course-catalog-field"><label>参考书 References <span class="char-count" id="course-refs-count">0/500</span></label>
-              <textarea class="input textarea readonly" id="course-refs-input" rows="2" readonly placeholder="选择课程后自动带出，不可修改"></textarea>
+              <textarea class="input textarea readonly" id="course-refs-input" rows="4" readonly placeholder="选择课程后自动带出，不可修改"></textarea>
             </div>
             <div class="form-item full course-catalog-field"><label>Other additional information (if applicable) 其他信息</label>
               <textarea class="input textarea readonly" id="course-additional-info-input" rows="2" readonly placeholder="选择课程后自动带出，不可修改"></textarea>

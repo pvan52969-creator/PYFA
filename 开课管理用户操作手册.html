@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>开课管理 · 用户操作手册</title>
+<style>
+  :root {
+    --bg: #1e1e2e;
+    --surface: #282840;
+    --surface2: #303050;
+    --border: #404068;
+    --text: #cdd6f4;
+    --text2: #a6adc8;
+    --text3: #6c7086;
+    --accent: #89b4fa;
+    --green: #a6e3a1;
+    --orange: #fab387;
+    --red: #f38ba8;
+    --purple: #cba6f7;
+    --yellow: #f9e2af;
+    --cyan: #89dceb;
+    --radius: 8px;
+    --shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px;
+  }
+  /* Sidebar */
+  #sidebar {
+    position: fixed; left:0; top:0; bottom:0; width: 270px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; z-index: 100; padding: 20px 0;
+  }
+  #sidebar h2 {
+    font-size: 16px; color: var(--accent); padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border); margin-bottom: 8px;
+  }
+  #sidebar nav a {
+    display: block; padding: 7px 20px; color: var(--text2);
+    text-decoration: none; font-size: 13px; transition: .15s;
+    border-left: 3px solid transparent;
+  }
+  #sidebar nav a:hover { color: var(--text); background: var(--surface2); }
+  #sidebar nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(137,180,250,.08); }
+  #sidebar nav a.l2 { padding-left: 36px; font-size: 12.5px; }
+  /* Main */
+  #main {
+    margin-left: 270px; padding: 40px 60px; max-width: 1000px;
+  }
+  h1 { font-size: 28px; color: #fff; margin-bottom: 8px; }
+  h2 { font-size: 22px; color: var(--accent); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 18px; color: var(--cyan); margin: 28px 0 12px; }
+  h4 { font-size: 15px; color: var(--purple); margin: 20px 0 8px; }
+  p { margin: 10px 0; color: var(--text2); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ul, ol { margin: 8px 0 8px 24px; color: var(--text2); }
+  li { margin: 4px 0; }
+  /* Tables */
+  table {
+    width: 100%; border-collapse: collapse; margin: 14px 0;
+    font-size: 13.5px; background: var(--surface); border-radius: var(--radius);
+    overflow: hidden;
+  }
+  th {
+    background: var(--surface2); color: var(--accent); font-weight: 600;
+    text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--border);
+  }
+  td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,.05); color: var(--text2); }
+  tr:last-child td { border-bottom: none; }
+  /* Callouts */
+  .callout {
+    margin: 14px 0; padding: 14px 18px; border-radius: var(--radius);
+    border-left: 4px solid; font-size: 14px; background: var(--surface);
+  }
+  .callout.info { border-color: var(--accent); }
+  .callout.warn { border-color: var(--orange); }
+  .callout.important { border-color: var(--red); }
+  .callout.tip { border-color: var(--green); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout p { margin: 2px 0; }
+  /* Status badges */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge.draft { background: rgba(166,173,200,.15); color: var(--text2); }
+  .badge.active { background: rgba(166,227,161,.15); color: var(--green); }
+  .badge.reverted { background: rgba(250,179,135,.15); color: var(--orange); }
+  .badge.open { background: rgba(166,227,161,.15); color: var(--green); }
+  .badge.closed { background: rgba(243,139,168,.15); color: var(--red); }
+  .badge.confirmed { background: rgba(166,227,161,.15); color: var(--green); }
+  .badge.pending { background: rgba(249,226,175,.15); color: var(--yellow); }
+  /* Flow */
+  .flow {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin: 12px 0; font-size: 13px;
+  }
+  .flow .step {
+    background: var(--surface2); padding: 6px 14px; border-radius: 6px;
+    white-space: nowrap;
+  }
+  .flow .arrow { color: var(--text3); font-weight: 700; }
+  /* Steps */
+  .steps { display: flex; gap: 12px; margin: 16px 0; }
+  .steps .step-card {
+    flex: 1; background: var(--surface); border-radius: var(--radius);
+    padding: 18px; border: 1px solid var(--border); text-align: center;
+  }
+  .steps .step-card .num {
+    display: inline-block; width: 32px; height: 32px; line-height: 32px;
+    border-radius: 50%; background: var(--accent); color: var(--bg);
+    font-weight: 700; font-size: 14px; margin-bottom: 8px;
+  }
+  .steps .step-card h4 { font-size: 14px; margin: 4px 0; }
+  .steps .step-card p { font-size: 12px; margin: 0; }
+  /* Progress */
+  .meta { color: var(--text3); font-size: 13px; margin-top: 4px; }
+  /* TOC */
+  #toc { margin-top: 16px; }
+  #toc a { color: var(--text2); }
+  /* Print */
+  @media print {
+    #sidebar { display: none; }
+    #main { margin:0; padding:20px; max-width:100%; }
+    body { background: #fff; color: #000; }
+    h2, h3, h4 { color: #222; }
+    p, li { color: #333; }
+    /* Tables: white bg + dark text for PDF readability */
+    table { background: #fff; border: 1px solid #ccc; box-shadow: none; }
+    th { background: #e8e8e8; color: #111; border: 1px solid #ccc; }
+    td { background: #fff; color: #333; border: 1px solid #ddd; }
+    tr:nth-child(even) td { background: #f7f7f7; }
+    .screenshot { max-width:100%; border:1px solid #ddd; }
+    .callout { background:#f5f5f5; border-color:#ccc; color:#333; }
+    .callout strong { color:#000; }
+    .flow .step { background:#eee; color:#333; }
+    .steps .step-card { background:#f9f9f9; }
+    .badge { color: #fff !important; text-shadow: none; }
+    .badge.draft { background: #888; }
+    .badge.active { background: #2e7d32; }
+    .badge.reverted { background: #d84315; }
+    .badge.closed { background: #c62828; }
+    .badge.pending { background: #ef6c00; }
+    .badge.confirmed { background: #1565c0; }
+    .badge.replaced { background: #6a1b9a; }
+    .badge.matched { background: #37474f; }
+  }
+  /* Screenshot styles */
+  .screenshot {
+    display: block; max-width: 95%; margin: 16px auto; border-radius: 6px;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .figcaption {
+    text-align: center; font-size: 12px; color: var(--text3);
+    margin: -8px 0 20px 0; font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <h2>📘 开课管理 · 用户手册</h2>
+  <nav>
+    <a href="#overview">系统概述</a>
+    <a href="#quick-start">快速入门</a>
+    <a href="#module-1">1. 开课时间设置</a>
+    <a href="#module-2">2. 校选课程管理</a>
+    <a href="#module-3">3. 特殊课程设置</a>
+    <a href="#module-4">4. 开课计划</a>
+    <a href="#module-5">5. 开课安排</a>
+    <a href="#module-5a" class="l2">步骤一：开课前期设置</a>
+    <a href="#module-5b" class="l2">步骤二：课程班（合班/Support）</a>
+    <a href="#module-5c" class="l2">步骤三：师资安排</a>
+    <a href="#module-6">6. 开课名单</a>
+    <a href="#module-7">7. 通识选修课开课</a>
+    <a href="#module-8">8. 开课清单</a>
+    <a href="#module-8a" class="l2">教师开课学时统计</a>
+    <a href="#module-8b" class="l2">开课清单</a>
+    <a href="#module-8c" class="l2">授课确认管理</a>
+    <a href="#module-8d" class="l2">授课教师替换</a>
+    <a href="#workflow">业务流程总览</a>
+    <a href="#faq">常见问题</a>
+  </nav>
+</div>
+
+<!-- Main Content -->
+<div id="main">
+
+<h1>开课管理 · 用户操作手册</h1>
+<p class="meta">厦门大学马来西亚分校（XMUM）本科教务系统 ｜ 版本 V4 · 2026年8月</p>
+
+<div class="callout info">
+<strong>适用角色</strong>
+<p>教务管理员、学院教务、授课教师。不同角色在系统中的操作权限有所区别，详见各模块说明。</p>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<h2 id="overview">系统概述</h2>
+<p>开课管理是XMUM本科教务系统的核心模块，负责从培养方案执行计划生成学期开课任务，完成教学任务维护、合班、师资安排与学生名单管理，最终产生可交付排课、选课、考勤等下游系统使用的正式开课数据。</p>
+
+<h3>模块结构</h3>
+<table>
+<tr><th style="width:20%">分组</th><th style="width:30%">子模块</th><th>功能说明</th></tr>
+<tr><td rowspan="3"><strong>开课设置</strong></td><td>开课时间设置</td><td>配置学期开课操作时间窗口与默认展示学期</td></tr>
+<tr><td>校选课程管理</td><td>维护校选课程（GE通识选修 / ME专业选修类）主数据池</td></tr>
+<tr><td>特殊课程设置</td><td>为特定课号预设教室、Support等默认配置</td></tr>
+<tr><td rowspan="3"><strong>专业开课</strong></td><td>开课计划</td><td>从执行计划生成学期开课任务，维护教学任务、合班、生效</td></tr>
+<tr><td>开课安排</td><td>三步引导完成开课前期设置、课程班、师资安排，生效后进入名单</td></tr>
+<tr><td>开课名单</td><td>维护各小组学生名单（预置/手工/一键分配/选课）</td></tr>
+<tr><td rowspan="3"><strong>通识选修</strong></td><td>通识选修计划</td><td>各学院GE开课配额计划（设计中）</td></tr>
+<tr><td>通识选修开课</td><td>GE课程班/Support/师资三步安排（设计中）</td></tr>
+<tr><td>通识选修名单</td><td>GE选课名单管理（设计中）</td></tr>
+<tr><td rowspan="5"><strong>开课清单</strong></td><td>教师开课学时统计</td><td>按教师维度统计各学期授课学时</td></tr>
+<tr><td>开课清单</td><td>汇总专业与通识选修开课数据</td></tr>
+<tr><td>授课确认管理</td><td>教务端下发授课确认及代确认</td></tr>
+<tr><td>授课确认（教师端）</td><td>教师在系统内确认本学期授课安排</td></tr>
+<tr><td>授课教师替换</td><td>对已生效开课进行教师替换</td></tr>
+</table>
+
+<div class="callout tip">
+<strong>操作建议</strong>
+<p>推荐按<em>从左到右、从上到下</em>的顺序完成开课工作流：先做开课设置 → 再生成开课计划 → 完成开课安排 → 最后维护开课名单。</p>
+</div>
+
+<img class="screenshot" src="screenshots/01-time-setting-list.png" alt="系统主界面">
+<p class="figcaption">图：系统主界面 — 开课管理模块</p>
+
+<!-- ==================== QUICK START ==================== -->
+<h2 id="quick-start">快速入门</h2>
+<p>以下是一个完整学期的开课操作主流程：</p>
+
+<div class="flow">
+<span class="step">1. 开课时间设置</span><span class="arrow">→</span>
+<span class="step">2. 校选课程管理<br/>(维护GE/ME主数据)</span><span class="arrow">→</span>
+<span class="step">3. 特殊课程设置<br/>(课号级默认)</span><span class="arrow">→</span>
+<span class="step">4. 开课计划<br/>(生成→合班→生效)</span><span class="arrow">→</span>
+<span class="step">5. 开课安排<br/>(三步→生效)</span><span class="arrow">→</span>
+<span class="step">6. 开课名单<br/>(分配→保存)</span>
+</div>
+
+<p><strong>关键依赖：</strong>第4步"生成开课任务"必须在第1步设置「默认展示学期=是」之后操作。第5步"开课安排"只有在第4步"开课计划"生效后才能看到对应教学班。第6步"开课名单"只有在第5步"开课安排"生效后才能维护。</p>
+
+<!-- ==================== MODULE 1 ==================== -->
+<h2 id="module-1">1. 开课时间设置</h2>
+<p><strong>菜单位置：</strong>开课管理 → 开课设置 → 开课时间设置</p>
+<p><strong>适用角色：</strong>教务管理员</p>
+<p><strong>目的：</strong>按学年学期配置开课操作时间窗口，作为专业开课等下游模块的前置条件。</p>
+
+<h3>1.1 主要功能</h3>
+<table>
+<tr><th>功能</th><th>说明</th></tr>
+<tr><td>查询 / 重置</td><td>按学年学期、默认展示学期过滤列表</td></tr>
+<tr><td>新增</td><td>为尚未配置的学期新增开课时间（选择学年学期 → 设置开始/截止时间）</td></tr>
+<tr><td>修改</td><td>修改全校开课窗口、授课确认截止日期、备注信息</td></tr>
+<tr><td>删除</td><td>批量删除学期配置（确认后不可撤销）</td></tr>
+<tr><td>默认展示学期开关</td><td>在列表中切换"是/否"，全局仅允许一个"是"（排他），下游模块依赖此项</td></tr>
+<tr><td>单位开课时间设置</td><td>展开行内区域，为各学院配置独立的开课时间（有配置时覆盖全校时间，否则继承）</td></tr>
+</table>
+
+<h3>1.2 字段说明（修改弹窗）</h3>
+<table>
+<tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td>学年学期</td><td>只读</td><td>—</td><td>附教学周提示</td></tr>
+<tr><td>开课开始</td><td>日期时间</td><td>是</td><td>须早于截止，格式 dd/mm/yyyy HH:mm</td></tr>
+<tr><td>开课截止</td><td>日期时间</td><td>是</td><td>须晚于开始；超出校历结束日可确认后保存</td></tr>
+<tr><td>授课确认截止日期</td><td>日期</td><td>否</td><td>仅日期；可设已过期日期；供教师确认函引用</td></tr>
+<tr><td>备注</td><td>文本</td><td>否</td><td>最长200字</td></tr>
+</table>
+
+<h3>1.3 业务规则</h3>
+<ul>
+  <li><strong>教学周数</strong>由学期类型固定推导：2月短学期=5周，4/9月长学期=14周（不在本页手工维护）</li>
+  <li><strong>状态</strong>由截止时间相对当前时刻判定：<span class="badge open">开放中</span> / <span class="badge closed">已截止</span></li>
+  <li><strong>单位覆盖：</strong>单位有独立起止时间时，该单位开课操作窗口以单位配置为准；未配置则继承全校时间</li>
+  <li><strong>默认展示学期</strong>下游"开课计划"生成开课任务前须存在至少一个"是"</li>
+</ul>
+
+<img class="screenshot" src="screenshots/01-time-setting-list.png" alt="开课时间设置主列表">
+<p class="figcaption">图1a：开课时间设置 — 主列表</p>
+<img class="screenshot" src="screenshots/01-time-setting-edit-modal.png" alt="开课时间设置修改弹窗">
+<p class="figcaption">图1b：开课时间设置 — 修改弹窗</p>
+
+<!-- ==================== MODULE 2 ==================== -->
+<h2 id="module-2">2. 校选课程管理</h2>
+<p><strong>菜单位置：</strong>开课管理 → 开课设置 → 校选课程管理</p>
+<p><strong>适用角色：</strong>教务管理员</p>
+<p><strong>目的：</strong>维护校选课程（GE通识选修 + ME专业选修类校选）主数据池，作为通识选修开课的候选课库与默认值来源。</p>
+
+<h3>2.1 主要功能</h3>
+<table>
+<tr><th>功能</th><th>说明</th></tr>
+<tr><td>查询 / 清除过滤</td><td>按课程管理单位、类型(GE/ME)、校选课类别、状态、课程代码/名称过滤</td></tr>
+<tr><td>新增 ME</td><td>从课库勾选Major Elective纳入校选池（不可直接新增GE，GE由Restrictions List同步进入）</td></tr>
+<tr><td>批量改状态</td><td>批量改为<span class="badge active">正常</span> / <span class="badge closed">停课</span></td></tr>
+<tr><td>删除</td><td>删除校选池记录（不影响教务课库）</td></tr>
+<tr><td>查看修读范围</td><td>只读弹窗查看课程的修读范围（专业、学生类型、年级学期、冲突/先修课程）</td></tr>
+<tr><td>设置修读范围</td><td>抽屉维护可选/不可选专业、学生类型、年级学期、冲突与先修课程</td></tr>
+<tr><td>修改开课默认信息</td><td>抽屉维护Support历史、状态、教学开关、备注</td></tr>
+</table>
+
+<h3>2.2 修读范围字段</h3>
+<table>
+<tr><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>修读范围（专业）</td><td>摘要+选择</td><td>可选与不可选互斥；两边都不选=全开放</td></tr>
+<tr><td>可选学生类型</td><td>多选</td><td>Local / Chinese / International，至少1种</td></tr>
+<tr><td>不可选年级学期</td><td>多选网格</td><td>Y1-Y4 + S1-S3；空=均可选</td></tr>
+<tr><td>冲突课程</td><td>多选</td><td>校选课库中与本节冲突的课程；已修不可再选</td></tr>
+<tr><td>先修课程</td><td>多选</td><td>课库+校选中需先修完的课程</td></tr>
+</table>
+
+<h3>2.3 开课默认信息字段</h3>
+<table>
+<tr><th>字段</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+<tr><td>Support 历史</td><td>下拉 Y/N</td><td>N</td><td>必填</td></tr>
+<tr><td>状态</td><td>下拉</td><td>正常</td><td>必填；停课课不可被选入通识开课计划</td></tr>
+<tr><td>是否排课</td><td>下拉 是/否</td><td>是</td><td>必填</td></tr>
+<tr><td>是否排场地</td><td>下拉 是/否</td><td>是</td><td>必填</td></tr>
+<tr><td>是否考勤（预留）</td><td>下拉 是/否</td><td>是</td><td>必填</td></tr>
+<tr><td>是否录入成绩（预留）</td><td>下拉 是/否</td><td>是</td><td>必填</td></tr>
+<tr><td>是否排考（预留）</td><td>下拉 是/否</td><td>是</td><td>必填</td></tr>
+<tr><td>备注信息</td><td>多行文本</td><td>—</td><td>选填</td></tr>
+</table>
+
+<h3>2.4 业务规则</h3>
+<ul>
+  <li>GE类别自动推断：G01/G1x → Arts; G02/G2x → Business; G03/G3x → Science; 其余 → Unrestricted</li>
+  <li>停课课不可被选入通识开课计划</li>
+  <li>状态流转：<span class="badge active">正常</span> ↔ <span class="badge closed">停课</span>；正常可删除移出校选池</li>
+</ul>
+
+<img class="screenshot" src="screenshots/02-elective-list.png" alt="校选课程管理主列表">
+<p class="figcaption">图2a：校选课程管理 — 主列表</p>
+<img class="screenshot" src="screenshots/02-elective-scope-view.png" alt="查看修读范围弹窗">
+<p class="figcaption">图2b：校选课程管理 — 查看修读范围弹窗</p>
+<img class="screenshot" src="screenshots/02-elective-scope-edit.png" alt="设置修读范围抽屉">
+<p class="figcaption">图2c：校选课程管理 — 设置修读范围抽屉</p>
+<img class="screenshot" src="screenshots/02-elective-offering-settings.png" alt="修改开课默认信息抽屉">
+<p class="figcaption">图2d：校选课程管理 — 修改开课默认信息抽屉</p>
+
+<!-- ==================== MODULE 3 ==================== -->
+<h2 id="module-3">3. 特殊课程设置</h2>
+<p><strong>菜单位置：</strong>开课管理 → 开课设置 → 特殊课程设置</p>
+<p><strong>适用角色：</strong>教务管理员</p>
+<p><strong>目的：</strong>提供课号级默认配置（教室属性/偏好、默认Support学院、Support历史），供专业开课安排新建教学班时自动带出。</p>
+
+<h3>3.1 主要功能</h3>
+<table>
+<tr><th>功能</th><th>说明</th></tr>
+<tr><td>查询 / 清除过滤</td><td>按开课单位、课程号过滤</td></tr>
+<tr><td>添加课程</td><td>从教务课程库勾选纳入特殊设置清单</td></tr>
+<tr><td>编辑</td><td>行操作→抽屉维护教室/Support/历史</td></tr>
+<tr><td>删除</td><td>多选删除（不回滚已落班数据）</td></tr>
+</table>
+
+<h3>3.2 编辑抽屉字段</h3>
+<table>
+<tr><th>区块</th><th>字段</th><th>类型</th><th>说明</th></tr>
+<tr><td>课程信息</td><td>课程代码 / 开课单位 / 课程名称</td><td>只读</td><td>—</td></tr>
+<tr><td rowspan="2">教室信息(默认)</td><td>教室属性</td><td>下拉</td><td>四学时各自的属性：普通教室 / 计算机教室 / 专业教室；默认普通教室</td></tr>
+<tr><td>参考教室偏好</td><td>多选</td><td>选填</td></tr>
+<tr><td rowspan="2">Support(默认)</td><td>Support 历史</td><td>下拉 Y/N</td><td>课号级；未纳入视为N</td></tr>
+<tr><td>默认 Support 学院</td><td>多选</td><td>排除本开课单位</td></tr>
+</table>
+
+<h3>3.3 写入规则</h3>
+<ul>
+  <li>新建教学班时可全量拷贝教室默认和Support默认</li>
+  <li>打开编辑抽屉时仅当字段仍为系统默认值时补全（不覆盖已手工修改的值）</li>
+  <li>Support历史始终按课号同步展示</li>
+</ul>
+
+<img class="screenshot" src="screenshots/03-special-list.png" alt="特殊课程设置主列表">
+<p class="figcaption">图3a：特殊课程设置 — 主列表</p>
+<img class="screenshot" src="screenshots/03-special-add-modal.png" alt="添加课程弹窗">
+<p class="figcaption">图3b：特殊课程设置 — 添加课程弹窗</p>
+<img class="screenshot" src="screenshots/03-special-edit-drawer.png" alt="编辑抽屉">
+<p class="figcaption">图3c：特殊课程设置 — 编辑抽屉</p>
+
+<!-- ==================== MODULE 4 ==================== -->
+<h2 id="module-4">4. 开课计划</h2>
+<p><strong>菜单位置：</strong>开课管理 → 专业开课 → 开课计划</p>
+<p><strong>适用角色：</strong>教务管理员、学院教务</p>
+<p><strong>目的：</strong>从已锁定的培养方案执行计划生成学期开课任务，维护教学任务基础信息与合班，批量生效后进入开课安排。</p>
+<p><strong>粒度：</strong>1门课 × 1个专业 × 1个入学批次 = 1条计划行（默认各自生成独立教学班）</p>
+
+<h3>4.1 主要功能</h3>
+<table>
+<tr><th>功能</th><th>说明</th><th>操作入口</th></tr>
+<tr><td>生成开课任务</td><td>弹窗从已锁定执行计划选未开课专业课生成计划</td><td>工具栏 → 生成开课任务</td></tr>
+<tr><td>修改教学任务</td><td>抽屉维护选课类型、周次、开关、教室等</td><td>列表 → 课程信息</td></tr>
+<tr><td>合班</td><td>合并同课多专业批次（仅<strong>未生效</strong>草稿可用）</td><td>操作列 → 合班</td></tr>
+<tr><td>一键合班</td><td>工具栏按规则合并未生效草稿（不与已生效班合并）</td><td>工具栏</td></tr>
+<tr><td>生效</td><td>批量将计划生效，进入开课安排</td><td>工具栏 → 生效</td></tr>
+<tr><td>删除</td><td>删除计划行及关联班/名单（仅非已生效可删）</td><td>工具栏 → 删除</td></tr>
+<tr><td>预置人数</td><td>查看学生预置人数（只读）</td><td>列点击</td></tr>
+<tr><td>操作记录</td><td>查看字段变更历史</td><td>列点击</td></tr>
+</table>
+
+<h3>4.2 状态流转</h3>
+<div class="flow">
+<span class="step"><span class="badge draft">草稿</span></span><span class="arrow">→生效→</span>
+<span class="step"><span class="badge active">已生效</span></span><span class="arrow">→退回→</span>
+<span class="step"><span class="badge reverted">回退</span></span><span class="arrow">→再生效→</span>
+<span class="step"><span class="badge active">已生效</span></span>
+</div>
+<ul>
+  <li><span class="badge draft">草稿</span>：不可进入开课安排列表</li>
+  <li><span class="badge active">已生效</span>：出现在开课安排，可进入下游</li>
+  <li><span class="badge reverted">回退</span>：可修改后再生效；合班保留（需手动拆班）</li>
+  <li>删除仅限<span class="badge draft">草稿</span>或<span class="badge reverted">回退</span>状态</li>
+</ul>
+
+<h3>4.3 合班前提（须同时满足）</h3>
+<ol>
+  <li>同开课学期、同课程号</li>
+  <li>学分、总学时、起止周、教学周数一致</li>
+  <li>教学任务开关一致（选课类型、是否排课/排场地/考勤/录入成绩/排考）</li>
+  <li>计划页仅<strong>未生效</strong>可合</li>
+</ol>
+<div class="callout warn">
+<strong>合班副作用</strong>
+<p>人数/预留累加；清空分组、教师安排、场地类型与教室安排偏好；关联的任务安排重置为草稿。</p>
+</div>
+
+<h3>4.4 修改教学任务 关键字段</h3>
+<table>
+<tr><th>字段</th><th>编辑性</th><th>说明</th></tr>
+<tr><td>起止周</td><td>可编辑</td><td>打开"设置起止周"弹窗（支持全部/单周/双周/全不选模式）；保存后不被学期默认覆盖</td></tr>
+<tr><td>计划总人数</td><td>条件可编</td><td>开放选课时手动填写；不开放选课+老生=预置人数（只读）；不开放选课+新生=招生计划（只读）</td></tr>
+<tr><td>预留名额</td><td>可编辑</td><td>默认5，可改，计入名额上限</td></tr>
+<tr><td>选课类型</td><td>可编辑</td><td>默认"不开放选课"</td></tr>
+<tr><td>是否排课/排场地/考勤/录入成绩/排考</td><td>可编辑</td><td>排场地/考勤默认随学时（全为0→否，否则→是）；排课/录入成绩/排考默认"是"</td></tr>
+<tr><td>教室属性 / 参考教室</td><td>可编辑</td><td>四学时各行独立设置（普通/计算机/专业教室）</td></tr>
+<tr><td>Support历史</td><td>只读</td><td>始终取自特殊课程设置</td></tr>
+</table>
+
+<img class="screenshot" src="screenshots/04-plan-list.png" alt="开课计划主列表">
+<p class="figcaption">图4a：开课计划 — 主列表</p>
+<img class="screenshot" src="screenshots/04-plan-generate-modal.png" alt="生成开课任务弹窗">
+<p class="figcaption">图4b：开课计划 — 生成开课任务弹窗</p>
+<img class="screenshot" src="screenshots/04-plan-edit-drawer.png" alt="修改教学任务抽屉">
+<p class="figcaption">图4c：开课计划 — 修改教学任务抽屉</p>
+<img class="screenshot" src="screenshots/04-plan-merge-split.png" alt="合班穿梭抽屉">
+<p class="figcaption">图4d：开课计划 — 合班穿梭抽屉</p>
+
+<!-- ==================== MODULE 5 ==================== -->
+<h2 id="module-5">5. 开课安排</h2>
+<p><strong>菜单位置：</strong>开课管理 → 专业开课 → 开课安排</p>
+<p><strong>适用角色：</strong>教务管理员、学院教务、教师</p>
+<p><strong>目的：</strong>对计划已生效的教学班，分三步完成开课前期设置、课程班（合班/Support）、师资安排（教师/授课确认/共同授课），再批量生效进入开课名单。</p>
+
+<div class="steps">
+  <div class="step-card">
+    <div class="num">1</div>
+    <h4>开课前期设置</h4>
+    <p>课程基础信息（含教室等）</p>
+    <p style="color:var(--text3)">行操作："设置"</p>
+  </div>
+  <div class="step-card">
+    <div class="num">2</div>
+    <h4>课程班</h4>
+    <p>合班 · Support管理</p>
+    <p style="color:var(--text3)">行操作："合班" / "Support管理"</p>
+  </div>
+  <div class="step-card">
+    <div class="num">3</div>
+    <h4>师资安排</h4>
+    <p>安排教师 · 授课确认 · 共同授课</p>
+    <p style="color:var(--text3)">行操作："安排教师" / "共同授课" / "授课确认"</p>
+  </div>
+</div>
+
+<div class="callout important">
+<strong>生效门槛（须同时满足）</strong>
+<ul>
+  <li>分组结构与学时投递无致命错误</li>
+  <li>分组人数上限合计 ≥ 计划总人数 且 ≤ 课程人数上限</li>
+  <li>全部授课教师已确认（含代确认）；无教师不可生效</li>
+  <li>学时投递合计不足 → 警示（确认后仍可生效）；超过 → 二次确认后可生效</li>
+</ul>
+</div>
+
+<h3 id="module-5a">5.1 步骤一：开课前期设置</h3>
+<p>点击行操作<a style="color:var(--accent)">「设置」</a>→ 打开"修改教学任务"抽屉，与开课计划共用同一套抽屉字段。在计划已生效且任务未生效时，主要可修改教室相关信息。</p>
+
+<h3 id="module-5b">5.2 步骤二：课程班（合班 / Support）</h3>
+<h4>合班</h4>
+<p>点击<a style="color:var(--accent)">「合班」</a>→ 打开合拆班穿梭抽屉，将待合并的专业批次移动到右侧已合并区。合班前提和副作用与开课计划一致。</p>
+<h4>Support 管理</h4>
+<p>点击<a style="color:var(--accent)">「Support 管理」</a>→ 弹窗维护Support学院（多选，不可选本开课单位），历史只读提示。</p>
+
+<h3 id="module-5c">5.3 步骤三：师资安排</h3>
+<h4>安排教师 → 进入分组工作台</h4>
+<p>分组工作台是沉浸式页面，左侧为分组信息：</p>
+<ul>
+  <li><strong>分组信息区：</strong>计划人数、课程人数上限、专业批次、Coordinator</li>
+  <li><strong>分组树：</strong>课程班名称 → 小组名称（可编辑）→ 人数上限 → 备注说明</li>
+  <li><strong>工具栏：</strong>分组（按组数/按人数）、重置、学时类型设置（全部合并/部分合并/分别安排）、复制（从历史学期）、安排教师</li>
+</ul>
+<p>右侧有「课程班/小组学时详情」和「学生名单」两个Tab。在学时详情中配置各组的学时类型(L/T/P/O)、周次、周学时、教师、教室属性等。</p>
+
+<h4>授课确认</h4>
+<p>在步骤三点击<a style="color:var(--accent)">「授课确认管理」</a>→ 弹窗查看各教师确认进度，可代确认（选择"同意"或"不同意+需求反馈"）。</p>
+
+<h4>共同授课</h4>
+<p>点击<a style="color:var(--accent)">「共同授课」</a>→ 弹窗左侧已设置表/右侧可选表，添加共享教师的课号。</p>
+
+<h4>撤回 vs 退回</h4>
+<table>
+<tr><th>操作</th><th>计划状态</th><th>任务状态</th><th>合班</th><th>分组/教师</th><th>学生名单分组</th></tr>
+<tr><td>撤回</td><td>仍为已生效</td><td>→ 草稿</td><td>保留</td><td>保留</td><td style="color:var(--red)">重置</td></tr>
+<tr><td>退回<br/>(至计划)</td><td>→ 回退</td><td>清空</td><td>保留<br/>(不自动拆)</td><td style="color:var(--red)">清空</td><td style="color:var(--red)">清空</td></tr>
+<tr><td>名单页<br/>退回安排</td><td>仍为已生效</td><td>→ 草稿</td><td>保留</td><td>可再改</td><td style="color:var(--green)">名单可保留</td></tr>
+</table>
+
+<img class="screenshot" src="screenshots/05-arrange-list.png" alt="开课安排主列表">
+<p class="figcaption">图5a：开课安排 — 主列表</p>
+<img class="screenshot" src="screenshots/05-arrange-setup-drawer.png" alt="设置抽屉">
+<p class="figcaption">图5b：开课安排 — 设置抽屉（修改教学任务）</p>
+<img class="screenshot" src="screenshots/05-arrange-grouping-workspace.png" alt="分组工作台">
+<p class="figcaption">图5c：开课安排 — 分组工作台（步骤三·安排教师/学时/分组）</p>
+<img class="screenshot" src="screenshots/05-arrange-support-modal.png" alt="Support管理弹窗">
+<p class="figcaption">图5d：开课安排 — Support管理弹窗</p>
+<img class="screenshot" src="screenshots/05-arrange-confirm-modal.png" alt="授课确认管理弹窗">
+<p class="figcaption">图5e：开课安排 — 授课确认管理弹窗</p>
+<img class="screenshot" src="screenshots/05-arrange-shared-teaching.png" alt="共同授课弹窗">
+<p class="figcaption">图5f：开课安排 — 共同授课弹窗</p>
+
+<!-- ==================== MODULE 6 ==================== -->
+<h2 id="module-6">6. 开课名单</h2>
+<p><strong>菜单位置：</strong>开课管理 → 专业开课 → 开课名单</p>
+<p><strong>适用角色：</strong>教务管理员、学院教务</p>
+<p><strong>目的：</strong>在任务安排已生效后，按开课任务维护各小组学生名单。</p>
+<p><strong>可见条件：</strong>计划已生效 <strong>且</strong> 任务安排已生效。</p>
+
+<h3>6.1 主要功能</h3>
+<table>
+<tr><th>功能</th><th>说明</th><th>操作入口</th></tr>
+<tr><td>管理名单</td><td>进入分组工作台"学生名单"Tab</td><td>行操作</td></tr>
+<tr><td>一键分配</td><td>按规则（国籍类型/专业/intake/性别）批量入组</td><td>工作台工具栏</td></tr>
+<tr><td>预置名单</td><td>从预置可修名单分配学生到小组</td><td>工作台工具栏</td></tr>
+<tr><td>添加学生</td><td>手工加入（受组容量约束）</td><td>工作台工具栏</td></tr>
+<tr><td>调整分组</td><td>学生调组</td><td>工作台工具栏</td></tr>
+<tr><td>移除</td><td>移出名单（保留移除记录）</td><td>工作台工具栏</td></tr>
+<tr><td>保存名单</td><td>保存当前维护结果</td><td>工作台工具栏</td></tr>
+<tr><td>退回</td><td>批量退回至开课安排（名单可保留，须填写退回说明）</td><td>列表工具栏</td></tr>
+</table>
+
+<h3>6.2 一键分配规则</h3>
+<table>
+<tr><th>场景</th><th>行为</th></tr>
+<tr><td>无特殊分组</td><td>按专业 + intake匹配，批量导入课程班名单</td></tr>
+<tr><td>已拆平行小组</td><td>配置规则后分配 — 维度含国籍类型/专业/intake/性别；模式含等比例/按顺序/唯一值；多维按优先级</td></tr>
+</table>
+
+<h3>6.3 业务规则</h3>
+<ul>
+  <li>实际人数不超过小组上限；不改变计划人数/名额上限（老生场景）</li>
+  <li>新生批次暂无预置名单时，以招生计划为计划人数口径</li>
+  <li>开放选课课程默认名单来自选课应用</li>
+</ul>
+
+<img class="screenshot" src="screenshots/06-roster-list.png" alt="开课名单主列表">
+<p class="figcaption">图6a：开课名单 — 主列表</p>
+<img class="screenshot" src="screenshots/06-roster-manage.png" alt="管理名单工作台">
+<p class="figcaption">图6b：开课名单 — 管理名单（分组工作台·学生名单Tab）</p>
+
+<!-- ==================== MODULE 7 ==================== -->
+<h2 id="module-7">7. 通识选修课开课</h2>
+<p><strong>状态：</strong><span class="badge draft">设计中</span></p>
+<p>本模块功能与专业开课类似，但针对通识选修课（GE）场景。包含三个子页面：</p>
+<ul>
+  <li><strong>通识选修计划：</strong>上段展示各学院需修GE的专业批次与人数，下段AC定各学院需开课程班/小组数（下限），学院可超额</li>
+  <li><strong>通识选修开课：</strong>计划+安排合表，三步引导（课程班 → 其他学院Support → 师资安排）</li>
+  <li><strong>通识选修课开课名单管理：</strong>开放选课，默认名单由选课应用生成，支持移除与手动添加</li>
+</ul>
+
+<img class="screenshot" src="screenshots/07-ge-quota-list.png" alt="通识选修计划">
+<p class="figcaption">图7a：通识选修计划页面</p>
+<img class="screenshot" src="screenshots/08-ge-offering-list.png" alt="通识选修开课">
+<p class="figcaption">图7b：通识选修开课页面</p>
+<img class="screenshot" src="screenshots/09-ge-roster-list.png" alt="通识选修课开课名单管理">
+<p class="figcaption">图7c：通识选修课开课名单管理页面</p>
+
+<!-- ==================== MODULE 8 ==================== -->
+<h2 id="module-8">8. 开课清单</h2>
+
+<h3 id="module-8a">8.1 教师开课学时统计</h3>
+<p><strong>菜单位置：</strong>开课管理 → 开课清单 → 教师开课学时统计</p>
+<p><strong>目的：</strong>按教师横向展示各学期授课学时（周学时×周次），支持三种统计维度。</p>
+<table>
+<tr><th>统计维度</th><th>说明</th></tr>
+<tr><td>按周次</td><td>按教学周展示教师每周学时分布</td></tr>
+<tr><td>按学期</td><td>按学期汇总教师总授课学时</td></tr>
+<tr><td>按学年</td><td>按学年汇总，可开启"本学期计入"开关</td></tr>
+</table>
+<p><strong>工具栏：</strong>超限阈值设置（设定教师学时上限阈值）、导出</p>
+
+<h3 id="module-8b">8.2 开课清单</h3>
+<p><strong>菜单位置：</strong>开课管理 → 开课清单 → 开课清单</p>
+<p><strong>目的：</strong>自动汇总专业与通识选修开课流程中任务安排已提交的数据。</p>
+<table>
+<tr><th>筛选</th><td>开课学期、开课类型(专业开课/通识选修)、开课单位、课程号/课程名称</td></tr>
+<tr><th>列表</th><td>负责人、开课学期、开课类型、课程号、课程名称、开课单位、选课类型、学分、小组数、起止周、总学时、课程人数上限、当前学生名单人数、任课教师</td></tr>
+</table>
+
+<h3 id="module-8c">8.3 授课确认管理</h3>
+<p><strong>菜单位置：</strong>开课管理 → 开课清单 → 授课确认管理</p>
+<p><strong>目的：</strong>按教师维度下发系统内授课确认；支持教务端代确认。</p>
+<p>另设<strong>授课确认（教师端）</strong>页面，教师在系统内确认本学期授课安排（同意/不同意+需求反馈），或查看教务下发的确认函。</p>
+
+<h3 id="module-8d">8.4 授课教师替换</h3>
+<p><strong>菜单位置：</strong>开课管理 → 开课清单 → 授课教师替换</p>
+<p><strong>目的：</strong>对已生效开课进行整行教师替换（不改起止周、学时类型与学时）。</p>
+<table>
+<tr><th>Tab</th><th>说明</th></tr>
+<tr><td>教师替换</td><td>选择课程→查看明细（课程班/小组、学时类型、起止周、周学时、总学时、教师、同时授课）→替换教师</td></tr>
+<tr><td>替换记录</td><td>查看历史上所有替换操作的记录</td></tr>
+</table>
+
+<img class="screenshot" src="screenshots/10-teacher-load-list.png" alt="教师开课学时统计">
+<p class="figcaption">图8a：教师开课学时统计页面</p>
+<img class="screenshot" src="screenshots/11-manifest-list.png" alt="开课清单">
+<p class="figcaption">图8b：开课清单页面</p>
+<img class="screenshot" src="screenshots/12-confirm-admin-list.png" alt="授课确认管理">
+<p class="figcaption">图8c：授课确认管理页面（管理端）</p>
+<img class="screenshot" src="screenshots/13-confirm-teacher-list.png" alt="授课确认教师端">
+<p class="figcaption">图8d：授课确认页面（教师端）</p>
+<img class="screenshot" src="screenshots/14-replace-list.png" alt="授课教师替换主列表">
+<p class="figcaption">图8e：授课教师替换 — 主列表</p>
+<img class="screenshot" src="screenshots/14-replace-detail.png" alt="授课教师替换详情">
+<p class="figcaption">图8f：授课教师替换 — 详情展开</p>
+
+<!-- ==================== WORKFLOW ==================== -->
+<h2 id="workflow">业务流程总览</h2>
+
+<h3>完整开课数据流</h3>
+<div class="flow" style="font-size:12px; justify-content:center; line-height:2;">
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+  <span class="step" style="background:var(--purple);color:var(--bg);font-weight:600;">校历学年学期</span>
+  <span class="arrow" style="font-size:18px;">↓</span>
+  <span class="step">开课时间设置<br/><small>(窗口、默认学期)</small></span>
+  <span class="arrow" style="font-size:18px;">↓</span>
+  <span class="step">培养方案执行计划<br/><small>(已锁定)</small></span>
+  <span class="arrow" style="font-size:18px;">+</span>
+  <span class="step">特殊课程设置<br/><small>(教室/Support默认)</small></span>
+  <span class="arrow" style="font-size:18px;">↓</span>
+  <span class="step" style="background:var(--accent);color:var(--bg);font-weight:600;">开课计划<br/><small>(生成→合班→生效)</small></span>
+  <span class="arrow" style="font-size:18px;">↓</span>
+  <span class="step" style="background:var(--cyan);color:var(--bg);font-weight:600;">开课安排<br/><small>(三步→生效)</small></span>
+  <span class="arrow" style="font-size:18px;">↓</span>
+  <span class="step" style="background:var(--green);color:var(--bg);font-weight:600;">开课名单<br/><small>(分配→保存)</small></span>
+  <span class="arrow" style="font-size:18px;">↓</span>
+  <span class="step">开课清单 / 排课 / 选课 / 考勤<br/><small>(下游消费)</small></span>
+</div>
+</div>
+
+<h3>状态与角色矩阵</h3>
+<table>
+<tr><th>阶段</th><th>负责角色</th><th>核心操作</th><th>结果</th></tr>
+<tr><td>开课设置</td><td>教务</td><td>设置时间窗口、维护校选/特殊课程</td><td>就绪可生成</td></tr>
+<tr><td>开课计划</td><td>教务/学院</td><td>生成→编辑→合班→生效</td><td>计划已生效</td></tr>
+<tr><td>开课安排·步骤1</td><td>教务</td><td>设置教室信息等</td><td>基础信息就绪</td></tr>
+<tr><td>开课安排·步骤2</td><td>教务</td><td>合班/Support</td><td>课程班就绪</td></tr>
+<tr><td>开课安排·步骤3</td><td>学院/教师</td><td>分组、安排教师、授课确认</td><td>师资就绪</td></tr>
+<tr><td>开课安排·生效</td><td>教务</td><td>校验门槛→生效</td><td>任务已生效</td></tr>
+<tr><td>开课名单</td><td>教务</td><td>一键分配/预置/手工→保存</td><td>名单就绪</td></tr>
+</table>
+
+<!-- ==================== FAQ ==================== -->
+<h2 id="faq">常见问题</h2>
+
+<h4>Q：生成开课任务时提示"未设置默认展示学期"怎么办？</h4>
+<p>A：请先前往 <strong>开课管理 → 开课设置 → 开课时间设置</strong>，找到目标学期，将"默认展示学期"开关切换为"是"。全局仅允许一个"是"。</p>
+
+<h4>Q：为什么在开课安排中看不到某条开课记录？</h4>
+<p>A：请确认该条记录在开课计划中的生效状态为<span class="badge active">已生效</span>。草稿或回退状态的计划不会出现在开课安排列表中。</p>
+
+<h4>Q：已生效的计划能否删除？</h4>
+<p>A：不能直接删除。需先从"开课安排"页面对该任务点击<a style="color:var(--orange)">「退回」</a>（填写退回说明），计划状态变为<span class="badge reverted">回退</span>后，再回到开课计划页删除。注意：退回会清空分组和教师数据，合班会保留（需手动拆班）。</p>
+
+<h4>Q：合班后人数怎么算？</h4>
+<p>A：合并后各批次的人数/预留名额会<strong>累加</strong>到合班。但分组、教师安排、场地类型偏好会被清空，需重新配置。任务安排状态也会重置为草稿。</p>
+
+<h4>Q："撤回"和"退回"有什么区别？</h4>
+<p>A：<strong>撤回</strong>：任务回到草稿，但合班/分组/教师全部保留，仅学生小组分配被重置。<strong>退回</strong>（至计划）：计划状态变为回退，清空分组/教师，合班保留但不自动拆（需手动）。已生效任务不可退回。</p>
+
+<h4>Q：授课教师还没确认怎么办？</h4>
+<p>A：任务生效的门槛之一是"全部授课教师已确认"。可在步骤三点击<a style="color:var(--accent)">「授课确认管理」</a>进行代确认（教务端操作），或通知教师登录教师端页面自行确认。</p>
+
+<h4>Q：计划总人数可以修改吗？</h4>
+<p>A：取决于选课类型——<strong>开放选课</strong>时可以手动编辑计划总人数；<strong>不开放选课</strong>时，老生显示预置可修人数（只读），新生显示招生计划人数（只读）。可在"修改教学任务"抽屉中查看和修改。</p>
+
+<h4>Q：通识选修课（GE）开课怎么操作？</h4>
+<p>A：通识选修课开课模块目前仍在<strong>设计中</strong>。当前需使用"校选课程管理"维护GE/ME主数据池后，通过专业开课流程（开课计划→开课安排→开课名单）的扩展路径处理。详细流程待正式发布。</p>
+
+<div class="callout tip">
+<strong>需要更多帮助？</strong>
+<p>如遇到本手册未覆盖的问题，请联系系统管理员或查看对应子模块的PRD需求文档。各模块PRD存放在 <code>prototype/参考文档/2、开课管理/</code> 目录下。</p>
+</div>
+
+</div>
+
+<script>
+// Active sidebar link
+(function() {
+  const links = document.querySelectorAll('#sidebar nav a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const id = e.target.id;
+        const match = document.querySelector(`#sidebar nav a[href="#${id}"]`);
+        if (match) match.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -70% 0px' });
+  document.querySelectorAll('h2[id], h3[id]').forEach(h => observer.observe(h));
+  links.forEach(a => {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

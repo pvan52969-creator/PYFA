@@ -3816,6 +3816,12 @@ code {
   --major-offering-count-col-width: 52px;
   --major-offering-changelog-col-width: 44px;
   --major-offering-course-info-col-width: 44px;
+  /* 左侧冻结至课程代码 */
+  --major-offering-sticky-check: 28px;
+  --major-offering-sticky-term: 56px;
+  --major-offering-sticky-owner: 80px;
+  --major-offering-sticky-status: 56px;
+  --major-offering-sticky-code: 72px;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-weight: 400;
   color: #000;
@@ -3985,6 +3991,85 @@ code {
   background: #fff;
   box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
 }
+/* 左侧冻结：勾选 → 学期 → 负责人 → 生效状态 → 课程代码 */
+#page-course-offering-major .course-offering-major-table th.col-check,
+#page-course-offering-major .course-offering-major-table td.col-check,
+#page-course-offering-major .course-offering-major-table th.col-term,
+#page-course-offering-major .course-offering-major-table td.col-term,
+#page-course-offering-major .course-offering-major-table th.col-owner,
+#page-course-offering-major .course-offering-major-table td.col-owner,
+#page-course-offering-major .course-offering-major-table th.col-status,
+#page-course-offering-major .course-offering-major-table td.col-status,
+#page-course-offering-major .course-offering-major-table th.col-code,
+#page-course-offering-major .course-offering-major-table td.col-code {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+#page-course-offering-major .course-offering-major-table thead th.col-check,
+#page-course-offering-major .course-offering-major-table thead th.col-term,
+#page-course-offering-major .course-offering-major-table thead th.col-owner,
+#page-course-offering-major .course-offering-major-table thead th.col-status,
+#page-course-offering-major .course-offering-major-table thead th.col-code {
+  z-index: 5;
+  background: var(--blue-50, #eff6ff);
+}
+#page-course-offering-major .course-offering-major-table tr:hover td.col-check,
+#page-course-offering-major .course-offering-major-table tr:hover td.col-term,
+#page-course-offering-major .course-offering-major-table tr:hover td.col-owner,
+#page-course-offering-major .course-offering-major-table tr:hover td.col-status,
+#page-course-offering-major .course-offering-major-table tr:hover td.col-code {
+  background: #fafbfc;
+}
+#page-course-offering-major .course-offering-major-table th.col-check,
+#page-course-offering-major .course-offering-major-table td.col-check {
+  left: 0;
+  width: var(--major-offering-sticky-check);
+  min-width: var(--major-offering-sticky-check);
+  max-width: var(--major-offering-sticky-check);
+}
+#page-course-offering-major .course-offering-major-table th.col-term,
+#page-course-offering-major .course-offering-major-table td.col-term {
+  left: var(--major-offering-sticky-check);
+  width: var(--major-offering-sticky-term);
+  min-width: var(--major-offering-sticky-term);
+  max-width: var(--major-offering-sticky-term);
+}
+#page-course-offering-major .course-offering-major-table th.col-owner,
+#page-course-offering-major .course-offering-major-table td.col-owner {
+  left: calc(var(--major-offering-sticky-check) + var(--major-offering-sticky-term));
+  width: var(--major-offering-sticky-owner);
+  min-width: var(--major-offering-sticky-owner);
+  max-width: var(--major-offering-sticky-owner);
+}
+#page-course-offering-major .course-offering-major-table th.col-status,
+#page-course-offering-major .course-offering-major-table td.col-status {
+  left: calc(
+    var(--major-offering-sticky-check)
+    + var(--major-offering-sticky-term)
+    + var(--major-offering-sticky-owner)
+  );
+  width: var(--major-offering-sticky-status);
+  min-width: var(--major-offering-sticky-status);
+  max-width: var(--major-offering-sticky-status);
+}
+#page-course-offering-major .course-offering-major-table th.col-code,
+#page-course-offering-major .course-offering-major-table td.col-code {
+  left: calc(
+    var(--major-offering-sticky-check)
+    + var(--major-offering-sticky-term)
+    + var(--major-offering-sticky-owner)
+    + var(--major-offering-sticky-status)
+  );
+  width: var(--major-offering-sticky-code);
+  min-width: var(--major-offering-sticky-code);
+  max-width: var(--major-offering-sticky-code);
+  border-right: 1px solid var(--border, #94a3b8);
+  box-shadow:
+    1px 0 0 var(--border, #94a3b8),
+    8px 0 14px rgba(15, 23, 42, 0.1);
+  overflow: visible;
+}
 #page-course-offering-major .course-offering-major-table td.col-sticky-actions a,
 #page-course-offering-major .course-offering-major-table td.col-sticky-actions .action-disabled {
   margin-right: 0;
@@ -4148,6 +4233,12 @@ code {
   --major-offering-count-col-width: 40px;
   --major-offering-course-info-col-width: 48px;
   --major-offering-changelog-col-width: 48px;
+  /* 左侧冻结至课程号 */
+  --roster-sticky-check: 32px;
+  --roster-sticky-status: 34px;
+  --roster-sticky-assign: 72px;
+  --roster-sticky-term: 68px;
+  --roster-sticky-code: 72px;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-weight: 400;
   color: #000;
@@ -4432,6 +4523,81 @@ code {
     -1px 0 0 var(--border, #cbd5e1),
     -8px 0 14px rgba(15, 23, 42, 0.1);
   white-space: nowrap;
+}
+/* 左侧冻结：勾选 → 名单状态 → 分配情况 → 开课学期 → 课程号 */
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-check,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-check,
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-status,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-status,
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-assign,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-assign,
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-term,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-term,
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-code,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-code {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-check,
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-status,
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-assign,
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-term,
+#page-course-major-offering-roster .course-major-offering-roster-table thead th.col-code {
+  z-index: 5;
+  background: var(--blue-50, #eff6ff);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-check,
+#page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-status,
+#page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-assign,
+#page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-term,
+#page-course-major-offering-roster .course-major-offering-roster-table tr:hover td.col-code {
+  background: #fafbfc;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-check,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-check {
+  left: 0;
+  width: var(--roster-sticky-check);
+  min-width: var(--roster-sticky-check);
+  max-width: var(--roster-sticky-check);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-status,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-status {
+  left: var(--roster-sticky-check);
+  width: var(--roster-sticky-status);
+  min-width: var(--roster-sticky-status);
+  max-width: var(--roster-sticky-status);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-assign,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-assign {
+  left: calc(var(--roster-sticky-check) + var(--roster-sticky-status));
+  width: var(--roster-sticky-assign);
+  min-width: var(--roster-sticky-assign);
+  max-width: var(--roster-sticky-assign);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-term,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-term {
+  left: calc(var(--roster-sticky-check) + var(--roster-sticky-status) + var(--roster-sticky-assign));
+  width: var(--roster-sticky-term);
+  min-width: var(--roster-sticky-term);
+  max-width: var(--roster-sticky-term);
+}
+#page-course-major-offering-roster .course-major-offering-roster-table th.col-code,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-code {
+  left: calc(
+    var(--roster-sticky-check)
+    + var(--roster-sticky-status)
+    + var(--roster-sticky-assign)
+    + var(--roster-sticky-term)
+  );
+  width: var(--roster-sticky-code);
+  min-width: var(--roster-sticky-code);
+  max-width: var(--roster-sticky-code);
+  border-right: 1px solid var(--border, #94a3b8);
+  box-shadow:
+    1px 0 0 var(--border, #94a3b8),
+    8px 0 14px rgba(15, 23, 42, 0.1);
+  overflow: visible;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table thead th.col-sticky-count {
   z-index: 4;
@@ -5444,6 +5610,15 @@ code {
   --mot-style2-support-college-width: 72px;
   --mot-style2-support-action-width: 48px;
   --mot-style2-support-group-width: calc(var(--mot-style2-support-hist-width) + var(--mot-style2-support-college-width) + var(--mot-style2-support-action-width));
+  /* 左侧冻结至 Course Code（宽度须与 sticky left 偏移一致） */
+  --mot-style2-sticky-check: 32px;
+  --mot-style2-sticky-expand: 36px;
+  --mot-style2-sticky-status: 34px;
+  /* 与开课计划「已生效」pill 同宽量级，避免三字状态被截断 */
+  --mot-style2-sticky-task-submit: 56px;
+  --mot-style2-sticky-tcc-progress: 72px;
+  --mot-style2-sticky-term: 72px;
+  --mot-style2-sticky-code: 88px;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th {
   position: sticky;
@@ -5539,14 +5714,15 @@ code {
   padding-right: 4px;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-task-submit {
-  width: 3.2em;
-  min-width: 3.2em;
-  max-width: 3.6em;
+  width: var(--mot-style2-sticky-task-submit);
+  min-width: var(--mot-style2-sticky-task-submit);
+  max-width: var(--mot-style2-sticky-task-submit);
   white-space: nowrap;
 }
 #page-course-major-offering-task-style2 .mot-style2-table td.col-task-submit {
   overflow: visible;
-  max-width: none;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit {
   overflow: visible;
@@ -6032,6 +6208,116 @@ code {
   padding-right: 6px;
   text-align: center;
   vertical-align: middle;
+}
+/* 左侧冻结：勾选 → … → Course Code */
+#page-course-major-offering-task-style2 .mot-style2-table th.col-check,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-check,
+#page-course-major-offering-task-style2 .mot-style2-table th.col-expand,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-expand,
+#page-course-major-offering-task-style2 .mot-style2-table th.col-status,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-status,
+#page-course-major-offering-task-style2 .mot-style2-table th.col-task-submit,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-task-submit,
+#page-course-major-offering-task-style2 .mot-style2-table th.col-tcc-progress,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-tcc-progress,
+#page-course-major-offering-task-style2 .mot-style2-table th.col-term,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-term,
+#page-course-major-offering-task-style2 .mot-style2-table th.col-code,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-code {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-check,
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-expand,
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-status,
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-task-submit,
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-tcc-progress,
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-term,
+#page-course-major-offering-task-style2 .mot-style2-table thead th.col-code {
+  z-index: 5;
+  background: var(--blue-50, #eff6ff);
+}
+#page-course-major-offering-task-style2 .mot-style2-table tr:hover td.col-check,
+#page-course-major-offering-task-style2 .mot-style2-table tr:hover td.col-expand,
+#page-course-major-offering-task-style2 .mot-style2-table tr:hover td.col-status,
+#page-course-major-offering-task-style2 .mot-style2-table tr:hover td.col-task-submit,
+#page-course-major-offering-task-style2 .mot-style2-table tr:hover td.col-tcc-progress,
+#page-course-major-offering-task-style2 .mot-style2-table tr:hover td.col-term,
+#page-course-major-offering-task-style2 .mot-style2-table tr:hover td.col-code {
+  background: #fafbfc;
+}
+#page-course-major-offering-task-style2 .mot-style2-table th.col-check,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-check {
+  left: 0;
+  width: var(--mot-style2-sticky-check);
+  min-width: var(--mot-style2-sticky-check);
+  max-width: var(--mot-style2-sticky-check);
+}
+#page-course-major-offering-task-style2 .mot-style2-table th.col-expand,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-expand {
+  left: var(--mot-style2-sticky-check);
+  width: var(--mot-style2-sticky-expand);
+  min-width: var(--mot-style2-sticky-expand);
+  max-width: var(--mot-style2-sticky-expand);
+}
+#page-course-major-offering-task-style2 .mot-style2-table th.col-status,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-status {
+  left: calc(var(--mot-style2-sticky-check) + var(--mot-style2-sticky-expand));
+  width: var(--mot-style2-sticky-status);
+  min-width: var(--mot-style2-sticky-status);
+  max-width: var(--mot-style2-sticky-status);
+}
+#page-course-major-offering-task-style2 .mot-style2-table th.col-task-submit,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-task-submit {
+  left: calc(var(--mot-style2-sticky-check) + var(--mot-style2-sticky-expand) + var(--mot-style2-sticky-status));
+  width: var(--mot-style2-sticky-task-submit);
+  min-width: var(--mot-style2-sticky-task-submit);
+  max-width: var(--mot-style2-sticky-task-submit);
+}
+#page-course-major-offering-task-style2 .mot-style2-table th.col-tcc-progress,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-tcc-progress {
+  left: calc(
+    var(--mot-style2-sticky-check)
+    + var(--mot-style2-sticky-expand)
+    + var(--mot-style2-sticky-status)
+    + var(--mot-style2-sticky-task-submit)
+  );
+  width: var(--mot-style2-sticky-tcc-progress);
+  min-width: var(--mot-style2-sticky-tcc-progress);
+  max-width: var(--mot-style2-sticky-tcc-progress);
+}
+#page-course-major-offering-task-style2 .mot-style2-table th.col-term,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-term {
+  left: calc(
+    var(--mot-style2-sticky-check)
+    + var(--mot-style2-sticky-expand)
+    + var(--mot-style2-sticky-status)
+    + var(--mot-style2-sticky-task-submit)
+    + var(--mot-style2-sticky-tcc-progress)
+  );
+  width: var(--mot-style2-sticky-term);
+  min-width: var(--mot-style2-sticky-term);
+  max-width: var(--mot-style2-sticky-term);
+}
+#page-course-major-offering-task-style2 .mot-style2-table th.col-code,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-code {
+  left: calc(
+    var(--mot-style2-sticky-check)
+    + var(--mot-style2-sticky-expand)
+    + var(--mot-style2-sticky-status)
+    + var(--mot-style2-sticky-task-submit)
+    + var(--mot-style2-sticky-tcc-progress)
+    + var(--mot-style2-sticky-term)
+  );
+  width: var(--mot-style2-sticky-code);
+  min-width: var(--mot-style2-sticky-code);
+  max-width: var(--mot-style2-sticky-code);
+  border-right: 1px solid var(--border, #94a3b8);
+  box-shadow:
+    1px 0 0 var(--border, #94a3b8),
+    8px 0 14px rgba(15, 23, 42, 0.1);
+  overflow: visible;
 }
 /* 步骤 3：操作列定宽（安排教师 · 共同授课），便于「授课确认」列 sticky 对齐 */
 #page-course-major-offering-task-style2[data-workflow-step="3"] .mot-style2-table {
@@ -8320,10 +8606,10 @@ code {
 #page-special-course-settings .table-scroll {
   padding-bottom: 4px;
 }
-/* 特殊课程设置：勾选列固定、课程名称偏宽，其余列尽量平分 */
+/* 特殊课程设置：勾选列固定；新增学时/教室摘要列后横向滚动 */
 #page-special-course-settings .special-course-settings-table {
-  width: 100%;
-  min-width: 100%;
+  width: max(100%, 1180px);
+  min-width: 1180px;
   table-layout: fixed;
 }
 #page-special-course-settings .special-course-settings-table .col-check {
@@ -8332,31 +8618,57 @@ code {
   max-width: 40px;
 }
 #page-special-course-settings .special-course-settings-table .col-course-name {
-  width: 32%;
-  min-width: 0;
-  max-width: none;
+  width: 160px;
+  min-width: 140px;
+}
+#page-special-course-settings .special-course-settings-table .col-code {
+  width: 88px;
+  min-width: 80px;
+}
+#page-special-course-settings .special-course-settings-table .col-offering-unit,
+#page-special-course-settings .special-course-settings-table .col-support-summary,
+#page-special-course-settings .special-course-settings-table .col-support-hist {
+  width: 88px;
+  min-width: 72px;
+}
+#page-special-course-settings .special-course-settings-table .col-hours-mode {
+  width: 150px;
+  min-width: 130px;
+}
+#page-special-course-settings .special-course-settings-table .col-classroom-summary {
+  width: 260px;
+  min-width: 200px;
+}
+#page-special-course-settings .special-course-settings-table th.col-sticky-actions,
+#page-special-course-settings .special-course-settings-table td.col-sticky-actions {
+  width: 64px;
+  min-width: 56px;
 }
 #page-special-course-settings .special-course-settings-table .col-code,
 #page-special-course-settings .special-course-settings-table .col-offering-unit,
 #page-special-course-settings .special-course-settings-table .col-support-summary,
 #page-special-course-settings .special-course-settings-table .col-support-hist,
-#page-special-course-settings .special-course-settings-table th.col-sticky-actions,
-#page-special-course-settings .special-course-settings-table td.col-sticky-actions {
-  width: 13%;
-  min-width: 0;
-  max-width: none;
-}
-#page-special-course-settings .special-course-settings-table .col-code,
-#page-special-course-settings .special-course-settings-table .col-offering-unit,
-#page-special-course-settings .special-course-settings-table .col-support-summary,
-#page-special-course-settings .special-course-settings-table .col-support-hist {
+#page-special-course-settings .special-course-settings-table .col-hours-mode .scs-list-summary-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .special-course-settings-table .col-classroom-summary {
-  min-width: 180px;
-  max-width: 280px;
+  vertical-align: top;
+}
+.special-course-settings-table .scs-list-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.35;
+  font-size: 12px;
+  text-align: left;
+}
+.special-course-settings-table .scs-list-summary-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 .special-course-settings-table .col-support-summary {
   min-width: 0;
@@ -9052,6 +9364,10 @@ code {
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
+  --tcc-sticky-check: 28px;
+  --tcc-sticky-status: 64px;
+  --tcc-sticky-teacher: 72px;
+  --tcc-sticky-code: 72px;
 }
 .tcc-admin-table th,
 .tcc-admin-table td {
@@ -9297,6 +9613,65 @@ code {
   overflow: visible;
   background: #fff;
   box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+}
+/* 左侧冻结：勾选 → Status → Lecturer → Course Code */
+.tcc-admin-course-table th.col-check,
+.tcc-admin-course-table td.col-check,
+.tcc-admin-course-table th.col-status,
+.tcc-admin-course-table td.col-status,
+.tcc-admin-course-table th.col-teacher,
+.tcc-admin-course-table td.col-teacher,
+.tcc-admin-course-table th.col-code,
+.tcc-admin-course-table td.col-code {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+.tcc-admin-course-table thead th.col-check,
+.tcc-admin-course-table thead th.col-status,
+.tcc-admin-course-table thead th.col-teacher,
+.tcc-admin-course-table thead th.col-code {
+  z-index: 5;
+  background: #f8fafc;
+}
+.tcc-admin-course-table tr:hover td.col-check,
+.tcc-admin-course-table tr:hover td.col-status,
+.tcc-admin-course-table tr:hover td.col-teacher,
+.tcc-admin-course-table tr:hover td.col-code {
+  background: #fafbfc;
+}
+.tcc-admin-course-table th.col-check,
+.tcc-admin-course-table td.col-check {
+  left: 0;
+  width: var(--tcc-sticky-check);
+  min-width: var(--tcc-sticky-check);
+  max-width: var(--tcc-sticky-check);
+}
+.tcc-admin-course-table th.col-status,
+.tcc-admin-course-table td.col-status {
+  left: var(--tcc-sticky-check);
+  width: var(--tcc-sticky-status);
+  min-width: var(--tcc-sticky-status);
+  max-width: var(--tcc-sticky-status);
+}
+.tcc-admin-course-table th.col-teacher,
+.tcc-admin-course-table td.col-teacher {
+  left: calc(var(--tcc-sticky-check) + var(--tcc-sticky-status));
+  width: var(--tcc-sticky-teacher);
+  min-width: var(--tcc-sticky-teacher);
+  max-width: var(--tcc-sticky-teacher);
+}
+.tcc-admin-course-table th.col-code,
+.tcc-admin-course-table td.col-code {
+  left: calc(var(--tcc-sticky-check) + var(--tcc-sticky-status) + var(--tcc-sticky-teacher));
+  width: var(--tcc-sticky-code);
+  min-width: var(--tcc-sticky-code);
+  max-width: var(--tcc-sticky-code);
+  border-right: 1px solid var(--border, #94a3b8);
+  box-shadow:
+    1px 0 0 var(--border, #94a3b8),
+    8px 0 14px rgba(15, 23, 42, 0.1);
+  overflow: visible;
 }
 .tcc-admin-course-table thead th.col-sticky-actions {
   z-index: 6;
@@ -12906,6 +13281,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 #modal-major-teacher-picker .teacher-picker-table tbody tr.teacher-picker-tbc-row td {
   background: #f8fafc;
+}
+#modal-major-teacher-picker .teacher-picker-table tbody tr.teacher-picker-current-replace-row td {
+  background: #f1f5f9;
+  color: var(--text-muted, #64748b);
+}
+#modal-major-teacher-picker .teacher-picker-table tbody tr.teacher-picker-current-replace-row input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 #modal-major-teacher-picker .teacher-picker-table tbody tr.teacher-picker-tbc-row td.col-staff-id code {
   font-weight: 600;

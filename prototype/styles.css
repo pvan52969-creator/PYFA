@@ -12059,7 +12059,6 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   line-height: 1.55;
 }
 #modal-delete-confirm .delete-confirm-email-hint {
-  display: none;
   margin: 12px 0 0;
   padding: 12px 14px;
   border-radius: 8px;
@@ -12070,6 +12069,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   font-weight: 600;
   line-height: 1.55;
   box-shadow: inset 3px 0 0 #2563eb;
+}
+#modal-delete-confirm .delete-confirm-email-hint.is-open {
+  display: block;
 }
 #modal-delete-confirm .delete-confirm-email-hint::before {
   content: '邮件通知';

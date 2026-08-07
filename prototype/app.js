@@ -30736,6 +30736,16 @@ function renderMajorOfferingTeacherPickerModal() {
   syncTeacherPickerReplaceConflictHint();
   renderGroupAssignTeacherPickerCurrentAssignments();
   renderGroupAssignPriorTermTeachers();
+  const checkAll = document.getElementById('teacher-picker-check-all');
+  if (checkAll) {
+    const batch = teacherPickerContext === 'teacherReplaceBatch';
+    checkAll.disabled = batch;
+    checkAll.title = batch ? '一键替换仅可选一名新教师' : '';
+    if (batch) {
+      checkAll.checked = false;
+      checkAll.indeterminate = false;
+    }
+  }
 }
 
 function syncTeacherPickerReplaceConflictHint() {
@@ -55198,6 +55208,7 @@ function resetDeleteConfirmChrome() {
   if (emailHintEl) {
     emailHintEl.textContent = '';
     emailHintEl.style.display = 'none';
+    emailHintEl.classList.remove('is-open');
   }
 }
 

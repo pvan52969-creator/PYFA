@@ -1498,23 +1498,18 @@
       <div class="page-header">
         <div>
           <h1>开课安排</h1>
-          <p class="subtitle">分三步完成开课前期设置、课程班与师资安排；提交/撤回/退回在各步骤均可操作</p>
+          <p class="subtitle">分两步完成 Course Setting 与师资安排；提交/撤回/退回在各步骤均可操作</p>
         </div>
       </div>
       -->
       <nav class="mot-style2-step-bar" id="mot-style2-step-bar" aria-label="任务安排步骤">
-        <button type="button" class="mot-style2-step is-active" data-step="1" title="设置课程基础信息（含教室等）" onclick="goMajorOfferingTaskStyle2Step(1)">
+        <button type="button" class="mot-style2-step is-active" data-step="1" title="Course Setting：课程基础信息 · 合班 · Support" onclick="goMajorOfferingTaskStyle2Step(1)">
           <span class="mot-style2-step-num">1</span>
-          <span class="mot-style2-step-label">开课前期设置</span>
+          <span class="mot-style2-step-label">Course Setting</span>
         </button>
         <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="2" title="合班 · Support" onclick="goMajorOfferingTaskStyle2Step(2)">
+        <button type="button" class="mot-style2-step" data-step="2" title="安排老师 · 授课确认 · 共同授课" onclick="goMajorOfferingTaskStyle2Step(2)">
           <span class="mot-style2-step-num">2</span>
-          <span class="mot-style2-step-label">课程班</span>
-        </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="3" title="安排老师 · 授课确认 · 共同授课" onclick="goMajorOfferingTaskStyle2Step(3)">
-          <span class="mot-style2-step-num">3</span>
           <span class="mot-style2-step-label">师资安排</span>
         </button>
       </nav>
@@ -5626,10 +5621,10 @@
       </div>
     </div>
     <div class="student-roster-toolbar">
-      <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentPickerModal()">新增</button>
-      <button class="btn btn-outline btn-sm btn-danger-outline" type="button" onclick="deleteMajorOfferingStudentRosterSelected()">删除</button>
-      <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingStudentRemovalLog()">名单移除记录</button>
-      <button class="btn btn-outline btn-sm" type="button" onclick="openMajorOfferingRetakeRoster()">预重修名单</button>
+      <button class="btn btn-outline btn-sm" type="button" id="mos-btn-add" onclick="openMajorOfferingStudentPickerModal()">新增</button>
+      <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="mos-btn-delete" onclick="deleteMajorOfferingStudentRosterSelected()">删除</button>
+      <button class="btn btn-outline btn-sm" type="button" id="mos-btn-removal-log" onclick="openMajorOfferingStudentRemovalLog()">名单移除记录</button>
+      <button class="btn btn-outline btn-sm" type="button" id="mos-btn-retake" onclick="openMajorOfferingRetakeRoster()">预重修名单</button>
       <button class="btn btn-outline btn-sm student-roster-preset-grouping-btn" type="button" id="mos-btn-preset-roster-grouping" onclick="openMajorOfferingStudentRosterPresetGrouping()">预置名单分配</button>
       <button class="btn btn-outline btn-sm student-roster-adjust-group-btn" type="button" id="mos-btn-adjust-group" onclick="adjustMajorOfferingStudentGrouping()">调整分组</button>
     </div>

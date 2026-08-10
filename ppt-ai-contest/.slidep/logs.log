@@ -1,0 +1,1676 @@
+=== boot pid=97705 ts=2026-08-07 17:26:41.590 cwd=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-start --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest --filename AI大赛-开课管理全流程AI提效.pptx --__daemon-child ===
+[2026-08-07 17:26:41.590] [INFO ] [pid=97705] [start] invoked pid=97705 cwd=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest daemonChild=yes dev=no argv=[--project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest --filename AI大赛-开课管理全流程AI提效.pptx --__daemon-child]
+[2026-08-07 17:26:41.591] [INFO ] [pid=97705] [start] daemon child runWorker ppid=97523
+[2026-08-07 17:26:41.591] [INFO ] [pid=97705] [worker] start projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest filename=AI大赛-开课管理全流程AI提效.pptx version=5.4.1
+[2026-08-07 17:26:41.591] [INFO ] [pid=97705] [worker] init ok dirs=ready
+[2026-08-07 17:26:41.591] [INFO ] [pid=97705] [server-url] env TENCENT_DOCS_LOCAL_MCP = http://127.0.0.1:39099/mcp
+[2026-08-07 17:26:41.591] [INFO ] [pid=97705] [worker] openFile start
+[2026-08-07 17:26:41.591] [INFO ] [pid=97705] [open-file] copy blank.pptx start src=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/resources/pptx/blank.pptx dest=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:26:41.593] [INFO ] [pid=97705] [open-file] copy blank.pptx ok dest=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=2
+[2026-08-07 17:26:41.625] [ERROR] [pid=97705] [http] editorStatus http 404 url=http://127.0.0.1:39099/api/editor/status body={"code":-1,"message":"no editor open for file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx"} ms=32
+[2026-08-07 17:26:41.625] [INFO ] [pid=97705] [open-file] open send url=http://127.0.0.1:39099/localapi/open filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:26:41.631] [INFO ] [pid=97705] [open-file] open ok fileId=F440091A fileType=slide filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=6
+[2026-08-07 17:26:41.631] [INFO ] [pid=97705] [worker] openFile ok fileId=F440091A filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:26:41.631] [INFO ] [pid=97705] [worker] previewUrl=http://127.0.0.1:39099/static/slide/pc.html?local_edit=1&client=sdk_local&localFilePath=%2FUsers%2Fpeter%2FDesktop%2Fly%2Fly%2Fpyfa%2Fppt-ai-contest%2FAI%E5%A4%A7%E8%B5%9B-%E5%BC%80%E8%AF%BE%E7%AE%A1%E7%90%86%E5%85%A8%E6%B5%81%E7%A8%8BAI%E6%8F%90%E6%95%88.pptx
+[2026-08-07 17:26:41.631] [INFO ] [pid=97705] [state] state.json not found, creating path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.slidep/state.json filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:26:41.632] [INFO ] [pid=97705] [worker] commitEndpoint=http://127.0.0.1:39099/localapi/commitrevision
+[2026-08-07 17:26:41.634] [INFO ] [pid=97705] [mcp] mcp:slide_get_info send url=http://127.0.0.1:39099/mcp args={"file_id":"F440091A-EA25-48E4-BFA1-9FD8E1F334FC"}
+[2026-08-07 17:26:41.640] [INFO ] [pid=97705] [mcp] mcp:slide_get_info ok ms=6
+[2026-08-07 17:26:41.640] [INFO ] [pid=97705] [purge] purge start backendSlideCount=0
+[2026-08-07 17:26:41.640] [INFO ] [pid=97705] [purge] purge ok removed=0 ms=8
+[2026-08-07 17:26:41.641] [INFO ] [pid=97705] [worker] initial sync submitted pages=0
+[2026-08-07 17:26:41.641] [INFO ] [pid=97705] [sync] submit nextRound=1 dirty=<none> pendingDirtySize=0 merged=no
+[2026-08-07 17:26:41.641] [INFO ] [pid=97705] [sync] drain start round=1 pendingDirtySize=0
+[2026-08-07 17:26:41.641] [INFO ] [pid=97705] [sync] aligned round=1 attempt=1 size=0 desired=0 pendingDirtySize=0
+[2026-08-07 17:26:41.642] [INFO ] [pid=97705] [worker] ready fileId=F440091A backendUrl=http://127.0.0.1:39099 initialPages=0 ms=51
+[2026-08-07 17:26:41.642] [INFO ] [pid=97705] [sync] reconcile ok round=1 attempt=1 ms=1
+[2026-08-07 17:26:41.642] [INFO ] [pid=97705] [sync] drain end round=1 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=1
+[2026-08-07 17:26:41.643] [INFO ] [pid=97705] [watcher] ready dir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages
+[2026-08-07 17:27:21.283] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_01_cover.jsx
+[2026-08-07 17:27:21.784] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_01_cover] size=1
+[2026-08-07 17:27:21.785] [INFO ] [pid=97705] [sync] submit nextRound=2 dirty=slide_01_cover pendingDirtySize=1 merged=no
+[2026-08-07 17:27:21.785] [INFO ] [pid=97705] [sync] drain start round=2 pendingDirtySize=1
+[2026-08-07 17:27:21.785] [INFO ] [pid=97705] [sync] step=add round=2 attempt=1 pageId=slide_01_cover index=0
+[2026-08-07 17:27:21.785] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_01_cover index=0
+[2026-08-07 17:27:21.786] [INFO ] [pid=97705] [render] start pageId=slide_01_cover file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_01_cover.jsx replacements=0
+[2026-08-07 17:27:22.116] [INFO ] [pid=97705] [render] ok pageId=slide_01_cover slides=1 imageReplaced=0 ms=330
+[2026-08-07 17:27:22.116] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01x4iz9r': {
+      id: 'rel:01x4iz9r',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/c29e79a9184e6316c6f2150725ffb0a7.svg'
+    },
+    'rel:00f8juqv': {
+      id: 'rel:00f8juqv',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/1362b601d42d4f4334dda4ad6fc33f9a.svg'
+    },
+    'rel:00o22sg5': {
+      id: 'rel:00o22sg5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a81a23c4cf2156413e4d29b3abf7d7ca.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:27:22.130] [INFO ] [pid=97705] [commit] commit send pageId=8bdd28 targetIndex=0 version=1 baseVersion=0 revisionBytes=26276
+[2026-08-07 17:27:22.144] [INFO ] [pid=97705] [commit] commit ok pageId=8bdd28 revisionId=208812be ms=13
+[2026-08-07 17:27:22.145] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_01_cover slideId=8bdd28 index=0 version=1 baseVersion=0 revisionId=208812be code=0 images=[local=3 remote=0 cached=0 failed=0] ms=360
+[2026-08-07 17:27:22.146] [INFO ] [pid=97705] [sync] aligned round=2 attempt=1 size=1 desired=1 pendingDirtySize=0
+[2026-08-07 17:27:22.146] [INFO ] [pid=97705] [sync] reconcile ok round=2 attempt=1 ms=361
+[2026-08-07 17:27:22.146] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:27:22.146] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:27:22.173] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=27
+[2026-08-07 17:27:22.173] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=27
+[2026-08-07 17:27:22.173] [INFO ] [pid=97705] [sync] drain end round=2 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=388
+[2026-08-07 17:27:36.771] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_02_pain_catalog.jsx
+[2026-08-07 17:27:37.272] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_02_pain_catalog] size=1
+[2026-08-07 17:27:37.273] [INFO ] [pid=97705] [sync] submit nextRound=3 dirty=slide_02_pain_catalog pendingDirtySize=1 merged=no
+[2026-08-07 17:27:37.273] [INFO ] [pid=97705] [sync] drain start round=3 pendingDirtySize=1
+[2026-08-07 17:27:37.273] [INFO ] [pid=97705] [sync] step=add round=3 attempt=1 pageId=slide_02_pain_catalog index=1
+[2026-08-07 17:27:37.273] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_02_pain_catalog index=1
+[2026-08-07 17:27:37.273] [INFO ] [pid=97705] [render] start pageId=slide_02_pain_catalog file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_02_pain_catalog.jsx replacements=0
+[2026-08-07 17:27:37.411] [INFO ] [pid=97705] [render] ok pageId=slide_02_pain_catalog slides=1 imageReplaced=0 ms=138
+[2026-08-07 17:27:37.411] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:012y5n45': {
+      id: 'rel:012y5n45',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/752093b42014fbc52eb969ee6f361264.svg'
+    },
+    'rel:01od0ltf': {
+      id: 'rel:01od0ltf',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/f850fa9610829368cd4cab3a6b222f9d.svg'
+    },
+    'rel:01ftdfn9': {
+      id: 'rel:01ftdfn9',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/634c348803016c2ef77aea9222ed1612.svg'
+    },
+    'rel:01ee5llc': {
+      id: 'rel:01ee5llc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/3ca72ee17ba53ba517afe2662f2dcd72.svg'
+    },
+    'rel:00c5kdux': {
+      id: 'rel:00c5kdux',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0fa9f7c159eded4f742a67c039df0cbf.svg'
+    },
+    'rel:00zudkuj': {
+      id: 'rel:00zudkuj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0f56ece6e579bb4ab44da44880c3f419.svg'
+    },
+    'rel:00h7qcjm': {
+      id: 'rel:00h7qcjm',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/442263d1243bd480fe36b12895a3633a.svg'
+    },
+    'rel:01a5vfyl': {
+      id: 'rel:01a5vfyl',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ed515854d341638b9c72687591346fcc.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:27:37.421] [INFO ] [pid=97705] [commit] commit send pageId=2fb9b9 targetIndex=1 version=2 baseVersion=1 revisionBytes=40664
+[2026-08-07 17:27:37.427] [INFO ] [pid=97705] [commit] commit ok pageId=2fb9b9 revisionId=ec2f9aa5 ms=6
+[2026-08-07 17:27:37.428] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_02_pain_catalog slideId=2fb9b9 index=1 version=2 baseVersion=1 revisionId=ec2f9aa5 code=0 images=[local=8 remote=0 cached=0 failed=0] ms=155
+[2026-08-07 17:27:37.428] [INFO ] [pid=97705] [sync] aligned round=3 attempt=1 size=2 desired=2 pendingDirtySize=0
+[2026-08-07 17:27:37.428] [INFO ] [pid=97705] [sync] reconcile ok round=3 attempt=1 ms=155
+[2026-08-07 17:27:37.428] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:27:37.428] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:27:37.440] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=12
+[2026-08-07 17:27:37.440] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=12
+[2026-08-07 17:27:37.440] [INFO ] [pid=97705] [sync] drain end round=3 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=167
+[2026-08-07 17:27:56.371] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_03_panorama.jsx
+[2026-08-07 17:27:56.874] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_03_panorama] size=1
+[2026-08-07 17:27:56.874] [INFO ] [pid=97705] [sync] submit nextRound=4 dirty=slide_03_panorama pendingDirtySize=1 merged=no
+[2026-08-07 17:27:56.875] [INFO ] [pid=97705] [sync] drain start round=4 pendingDirtySize=1
+[2026-08-07 17:27:56.875] [INFO ] [pid=97705] [sync] step=add round=4 attempt=1 pageId=slide_03_panorama index=2
+[2026-08-07 17:27:56.875] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_03_panorama index=2
+[2026-08-07 17:27:56.875] [INFO ] [pid=97705] [render] start pageId=slide_03_panorama file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_03_panorama.jsx replacements=0
+[2026-08-07 17:27:56.992] [INFO ] [pid=97705] [render] ok pageId=slide_03_panorama slides=1 imageReplaced=0 ms=117
+[2026-08-07 17:27:56.992] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:015ns779': {
+      id: 'rel:015ns779',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/02f40c638d1a92a9aec6f8e0c63fe99d.svg'
+    },
+    'rel:01vlyqsj': {
+      id: 'rel:01vlyqsj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/f87c33de359d53d48a6ae5a76782db07.svg'
+    },
+    'rel:00zudkuj': {
+      id: 'rel:00zudkuj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0f56ece6e579bb4ab44da44880c3f419.svg'
+    },
+    'rel:004arllq': {
+      id: 'rel:004arllq',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0510bd12f999ab461fd54d82823d083b.svg'
+    },
+    'rel:01vxwrfr': {
+      id: 'rel:01vxwrfr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/27153dd49b3468d4d27256275e810b08.svg'
+    },
+    'rel:016buk1b': {
+      id: 'rel:016buk1b',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/21df69f26b1ece8591a1204049537b89.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:27:56.999] [INFO ] [pid=97705] [commit] commit send pageId=1f2eb3 targetIndex=2 version=3 baseVersion=2 revisionBytes=37716
+[2026-08-07 17:27:57.009] [INFO ] [pid=97705] [commit] commit ok pageId=1f2eb3 revisionId=1b1a8655 ms=10
+[2026-08-07 17:27:57.009] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_03_panorama slideId=1f2eb3 index=2 version=3 baseVersion=2 revisionId=1b1a8655 code=0 images=[local=6 remote=0 cached=0 failed=0] ms=134
+[2026-08-07 17:27:57.010] [INFO ] [pid=97705] [sync] aligned round=4 attempt=1 size=3 desired=3 pendingDirtySize=0
+[2026-08-07 17:27:57.010] [INFO ] [pid=97705] [sync] reconcile ok round=4 attempt=1 ms=135
+[2026-08-07 17:27:57.010] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:27:57.010] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:27:57.032] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=22
+[2026-08-07 17:27:57.032] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=22
+[2026-08-07 17:27:57.032] [INFO ] [pid=97705] [sync] drain end round=4 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=157
+[2026-08-07 17:28:15.185] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_04_product_flow.jsx
+[2026-08-07 17:28:15.687] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_04_product_flow] size=1
+[2026-08-07 17:28:15.687] [INFO ] [pid=97705] [sync] submit nextRound=5 dirty=slide_04_product_flow pendingDirtySize=1 merged=no
+[2026-08-07 17:28:15.687] [INFO ] [pid=97705] [sync] drain start round=5 pendingDirtySize=1
+[2026-08-07 17:28:15.687] [INFO ] [pid=97705] [sync] step=add round=5 attempt=1 pageId=slide_04_product_flow index=3
+[2026-08-07 17:28:15.687] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_04_product_flow index=3
+[2026-08-07 17:28:15.688] [INFO ] [pid=97705] [render] start pageId=slide_04_product_flow file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_04_product_flow.jsx replacements=0
+[2026-08-07 17:28:15.795] [INFO ] [pid=97705] [render] ok pageId=slide_04_product_flow slides=1 imageReplaced=0 ms=107
+[2026-08-07 17:28:15.796] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01hwqvf8': {
+      id: 'rel:01hwqvf8',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b9619b6decad4043b5bf5f89e5cf46df.svg'
+    },
+    'rel:00fqnf0o': {
+      id: 'rel:00fqnf0o',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/95d0660940ffc881ac72f6c018b1b550.svg'
+    },
+    'rel:00b5zbsz': {
+      id: 'rel:00b5zbsz',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cafd9b1f462f056198aceb912685d6fa.svg'
+    },
+    'rel:01abtbtu': {
+      id: 'rel:01abtbtu',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/4af20219204be7d5cd041fa0172b1597.svg'
+    },
+    'rel:01eljazp': {
+      id: 'rel:01eljazp',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/76e42b800b41ef899f853fc49a633bc0.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:28:15.803] [INFO ] [pid=97705] [commit] commit send pageId=81f0ca targetIndex=3 version=4 baseVersion=3 revisionBytes=43488
+[2026-08-07 17:28:15.810] [INFO ] [pid=97705] [commit] commit ok pageId=81f0ca revisionId=3dbb9743 ms=6
+[2026-08-07 17:28:15.810] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_04_product_flow slideId=81f0ca index=3 version=4 baseVersion=3 revisionId=3dbb9743 code=0 images=[local=5 remote=0 cached=0 failed=0] ms=123
+[2026-08-07 17:28:15.811] [INFO ] [pid=97705] [sync] aligned round=5 attempt=1 size=4 desired=4 pendingDirtySize=0
+[2026-08-07 17:28:15.811] [INFO ] [pid=97705] [sync] reconcile ok round=5 attempt=1 ms=124
+[2026-08-07 17:28:15.811] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:28:15.811] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:28:15.840] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=29
+[2026-08-07 17:28:15.840] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=29
+[2026-08-07 17:28:15.841] [INFO ] [pid=97705] [sync] drain end round=5 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=154
+[2026-08-07 17:28:32.211] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_05_dev_hero.jsx
+[2026-08-07 17:28:32.712] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_05_dev_hero] size=1
+[2026-08-07 17:28:32.712] [INFO ] [pid=97705] [sync] submit nextRound=6 dirty=slide_05_dev_hero pendingDirtySize=1 merged=no
+[2026-08-07 17:28:32.712] [INFO ] [pid=97705] [sync] drain start round=6 pendingDirtySize=1
+[2026-08-07 17:28:32.712] [INFO ] [pid=97705] [sync] step=add round=6 attempt=1 pageId=slide_05_dev_hero index=4
+[2026-08-07 17:28:32.712] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_05_dev_hero index=4
+[2026-08-07 17:28:32.713] [INFO ] [pid=97705] [render] start pageId=slide_05_dev_hero file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_05_dev_hero.jsx replacements=0
+[2026-08-07 17:28:32.843] [INFO ] [pid=97705] [render] ok pageId=slide_05_dev_hero slides=1 imageReplaced=0 ms=130
+[2026-08-07 17:28:32.843] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:017flkzc': {
+      id: 'rel:017flkzc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b8dd9ca277ad0d4f1e45658e8a0e77e5.svg'
+    },
+    'rel:010gzys5': {
+      id: 'rel:010gzys5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/6642f0fad296a4c11edaffb2177322d8.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:28:32.856] [INFO ] [pid=97705] [commit] commit send pageId=7ca2e9 targetIndex=4 version=5 baseVersion=4 revisionBytes=39880
+[2026-08-07 17:28:32.871] [INFO ] [pid=97705] [commit] commit ok pageId=7ca2e9 revisionId=065cd726 ms=14
+[2026-08-07 17:28:32.872] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_05_dev_hero slideId=7ca2e9 index=4 version=5 baseVersion=4 revisionId=065cd726 code=0 images=[local=3 remote=0 cached=0 failed=0] ms=160
+[2026-08-07 17:28:32.872] [INFO ] [pid=97705] [sync] aligned round=6 attempt=1 size=5 desired=5 pendingDirtySize=0
+[2026-08-07 17:28:32.872] [INFO ] [pid=97705] [sync] reconcile ok round=6 attempt=1 ms=160
+[2026-08-07 17:28:32.872] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:28:32.872] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:28:32.897] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=25
+[2026-08-07 17:28:32.897] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=25
+[2026-08-07 17:28:32.897] [INFO ] [pid=97705] [sync] drain end round=6 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=185
+[2026-08-07 17:28:50.758] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_06_backend.jsx
+[2026-08-07 17:28:51.259] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_06_backend] size=1
+[2026-08-07 17:28:51.260] [INFO ] [pid=97705] [sync] submit nextRound=7 dirty=slide_06_backend pendingDirtySize=1 merged=no
+[2026-08-07 17:28:51.260] [INFO ] [pid=97705] [sync] drain start round=7 pendingDirtySize=1
+[2026-08-07 17:28:51.260] [INFO ] [pid=97705] [sync] step=add round=7 attempt=1 pageId=slide_06_backend index=5
+[2026-08-07 17:28:51.261] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_06_backend index=5
+[2026-08-07 17:28:51.261] [INFO ] [pid=97705] [render] start pageId=slide_06_backend file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_06_backend.jsx replacements=0
+[2026-08-07 17:28:51.379] [INFO ] [pid=97705] [render] ok pageId=slide_06_backend slides=1 imageReplaced=0 ms=118
+[2026-08-07 17:28:51.379] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:00aooqvl': {
+      id: 'rel:00aooqvl',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/c9f2d8d127b91010cc4363699da8ba16.svg'
+    },
+    'rel:01eljazp': {
+      id: 'rel:01eljazp',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/76e42b800b41ef899f853fc49a633bc0.svg'
+    },
+    'rel:00gcln64': {
+      id: 'rel:00gcln64',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/5fc9c1fb669a7317f632b869a07af10f.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:28:51.383] [INFO ] [pid=97705] [commit] commit send pageId=2a4aa9 targetIndex=5 version=6 baseVersion=5 revisionBytes=45132
+[2026-08-07 17:28:51.390] [INFO ] [pid=97705] [commit] commit ok pageId=2a4aa9 revisionId=d280f81d ms=7
+[2026-08-07 17:28:51.391] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_06_backend slideId=2a4aa9 index=5 version=6 baseVersion=5 revisionId=d280f81d code=0 images=[local=3 remote=0 cached=0 failed=0] ms=130
+[2026-08-07 17:28:51.392] [INFO ] [pid=97705] [sync] aligned round=7 attempt=1 size=6 desired=6 pendingDirtySize=0
+[2026-08-07 17:28:51.392] [INFO ] [pid=97705] [sync] reconcile ok round=7 attempt=1 ms=132
+[2026-08-07 17:28:51.392] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:28:51.392] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:28:51.420] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=28
+[2026-08-07 17:28:51.421] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=29
+[2026-08-07 17:28:51.421] [INFO ] [pid=97705] [sync] drain end round=7 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=161
+[2026-08-07 17:29:11.171] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_07_frontend_test.jsx
+[2026-08-07 17:29:11.673] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_07_frontend_test] size=1
+[2026-08-07 17:29:11.673] [INFO ] [pid=97705] [sync] submit nextRound=8 dirty=slide_07_frontend_test pendingDirtySize=1 merged=no
+[2026-08-07 17:29:11.673] [INFO ] [pid=97705] [sync] drain start round=8 pendingDirtySize=1
+[2026-08-07 17:29:11.673] [INFO ] [pid=97705] [sync] step=add round=8 attempt=1 pageId=slide_07_frontend_test index=6
+[2026-08-07 17:29:11.673] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_07_frontend_test index=6
+[2026-08-07 17:29:11.674] [INFO ] [pid=97705] [render] start pageId=slide_07_frontend_test file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_07_frontend_test.jsx replacements=0
+[2026-08-07 17:29:11.778] [INFO ] [pid=97705] [render] ok pageId=slide_07_frontend_test slides=1 imageReplaced=0 ms=104
+[2026-08-07 17:29:11.779] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:010gzys5': {
+      id: 'rel:010gzys5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/6642f0fad296a4c11edaffb2177322d8.svg'
+    },
+    'rel:01uvldzm': {
+      id: 'rel:01uvldzm',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b13c709c75ae4548ccedeebf89fec8ce.svg'
+    },
+    'rel:018cn9n4': {
+      id: 'rel:018cn9n4',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/e914471da5d92156587b4db8b5634913.svg'
+    },
+    'rel:00di171s': {
+      id: 'rel:00di171s',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/fb8a3d6f10779eb1f26a5773ec3171b8.svg'
+    },
+    'rel:01u3fyx6': {
+      id: 'rel:01u3fyx6',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cc99c96791d4fb649a5a786ff8e8b8ac.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    },
+    'rel:00aqhb6m': {
+      id: 'rel:00aqhb6m',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b2f5e5b5955d5cd1b0e6425b27092c31.svg'
+    },
+    'rel:0174wc3k': {
+      id: 'rel:0174wc3k',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/de9f990e88a1dc779dffb6091a16affc.svg'
+    },
+    'rel:00azrhgb': {
+      id: 'rel:00azrhgb',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/61dea2d0733986f7e96f8ea4e159674a.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:29:11.786] [INFO ] [pid=97705] [commit] commit send pageId=e85e51 targetIndex=6 version=7 baseVersion=6 revisionBytes=45976
+[2026-08-07 17:29:11.791] [INFO ] [pid=97705] [commit] commit ok pageId=e85e51 revisionId=ab15d5c6 ms=5
+[2026-08-07 17:29:11.791] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_07_frontend_test slideId=e85e51 index=6 version=7 baseVersion=6 revisionId=ab15d5c6 code=0 images=[local=9 remote=0 cached=0 failed=0] ms=118
+[2026-08-07 17:29:11.792] [INFO ] [pid=97705] [sync] aligned round=8 attempt=1 size=7 desired=7 pendingDirtySize=0
+[2026-08-07 17:29:11.792] [INFO ] [pid=97705] [sync] reconcile ok round=8 attempt=1 ms=119
+[2026-08-07 17:29:11.792] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:29:11.792] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:29:11.826] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=34
+[2026-08-07 17:29:11.826] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=34
+[2026-08-07 17:29:11.826] [INFO ] [pid=97705] [sync] drain end round=8 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=153
+[2026-08-07 17:29:29.603] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_08_agent_724.jsx
+[2026-08-07 17:29:30.102] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_08_agent_724] size=1
+[2026-08-07 17:29:30.103] [INFO ] [pid=97705] [sync] submit nextRound=9 dirty=slide_08_agent_724 pendingDirtySize=1 merged=no
+[2026-08-07 17:29:30.103] [INFO ] [pid=97705] [sync] drain start round=9 pendingDirtySize=1
+[2026-08-07 17:29:30.104] [INFO ] [pid=97705] [sync] step=add round=9 attempt=1 pageId=slide_08_agent_724 index=7
+[2026-08-07 17:29:30.104] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_08_agent_724 index=7
+[2026-08-07 17:29:30.104] [INFO ] [pid=97705] [render] start pageId=slide_08_agent_724 file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_08_agent_724.jsx replacements=0
+[2026-08-07 17:29:30.197] [INFO ] [pid=97705] [render] ok pageId=slide_08_agent_724 slides=1 imageReplaced=0 ms=93
+[2026-08-07 17:29:30.198] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01bf9aam': {
+      id: 'rel:01bf9aam',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/caeb26b22ff7dce206427fb6c7d7b0b5.svg'
+    },
+    'rel:004arllq': {
+      id: 'rel:004arllq',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0510bd12f999ab461fd54d82823d083b.svg'
+    },
+    'rel:0109ntbt': {
+      id: 'rel:0109ntbt',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/322f99668613c8666554ea61b7989ca0.svg'
+    },
+    'rel:00z09pst': {
+      id: 'rel:00z09pst',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b3097feec9f498776197e25c6b72604a.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:29:30.202] [INFO ] [pid=97705] [commit] commit send pageId=d41e4f targetIndex=7 version=8 baseVersion=7 revisionBytes=31396
+[2026-08-07 17:29:30.208] [INFO ] [pid=97705] [commit] commit ok pageId=d41e4f revisionId=adcc9bbb ms=5
+[2026-08-07 17:29:30.209] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_08_agent_724 slideId=d41e4f index=7 version=8 baseVersion=7 revisionId=adcc9bbb code=0 images=[local=4 remote=0 cached=0 failed=0] ms=105
+[2026-08-07 17:29:30.209] [INFO ] [pid=97705] [sync] aligned round=9 attempt=1 size=8 desired=8 pendingDirtySize=0
+[2026-08-07 17:29:30.209] [INFO ] [pid=97705] [sync] reconcile ok round=9 attempt=1 ms=106
+[2026-08-07 17:29:30.210] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:29:30.210] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:29:30.261] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=51
+[2026-08-07 17:29:30.261] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=52
+[2026-08-07 17:29:30.261] [INFO ] [pid=97705] [sync] drain end round=9 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=158
+[2026-08-07 17:29:47.284] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_09_completeness.jsx
+[2026-08-07 17:29:47.786] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_09_completeness] size=1
+[2026-08-07 17:29:47.786] [INFO ] [pid=97705] [sync] submit nextRound=10 dirty=slide_09_completeness pendingDirtySize=1 merged=no
+[2026-08-07 17:29:47.787] [INFO ] [pid=97705] [sync] drain start round=10 pendingDirtySize=1
+[2026-08-07 17:29:47.787] [INFO ] [pid=97705] [sync] step=add round=10 attempt=1 pageId=slide_09_completeness index=8
+[2026-08-07 17:29:47.787] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_09_completeness index=8
+[2026-08-07 17:29:47.787] [INFO ] [pid=97705] [render] start pageId=slide_09_completeness file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_09_completeness.jsx replacements=0
+[2026-08-07 17:29:47.895] [INFO ] [pid=97705] [render] ok pageId=slide_09_completeness slides=1 imageReplaced=0 ms=108
+[2026-08-07 17:29:47.895] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:00wisyd2': {
+      id: 'rel:00wisyd2',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/64022cf0b7104ada39161a255d19f18f.svg'
+    },
+    'rel:00y5r9az': {
+      id: 'rel:00y5r9az',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/89f6c0e7a8fb06fc0cafe78276ea4913.svg'
+    },
+    'rel:00po992o': {
+      id: 'rel:00po992o',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/5c8b14538602a7e1faf05843f354fba8.svg'
+    },
+    'rel:00goizg0': {
+      id: 'rel:00goizg0',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/7ea254c58aa4e9c9d149b32e9d2d59b6.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:29:47.901] [INFO ] [pid=97705] [commit] commit send pageId=8faf6c targetIndex=8 version=9 baseVersion=8 revisionBytes=36256
+[2026-08-07 17:29:47.907] [INFO ] [pid=97705] [commit] commit ok pageId=8faf6c revisionId=8f4b78d0 ms=5
+[2026-08-07 17:29:47.907] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_09_completeness slideId=8faf6c index=8 version=9 baseVersion=8 revisionId=8f4b78d0 code=0 images=[local=4 remote=0 cached=0 failed=0] ms=120
+[2026-08-07 17:29:47.908] [INFO ] [pid=97705] [sync] aligned round=10 attempt=1 size=9 desired=9 pendingDirtySize=0
+[2026-08-07 17:29:47.908] [INFO ] [pid=97705] [sync] reconcile ok round=10 attempt=1 ms=121
+[2026-08-07 17:29:47.908] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:29:47.908] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:29:48.004] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=96
+[2026-08-07 17:29:48.004] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=96
+[2026-08-07 17:29:48.004] [INFO ] [pid=97705] [sync] drain end round=10 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=217
+[2026-08-07 17:30:07.513] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_10_assets.jsx
+[2026-08-07 17:30:08.014] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_10_assets] size=1
+[2026-08-07 17:30:08.014] [INFO ] [pid=97705] [sync] submit nextRound=11 dirty=slide_10_assets pendingDirtySize=1 merged=no
+[2026-08-07 17:30:08.014] [INFO ] [pid=97705] [sync] drain start round=11 pendingDirtySize=1
+[2026-08-07 17:30:08.015] [INFO ] [pid=97705] [sync] step=add round=11 attempt=1 pageId=slide_10_assets index=9
+[2026-08-07 17:30:08.015] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_10_assets index=9
+[2026-08-07 17:30:08.015] [INFO ] [pid=97705] [render] start pageId=slide_10_assets file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_10_assets.jsx replacements=0
+[2026-08-07 17:30:08.114] [INFO ] [pid=97705] [render] ok pageId=slide_10_assets slides=1 imageReplaced=0 ms=99
+[2026-08-07 17:30:08.114] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:017flkzc': {
+      id: 'rel:017flkzc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b8dd9ca277ad0d4f1e45658e8a0e77e5.svg'
+    },
+    'rel:007inxt5': {
+      id: 'rel:007inxt5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/1cf4d2a863edaffefa13a3a5cd9914b0.svg'
+    },
+    'rel:0171mccf': {
+      id: 'rel:0171mccf',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/99b95a19e936e95fd0a41191b7c0ea1e.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    },
+    'rel:00zsta4w': {
+      id: 'rel:00zsta4w',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/79d3da0ff8260e6621b27147e91f3022.svg'
+    },
+    'rel:01ee5eim': {
+      id: 'rel:01ee5eim',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ec6d7f730519dced8385566dba42b072.svg'
+    },
+    'rel:00dzox3j': {
+      id: 'rel:00dzox3j',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/44a7a244b2f022bbe6ce251e3ae182ab.svg'
+    },
+    'rel:019ln1h0': {
+      id: 'rel:019ln1h0',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ec0b81c9f3407c4d56701d19a08ddcb4.svg'
+    },
+    'rel:00b5zbsz': {
+      id: 'rel:00b5zbsz',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cafd9b1f462f056198aceb912685d6fa.svg'
+    },
+    'rel:01abtbtu': {
+      id: 'rel:01abtbtu',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/4af20219204be7d5cd041fa0172b1597.svg'
+    },
+    'rel:0112zxr7': {
+      id: 'rel:0112zxr7',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a9347525e60a66ad59f7b8a12e95f5fb.svg'
+    },
+    'rel:004zr65t': {
+      id: 'rel:004zr65t',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a744b41c1dd355dbcaa12d9476b24783.svg'
+    },
+    'rel:013bvzx5': {
+      id: 'rel:013bvzx5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/63a7df50bb4c7a3029716b1255b41ce7.svg'
+    },
+    'rel:00tb9v31': {
+      id: 'rel:00tb9v31',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/11348fdeb5eca4170fe00225ceba724f.svg'
+    },
+    'rel:0117no7m': {
+      id: 'rel:0117no7m',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/38b8ef6e4b2d88f6a8152b2a8ca3a365.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:08.120] [INFO ] [pid=97705] [commit] commit send pageId=df9285 targetIndex=9 version=10 baseVersion=9 revisionBytes=67300
+[2026-08-07 17:30:08.127] [INFO ] [pid=97705] [commit] commit ok pageId=df9285 revisionId=c56683be ms=7
+[2026-08-07 17:30:08.128] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_10_assets slideId=df9285 index=9 version=10 baseVersion=9 revisionId=c56683be code=0 images=[local=15 remote=0 cached=0 failed=0] ms=113
+[2026-08-07 17:30:08.128] [INFO ] [pid=97705] [sync] aligned round=11 attempt=1 size=10 desired=10 pendingDirtySize=0
+[2026-08-07 17:30:08.128] [INFO ] [pid=97705] [sync] reconcile ok round=11 attempt=1 ms=114
+[2026-08-07 17:30:08.128] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:30:08.128] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:30:08.166] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=38
+[2026-08-07 17:30:08.166] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=38
+[2026-08-07 17:30:08.166] [INFO ] [pid=97705] [sync] drain end round=11 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=152
+[2026-08-07 17:30:23.789] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_11_automation.jsx
+[2026-08-07 17:30:24.291] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_11_automation] size=1
+[2026-08-07 17:30:24.291] [INFO ] [pid=97705] [sync] submit nextRound=12 dirty=slide_11_automation pendingDirtySize=1 merged=no
+[2026-08-07 17:30:24.291] [INFO ] [pid=97705] [sync] drain start round=12 pendingDirtySize=1
+[2026-08-07 17:30:24.292] [INFO ] [pid=97705] [sync] step=add round=12 attempt=1 pageId=slide_11_automation index=10
+[2026-08-07 17:30:24.292] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:24.292] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:24.296] [WARN ] [pid=97705] [worker] reconcile failed (Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error); trying soft recovery (purge backend + sync version, no editor restart)
+[2026-08-07 17:30:24.298] [INFO ] [pid=97705] [mcp] mcp:slide_get_info send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u"}
+[2026-08-07 17:30:24.302] [INFO ] [pid=97705] [mcp] mcp:slide_get_info ok ms=4
+[2026-08-07 17:30:24.302] [INFO ] [pid=97705] [purge] purge start backendSlideCount=10
+[2026-08-07 17:30:24.303] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.308] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=4
+[2026-08-07 17:30:24.309] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.311] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:24.312] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.315] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:24.316] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.318] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:24.319] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.321] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:24.323] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.325] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:24.326] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.327] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:24.329] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.331] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:24.331] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.333] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=0
+[2026-08-07 17:30:24.334] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:24.335] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:24.335] [INFO ] [pid=97705] [purge] purge ok removed=10 ms=39
+[2026-08-07 17:30:24.339] [INFO ] [pid=97705] [mcp] mcp:slide_get_info send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u"}
+[2026-08-07 17:30:24.358] [INFO ] [pid=97705] [mcp] mcp:slide_get_info ok ms=19
+[2026-08-07 17:30:24.359] [INFO ] [pid=97705] [backend-ops] seedServerVersion from=10 to=20
+[2026-08-07 17:30:24.359] [INFO ] [pid=97705] [worker] recovery (soft) ok: purged=10 backendNow=0page(s) version=20, view reset; reconcile will redo full sync
+[2026-08-07 17:30:24.359] [INFO ] [pid=97705] [sync] reconcile FAIL but recovered via onReconcileFailure round=12 attempt=1 (recovery 1/2) ms=68; re-running reconcile
+[2026-08-07 17:30:24.359] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_01_cover index=0
+[2026-08-07 17:30:24.361] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_01_cover index=0
+[2026-08-07 17:30:24.362] [INFO ] [pid=97705] [render] start pageId=slide_01_cover file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_01_cover.jsx replacements=0
+[2026-08-07 17:30:24.444] [INFO ] [pid=97705] [render] ok pageId=slide_01_cover slides=1 imageReplaced=0 ms=82
+[2026-08-07 17:30:24.445] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01x4iz9r': {
+      id: 'rel:01x4iz9r',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/c29e79a9184e6316c6f2150725ffb0a7.svg'
+    },
+    'rel:00f8juqv': {
+      id: 'rel:00f8juqv',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/1362b601d42d4f4334dda4ad6fc33f9a.svg'
+    },
+    'rel:00o22sg5': {
+      id: 'rel:00o22sg5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a81a23c4cf2156413e4d29b3abf7d7ca.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:24.451] [INFO ] [pid=97705] [commit] commit send pageId=76f01f targetIndex=0 version=11 baseVersion=20 revisionBytes=26280
+[2026-08-07 17:30:24.455] [INFO ] [pid=97705] [commit] commit ok pageId=76f01f revisionId=7fd7e2cb ms=3
+[2026-08-07 17:30:24.455] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_01_cover slideId=76f01f index=0 version=11 baseVersion=20 revisionId=7fd7e2cb code=0 images=[local=3 remote=0 cached=0 failed=0] ms=94
+[2026-08-07 17:30:24.455] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_02_pain_catalog index=1
+[2026-08-07 17:30:24.455] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_02_pain_catalog index=1
+[2026-08-07 17:30:24.455] [INFO ] [pid=97705] [render] start pageId=slide_02_pain_catalog file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_02_pain_catalog.jsx replacements=0
+[2026-08-07 17:30:24.560] [INFO ] [pid=97705] [render] ok pageId=slide_02_pain_catalog slides=1 imageReplaced=0 ms=105
+[2026-08-07 17:30:24.560] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:012y5n45': {
+      id: 'rel:012y5n45',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/752093b42014fbc52eb969ee6f361264.svg'
+    },
+    'rel:01od0ltf': {
+      id: 'rel:01od0ltf',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/f850fa9610829368cd4cab3a6b222f9d.svg'
+    },
+    'rel:01ftdfn9': {
+      id: 'rel:01ftdfn9',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/634c348803016c2ef77aea9222ed1612.svg'
+    },
+    'rel:01ee5llc': {
+      id: 'rel:01ee5llc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/3ca72ee17ba53ba517afe2662f2dcd72.svg'
+    },
+    'rel:00c5kdux': {
+      id: 'rel:00c5kdux',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0fa9f7c159eded4f742a67c039df0cbf.svg'
+    },
+    'rel:00zudkuj': {
+      id: 'rel:00zudkuj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0f56ece6e579bb4ab44da44880c3f419.svg'
+    },
+    'rel:00h7qcjm': {
+      id: 'rel:00h7qcjm',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/442263d1243bd480fe36b12895a3633a.svg'
+    },
+    'rel:01a5vfyl': {
+      id: 'rel:01a5vfyl',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ed515854d341638b9c72687591346fcc.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:24.576] [INFO ] [pid=97705] [commit] commit send pageId=4c3810 targetIndex=1 version=12 baseVersion=21 revisionBytes=40668
+[2026-08-07 17:30:24.581] [INFO ] [pid=97705] [commit] commit ok pageId=4c3810 revisionId=d4f3f17b ms=5
+[2026-08-07 17:30:24.582] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_02_pain_catalog slideId=4c3810 index=1 version=12 baseVersion=21 revisionId=d4f3f17b code=0 images=[local=8 remote=0 cached=0 failed=0] ms=127
+[2026-08-07 17:30:24.582] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_03_panorama index=2
+[2026-08-07 17:30:24.582] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_03_panorama index=2
+[2026-08-07 17:30:24.582] [INFO ] [pid=97705] [render] start pageId=slide_03_panorama file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_03_panorama.jsx replacements=0
+[2026-08-07 17:30:24.635] [INFO ] [pid=97705] [render] ok pageId=slide_03_panorama slides=1 imageReplaced=0 ms=53
+[2026-08-07 17:30:24.635] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:015ns779': {
+      id: 'rel:015ns779',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/02f40c638d1a92a9aec6f8e0c63fe99d.svg'
+    },
+    'rel:01vlyqsj': {
+      id: 'rel:01vlyqsj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/f87c33de359d53d48a6ae5a76782db07.svg'
+    },
+    'rel:00zudkuj': {
+      id: 'rel:00zudkuj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0f56ece6e579bb4ab44da44880c3f419.svg'
+    },
+    'rel:004arllq': {
+      id: 'rel:004arllq',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0510bd12f999ab461fd54d82823d083b.svg'
+    },
+    'rel:01vxwrfr': {
+      id: 'rel:01vxwrfr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/27153dd49b3468d4d27256275e810b08.svg'
+    },
+    'rel:016buk1b': {
+      id: 'rel:016buk1b',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/21df69f26b1ece8591a1204049537b89.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:24.638] [INFO ] [pid=97705] [commit] commit send pageId=9e8b4d targetIndex=2 version=13 baseVersion=22 revisionBytes=37716
+[2026-08-07 17:30:24.641] [INFO ] [pid=97705] [commit] commit ok pageId=9e8b4d revisionId=817eb135 ms=3
+[2026-08-07 17:30:24.642] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_03_panorama slideId=9e8b4d index=2 version=13 baseVersion=22 revisionId=817eb135 code=0 images=[local=6 remote=0 cached=0 failed=0] ms=60
+[2026-08-07 17:30:24.642] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_04_product_flow index=3
+[2026-08-07 17:30:24.642] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_04_product_flow index=3
+[2026-08-07 17:30:24.642] [INFO ] [pid=97705] [render] start pageId=slide_04_product_flow file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_04_product_flow.jsx replacements=0
+[2026-08-07 17:30:24.877] [INFO ] [pid=97705] [render] ok pageId=slide_04_product_flow slides=1 imageReplaced=0 ms=235
+[2026-08-07 17:30:24.878] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01hwqvf8': {
+      id: 'rel:01hwqvf8',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b9619b6decad4043b5bf5f89e5cf46df.svg'
+    },
+    'rel:00fqnf0o': {
+      id: 'rel:00fqnf0o',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/95d0660940ffc881ac72f6c018b1b550.svg'
+    },
+    'rel:00b5zbsz': {
+      id: 'rel:00b5zbsz',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cafd9b1f462f056198aceb912685d6fa.svg'
+    },
+    'rel:01abtbtu': {
+      id: 'rel:01abtbtu',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/4af20219204be7d5cd041fa0172b1597.svg'
+    },
+    'rel:01eljazp': {
+      id: 'rel:01eljazp',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/76e42b800b41ef899f853fc49a633bc0.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:24.884] [INFO ] [pid=97705] [commit] commit send pageId=93a462 targetIndex=3 version=14 baseVersion=23 revisionBytes=43492
+[2026-08-07 17:30:24.897] [INFO ] [pid=97705] [commit] commit ok pageId=93a462 revisionId=72ff3de4 ms=13
+[2026-08-07 17:30:24.898] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_04_product_flow slideId=93a462 index=3 version=14 baseVersion=23 revisionId=72ff3de4 code=0 images=[local=5 remote=0 cached=0 failed=0] ms=256
+[2026-08-07 17:30:24.898] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_05_dev_hero index=4
+[2026-08-07 17:30:24.898] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_05_dev_hero index=4
+[2026-08-07 17:30:24.898] [INFO ] [pid=97705] [render] start pageId=slide_05_dev_hero file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_05_dev_hero.jsx replacements=0
+[2026-08-07 17:30:24.994] [INFO ] [pid=97705] [render] ok pageId=slide_05_dev_hero slides=1 imageReplaced=0 ms=96
+[2026-08-07 17:30:24.994] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:017flkzc': {
+      id: 'rel:017flkzc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b8dd9ca277ad0d4f1e45658e8a0e77e5.svg'
+    },
+    'rel:010gzys5': {
+      id: 'rel:010gzys5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/6642f0fad296a4c11edaffb2177322d8.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:24.999] [INFO ] [pid=97705] [commit] commit send pageId=be1646 targetIndex=4 version=15 baseVersion=24 revisionBytes=39864
+[2026-08-07 17:30:25.005] [INFO ] [pid=97705] [commit] commit ok pageId=be1646 revisionId=16ba6ca3 ms=6
+[2026-08-07 17:30:25.006] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_05_dev_hero slideId=be1646 index=4 version=15 baseVersion=24 revisionId=16ba6ca3 code=0 images=[local=3 remote=0 cached=0 failed=0] ms=108
+[2026-08-07 17:30:25.006] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_06_backend index=5
+[2026-08-07 17:30:25.006] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_06_backend index=5
+[2026-08-07 17:30:25.006] [INFO ] [pid=97705] [render] start pageId=slide_06_backend file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_06_backend.jsx replacements=0
+[2026-08-07 17:30:25.084] [INFO ] [pid=97705] [render] ok pageId=slide_06_backend slides=1 imageReplaced=0 ms=78
+[2026-08-07 17:30:25.085] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:00aooqvl': {
+      id: 'rel:00aooqvl',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/c9f2d8d127b91010cc4363699da8ba16.svg'
+    },
+    'rel:01eljazp': {
+      id: 'rel:01eljazp',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/76e42b800b41ef899f853fc49a633bc0.svg'
+    },
+    'rel:00gcln64': {
+      id: 'rel:00gcln64',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/5fc9c1fb669a7317f632b869a07af10f.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.089] [INFO ] [pid=97705] [commit] commit send pageId=9a43f9 targetIndex=5 version=16 baseVersion=25 revisionBytes=45124
+[2026-08-07 17:30:25.093] [INFO ] [pid=97705] [commit] commit ok pageId=9a43f9 revisionId=31c35740 ms=4
+[2026-08-07 17:30:25.093] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_06_backend slideId=9a43f9 index=5 version=16 baseVersion=25 revisionId=31c35740 code=0 images=[local=3 remote=0 cached=0 failed=0] ms=87
+[2026-08-07 17:30:25.093] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_07_frontend_test index=6
+[2026-08-07 17:30:25.093] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_07_frontend_test index=6
+[2026-08-07 17:30:25.094] [INFO ] [pid=97705] [render] start pageId=slide_07_frontend_test file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_07_frontend_test.jsx replacements=0
+[2026-08-07 17:30:25.180] [INFO ] [pid=97705] [render] ok pageId=slide_07_frontend_test slides=1 imageReplaced=0 ms=86
+[2026-08-07 17:30:25.180] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:010gzys5': {
+      id: 'rel:010gzys5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/6642f0fad296a4c11edaffb2177322d8.svg'
+    },
+    'rel:01uvldzm': {
+      id: 'rel:01uvldzm',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b13c709c75ae4548ccedeebf89fec8ce.svg'
+    },
+    'rel:018cn9n4': {
+      id: 'rel:018cn9n4',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/e914471da5d92156587b4db8b5634913.svg'
+    },
+    'rel:00di171s': {
+      id: 'rel:00di171s',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/fb8a3d6f10779eb1f26a5773ec3171b8.svg'
+    },
+    'rel:01u3fyx6': {
+      id: 'rel:01u3fyx6',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cc99c96791d4fb649a5a786ff8e8b8ac.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    },
+    'rel:00aqhb6m': {
+      id: 'rel:00aqhb6m',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b2f5e5b5955d5cd1b0e6425b27092c31.svg'
+    },
+    'rel:0174wc3k': {
+      id: 'rel:0174wc3k',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/de9f990e88a1dc779dffb6091a16affc.svg'
+    },
+    'rel:00azrhgb': {
+      id: 'rel:00azrhgb',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/61dea2d0733986f7e96f8ea4e159674a.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.185] [INFO ] [pid=97705] [commit] commit send pageId=faedd4 targetIndex=6 version=17 baseVersion=26 revisionBytes=46000
+[2026-08-07 17:30:25.191] [INFO ] [pid=97705] [commit] commit ok pageId=faedd4 revisionId=490727d0 ms=4
+[2026-08-07 17:30:25.191] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_07_frontend_test slideId=faedd4 index=6 version=17 baseVersion=26 revisionId=490727d0 code=0 images=[local=9 remote=0 cached=0 failed=0] ms=98
+[2026-08-07 17:30:25.191] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_08_agent_724 index=7
+[2026-08-07 17:30:25.191] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_08_agent_724 index=7
+[2026-08-07 17:30:25.191] [INFO ] [pid=97705] [render] start pageId=slide_08_agent_724 file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_08_agent_724.jsx replacements=0
+[2026-08-07 17:30:25.225] [INFO ] [pid=97705] [render] ok pageId=slide_08_agent_724 slides=1 imageReplaced=0 ms=34
+[2026-08-07 17:30:25.225] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01bf9aam': {
+      id: 'rel:01bf9aam',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/caeb26b22ff7dce206427fb6c7d7b0b5.svg'
+    },
+    'rel:004arllq': {
+      id: 'rel:004arllq',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0510bd12f999ab461fd54d82823d083b.svg'
+    },
+    'rel:0109ntbt': {
+      id: 'rel:0109ntbt',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/322f99668613c8666554ea61b7989ca0.svg'
+    },
+    'rel:00z09pst': {
+      id: 'rel:00z09pst',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b3097feec9f498776197e25c6b72604a.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.228] [INFO ] [pid=97705] [commit] commit send pageId=0e14e2 targetIndex=7 version=18 baseVersion=27 revisionBytes=31404
+[2026-08-07 17:30:25.232] [INFO ] [pid=97705] [commit] commit ok pageId=0e14e2 revisionId=26f1b2b8 ms=3
+[2026-08-07 17:30:25.232] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_08_agent_724 slideId=0e14e2 index=7 version=18 baseVersion=27 revisionId=26f1b2b8 code=0 images=[local=4 remote=0 cached=0 failed=0] ms=41
+[2026-08-07 17:30:25.232] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_09_completeness index=8
+[2026-08-07 17:30:25.232] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_09_completeness index=8
+[2026-08-07 17:30:25.232] [INFO ] [pid=97705] [render] start pageId=slide_09_completeness file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_09_completeness.jsx replacements=0
+[2026-08-07 17:30:25.276] [INFO ] [pid=97705] [render] ok pageId=slide_09_completeness slides=1 imageReplaced=0 ms=44
+[2026-08-07 17:30:25.276] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:00wisyd2': {
+      id: 'rel:00wisyd2',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/64022cf0b7104ada39161a255d19f18f.svg'
+    },
+    'rel:00y5r9az': {
+      id: 'rel:00y5r9az',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/89f6c0e7a8fb06fc0cafe78276ea4913.svg'
+    },
+    'rel:00po992o': {
+      id: 'rel:00po992o',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/5c8b14538602a7e1faf05843f354fba8.svg'
+    },
+    'rel:00goizg0': {
+      id: 'rel:00goizg0',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/7ea254c58aa4e9c9d149b32e9d2d59b6.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.279] [INFO ] [pid=97705] [commit] commit send pageId=6a5fc5 targetIndex=8 version=19 baseVersion=28 revisionBytes=36272
+[2026-08-07 17:30:25.283] [INFO ] [pid=97705] [commit] commit ok pageId=6a5fc5 revisionId=3a62c940 ms=4
+[2026-08-07 17:30:25.284] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_09_completeness slideId=6a5fc5 index=8 version=19 baseVersion=28 revisionId=3a62c940 code=0 images=[local=4 remote=0 cached=0 failed=0] ms=52
+[2026-08-07 17:30:25.285] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_10_assets index=9
+[2026-08-07 17:30:25.285] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_10_assets index=9
+[2026-08-07 17:30:25.285] [INFO ] [pid=97705] [render] start pageId=slide_10_assets file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_10_assets.jsx replacements=0
+[2026-08-07 17:30:25.338] [INFO ] [pid=97705] [render] ok pageId=slide_10_assets slides=1 imageReplaced=0 ms=53
+[2026-08-07 17:30:25.338] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:017flkzc': {
+      id: 'rel:017flkzc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b8dd9ca277ad0d4f1e45658e8a0e77e5.svg'
+    },
+    'rel:007inxt5': {
+      id: 'rel:007inxt5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/1cf4d2a863edaffefa13a3a5cd9914b0.svg'
+    },
+    'rel:0171mccf': {
+      id: 'rel:0171mccf',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/99b95a19e936e95fd0a41191b7c0ea1e.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    },
+    'rel:00zsta4w': {
+      id: 'rel:00zsta4w',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/79d3da0ff8260e6621b27147e91f3022.svg'
+    },
+    'rel:01ee5eim': {
+      id: 'rel:01ee5eim',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ec6d7f730519dced8385566dba42b072.svg'
+    },
+    'rel:00dzox3j': {
+      id: 'rel:00dzox3j',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/44a7a244b2f022bbe6ce251e3ae182ab.svg'
+    },
+    'rel:019ln1h0': {
+      id: 'rel:019ln1h0',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ec0b81c9f3407c4d56701d19a08ddcb4.svg'
+    },
+    'rel:00b5zbsz': {
+      id: 'rel:00b5zbsz',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cafd9b1f462f056198aceb912685d6fa.svg'
+    },
+    'rel:01abtbtu': {
+      id: 'rel:01abtbtu',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/4af20219204be7d5cd041fa0172b1597.svg'
+    },
+    'rel:0112zxr7': {
+      id: 'rel:0112zxr7',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a9347525e60a66ad59f7b8a12e95f5fb.svg'
+    },
+    'rel:004zr65t': {
+      id: 'rel:004zr65t',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a744b41c1dd355dbcaa12d9476b24783.svg'
+    },
+    'rel:013bvzx5': {
+      id: 'rel:013bvzx5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/63a7df50bb4c7a3029716b1255b41ce7.svg'
+    },
+    'rel:00tb9v31': {
+      id: 'rel:00tb9v31',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/11348fdeb5eca4170fe00225ceba724f.svg'
+    },
+    'rel:0117no7m': {
+      id: 'rel:0117no7m',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/38b8ef6e4b2d88f6a8152b2a8ca3a365.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.342] [INFO ] [pid=97705] [commit] commit send pageId=b6a7f6 targetIndex=9 version=20 baseVersion=29 revisionBytes=67308
+[2026-08-07 17:30:25.348] [INFO ] [pid=97705] [commit] commit ok pageId=b6a7f6 revisionId=09a66b8c ms=5
+[2026-08-07 17:30:25.348] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_10_assets slideId=b6a7f6 index=9 version=20 baseVersion=29 revisionId=09a66b8c code=0 images=[local=15 remote=0 cached=0 failed=0] ms=63
+[2026-08-07 17:30:25.348] [INFO ] [pid=97705] [sync] step=add round=12 attempt=2 pageId=slide_11_automation index=10
+[2026-08-07 17:30:25.348] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:25.348] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:25.349] [WARN ] [pid=97705] [worker] reconcile failed (Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error); trying soft recovery (purge backend + sync version, no editor restart)
+[2026-08-07 17:30:25.351] [INFO ] [pid=97705] [mcp] mcp:slide_get_info send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u"}
+[2026-08-07 17:30:25.353] [INFO ] [pid=97705] [mcp] mcp:slide_get_info ok ms=2
+[2026-08-07 17:30:25.353] [INFO ] [pid=97705] [purge] purge start backendSlideCount=10
+[2026-08-07 17:30:25.355] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.357] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:25.358] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.360] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.361] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.362] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.363] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.364] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.365] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.366] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.367] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.368] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.369] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.371] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=2
+[2026-08-07 17:30:25.373] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.374] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.375] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.376] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.377] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u","page_index":0}
+[2026-08-07 17:30:25.378] [INFO ] [pid=97705] [mcp] mcp:slide_remove_slide ok ms=1
+[2026-08-07 17:30:25.378] [INFO ] [pid=97705] [purge] purge ok removed=10 ms=29
+[2026-08-07 17:30:25.379] [INFO ] [pid=97705] [mcp] mcp:slide_get_info send url=http://127.0.0.1:39099/mcp args={"file_id":"sid_msiqqdi0_6rphhr3u"}
+[2026-08-07 17:30:25.379] [INFO ] [pid=97705] [mcp] mcp:slide_get_info ok ms=0
+[2026-08-07 17:30:25.379] [INFO ] [pid=97705] [backend-ops] seedServerVersion from=30 to=40
+[2026-08-07 17:30:25.379] [INFO ] [pid=97705] [worker] recovery (soft) ok: purged=10 backendNow=0page(s) version=40, view reset; reconcile will redo full sync
+[2026-08-07 17:30:25.379] [INFO ] [pid=97705] [sync] reconcile FAIL but recovered via onReconcileFailure round=12 attempt=2 (recovery 2/2) ms=1020; re-running reconcile
+[2026-08-07 17:30:25.380] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_01_cover index=0
+[2026-08-07 17:30:25.380] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_01_cover index=0
+[2026-08-07 17:30:25.380] [INFO ] [pid=97705] [render] start pageId=slide_01_cover file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_01_cover.jsx replacements=0
+[2026-08-07 17:30:25.402] [INFO ] [pid=97705] [render] ok pageId=slide_01_cover slides=1 imageReplaced=0 ms=22
+[2026-08-07 17:30:25.402] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01x4iz9r': {
+      id: 'rel:01x4iz9r',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/c29e79a9184e6316c6f2150725ffb0a7.svg'
+    },
+    'rel:00f8juqv': {
+      id: 'rel:00f8juqv',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/1362b601d42d4f4334dda4ad6fc33f9a.svg'
+    },
+    'rel:00o22sg5': {
+      id: 'rel:00o22sg5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a81a23c4cf2156413e4d29b3abf7d7ca.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.406] [INFO ] [pid=97705] [commit] commit send pageId=89d894 targetIndex=0 version=21 baseVersion=40 revisionBytes=26272
+[2026-08-07 17:30:25.409] [INFO ] [pid=97705] [commit] commit ok pageId=89d894 revisionId=e4c3c3ff ms=3
+[2026-08-07 17:30:25.409] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_01_cover slideId=89d894 index=0 version=21 baseVersion=40 revisionId=e4c3c3ff code=0 images=[local=3 remote=0 cached=0 failed=0] ms=29
+[2026-08-07 17:30:25.409] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_02_pain_catalog index=1
+[2026-08-07 17:30:25.409] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_02_pain_catalog index=1
+[2026-08-07 17:30:25.409] [INFO ] [pid=97705] [render] start pageId=slide_02_pain_catalog file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_02_pain_catalog.jsx replacements=0
+[2026-08-07 17:30:25.458] [INFO ] [pid=97705] [render] ok pageId=slide_02_pain_catalog slides=1 imageReplaced=0 ms=49
+[2026-08-07 17:30:25.458] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:012y5n45': {
+      id: 'rel:012y5n45',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/752093b42014fbc52eb969ee6f361264.svg'
+    },
+    'rel:01od0ltf': {
+      id: 'rel:01od0ltf',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/f850fa9610829368cd4cab3a6b222f9d.svg'
+    },
+    'rel:01ftdfn9': {
+      id: 'rel:01ftdfn9',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/634c348803016c2ef77aea9222ed1612.svg'
+    },
+    'rel:01ee5llc': {
+      id: 'rel:01ee5llc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/3ca72ee17ba53ba517afe2662f2dcd72.svg'
+    },
+    'rel:00c5kdux': {
+      id: 'rel:00c5kdux',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0fa9f7c159eded4f742a67c039df0cbf.svg'
+    },
+    'rel:00zudkuj': {
+      id: 'rel:00zudkuj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0f56ece6e579bb4ab44da44880c3f419.svg'
+    },
+    'rel:00h7qcjm': {
+      id: 'rel:00h7qcjm',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/442263d1243bd480fe36b12895a3633a.svg'
+    },
+    'rel:01a5vfyl': {
+      id: 'rel:01a5vfyl',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ed515854d341638b9c72687591346fcc.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.462] [INFO ] [pid=97705] [commit] commit send pageId=f7dbd1 targetIndex=1 version=22 baseVersion=41 revisionBytes=40652
+[2026-08-07 17:30:25.470] [INFO ] [pid=97705] [commit] commit ok pageId=f7dbd1 revisionId=dee1f63a ms=8
+[2026-08-07 17:30:25.470] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_02_pain_catalog slideId=f7dbd1 index=1 version=22 baseVersion=41 revisionId=dee1f63a code=0 images=[local=8 remote=0 cached=0 failed=0] ms=61
+[2026-08-07 17:30:25.470] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_03_panorama index=2
+[2026-08-07 17:30:25.470] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_03_panorama index=2
+[2026-08-07 17:30:25.470] [INFO ] [pid=97705] [render] start pageId=slide_03_panorama file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_03_panorama.jsx replacements=0
+[2026-08-07 17:30:25.511] [INFO ] [pid=97705] [render] ok pageId=slide_03_panorama slides=1 imageReplaced=0 ms=41
+[2026-08-07 17:30:25.511] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:015ns779': {
+      id: 'rel:015ns779',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/02f40c638d1a92a9aec6f8e0c63fe99d.svg'
+    },
+    'rel:01vlyqsj': {
+      id: 'rel:01vlyqsj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/f87c33de359d53d48a6ae5a76782db07.svg'
+    },
+    'rel:00zudkuj': {
+      id: 'rel:00zudkuj',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0f56ece6e579bb4ab44da44880c3f419.svg'
+    },
+    'rel:004arllq': {
+      id: 'rel:004arllq',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0510bd12f999ab461fd54d82823d083b.svg'
+    },
+    'rel:01vxwrfr': {
+      id: 'rel:01vxwrfr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/27153dd49b3468d4d27256275e810b08.svg'
+    },
+    'rel:016buk1b': {
+      id: 'rel:016buk1b',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/21df69f26b1ece8591a1204049537b89.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.515] [INFO ] [pid=97705] [commit] commit send pageId=23c2b0 targetIndex=2 version=23 baseVersion=42 revisionBytes=37684
+[2026-08-07 17:30:25.520] [INFO ] [pid=97705] [commit] commit ok pageId=23c2b0 revisionId=fe2558e4 ms=4
+[2026-08-07 17:30:25.521] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_03_panorama slideId=23c2b0 index=2 version=23 baseVersion=42 revisionId=fe2558e4 code=0 images=[local=6 remote=0 cached=0 failed=0] ms=51
+[2026-08-07 17:30:25.521] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_04_product_flow index=3
+[2026-08-07 17:30:25.521] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_04_product_flow index=3
+[2026-08-07 17:30:25.521] [INFO ] [pid=97705] [render] start pageId=slide_04_product_flow file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_04_product_flow.jsx replacements=0
+[2026-08-07 17:30:25.577] [INFO ] [pid=97705] [render] ok pageId=slide_04_product_flow slides=1 imageReplaced=0 ms=56
+[2026-08-07 17:30:25.577] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01hwqvf8': {
+      id: 'rel:01hwqvf8',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b9619b6decad4043b5bf5f89e5cf46df.svg'
+    },
+    'rel:00fqnf0o': {
+      id: 'rel:00fqnf0o',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/95d0660940ffc881ac72f6c018b1b550.svg'
+    },
+    'rel:00b5zbsz': {
+      id: 'rel:00b5zbsz',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cafd9b1f462f056198aceb912685d6fa.svg'
+    },
+    'rel:01abtbtu': {
+      id: 'rel:01abtbtu',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/4af20219204be7d5cd041fa0172b1597.svg'
+    },
+    'rel:01eljazp': {
+      id: 'rel:01eljazp',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/76e42b800b41ef899f853fc49a633bc0.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.581] [INFO ] [pid=97705] [commit] commit send pageId=b20c8f targetIndex=3 version=24 baseVersion=43 revisionBytes=43488
+[2026-08-07 17:30:25.588] [INFO ] [pid=97705] [commit] commit ok pageId=b20c8f revisionId=7d3ec737 ms=7
+[2026-08-07 17:30:25.588] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_04_product_flow slideId=b20c8f index=3 version=24 baseVersion=43 revisionId=7d3ec737 code=0 images=[local=5 remote=0 cached=0 failed=0] ms=67
+[2026-08-07 17:30:25.588] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_05_dev_hero index=4
+[2026-08-07 17:30:25.589] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_05_dev_hero index=4
+[2026-08-07 17:30:25.589] [INFO ] [pid=97705] [render] start pageId=slide_05_dev_hero file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_05_dev_hero.jsx replacements=0
+[2026-08-07 17:30:25.654] [INFO ] [pid=97705] [render] ok pageId=slide_05_dev_hero slides=1 imageReplaced=0 ms=65
+[2026-08-07 17:30:25.654] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:017flkzc': {
+      id: 'rel:017flkzc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b8dd9ca277ad0d4f1e45658e8a0e77e5.svg'
+    },
+    'rel:010gzys5': {
+      id: 'rel:010gzys5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/6642f0fad296a4c11edaffb2177322d8.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.658] [INFO ] [pid=97705] [commit] commit send pageId=5296b0 targetIndex=4 version=25 baseVersion=44 revisionBytes=39872
+[2026-08-07 17:30:25.665] [INFO ] [pid=97705] [commit] commit ok pageId=5296b0 revisionId=a250e5c0 ms=6
+[2026-08-07 17:30:25.666] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_05_dev_hero slideId=5296b0 index=4 version=25 baseVersion=44 revisionId=a250e5c0 code=0 images=[local=3 remote=0 cached=0 failed=0] ms=77
+[2026-08-07 17:30:25.666] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_06_backend index=5
+[2026-08-07 17:30:25.666] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_06_backend index=5
+[2026-08-07 17:30:25.666] [INFO ] [pid=97705] [render] start pageId=slide_06_backend file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_06_backend.jsx replacements=0
+[2026-08-07 17:30:25.928] [INFO ] [pid=97705] [render] ok pageId=slide_06_backend slides=1 imageReplaced=0 ms=262
+[2026-08-07 17:30:25.929] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:00aooqvl': {
+      id: 'rel:00aooqvl',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/c9f2d8d127b91010cc4363699da8ba16.svg'
+    },
+    'rel:01eljazp': {
+      id: 'rel:01eljazp',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/76e42b800b41ef899f853fc49a633bc0.svg'
+    },
+    'rel:00gcln64': {
+      id: 'rel:00gcln64',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/5fc9c1fb669a7317f632b869a07af10f.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:25.944] [INFO ] [pid=97705] [commit] commit send pageId=a0d238 targetIndex=5 version=26 baseVersion=45 revisionBytes=45132
+[2026-08-07 17:30:25.952] [INFO ] [pid=97705] [commit] commit ok pageId=a0d238 revisionId=b899e6fe ms=7
+[2026-08-07 17:30:25.953] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_06_backend slideId=a0d238 index=5 version=26 baseVersion=45 revisionId=b899e6fe code=0 images=[local=3 remote=0 cached=0 failed=0] ms=287
+[2026-08-07 17:30:25.953] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_07_frontend_test index=6
+[2026-08-07 17:30:25.953] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_07_frontend_test index=6
+[2026-08-07 17:30:25.953] [INFO ] [pid=97705] [render] start pageId=slide_07_frontend_test file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_07_frontend_test.jsx replacements=0
+[2026-08-07 17:30:26.035] [INFO ] [pid=97705] [render] ok pageId=slide_07_frontend_test slides=1 imageReplaced=0 ms=82
+[2026-08-07 17:30:26.035] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:010gzys5': {
+      id: 'rel:010gzys5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/6642f0fad296a4c11edaffb2177322d8.svg'
+    },
+    'rel:01uvldzm': {
+      id: 'rel:01uvldzm',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b13c709c75ae4548ccedeebf89fec8ce.svg'
+    },
+    'rel:018cn9n4': {
+      id: 'rel:018cn9n4',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/e914471da5d92156587b4db8b5634913.svg'
+    },
+    'rel:00di171s': {
+      id: 'rel:00di171s',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/fb8a3d6f10779eb1f26a5773ec3171b8.svg'
+    },
+    'rel:01u3fyx6': {
+      id: 'rel:01u3fyx6',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cc99c96791d4fb649a5a786ff8e8b8ac.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    },
+    'rel:00aqhb6m': {
+      id: 'rel:00aqhb6m',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b2f5e5b5955d5cd1b0e6425b27092c31.svg'
+    },
+    'rel:0174wc3k': {
+      id: 'rel:0174wc3k',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/de9f990e88a1dc779dffb6091a16affc.svg'
+    },
+    'rel:00azrhgb': {
+      id: 'rel:00azrhgb',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/61dea2d0733986f7e96f8ea4e159674a.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:26.039] [INFO ] [pid=97705] [commit] commit send pageId=ccc325 targetIndex=6 version=27 baseVersion=46 revisionBytes=45988
+[2026-08-07 17:30:26.044] [INFO ] [pid=97705] [commit] commit ok pageId=ccc325 revisionId=a1342320 ms=5
+[2026-08-07 17:30:26.045] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_07_frontend_test slideId=ccc325 index=6 version=27 baseVersion=46 revisionId=a1342320 code=0 images=[local=9 remote=0 cached=0 failed=0] ms=92
+[2026-08-07 17:30:26.045] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_08_agent_724 index=7
+[2026-08-07 17:30:26.045] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_08_agent_724 index=7
+[2026-08-07 17:30:26.045] [INFO ] [pid=97705] [render] start pageId=slide_08_agent_724 file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_08_agent_724.jsx replacements=0
+[2026-08-07 17:30:26.107] [INFO ] [pid=97705] [render] ok pageId=slide_08_agent_724 slides=1 imageReplaced=0 ms=62
+[2026-08-07 17:30:26.107] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:01bf9aam': {
+      id: 'rel:01bf9aam',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/caeb26b22ff7dce206427fb6c7d7b0b5.svg'
+    },
+    'rel:004arllq': {
+      id: 'rel:004arllq',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0510bd12f999ab461fd54d82823d083b.svg'
+    },
+    'rel:0109ntbt': {
+      id: 'rel:0109ntbt',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/322f99668613c8666554ea61b7989ca0.svg'
+    },
+    'rel:00z09pst': {
+      id: 'rel:00z09pst',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b3097feec9f498776197e25c6b72604a.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:26.110] [INFO ] [pid=97705] [commit] commit send pageId=45edf9 targetIndex=7 version=28 baseVersion=47 revisionBytes=31388
+[2026-08-07 17:30:26.115] [INFO ] [pid=97705] [commit] commit ok pageId=45edf9 revisionId=48501abf ms=4
+[2026-08-07 17:30:26.115] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_08_agent_724 slideId=45edf9 index=7 version=28 baseVersion=47 revisionId=48501abf code=0 images=[local=4 remote=0 cached=0 failed=0] ms=70
+[2026-08-07 17:30:26.116] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_09_completeness index=8
+[2026-08-07 17:30:26.116] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_09_completeness index=8
+[2026-08-07 17:30:26.116] [INFO ] [pid=97705] [render] start pageId=slide_09_completeness file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_09_completeness.jsx replacements=0
+[2026-08-07 17:30:26.163] [INFO ] [pid=97705] [render] ok pageId=slide_09_completeness slides=1 imageReplaced=0 ms=47
+[2026-08-07 17:30:26.163] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:00wisyd2': {
+      id: 'rel:00wisyd2',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/64022cf0b7104ada39161a255d19f18f.svg'
+    },
+    'rel:00y5r9az': {
+      id: 'rel:00y5r9az',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/89f6c0e7a8fb06fc0cafe78276ea4913.svg'
+    },
+    'rel:00po992o': {
+      id: 'rel:00po992o',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/5c8b14538602a7e1faf05843f354fba8.svg'
+    },
+    'rel:00goizg0': {
+      id: 'rel:00goizg0',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/7ea254c58aa4e9c9d149b32e9d2d59b6.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:26.167] [INFO ] [pid=97705] [commit] commit send pageId=037cf1 targetIndex=8 version=29 baseVersion=48 revisionBytes=36260
+[2026-08-07 17:30:26.172] [INFO ] [pid=97705] [commit] commit ok pageId=037cf1 revisionId=eaf6b849 ms=4
+[2026-08-07 17:30:26.173] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_09_completeness slideId=037cf1 index=8 version=29 baseVersion=48 revisionId=eaf6b849 code=0 images=[local=4 remote=0 cached=0 failed=0] ms=57
+[2026-08-07 17:30:26.173] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_10_assets index=9
+[2026-08-07 17:30:26.173] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_10_assets index=9
+[2026-08-07 17:30:26.173] [INFO ] [pid=97705] [render] start pageId=slide_10_assets file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_10_assets.jsx replacements=0
+[2026-08-07 17:30:26.233] [INFO ] [pid=97705] [render] ok pageId=slide_10_assets slides=1 imageReplaced=0 ms=60
+[2026-08-07 17:30:26.233] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:017flkzc': {
+      id: 'rel:017flkzc',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b8dd9ca277ad0d4f1e45658e8a0e77e5.svg'
+    },
+    'rel:007inxt5': {
+      id: 'rel:007inxt5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/1cf4d2a863edaffefa13a3a5cd9914b0.svg'
+    },
+    'rel:0171mccf': {
+      id: 'rel:0171mccf',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/99b95a19e936e95fd0a41191b7c0ea1e.svg'
+    },
+    'rel:01pcxvbr': {
+      id: 'rel:01pcxvbr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/382d4583a931d1e10fe0a08da9bb85a6.svg'
+    },
+    'rel:00zsta4w': {
+      id: 'rel:00zsta4w',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/79d3da0ff8260e6621b27147e91f3022.svg'
+    },
+    'rel:01ee5eim': {
+      id: 'rel:01ee5eim',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ec6d7f730519dced8385566dba42b072.svg'
+    },
+    'rel:00dzox3j': {
+      id: 'rel:00dzox3j',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/44a7a244b2f022bbe6ce251e3ae182ab.svg'
+    },
+    'rel:019ln1h0': {
+      id: 'rel:019ln1h0',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ec0b81c9f3407c4d56701d19a08ddcb4.svg'
+    },
+    'rel:00b5zbsz': {
+      id: 'rel:00b5zbsz',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/cafd9b1f462f056198aceb912685d6fa.svg'
+    },
+    'rel:01abtbtu': {
+      id: 'rel:01abtbtu',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/4af20219204be7d5cd041fa0172b1597.svg'
+    },
+    'rel:0112zxr7': {
+      id: 'rel:0112zxr7',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a9347525e60a66ad59f7b8a12e95f5fb.svg'
+    },
+    'rel:004zr65t': {
+      id: 'rel:004zr65t',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a744b41c1dd355dbcaa12d9476b24783.svg'
+    },
+    'rel:013bvzx5': {
+      id: 'rel:013bvzx5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/63a7df50bb4c7a3029716b1255b41ce7.svg'
+    },
+    'rel:00tb9v31': {
+      id: 'rel:00tb9v31',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/11348fdeb5eca4170fe00225ceba724f.svg'
+    },
+    'rel:0117no7m': {
+      id: 'rel:0117no7m',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/38b8ef6e4b2d88f6a8152b2a8ca3a365.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:30:26.238] [INFO ] [pid=97705] [commit] commit send pageId=e8fd47 targetIndex=9 version=30 baseVersion=49 revisionBytes=67304
+[2026-08-07 17:30:26.244] [INFO ] [pid=97705] [commit] commit ok pageId=e8fd47 revisionId=e33541fe ms=6
+[2026-08-07 17:30:26.244] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_10_assets slideId=e8fd47 index=9 version=30 baseVersion=49 revisionId=e33541fe code=0 images=[local=15 remote=0 cached=0 failed=0] ms=71
+[2026-08-07 17:30:26.245] [INFO ] [pid=97705] [sync] step=add round=12 attempt=3 pageId=slide_11_automation index=10
+[2026-08-07 17:30:26.245] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:26.245] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:26.245] [WARN ] [pid=97705] [sync] recovery budget exhausted round=12 (2/2); falling back to failure throttle
+[2026-08-07 17:30:26.245] [ERROR] [pid=97705] [sync] reconcile FAIL round=12 attempt=3 (1/5) ms=866 Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error
+    at Compiler.parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:202:46)
+    at parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:397:21)
+    at bE.parse (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:12894)
+    at CE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:13356)
+    at Id.validateAndTransform (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:266)
+    at Id.eval (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:14824)
+    at PE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:3280)
+    at AV (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:13436)
+    at mh.addSlideAt (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:18241)
+    at L.reconcile (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:25063)
+[2026-08-07 17:30:26.285] [INFO ] [pid=97705] [sync] backoff round=12 5000ms before next reconcile retry
+[2026-08-07 17:30:31.287] [INFO ] [pid=97705] [sync] step=add round=12 attempt=4 pageId=slide_11_automation index=10
+[2026-08-07 17:30:31.287] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:31.287] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:31.288] [WARN ] [pid=97705] [sync] recovery budget exhausted round=12 (2/2); falling back to failure throttle
+[2026-08-07 17:30:31.288] [ERROR] [pid=97705] [sync] reconcile FAIL round=12 attempt=4 (2/5) ms=1 Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error
+    at Compiler.parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:202:46)
+    at parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:397:21)
+    at bE.parse (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:12894)
+    at CE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:13356)
+    at Id.validateAndTransform (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:266)
+    at Id.eval (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:14824)
+    at PE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:3280)
+    at AV (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:13436)
+    at mh.addSlideAt (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:18241)
+    at L.reconcile (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:25063)
+[2026-08-07 17:30:31.288] [INFO ] [pid=97705] [sync] backoff round=12 5000ms before next reconcile retry
+[2026-08-07 17:30:36.289] [INFO ] [pid=97705] [sync] step=add round=12 attempt=5 pageId=slide_11_automation index=10
+[2026-08-07 17:30:36.289] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:36.289] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:36.289] [WARN ] [pid=97705] [sync] recovery budget exhausted round=12 (2/2); falling back to failure throttle
+[2026-08-07 17:30:36.289] [ERROR] [pid=97705] [sync] reconcile FAIL round=12 attempt=5 (3/5) ms=1 Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error
+    at Compiler.parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:202:46)
+    at parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:397:21)
+    at bE.parse (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:12894)
+    at CE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:13356)
+    at Id.validateAndTransform (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:266)
+    at Id.eval (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:14824)
+    at PE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:3280)
+    at AV (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:13436)
+    at mh.addSlideAt (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:18241)
+    at L.reconcile (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:25063)
+[2026-08-07 17:30:36.289] [INFO ] [pid=97705] [sync] backoff round=12 5000ms before next reconcile retry
+[2026-08-07 17:30:37.910] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_12_summary_data.jsx
+[2026-08-07 17:30:38.413] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_12_summary_data] size=1
+[2026-08-07 17:30:38.413] [INFO ] [pid=97705] [sync] submit round=12 dirty=slide_12_summary_data pendingDirtySize=2 merged=yes
+[2026-08-07 17:30:41.291] [INFO ] [pid=97705] [sync] step=add round=12 attempt=6 pageId=slide_11_automation index=10
+[2026-08-07 17:30:41.291] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:41.291] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:41.291] [WARN ] [pid=97705] [sync] recovery budget exhausted round=12 (2/2); falling back to failure throttle
+[2026-08-07 17:30:41.291] [ERROR] [pid=97705] [sync] reconcile FAIL round=12 attempt=6 (4/5) ms=1 Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error
+    at Compiler.parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:202:46)
+    at parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:397:21)
+    at bE.parse (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:12894)
+    at CE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:13356)
+    at Id.validateAndTransform (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:266)
+    at Id.eval (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:14824)
+    at PE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:3280)
+    at AV (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:13436)
+    at mh.addSlideAt (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:18241)
+    at L.reconcile (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:25063)
+[2026-08-07 17:30:41.292] [INFO ] [pid=97705] [sync] backoff round=12 5000ms before next reconcile retry
+[2026-08-07 17:30:46.293] [INFO ] [pid=97705] [sync] step=add round=12 attempt=7 pageId=slide_11_automation index=10
+[2026-08-07 17:30:46.294] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:46.294] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:46.294] [WARN ] [pid=97705] [sync] recovery budget exhausted round=12 (2/2); falling back to failure throttle
+[2026-08-07 17:30:46.294] [ERROR] [pid=97705] [sync] reconcile FAIL round=12 attempt=7 (5/5) ms=2 Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error
+    at Compiler.parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:202:46)
+    at parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:397:21)
+    at bE.parse (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:12894)
+    at CE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:13356)
+    at Id.validateAndTransform (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:266)
+    at Id.eval (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:14824)
+    at PE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:3280)
+    at AV (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:13436)
+    at mh.addSlideAt (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:18241)
+    at L.reconcile (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:25063)
+[2026-08-07 17:30:46.295] [WARN ] [pid=97705] [sync] giving up auto-retry round=12 pendingDirtySize=2 next external submit will resume
+[2026-08-07 17:30:46.295] [WARN ] [pid=97705] [sync] skip save round=12: residual failure state (consecutiveFailures=5 pendingDirtySize=2); defer save until next clean reconcile
+[2026-08-07 17:30:46.295] [INFO ] [pid=97705] [sync] drain end round=12 reconciles=7 mergedSubmits=2 pendingDirtySize=2 ms=22004
+[2026-08-07 17:30:50.335] [INFO ] [pid=97705] [watcher] event=add file=pages/slide_13_end.jsx
+[2026-08-07 17:30:50.836] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_13_end] size=1
+[2026-08-07 17:30:50.837] [INFO ] [pid=97705] [sync] submit nextRound=13 dirty=slide_13_end pendingDirtySize=3 merged=no
+[2026-08-07 17:30:50.837] [INFO ] [pid=97705] [sync] drain start round=13 pendingDirtySize=3
+[2026-08-07 17:30:50.837] [INFO ] [pid=97705] [sync] step=add round=13 attempt=1 pageId=slide_11_automation index=10
+[2026-08-07 17:30:50.838] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:30:50.838] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:30:50.838] [WARN ] [pid=97705] [sync] recovery budget exhausted round=13 (2/2); falling back to failure throttle
+[2026-08-07 17:30:50.839] [ERROR] [pid=97705] [sync] reconcile FAIL round=13 attempt=1 (6/5) ms=2 Error:   x Expected '</', got '#'
+   ,-[3:1]
+ 1 | <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ 2 |   {/* A区 */}
+ 3 |   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   :                                                                                             ^
+ 4 |     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ 5 |       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ 6 |       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   `----
+
+
+Caused by:
+    Syntax Error
+    at Compiler.parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:202:46)
+    at parseSync (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/node_modules/@swc/core/index.js:397:21)
+    at bE.parse (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:12894)
+    at CE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:13356)
+    at Id.validateAndTransform (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:266)
+    at Id.eval (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5938:14824)
+    at PE (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5945:3280)
+    at AV (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:13436)
+    at mh.addSlideAt (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:18241)
+    at L.reconcile (/Users/peter/.workbuddy/binaries/node/versions/22.22.2/lib/node_modules/@tencent/slidep/dist/slidep.js:5986:25063)
+[2026-08-07 17:30:50.839] [WARN ] [pid=97705] [sync] giving up auto-retry round=13 pendingDirtySize=3 next external submit will resume
+[2026-08-07 17:30:50.839] [WARN ] [pid=97705] [sync] skip save round=13: residual failure state (consecutiveFailures=6 pendingDirtySize=3); defer save until next clean reconcile
+[2026-08-07 17:30:50.839] [INFO ] [pid=97705] [sync] drain end round=13 reconciles=1 mergedSubmits=1 pendingDirtySize=3 ms=2
+[2026-08-07 17:31:27.794] [INFO ] [pid=97705] [watcher] event=change file=pages/slide_11_automation.jsx
+[2026-08-07 17:31:28.296] [INFO ] [pid=97705] [watcher] flush batch dirty=[slide_11_automation] size=1
+[2026-08-07 17:31:28.297] [INFO ] [pid=97705] [sync] submit nextRound=14 dirty=slide_11_automation pendingDirtySize=3 merged=no
+[2026-08-07 17:31:28.297] [INFO ] [pid=97705] [sync] drain start round=14 pendingDirtySize=3
+[2026-08-07 17:31:28.297] [INFO ] [pid=97705] [sync] step=add round=14 attempt=1 pageId=slide_11_automation index=10
+[2026-08-07 17:31:28.297] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_11_automation index=10
+[2026-08-07 17:31:28.297] [INFO ] [pid=97705] [render] start pageId=slide_11_automation file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx replacements=0
+[2026-08-07 17:31:28.361] [INFO ] [pid=97705] [render] ok pageId=slide_11_automation slides=1 imageReplaced=0 ms=64
+[2026-08-07 17:31:28.361] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:018tp8d0': {
+      id: 'rel:018tp8d0',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a9ccd14271ba65cf49bd1838ee36e512.svg'
+    },
+    'rel:0163v4w8': {
+      id: 'rel:0163v4w8',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/b09d5da80ebe2ff2810c1e5c3dbed5a0.svg'
+    },
+    'rel:010yl1zr': {
+      id: 'rel:010yl1zr',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/8e38826510619a8e4bc930b9c5294d4a.svg'
+    },
+    'rel:00g51x12': {
+      id: 'rel:00g51x12',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/6f6105fdd16e73e469bc5b0522620ee0.svg'
+    },
+    'rel:00q8y1vq': {
+      id: 'rel:00q8y1vq',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/374846fafb71a09384add6ebd2703a6f.svg'
+    },
+    'rel:006ykaue': {
+      id: 'rel:006ykaue',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/c5d39a3a9042f0f758b61f1d1ed3623e.svg'
+    },
+    'rel:01ufbdj6': {
+      id: 'rel:01ufbdj6',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/0805bbd5f9c02b1f8a5117d693548277.svg'
+    },
+    'rel:01abtbtu': {
+      id: 'rel:01abtbtu',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/4af20219204be7d5cd041fa0172b1597.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:31:28.366] [INFO ] [pid=97705] [commit] commit send pageId=fb83a5 targetIndex=10 version=31 baseVersion=50 revisionBytes=41076
+[2026-08-07 17:31:28.375] [INFO ] [pid=97705] [commit] commit ok pageId=fb83a5 revisionId=916f7633 ms=9
+[2026-08-07 17:31:28.376] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_11_automation slideId=fb83a5 index=10 version=31 baseVersion=50 revisionId=916f7633 code=0 images=[local=8 remote=0 cached=0 failed=0] ms=79
+[2026-08-07 17:31:28.376] [INFO ] [pid=97705] [sync] step=add round=14 attempt=1 pageId=slide_12_summary_data index=11
+[2026-08-07 17:31:28.376] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_12_summary_data index=11
+[2026-08-07 17:31:28.376] [INFO ] [pid=97705] [render] start pageId=slide_12_summary_data file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_12_summary_data.jsx replacements=0
+[2026-08-07 17:31:28.424] [INFO ] [pid=97705] [render] ok pageId=slide_12_summary_data slides=1 imageReplaced=0 ms=48
+[2026-08-07 17:31:28.424] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:007inxt5': {
+      id: 'rel:007inxt5',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/1cf4d2a863edaffefa13a3a5cd9914b0.svg'
+    },
+    'rel:01au7rd2': {
+      id: 'rel:01au7rd2',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/7e314a823900dedf2fc541e62ed44de9.svg'
+    },
+    'rel:00tg4r5u': {
+      id: 'rel:00tg4r5u',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/ceb8f4cdc40233c1e525ccf8dd1bb744.svg'
+    },
+    'rel:00nxsl7c': {
+      id: 'rel:00nxsl7c',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/d68f71fc460083d51def062b2bdc821b.svg'
+    },
+    'rel:01l8ty0c': {
+      id: 'rel:01l8ty0c',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/a77b1f0fa9ec8eab44ee4c2977cad49b.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:31:28.427] [INFO ] [pid=97705] [commit] commit send pageId=704ed1 targetIndex=11 version=32 baseVersion=51 revisionBytes=30732
+[2026-08-07 17:31:28.432] [INFO ] [pid=97705] [commit] commit ok pageId=704ed1 revisionId=7185c42a ms=5
+[2026-08-07 17:31:28.432] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_12_summary_data slideId=704ed1 index=11 version=32 baseVersion=51 revisionId=7185c42a code=0 images=[local=5 remote=0 cached=0 failed=0] ms=56
+[2026-08-07 17:31:28.432] [INFO ] [pid=97705] [sync] step=add round=14 attempt=1 pageId=slide_13_end index=12
+[2026-08-07 17:31:28.432] [INFO ] [pid=97705] [backend-ops] addSlideAt start pageId=slide_13_end index=12
+[2026-08-07 17:31:28.432] [INFO ] [pid=97705] [render] start pageId=slide_13_end file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_13_end.jsx replacements=0
+[2026-08-07 17:31:28.462] [INFO ] [pid=97705] [render] ok pageId=slide_13_end slides=1 imageReplaced=0 ms=30
+[2026-08-07 17:31:28.462] [INFO ] [pid=97705] [render] renderSlideData result.resources={
+  images: {
+    'rel:00p91z3m': {
+      id: 'rel:00p91z3m',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/e395c3c410c8151946476e81c4202460.svg'
+    },
+    'rel:01x8dmbd': {
+      id: 'rel:01x8dmbd',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/73f8984ecb6fed15131f3e8597d05a53.svg'
+    },
+    'rel:01u919qf': {
+      id: 'rel:01u919qf',
+      src: '/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/.cache/media/images/f7ca91780ecf4f421af91a61783c406c.svg'
+    }
+  },
+  videos: {},
+  audios: {},
+  fonts: {}
+}
+[2026-08-07 17:31:28.464] [INFO ] [pid=97705] [commit] commit send pageId=dc38ce targetIndex=12 version=33 baseVersion=52 revisionBytes=24712
+[2026-08-07 17:31:28.470] [INFO ] [pid=97705] [commit] commit ok pageId=dc38ce revisionId=67ef4d34 ms=5
+[2026-08-07 17:31:28.470] [INFO ] [pid=97705] [backend-ops] addSlideAt ok pageId=slide_13_end slideId=dc38ce index=12 version=33 baseVersion=52 revisionId=67ef4d34 code=0 images=[local=3 remote=0 cached=0 failed=0] ms=38
+[2026-08-07 17:31:28.471] [INFO ] [pid=97705] [sync] aligned round=14 attempt=1 size=13 desired=13 pendingDirtySize=0
+[2026-08-07 17:31:28.471] [INFO ] [pid=97705] [sync] reconcile ok round=14 attempt=1 ms=174
+[2026-08-07 17:31:28.471] [INFO ] [pid=97705] [backend-ops] save start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:31:28.471] [INFO ] [pid=97705] [commit] save send filePath=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:31:28.524] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=53
+[2026-08-07 17:31:28.524] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=53
+[2026-08-07 17:31:28.525] [INFO ] [pid=97705] [sync] drain end round=14 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=228

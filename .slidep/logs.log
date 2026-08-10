@@ -1,0 +1,60 @@
+=== boot pid=97523 ts=2026-08-07 17:26:40.785 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-start --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest --filename AI大赛-开课管理全流程AI提效.pptx ===
+[2026-08-07 17:26:40.782] [INFO ] [pid=97523] [start] invoked pid=97523 cwd=/Users/peter/Desktop/ly/ly/pyfa daemonChild=no dev=no argv=[--project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest --filename AI大赛-开课管理全流程AI提效.pptx]
+[2026-08-07 17:26:40.785] [INFO ] [pid=97523] [start] spawning daemon projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest filename=AI大赛-开课管理全流程AI提效.pptx
+[2026-08-07 17:26:40.789] [INFO ] [pid=97523] [start] daemon spawned childPid=97705; waiting started ipc
+[2026-08-07 17:26:41.642] [INFO ] [pid=97523] [start] daemon started childPid=97705 ms=857
+=== boot pid=99751 ts=2026-08-07 17:30:56.997 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_01_cover.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:30:56.995] [INFO ] [pid=99751] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_01_cover.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:30:57.237] [INFO ] [pid=99751] [validate] ok slideId=slide_01_cover status=ready totalResources=0 done=0 pending=0 ms=242
+=== boot pid=99771 ts=2026-08-07 17:30:57.932 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_02_pain_catalog.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:30:57.931] [INFO ] [pid=99771] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_02_pain_catalog.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:30:58.381] [INFO ] [pid=99771] [validate] ok slideId=slide_02_pain_catalog status=ready totalResources=0 done=0 pending=0 ms=450
+=== boot pid=99780 ts=2026-08-07 17:30:59.101 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_03_panorama.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:30:59.101] [INFO ] [pid=99780] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_03_panorama.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:30:59.386] [INFO ] [pid=99780] [validate] ok slideId=slide_03_panorama status=ready totalResources=0 done=0 pending=0 ms=285
+=== boot pid=99788 ts=2026-08-07 17:31:00.087 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_04_product_flow.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:00.087] [INFO ] [pid=99788] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_04_product_flow.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:00.463] [INFO ] [pid=99788] [validate] ok slideId=slide_04_product_flow status=ready totalResources=0 done=0 pending=0 ms=376
+=== boot pid=99808 ts=2026-08-07 17:31:01.148 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_05_dev_hero.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:01.148] [INFO ] [pid=99808] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_05_dev_hero.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:01.463] [INFO ] [pid=99808] [validate] ok slideId=slide_05_dev_hero status=ready totalResources=0 done=0 pending=0 ms=316
+=== boot pid=99816 ts=2026-08-07 17:31:02.149 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_06_backend.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:02.148] [INFO ] [pid=99816] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_06_backend.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:02.546] [INFO ] [pid=99816] [validate] ok slideId=slide_06_backend status=ready totalResources=0 done=0 pending=0 ms=398
+=== boot pid=99837 ts=2026-08-07 17:31:03.251 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_07_frontend_test.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:03.251] [INFO ] [pid=99837] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_07_frontend_test.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:03.965] [INFO ] [pid=99837] [validate] ok slideId=slide_07_frontend_test status=ready totalResources=0 done=0 pending=0 ms=714
+=== boot pid=99850 ts=2026-08-07 17:31:04.672 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_08_agent_724.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:04.671] [INFO ] [pid=99850] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_08_agent_724.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:04.932] [INFO ] [pid=99850] [validate] ok slideId=slide_08_agent_724 status=ready totalResources=0 done=0 pending=0 ms=261
+=== boot pid=99859 ts=2026-08-07 17:31:05.614 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_09_completeness.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:05.614] [INFO ] [pid=99859] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_09_completeness.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:05.905] [INFO ] [pid=99859] [validate] ok slideId=slide_09_completeness status=ready totalResources=0 done=0 pending=0 ms=291
+=== boot pid=99867 ts=2026-08-07 17:31:06.579 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_10_assets.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:06.579] [INFO ] [pid=99867] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_10_assets.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:06.944] [INFO ] [pid=99867] [validate] ok slideId=slide_10_assets status=ready totalResources=0 done=0 pending=0 ms=366
+=== boot pid=99881 ts=2026-08-07 17:31:07.655 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:07.655] [INFO ] [pid=99881] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:07.675] [WARN ] [pid=99881] [validate] validation FAIL slideId=slide_11_automation code=JSX_PARSE_ERROR message=JSX parse error:   [31m×[0m Expected '</', got '#'
+   ╭─[3:1]
+ [2m1[0m │ <Slide style={{ width: 1280, height: 720, background: '#0A0E27', padding: '50px 70px 40px 70px' }}>
+ [2m2[0m │   {/* A区 */}
+ [2m3[0m │   <Box style={{ height: 80, borderLeft: '4px solid', borderImage: 'linear-gradient(180deg, '#10B981', '#3B82F6') 1', paddingLeft: 20, justifyContent: 'center', marginBottom: 10 }}>
+   · [35;1m                                                                                            ─[0m
+ [2m4[0m │     <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+ [2m5[0m │       <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#F1F5F9' }}>自动化工程能力</Text>
+ [2m6[0m │       <Text style={{ fontSize: 14, color: '#10B981' }}>评分维度四 · 10分加分</Text>
+   ╰────
+
+
+Caused by:
+    Syntax Error ms=20
+=== boot pid=99890 ts=2026-08-07 17:31:08.345 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_12_summary_data.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:08.344] [INFO ] [pid=99890] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_12_summary_data.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:08.612] [INFO ] [pid=99890] [validate] ok slideId=slide_12_summary_data status=ready totalResources=0 done=0 pending=0 ms=268
+=== boot pid=99897 ts=2026-08-07 17:31:09.303 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_13_end.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:09.303] [INFO ] [pid=99897] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_13_end.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:09.510] [INFO ] [pid=99897] [validate] ok slideId=slide_13_end status=ready totalResources=0 done=0 pending=0 ms=207
+=== boot pid=171 ts=2026-08-07 17:31:32.384 cwd=/Users/peter/Desktop/ly/ly/pyfa argv=/Users/peter/.workbuddy/binaries/node/versions/22.22.2/bin/slidep-validate /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx --project /Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest ===
+[2026-08-07 17:31:32.380] [INFO ] [pid=171] [validate] start file=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/pages/slide_11_automation.jsx projectDir=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest checkOverflow=true
+[2026-08-07 17:31:32.736] [INFO ] [pid=171] [validate] ok slideId=slide_11_automation status=ready totalResources=0 done=0 pending=0 ms=356

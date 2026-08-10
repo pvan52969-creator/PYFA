@@ -1,0 +1,70 @@
+{
+  "filePath": "/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx",
+  "lastCommit": {
+    "slide_01_cover": {
+      "revisionId": "e4c3c3ff1c642de01b1b81d6fa6e7d9de412df55",
+      "version": 21,
+      "at": "2026-08-07 17:30:25.409"
+    },
+    "slide_02_pain_catalog": {
+      "revisionId": "dee1f63aed5eb6e2472a03a8f6890ab6d3e8ca40",
+      "version": 22,
+      "at": "2026-08-07 17:30:25.470"
+    },
+    "slide_03_panorama": {
+      "revisionId": "fe2558e40967e64105724572639c1745197d4a84",
+      "version": 23,
+      "at": "2026-08-07 17:30:25.521"
+    },
+    "slide_04_product_flow": {
+      "revisionId": "7d3ec737f011736a7bc161a86a6f0d6e0abf721b",
+      "version": 24,
+      "at": "2026-08-07 17:30:25.588"
+    },
+    "slide_05_dev_hero": {
+      "revisionId": "a250e5c035cfc726c301aa872d914b04ca23083c",
+      "version": 25,
+      "at": "2026-08-07 17:30:25.665"
+    },
+    "slide_06_backend": {
+      "revisionId": "b899e6fe783f6efacd81ae1b97a4e90b301dc660",
+      "version": 26,
+      "at": "2026-08-07 17:30:25.953"
+    },
+    "slide_07_frontend_test": {
+      "revisionId": "a134232024add7dd9ad2127cb466b830dcca6c7a",
+      "version": 27,
+      "at": "2026-08-07 17:30:26.044"
+    },
+    "slide_08_agent_724": {
+      "revisionId": "48501abfa39385155e7dff421413991a5a38eb94",
+      "version": 28,
+      "at": "2026-08-07 17:30:26.115"
+    },
+    "slide_09_completeness": {
+      "revisionId": "eaf6b8495c65140dd518ea0ae66c8429e9cbaca4",
+      "version": 29,
+      "at": "2026-08-07 17:30:26.172"
+    },
+    "slide_10_assets": {
+      "revisionId": "e33541fe2aca5250a52be65a2764e4a0d601ea5d",
+      "version": 30,
+      "at": "2026-08-07 17:30:26.244"
+    },
+    "slide_11_automation": {
+      "revisionId": "916f76336c27d8d5b399d148b5ffe55999af29d4",
+      "version": 31,
+      "at": "2026-08-07 17:31:28.376"
+    },
+    "slide_12_summary_data": {
+      "revisionId": "7185c42a7882ea0de50345112d1eb1c81e857e4e",
+      "version": 32,
+      "at": "2026-08-07 17:31:28.432"
+    },
+    "slide_13_end": {
+      "revisionId": "67ef4d34e3b001a4c9f1d9f5661500e8f129018b",
+      "version": 33,
+      "at": "2026-08-07 17:31:28.470"
+    }
+  }
+}

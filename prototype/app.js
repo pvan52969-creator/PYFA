@@ -6928,10 +6928,14 @@ function applySpecialCourseDefaultsToSection(sec, options = {}) {
   return changed;
 }
 
-/** 列表「学时类型设置」：按合并结果展示（总学时 / 理论&实践、辅导、其他 / 理论、辅导、实践、其他） */
+/** 列表「学时类型设置」：按合并结果展示（总学时 / 理论&实践、辅导、其他 / 理论、辅导、实践、其他）；单项与合并组均按理论→辅导→实践→其他排序 */
 function formatSpecialCourseHoursModeSummary(row) {
   const mode = String(row?.groupAssignHoursMode || 'separate').trim();
   const allTypes = ['理论学时', '辅导学时', '实践学时', '其他学时'];
+  const typeOrder = ht => {
+    const i = allTypes.indexOf(ht);
+    return i < 0 ? allTypes.length : i;
+  };
   if (mode === 'all') return '总学时';
   if (mode === 'partial') {
     const groups = (Array.isArray(row?.groupAssignPartialMergeGroups) ? row.groupAssignPartialMergeGroups : [])
@@ -6942,10 +6946,20 @@ function formatSpecialCourseHoursModeSummary(row) {
     }
     const used = new Set(groups.flat());
     const parts = [
-      ...groups.map(g => formatSpecialCourseClassroomHourLabel(g)),
-      ...allTypes.filter(ht => !used.has(ht)).map(ht => formatSpecialCourseClassroomHourLabel([ht]))
+      ...groups.map(g => {
+        const ordered = [...g].sort((a, b) => typeOrder(a) - typeOrder(b));
+        return {
+          order: Math.min(...ordered.map(typeOrder)),
+          label: formatSpecialCourseClassroomHourLabel(ordered)
+        };
+      }),
+      ...allTypes.filter(ht => !used.has(ht)).map(ht => ({
+        order: typeOrder(ht),
+        label: formatSpecialCourseClassroomHourLabel([ht])
+      }))
     ];
-    return parts.join('、');
+    parts.sort((a, b) => a.order - b.order);
+    return parts.map(p => p.label).join('、');
   }
   return allTypes.map(ht => formatSpecialCourseClassroomHourLabel([ht])).join('、');
 }
@@ -6964,23 +6978,39 @@ function getSpecialCourseClassroomSummaryLines(row) {
     return [lineFor('总学时', r)];
   }
   if (mode === 'partial') {
+    const allTypes = ['理论学时', '辅导学时', '实践学时', '其他学时'];
+    const typeOrder = ht => {
+      const i = allTypes.indexOf(ht);
+      return i < 0 ? allTypes.length : i;
+    };
     const groups = (Array.isArray(row?.groupAssignPartialMergeGroups) ? row.groupAssignPartialMergeGroups : [])
-      .map(g => (Array.isArray(g) ? g : []).filter(ht => ['理论学时', '辅导学时', '实践学时', '其他学时'].includes(ht)))
+      .map(g => (Array.isArray(g) ? g : []).filter(ht => allTypes.includes(ht)))
       .filter(g => g.length >= 2);
     const used = new Set(groups.flat());
-    const lines = groups.map(g => {
-      const keys = g.map(classroomHourKeyFromCn).filter(Boolean);
-      const r = (keys.map(k => byKey[k]).find(Boolean))
-        || { attribute: 'normal', referenceClassrooms: [] };
-      return lineFor(formatSpecialCourseClassroomHourLabel(g), r);
-    });
-    ['理论学时', '辅导学时', '实践学时', '其他学时'].filter(ht => !used.has(ht)).forEach(ht => {
-      const key = classroomHourKeyFromCn(ht);
-      lines.push(lineFor(formatSpecialCourseClassroomHourLabel([ht]), byKey[key] || {
-        attribute: 'normal',
-        referenceClassrooms: []
-      }));
-    });
+    const parts = [
+      ...groups.map(g => {
+        const ordered = [...g].sort((a, b) => typeOrder(a) - typeOrder(b));
+        const keys = ordered.map(classroomHourKeyFromCn).filter(Boolean);
+        const r = (keys.map(k => byKey[k]).find(Boolean))
+          || { attribute: 'normal', referenceClassrooms: [] };
+        return {
+          order: Math.min(...ordered.map(typeOrder)),
+          text: lineFor(formatSpecialCourseClassroomHourLabel(ordered), r)
+        };
+      }),
+      ...allTypes.filter(ht => !used.has(ht)).map(ht => {
+        const key = classroomHourKeyFromCn(ht);
+        return {
+          order: typeOrder(ht),
+          text: lineFor(formatSpecialCourseClassroomHourLabel([ht]), byKey[key] || {
+            attribute: 'normal',
+            referenceClassrooms: []
+          })
+        };
+      })
+    ];
+    parts.sort((a, b) => a.order - b.order);
+    const lines = parts.map(p => p.text);
     return lines.length ? lines : reqs.map(r => lineFor(formatSpecialCourseClassroomHourLabel([r.hourType]), r));
   }
   return reqs.map(r => lineFor(formatSpecialCourseClassroomHourLabel([r.hourType]), r));

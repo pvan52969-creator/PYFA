@@ -4933,7 +4933,7 @@
       </div>
     </section>
     <section class="offering-edit-section" id="scs-edit-classroom-section">
-      <h4 class="offering-edit-section-title">教室信息（默认）</h4>
+      <h4 class="offering-edit-section-title">教室偏好设置</h4>
       <div class="form-item mos-edit-classroom-attr-block">
         <label>教室属性与参考教室</label>
         <p class="form-hint" id="scs-edit-classroom-hint">按上方学时类型设置逐项配置；偏好教室展示设备与软件，便于按教学需求选择</p>
@@ -4941,7 +4941,7 @@
       </div>
     </section>
     <section class="offering-edit-section">
-      <h4 class="offering-edit-section-title">Support（默认）</h4>
+      <h4 class="offering-edit-section-title">Support学院设置</h4>
       <div class="form-item">
         <label class="req" for="scs-edit-support-history">Support历史</label>
         <select class="input input-sm" id="scs-edit-support-history">
@@ -4955,6 +4955,14 @@
         <p class="form-hint">一般不同于开课单位；开课安排中 Support 为空时自动带出，仍可按班管理</p>
         <div class="clo-multiselect-options scs-edit-support-options" id="scs-edit-support-options"></div>
       </div>
+    </section>
+    <section class="offering-edit-section scs-edit-shared-teaching-section">
+      <h4 class="offering-edit-section-title">共同授课设置</h4>
+      <div class="scs-edit-shared-peers-toolbar">
+        <button class="btn btn-outline btn-sm" type="button" onclick="openSpecialCourseSharedTeachingPeerPicker()">添加课程</button>
+        <span class="form-hint scs-edit-shared-peers-count" id="scs-edit-shared-peers-count"></span>
+      </div>
+      <div class="scs-edit-shared-peer-list-wrap" id="scs-edit-shared-teaching-peers"></div>
     </section>
   </div>
   <div class="drawer-foot">
@@ -8253,6 +8261,52 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-special-course-add')">取消</button>
       <button class="btn btn-primary" type="button" onclick="confirmSpecialCourseSettingsAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：特殊课程设置 · 共同授课关联课号（课程库多选） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-scs-shared-teaching-peer-picker">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3>选择共同授课关联课号</h3>
+      <button class="modal-close" type="button" onclick="closeSpecialCourseSharedTeachingPeerPicker()">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint">候选来自教务课程库中未停开的课程；不可选本课。可多选。</p>
+      <div class="picker-filter-grid">
+        <div class="form-item">
+          <label for="scs-peer-filter-unit">开课单位</label>
+          <select class="input input-sm" id="scs-peer-filter-unit" onchange="renderSpecialCourseSharedTeachingPeerPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label for="scs-peer-filter-code">课程号</label>
+          <input class="input input-sm" id="scs-peer-filter-code" placeholder="课程号" onkeydown="if(event.key==='Enter'){renderSpecialCourseSharedTeachingPeerPicker()}">
+        </div>
+        <div class="form-item">
+          <label for="scs-peer-filter-name">课程名称</label>
+          <input class="input input-sm" id="scs-peer-filter-name" placeholder="课程名称" onkeydown="if(event.key==='Enter'){renderSpecialCourseSharedTeachingPeerPicker()}">
+        </div>
+        <div class="picker-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="renderSpecialCourseSharedTeachingPeerPicker()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetSpecialCourseSharedTeachingPeerPickerFilters()">重置</button>
+        </div>
+      </div>
+      <div class="picker-table-wrap" style="margin-top:12px">
+        <table class="data-table compact scs-peer-picker-table">
+          <thead><tr></tr></thead>
+          <tbody id="scs-peer-picker-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="scs-peer-picker-count">共 0 条记录</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeSpecialCourseSharedTeachingPeerPicker()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSpecialCourseSharedTeachingPeerPicker()">确定</button>
     </div>
   </div>
 </div>

@@ -3820,7 +3820,7 @@ code {
   --major-offering-sticky-check: 28px;
   --major-offering-sticky-term: 72px;
   --major-offering-sticky-owner: 80px;
-  --major-offering-sticky-status: 56px;
+  --major-offering-sticky-status: 88px;
   --major-offering-sticky-code: 72px;
   font-family: Calibri, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-weight: 400;
@@ -3915,7 +3915,7 @@ code {
   min-width: 2.4em;
 }
 #page-course-offering-major .course-offering-major-table .col-status {
-  min-width: 52px;
+  min-width: 88px;
   white-space: nowrap;
 }
 #page-course-offering-major .course-offering-major-table .col-term {
@@ -3952,9 +3952,22 @@ code {
   min-width: 56px;
 }
 #page-course-offering-major .course-offering-major-table .col-school,
-#page-course-offering-major .course-offering-major-table .col-prog,
-#page-course-offering-major .course-offering-major-table .col-intake {
-  min-width: 64px;
+#page-course-offering-major .course-offering-major-table .col-batch {
+  min-width: 120px;
+  max-width: 180px;
+  white-space: normal;
+  vertical-align: middle;
+}
+#page-course-offering-major .course-offering-major-table .col-batch .mot-style2-batch-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.2;
+}
+#page-course-offering-major .course-offering-major-table .col-batch .mot-style2-batch-line {
+  display: block;
+  white-space: nowrap;
 }
 #page-course-offering-major .course-offering-major-table .col-unit,
 #page-course-offering-major .course-offering-major-table .col-week {
@@ -5711,6 +5724,7 @@ code {
   --mot-style2-actions-col-width-wide: 168px;
   --mot-style2-tcc-admin-col-width: 72px;
   --mot-style2-course-info-col-width: 44px;
+  --mot-style2-change-log-col-width: 44px;
   --mot-style2-support-hist-width: 48px;
   --mot-style2-support-college-width: 72px;
   --mot-style2-support-action-width: 48px;
@@ -6097,7 +6111,6 @@ code {
   text-align: center;
   vertical-align: middle;
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.col-tcc-admin {
   z-index: 5;
@@ -6166,7 +6179,7 @@ code {
   /* 操作列仅「合班」（课程信息已独立）；预留退回说明空间 */
   --mot-style2-actions-col-width: 72px;
 }
-/* Course Setting：冻结 Support → 课程信息 → 操作 */
+/* Course Setting：冻结 操作记录 → Support → 课程信息 → 操作 */
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table th.col-sticky-actions,
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table td.col-sticky-actions {
   position: sticky;
@@ -6208,7 +6221,6 @@ code {
   z-index: 6;
   width: var(--mot-style2-support-group-width);
   min-width: var(--mot-style2-support-group-width);
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
 }
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table th.col-support-action,
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table td.col-support-action {
@@ -6248,14 +6260,36 @@ code {
   min-width: var(--mot-style2-support-hist-width);
   max-width: var(--mot-style2-support-hist-width);
   background: #fff;
+}
+#page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table th.col-change-log,
+#page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table td.col-change-log {
+  position: sticky;
+  right: calc(
+    var(--mot-style2-actions-col-width)
+    + var(--mot-style2-course-info-col-width)
+    + var(--mot-style2-support-group-width)
+  );
+  z-index: 3;
+  width: var(--mot-style2-change-log-col-width);
+  min-width: var(--mot-style2-change-log-col-width);
+  max-width: var(--mot-style2-change-log-col-width);
+  background: #fff;
+  border-left: 1px solid var(--border, #94a3b8);
   box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  padding-left: 2px;
+  padding-right: 2px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: var(--ui-list-font, 12px);
 }
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table thead th.col-support-action,
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table thead th.col-support-college,
-#page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table thead th.col-support-hist {
+#page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table thead th.col-support-hist,
+#page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table thead th.col-change-log {
   z-index: 5;
   background: var(--blue-50, #eff6ff);
 }
+#page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table tr:hover td.col-change-log,
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table tr:hover td.col-support-hist,
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table tr:hover td.col-support-college,
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table tr:hover td.col-support-action,
@@ -6519,6 +6553,35 @@ code {
 #page-course-major-offering-task-style2[data-workflow-step="2"] .mot-style2-table td.col-sticky-course-info a:hover {
   text-decoration: underline;
 }
+/* 步骤 2：冻结 操作记录 → 授课确认 → 课程信息 → 操作 */
+#page-course-major-offering-task-style2[data-workflow-step="2"] .mot-style2-table th.col-change-log,
+#page-course-major-offering-task-style2[data-workflow-step="2"] .mot-style2-table td.col-change-log {
+  position: sticky;
+  right: calc(
+    var(--mot-style2-actions-col-width)
+    + var(--mot-style2-course-info-col-width)
+    + var(--mot-style2-tcc-admin-col-width)
+  );
+  z-index: 3;
+  width: var(--mot-style2-change-log-col-width);
+  min-width: var(--mot-style2-change-log-col-width);
+  max-width: var(--mot-style2-change-log-col-width);
+  background: #fff;
+  border-left: 1px solid var(--border, #94a3b8);
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  padding-left: 2px;
+  padding-right: 2px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: var(--ui-list-font, 12px);
+}
+#page-course-major-offering-task-style2[data-workflow-step="2"] .mot-style2-table thead th.col-change-log {
+  z-index: 5;
+  background: var(--blue-50, #eff6ff);
+}
+#page-course-major-offering-task-style2[data-workflow-step="2"] .mot-style2-table tr:hover td.col-change-log {
+  background: #fafbfc;
+}
 #page-course-major-offering-task-style2 .mot-style2-table thead th.col-sticky-actions {
   z-index: 5;
   background: var(--blue-50, #eff6ff);
@@ -6700,12 +6763,14 @@ code {
 #page-course-major-offering-task-style2[data-workflow-step="1"] thead th.col-support-hist,
 #page-course-major-offering-task-style2[data-workflow-step="1"] thead th.col-support-college,
 #page-course-major-offering-task-style2[data-workflow-step="1"] thead th.col-support-action,
+#page-course-major-offering-task-style2[data-workflow-step="1"] thead th.col-change-log,
 #page-course-major-offering-task-style2[data-workflow-step="1"] thead th.col-sticky-course-info,
 #page-course-major-offering-task-style2[data-workflow-step="1"] thead th.col-sticky-actions {
   background: var(--blue-50, #eff6ff);
   color: var(--blue-900, #1e3a8a);
 }
 #page-course-major-offering-task-style2[data-workflow-step="2"] thead th.mot-style2-col-lecturer,
+#page-course-major-offering-task-style2[data-workflow-step="2"] thead th.col-change-log,
 #page-course-major-offering-task-style2[data-workflow-step="2"] thead th.col-tcc-admin,
 #page-course-major-offering-task-style2[data-workflow-step="2"] thead th.col-sticky-course-info,
 #page-course-major-offering-task-style2[data-workflow-step="2"] thead th.col-sticky-actions {
@@ -8805,8 +8870,8 @@ code {
 }
 /* 特殊课程设置：勾选列固定；新增学时/教室摘要列后横向滚动 */
 #page-special-course-settings .special-course-settings-table {
-  width: max(100%, 1180px);
-  min-width: 1180px;
+  width: max(100%, 1320px);
+  min-width: 1320px;
   table-layout: fixed;
 }
 #page-special-course-settings .special-course-settings-table .col-check {
@@ -8828,6 +8893,10 @@ code {
   width: 88px;
   min-width: 72px;
 }
+#page-special-course-settings .special-course-settings-table .col-shared-teaching-peers {
+  width: 140px;
+  min-width: 120px;
+}
 #page-special-course-settings .special-course-settings-table .col-hours-mode {
   width: 150px;
   min-width: 130px;
@@ -8845,6 +8914,7 @@ code {
 #page-special-course-settings .special-course-settings-table .col-offering-unit,
 #page-special-course-settings .special-course-settings-table .col-support-summary,
 #page-special-course-settings .special-course-settings-table .col-support-hist,
+#page-special-course-settings .special-course-settings-table .col-shared-teaching-peers,
 #page-special-course-settings .special-course-settings-table .col-hours-mode .scs-list-summary-text {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -8901,6 +8971,49 @@ code {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+}
+.drawer-special-course-edit .scs-edit-shared-peers-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 10px;
+}
+.drawer-special-course-edit .scs-edit-shared-peers-count {
+  margin: 0;
+}
+.drawer-special-course-edit .scs-edit-shared-teaching-section {
+  padding-top: 16px;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-list-wrap {
+  max-height: 240px;
+  overflow: auto;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-table {
+  width: 100%;
+  table-layout: fixed;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-table .col-code {
+  width: 100px;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-table .col-credits {
+  width: 56px;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-table .col-course-attr {
+  width: 88px;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-table .actions {
+  width: 72px;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-table .col-course-name,
+.drawer-special-course-edit .scs-edit-shared-peer-table .col-course-attr {
+  min-width: 0;
+}
+.drawer-special-course-edit .scs-edit-shared-peer-table .col-course-name .cell-ellipsis-tip,
+.drawer-special-course-edit .scs-edit-shared-peer-table .col-course-attr .cell-ellipsis-tip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 @media (max-width: 720px) {
   .drawer-special-course-edit .scs-edit-support-options {

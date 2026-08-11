@@ -1054,6 +1054,9 @@
         <div class="panel-toolbar course-major-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openGenerateMajorOfferingTaskModal()">生成开课任务</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> --> <!-- 改由任务安排页 -->
+          <!-- 原顺序：一键合班 → ME开课；改 ME开课在一键合班左侧 -->
+          <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-me-open" ...>ME开课</button> --> <!-- 原 outline；与「生成开课任务」统一为 primary -->
+          <button class="btn btn-primary btn-sm" type="button" id="btn-major-offering-me-open" onclick="openMeOfferingFromSchoolElectiveModal()">ME开课</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-one-click-merge" onclick="oneClickMergeMajorOfferingSections()">一键合班</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>生效</button>
           <!-- 原顺序：生效 → 一键合班，改一键合班在生效左侧 -->
@@ -2468,9 +2471,11 @@
           <button type="button" class="teacher-load-dimension-tab" role="tab" aria-selected="false" data-ttl="dimension-tab" data-dimension="academic-year" onclick="setTeacherTeachingLoadDimension('academic-year')">按学年</button>
         </div>
       </div>
+      <!-- 原型说明条按产品要求去掉，避免占位干扰列表
       <div class="alert-info offering-module-hint">
         <p>按教师横向展示各学期授课学时（周学时 × 周次）。原型数据示意学院 Teaching Load 表结构；后续可与开课清单中已提交的教师安排联动。</p>
       </div>
+      -->
       <div class="card course-major-query-card">
         <div class="course-major-query-grid teacher-load-query-grid">
           <div class="course-time-query-field">
@@ -4255,7 +4260,8 @@
               <option value="">请选择</option>
             </select>
           </div>
-          <div class="form-item field-study"><label class="req">修读类型</label>
+          <!-- <div class="form-item field-study"><label class="req">修读类型</label> --> <!-- 原「修读类型」；改「课程性质」 -->
+          <div class="form-item field-study"><label class="req">课程性质</label>
             <select class="input" id="study-type-select" onchange="onStudyTypeChange()">
               <option value="compulsory">必修 Compulsory</option>
               <option value="elective">选修 Elective</option>
@@ -4529,6 +4535,129 @@
       <button class="btn btn-outline btn-sm" type="button" onclick="generateAllMajorOfferingTasksForTerm()">一键生成</button>
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-generate-major-offering-task')">取消</button>
       <button class="btn btn-primary" type="button" onclick="confirmGenerateMajorOfferingTask()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：专业开课 · ME开课（校选 ME → 选修开课任务） ═══ -->
+<!-- 专业批次不在本弹窗维护，改编辑抽屉「合班信息 · 专业批次」（选修类型） -->
+<div class="modal-overlay" id="modal-me-offering-from-school-elective">
+  <div class="modal modal-xl me-offering-modal">
+    <div class="modal-head">
+      <h3>ME开课</h3>
+      <button class="modal-close" type="button" onclick="closeMeOfferingFromSchoolElectiveModal()">×</button>
+    </div>
+    <div class="modal-body me-offering-modal-body">
+      <div class="me-offering-term-row">
+        <div class="form-item">
+          <label>开课学期</label>
+          <p class="form-static" id="me-offering-term-display">—</p>
+        </div>
+      </div>
+      <!-- 原合并筛选：单框即时过滤；改为课号/课名/开课单位分框，需点「查询」生效
+      <div class="form-item">
+        <label for="me-offering-course-q">课程筛选</label>
+        <input class="input input-sm" id="me-offering-course-q" type="text" placeholder="课号 / 课名 / 开课单位" oninput="renderMeOfferingCourseList()">
+      </div>
+      -->
+      <div class="me-offering-filter-row">
+        <div class="form-item">
+          <label for="me-offering-filter-code">课号</label>
+          <input class="input input-sm" id="me-offering-filter-code" type="text" placeholder="课号" onkeydown="if(event.key==='Enter')queryMeOfferingCourseList()">
+        </div>
+        <div class="form-item">
+          <label for="me-offering-filter-name">课名</label>
+          <input class="input input-sm" id="me-offering-filter-name" type="text" placeholder="课名" onkeydown="if(event.key==='Enter')queryMeOfferingCourseList()">
+        </div>
+        <div class="form-item">
+          <label for="me-offering-filter-unit">开课单位</label>
+          <input class="input input-sm" id="me-offering-filter-unit" type="text" placeholder="开课单位" onkeydown="if(event.key==='Enter')queryMeOfferingCourseList()">
+        </div>
+        <div class="me-offering-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="queryMeOfferingCourseList()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetMeOfferingCourseFilters()">重置</button>
+        </div>
+      </div>
+      <p class="form-hint">从「校选课程管理」勾选一门或多门 ME 课生成开课任务（选课类型固定为<strong>选修</strong>；一门课一条任务）。上课专业批次请在生成后打开「修改教学任务」维护。CHS、MAT、PHY 专业不在此入口处理。</p>
+
+      <section class="me-offering-section">
+        <div class="me-offering-pane-head">
+          <strong>选择 ME 课</strong>
+          <span class="text-muted" id="me-offering-course-count">共 0 门</span>
+        </div>
+        <div class="picker-table-wrap me-offering-course-table-wrap">
+          <table class="data-table compact me-offering-course-table">
+            <thead>
+              <tr>
+                <th class="col-check">
+                  <input type="checkbox" id="me-offering-course-check-all" title="全选当前列表" onclick="toggleMeOfferingCourseCheckAll(this.checked)">
+                </th>
+                <th>课号</th>
+                <th>课程名称</th>
+                <th class="col-center">开课单位</th>
+                <th>修读范围摘要</th>
+              </tr>
+            </thead>
+            <tbody id="me-offering-course-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      <!-- 原「2. 上课专业批次」区块：改由编辑抽屉「合班信息 · 专业批次」维护（选修类型）
+      <section class="me-offering-section">...</section>
+      -->
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeMeOfferingFromSchoolElectiveModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmMeOfferingFromSchoolElective()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 嵌套弹窗：专业开课 · 选修课维护专业批次（编辑抽屉调用） ═══ -->
+<!-- 原挂在 ME开课弹窗内选择批次；改选修类型统一在「修改教学任务」抽屉维护 -->
+<div class="modal-overlay modal-nested" id="modal-me-offering-batch-picker">
+  <div class="modal modal-xl me-offering-batch-picker-modal">
+    <div class="modal-head">
+      <h3>选择上课专业批次</h3>
+      <button class="modal-close" type="button" onclick="closeMeOfferingBatchPickerModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="me-offering-batch-picker-hint-row">
+        <p class="form-hint" id="me-offering-batch-picker-hint">可点「初始化」按校选可选专业勾选，或点左侧专业手工追加。灰色项为不可选年级学期或无法折算。CHS、MAT、PHY 不出现。</p>
+        <button class="btn btn-outline btn-sm" type="button" id="btn-me-offering-batch-init" onclick="initMeOfferingBatchPickerSelection()" title="按校选可选专业重新勾选默认批次">初始化</button>
+      </div>
+      <div class="ge-offering-batch-picker-axes me-offering-batch-axes">
+        <div class="ge-offering-batch-picker-axis">
+          <div class="ge-offering-batch-picker-axis-head me-offering-batch-prog-head">
+            <span class="me-offering-batch-axis-label">专业</span>
+            <!-- <input ... id="me-offering-batch-prog-q" ...> --> <!-- 原专业代码检索，按需求去掉 -->
+          </div>
+          <div class="ge-offering-batch-picker-axis-list" id="me-offering-batch-programmes"></div>
+        </div>
+        <div class="ge-offering-batch-picker-axis">
+          <div class="ge-offering-batch-picker-axis-head">
+            <span id="me-offering-batch-intake-title">入学批次</span>
+          </div>
+          <div class="ge-offering-batch-picker-axis-list" id="me-offering-batch-intakes"></div>
+        </div>
+      </div>
+      <div class="ge-offering-batch-picker-preview me-offering-batch-preview">
+        <div class="ge-offering-batch-picker-preview-head me-offering-batch-preview-head">
+          <span class="text-muted">已选专业批次</span>
+          <div class="me-offering-batch-preview-actions">
+            <!-- 初始化已移至提示行右侧 -->
+            <button class="btn btn-outline btn-sm" type="button" id="btn-me-offering-batch-clear-all" onclick="clearMeOfferingBatchPickerSelection()" disabled>取消全部已选</button>
+          </div>
+        </div>
+        <div class="ge-offering-batch-picker-preview-list" id="me-offering-batch-preview-list"></div>
+      </div>
+    </div>
+    <div class="modal-foot school-elective-programme-picker-foot">
+      <span class="text-muted" id="me-offering-batch-picker-count">已选 0</span>
+      <div class="school-elective-programme-picker-foot-actions">
+        <button class="btn btn-ghost" type="button" onclick="closeMeOfferingBatchPickerModal()">取消</button>
+        <button class="btn btn-primary" type="button" onclick="confirmMeOfferingBatchPickerModal()">确定</button>
+      </div>
     </div>
   </div>
 </div>
@@ -4840,11 +4969,23 @@
         <div class="mos-edit-classroom-hour-attrs" id="mos-edit-classroom-hour-attrs" data-classroom-hour-attrs="mos-edit-classroom-hour-attrs"></div>
       </div>
     </section>
-    <section class="offering-edit-section">
-      <h4 class="offering-edit-section-title">合班信息</h4>
-      <div class="form-item">
-        <label class="req">专业批次</label>
+    <section class="offering-edit-section" id="mos-edit-programme-batch-section">
+      <!-- <h4 class="offering-edit-section-title">合班信息</h4> --> <!-- 原标题；改「专业批次信息」 -->
+      <h4 class="offering-edit-section-title">专业批次信息</h4>
+      <!-- 原单字段「专业批次」切换只读/选择器；改拆为必修「上课专业批次」/ 选修「可选专业批次」 -->
+      <div class="form-item" id="mos-edit-class-programme-batch-item">
+        <label class="req" for="mos-edit-programme-batches">上课专业批次</label>
         <input class="input input-sm readonly" id="mos-edit-programme-batches" type="text" readonly tabindex="-1">
+      </div>
+      <div class="form-item" id="mos-edit-eligible-programme-batch-item" hidden>
+        <label class="req" for="mos-edit-programme-batches-display">可选专业批次</label>
+        <!-- 原：只读 input 与 input-with-btn 互斥显隐；但 .input-with-btn{display:flex} 会盖过 [hidden]，两块叠成两行。改始终单行，仅隐藏「选择」按钮（.btn[hidden] 已有 !important） -->
+        <!-- <input class="input input-sm readonly" id="mos-edit-eligible-programme-batches" type="text" readonly tabindex="-1" hidden> -->
+        <div class="input-with-btn" id="mos-edit-programme-batches-picker-wrap">
+          <input class="input input-sm readonly" id="mos-edit-programme-batches-display" type="text" value="未选择" readonly tabindex="-1">
+          <button class="btn btn-outline btn-sm" type="button" id="btn-mos-edit-programme-batches" onclick="openMajorOfferingEditBatchPicker()" title="仅手动生成的选修可维护；CHS、MAT、PHY 不出现。若来自校选 ME，会按不可选专业 / 不可选年级学期约束。">选择</button>
+        </div>
+        <!-- <p class="form-hint" id="mos-edit-programme-batches-hint" hidden></p> --> <!-- 原第二行 hint / 空占位；提示已挂选择按钮 title，去掉避免多占一行 -->
       </div>
     </section>
     <!-- 教师安排模块暂隐藏，改由任务安排·分组页维护
@@ -8559,7 +8700,7 @@
       <div class="school-elective-programme-picker-bar">
         <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(true)">全选</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(false)">清空</button>
-        <button class="btn btn-outline btn-sm" type="button" onclick="initSchoolElectiveProgrammePickerScope()" title="GE：同大类专业不可选（Science 时 MAT 除外）；不限则全开放。ME：仅本学院专业可选">初始化</button>
+        <button class="btn btn-outline btn-sm" type="button" onclick="initSchoolElectiveProgrammePickerScope()" title="GE：同大类专业不可选（Science 时 MAT 除外）；不限则全开放。ME：开课单位专业 + MAT 设为可选">初始化</button>
         <span class="school-elective-picker-stream-legend" aria-hidden="true">
           <span class="school-elective-picker-stream school-elective-picker-stream--arts">文</span>
           <span class="school-elective-picker-stream school-elective-picker-stream--business">商</span>

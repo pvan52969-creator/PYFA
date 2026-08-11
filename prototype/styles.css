@@ -3974,6 +3974,32 @@ code {
   min-width: 48px;
   white-space: nowrap;
 }
+#page-course-offering-major .course-offering-major-table .col-source {
+  min-width: 40px;
+  max-width: 48px;
+  width: 44px;
+  white-space: nowrap;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#mos-edit-programme-batch-section .form-item + .form-item {
+  margin-top: 16px;
+}
+/* .form-item{display:flex} 会盖过 UA [hidden]；必修须真正隐藏「可选专业批次」整块 */
+#mos-edit-programme-batch-section .form-item[hidden] {
+  display: none !important;
+}
+#mos-edit-programme-batch-section #mos-edit-class-programme-batch-item {
+  margin-bottom: 4px;
+}
+/* 可选专业批次：始终单行 input + 可选「选择」按钮；勿再对 wrap 用 hidden（display:flex 会盖过 [hidden]） */
+#mos-edit-programme-batch-section #mos-edit-programme-batches-picker-wrap {
+  align-items: center;
+}
+#mos-edit-programme-batch-section #mos-edit-programme-batches-display {
+  flex: 1;
+  min-width: 0;
+}
 #page-course-offering-major .course-offering-major-table .col-support-hist {
   min-width: 56px;
   white-space: nowrap;
@@ -4593,6 +4619,24 @@ code {
   text-align: center;
   padding-left: 4px;
   padding-right: 4px;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .col-source {
+  min-width: 48px;
+  max-width: 64px;
+  white-space: nowrap;
+  text-align: center;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .col-shared-teaching-status {
+  min-width: 52px;
+  max-width: 72px;
+  white-space: nowrap;
+  text-align: center;
+}
+#page-course-major-offering-roster .course-major-offering-roster-table .col-shared-teaching-courses {
+  min-width: 100px;
+  max-width: 160px;
+  white-space: normal;
+  word-break: break-word;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table th.col-sticky-count,
 #page-course-major-offering-roster .course-major-offering-roster-table td.col-sticky-count {
@@ -6058,6 +6102,12 @@ code {
   max-width: 150px;
   white-space: normal;
   word-break: break-word;
+}
+#page-course-major-offering-task-style2 .mot-style2-table .col-source {
+  min-width: 48px;
+  max-width: 64px;
+  white-space: nowrap;
+  text-align: center;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-shared-teaching-status {
   min-width: 52px;
@@ -8868,57 +8918,89 @@ code {
 #page-special-course-settings .table-scroll {
   padding-bottom: 4px;
 }
-/* 特殊课程设置：勾选列固定；新增学时/教室摘要列后横向滚动 */
+/* 特殊课程设置：课名适中；课号/Support 表头/学时与教室摘要保证可读 */
 #page-special-course-settings .special-course-settings-table {
-  width: max(100%, 1320px);
-  min-width: 1320px;
+  width: max(100%, 1280px);
+  min-width: 1280px;
   table-layout: fixed;
 }
 #page-special-course-settings .special-course-settings-table .col-check {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
 }
 #page-special-course-settings .special-course-settings-table .col-course-name {
-  width: 160px;
-  min-width: 140px;
+  width: 180px;
+  min-width: 160px;
+  max-width: 200px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
 }
 #page-special-course-settings .special-course-settings-table .col-code {
   width: 88px;
-  min-width: 80px;
+  min-width: 84px;
 }
-#page-special-course-settings .special-course-settings-table .col-offering-unit,
-#page-special-course-settings .special-course-settings-table .col-support-summary,
+#page-special-course-settings .special-course-settings-table .col-offering-unit {
+  width: 72px;
+  min-width: 64px;
+}
 #page-special-course-settings .special-course-settings-table .col-support-hist {
-  width: 88px;
-  min-width: 72px;
+  width: 92px;
+  min-width: 86px;
+}
+#page-special-course-settings .special-course-settings-table .col-support-summary {
+  width: 116px;
+  min-width: 108px;
 }
 #page-special-course-settings .special-course-settings-table .col-shared-teaching-peers {
-  width: 140px;
-  min-width: 120px;
+  width: 110px;
+  min-width: 96px;
 }
 #page-special-course-settings .special-course-settings-table .col-hours-mode {
-  width: 150px;
-  min-width: 130px;
+  width: 140px;
+  min-width: 128px;
 }
 #page-special-course-settings .special-course-settings-table .col-classroom-summary {
   width: 260px;
-  min-width: 200px;
+  min-width: 220px;
 }
 #page-special-course-settings .special-course-settings-table th.col-sticky-actions,
 #page-special-course-settings .special-course-settings-table td.col-sticky-actions {
-  width: 64px;
-  min-width: 56px;
+  width: 52px;
+  min-width: 48px;
 }
-#page-special-course-settings .special-course-settings-table .col-code,
+#page-special-course-settings .special-course-settings-table thead th.col-support-hist,
+#page-special-course-settings .special-course-settings-table thead th.col-support-summary,
+#page-special-course-settings .special-course-settings-table thead th.col-code {
+  white-space: nowrap;
+  overflow: visible;
+}
 #page-special-course-settings .special-course-settings-table .col-offering-unit,
 #page-special-course-settings .special-course-settings-table .col-support-summary,
 #page-special-course-settings .special-course-settings-table .col-support-hist,
-#page-special-course-settings .special-course-settings-table .col-shared-teaching-peers,
-#page-special-course-settings .special-course-settings-table .col-hours-mode .scs-list-summary-text {
+#page-special-course-settings .special-course-settings-table .col-shared-teaching-peers {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+#page-special-course-settings .special-course-settings-table td.col-code,
+#page-special-course-settings .special-course-settings-table td.col-code code {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+#page-special-course-settings .special-course-settings-table .col-hours-mode .scs-list-summary-text {
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
+  overflow: visible;
+}
+#page-special-course-settings .special-course-settings-table td.col-course-name .cell-ellipsis-tip {
+  display: inline;
+  white-space: normal;
+  word-break: break-word;
 }
 .special-course-settings-table .col-classroom-summary {
   vertical-align: top;
@@ -8932,13 +9014,10 @@ code {
   text-align: left;
 }
 .special-course-settings-table .scs-list-summary-line {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
   max-width: 100%;
-}
-.special-course-settings-table .col-support-summary {
-  min-width: 0;
 }
 .drawer-special-course-edit {
   width: min(920px, 96vw);
@@ -9675,8 +9754,10 @@ code {
   border-collapse: separate;
   border-spacing: 0;
   --tcc-sticky-check: 28px;
-  --tcc-sticky-status: 64px;
-  --tcc-sticky-teacher: 72px;
+  /* --tcc-sticky-status: 64px; */ /* 原过窄，「管理端确认」pill 被截断 */
+  --tcc-sticky-status: 88px;
+  /* --tcc-sticky-teacher: 72px; */ /* 原过窄，Lecturer 姓名易省略；尽量完整展示 */
+  --tcc-sticky-teacher: 128px;
   --tcc-sticky-code: 72px;
 }
 .tcc-admin-table th,
@@ -9790,13 +9871,17 @@ code {
   min-width: 36px;
 }
 .tcc-admin-course-table .col-status {
-  width: 64px;
-  min-width: 64px;
+  /* width: 64px; */ /* 原过窄，「管理端确认」被截断 */
+  /* min-width: 64px; */
+  width: var(--tcc-sticky-status);
+  min-width: var(--tcc-sticky-status);
   overflow: visible;
 }
 .tcc-admin-course-table .col-teacher {
-  width: 72px;
-  min-width: 64px;
+  /* width: 72px; */ /* 原过窄，姓名易被 ellipsis */
+  /* min-width: 64px; */
+  width: var(--tcc-sticky-teacher);
+  min-width: var(--tcc-sticky-teacher);
 }
 .tcc-admin-course-table .col-code {
   width: 72px;
@@ -9963,6 +10048,8 @@ code {
   width: var(--tcc-sticky-status);
   min-width: var(--tcc-sticky-status);
   max-width: var(--tcc-sticky-status);
+  overflow: visible; /* 避免 pill 被 .tcc-admin-table td 的 overflow:hidden 裁切 */
+  text-overflow: clip;
 }
 .tcc-admin-course-table th.col-teacher,
 .tcc-admin-course-table td.col-teacher {
@@ -9970,6 +10057,9 @@ code {
   width: var(--tcc-sticky-teacher);
   min-width: var(--tcc-sticky-teacher);
   max-width: var(--tcc-sticky-teacher);
+  /* 尽量不隐藏姓名；过长仍可靠 title 看全 */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tcc-admin-course-table th.col-code,
 .tcc-admin-course-table td.col-code {
@@ -17693,6 +17783,139 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
     grid-template-columns: 1fr;
   }
 }
+/* ME开课：校选 ME → 专业开课计划（上下结构：选课 → 专业批次选择器） */
+.me-offering-modal .me-offering-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: min(78vh, 720px);
+}
+.me-offering-term-row {
+  /* 原：学期 + 合并筛选两列；现仅展示学期，筛选改独立行 */
+  display: grid;
+  grid-template-columns: 160px;
+  gap: 12px;
+  align-items: end;
+}
+.me-offering-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+.me-offering-filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-bottom: 1px;
+}
+.me-offering-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.me-offering-pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.me-offering-course-table-wrap {
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+.me-offering-course-table tbody tr.is-selected {
+  background: #eef5ff;
+}
+.me-offering-course-table tbody tr {
+  cursor: pointer;
+}
+#modal-me-offering-batch-picker .me-offering-batch-picker-modal.modal-xl {
+  width: min(96vw, 1080px);
+  max-width: 1080px;
+}
+#modal-me-offering-batch-picker .me-offering-batch-picker-modal .modal-body {
+  max-height: min(78vh, 720px);
+  overflow: auto;
+}
+.me-offering-batch-picker-modal .me-offering-batch-axes {
+  /* min-height: 260px; */ /* 原较小；弹窗放大后加高双栏 */
+  min-height: 360px;
+  margin-bottom: 10px;
+}
+.me-offering-batch-picker-modal .ge-offering-batch-picker-preview-list {
+  max-height: 160px;
+}
+.me-offering-batch-picker-hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.me-offering-batch-picker-hint-row .form-hint {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+.me-offering-batch-picker-hint-row #btn-me-offering-batch-init {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+}
+.me-offering-batch-prog-head {
+  justify-content: flex-start;
+  gap: 8px;
+}
+.me-offering-batch-axis-label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+/* .me-offering-batch-prog-q { ... } */ /* 原专业代码检索框样式，检索已去掉 */
+.me-offering-batch-preview {
+  margin-top: 4px;
+}
+.me-offering-batch-preview-head {
+  justify-content: space-between;
+  gap: 12px;
+}
+.me-offering-batch-preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+.me-offering-batch-preview-actions .btn {
+  border: 1px solid var(--border);
+}
+.ge-offering-batch-picker-check-item.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (max-width: 720px) {
+  .me-offering-term-row {
+    grid-template-columns: 1fr;
+  }
+  .me-offering-filter-row {
+    grid-template-columns: 1fr;
+  }
+}
+/* 原左右分栏样式（课 | 批次）已弃用，改上下结构
+.me-offering-panes {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 12px;
+}
+.me-offering-pane {
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 10px;
+  min-height: 320px;
+}
+*/
 .school-elective-excluded-programmes-field {
   width: 100%;
   align-items: stretch;

@@ -21,6 +21,12 @@
   --header-h: 56px;
   --radius: 8px;
   --shadow: 0 1px 4px rgba(15,52,96,.08);
+  /* 主内容区内边距（与 .main padding 对齐） */
+  --main-pad-y: 20px;
+  --main-pad-x: 24px;
+  /* 列表页可视高度：整屏减去主区上下内边距 */
+  --page-viewport-h: calc(100vh - (var(--main-pad-y) * 2));
+  --table-head-bg: #f1f5f9;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -110,12 +116,118 @@ body {
 
 .main {
   flex: 1; overflow-y: auto;
-  padding: 20px 24px;
+  padding: var(--main-pad-y) var(--main-pad-x);
   background: #f0f4f8;
+}
+/* 列表页框架激活时：禁止主区整页滚动，仅表格内容区滚动 */
+.main:has(> .page.page-list.active) {
+  overflow: hidden;
 }
 
 .page { display: none; }
 .page.active { display: block; }
+
+/*
+ * 系统 UI 基本框架 · 列表页（page-list）
+ * 规则：页头 / 筛选 / 统计条 / Tab / 工具栏固定；上下滚动仅发生在 .table-scroll（表头吸顶）。
+ * 用法：菜单列表页 section 增加 class="page-list"（可与业务 class 并存）。
+ */
+.main .page.page-list.active {
+  display: flex;
+  flex-direction: column;
+  height: var(--page-viewport-h);
+  max-height: var(--page-viewport-h);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.main .page.page-list.active > .page-header,
+.main .page.page-list.active > .schedule-query-card,
+.main .page.page-list.active > .query-card,
+.main .page.page-list.active > .filter-bar,
+.main .page.page-list.active > .legend-bar,
+.main .page.page-list.active > .tab-bar,
+.main .page.page-list.active > .info-strip,
+.main .page.page-list.active > .panel-toolbar {
+  flex-shrink: 0;
+}
+.main .page.page-list.active > .schedule-query-card,
+.main .page.page-list.active > .query-card {
+  z-index: 5;
+  background: #fff;
+}
+.main .page.page-list.active > .legend-bar {
+  margin-bottom: 8px;
+}
+/* 主列表卡片占满剩余高度（排除筛选卡） */
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card),
+.main .page.page-list.active > .schedule-card:not(.schedule-query-card),
+.main .page.page-list.active > .list-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card) > .panel-toolbar,
+.main .page.page-list.active > .schedule-card > .panel-toolbar,
+.main .page.page-list.active > .list-card > .panel-toolbar,
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card) > .card-head,
+.main .page.page-list.active > .schedule-card > .card-head,
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card) > .tab-bar,
+.main .page.page-list.active > .schedule-card > .tab-bar,
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card) > .schedule-auto-progress,
+.main .page.page-list.active > .schedule-card > .schedule-auto-progress,
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card) > .table-footer,
+.main .page.page-list.active > .schedule-card > .table-footer,
+.main .page.page-list.active > .list-card > .table-footer,
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card) > .schedule-tt-export-bar,
+.main .page.page-list.active > .schedule-card > .schedule-tt-export-bar,
+.main .page.page-list.active > .card:not(.schedule-query-card):not(.query-card) > .adjustment-apply-actions,
+.main .page.page-list.active > .schedule-card > .adjustment-apply-actions {
+  flex-shrink: 0;
+}
+.main .page.page-list.active .table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+}
+.main .page.page-list.active .table-scroll > table > thead > tr > th,
+.main .page.page-list.active .table-scroll table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--table-head-bg);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+/* Tab 页：激活面板承接高度，其内列表卡片滚动 */
+.main .page.page-list.active > .tab-panel.active {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.main .page.page-list.active > .tab-panel:not(.active) {
+  display: none;
+}
+.main .page.page-list.active > .tab-panel.active > .schedule-query-card,
+.main .page.page-list.active > .tab-panel.active > .query-card,
+.main .page.page-list.active > .tab-panel.active > .legend-bar,
+.main .page.page-list.active > .tab-panel.active > .filter-bar {
+  flex-shrink: 0;
+}
+.main .page.page-list.active > .tab-panel.active > .card:not(.schedule-query-card):not(.query-card),
+.main .page.page-list.active > .tab-panel.active > .schedule-card:not(.schedule-query-card),
+.main .page.page-list.active > .tab-panel.active > .list-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
 
 #page-workflow.active {
   display: flex;
@@ -7931,6 +8043,49 @@ input#group-assign-recorded-hours {
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* 排课管理 · 修改记录抽屉 */
+.drawer-entity-change-log {
+  width: min(980px, 96vw);
+}
+.drawer-entity-change-log-query {
+  margin-bottom: 14px;
+}
+.drawer-entity-change-log-table-wrap {
+  max-height: calc(100vh - 280px);
+}
+.drawer-entity-change-log .ecl-before,
+.drawer-entity-change-log .ecl-after {
+  max-width: 240px;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.45;
+  vertical-align: top;
+}
+.drawer-entity-change-log .ecl-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.drawer-entity-change-log .ecl-stack-item {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.drawer-entity-change-log .ecl-stack-item + .ecl-stack-item {
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-light);
+}
+.drawer-entity-change-log .ecl-before {
+  color: var(--text-3);
+}
+.drawer-entity-change-log .ecl-after {
+  color: var(--text-1);
+}
+.drawer-entity-change-log .ecl-empty {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--text-3);
+}
 .merge-split-info-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -8367,13 +8522,32 @@ input#group-assign-recorded-hours {
 .adjustment-page .card > .table-scroll { margin-top: 0; }
 
 /* ?? ???? ? ?????? + ????? ?? */
-.adjustment-table { min-width: 1120px; }
+.adjustment-table {
+  min-width: 1120px;
+  /* sticky 左右冻结在 collapse 下易被盖住，与冲突查询表一致用 separate */
+  border-collapse: separate;
+  border-spacing: 0;
+}
 .adjustment-table th, .adjustment-table td { white-space: nowrap; }
+/* 左侧冻结：序号 / 申请单号 / 调课类型 */
 .adjustment-table th:nth-child(-n+3),
 .adjustment-table td:nth-child(-n+3) {
-  position: sticky; z-index: 1; background: #fff;
+  position: sticky;
+  z-index: 3;
+  background: #fff;
 }
-.adjustment-table thead th:nth-child(-n+3) { z-index: 3; background: var(--blue-50); }
+/*
+ * 冻结列表头须高于 page-list 通用表头（z-index:2），
+ * 否则横向滚动时其它列表头会盖住冻结列标题。
+ */
+.main .page.page-list.active .adjustment-table thead th:nth-child(-n+3),
+.adjustment-table thead th:nth-child(-n+3) {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--table-head-bg, var(--blue-50));
+  box-shadow: inset 0 -1px 0 var(--border);
+}
 .adjustment-table tr:hover td:nth-child(-n+3) { background: #fafbfc; }
 .adjustment-table th:nth-child(1), .adjustment-table td:nth-child(1) { left: 0; width: 52px; min-width: 52px; }
 .adjustment-table th:nth-child(2), .adjustment-table td:nth-child(2) { left: 52px; width: 120px; min-width: 120px; }
@@ -8381,19 +8555,39 @@ input#group-assign-recorded-hours {
   left: 172px; width: 88px; min-width: 88px;
   box-shadow: 6px 0 8px -6px rgba(15,52,96,.22);
 }
-/* ????????? + ??? */
+.main .page.page-list.active .adjustment-table thead th:nth-child(3),
+.adjustment-table thead th:nth-child(3) {
+  box-shadow: 6px 0 8px -6px rgba(15,52,96,.22), inset 0 -1px 0 var(--border);
+}
+/* 右侧冻结：审批状态 + 操作 */
 .adj-freeze-2 th:last-child, .adj-freeze-2 td:last-child,
 .adj-freeze-1 th:last-child, .adj-freeze-1 td:last-child {
-  position: sticky; right: 0; z-index: 1; background: #fff;
+  position: sticky; right: 0; z-index: 3; background: #fff;
   width: 132px; min-width: 132px;
   box-shadow: -6px 0 8px -6px rgba(15,52,96,.22);
 }
 .adj-freeze-2 th:nth-last-child(2), .adj-freeze-2 td:nth-last-child(2) {
-  position: sticky; right: 132px; z-index: 1; background: #fff;
+  position: sticky; right: 132px; z-index: 3; background: #fff;
   width: 96px; min-width: 96px;
 }
-.adj-freeze-2 thead th:last-child, .adj-freeze-2 thead th:nth-last-child(2),
-.adj-freeze-1 thead th:last-child { z-index: 3; background: var(--blue-50); }
+.main .page.page-list.active .adj-freeze-2 thead th:last-child,
+.main .page.page-list.active .adj-freeze-2 thead th:nth-last-child(2),
+.main .page.page-list.active .adj-freeze-1 thead th:last-child,
+.adj-freeze-2 thead th:last-child,
+.adj-freeze-2 thead th:nth-last-child(2),
+.adj-freeze-1 thead th:last-child {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--table-head-bg, var(--blue-50));
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.main .page.page-list.active .adj-freeze-2 thead th:last-child,
+.main .page.page-list.active .adj-freeze-1 thead th:last-child,
+.adj-freeze-2 thead th:last-child,
+.adj-freeze-1 thead th:last-child {
+  box-shadow: -6px 0 8px -6px rgba(15,52,96,.22), inset 0 -1px 0 var(--border);
+}
 .adj-freeze-2 tr:hover td:last-child, .adj-freeze-2 tr:hover td:nth-last-child(2),
 .adj-freeze-1 tr:hover td:last-child { background: #fafbfc; }
 
@@ -8433,6 +8627,7 @@ input#group-assign-recorded-hours {
 #modal-adjustment-slot-picker.modal-drawer .modal,
 #modal-adjustment-teacher-picker.modal-drawer .modal,
 #modal-adjustment-room-picker.modal-drawer .modal,
+#modal-schedule-auto-time-course-picker.modal-drawer .modal,
 #modal-schedule-room-picker.modal-drawer:not(.is-lock-room) .modal {
   width: min(920px, 72vw);
   max-width: 94vw;
@@ -8447,6 +8642,7 @@ input#group-assign-recorded-hours {
 #modal-adjustment-slot-picker.modal-drawer .modal-body,
 #modal-adjustment-teacher-picker.modal-drawer .modal-body,
 #modal-adjustment-room-picker.modal-drawer .modal-body,
+#modal-schedule-auto-time-course-picker.modal-drawer .modal-body,
 #modal-schedule-room-picker.modal-drawer .modal-body {
   flex: 1;
   min-height: 0;
@@ -8459,6 +8655,7 @@ input#group-assign-recorded-hours {
 #modal-adjustment-slot-picker.modal-drawer .table-scroll,
 #modal-adjustment-teacher-picker.modal-drawer .table-scroll,
 #modal-adjustment-room-picker.modal-drawer .table-scroll,
+#modal-schedule-auto-time-course-picker.modal-drawer .table-scroll,
 #modal-schedule-room-picker.modal-drawer .table-scroll {
   flex: 1;
   min-height: 240px;
@@ -10836,11 +11033,14 @@ code {
 .schedule-time-tt-table td { white-space: nowrap; }
 
 /* 课表查询：查询条件固定；课表/不排课固定高度可滚动；列宽=单列初始宽度，加列横向滚动 */
+.main:has(> .page.schedule-page.active[id$="-timetable"]) {
+  overflow: hidden;
+}
 .main .page.schedule-page.active[id$="-timetable"] {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 40px);
-  max-height: calc(100vh - 40px);
+  height: var(--page-viewport-h);
+  max-height: var(--page-viewport-h);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -11173,6 +11373,26 @@ code {
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta-freeze {
   z-index: 5;
+}
+/* 表头行纵向冻结；border-collapse 下 sticky 单元格边框会丢失，用内阴影补下边线 */
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta-scroll {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta-freeze {
+  z-index: 6;
+  box-shadow: 1px 0 0 var(--border), inset 0 -1px 0 var(--border);
+}
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta-seats {
+  box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08), inset 0 -1px 0 var(--border);
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-index {
   left: 0;
@@ -12245,6 +12465,54 @@ code {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+.schedule-room-course-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  flex-shrink: 0;
+}
+#page-schedule-time-detail #schedule-room-course-search-field,
+#page-schedule-room-detail #schedule-time-course-search-field {
+  display: none !important;
+}
+#page-schedule-time-detail .schedule-detail-course-search-field,
+#page-schedule-room-detail .schedule-detail-course-search-field {
+  width: 108px;
+  flex: 0 0 108px;
+  padding-left: 8px;
+  padding-right: 22px;
+}
+.schedule-room-course-search-input {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.schedule-room-course-search-input .input {
+  width: 100%;
+  padding-right: 28px;
+}
+.schedule-room-course-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: #fff;
+  font-size: 15px;
+  line-height: 17px;
+  text-align: center;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.schedule-room-course-search-clear:hover { background: #94a3b8; }
+.schedule-room-course-search > .btn { flex-shrink: 0; }
 .schedule-detail-tab {
   flex: 1 1 0;
   min-width: 0;
@@ -12355,12 +12623,12 @@ code {
 }
 .schedule-conflict-legend .sch-leg-item.is-teacher { background: #fee2e2; color: #991b1b; }
 .schedule-conflict-legend .sch-leg-item.is-teacher::before { background: #dc2626; }
-.schedule-conflict-legend .sch-leg-item.is-student { background: #fce7f3; color: #9d174d; }
-.schedule-conflict-legend .sch-leg-item.is-student::before { background: #db2777; }
+.schedule-conflict-legend .sch-leg-item.is-student { background: #f3e8ff; color: #6b21a8; }
+.schedule-conflict-legend .sch-leg-item.is-student::before { background: #9333ea; }
 .schedule-conflict-legend .sch-leg-item.is-room { background: #fee2e2; color: #991b1b; }
 .schedule-conflict-legend .sch-leg-item.is-room::before { background: #dc2626; }
-.schedule-conflict-legend .sch-leg-item.is-room-seats { background: #fce7f3; color: #9f1239; }
-.schedule-conflict-legend .sch-leg-item.is-room-seats::before { background: #ec4899; }
+.schedule-conflict-legend .sch-leg-item.is-room-seats { background: #f3e8ff; color: #7e22ce; }
+.schedule-conflict-legend .sch-leg-item.is-room-seats::before { background: #a855f7; }
 .schedule-conflict-legend .sch-leg-item.is-room-type { background: #dcfce7; color: #166534; }
 .schedule-conflict-legend .sch-leg-item.is-room-type::before { background: #15803d; }
 .schedule-conflict-legend .sch-leg-item.is-soft { background: #fef3c7; color: #92400e; }
@@ -12522,16 +12790,16 @@ code {
   box-shadow: inset 0 0 0 3px #dc2626;
 }
 .schedule-grid-cell.is-conflict-student {
-  background: #f9a8d4 !important;
-  box-shadow: inset 0 0 0 3px #db2777;
+  background: #d8b4fe !important;
+  box-shadow: inset 0 0 0 3px #9333ea;
 }
 .schedule-grid-cell.is-conflict-room {
   background: #fca5a5 !important;
   box-shadow: inset 0 0 0 3px #dc2626;
 }
 .schedule-grid-cell.is-conflict-roomSeats {
-  background: #f9a8d4 !important;
-  box-shadow: inset 0 0 0 3px #ec4899;
+  background: #d8b4fe !important;
+  box-shadow: inset 0 0 0 3px #a855f7;
 }
 /* 待定/锁定格上仍需露出冲突色（座位数等） */
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-conflict,
@@ -12582,7 +12850,7 @@ code {
   color: #86198f;
 }
 .sch-conflict-cell-label.is-teacher { color: #991b1b; }
-.sch-conflict-cell-label.is-student { color: #9d174d; }
+.sch-conflict-cell-label.is-student { color: #6b21a8; }
 .sch-conflict-cell-label.is-room { color: #991b1b; }
 .sch-conflict-cell-label.is-soft { color: #92400e; }
 .sch-conflict-cell-label.is-retake { color: #9a3412; }
@@ -12599,7 +12867,7 @@ code {
   border-left: 3px solid #c026d3;
 }
 .sch-conflict-summary.is-teacher { background: #fef2f2; color: #991b1b; border-left-color: #dc2626; }
-.sch-conflict-summary.is-student { background: #fdf2f8; color: #9d174d; border-left-color: #db2777; }
+.sch-conflict-summary.is-student { background: #faf5ff; color: #6b21a8; border-left-color: #9333ea; }
 .sch-conflict-summary.is-room { background: #fef2f2; color: #991b1b; border-left-color: #dc2626; }
 .sch-conflict-summary.is-soft { background: #fffbeb; color: #92400e; border-left-color: #f59e0b; }
 .sch-conflict-summary.is-retake { background: #ffedd5; color: #9a3412; border-left-color: #ea580c; }
@@ -12607,9 +12875,9 @@ code {
 .sch-conflict-summary.is-mixed { background: #fae8ff; color: #86198f; border-left-color: #c026d3; }
 .sch-conflict-line { margin-bottom: 8px; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
 .sch-conflict-line.is-teacher { background: #fef2f2; border-left: 3px solid #dc2626; }
-.sch-conflict-line.is-student { background: #fdf2f8; border-left: 3px solid #db2777; }
+.sch-conflict-line.is-student { background: #faf5ff; border-left: 3px solid #9333ea; }
 .sch-conflict-line.is-room { background: #fef2f2; border-left: 3px solid #dc2626; }
-.sch-conflict-line.is-room-seats { background: #fdf2f8; border-left: 3px solid #ec4899; }
+.sch-conflict-line.is-room-seats { background: #faf5ff; border-left: 3px solid #a855f7; }
 .sch-conflict-line.is-room-type { background: #f0fdf4; border-left: 3px solid #15803d; }
 .sch-conflict-line.is-cell,
 .sch-conflict-line.is-lunch { background: #f3f4f6; border-left: 3px solid #9ca3af; }
@@ -13336,6 +13604,40 @@ code {
   z-index: auto;
   box-shadow: none;
 }
+/* 批量调时间：冲突情况列（不冻结，宽度随内容适配） */
+#modal-adjustment-batch .adj-batch-time-preview th.adj-batch-conflict-col,
+#modal-adjustment-batch .adj-batch-time-preview td.adj-batch-conflict-col {
+  width: auto;
+  min-width: 500px;
+  max-width: none;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: top;
+  font-size: 12px;
+  line-height: 1.45;
+}
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict > td {
+  background: #fffbeb;
+}
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict > td.col-index,
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict > td:nth-child(2),
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict > td.adj-batch-conflict-col {
+  background: #fffbeb;
+}
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict:hover > td,
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict:hover > td.col-index,
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict:hover > td:nth-child(2),
+#modal-adjustment-batch .adj-batch-time-preview tr.is-conflict:hover > td.adj-batch-conflict-col {
+  background: #fef3c7;
+}
+#modal-adjustment-batch .adj-batch-conflict-cell .adj-detail-conflict-types,
+#modal-adjustment-batch .adj-batch-conflict-cell .adj-detail-conflict-detail {
+  white-space: normal;
+  word-break: break-word;
+}
+#modal-adjustment-batch .adj-batch-conflict-cell .adj-detail-conflict-detail {
+  font-size: 11px;
+}
 #modal-adjustment-batch .adjustment-batch-form {
   margin-bottom: 0;
 }
@@ -13423,7 +13725,7 @@ code {
 .adj-freeze-left-2 td.col-index {
   position: sticky;
   left: 0;
-  z-index: 2;
+  z-index: 3;
   background: #fff;
   min-width: 56px;
 }
@@ -13431,16 +13733,471 @@ code {
 .adj-freeze-left-2 td:nth-child(2) {
   position: sticky;
   left: 56px;
-  z-index: 2;
+  z-index: 3;
   background: #fff;
   box-shadow: 2px 0 4px rgba(15, 52, 96, 0.06);
 }
+.main .page.page-list.active .adj-freeze-left-2 thead th.col-index,
+.main .page.page-list.active .adj-freeze-left-2 thead th:nth-child(2),
 .adj-freeze-left-2 thead th.col-index,
 .adj-freeze-left-2 thead th:nth-child(2) {
-  z-index: 3;
-  background: var(--blue-50);
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--table-head-bg, var(--blue-50));
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.main .page.page-list.active .adj-freeze-left-2 thead th:nth-child(2),
+.adj-freeze-left-2 thead th:nth-child(2) {
+  box-shadow: 2px 0 4px rgba(15, 52, 96, 0.06), inset 0 -1px 0 var(--border);
 }
 .adj-freeze-left-2 tr:hover td.col-index,
 .adj-freeze-left-2 tr:hover td:nth-child(2) {
   background: #fafbfc;
+}
+
+/* 批量调课管理列表：右侧固定操作列 */
+.adj-freeze-right-1 th.col-ops,
+.adj-freeze-right-1 td.col-ops,
+.adj-freeze-right-1 th:last-child,
+.adj-freeze-right-1 td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: #fff;
+  width: 88px;
+  min-width: 88px;
+  box-shadow: -6px 0 8px -6px rgba(15, 52, 96, 0.22);
+}
+.main .page.page-list.active .adj-freeze-right-1 thead th.col-ops,
+.main .page.page-list.active .adj-freeze-right-1 thead th:last-child,
+.adj-freeze-right-1 thead th.col-ops,
+.adj-freeze-right-1 thead th:last-child {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--table-head-bg, var(--blue-50));
+  box-shadow: -6px 0 8px -6px rgba(15, 52, 96, 0.22), inset 0 -1px 0 var(--border);
+}
+.adj-freeze-right-1 tr:hover td.col-ops,
+.adj-freeze-right-1 tr:hover td:last-child {
+  background: #fafbfc;
+}
+#page-adjustment-batch .adj-freeze-right-1 td.col-ops a {
+  color: var(--blue-700);
+  font-weight: 600;
+  text-decoration: none;
+}
+#page-adjustment-batch .adj-freeze-right-1 td.col-ops a:hover {
+  text-decoration: underline;
+}
+
+/* 排课表教室 · 课表冲突查询：沿用 page-list 框架；此处仅保留冲突表冻结列 */
+.schedule-room-conflict-filters {
+  flex-wrap: wrap;
+}
+.schedule-room-conflict-table {
+  --sch-conflict-freeze-index-w: 56px;
+  --sch-conflict-freeze-term-w: 96px;
+  --sch-conflict-freeze-date-w: 112px;
+  min-width: 1680px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.schedule-room-conflict-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--table-head-bg, #f1f5f9);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+/* 左右滚动时固定：序号、学期、日期 */
+.schedule-room-conflict-table .sch-conflict-freeze {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+.schedule-room-conflict-table .sch-conflict-freeze-index {
+  left: 0;
+  min-width: var(--sch-conflict-freeze-index-w);
+  width: var(--sch-conflict-freeze-index-w);
+  text-align: center;
+}
+.schedule-room-conflict-table .sch-conflict-freeze-term {
+  left: var(--sch-conflict-freeze-index-w);
+  min-width: var(--sch-conflict-freeze-term-w);
+  width: var(--sch-conflict-freeze-term-w);
+}
+.schedule-room-conflict-table .sch-conflict-freeze-date {
+  left: calc(var(--sch-conflict-freeze-index-w) + var(--sch-conflict-freeze-term-w));
+  min-width: var(--sch-conflict-freeze-date-w);
+  width: var(--sch-conflict-freeze-date-w);
+  box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08);
+}
+/*
+ * 冻结列表头：需同时 sticky top + left。
+ * 选择器优先级须高于 page-list 通用表头规则，否则 z-index 被压成 2，
+ * 纵向滚动时会被 tbody 冻结列（z-index:3）盖住。
+ */
+.main .page.page-list.active .schedule-room-conflict-table thead th.sch-conflict-freeze,
+.schedule-room-conflict-table thead th.sch-conflict-freeze {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--table-head-bg, #f1f5f9);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.main .page.page-list.active .schedule-room-conflict-table thead th.sch-conflict-freeze-date,
+.schedule-room-conflict-table thead th.sch-conflict-freeze-date {
+  box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08), inset 0 -1px 0 var(--border);
+}
+.schedule-room-conflict-table tbody tr:hover .sch-conflict-freeze {
+  background: #fafbfc;
+}
+.schedule-room-conflict-table .sch-conflict-multiline {
+  white-space: normal;
+  line-height: 1.45;
+  vertical-align: top;
+  max-width: 220px;
+}
+.schedule-room-conflict-table .sch-conflict-detail-cell {
+  max-width: 320px;
+  min-width: 180px;
+}
+.sch-conflict-type-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.sch-conflict-type-tag.is-room {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.sch-conflict-type-tag.is-room-seats {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+.sch-conflict-type-tag.is-room-type {
+  background: #dcfce7;
+  color: #166534;
+}
+.sch-joint-badge {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.sch-joint-badge.is-joint-y {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.sch-joint-badge.is-joint-n {
+  background: #f1f5f9;
+  color: #64748b;
+}
+#schedule-room-conflict-hint .sch-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+#schedule-room-conflict-hint .sch-leg-item.is-room {
+  background: #fee2e2;
+  color: #991b1b;
+}
+#schedule-room-conflict-hint .sch-leg-item.is-room-seats {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+#schedule-room-conflict-hint .sch-leg-item.is-room-type {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* 自动排课：查询条件与执行按钮一体 */
+.schedule-auto-run-card {
+  padding: 16px 18px;
+}
+.schedule-auto-run-row {
+  align-items: flex-end;
+}
+.schedule-auto-run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.schedule-auto-run-scope {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.schedule-auto-run-scope strong {
+  color: var(--blue-900);
+}
+.schedule-auto-boards-card {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.schedule-auto-progress-line {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.schedule-auto-progress-line .schedule-auto-progress-bar {
+  width: 100%;
+}
+.schedule-auto-boards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-height: 360px;
+}
+.schedule-auto-board {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+.schedule-auto-board.is-pending {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+.schedule-auto-board.is-success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.schedule-auto-board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.78);
+}
+.schedule-auto-board.is-pending .schedule-auto-board-head {
+  color: #1d4ed8;
+  border-bottom-color: #bfdbfe;
+}
+.schedule-auto-board.is-success .schedule-auto-board-head {
+  color: #166534;
+  border-bottom-color: #bbf7d0;
+}
+.schedule-auto-board-head strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(15, 52, 96, 0.08);
+}
+.schedule-auto-board-table-wrap {
+  flex: 1;
+  min-height: 280px;
+  max-height: min(58vh, 560px);
+  overflow: auto;
+  background: #fff;
+}
+.schedule-auto-board-table {
+  width: 100%;
+  font-size: 12px;
+}
+.schedule-auto-board-table th,
+.schedule-auto-board-table td {
+  white-space: nowrap;
+  vertical-align: top;
+}
+.schedule-auto-board-table td.schedule-auto-class-time {
+  white-space: normal;
+  min-width: 160px;
+  max-width: 260px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.schedule-auto-board-table tr.schedule-auto-board-main-row.has-fail-reason td {
+  border-bottom-color: transparent;
+}
+.schedule-auto-board-table tr.schedule-auto-board-fail-row td {
+  padding-top: 0;
+  padding-bottom: 10px;
+  white-space: normal;
+  border-top: none;
+  background: #fff7f7;
+}
+.schedule-auto-fail-reason-line {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+}
+.schedule-auto-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.schedule-auto-status.is-pending {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+.schedule-auto-status.is-failed {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+.schedule-auto-status.is-success {
+  color: #15803d;
+  background: #dcfce7;
+}
+.schedule-auto-board-table .empty-cell {
+  text-align: center;
+  color: var(--text-3);
+  padding: 28px 12px;
+  white-space: normal;
+}
+@media (max-width: 1100px) {
+  .schedule-auto-boards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 自动排课 / 自动排教室作业页 */
+.schedule-auto-job-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.schedule-auto-rule-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.schedule-auto-rule-pick select {
+  min-width: 200px;
+}
+.schedule-auto-rule-summary {
+  display: inline-block;
+  min-width: 200px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: #f8fafc;
+  color: var(--text);
+  font-weight: 600;
+}
+.schedule-auto-rule-summary.is-empty {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.schedule-auto-rule-kind {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.schedule-auto-rule-kind.is-hard {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.schedule-auto-rule-kind.is-soft {
+  background: #ffedd5;
+  color: #9a3412;
+}
+.schedule-auto-rule-kind.is-strategy {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+.schedule-auto-rule-mode-select {
+  min-width: 110px;
+  max-width: 140px;
+}
+.schedule-auto-rule-priority-input {
+  width: 72px;
+  text-align: center;
+}
+.schedule-auto-rule-mode-fixed {
+  color: var(--text-2);
+  font-size: 12px;
+}
+.schedule-auto-progress {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.schedule-auto-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+.schedule-auto-progress-bar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  transition: width 0.2s ease;
+}
+.schedule-auto-progress-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.schedule-auto-result-ok { color: #15803d; font-weight: 600; }
+.schedule-auto-result-fail { color: #b91c1c; font-weight: 600; }
+.schedule-auto-result-skip { color: #a16207; font-weight: 600; }
+.schedule-auto-rule-constraint {
+  white-space: normal;
+  vertical-align: top;
+  min-width: 160px;
+  max-width: 280px;
+}
+.schedule-auto-rule-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.45;
+}
+.schedule-auto-rule-line {
+  display: block;
 }

@@ -153,10 +153,17 @@
       <a href="#" class="nav-item" data-page="schedule-time">按入学批次排</a>
       <a href="#" class="nav-item" data-page="schedule-teacher">按教师排</a>
       <a href="#" class="nav-item" data-page="schedule-course">按课程排</a>
+      <div class="nav-group">自动排课表时间</div>
+      <a href="#" class="nav-item" data-page="schedule-auto-time-rule">自动排课规则</a>
+      <a href="#" class="nav-item" data-page="schedule-auto-time">自动排课</a>
       <div class="nav-group">排课表教室</div>
-      <a href="#" class="nav-item" data-page="schedule-room-intake">按时间排</a>
-      <a href="#" class="nav-item" data-page="schedule-room-teacher">按场地类型排</a>
+      <a href="#" class="nav-item" data-page="schedule-room-week">按时间排</a>
+      <a href="#" class="nav-item" data-page="schedule-room-category">按场地类型排</a>
+      <a href="#" class="nav-item" data-page="schedule-room-conflict">课表冲突查询</a>
       <!-- 按课程排已隐藏：data-page="schedule-room-course" -->
+      <div class="nav-group">自动排课表教室</div>
+      <a href="#" class="nav-item" data-page="schedule-auto-room-rule">自动排教室规则</a>
+      <a href="#" class="nav-item" data-page="schedule-auto-room">自动排教室</a>
       <div class="nav-group">课表查询</div>
       <a href="#" class="nav-item" data-page="schedule-intake-timetable">入学批次课表</a>
       <a href="#" class="nav-item" data-page="schedule-teacher-timetable">教师课表</a>
@@ -2267,7 +2274,7 @@
     </section>
 
     <!-- ═══ 排课管理 · 课表节次维护 ═══ -->
-    <section class="page schedule-page" id="page-schedule-period">
+    <section class="page-list page schedule-page" id="page-schedule-period">
       <div class="page-header">
         <div>
           <h1>课表节次维护</h1>
@@ -2316,7 +2323,7 @@
     </section>
 
     <!-- ═══ 排课管理 · 排课时间设置 ═══ -->
-    <section class="page schedule-page" id="page-schedule-time-setting">
+    <section class="page-list page schedule-page" id="page-schedule-time-setting">
       <div class="page-header">
         <div>
           <h1>排课时间设置</h1>
@@ -2524,7 +2531,7 @@
     </section>
 
     <!-- ═══ 排课管理 · 排课规则设置 ═══ -->
-    <section class="page schedule-page" id="page-schedule-rule-setting">
+    <section class="page-list page schedule-page" id="page-schedule-rule-setting">
       <div class="page-header">
         <div>
           <h1>排课规则设置</h1>
@@ -2556,7 +2563,7 @@
     <!-- 原「教学任务」页面已移除，教学任务改在专业批次排课页同步（见 app.js 注释） -->
 
     <!-- ═══ 排课管理 · 排课表时间 · 按入学批次排 ═══ -->
-    <section class="page schedule-page" id="page-schedule-time">
+    <section class="page-list page schedule-page" id="page-schedule-time">
       <div class="page-header">
         <div><h1>按入学批次排</h1><p class="subtitle">排课表时间 · 在排课起止时间内按学院、专业与入学批次安排上课时间</p></div>
       </div>
@@ -2630,6 +2637,34 @@
             <button type="button" class="schedule-detail-tab" data-tab="hold" data-sch-phase-tab="room" hidden onclick="setScheduleCourseTab('hold')">待定 <span id="schedule-tab-hold-count">0</span></button>
             <button type="button" class="schedule-detail-tab" data-tab="locked" data-sch-phase-tab="room" hidden onclick="setScheduleCourseTab('locked')">锁定 <span id="schedule-tab-locked-count">0</span></button>
           </div>
+          <div class="schedule-room-course-search" id="schedule-room-course-search">
+            <select class="input input-sm schedule-detail-course-search-field" id="schedule-time-course-search-field"
+              aria-label="查询条件" onchange="onScheduleTimeCourseSearchFieldChange()">
+              <option value="courseCode">课程编号</option>
+              <option value="teacherName">教师姓名</option>
+              <option value="teacherId">教师工号</option>
+              <option value="sharedTeachingCode">共同授课码</option>
+            </select>
+            <select class="input input-sm schedule-detail-course-search-field schedule-room-course-search-field" id="schedule-room-course-search-field"
+              aria-label="查询条件" hidden onchange="onScheduleRoomCourseSearchFieldChange()">
+              <option value="courseCode">课程编号</option>
+              <option value="teacherName">教师姓名</option>
+              <option value="teacherId">教师工号</option>
+              <option value="sharedTeachingCode">共同授课码</option>
+              <option value="venueType">场地类型</option>
+              <option value="venueRemark">教室偏好</option>
+            </select>
+            <div class="schedule-room-course-search-input">
+              <input class="input input-sm" id="schedule-room-course-search-input" type="text"
+                placeholder="课程编号 / 教师工号 / 教师姓名 / 共同授课码"
+                oninput="onScheduleDetailCourseSearchInput(this)"
+                onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+              <button type="button" class="schedule-room-course-search-clear"
+                id="schedule-room-course-search-clear" title="清空" aria-label="清空搜索条件"
+                onclick="clearScheduleDetailCourseSearch()" hidden>×</button>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="searchScheduleDetailCourseCards()">查询</button>
+          </div>
           <ul class="schedule-detail-course-list" id="schedule-detail-course-list"></ul>
           <div class="schedule-detail-sidebar-foot">
             <div class="schedule-detail-foot-left">
@@ -2699,8 +2734,8 @@
             </div>
             <div class="schedule-detail-field schedule-room-hold-bar" id="schedule-room-hold-bar" hidden>
               <div class="schedule-room-hold-actions" id="schedule-room-hold-actions">
-                <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-room-hold-lock" disabled onclick="lockScheduleRoomHold()">锁定</button>
-                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-room-hold-revoke" disabled onclick="revokeScheduleRoomHold()">撤回</button>
+                <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-room-hold-lock" onclick="lockScheduleRoomHold()">锁定</button>
+                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-room-hold-revoke" onclick="revokeScheduleRoomHold()">撤回</button>
               </div>
               <div class="schedule-room-lock-legend" id="schedule-room-lock-legend">
                 <span class="sch-leg-title" id="schedule-lock-legend-title">锁定状态：</span>
@@ -2742,7 +2777,7 @@
               <button class="btn btn-danger-outline btn-sm" id="btn-schedule-slot-cancel" type="button" onclick="cancelSelectedScheduleSlot()" hidden>取消排该时段</button>
             </div>
             <div class="schedule-detail-field schedule-retake-detect-panel" id="schedule-retake-detect-panel">
-              <label class="schedule-detail-field-label">重修检测</label>
+              <label class="schedule-detail-field-label">预重修检测</label>
               <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry">
                 <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">查询冲突</button>
               </div>
@@ -2796,7 +2831,7 @@
     </section>
 
     <!-- ═══ 排课管理 · 排课表时间 · 按教师排 ═══ -->
-    <section class="page schedule-page" id="page-schedule-teacher">
+    <section class="page-list page schedule-page" id="page-schedule-teacher">
       <div class="page-header">
         <div><h1>按教师排</h1><p class="subtitle">排课表时间 · 在排课起止时间内按教师维度安排上课时间</p></div>
       </div>
@@ -2847,7 +2882,7 @@
     </section>
 
     <!-- ═══ 排课管理 · 排课表时间 · 按课程排 ═══ -->
-    <section class="page schedule-page" id="page-schedule-course">
+    <section class="page-list page schedule-page" id="page-schedule-course">
       <div class="page-header">
         <div><h1>按课程排</h1><p class="subtitle">排课表时间 · 在排课起止时间内按课程维度安排上课时间</p></div>
       </div>
@@ -2897,8 +2932,153 @@
       </table></div></div>
     </section>
 
+    <!-- ═══ 自动排课表时间 · 自动排课规则设置 ═══ -->
+    <section class="page-list page schedule-page" id="page-schedule-auto-time-rule">
+      <div class="page-header">
+        <div>
+          <h1>自动排课规则</h1>
+          <p class="subtitle">自动排课表时间 · 维护自动排约束及策略；与基础「排课规则设置」独立</p>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-auto-time-rule-hint"></div>
+      <div class="card schedule-card">
+        <div class="panel-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openScheduleAutoRuleModal('time')">新增约束</button>
+          <span class="hint">每条约束独立启用，策略均可编辑；启用项供「自动排课」使用</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table schedule-auto-rule-table">
+            <thead>
+              <tr>
+                <th class="col-index">序号</th>
+                <th>约束名称</th>
+                <th class="col-center">策略</th>
+                <th class="col-center">优先级</th>
+                <th class="col-center">是否启用</th>
+                <th class="col-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-auto-time-rule-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 自动排课表时间 · 自动排课 ═══ -->
+    <section class="page-list page schedule-page" id="page-schedule-auto-time">
+      <div class="page-header">
+        <div>
+          <h1>自动排课</h1>
+          <p class="subtitle">按查询条件范围内的未排开课任务自动排课；成功后静默提交至排课表教室</p>
+        </div>
+      </div>
+      <div class="card schedule-query-card schedule-auto-run-card">
+        <div class="schedule-query-row schedule-auto-run-row">
+          <div class="schedule-query-fields schedule-query-fields-wide">
+            <div class="schedule-query-field">
+              <label for="sat-filter-term">学年学期</label>
+              <select class="input input-sm" id="sat-filter-term" onchange="renderScheduleAutoTimePage()"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-school">学院</label>
+              <select class="input input-sm" id="sat-filter-school" onchange="renderScheduleAutoTimePage()"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-prog">专业</label>
+              <select class="input input-sm" id="sat-filter-prog" onchange="renderScheduleAutoTimePage()"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-intake">入学批次</label>
+              <select class="input input-sm" id="sat-filter-intake" onchange="renderScheduleAutoTimePage()"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-category">课程类别</label>
+              <select class="input input-sm" id="sat-filter-category" onchange="renderScheduleAutoTimePage()">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-nature">课程性质</label>
+              <select class="input input-sm" id="sat-filter-nature" onchange="renderScheduleAutoTimePage()">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-course-btn">课程</label>
+              <button type="button" class="input input-sm adj-pick-btn is-empty" id="sat-filter-course-btn"
+                onclick="openScheduleAutoTimeCoursePicker()" title="">请选择课程</button>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-teacher">教师</label>
+              <input class="input input-sm" id="sat-filter-teacher" placeholder="教师工号 / 姓名" oninput="renderScheduleAutoTimePage()">
+            </div>
+          </div>
+          <div class="schedule-auto-run-actions">
+            <button class="btn btn-primary" type="button" id="btn-sat-start" onclick="startScheduleAutoTimeJob()">自动排课</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-sat-stop" onclick="stopScheduleAutoTimeJob()" disabled>结束排课</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-sat-revoke" onclick="revokeScheduleAutoTimeJob()">撤回结果</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleAutoTimeQuery()">重置</button>
+          </div>
+        </div>
+        <div class="schedule-auto-run-scope" id="schedule-auto-time-hint"></div>
+      </div>
+      <div class="card schedule-card schedule-auto-boards-card">
+        <div class="schedule-auto-progress-line" id="sat-progress-line">
+          <div class="schedule-auto-progress-bar"><span id="sat-progress-bar" style="width:0%"></span></div>
+          <div class="schedule-auto-progress-text" id="sat-progress-text">设置查询条件后点击「自动排课」</div>
+        </div>
+        <div class="schedule-auto-boards">
+          <div class="schedule-auto-board is-pending">
+            <div class="schedule-auto-board-head">
+              <span>待排课程</span>
+              <strong id="sat-left-count">0</strong>
+            </div>
+            <div class="table-wrap schedule-auto-board-table-wrap">
+              <table class="data-table schedule-auto-board-table">
+                <thead>
+                  <tr>
+                    <th class="col-status">排课状态</th>
+                    <th>课程号</th>
+                    <th>课程性质</th>
+                    <th class="col-center">起止周</th>
+                    <th class="col-center">总学时</th>
+                    <th>上课小组</th>
+                    <th>授课老师</th>
+                  </tr>
+                </thead>
+                <tbody id="sat-left-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="schedule-auto-board is-success">
+            <div class="schedule-auto-board-head">
+              <span>成功课程</span>
+              <strong id="sat-right-count">0</strong>
+            </div>
+            <div class="table-wrap schedule-auto-board-table-wrap">
+              <table class="data-table schedule-auto-board-table">
+                <thead>
+                  <tr>
+                    <th class="col-status">排课状态</th>
+                    <th>课程号</th>
+                    <th>课程性质</th>
+                    <th class="col-center">起止周</th>
+                    <th class="col-center">总学时</th>
+                    <th>上课小组</th>
+                    <th>授课老师</th>
+                    <th>上课时间</th>
+                  </tr>
+                </thead>
+                <tbody id="sat-right-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ 排课管理 · 排课表教室 · 按时间排 ═══ -->
-    <section class="page schedule-page" id="page-schedule-room-intake">
+    <section class="page-list page schedule-page" id="page-schedule-room-week">
       <div class="page-header">
         <div><h1>按时间排</h1><p class="subtitle">排课表教室 · 在排教室起止时间内按星期安排上课教室</p></div>
       </div>
@@ -2928,8 +3108,8 @@
             </div>
           </div>
           <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomIntakePage()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('intake')">重置</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomWeekPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('week')">重置</button>
           </div>
         </div>
       </div>
@@ -2951,7 +3131,7 @@
     </section>
 
     <!-- ═══ 排课管理 · 排课表教室 · 按场地类型排 ═══ -->
-    <section class="page schedule-page" id="page-schedule-room-teacher">
+    <section class="page-list page schedule-page" id="page-schedule-room-category">
       <div class="page-header">
         <div><h1>按场地类型排</h1><p class="subtitle">排课表教室 · 在排教室起止时间内按场地类型安排上课教室</p></div>
       </div>
@@ -2977,8 +3157,8 @@
             </div>
           </div>
           <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomTeacherPage()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('teacher')">重置</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomCategoryPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('category')">重置</button>
           </div>
         </div>
       </div>
@@ -2999,8 +3179,238 @@
       </table></div></div>
     </section>
 
+    <!-- ═══ 排课管理 · 排课表教室 · 课表冲突查询 ═══ -->
+    <section class="page-list page schedule-page" id="page-schedule-room-conflict">
+      <div class="page-header">
+        <div>
+          <h1>课表冲突查询</h1>
+          <p class="subtitle">查询排课教室阶段的教室时间、座位人数及场地类型冲突</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-room-conflict-export" onclick="exportScheduleRoomConflictRows()" disabled>导出</button>
+        </div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields schedule-room-conflict-filters">
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-term">学年学期</label>
+              <input class="input input-sm" id="schedule-room-conflict-filter-term" readonly placeholder="—">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-type">冲突类型</label>
+              <select class="input input-sm" id="schedule-room-conflict-filter-type">
+                <option value="">全部</option>
+                <option value="roomTime">教室时间冲突</option>
+                <option value="roomSeats">座位人数冲突</option>
+                <option value="roomType">场地类型冲突</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-date">日期</label>
+              <input class="input input-sm" id="schedule-room-conflict-filter-date" type="date" onchange="onScheduleRoomConflictDateChange()">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-week">周次</label>
+              <input class="input input-sm" id="schedule-room-conflict-filter-week" type="number" min="1" placeholder="如 5" onchange="onScheduleRoomConflictWeekWeekdayChange()">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-weekday">星期</label>
+              <select class="input input-sm" id="schedule-room-conflict-filter-weekday" onchange="onScheduleRoomConflictWeekWeekdayChange()">
+                <option value="">全部</option>
+                <option value="1">周一</option>
+                <option value="2">周二</option>
+                <option value="3">周三</option>
+                <option value="4">周四</option>
+                <option value="5">周五</option>
+                <option value="6">周六</option>
+                <option value="7">周日</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-period">节次</label>
+              <select class="input input-sm" id="schedule-room-conflict-filter-period">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-course">课程号 / 名称</label>
+              <input class="input input-sm" id="schedule-room-conflict-filter-course" placeholder="课程号 / 课程名称">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-teacher">教师工号 / 姓名</label>
+              <input class="input input-sm" id="schedule-room-conflict-filter-teacher" placeholder="教师工号 / 姓名">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-room">教室</label>
+              <input class="input input-sm" id="schedule-room-conflict-filter-room" placeholder="教室名称">
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleRoomConflicts()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomConflictFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-room-conflict-hint"></div>
+      <div class="card schedule-card">
+        <div class="table-scroll schedule-room-conflict-table-wrap">
+          <table class="data-table schedule-room-conflict-table">
+            <thead>
+              <tr>
+                <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
+                <th class="sch-conflict-freeze sch-conflict-freeze-term">学期</th>
+                <th class="sch-conflict-freeze sch-conflict-freeze-date">日期</th>
+                <th>周次</th>
+                <th>星期</th>
+                <th>节次</th>
+                <th>课程号</th>
+                <th>课程名称</th>
+                <th>上课教师</th>
+                <th>上课小组（人数）</th>
+                <th>上课教室</th>
+                <th class="col-center">共同授课状态</th>
+                <th>冲突类型</th>
+                <th>冲突内容</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-room-conflict-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 自动排课表教室 · 自动排教室规则 ═══ -->
+    <section class="page-list page schedule-page" id="page-schedule-auto-room-rule">
+      <div class="page-header">
+        <div>
+          <h1>自动排教室规则</h1>
+          <p class="subtitle">自动排课表教室 · 维护自动排教室约束及策略；与时间侧自动规则独立</p>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-auto-room-rule-hint"></div>
+      <div class="card schedule-card">
+        <div class="panel-toolbar">
+          <button class="btn btn-primary btn-sm" type="button" onclick="openScheduleAutoRuleModal('room')">新增约束</button>
+          <span class="hint">每条约束独立启用，策略均可编辑；启用项供「自动排教室」使用</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table schedule-auto-rule-table">
+            <thead>
+              <tr>
+                <th class="col-index">序号</th>
+                <th>约束名称</th>
+                <th class="col-center">策略</th>
+                <th class="col-center">优先级</th>
+                <th class="col-center">是否启用</th>
+                <th class="col-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-auto-room-rule-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 自动排课表教室 · 自动排教室 ═══ -->
+    <section class="page-list page schedule-page" id="page-schedule-auto-room">
+      <div class="page-header">
+        <div>
+          <h1>自动排教室</h1>
+          <p class="subtitle">自动排课表教室 · 按已排节次追加未派教室；撤回排课前须先撤回排教室</p>
+        </div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields">
+            <div class="schedule-query-field">
+              <label for="sar-filter-school">学院</label>
+              <select class="input input-sm" id="sar-filter-school"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-prog">专业</label>
+              <select class="input input-sm" id="sar-filter-prog"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-intake">入学批次</label>
+              <select class="input input-sm" id="sar-filter-intake"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-keyword">课程/教室</label>
+              <input class="input input-sm" id="sar-filter-keyword" placeholder="课程号 / 课程名 / 教室">
+            </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-status">排教室状态</label>
+              <select class="input input-sm" id="sar-filter-status">
+                <option value="unset">未排</option>
+                <option value="">全部</option>
+                <option value="locked">已排</option>
+              </select>
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleAutoRoomPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleAutoRoomQuery()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-auto-room-hint"></div>
+      <div class="card schedule-card">
+        <div class="panel-toolbar schedule-auto-job-toolbar">
+          <div class="schedule-auto-rule-pick">启用约束
+            <span class="schedule-auto-rule-summary" id="sar-rule-summary">—</span>
+          </div>
+          <button class="btn btn-primary btn-sm" type="button" id="btn-sar-start" onclick="startScheduleAutoRoomJob()">开始自动排教室</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-sar-revoke" onclick="revokeScheduleAutoRoomJob()">撤回结果</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="renderScheduleAutoRoomPage()">刷新</button>
+        </div>
+        <div class="schedule-auto-progress" id="sar-progress" hidden>
+          <div class="schedule-auto-progress-bar"><span id="sar-progress-fill"></span></div>
+          <div class="schedule-auto-progress-text" id="sar-progress-text"></div>
+        </div>
+        <div class="table-scroll" style="margin-bottom:12px">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" id="sar-check-all" onchange="toggleScheduleAutoRoomCheckAll(this.checked)"></th>
+                <th class="col-index">序号</th>
+                <th>课程号</th>
+                <th>课程名称</th>
+                <th>上课小组</th>
+                <th class="col-center">星期</th>
+                <th class="col-center">节次</th>
+                <th>周次</th>
+                <th>场地类型</th>
+                <th class="col-center">状态</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-auto-room-scope-body"></tbody>
+          </table>
+        </div>
+        <div class="tab-bar" id="sar-result-tabs">
+          <button type="button" class="tab active" data-sar-tab="success" onclick="setScheduleAutoRoomResultTab('success')">成功结果</button>
+          <button type="button" class="tab" data-sar-tab="failed" onclick="setScheduleAutoRoomResultTab('failed')">失败记录</button>
+          <button type="button" class="tab" data-sar-tab="all" onclick="setScheduleAutoRoomResultTab('all')">全部明细</button>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-index">序号</th>
+                <th>对象</th>
+                <th class="col-center">结果</th>
+                <th>原因 / 说明</th>
+                <th>规则来源</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-auto-room-result-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ 排课管理 · 排课表教室 · 按课程排（侧栏已隐藏，保留页以兼容旧深链） ═══ -->
-    <section class="page schedule-page" id="page-schedule-room-course" hidden aria-hidden="true">
+    <section class="page-list page schedule-page" id="page-schedule-room-course" hidden aria-hidden="true">
       <div class="page-header">
         <div><h1>按课程排</h1><p class="subtitle">排课表教室 · 在排教室起止时间内按课程维度安排上课教室</p></div>
       </div>
@@ -3067,7 +3477,7 @@
     <section class="page schedule-page schedule-detail-page" id="page-schedule-room-detail" hidden aria-hidden="true"></section>
 
     <!-- ═══ 排课管理 · 教室排课（旧页，保留兼容） ═══ -->
-    <section class="page schedule-page" id="page-schedule-room" hidden aria-hidden="true">
+    <section class="page-list page schedule-page" id="page-schedule-room" hidden aria-hidden="true">
       <div class="page-header">
         <div><h1>教室排课</h1><p class="subtitle">为课程分配上课地点与容量校验</p></div>
       </div>
@@ -3533,7 +3943,7 @@
     </section>
 
     <!-- ═══ 调课管理 · 我的调课申请（教师端） ═══ -->
-    <section class="page adjustment-page" id="page-adjustment-teacher">
+    <section class="page-list page adjustment-page" id="page-adjustment-teacher">
       <div class="page-header">
         <div><h1>我的调课申请</h1><p class="subtitle">教师发起调课、停课、补课、加课申请，并跟踪审批状态</p></div>
       </div>
@@ -3590,7 +4000,7 @@
     </section>
 
     <!-- ═══ 调课管理 · 调课申请管理（管理员代申请） ═══ -->
-    <section class="page adjustment-page" id="page-adjustment-admin">
+    <section class="page-list page adjustment-page" id="page-adjustment-admin">
       <div class="page-header">
         <div><h1>调课申请管理</h1><p class="subtitle">教务管理员可代教师发起调课、停课、补课、加课申请</p></div>
       </div>
@@ -3651,7 +4061,7 @@
     </section>
 
     <!-- ═══ 调课管理 · 申请审批（教务） ═══ -->
-    <section class="page adjustment-page" id="page-adjustment-approval">
+    <section class="page-list page adjustment-page" id="page-adjustment-approval">
       <div class="page-header">
         <div><h1>调课申请审批</h1><p class="subtitle">教务管理员审批教师提交的调课 / 停课 / 补课 / 加课申请</p></div>
       </div>
@@ -3690,7 +4100,7 @@
     </section>
 
     <!-- ═══ 调课管理 · 公假日停课 ═══ -->
-    <section class="page adjustment-page" id="page-adjustment-holiday">
+    <section class="page-list page adjustment-page" id="page-adjustment-holiday">
       <div class="page-header">
         <div><h1>公假日停课</h1><p class="subtitle">维护公共假日，按日期自动生成对应星期的停课记录</p></div>
       </div>
@@ -3732,7 +4142,7 @@
     </section>
 
     <!-- ═══ 调课管理 · 批量调课管理 ═══ -->
-    <section class="page adjustment-page" id="page-adjustment-batch">
+    <section class="page-list page adjustment-page" id="page-adjustment-batch">
       <div class="page-header">
         <div>
           <h1>批量调课管理</h1>
@@ -3770,7 +4180,7 @@
           <div class="legend-bar" id="adjustment-batch-record-hint"></div>
         </div>
         <div class="table-scroll">
-          <table class="data-table adjustment-table adj-freeze-left-2">
+          <table class="data-table adjustment-table adj-freeze-left-2 adj-freeze-right-1">
             <thead>
               <tr>
                 <th class="col-index">序号</th>
@@ -3783,6 +4193,7 @@
                 <th>调整原因</th>
                 <th class="col-center">操作时间</th>
                 <th class="col-center">操作人</th>
+                <th class="col-center col-ops">操作</th>
               </tr>
             </thead>
             <tbody id="adjustment-batch-record-body"></tbody>
@@ -3792,7 +4203,7 @@
     </section>
 
     <!-- ═══ 调课管理 · 调课申请记录 ═══ -->
-    <section class="page adjustment-page" id="page-adjustment-record">
+    <section class="page-list page adjustment-page" id="page-adjustment-record">
       <div class="page-header">
         <div><h1>调课申请记录</h1><p class="subtitle">汇总「我的调课申请」「调课申请管理」中新增的调课、停课、补课、加课申请</p></div>
       </div>
@@ -7466,6 +7877,31 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-schedule-auto-rule">
+  <div class="modal modal-md">
+    <div class="modal-head">
+      <h3 id="modal-schedule-auto-rule-title">自动排约束</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-schedule-auto-rule')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-item" style="grid-column:1/-1"><label class="req">约束名称</label><input class="input" id="sarule-name" placeholder="如：教师冲突"></div>
+        <div class="form-item"><label class="req">策略</label>
+          <select class="input" id="sarule-mode"></select>
+        </div>
+        <div class="form-item"><label>优先级</label><input class="input" id="sarule-priority" type="number" min="1" value="10"></div>
+        <div class="form-item"><label>是否启用</label>
+          <select class="input" id="sarule-enabled"><option value="1">启用</option><option value="0">停用</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-auto-rule')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveScheduleAutoRuleModal()">保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-schedule-teacher">
   <div class="modal modal-md">
     <div class="modal-head"><h3>教师排课</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-teacher')">×</button></div>
@@ -7893,6 +8329,19 @@
 </div>
 
 <!-- ═══ 抽屉：批量调时间 / 批量调教室 ═══ -->
+<div class="modal-overlay modal-drawer" id="modal-adjustment-batch-detail">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="adjustment-batch-detail-title">批量调课详情</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-adjustment-batch-detail')">×</button>
+    </div>
+    <div class="modal-body" id="adjustment-batch-detail-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-batch-detail')">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay modal-drawer" id="modal-adjustment-batch">
   <div class="modal modal-xl adjustment-batch-drawer-modal">
     <div class="modal-head">
@@ -7933,7 +8382,7 @@
             <div class="adjustment-batch-preview-tip" id="adjustment-batch-time-tip" hidden></div>
           </div>
           <div class="table-scroll">
-            <table class="data-table adjustment-table adj-freeze-left-2 adj-batch-preview-table">
+            <table class="data-table adjustment-table adj-freeze-left-2 adj-batch-preview-table adj-batch-time-preview">
               <thead>
                 <tr>
                   <th class="col-index">序号</th>
@@ -7946,6 +8395,7 @@
                   <th>教室</th>
                   <th class="col-center">调整后日期</th>
                   <th class="col-center">调整后节次</th>
+                  <th class="adj-batch-conflict-col">冲突情况</th>
                 </tr>
               </thead>
               <tbody id="adjustment-batch-time-preview-body"></tbody>
@@ -8043,6 +8493,59 @@
   </div>
 </div>
 
+<!-- ═══ 抽屉：自动排课 · 选择课程（可多选） ═══ -->
+<div class="modal-overlay modal-drawer" id="modal-schedule-auto-time-course-picker">
+  <div class="modal modal-lg adj-picker-drawer-modal">
+    <div class="modal-head">
+      <h3>选择课程</h3>
+      <button class="modal-close" type="button" onclick="closeScheduleAutoTimeCoursePicker()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="schedule-room-filter-grid">
+        <div class="srf-item">
+          <label for="satcp-filter-code">课程号</label>
+          <input class="input input-sm" id="satcp-filter-code" placeholder="课程号"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();queryScheduleAutoTimeCoursePicker();}">
+        </div>
+        <div class="srf-item">
+          <label for="satcp-filter-name">课程名称</label>
+          <input class="input input-sm" id="satcp-filter-name" placeholder="课程名称"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();queryScheduleAutoTimeCoursePicker();}">
+        </div>
+        <div class="srf-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleAutoTimeCoursePicker()">查询</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleAutoTimeCoursePickerFilters()">重置</button>
+        </div>
+      </div>
+      <div class="table-scroll" id="schedule-auto-time-course-picker-scroll">
+        <table class="data-table compact">
+          <thead>
+            <tr>
+              <th class="col-check">
+                <input type="checkbox" id="satcp-check-all" aria-label="全选"
+                  onchange="toggleScheduleAutoTimeCoursePickerCheckAll(this.checked)">
+              </th>
+              <th class="col-index">序号</th>
+              <th>课程号</th>
+              <th>课程名称</th>
+              <th>课程类别</th>
+              <th>课程性质</th>
+            </tr>
+          </thead>
+          <tbody id="satcp-picker-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="satcp-picker-count">共 0 条 · 已选 0 门</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeScheduleAutoTimeCoursePicker()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmScheduleAutoTimeCoursePicker()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 抽屉：选择教室（排教室 / 批量调教室共用） ═══ -->
 <div class="modal-overlay modal-drawer modal-nested" id="modal-schedule-room-picker">
   <div class="modal modal-lg adj-picker-drawer-modal">
@@ -8113,12 +8616,71 @@
     </div>
   </div>
 </div>
+<!-- ═══ 抽屉：排课管理 · 修改记录（通用） ═══ -->
+<div class="drawer-backdrop" id="drawer-entity-change-log-backdrop" onclick="closeEntityChangeLogDrawer()"></div>
+<aside class="drawer-panel drawer-entity-change-log" id="drawer-entity-change-log" aria-labelledby="entity-change-log-title">
+  <div class="drawer-head">
+    <h3 id="entity-change-log-title">修改记录</h3>
+    <button class="modal-close" type="button" onclick="closeEntityChangeLogDrawer()" aria-label="关闭">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="card schedule-query-card drawer-entity-change-log-query">
+      <div class="schedule-query-row">
+        <div class="schedule-query-fields">
+          <div class="schedule-query-field">
+            <label for="entity-change-log-from">修改时间起</label>
+            <input class="input input-sm" type="datetime-local" id="entity-change-log-from">
+          </div>
+          <div class="schedule-query-field">
+            <label for="entity-change-log-to">修改时间止</label>
+            <input class="input input-sm" type="datetime-local" id="entity-change-log-to">
+          </div>
+          <div class="schedule-query-field">
+            <label for="entity-change-log-operator">操作人</label>
+            <input class="input input-sm" type="text" id="entity-change-log-operator" placeholder="姓名关键字">
+          </div>
+          <div class="schedule-query-field">
+            <label for="entity-change-log-field">修改字段</label>
+            <select class="input input-sm" id="entity-change-log-field">
+              <option value="">全部</option>
+            </select>
+          </div>
+        </div>
+        <div class="schedule-query-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="queryEntityChangeLogDrawer()">查询</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="resetEntityChangeLogDrawerQuery()">重置</button>
+        </div>
+      </div>
+    </div>
+    <div class="table-scroll drawer-entity-change-log-table-wrap">
+      <table class="data-table compact">
+        <thead>
+          <tr>
+            <th class="col-index">序号</th>
+            <th class="col-center">修改时间</th>
+            <th class="col-center">操作人</th>
+            <th class="col-center">操作类型</th>
+            <th>修改字段</th>
+            <th>修改前</th>
+            <th>修改后</th>
+          </tr>
+        </thead>
+        <tbody id="entity-change-log-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="entity-change-log-pagination"></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeEntityChangeLogDrawer()">关闭</button>
+  </div>
+</aside>
+
 <!-- 排课表时间：课表右键菜单（勿往此菜单加教室侧项） -->
 <div class="schedule-ctx-menu" id="schedule-grid-context-menu" hidden role="menu" aria-label="课表卡片操作">
   <span class="schedule-ctx-arrow" aria-hidden="true"></span>
   <button type="button" class="schedule-ctx-item" data-sch-ctx="viewConflict" role="menuitem">查看冲突</button>
   <button type="button" class="schedule-ctx-item" data-sch-ctx="setVenueType" role="menuitem">设置场地类型</button>
-  <button type="button" class="schedule-ctx-item" data-sch-ctx="retakeDetect" role="menuitem">预重修冲突</button>
+  <button type="button" class="schedule-ctx-item" data-sch-ctx="retakeDetect" role="menuitem">预重修检测</button>
   <div class="schedule-ctx-sep" role="separator"></div>
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoSlot" role="menuitem">撤销本节次</button>
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoCourse" role="menuitem">撤销本课程</button>

@@ -45986,6 +45986,7 @@ const PORTAL_APPS = [
     nameZh: '开课管理',
     category: 'teaching',
     disabled: false,
+    badge: '跳转开课原型Demo',
     icon: 'calendar',
     action: 'enterCourseModule'
   },
@@ -45997,6 +45998,16 @@ const PORTAL_APPS = [
     disabled: false,
     icon: 'schedule',
     action: 'enterScheduleModule'
+  },
+  {
+    id: 'elective',
+    name: 'Course Selection',
+    nameZh: '选课管理',
+    category: 'teaching',
+    disabled: false,
+    badge: '跳转选课原型Demo',
+    icon: 'elective',
+    action: 'enterElectiveModule'
   }
 ];
 
@@ -46023,16 +46034,25 @@ function enterCurriculumModule() {
   goPage('version-list');
 }
 
+/** 开课管理模块外部入口（门户点击后跳转） */
+const COURSE_MODULE_EXTERNAL_URL =
+  'https://xmum-programme-git-feature-add-login-peter-22-s-projects.vercel.app?_vercel_share=zTgB9E3Pmjt7AAP9rA94xkiKIr2o77TV';
+
+/** 选课管理模块外部入口（门户点击后跳转） */
+const ELECTIVE_MODULE_EXTERNAL_URL = 'https://tyvirgo.github.io/mljw/';
+
 function enterCourseModule() {
-  document.querySelector('.app')?.classList.remove('portal-mode');
-  setActiveModule('course');
-  goPage('course-workflow');
+  window.location.assign(COURSE_MODULE_EXTERNAL_URL);
 }
 
 function enterScheduleModule() {
   document.querySelector('.app')?.classList.remove('portal-mode');
   setActiveModule('schedule');
   goPage('schedule-workflow');
+}
+
+function enterElectiveModule() {
+  window.location.assign(ELECTIVE_MODULE_EXTERNAL_URL);
 }
 
 function setPortalTab(tab) {
@@ -46053,7 +46073,8 @@ function portalAppIcon(type) {
     user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>',
     book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 012-2h11v16H6a2 2 0 00-2 2V5z"/><path d="M6 3v16a2 2 0 002 2h11"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>',
-    schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18M8 14h2M12 14h2M16 14h2M8 18h2M12 18h2"/></svg>'
+    schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18M8 14h2M12 14h2M16 14h2M8 18h2M12 18h2"/></svg>',
+    elective: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>'
   };
   return icons[type] || icons.grid;
 }

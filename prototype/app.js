@@ -38478,11 +38478,12 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
       });
     });
   } else {
-    weekdays.forEach(w => { axisMaxCols[w.value] = 1; });
+    // 横轴=节次：按节次列统计最大并排卡片数
+    periods.forEach(p => { axisMaxCols[p.periodNo] = 1; });
     periods.forEach(p => {
       weekdays.forEach(w => {
         const n = (occupancy.get(`${w.value}-${p.periodNo}`) || []).length;
-        if (n) axisMaxCols[w.value] = Math.max(axisMaxCols[w.value], Math.min(n, 3));
+        if (n) axisMaxCols[p.periodNo] = Math.max(axisMaxCols[p.periodNo], Math.min(n, 3));
       });
     });
   }
@@ -38678,18 +38679,18 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
     }
     html += '</tbody></table>';
   } else {
-    // --sch-day-count：单列初始日列宽按当前显示星期数均分；多卡片时列宽=单列宽×列数，超出横向滚动
-    html = `<table class="schedule-grid-table schedule-detail-grid-table" style="--sch-day-count:${weekdays.length}"><thead><tr><th class="schedule-grid-period-col">节次</th>`;
-    weekdays.forEach(w => {
-      html += `<th style="--sch-cols:${axisMaxCols[w.value]}">${w.label}</th>`;
+    // 排时间：横标题=节次，纵标题=星期；--sch-day-count 表示节次列数（均分列宽）
+    html = `<table class="schedule-grid-table schedule-detail-grid-table is-time-period-cols" style="--sch-day-count:${periods.length}"><thead><tr><th class="schedule-grid-weekday-col">星期</th>`;
+    periods.forEach(p => {
+      html += `<th style="--sch-cols:${axisMaxCols[p.periodNo]}"><span>${p.periodNo}</span><small>${escapeHtml(p.startTime)}-${escapeHtml(p.endTime)}</small></th>`;
     });
     html += '</tr></thead><tbody>';
-    periods.forEach(p => {
-      html += `<tr><td class="schedule-grid-period-col"><span>${p.periodNo}</span><small>${escapeHtml(p.startTime)}-${escapeHtml(p.endTime)}</small></td>`;
-      weekdays.forEach(w => {
+    weekdays.forEach(w => {
+      html += `<tr><td class="schedule-grid-weekday-col">${escapeHtml(w.label)}</td>`;
+      periods.forEach(p => {
         const cells = occupancy.get(`${w.value}-${p.periodNo}`) || [];
         const colCount = cells.length ? Math.min(cells.length, 3) : 1;
-        html += renderBlocks(cells, colCount, axisMaxCols[w.value] || 1, w.value, p.periodNo);
+        html += renderBlocks(cells, colCount, axisMaxCols[p.periodNo] || 1, w.value, p.periodNo);
       });
       html += '</tr>';
     });

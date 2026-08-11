@@ -12717,13 +12717,15 @@ code {
   overflow: auto;
 }
 .schedule-detail-main .schedule-detail-grid-table {
-  --sch-period-w: 72px;
-  --sch-day-count: 5;
+  --sch-period-w: 72px; /* 左轴冻结列宽（排时间=星期） */
+  --sch-day-count: 10; /* 横轴节次列数，由 JS 写入 */
   --sch-day-col-w: calc((100cqw - var(--sch-period-w)) / var(--sch-day-count));
   width: max-content;
   min-width: 100%;
   table-layout: fixed;
 }
+/* 排时间：纵标题=星期（冻结）；兼容旧 class schedule-grid-period-col */
+.schedule-detail-main .schedule-detail-grid-table .schedule-grid-weekday-col,
 .schedule-detail-main .schedule-detail-grid-table .schedule-grid-period-col {
   width: var(--sch-period-w);
   min-width: var(--sch-period-w);
@@ -12733,7 +12735,10 @@ code {
   z-index: 3;
   background: #f1f5f9;
   box-shadow: 1px 0 0 var(--border);
+  text-align: center;
+  font-weight: 600;
 }
+.schedule-detail-main .schedule-detail-grid-table thead .schedule-grid-weekday-col,
 .schedule-detail-main .schedule-detail-grid-table thead .schedule-grid-period-col {
   z-index: 5;
 }
@@ -12743,7 +12748,24 @@ code {
   z-index: 2;
   background: #f1f5f9;
 }
-.schedule-detail-main .schedule-detail-grid-table thead th:not(.schedule-grid-period-col) {
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols thead th:not(.schedule-grid-weekday-col) {
+  width: auto;
+  min-width: calc(var(--sch-day-col-w) * var(--sch-cols, 1));
+  vertical-align: bottom;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols thead th:not(.schedule-grid-weekday-col) span {
+  display: block;
+  font-weight: 600;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols thead th:not(.schedule-grid-weekday-col) small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.schedule-detail-main .schedule-detail-grid-table thead th:not(.schedule-grid-period-col):not(.schedule-grid-weekday-col) {
   width: auto;
   min-width: calc(var(--sch-day-col-w) * var(--sch-cols, 1));
 }

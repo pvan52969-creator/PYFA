@@ -53,7 +53,9 @@
         document.documentElement.classList.add('sch-detail-boot');
         var phase = params.get('schPhase') || 'time';
         document.documentElement.setAttribute('data-sch-boot-phase', phase);
-        document.title = phase === 'room' ? '排教室界面加载中…' : '排课界面加载中…';
+        var schTitle = (params.get('schTitle') || '').trim();
+        document.title = schTitle
+          || (phase === 'room' ? '排教室界面加载中…' : '排课界面加载中…');
       } catch (e) {}
     })();
   </script>
@@ -159,18 +161,15 @@
       <div class="nav-group">排课表教室</div>
       <a href="#" class="nav-item" data-page="schedule-room-week">按时间排</a>
       <a href="#" class="nav-item" data-page="schedule-room-category">按场地类型排</a>
-      <a href="#" class="nav-item" data-page="schedule-room-conflict">课表冲突查询</a>
+      <a href="#" class="nav-item" data-page="schedule-room-conflict">场地冲突查询</a>
       <!-- 按课程排已隐藏：data-page="schedule-room-course" -->
       <div class="nav-group">自动排课表教室</div>
       <a href="#" class="nav-item" data-page="schedule-auto-room-rule">自动排教室规则</a>
       <a href="#" class="nav-item" data-page="schedule-auto-room">自动排教室</a>
       <div class="nav-group">课表查询</div>
-      <a href="#" class="nav-item" data-page="schedule-intake-timetable">入学批次课表</a>
-      <a href="#" class="nav-item" data-page="schedule-teacher-timetable">教师课表</a>
-      <a href="#" class="nav-item" data-page="schedule-student-timetable">学生课表</a>
-      <a href="#" class="nav-item" data-page="schedule-course-timetable">课程课表</a>
-      <a href="#" class="nav-item" data-page="schedule-room-timetable">教室课表</a>
-      <a href="#" class="nav-item" data-page="schedule-time-timetable">时间课表</a>
+      <a href="#" class="nav-item" data-page="schedule-timetable-query">课表查询</a>
+      <a href="#" class="nav-item" data-page="schedule-student-density">学生课表密度</a>
+      <a href="#" class="nav-item" data-page="schedule-teacher-density">教师课表密度</a>
       <div class="nav-group">调课管理</div>
       <a href="#" class="nav-item" data-page="adjustment-teacher">我的调课申请</a>
       <a href="#" class="nav-item" data-page="adjustment-approval">调课申请审批</a>
@@ -3037,13 +3036,13 @@
               <table class="data-table schedule-auto-board-table">
                 <thead>
                   <tr>
-                    <th class="col-status">排课状态</th>
-                    <th>课程号</th>
-                    <th>课程性质</th>
-                    <th class="col-center">起止周</th>
-                    <th class="col-center">总学时</th>
-                    <th>上课小组</th>
-                    <th>授课老师</th>
+                    <th class="col-status schedule-auto-status-col">排课状态</th>
+                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-nature">课程性质</th>
+                    <th class="col-center schedule-auto-weeks">起止周</th>
+                    <th class="col-center schedule-auto-hours">总学时</th>
+                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-teacher">授课老师</th>
                   </tr>
                 </thead>
                 <tbody id="sat-left-body"></tbody>
@@ -3059,14 +3058,14 @@
               <table class="data-table schedule-auto-board-table">
                 <thead>
                   <tr>
-                    <th class="col-status">排课状态</th>
-                    <th>课程号</th>
-                    <th>课程性质</th>
-                    <th class="col-center">起止周</th>
-                    <th class="col-center">总学时</th>
-                    <th>上课小组</th>
-                    <th>授课老师</th>
-                    <th>上课时间</th>
+                    <th class="col-status schedule-auto-status-col">排课状态</th>
+                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-nature">课程性质</th>
+                    <th class="col-center schedule-auto-weeks">起止周</th>
+                    <th class="col-center schedule-auto-hours">总学时</th>
+                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-teacher">授课老师</th>
+                    <th class="schedule-auto-class-time">上课时间</th>
                   </tr>
                 </thead>
                 <tbody id="sat-right-body"></tbody>
@@ -3179,11 +3178,11 @@
       </table></div></div>
     </section>
 
-    <!-- ═══ 排课管理 · 排课表教室 · 课表冲突查询 ═══ -->
+    <!-- ═══ 排课管理 · 排课表教室 · 场地冲突查询 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-room-conflict">
       <div class="page-header">
         <div>
-          <h1>课表冲突查询</h1>
+          <h1>场地冲突查询</h1>
           <p class="subtitle">查询排课教室阶段的教室时间、座位人数及场地类型冲突</p>
         </div>
         <div class="page-header-actions">
@@ -3261,7 +3260,7 @@
                 <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
                 <th class="sch-conflict-freeze sch-conflict-freeze-term">学期</th>
                 <th class="sch-conflict-freeze sch-conflict-freeze-date">日期</th>
-                <th>周次</th>
+                <th>起止周</th>
                 <th>星期</th>
                 <th>节次</th>
                 <th>课程号</th>
@@ -3317,94 +3316,110 @@
       <div class="page-header">
         <div>
           <h1>自动排教室</h1>
-          <p class="subtitle">自动排课表教室 · 按已排节次追加未派教室；撤回排课前须先撤回排教室</p>
+          <p class="subtitle">按查询条件范围内已排时间且未派教室的节次自动派教室；撤回排课前须先撤回排教室</p>
         </div>
       </div>
-      <div class="card schedule-query-card">
-        <div class="schedule-query-row">
-          <div class="schedule-query-fields">
+      <div class="card schedule-query-card schedule-auto-run-card">
+        <div class="schedule-query-row schedule-auto-run-row">
+          <div class="schedule-query-fields schedule-query-fields-wide">
+            <div class="schedule-query-field">
+              <label for="sar-filter-term">学年学期</label>
+              <select class="input input-sm" id="sar-filter-term" onchange="renderScheduleAutoRoomPage()"></select>
+            </div>
             <div class="schedule-query-field">
               <label for="sar-filter-school">学院</label>
-              <select class="input input-sm" id="sar-filter-school"></select>
+              <select class="input input-sm" id="sar-filter-school" onchange="renderScheduleAutoRoomPage()"></select>
             </div>
             <div class="schedule-query-field">
               <label for="sar-filter-prog">专业</label>
-              <select class="input input-sm" id="sar-filter-prog"></select>
+              <select class="input input-sm" id="sar-filter-prog" onchange="renderScheduleAutoRoomPage()"></select>
             </div>
             <div class="schedule-query-field">
               <label for="sar-filter-intake">入学批次</label>
-              <select class="input input-sm" id="sar-filter-intake"></select>
+              <select class="input input-sm" id="sar-filter-intake" onchange="renderScheduleAutoRoomPage()"></select>
             </div>
             <div class="schedule-query-field">
-              <label for="sar-filter-keyword">课程/教室</label>
-              <input class="input input-sm" id="sar-filter-keyword" placeholder="课程号 / 课程名 / 教室">
-            </div>
-            <div class="schedule-query-field">
-              <label for="sar-filter-status">排教室状态</label>
-              <select class="input input-sm" id="sar-filter-status">
-                <option value="unset">未排</option>
+              <label for="sar-filter-category">课程类别</label>
+              <select class="input input-sm" id="sar-filter-category" onchange="renderScheduleAutoRoomPage()">
                 <option value="">全部</option>
-                <option value="locked">已排</option>
               </select>
             </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-nature">课程性质</label>
+              <select class="input input-sm" id="sar-filter-nature" onchange="renderScheduleAutoRoomPage()">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-course-btn">课程</label>
+              <button type="button" class="input input-sm adj-pick-btn is-empty" id="sar-filter-course-btn"
+                onclick="openScheduleAutoRoomCoursePicker()" title="">请选择课程</button>
+            </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-teacher">教师</label>
+              <input class="input input-sm" id="sar-filter-teacher" placeholder="教师工号 / 姓名" oninput="renderScheduleAutoRoomPage()">
+            </div>
           </div>
-          <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleAutoRoomPage()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleAutoRoomQuery()">重置</button>
+          <div class="schedule-auto-run-actions">
+            <button class="btn btn-primary" type="button" id="btn-sar-start" onclick="startScheduleAutoRoomJob()">自动排教室</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-sar-stop" onclick="stopScheduleAutoRoomJob()" disabled>结束排教室</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-sar-revoke" onclick="revokeScheduleAutoRoomJob()">撤回结果</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleAutoRoomQuery()">重置</button>
           </div>
         </div>
+        <div class="schedule-auto-run-scope" id="schedule-auto-room-hint"></div>
       </div>
-      <div class="legend-bar" id="schedule-auto-room-hint"></div>
-      <div class="card schedule-card">
-        <div class="panel-toolbar schedule-auto-job-toolbar">
-          <div class="schedule-auto-rule-pick">启用约束
-            <span class="schedule-auto-rule-summary" id="sar-rule-summary">—</span>
+      <div class="card schedule-card schedule-auto-boards-card">
+        <div class="schedule-auto-progress-line" id="sar-progress-line">
+          <div class="schedule-auto-progress-bar"><span id="sar-progress-bar" style="width:0%"></span></div>
+          <div class="schedule-auto-progress-text" id="sar-progress-text">设置查询条件后点击「自动排教室」</div>
+        </div>
+        <div class="schedule-auto-boards">
+          <div class="schedule-auto-board is-pending">
+            <div class="schedule-auto-board-head">
+              <span>待排教室</span>
+              <strong id="sar-left-count">0</strong>
+            </div>
+            <div class="table-wrap schedule-auto-board-table-wrap">
+              <table class="data-table schedule-auto-board-table">
+                <thead>
+                  <tr>
+                    <th class="col-status schedule-auto-status-col">排教室状态</th>
+                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-nature">课程性质</th>
+                    <th class="col-center schedule-auto-weeks">起止周</th>
+                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-teacher">授课老师</th>
+                    <th class="schedule-auto-class-time">上课时间</th>
+                  </tr>
+                </thead>
+                <tbody id="sar-left-body"></tbody>
+              </table>
+            </div>
           </div>
-          <button class="btn btn-primary btn-sm" type="button" id="btn-sar-start" onclick="startScheduleAutoRoomJob()">开始自动排教室</button>
-          <button class="btn btn-outline btn-sm" type="button" id="btn-sar-revoke" onclick="revokeScheduleAutoRoomJob()">撤回结果</button>
-          <button class="btn btn-ghost btn-sm" type="button" onclick="renderScheduleAutoRoomPage()">刷新</button>
-        </div>
-        <div class="schedule-auto-progress" id="sar-progress" hidden>
-          <div class="schedule-auto-progress-bar"><span id="sar-progress-fill"></span></div>
-          <div class="schedule-auto-progress-text" id="sar-progress-text"></div>
-        </div>
-        <div class="table-scroll" style="margin-bottom:12px">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th class="col-check"><input type="checkbox" id="sar-check-all" onchange="toggleScheduleAutoRoomCheckAll(this.checked)"></th>
-                <th class="col-index">序号</th>
-                <th>课程号</th>
-                <th>课程名称</th>
-                <th>上课小组</th>
-                <th class="col-center">星期</th>
-                <th class="col-center">节次</th>
-                <th>周次</th>
-                <th>场地类型</th>
-                <th class="col-center">状态</th>
-              </tr>
-            </thead>
-            <tbody id="schedule-auto-room-scope-body"></tbody>
-          </table>
-        </div>
-        <div class="tab-bar" id="sar-result-tabs">
-          <button type="button" class="tab active" data-sar-tab="success" onclick="setScheduleAutoRoomResultTab('success')">成功结果</button>
-          <button type="button" class="tab" data-sar-tab="failed" onclick="setScheduleAutoRoomResultTab('failed')">失败记录</button>
-          <button type="button" class="tab" data-sar-tab="all" onclick="setScheduleAutoRoomResultTab('all')">全部明细</button>
-        </div>
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th class="col-index">序号</th>
-                <th>对象</th>
-                <th class="col-center">结果</th>
-                <th>原因 / 说明</th>
-                <th>规则来源</th>
-              </tr>
-            </thead>
-            <tbody id="schedule-auto-room-result-body"></tbody>
-          </table>
+          <div class="schedule-auto-board is-success">
+            <div class="schedule-auto-board-head">
+              <span>成功课程</span>
+              <strong id="sar-right-count">0</strong>
+            </div>
+            <div class="table-wrap schedule-auto-board-table-wrap">
+              <table class="data-table schedule-auto-board-table">
+                <thead>
+                  <tr>
+                    <th class="col-status schedule-auto-status-col">排教室状态</th>
+                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-nature">课程性质</th>
+                    <th class="col-center schedule-auto-weeks">起止周</th>
+                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-teacher">授课老师</th>
+                    <th class="schedule-auto-class-time">上课时间</th>
+                    <th class="schedule-auto-room">教室</th>
+                  </tr>
+                </thead>
+                <tbody id="sar-right-body"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -3517,8 +3532,20 @@
       </table></div></div>
     </section>
 
-    <!-- ═══ 排课管理 · 入学批次课表 ═══ -->
-    <section class="page schedule-page" id="page-schedule-intake-timetable">
+    <!-- ═══ 排课管理 · 课表查询（分 Tab） ═══ -->
+    <section class="page schedule-page schedule-tt-query-page" id="page-schedule-timetable-query">
+      <div class="page-header">
+        <div><h1>课表查询</h1><p class="subtitle">入学批次 / 教师 / 学生 / 课程 / 教室 / 时间课表统一查询入口</p></div>
+      </div>
+      <div class="tab-bar" id="schedule-tt-query-tabs">
+        <button type="button" class="tab active" data-tt-tab="intake" onclick="switchScheduleTimetableQueryTab('intake')">入学批次课表</button>
+        <button type="button" class="tab" data-tt-tab="teacher" onclick="switchScheduleTimetableQueryTab('teacher')">教师课表</button>
+        <button type="button" class="tab" data-tt-tab="student" onclick="switchScheduleTimetableQueryTab('student')">学生课表</button>
+        <button type="button" class="tab" data-tt-tab="course" onclick="switchScheduleTimetableQueryTab('course')">课程课表</button>
+        <button type="button" class="tab" data-tt-tab="room" onclick="switchScheduleTimetableQueryTab('room')">教室课表</button>
+        <button type="button" class="tab" data-tt-tab="time" onclick="switchScheduleTimetableQueryTab('time')">时间课表</button>
+      </div>
+      <div class="tab-panel active" id="tab-schedule-intake-timetable" data-tt-tab="intake">
       <div class="page-header">
         <div><h1>入学批次课表</h1><p class="subtitle">选择入学批次查看该批次学期课表（图形化展示）</p></div>
       </div>
@@ -3571,10 +3598,45 @@
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- ═══ 排课管理 · 学生课表 ═══ -->
-    <section class="page schedule-page" id="page-schedule-student-timetable">
+      </div>
+      <div class="tab-panel" id="tab-schedule-teacher-timetable" data-tt-tab="teacher">
+      <div class="page-header">
+        <div><h1>教师课表</h1><p class="subtitle">选择教师查看该教师学期课表（图形化展示）</p></div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields">
+            <div class="schedule-query-field">
+              <label for="schedule-teacher-tt-term">学年学期</label>
+              <input class="input input-sm" id="schedule-teacher-tt-term" readonly placeholder="—">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-teacher-tt-teacher">教师</label>
+              <select class="input input-sm" id="schedule-teacher-tt-teacher"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-teacher-tt-week">排课周次</label>
+              <input class="input input-sm" id="schedule-teacher-tt-week" type="number" min="1" placeholder="如 3（第3周）">
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTeacherTimetable()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimetableQuery('teacher')">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card schedule-timetable-wrap">
+        <div class="schedule-tt-export-actions schedule-tt-export-bar">
+          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('teacher')">导出图形课表</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('teacher')">导出数据课表</button>
+        </div>
+        <div class="schedule-tt-fieldbar" id="schedule-teacher-tt-fields"></div>
+        <div class="schedule-timetable-scroll">
+          <div id="schedule-teacher-tt-grid" class="schedule-timetable-grid"></div>
+        </div>
+      </div>
+      </div>
+      <div class="tab-panel" id="tab-schedule-student-timetable" data-tt-tab="student">
       <div class="page-header">
         <div><h1>学生课表</h1><p class="subtitle">选择学生查看该学生学期课表（图形化展示）</p></div>
       </div>
@@ -3611,49 +3673,8 @@
           <div id="schedule-student-tt-grid" class="schedule-timetable-grid"></div>
         </div>
       </div>
-    </section>
-
-    <!-- ═══ 排课管理 · 教师课表 ═══ -->
-    <section class="page schedule-page" id="page-schedule-teacher-timetable">
-      <div class="page-header">
-        <div><h1>教师课表</h1><p class="subtitle">选择教师查看该教师学期课表（图形化展示）</p></div>
       </div>
-      <div class="card schedule-query-card">
-        <div class="schedule-query-row">
-          <div class="schedule-query-fields">
-            <div class="schedule-query-field">
-              <label for="schedule-teacher-tt-term">学年学期</label>
-              <input class="input input-sm" id="schedule-teacher-tt-term" readonly placeholder="—">
-            </div>
-            <div class="schedule-query-field">
-              <label for="schedule-teacher-tt-teacher">教师</label>
-              <select class="input input-sm" id="schedule-teacher-tt-teacher"></select>
-            </div>
-            <div class="schedule-query-field">
-              <label for="schedule-teacher-tt-week">排课周次</label>
-              <input class="input input-sm" id="schedule-teacher-tt-week" type="number" min="1" placeholder="如 3（第3周）">
-            </div>
-          </div>
-          <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTeacherTimetable()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimetableQuery('teacher')">重置</button>
-          </div>
-        </div>
-      </div>
-      <div class="card schedule-timetable-wrap">
-        <div class="schedule-tt-export-actions schedule-tt-export-bar">
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('teacher')">导出图形课表</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('teacher')">导出数据课表</button>
-        </div>
-        <div class="schedule-tt-fieldbar" id="schedule-teacher-tt-fields"></div>
-        <div class="schedule-timetable-scroll">
-          <div id="schedule-teacher-tt-grid" class="schedule-timetable-grid"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 排课管理 · 课程课表 ═══ -->
-    <section class="page schedule-page" id="page-schedule-course-timetable">
+      <div class="tab-panel" id="tab-schedule-course-timetable" data-tt-tab="course">
       <div class="page-header">
         <div><h1>课程课表</h1><p class="subtitle">选择课程查看该课程学期课表（图形化展示）</p></div>
       </div>
@@ -3689,10 +3710,8 @@
           <div id="schedule-course-tt-grid" class="schedule-timetable-grid"></div>
         </div>
       </div>
-    </section>
-
-    <!-- ═══ 排课管理 · 教室课表 ═══ -->
-    <section class="page schedule-page" id="page-schedule-room-timetable">
+      </div>
+      <div class="tab-panel" id="tab-schedule-room-timetable" data-tt-tab="room">
       <div class="page-header">
         <div><h1>教室课表</h1><p class="subtitle">选择教室查看该教室学期课表（图形化展示）</p></div>
       </div>
@@ -3728,10 +3747,8 @@
           <div id="schedule-room-tt-grid" class="schedule-timetable-grid"></div>
         </div>
       </div>
-    </section>
-
-    <!-- ═══ 排课管理 · 时间课表 ═══ -->
-    <section class="page schedule-page" id="page-schedule-time-timetable">
+      </div>
+      <div class="tab-panel" id="tab-schedule-time-timetable" data-tt-tab="time">
       <div class="page-header">
         <div><h1>时间课表</h1><p class="subtitle">按多维条件查询全校排课明细，以表格形式逐时段展示</p></div>
       </div>
@@ -3819,6 +3836,93 @@
               <th>上课单位</th><th class="col-center">教室</th>
             </tr></thead>
             <tbody id="schedule-time-tt-body"></tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+
+    </section>
+
+    <!-- ═══ 排课管理 · 学生课表密度 ═══ -->
+    <section class="page schedule-page" id="page-schedule-student-density">
+      <div class="page-header">
+        <div>
+          <h1>学生课表密度</h1>
+          <p class="subtitle">按筛选范围查看学生在星期×节次上的占用密度</p>
+        </div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-room-filter-grid adj-density-filter-grid schedule-density-filter-grid">
+          <div class="srf-item"><label>学期</label><select class="input input-sm" id="sdf-term"></select></div>
+          <div class="srf-item"><label>学生学号</label><input class="input input-sm" id="sdf-student-id" type="text" placeholder="请输入学号"></div>
+          <div class="srf-item"><label>学生姓名</label><input class="input input-sm" id="sdf-student-name" type="text" placeholder="请输入姓名"></div>
+          <div class="srf-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleStudentDensity()">查询</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleStudentDensityQuery()">重置</button>
+          </div>
+          <div class="srf-item"><label>专业</label><select class="input input-sm" id="sdf-programme"></select></div>
+          <div class="srf-item"><label>批次</label><select class="input input-sm" id="sdf-batch"></select></div>
+          <div class="srf-item"><label>性别</label><select class="input input-sm no-search" id="sdf-gender"><option value="">全部</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+          <div class="srf-item"><label>周数</label><select class="input input-sm no-search" id="sdf-week" onchange="queryScheduleStudentDensity()"></select></div>
+          <div class="srf-item schedule-density-date-range-item">
+            <label>日期范围</label>
+            <div class="schedule-density-date-range">
+              <input class="input input-sm" id="sdf-date-from" type="date" title="开始日期">
+              <span class="schedule-density-date-sep">至</span>
+              <input class="input input-sm" id="sdf-date-to" type="date" title="结束日期">
+            </div>
+          </div>
+          <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="sdf-teacher-id" type="text" placeholder="请输入工号"></div>
+          <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="sdf-teacher-name" type="text" placeholder="请输入姓名"></div>
+          <div class="srf-item"><label>密度维度</label><select class="input input-sm no-search" id="sdf-dimension" onchange="renderScheduleStudentDensityTable()"><option value="ratio" selected>比率</option><option value="count">人数</option></select></div>
+        </div>
+      </div>
+      <div class="schedule-density-hint adj-density-hint" id="schedule-student-density-hint"></div>
+      <div class="card schedule-timetable-wrap">
+        <div class="table-scroll adj-density-table-wrap schedule-density-table-wrap">
+          <table class="data-table compact adj-density-table" id="schedule-student-density-table">
+            <thead id="schedule-student-density-thead"></thead>
+            <tbody id="schedule-student-density-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 排课管理 · 教师课表密度 ═══ -->
+    <section class="page schedule-page" id="page-schedule-teacher-density">
+      <div class="page-header">
+        <div>
+          <h1>教师课表密度</h1>
+          <p class="subtitle">按筛选范围查看教师在星期×节次上的占用密度</p>
+        </div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-room-filter-grid adj-density-filter-grid schedule-density-filter-grid">
+          <div class="srf-item"><label>学期</label><select class="input input-sm" id="tdf-term"></select></div>
+          <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="tdf-teacher-id" type="text" placeholder="请输入工号"></div>
+          <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="tdf-teacher-name" type="text" placeholder="请输入姓名"></div>
+          <div class="srf-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTeacherDensity()">查询</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleTeacherDensityQuery()">重置</button>
+          </div>
+          <div class="srf-item"><label>周数</label><select class="input input-sm no-search" id="tdf-week" onchange="queryScheduleTeacherDensity()"></select></div>
+          <div class="srf-item schedule-density-date-range-item">
+            <label>日期范围</label>
+            <div class="schedule-density-date-range">
+              <input class="input input-sm" id="tdf-date-from" type="date" title="开始日期">
+              <span class="schedule-density-date-sep">至</span>
+              <input class="input input-sm" id="tdf-date-to" type="date" title="结束日期">
+            </div>
+          </div>
+          <div class="srf-item"><label>密度维度</label><select class="input input-sm no-search" id="tdf-dimension" onchange="renderScheduleTeacherDensityTable()"><option value="ratio" selected>比率</option><option value="count">人数</option></select></div>
+        </div>
+      </div>
+      <div class="schedule-density-hint adj-density-hint" id="schedule-teacher-density-hint"></div>
+      <div class="card schedule-timetable-wrap">
+        <div class="table-scroll adj-density-table-wrap schedule-density-table-wrap">
+          <table class="data-table compact adj-density-table" id="schedule-teacher-density-table">
+            <thead id="schedule-teacher-density-thead"></thead>
+            <tbody id="schedule-teacher-density-tbody"></tbody>
           </table>
         </div>
       </div>

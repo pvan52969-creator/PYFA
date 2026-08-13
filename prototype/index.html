@@ -9,11 +9,12 @@
 <body>
 <div class="app portal-mode">
   <aside class="sidebar">
-    <div class="sidebar-brand" role="button" tabindex="0" title="返回 Academic Portal 主菜单" onclick="goPortal()" onkeydown="if(event.key==='Enter'||event.key===' ')goPortal()">
+    <div class="sidebar-brand" role="button" tabindex="0" title="点击可跳转主菜单" onclick="goPortal()" onkeydown="if(event.key==='Enter'||event.key===' ')goPortal()">
       <div class="brand-icon">XM</div>
       <div>
         <div class="brand-title" id="sidebar-brand-title">培养方案管理</div>
         <div class="brand-sub" id="sidebar-brand-sub">Curriculum Management</div>
+        <div class="brand-tip">点击可跳转主菜单</div>
       </div>
     </div>
     <nav class="sidebar-nav" id="sidebar-nav-curriculum">
@@ -69,10 +70,10 @@
         </button>
         <div class="nav-section-body">
           <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-demand">通识选修开课需求</a> --> <!-- 已并入「通识选修小组配额」上段 -->
-          <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">通识选修计划</a>
-          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">通识选修开课</a>
-          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a> --> <!-- 已并入「通识选修开课」下段 -->
-          <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">通识选修课开课名单管理</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-quota">选修开课计划</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-ge">选修开课安排</a>
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-task">通识选修开课任务安排</a> --> <!-- 已并入「选修开课安排」 -->
+          <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">选修开课名单</a>
         </div>
       </div>
       <!-- 特殊开课（模块暂下线）：侧栏隐，页面与逻辑保留空壳 -->
@@ -152,13 +153,15 @@
   </aside>
 
   <main class="main">
-    <div class="global-ui-font-control" id="global-ui-font-control" title="列表字体大小（仅 Portal 主菜单）">
-      <label for="global-ui-font-select">字体</label>
-      <select id="global-ui-font-select" class="input input-sm" aria-label="全局字体大小" onchange="setGlobalUiFontSize(this.value)">
-        <option value="sm">小</option>
-        <option value="md">标准</option>
-        <option value="lg">大</option>
-      </select>
+    <div class="global-prototype-chrome" id="global-prototype-chrome">
+      <div class="global-ui-font-control" id="global-ui-font-control" title="列表字体大小">
+        <label for="global-ui-font-select">字体</label>
+        <select id="global-ui-font-select" class="input input-sm" aria-label="全局字体大小" onchange="setGlobalUiFontSize(this.value)">
+          <option value="sm">小</option>
+          <option value="md">标准</option>
+          <option value="lg">大</option>
+        </select>
+      </div>
     </div>
     <!-- ═══ Academic Portal 主菜单 ═══ -->
     <section class="page active" id="page-portal">
@@ -174,9 +177,9 @@
           <h1 class="portal-topbar-title">开课原型DEMO</h1>
           <div class="portal-topbar-right">
             <button type="button" class="portal-lang-btn">中文</button>
-            <div class="portal-user">
-              <span class="portal-user-avatar">A</span>
-              <span class="portal-user-name">ADMIN USER</span>
+            <div class="portal-user" title="原型角色切换（正式环境取登录用户）；影响开课相关列表数据权限">
+              <span class="portal-user-avatar" id="portal-user-avatar" aria-hidden="true">教</span>
+              <select id="prototype-role-select" class="portal-user-role-select" aria-label="切换原型角色" onchange="setPrototypeRole(this.value)"></select>
             </div>
           </div>
         </header>
@@ -1672,10 +1675,11 @@
     <section class="page" id="page-course-ge-offering-quota">
       <div class="page-header">
         <div>
-          <h1>通识选修计划</h1>
-          <p class="subtitle">上段查看开课需求，下段由 AC 定各学院需开课程班/小组数（下限）；学院可超额，无需确认</p>
+          <h1>选修开课计划</h1>
+          <p class="subtitle">上段查看开课需求，下段由 AC 定各类型（G01–G04）需开课程班/小组数（下限）；可超额，无需确认</p>
         </div>
       </div>
+      <!-- 原模块说明条；按产品要求去掉
       <div class="alert-info offering-module-hint">
         <p><strong>说明</strong></p>
         <ul class="offering-module-hint-list">
@@ -1684,6 +1688,7 @@
           <li>本模块只管组数与每组人数上限；学生名单由选课应用生成。交叉规则：文科可选商/理 GE，商科可选文/理，理科可选文/商。</li>
         </ul>
       </div>
+      -->
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
@@ -1704,44 +1709,69 @@
           <span class="hint">按专业大类合计 · 按学院明细</span>
         </div>
         <div id="ge-offering-demand-body-wrap">
-          <div class="ge-offering-demand-summary" id="ge-offering-demand-summary"></div>
-          <div class="panel-toolbar ge-offering-quota-section-toolbar">
-            <button class="btn btn-outline btn-sm" type="button" onclick="event.stopPropagation();refreshGeOfferingDemandPage()">刷新</button>
-            <span class="form-hint">学院仅汇总人数；人数可能随执行计划更新，可点刷新重新汇总</span>
+          <div class="ge-offering-demand-tabs" role="tablist" aria-label="开课需求视图">
+            <button type="button" class="ge-offering-demand-tab is-active" role="tab" aria-selected="true"
+              data-ge-demand-tab="creditSplit" onclick="event.stopPropagation();setGeOfferingDemandViewTab('creditSplit')">GE学分分布预估</button>
+            <button type="button" class="ge-offering-demand-tab" role="tab" aria-selected="false"
+              data-ge-demand-tab="school" onclick="event.stopPropagation();setGeOfferingDemandViewTab('school')">按学院明细</button>
           </div>
-          <div class="table-scroll" style="padding:0 0 8px">
-            <table class="data-table compact">
-              <thead>
-                <tr>
-                  <th class="col-index">序号</th>
-                  <th>学院</th>
-                  <th class="col-center">预计人数</th>
-                  <th>涉及专业批次</th>
-                </tr>
-              </thead>
-              <tbody id="ge-offering-demand-school-body"></tbody>
-            </table>
+          <!-- 默认展示学分分布；学院明细面板初始 hidden -->
+          <div id="ge-offering-demand-panel-school" class="ge-offering-demand-panel" data-ge-demand-panel="school" hidden>
+            <div class="ge-offering-demand-summary" id="ge-offering-demand-summary"></div>
+            <div class="panel-toolbar ge-offering-quota-section-toolbar">
+              <button class="btn btn-outline btn-sm" type="button" onclick="event.stopPropagation();refreshGeOfferingDemandPage()">刷新</button>
+              <span class="form-hint">学院仅汇总人数；人数可能随执行计划更新，可点刷新重新汇总</span>
+            </div>
+            <div class="table-scroll" style="padding:0 0 8px">
+              <table class="data-table compact">
+                <thead>
+                  <tr>
+                    <th class="col-index">序号</th>
+                    <th>学院</th>
+                    <th class="col-center">预计人数</th>
+                    <th>涉及专业批次</th>
+                  </tr>
+                </thead>
+                <tbody id="ge-offering-demand-school-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="ge-offering-demand-panel-credit-split" class="ge-offering-demand-panel" data-ge-demand-panel="creditSplit">
+            <div class="panel-toolbar ge-offering-quota-section-toolbar">
+              <button class="btn btn-outline btn-sm" type="button" onclick="event.stopPropagation();refreshGeOfferingDemandPage()">刷新</button>
+              <span class="form-hint ge-demand-credit-split-hint">
+                按批次标准学分拆为 2/3 学分人次
+                <span id="ge-offering-demand-credit-split-tip"
+                  class="offering-group-status-th-tip cell-ellipsis-tip ge-demand-credit-split-tip"
+                  tabindex="0" role="button" aria-label="学分人次拆分规则"
+                  onclick="event.stopPropagation()">!</span>
+              </span>
+            </div>
+            <div class="ge-demand-credit-split-cards" id="ge-offering-demand-credit-split"></div>
           </div>
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><span>各学院配额</span><span class="hint">需开为下限；可超额</span></div>
+        <div class="card-head"><span>类型配额</span><span class="hint">需开为下限；可超额 · G01–G04</span></div>
         <div class="panel-toolbar ge-offering-quota-section-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="saveGeOfferingQuotaPage()">保存计划</button>
-          <span class="form-hint">修改需开课程班/小组数后点击保存计划</span>
+          <button class="btn btn-outline btn-sm" type="button" onclick="openGeOfferingEnrollmentQuotaModal()">设定Quota</button>
+          <span class="form-hint" id="ge-enrollment-quota-toolbar-hint">修改需开课程数（2/3学分）后点击保存计划；设定 Quota 用于统一计划总人数</span>
         </div>
         <div class="table-scroll">
           <table class="data-table compact">
             <thead>
               <tr>
-                <th class="col-index">序号</th>
-                <th>学院</th>
-                <th class="col-center">需开课程班/小组数</th>
-                <th class="col-center">已开课程班/小组数</th>
+                <!-- <th class="col-index">序号</th> -->
+                <th class="col-center">类型</th>
+                <th class="col-center">需开课程数（2学分）</th>
+                <th class="col-center">需开课程数（3学分）</th>
+                <th class="col-center">需开课程总数</th>
+                <th class="col-center">已开课程总数</th>
                 <th class="col-center">进度</th>
               </tr>
             </thead>
-            <tbody id="ge-offering-quota-college-body"></tbody>
+            <tbody id="ge-offering-quota-type-body"></tbody>
           </table>
         </div>
       </div>
@@ -1751,23 +1781,19 @@
     <section class="page" id="page-course-offering-ge">
       <div class="page-header">
         <div>
-          <h1>通识选修开课</h1>
-          <p class="subtitle">分三步完成课程班、其他学院 Support 与师资安排；提交 / 退回在各步骤均可操作</p>
+          <h1>选修开课安排</h1>
+          <p class="subtitle">分两步完成 Course Setting（课程班 · Support）与师资安排；提交 / 退回在各步骤均可操作</p>
         </div>
       </div>
       <nav class="mot-style2-step-bar" id="ge-offering-step-bar" aria-label="通识选修开课步骤">
-        <button type="button" class="mot-style2-step is-active" data-step="1" title="添加课程 · 修读范围" onclick="goGeOfferingPlanStep(1)">
+        <!-- 原三步：1 课程班 / 2 其他学院 Support / 3 师资安排；改对齐专业任务样式二：1 Course Setting 融合课程班+Support -->
+        <button type="button" class="mot-style2-step is-active" data-step="1" title="Course Setting：添加课程 · 修读范围 · 其他学院 Support" onclick="goGeOfferingPlanStep(1)">
           <span class="mot-style2-step-num">1</span>
-          <span class="mot-style2-step-label">课程班</span>
+          <span class="mot-style2-step-label">Course Setting</span>
         </button>
         <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="2" title="申请 · 历史 · 详情" onclick="goGeOfferingPlanStep(2)">
+        <button type="button" class="mot-style2-step" data-step="2" title="学时类型 · 任课教师" onclick="goGeOfferingPlanStep(2)">
           <span class="mot-style2-step-num">2</span>
-          <span class="mot-style2-step-label">其他学院 Support</span>
-        </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="3" title="学时类型 · 任课教师" onclick="goGeOfferingPlanStep(3)">
-          <span class="mot-style2-step-num">3</span>
           <span class="mot-style2-step-label">师资安排</span>
         </button>
       </nav>
@@ -1778,19 +1804,21 @@
           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGeOfferingPlanQuotaCard();}">
           <span class="ge-offering-plan-quota-title">
             <span class="ge-offering-plan-quota-chevron" aria-hidden="true">▼</span>
-            需求与配额进度
+            需求与类型配额进度
           </span>
-          <span class="hint">提交前，所选课程所属学院须达到保底组数下限</span>
         </div>
         <div id="ge-offering-plan-quota-body-wrap">
+          <div id="ge-offering-plan-enrollment-quota-banner" class="ge-offering-plan-enrollment-quota-banner" aria-live="polite"></div>
           <div class="ge-offering-demand-summary" id="ge-offering-plan-demand-summary"></div>
           <div class="table-scroll" style="padding:0 0 8px">
             <table class="data-table compact">
               <thead>
                 <tr>
-                  <th class="col-center">学院</th>
-                  <th class="col-center">保底课程班/小组数</th>
-                  <th class="col-center">已开课程班/组数</th>
+                  <th class="col-center">类型</th>
+                  <th class="col-center">需开课程数（2学分）</th>
+                  <th class="col-center">需开课程数（3学分）</th>
+                  <th class="col-center">需开课程总数</th>
+                  <th class="col-center">已开课程总数</th>
                   <th class="col-center">状态</th>
                 </tr>
               </thead>
@@ -1850,16 +1878,30 @@
     <!-- ═══ 开课管理 · 通识选修 · 开课名单管理 ═══ -->
     <section class="page" id="page-course-ge-offering-roster">
       <div class="page-header">
-        <div><h1>通识选修课开课名单管理</h1><p class="subtitle">开课安排提交后，按开课任务维护各小组学生名单</p></div>
+        <div><h1>选修开课名单</h1><p class="subtitle">开课安排提交后，按开课任务维护各小组学生名单</p></div>
       </div>
+      <!-- 原流程说明条：用户要求去掉
       <div class="alert-info offering-module-hint">
         <p><strong>流程说明</strong></p>
         <ul class="offering-module-hint-list">
           <li>「通识选修开课」提交安排后，本页按开课任务展示；点击<strong>人数</strong>可打开抽屉查看名单，点击「管理名单」进入分组页维护学生。</li>
           <li>通识选修为<strong>开放选课</strong>，默认名单由选课应用生成；本页支持<strong>移除</strong>与<strong>手动添加</strong>学生，无预置批次名单。</li>
-          <!-- <li>任务安排提交后，本页按开课任务展示；点击「查看名单」进入分组页，在左侧切换小组查看学生。</li> -->
-          <!-- <li>通识选修为<strong>开放选课</strong>，学生名单由选课应用生成，本页<strong>仅支持查看</strong>，不可手工维护名单。</li> -->
         </ul>
+      </div>
+      -->
+      <div class="card ge-offering-roster-stats-card" id="ge-offering-roster-stats-card">
+        <div class="card-head ge-offering-roster-stats-card-head"
+          role="button" tabindex="0" aria-expanded="true" aria-controls="ge-offering-roster-stats-body-wrap"
+          onclick="toggleGeOfferingRosterStatsCard()"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGeOfferingRosterStatsCard();}">
+          <span class="ge-offering-roster-stats-card-title">
+            <span class="ge-offering-roster-stats-card-chevron" aria-hidden="true">▼</span>
+            开课情况统计
+          </span>
+        </div>
+        <div id="ge-offering-roster-stats-body-wrap">
+          <div id="ge-offering-roster-unit-credit-stats" class="ge-roster-unit-credit-stats"></div>
+        </div>
       </div>
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
@@ -1883,8 +1925,8 @@
       </div>
       <div class="card course-ge-roster-list-card">
         <div class="panel-toolbar course-ge-roster-toolbar">
-          <span class="form-hint">点击人数打开名单抽屉查看；「管理名单」进入分组页维护。开放选课默认名单由选课应用生成</span>
-          <!-- <span class="form-hint">开放选课课程名单由选课应用生成；本页仅供查看各分组当前名单情况</span> -->
+          <span class="form-hint">「通识选修开课」已添加的课程均可在此查看；未生效不可「管理名单」。点击人数可打开名单抽屉。开放选课默认名单由选课应用生成</span>
+          <!-- <span class="form-hint">点击人数打开名单抽屉查看；「管理名单」进入分组页维护。开放选课默认名单由选课应用生成</span> -->
         </div>
         <div class="table-scroll">
           <table class="data-table compact course-ge-offering-roster-table">
@@ -4316,7 +4358,7 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-mot-style2-one-click-history-copy')">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint" id="mot-style2-one-click-history-copy-hint">从所选学期复制同课号开课任务安排（分组、学时、学时类型、教师、教室等）到当前任务；复制后可再调整。下拉仅列出最近一个学年的学期；当前开课学期为 26/04 时默认选中 25/04。已生效，或授课确认已发出 / 部分确认 / 已确认的任务，以及所选学期无可用安排的课号，将提示不适用并跳过；其余可继续复制。</p>
+      <p class="form-hint" id="mot-style2-one-click-history-copy-hint">从所选学期复制同课号开课任务安排（分组、学时、学时类型、教师、教室等）到当前任务；复制后可再调整。下拉仅列出最近一个学年的学期；当前开课学期为 26/04 时默认选中 25/04。已生效，或授课确认已发出 / 部分确认 / 已确认的任务，以及所选学期无可用安排的课号，将提示不适用并跳过；其余可继续复制。专业开课与通识选修开课共用本能力。</p>
       <div class="form-item">
         <label class="req" for="mot-style2-one-click-history-copy-term">复制来源学期</label>
         <select class="input" id="mot-style2-one-click-history-copy-term" aria-label="复制来源学期"></select>
@@ -4578,7 +4620,7 @@
           <button class="btn btn-outline btn-sm" type="button" onclick="resetMeOfferingCourseFilters()">重置</button>
         </div>
       </div>
-      <p class="form-hint">从「校选课程管理」勾选一门或多门 ME 课生成开课任务（选课类型固定为<strong>选修</strong>；一门课一条任务）。上课专业批次请在生成后打开「修改教学任务」维护。CHS、MAT、PHY 专业不在此入口处理。</p>
+      <p class="form-hint">从「校选课程管理」勾选一门或多门 ME 课生成开课任务（选课类型固定为<strong>选修</strong>；一门课一条任务）。状态与勾选权限随 Portal 顶栏<strong>用户角色</strong>变化：仅 <strong>Pending</strong> 可勾选；<strong>N</strong>（校选停课或对方专业尚未开出同课号）与 <strong>Y</strong>（本学期已开）不可选。上课专业批次请在生成后打开「修改教学任务」维护。CHS、MAT、PHY 专业不在此入口处理。</p>
 
       <section class="me-offering-section">
         <div class="me-offering-pane-head">
@@ -4590,11 +4632,13 @@
             <thead>
               <tr>
                 <th class="col-check">
-                  <input type="checkbox" id="me-offering-course-check-all" title="全选当前列表" onclick="toggleMeOfferingCourseCheckAll(this.checked)">
+                  <input type="checkbox" id="me-offering-course-check-all" title="全选当前列表中可开课（Pending）课程" onclick="toggleMeOfferingCourseCheckAll(this.checked)">
                 </th>
+                <th class="col-center col-me-status">状态</th>
                 <th>课号</th>
                 <th>课程名称</th>
                 <th class="col-center">开课单位</th>
+                <th class="col-center">开课专业</th>
                 <th>修读范围摘要</th>
               </tr>
             </thead>
@@ -5112,11 +5156,11 @@
   </div>
 </aside>
 
-<!-- ═══ 抽屉：通识选修开课 · 修改 ═══ -->
+<!-- ═══ 抽屉：通识选修开课 · 编辑 ═══ -->
 <div class="drawer-backdrop" id="drawer-ge-offering-edit-backdrop" onclick="closeGeOfferingEditDrawer()"></div>
 <aside class="drawer-panel drawer-ge-offering-edit" id="drawer-ge-offering-edit">
   <div class="drawer-head">
-    <h3>修改开课计划</h3>
+    <h3>编辑开课计划</h3>
     <button class="modal-close" type="button" onclick="closeGeOfferingEditDrawer()">×</button>
   </div>
   <div class="drawer-body offering-edit-drawer-body">
@@ -5171,27 +5215,6 @@
           <input class="input input-sm readonly" id="ge-edit-enrollment-type" type="text" readonly tabindex="-1" value="开放选课">
           <p class="form-hint">通识选修固定为开放选课，名单由选课应用生成</p>
         </div>
-        <!-- 原场地类型选择、教室安排字段，已从通识选修开课计划抽屉移除
-        <div class="form-item">
-          <label for="ge-edit-venue-types">场地类型选择</label>
-          <div class="clo-multiselect" id="ge-edit-venue-types-multiselect">
-            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleGeOfferingVenueTypeDropdown(event)">
-              <span class="clo-multiselect-display placeholder" id="ge-edit-venue-types-display">请选择</span>
-              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-            </button>
-            <div class="clo-multiselect-dropdown" id="ge-edit-venue-types-dropdown" hidden>
-              <div class="clo-multiselect-options" id="ge-edit-venue-types-options"></div>
-            </div>
-          </div>
-        </div>
-        <div class="form-item">
-          <label for="ge-edit-classroom-arrangement">教室安排</label>
-          <div class="input-with-btn">
-            <input class="input input-sm" id="ge-edit-classroom-arrangement" type="text" placeholder="请选择" readonly tabindex="-1">
-            <button class="btn btn-outline btn-sm" type="button" onclick="openGeOfferingClassroomPickerModal()">选择</button>
-          </div>
-        </div>
-        -->
         <div class="form-item">
           <label class="req" for="ge-edit-is-scheduled">是否排课</label>
           <select class="input input-sm" id="ge-edit-is-scheduled">
@@ -5252,6 +5275,49 @@
           <label class="req">其他学时</label>
           <input class="input input-sm readonly" id="ge-edit-other-hours" type="text" readonly tabindex="-1">
         </div>
+      </div>
+    </section>
+    <section class="offering-edit-section" id="ge-edit-hour-type-section">
+      <h4 class="offering-edit-section-title">学时类型设置</h4>
+      <p class="form-hint">先设定学时合并方式，再按合并后的学时类型配置下方教室属性与偏好；开课安排时作为默认带出，可在教学班覆盖。</p>
+      <div class="group-assign-hour-type-settings-options mos-edit-hour-type-options" id="ge-edit-hour-type-options" role="radiogroup" aria-label="学时类型设置">
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="ge-edit-hours-mode" value="all" onchange="onGeOfferingEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>全部合并</strong>
+            <span class="form-hint">合为总学时统一配置教室，不再区分学时类型</span>
+          </span>
+        </label>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="ge-edit-hours-mode" value="partial" onchange="onGeOfferingEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>部分学时合并</strong>
+            <span class="form-hint">可建多组合并；未入组的类型单独配置教室</span>
+          </span>
+        </label>
+        <div class="group-assign-partial-merge-types-wrap" id="ge-edit-partial-merge-types-wrap" hidden>
+          <p class="form-hint group-assign-partial-merge-types-hint">每组至少勾选 2 种；同一学时类型只能属于一组。</p>
+          <div class="group-assign-partial-merge-groups" id="ge-edit-partial-merge-groups"></div>
+          <div class="group-assign-partial-merge-groups-foot">
+            <button type="button" class="btn btn-outline btn-sm" id="ge-edit-partial-merge-add-group" onclick="addGeOfferingEditPartialMergeGroup()">添加合并组</button>
+            <p class="form-hint group-assign-partial-merge-separate-hint" id="ge-edit-partial-merge-separate-hint"></p>
+          </div>
+        </div>
+        <label class="group-assign-hour-type-settings-option">
+          <input type="radio" name="ge-edit-hours-mode" value="separate" checked onchange="onGeOfferingEditHoursModeChange()">
+          <span class="group-assign-hour-type-settings-option-body">
+            <strong>按学时类型分别安排</strong>
+            <span class="form-hint">理论 / 辅导 / 实践 / 其他学时各自配置教室</span>
+          </span>
+        </label>
+      </div>
+    </section>
+    <section class="offering-edit-section" id="ge-edit-classroom-section">
+      <h4 class="offering-edit-section-title">教室信息</h4>
+      <div class="form-item mos-edit-classroom-attr-block">
+        <label>教室属性与参考教室</label>
+        <p class="form-hint" id="ge-edit-classroom-hint">四种学时依次设置；教室属性默认「普通教室」，参考教室非必填、默认无偏好</p>
+        <div class="mos-edit-classroom-hour-attrs" id="ge-edit-classroom-hour-attrs" data-classroom-hour-attrs="ge-edit-classroom-hour-attrs"></div>
       </div>
     </section>
     <!-- 无合班信息：通识选修不按专业批次合班 -->
@@ -6267,6 +6333,38 @@
     <div class="modal-body" id="major-offering-detail-body"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-major-offering-detail')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：通识名单 · 开课单位学分门数详情 ═══ -->
+<div class="modal-overlay" id="modal-ge-offering-roster-credit-detail">
+  <div class="modal modal-xl">
+    <div class="modal-head">
+      <h3 id="ge-offering-roster-credit-detail-title">课程明细</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-roster-credit-detail')">×</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div class="table-scroll" style="max-height:min(60vh,520px)">
+        <table class="data-table compact">
+          <thead>
+            <tr>
+              <th class="col-center col-term">开课学期</th>
+              <th class="col-center col-task-submit">生效状态</th>
+              <th class="col-center col-tcc-progress">授课确认状态</th>
+              <th class="col-code">课程号</th>
+              <th class="col-name">课程名称</th>
+              <th class="col-center col-num">学分</th>
+              <th class="col-center col-num">小组数</th>
+              <th class="col-center col-num">总学时</th>
+            </tr>
+          </thead>
+          <tbody id="ge-offering-roster-credit-detail-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-ge-offering-roster-credit-detail')">关闭</button>
     </div>
   </div>
 </div>
@@ -8119,6 +8217,33 @@
   </div>
 </div>
 
+<!-- ═══ 弹窗：通识选修计划 · 设定 Quota（计划总人数） ═══ -->
+<div class="modal-overlay" id="modal-ge-enrollment-quota">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>设定Quota</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-ge-enrollment-quota')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" style="margin-top:0">为本学期通识选修开课设定统一的计划总人数。设定并保存生效后，才可在「通识选修开课」中添加开课课程；新课自动带入该值，仍可在修改中调整。已有课程的计划总人数不会被覆盖。</p>
+      <div class="form-grid">
+        <div class="form-item">
+          <label>开课学期</label>
+          <input class="input readonly" id="ge-enrollment-quota-term-label" type="text" readonly tabindex="-1" value="—">
+        </div>
+        <div class="form-item">
+          <label class="req" for="ge-enrollment-quota-planned-total">计划总人数（Quota）</label>
+          <input class="input" id="ge-enrollment-quota-planned-total" type="number" min="0" step="1" placeholder="例如 120">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-ge-enrollment-quota')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmGeOfferingEnrollmentQuota()">保存生效</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：通识选修开课 · 添加课程 ═══ -->
 <div class="modal-overlay" id="modal-ge-offering-add">
   <div class="modal modal-xl">
@@ -8579,9 +8704,9 @@
           <p class="form-hint">该课历史上是否有过 Support（Y/N），供学院开课时参考是否需要申请</p>
         </div>
         <div class="form-item">
-          <label class="req" for="sec-offering-edit-enrollment-type">选课类型</label>
-          <input class="input input-sm readonly" id="sec-offering-edit-enrollment-type" type="text" readonly tabindex="-1" value="开放选课">
-          <p class="form-hint">通识选修固定为开放选课，名单由选课应用生成</p>
+          <label class="req" for="sec-offering-edit-enrollment-type">选修/必修</label>
+          <input class="input input-sm readonly" id="sec-offering-edit-enrollment-type" type="text" readonly tabindex="-1" value="选修">
+          <p class="form-hint">校选开课固定为选修，默认名单由选课应用生成</p>
         </div>
         <div class="form-item">
           <label class="req" for="sec-offering-edit-status">状态</label>

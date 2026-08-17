@@ -1059,7 +1059,9 @@
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> --> <!-- 改由任务安排页 -->
           <!-- 原顺序：一键合班 → ME开课；改 ME开课在一键合班左侧 -->
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-me-open" ...>ME开课</button> --> <!-- 原 outline；与「生成开课任务」统一为 primary -->
+          <!-- 暂隐：ME开课统一从「选修开课安排」入口；专业开课计划页入口先隐藏
           <button class="btn btn-primary btn-sm" type="button" id="btn-major-offering-me-open" onclick="openMeOfferingFromSchoolElectiveModal()">ME开课</button>
+          -->
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-one-click-merge" onclick="oneClickMergeMajorOfferingSections()">一键合班</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-submit" onclick="submitSelectedMajorOfferingTasks()" disabled>生效</button>
           <!-- 原顺序：生效 → 一键合班，改一键合班在生效左侧 -->
@@ -1676,8 +1678,14 @@
       <div class="page-header">
         <div>
           <h1>选修开课计划</h1>
-          <p class="subtitle">上段查看开课需求，下段由 AC 定各类型（G01–G04）需开课程班/小组数（下限）；可超额，无需确认</p>
+          <p class="subtitle" id="elective-plan-page-subtitle">上段查看开课需求，下段由 AC 定各类型（G01–G04）需开课程班/小组数（下限）；可超额，无需确认</p>
         </div>
+      </div>
+      <div class="tab-bar elective-plan-kind-tabs" role="tablist" aria-label="选修开课计划类型">
+        <button type="button" class="tab active" role="tab" aria-selected="true" data-elective-plan-tab="ge"
+          onclick="setElectivePlanKindTab('ge')">GE开课计划</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-elective-plan-tab="me"
+          onclick="setElectivePlanKindTab('me')">ME开课计划</button>
       </div>
       <!-- 原模块说明条；按产品要求去掉
       <div class="alert-info offering-module-hint">
@@ -1697,6 +1705,7 @@
           </div>
         </div>
       </div>
+      <div id="elective-plan-panel-ge" class="tab-panel active" data-elective-plan-panel="ge">
       <div class="card" id="ge-offering-demand-card" style="margin-bottom:12px">
         <div class="card-head ge-offering-demand-card-head"
           role="button" tabindex="0" aria-expanded="true" aria-controls="ge-offering-demand-body-wrap"
@@ -1714,12 +1723,13 @@
               data-ge-demand-tab="creditSplit" onclick="event.stopPropagation();setGeOfferingDemandViewTab('creditSplit')">GE学分分布预估</button>
             <button type="button" class="ge-offering-demand-tab" role="tab" aria-selected="false"
               data-ge-demand-tab="school" onclick="event.stopPropagation();setGeOfferingDemandViewTab('school')">按学院明细</button>
+            <button class="btn btn-outline btn-sm ge-offering-demand-refresh" type="button"
+              onclick="event.stopPropagation();refreshGeOfferingDemandPage()">刷新</button>
           </div>
           <!-- 默认展示学分分布；学院明细面板初始 hidden -->
           <div id="ge-offering-demand-panel-school" class="ge-offering-demand-panel" data-ge-demand-panel="school" hidden>
             <div class="ge-offering-demand-summary" id="ge-offering-demand-summary"></div>
             <div class="panel-toolbar ge-offering-quota-section-toolbar">
-              <button class="btn btn-outline btn-sm" type="button" onclick="event.stopPropagation();refreshGeOfferingDemandPage()">刷新</button>
               <span class="form-hint">学院仅汇总人数；人数可能随执行计划更新，可点刷新重新汇总</span>
             </div>
             <div class="table-scroll" style="padding:0 0 8px">
@@ -1738,7 +1748,6 @@
           </div>
           <div id="ge-offering-demand-panel-credit-split" class="ge-offering-demand-panel" data-ge-demand-panel="creditSplit">
             <div class="panel-toolbar ge-offering-quota-section-toolbar">
-              <button class="btn btn-outline btn-sm" type="button" onclick="event.stopPropagation();refreshGeOfferingDemandPage()">刷新</button>
               <span class="form-hint ge-demand-credit-split-hint">
                 按批次标准学分拆为 2/3 学分人次
                 <span id="ge-offering-demand-credit-split-tip"
@@ -1759,13 +1768,14 @@
           <span class="form-hint" id="ge-enrollment-quota-toolbar-hint">修改需开课程数（2/3学分）后点击保存计划；设定 Quota 用于统一计划总人数</span>
         </div>
         <div class="table-scroll">
-          <table class="data-table compact">
+          <table class="data-table compact ge-offering-quota-type-table">
             <thead>
               <tr>
                 <!-- <th class="col-index">序号</th> -->
-                <th class="col-center">类型</th>
-                <th class="col-center">需开课程数（2学分）</th>
-                <th class="col-center">需开课程数（3学分）</th>
+                <th class="col-center col-ge-type">类型</th>
+                <th class="col-center col-ge-category">校选课类别</th>
+                <th class="col-center col-ge-min-2">需开课程数（2学分）</th>
+                <th class="col-center col-ge-min-3">需开课程数（3学分）</th>
                 <th class="col-center">需开课程总数</th>
                 <th class="col-center">已开课程总数</th>
                 <th class="col-center">进度</th>
@@ -1775,6 +1785,43 @@
           </table>
         </div>
       </div>
+      </div>
+      <div id="elective-plan-panel-me" class="tab-panel" data-elective-plan-panel="me" hidden>
+        <div class="card" id="me-offering-demand-card" style="margin-bottom:12px">
+          <div class="card-head">
+            <span>开课需求</span>
+            <span class="hint">PHY / MAT / CHS · 本学期需修 ME</span>
+            <button class="btn btn-outline btn-sm" type="button"
+              onclick="event.stopPropagation();refreshMeOfferingDemandPage()">刷新</button>
+          </div>
+          <div class="ge-demand-credit-split-cards me-offering-plan-demand-cards" id="me-offering-plan-demand-cards"></div>
+        </div>
+        <div class="card" id="me-offering-plan-quota-card">
+          <div class="card-head"><span>类型配额</span><span class="hint">需开为下限；可超额 · PHY / MAT / CHS</span></div>
+          <div class="panel-toolbar ge-offering-quota-section-toolbar">
+            <button class="btn btn-primary btn-sm" type="button" onclick="saveMeOfferingPlanQuotaPage()">保存计划</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetMeOfferingPlanQuotaToFormula()">重置</button>
+            <span class="form-hint" id="me-enrollment-quota-toolbar-hint">每行点「设定Quota」单独保存生效；初始化按公式回填</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table compact ge-offering-quota-type-table me-offering-plan-quota-table">
+              <thead>
+                <tr>
+                  <th class="col-center">专业</th>
+                  <th class="col-center">学生数</th>
+                  <th class="col-center">合计组数</th>
+                  <th class="col-center">计划Quota</th>
+                  <th class="col-center">开课数量</th>
+                  <th class="col-center" title="该专业的 ME 所有课程人数上限之和">实际Quota</th>
+                  <th class="col-center">状态</th>
+                  <th class="col-center">操作</th>
+                </tr>
+              </thead>
+              <tbody id="me-offering-plan-quota-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ═══ 开课管理 · 通识选修开课（计划 + 安排合表） ═══ -->
@@ -1782,7 +1829,6 @@
       <div class="page-header">
         <div>
           <h1>选修开课安排</h1>
-          <p class="subtitle">分两步完成 Course Setting（课程班 · Support）与师资安排；提交 / 退回在各步骤均可操作</p>
         </div>
       </div>
       <nav class="mot-style2-step-bar" id="ge-offering-step-bar" aria-label="通识选修开课步骤">
@@ -1808,6 +1854,13 @@
           </span>
         </div>
         <div id="ge-offering-plan-quota-body-wrap">
+          <div class="tab-bar elective-plan-kind-tabs ge-offering-result-kind-tabs" role="tablist" aria-label="计划结果类型">
+            <button type="button" class="tab active" role="tab" aria-selected="true" data-ge-offering-result-tab="ge"
+              onclick="setGeOfferingResultKindTab('ge')">GE开课计划</button>
+            <button type="button" class="tab" role="tab" aria-selected="false" data-ge-offering-result-tab="me"
+              onclick="setGeOfferingResultKindTab('me')">ME开课计划</button>
+          </div>
+          <div id="ge-offering-result-panel-ge" class="tab-panel active" data-ge-offering-result-panel="ge">
           <div id="ge-offering-plan-enrollment-quota-banner" class="ge-offering-plan-enrollment-quota-banner" aria-live="polite"></div>
           <div class="ge-offering-demand-summary" id="ge-offering-plan-demand-summary"></div>
           <div class="table-scroll" style="padding:0 0 8px">
@@ -1824,6 +1877,25 @@
               </thead>
               <tbody id="ge-offering-plan-quota-body"></tbody>
             </table>
+          </div>
+          </div>
+          <div id="ge-offering-result-panel-me" class="tab-panel" data-ge-offering-result-panel="me" hidden>
+            <div class="ge-demand-credit-split-cards me-offering-plan-demand-cards" id="me-offering-result-demand-cards"></div>
+            <div class="table-scroll" style="padding:0 16px 8px">
+              <table class="data-table compact me-offering-result-quota-table">
+                <thead>
+                  <tr>
+                    <th class="col-center">专业</th>
+                    <th class="col-center">学生数</th>
+                    <th class="col-center">计划 Quota</th>
+                    <th class="col-center">开课数量</th>
+                    <th class="col-center">实际Quota</th>
+                    <th class="col-center">状态</th>
+                  </tr>
+                </thead>
+                <tbody id="me-offering-result-quota-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -4333,9 +4405,9 @@
       </div>
       <div class="form-section" id="elective-matrix-section">
         <h4>选修课学期修读要求 <span class="optional-tag">非必填</span></h4>
-        <p class="form-hint" id="elective-matrix-hint">请手动添加需要限制的学期，选择学期并填写该学期的最低/最高学分要求及课程数量（Y1S1 ~ Y4S3）。</p>
+        <p class="form-hint" id="elective-matrix-hint">请手动添加需要限制的学期，选择学期并填写该学期的最低学分、最高学分及课程数量（Y1S1 ~ Y4S3）。</p>
         <table class="data-table compact editable elective-matrix-form">
-          <thead><tr><th style="width:140px">学期</th><th>最低学分要求</th><th>最高学分限制</th><th>要求课程数</th><th style="width:56px">操作</th></tr></thead>
+          <thead><tr><th style="width:140px">学期</th><th>最低学分要求</th><th>最高学分</th><th>课程数量</th><th style="width:56px">操作</th></tr></thead>
           <tbody id="elective-matrix-tbody">
             <tr id="elective-matrix-empty"><td colspan="5" class="matrix-empty">暂无数据，请点击下方「+ 添加学期要求」</td></tr>
           </tbody>
@@ -4581,7 +4653,7 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：专业开课 · ME开课（校选 ME → 选修开课任务） ═══ -->
+<!-- ═══ 弹窗：选修开课安排 · ME开课（校选 ME → 选修开课任务） ═══ -->
 <!-- 专业批次不在本弹窗维护，改编辑抽屉「合班信息 · 专业批次」（选修类型） -->
 <div class="modal-overlay" id="modal-me-offering-from-school-elective">
   <div class="modal modal-xl me-offering-modal">
@@ -4620,7 +4692,7 @@
           <button class="btn btn-outline btn-sm" type="button" onclick="resetMeOfferingCourseFilters()">重置</button>
         </div>
       </div>
-      <p class="form-hint">从「校选课程管理」勾选一门或多门 ME 课生成开课任务（选课类型固定为<strong>选修</strong>；一门课一条任务）。状态与勾选权限随 Portal 顶栏<strong>用户角色</strong>变化：仅 <strong>Pending</strong> 可勾选；<strong>N</strong>（校选停课或对方专业尚未开出同课号）与 <strong>Y</strong>（本学期已开）不可选。上课专业批次请在生成后打开「修改教学任务」维护。CHS、MAT、PHY 专业不在此入口处理。</p>
+      <p class="form-hint">从「校选课程管理」勾选一门或多门 ME 课，生成到<strong>选修开课安排</strong>（选课类型固定为<strong>选修</strong>；一门课一条任务）。状态与勾选权限随 Portal 顶栏<strong>用户角色</strong>变化：仅 <strong>Pending</strong> 可勾选；<strong>N</strong>（校选停课或对方专业尚未开出同课号）与 <strong>Y</strong>（本学期已开）不可选。上课专业批次请在生成后打开「修改教学任务」维护。CHS、MAT、PHY 专业不在此入口处理。</p>
 
       <section class="me-offering-section">
         <div class="me-offering-pane-head">
@@ -8244,6 +8316,39 @@
   </div>
 </div>
 
+<!-- ═══ 弹窗：ME开课计划 · 设定 Quota（按专业单独设定） ═══ -->
+<div class="modal-overlay" id="modal-me-enrollment-quota">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="me-enrollment-quota-modal-title">设定Quota</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-me-enrollment-quota')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" style="margin-top:0">为本学期该专业设定计划 Quota（人数下限）。可按公式值初始化后再调整，保存后仅该专业生效。</p>
+      <div class="form-grid">
+        <div class="form-item">
+          <label>开课学期</label>
+          <input class="input readonly" id="me-enrollment-quota-term-label" type="text" readonly tabindex="-1" value="—">
+        </div>
+        <div class="form-item">
+          <label>专业</label>
+          <input class="input readonly" id="me-enrollment-quota-programme-label" type="text" readonly tabindex="-1" value="—">
+        </div>
+        <div class="form-item full">
+          <label class="req" for="me-enrollment-quota-planned">计划 Quota</label>
+          <input class="input" id="me-enrollment-quota-planned" type="number" min="0" step="1" placeholder="例如 60">
+          <p class="form-hint" id="me-enrollment-quota-formula-hint">公式预计 Quota：—</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" type="button" onclick="initMeOfferingPlanQuotaModal()">初始化</button>
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-me-enrollment-quota')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmMeOfferingPlanQuotaModal()">保存生效</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：通识选修开课 · 添加课程 ═══ -->
 <div class="modal-overlay" id="modal-ge-offering-add">
   <div class="modal modal-xl">
@@ -9684,6 +9789,7 @@
 </div>
   <script src="mock-data.js"></script>
   <script src="ge-restrictions-list.js"></script>
+  <script src="mat-phy-me-list.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

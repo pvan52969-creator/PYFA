@@ -65,7 +65,7 @@
       </div>
       <div class="nav-section">
         <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
-          <span class="nav-section-title-text">通识选修课开课<span class="nav-section-status">（设计中）</span></span>
+          <span class="nav-section-title-text">选修开课</span>
           <span class="nav-section-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="nav-section-body">
@@ -76,10 +76,9 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">选修开课名单</a>
         </div>
       </div>
-      <!-- 特殊开课（模块暂下线）：侧栏隐，页面与逻辑保留空壳 -->
-      <div class="nav-section" hidden>
+      <div class="nav-section">
         <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
-          <span class="nav-section-title-text">特殊开课<span class="nav-section-status">（设计中）</span></span>
+          <span class="nav-section-title-text">特殊开课</span>
           <span class="nav-section-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="nav-section-body">
@@ -1008,8 +1007,8 @@
             <select class="input input-sm" id="course-major-filter-prog"><option value="">全部专业</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-filter-offering-unit">开课单位</label>
-            <select class="input input-sm" id="course-major-filter-offering-unit"><option value="">全部开课单位</option></select>
+            <label for="course-major-filter-offering-programme">所属专业</label>
+            <select class="input input-sm" id="course-major-filter-offering-programme"><option value="">全部所属专业</option></select>
           </div>
           <div class="course-time-query-field">
             <label for="course-major-filter-name">课程号</label>
@@ -1681,10 +1680,10 @@
           <p class="subtitle" id="elective-plan-page-subtitle">上段查看开课需求，下段由 AC 定各类型（G01–G04）需开课程班/小组数（下限）；可超额，无需确认</p>
         </div>
       </div>
-      <div class="tab-bar elective-plan-kind-tabs" role="tablist" aria-label="选修开课计划类型">
-        <button type="button" class="tab active" role="tab" aria-selected="true" data-elective-plan-tab="ge"
+      <div class="approval-tab-bar elective-plan-kind-tabs" role="tablist" aria-label="选修开课计划类型">
+        <button type="button" class="approval-tab active" role="tab" aria-selected="true" data-elective-plan-tab="ge"
           onclick="setElectivePlanKindTab('ge')">GE开课计划</button>
-        <button type="button" class="tab" role="tab" aria-selected="false" data-elective-plan-tab="me"
+        <button type="button" class="approval-tab" role="tab" aria-selected="false" data-elective-plan-tab="me"
           onclick="setElectivePlanKindTab('me')">ME开课计划</button>
       </div>
       <!-- 原模块说明条；按产品要求去掉
@@ -1811,7 +1810,12 @@
                   <th class="col-center">学生数</th>
                   <th class="col-center">合计组数</th>
                   <th class="col-center">计划Quota</th>
-                  <th class="col-center">开课数量</th>
+                  <th class="col-center">
+                    <span class="offering-group-status-th-with-tip">已开课程班/组数
+                      <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-opened-count-tip"
+                        tabindex="0" role="button" aria-label="已开课程班/组数统计口径">!</span>
+                    </span>
+                  </th>
                   <th class="col-center" title="该专业的 ME 所有课程人数上限之和">实际Quota</th>
                   <th class="col-center">状态</th>
                   <th class="col-center">操作</th>
@@ -1850,16 +1854,17 @@
           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGeOfferingPlanQuotaCard();}">
           <span class="ge-offering-plan-quota-title">
             <span class="ge-offering-plan-quota-chevron" aria-hidden="true">▼</span>
-            需求与类型配额进度
           </span>
-        </div>
-        <div id="ge-offering-plan-quota-body-wrap">
-          <div class="tab-bar elective-plan-kind-tabs ge-offering-result-kind-tabs" role="tablist" aria-label="计划结果类型">
-            <button type="button" class="tab active" role="tab" aria-selected="true" data-ge-offering-result-tab="ge"
+          <div class="approval-tab-bar elective-plan-kind-tabs ge-offering-result-kind-tabs" role="tablist" aria-label="计划结果类型"
+            onclick="event.stopPropagation()"
+            onkeydown="event.stopPropagation()">
+            <button type="button" class="approval-tab active" role="tab" aria-selected="true" data-ge-offering-result-tab="ge"
               onclick="setGeOfferingResultKindTab('ge')">GE开课计划</button>
-            <button type="button" class="tab" role="tab" aria-selected="false" data-ge-offering-result-tab="me"
+            <button type="button" class="approval-tab" role="tab" aria-selected="false" data-ge-offering-result-tab="me"
               onclick="setGeOfferingResultKindTab('me')">ME开课计划</button>
           </div>
+        </div>
+        <div id="ge-offering-plan-quota-body-wrap">
           <div id="ge-offering-result-panel-ge" class="tab-panel active" data-ge-offering-result-panel="ge">
           <div id="ge-offering-plan-enrollment-quota-banner" class="ge-offering-plan-enrollment-quota-banner" aria-live="polite"></div>
           <div class="ge-offering-demand-summary" id="ge-offering-plan-demand-summary"></div>
@@ -1868,6 +1873,7 @@
               <thead>
                 <tr>
                   <th class="col-center">类型</th>
+                  <th class="col-center">校选课类别</th>
                   <th class="col-center">需开课程数（2学分）</th>
                   <th class="col-center">需开课程数（3学分）</th>
                   <th class="col-center">需开课程总数</th>
@@ -1881,14 +1887,19 @@
           </div>
           <div id="ge-offering-result-panel-me" class="tab-panel" data-ge-offering-result-panel="me" hidden>
             <div class="ge-demand-credit-split-cards me-offering-plan-demand-cards" id="me-offering-result-demand-cards"></div>
-            <div class="table-scroll" style="padding:0 16px 8px">
+            <div class="table-scroll">
               <table class="data-table compact me-offering-result-quota-table">
                 <thead>
                   <tr>
                     <th class="col-center">专业</th>
                     <th class="col-center">学生数</th>
                     <th class="col-center">计划 Quota</th>
-                    <th class="col-center">开课数量</th>
+                    <th class="col-center">
+                      <span class="offering-group-status-th-with-tip">已开课程班/组数
+                        <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-opened-count-tip"
+                          tabindex="0" role="button" aria-label="已开课程班/组数统计口径">!</span>
+                      </span>
+                    </th>
                     <th class="col-center">实际Quota</th>
                     <th class="col-center">状态</th>
                   </tr>
@@ -1906,8 +1917,8 @@
             <select class="input input-sm" id="ge-offering-filter-term" onchange="onGeOfferingTermFilterChange()"></select>
           </div>
           <div class="course-time-query-field">
-            <label for="ge-offering-task-filter-offering-unit">开课单位</label>
-            <select class="input input-sm" id="ge-offering-task-filter-offering-unit"><option value="">全部开课单位</option></select>
+            <label for="ge-offering-task-filter-offering-programme">所属专业</label>
+            <select class="input input-sm" id="ge-offering-task-filter-offering-programme"><option value="">全部专业</option></select>
           </div>
           <div class="course-time-query-field">
             <label for="course-offering-filter-ge">课程号 / 名称</label>
@@ -1968,11 +1979,44 @@
           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGeOfferingRosterStatsCard();}">
           <span class="ge-offering-roster-stats-card-title">
             <span class="ge-offering-roster-stats-card-chevron" aria-hidden="true">▼</span>
-            开课情况统计
           </span>
+          <div class="approval-tab-bar elective-plan-kind-tabs ge-offering-roster-stats-tabs" role="tablist" aria-label="开课统计类型"
+            onclick="event.stopPropagation()"
+            onkeydown="event.stopPropagation()">
+            <button type="button" class="approval-tab active" role="tab" aria-selected="true" data-ge-roster-stats-tab="ge"
+              onclick="setGeOfferingRosterStatsTab('ge')">GE开课统计</button>
+            <button type="button" class="approval-tab" role="tab" aria-selected="false" data-ge-roster-stats-tab="me"
+              onclick="setGeOfferingRosterStatsTab('me')">ME开课统计</button>
+          </div>
         </div>
         <div id="ge-offering-roster-stats-body-wrap">
-          <div id="ge-offering-roster-unit-credit-stats" class="ge-roster-unit-credit-stats"></div>
+          <div id="ge-offering-roster-stats-panel-ge" class="tab-panel active" data-ge-roster-stats-panel="ge">
+            <div id="ge-offering-roster-unit-credit-stats" class="ge-roster-unit-credit-stats"></div>
+          </div>
+          <div id="ge-offering-roster-stats-panel-me" class="tab-panel" data-ge-roster-stats-panel="me" hidden>
+            <div class="ge-roster-unit-credit-stats ge-roster-me-stats">
+              <div class="table-scroll">
+                <table class="data-table compact me-offering-result-quota-table">
+                  <thead>
+                    <tr>
+                      <th class="col-center">专业</th>
+                      <th class="col-center">学生数</th>
+                      <th class="col-center">计划 Quota</th>
+                      <th class="col-center">
+                        <span class="offering-group-status-th-with-tip">已开课程班/组数
+                          <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-opened-count-tip"
+                            tabindex="0" role="button" aria-label="已开课程班/组数统计口径">!</span>
+                        </span>
+                      </th>
+                      <th class="col-center">实际Quota</th>
+                      <th class="col-center">状态</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ge-offering-roster-me-stats-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="card course-major-query-card">
@@ -8369,6 +8413,12 @@
         <div class="form-item">
           <label for="ge-offering-add-unit">开课单位</label>
           <select class="input input-sm" id="ge-offering-add-unit" onchange="renderGeOfferingAddModalPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label for="ge-offering-add-programme">所属专业</label>
+          <select class="input input-sm" id="ge-offering-add-programme" onchange="renderGeOfferingAddModalPicker()">
             <option value="">全部</option>
           </select>
         </div>

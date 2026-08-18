@@ -536,6 +536,10 @@ body {
   cursor: pointer;
   user-select: none;
 }
+#ge-offering-roster-stats-card .ge-offering-roster-stats-card-head,
+#ge-offering-plan-quota-card .ge-offering-plan-quota-head {
+  justify-content: flex-start;
+}
 #ge-offering-plan-quota-card .ge-offering-plan-quota-title,
 #ge-offering-demand-card .ge-offering-demand-card-title,
 #ge-offering-roster-stats-card .ge-offering-roster-stats-card-title {
@@ -7169,6 +7173,14 @@ code {
 #page-course-offering-ge #ge-offering-plan-quota-card .data-table.compact td:first-child {
   text-align: center;
 }
+/* ME 结果表：线框贴表格，左右与上方需求卡对齐；去掉表内留白避免双边框错位 */
+#page-course-offering-ge #ge-offering-result-panel-me > .table-scroll {
+  margin: 0 16px 16px;
+  padding: 0;
+}
+#page-course-offering-ge #ge-offering-result-panel-me .me-offering-result-quota-table tbody tr:last-child td {
+  border-bottom: none;
+}
 /* 通识选修计划 · 预计需修 GE 汇总（关键指标） */
 .ge-offering-demand-summary,
 #ge-offering-plan-demand-summary {
@@ -7594,44 +7606,22 @@ code {
   margin: 10px 0 0;
   font-size: 12px;
 }
-#page-course-ge-offering-quota .elective-plan-kind-tabs,
-#page-course-offering-ge .ge-offering-result-kind-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 3px;
-  margin-bottom: 12px;
-  background: var(--blue-100);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
+#page-course-ge-offering-quota .elective-plan-kind-tabs {
+  margin: 0 0 12px;
 }
-#page-course-offering-ge .ge-offering-result-kind-tabs {
-  margin: 8px 16px 4px;
-}
-#page-course-ge-offering-quota .elective-plan-kind-tabs .tab,
-#page-course-offering-ge .ge-offering-result-kind-tabs .tab {
+#page-course-offering-ge .ge-offering-result-kind-tabs,
+#page-course-ge-offering-roster .ge-offering-roster-stats-tabs {
   flex: 1;
-  padding: 6px 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  gap: 24px;
+  border-bottom: none;
+}
+#page-course-offering-ge .ge-offering-result-kind-tabs .approval-tab,
+#page-course-ge-offering-roster .ge-offering-roster-stats-tabs .approval-tab {
+  padding: 4px 2px 6px;
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-2);
-  border: none;
-  border-bottom: none;
-  border-radius: 6px;
-  background: transparent;
-}
-#page-course-ge-offering-quota .elective-plan-kind-tabs .tab:hover,
-#page-course-offering-ge .ge-offering-result-kind-tabs .tab:hover {
-  color: var(--blue-700);
-  background: #fff;
-}
-#page-course-ge-offering-quota .elective-plan-kind-tabs .tab.active,
-#page-course-offering-ge .ge-offering-result-kind-tabs .tab.active {
-  color: #fff;
-  font-weight: 600;
-  background: var(--blue-700);
-  border-bottom: none;
-  box-shadow: 0 1px 3px rgba(15, 52, 96, 0.22);
 }
 #page-course-ge-offering-quota .me-offering-plan-quota-table {
   table-layout: fixed;
@@ -10148,6 +10138,12 @@ code {
   padding-left: 4px;
   padding-right: 4px;
 }
+#page-course-ge-offering-roster .course-ge-offering-roster-table .col-offering-programme {
+  min-width: 56px;
+  max-width: 96px;
+  white-space: nowrap;
+  text-align: center;
+}
 #page-course-ge-offering-roster .course-ge-offering-roster-table th.col-sticky-count,
 #page-course-ge-offering-roster .course-ge-offering-roster-table td.col-sticky-count {
   position: sticky;
@@ -10227,8 +10223,8 @@ code {
 }
 /* 特殊课程设置：课名适中；课号/Support 表头/学时与教室摘要保证可读 */
 #page-special-course-settings .special-course-settings-table {
-  width: max(100%, 1280px);
-  min-width: 1280px;
+  width: max(100%, 1360px);
+  min-width: 1360px;
   table-layout: fixed;
 }
 #page-special-course-settings .special-course-settings-table .col-check {
@@ -10248,7 +10244,8 @@ code {
   width: 88px;
   min-width: 84px;
 }
-#page-special-course-settings .special-course-settings-table .col-offering-unit {
+#page-special-course-settings .special-course-settings-table .col-offering-unit,
+#page-special-course-settings .special-course-settings-table .col-offering-programme {
   width: 72px;
   min-width: 64px;
 }
@@ -10284,6 +10281,7 @@ code {
   overflow: visible;
 }
 #page-special-course-settings .special-course-settings-table .col-offering-unit,
+#page-special-course-settings .special-course-settings-table .col-offering-programme,
 #page-special-course-settings .special-course-settings-table .col-support-summary,
 #page-special-course-settings .special-course-settings-table .col-support-hist,
 #page-special-course-settings .special-course-settings-table .col-shared-teaching-peers {
@@ -14496,6 +14494,30 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-ge-offering-add .modal-xl {
   width: min(96vw, 1180px);
   max-width: 1180px;
+}
+#modal-ge-offering-add .picker-filter-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 12px 16px;
+  align-items: end;
+}
+#modal-ge-offering-add .picker-filter-grid .form-item {
+  min-width: 0;
+}
+#modal-ge-offering-add .picker-filter-grid .form-item .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+#modal-ge-offering-add .picker-filter-actions {
+  align-self: end;
+  white-space: nowrap;
+}
+@media (max-width: 960px) {
+  #modal-ge-offering-add .picker-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #modal-ge-offering-add .picker-filter-actions {
+    grid-column: 1 / -1;
+  }
 }
 #modal-ge-offering-add .picker-table-wrap {
   max-height: min(52vh, 420px);

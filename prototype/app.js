@@ -15412,9 +15412,23 @@ function ensureOtherOfferingAddIntakeOptions() {
 function ensureOtherOfferingAddUnitFilterOptions() {
   const sel = document.getElementById('other-offering-add-unit');
   if (!sel || sel.dataset.built === '1') return;
-  const units = getCourseCatalogOfferings();
+  const units = [...new Set(
+    COURSE_CATALOG.map(cat => getCatalogOfferingUnitAbbr(cat.id, cat.code)).filter(u => u && u !== '—')
+  )].sort((a, b) => String(a).localeCompare(String(b), 'en'));
   sel.innerHTML = '<option value="">全部</option>' + units.map(u =>
     `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`
+  ).join('');
+  sel.dataset.built = '1';
+}
+
+function ensureOtherOfferingAddOfferingProgrammeFilterOptions() {
+  const sel = document.getElementById('other-offering-add-offering-programme');
+  if (!sel || sel.dataset.built === '1') return;
+  const codes = [...new Set(
+    COURSE_CATALOG.map(cat => getCatalogOfferingProgrammeCode(cat.id, cat.code)).filter(Boolean)
+  )].sort((a, b) => String(a).localeCompare(String(b), 'en'));
+  sel.innerHTML = '<option value="">全部</option>' + codes.map(c =>
+    `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
   ).join('');
   sel.dataset.built = '1';
 }
@@ -15422,8 +15436,10 @@ function ensureOtherOfferingAddUnitFilterOptions() {
 function getFilteredOtherOfferingAddCourses() {
   const keyword = (document.getElementById('other-offering-add-keyword')?.value || '').trim().toLowerCase();
   const unit = document.getElementById('other-offering-add-unit')?.value || '';
+  const programme = document.getElementById('other-offering-add-offering-programme')?.value || '';
   return COURSE_CATALOG.filter(cat => {
-    if (unit && cat.department !== unit) return false;
+    if (unit && getCatalogOfferingUnitAbbr(cat.id, cat.code) !== unit) return false;
+    if (programme && getCatalogOfferingProgrammeCode(cat.id, cat.code) !== programme) return false;
     if (!keyword) return true;
     return cat.code.toLowerCase().includes(keyword) || cat.name.toLowerCase().includes(keyword);
   });
@@ -15459,24 +15475,30 @@ function updateOtherOfferingAddTermHint() {
 
 function renderOtherOfferingAddModalPicker() {
   ensureOtherOfferingAddUnitFilterOptions();
+  ensureOtherOfferingAddOfferingProgrammeFilterOptions();
   const tbody = document.getElementById('other-offering-add-tbody');
   const countEl = document.getElementById('other-offering-add-count');
   const termCode = getOtherOfferingAddTermCode();
   const list = getFilteredOtherOfferingAddCourses();
   if (tbody) {
     tbody.innerHTML = !termCode
-      ? '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">请先选择开课学期</td></tr>'
+      ? '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">请先选择开课学期</td></tr>'
       : list.length
-        ? list.map((cat, idx) => `<tr>
+        ? list.map((cat, idx) => {
+            const unitAbbr = getCatalogOfferingUnitAbbr(cat.id, cat.code) || '—';
+            const programmeCode = getCatalogOfferingProgrammeCode(cat.id, cat.code) || '—';
+            return `<tr>
             <td class="col-check"><input type="checkbox" class="other-offering-add-row-check" value="${escapeHtml(cat.id)}" ${otherOfferingAddSelectedCatalogIds.has(cat.id) ? 'checked' : ''} onchange="updateOtherOfferingAddSelection()"></td>
             <td class="col-index">${idx + 1}</td>
             <td><strong>${escapeHtml(cat.code)}</strong></td>
             <td>${escapeHtml(cat.name)}</td>
             <td>${escapeHtml(cat.classification || '—')}</td>
             <td class="col-center">${cat.credits ?? '—'}</td>
-            <td class="col-center"><code>${escapeHtml(cat.department || '—')}</code></td>
-          </tr>`).join('')
-        : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">未找到匹配课程，请调整筛选条件</td></tr>';
+            <td class="col-center"><code>${escapeHtml(unitAbbr)}</code></td>
+            <td class="col-center"><code>${escapeHtml(programmeCode)}</code></td>
+          </tr>`;
+          }).join('')
+        : '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">未找到匹配课程，请调整筛选条件</td></tr>';
   }
   if (countEl) countEl.textContent = `共 ${list.length} 门课程`;
   updateOtherOfferingAddSelection();
@@ -15485,9 +15507,11 @@ function renderOtherOfferingAddModalPicker() {
 function resetOtherOfferingAddModalFilters() {
   const keywordEl = document.getElementById('other-offering-add-keyword');
   const unitEl = document.getElementById('other-offering-add-unit');
+  const programmeEl = document.getElementById('other-offering-add-offering-programme');
   const remarkEl = document.getElementById('other-offering-add-remark');
   if (keywordEl) keywordEl.value = '';
   if (unitEl) unitEl.value = '';
+  if (programmeEl) programmeEl.value = '';
   if (remarkEl) remarkEl.value = '';
   rebuildOtherOfferingAddTermFilterOptions();
   updateOtherOfferingAddTermHint();
@@ -15536,6 +15560,8 @@ function openOtherOfferingAddModal() {
   otherOfferingAddSelectedCatalogIds.clear();
   const unitSel = document.getElementById('other-offering-add-unit');
   if (unitSel) unitSel.dataset.built = '0';
+  const programmeSel = document.getElementById('other-offering-add-offering-programme');
+  if (programmeSel) programmeSel.dataset.built = '0';
   resetOtherOfferingAddModalFilters();
   openModal('modal-other-offering-add');
 }
@@ -15612,30 +15638,10 @@ function getFilteredOtherOfferingLines() {
   });
 }
 
-function renderOtherOfferingPlanHint() {
-  const hint = document.getElementById('course-offering-hint-other');
-  if (!hint) return;
-  rebuildOtherOfferingTermFilterOptions();
-  const viewLabel = getOtherOfferingViewTermDisplay();
-  const termCode = getOtherOfferingViewTermCode();
-  const offering = getActiveOfferingTermSetting();
-  if (!viewLabel || !termCode) {
-    hint.innerHTML = '<span class="text-muted">请先在「开课时间设置」中维护学年学期。</span>';
-    return;
-  }
-  syncCourseOfferingPlanStoreFromTerm(termCode);
-  const otherCount = (COURSE_OFFERING_PLAN_STORE?.lines || []).filter(l => l.offeringType === 'other').length;
-  const offeringLabel = offering ? formatCourseTermDisplay(offering.termCode) : '';
-  hint.innerHTML = `<span class="legend-item">当前查看 <strong>${escapeHtml(viewLabel)}</strong>`
-    + (offeringLabel && offeringLabel !== viewLabel ? ` · 系统开课学期 <strong>${escapeHtml(offeringLabel)}</strong>` : '')
-    + ` · 已计划 <strong>${otherCount}</strong> 条</span>`
-    + '<span class="legend-item text-muted"> · 特殊开课须<strong>手动添加</strong>，不含于专业执行计划与通识选修流程</span>';
-}
-
 function renderOtherOfferingPlanPage() {
   const tbody = document.getElementById('course-offering-body-other');
   if (!tbody) return;
-  renderOtherOfferingPlanHint();
+  rebuildOtherOfferingTermFilterOptions();
   const termCode = getOtherOfferingViewTermCode();
   if (!termCode) {
     tbody.innerHTML = '<tr><td colspan="13" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
@@ -19835,6 +19841,21 @@ function getOfferingTeacherReplaceSectionUnit(sec) {
   return sec.offeringUnitAbbr || '';
 }
 
+function getOfferingTeacherReplaceSectionOfferingProgramme(sec) {
+  if (!sec) return '';
+  if (sec.offeringType === 'ge' && typeof resolveGeOfferingOfferingProgrammeDisplay === 'function') {
+    const line = (COURSE_OFFERING_PLAN_STORE?.lines || []).find(
+      l => l.offeringType === 'ge' && (l.sectionId === sec.id || (sec.lineIds || []).includes(l.id))
+    );
+    const code = resolveGeOfferingOfferingProgrammeDisplay(line, sec);
+    return code && code !== '—' ? code : '';
+  }
+  if (typeof resolveMajorOfferingSectionOfferingProgrammeCode === 'function') {
+    return resolveMajorOfferingSectionOfferingProgrammeCode(sec) || '';
+  }
+  return String(sec.offeringProgrammeCode || '').trim().toUpperCase();
+}
+
 function getOfferingTeacherReplaceAssignRows(sec) {
   if (!sec) return [];
   if (typeof sanitizeSectionGroupAssignments === 'function') sanitizeSectionGroupAssignments(sec);
@@ -19871,24 +19892,25 @@ function mapOfferingTeacherReplaceAssignRowView(sec, row, idx) {
   };
 }
 
-function rebuildOfferingTeacherReplaceUnitFilter(sections) {
-  const sel = document.getElementById('otr-filter-unit');
+function rebuildOfferingTeacherReplaceProgrammeFilter(sections) {
+  const sel = document.getElementById('otr-filter-offering-programme');
   if (!sel) return;
   const cur = sel.value || '';
-  const units = [...new Set((sections || []).map(getOfferingTeacherReplaceSectionUnit).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">全部开课单位</option>' +
-    units.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
-  if (cur && units.includes(cur)) sel.value = cur;
+  const codes = [...new Set((sections || []).map(getOfferingTeacherReplaceSectionOfferingProgramme).filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b), 'en'));
+  sel.innerHTML = '<option value="">全部所属专业</option>' +
+    codes.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if (cur && codes.includes(cur)) sel.value = cur;
 }
 
 function getFilteredOfferingTeacherReplaceSections() {
   const term = normalizeOfferingTermCode(
     document.getElementById('otr-filter-term')?.value || getDefaultOfferingTermCode() || ''
   );
-  const unit = document.getElementById('otr-filter-unit')?.value || '';
+  const offeringProgramme = document.getElementById('otr-filter-offering-programme')?.value || '';
   const codeQ = (document.getElementById('otr-filter-code')?.value || '').trim().toLowerCase();
   return getEffectiveOfferingSectionsForTeacherReplace(term).filter(sec => {
-    if (unit && getOfferingTeacherReplaceSectionUnit(sec) !== unit) return false;
+    if (offeringProgramme && getOfferingTeacherReplaceSectionOfferingProgramme(sec) !== offeringProgramme) return false;
     if (codeQ && !(sec.code || '').toLowerCase().includes(codeQ)) return false;
     return true;
   });
@@ -19923,7 +19945,7 @@ function onOfferingTeacherReplaceTermChange() {
     syncCourseOfferingPlanStoreFromTerm(term);
   }
   offeringTeacherReplaceFocusSectionId = '';
-  rebuildOfferingTeacherReplaceUnitFilter(getEffectiveOfferingSectionsForTeacherReplace(term));
+  rebuildOfferingTeacherReplaceProgrammeFilter(getEffectiveOfferingSectionsForTeacherReplace(term));
   renderOfferingTeacherReplacePage();
 }
 
@@ -19936,8 +19958,8 @@ function resetOfferingTeacherReplaceFilters() {
   rebuildOfferingTermFilterSelect('otr-filter-term', { preserveValue: false });
   const codeEl = document.getElementById('otr-filter-code');
   if (codeEl) codeEl.value = '';
-  const unitEl = document.getElementById('otr-filter-unit');
-  if (unitEl) unitEl.value = '';
+  const programmeEl = document.getElementById('otr-filter-offering-programme');
+  if (programmeEl) programmeEl.value = '';
   offeringTeacherReplaceFocusSectionId = '';
   onOfferingTeacherReplaceTermChange();
 }
@@ -20050,7 +20072,7 @@ function renderOfferingTeacherReplaceCourseList() {
         <td class="col-center col-prog">${progCell}</td>
         <td class="col-center col-intake">${intakeCell}</td>
         <td class="col-center col-enrollment-type">${renderMajorOfferingEnrollmentTypeDisplay(sec)}</td>
-        <td class="col-center"><code>${escapeHtml(getOfferingTeacherReplaceSectionUnit(sec) || '—')}</code></td>
+        <td class="col-center"><code>${escapeHtml(getOfferingTeacherReplaceSectionOfferingProgramme(sec) || '—')}</code></td>
         <td class="col-teachers">${formatOfferingTeacherReplaceSectionTeachersSummary(sec)}</td>
         <td class="actions col-sticky-actions">
           <a href="#" onclick="toggleOfferingTeacherReplaceExpand('${escapeHtml(sec.id)}', event);return false">详情</a>
@@ -20118,7 +20140,7 @@ function renderOfferingTeacherReplacePage() {
   if (term && typeof syncCourseOfferingPlanStoreFromTerm === 'function') {
     syncCourseOfferingPlanStoreFromTerm(term);
   }
-  rebuildOfferingTeacherReplaceUnitFilter(getEffectiveOfferingSectionsForTeacherReplace(term));
+  rebuildOfferingTeacherReplaceProgrammeFilter(getEffectiveOfferingSectionsForTeacherReplace(term));
   renderOfferingTeacherReplaceCourseList();
   renderOfferingTeacherReplaceLog();
 }
@@ -24833,18 +24855,19 @@ function getGeOfferingEnrollmentQuota(termCode) {
   return Math.max(0, Math.round(Number(GE_OFFERING_ENROLLMENT_QUOTA_BY_TERM[termCode].plannedTotal) || 0));
 }
 
-function formatGeOfferingEnrollmentQuotaHintHtml(termCode) {
-  const n = getGeOfferingEnrollmentQuota(termCode);
-  if (n == null) {
-    return {
-      cls: 'is-unset',
-      html: '<span class="ge-quota-hint-label">尚未设定 Quota</span><span class="ge-quota-hint-note">设定并保存生效后，通识选修开课才可「添加开课课程」</span>'
-    };
-  }
-  return {
-    cls: 'is-set',
-    html: `<span class="ge-quota-hint-label">当前 Quota（计划总人数）</span><span class="ge-quota-hint-value">${n}</span><span class="ge-quota-hint-note">新添加课程将自动带入，仍可在修改中调整</span>`
-  };
+function getGeOfferingCourseQuotaTipText() {
+  return '新添加课程的计划总人数会带入该数值，支持手动调整';
+}
+
+function bindGeOfferingCourseQuotaTips(root) {
+  const el = typeof root === 'string' ? document.getElementById(root) : root;
+  if (!el) return;
+  const scope = el.closest?.('table') || el;
+  const text = getGeOfferingCourseQuotaTipText();
+  scope.querySelectorAll('.ge-offering-course-quota-tip').forEach(tip => {
+    tip.setAttribute('data-tip', text);
+  });
+  bindCellFloatTips(scope, '.ge-offering-course-quota-tip[data-tip]', { alwaysShow: true });
 }
 
 function openGeOfferingEnrollmentQuotaModal() {
@@ -24873,12 +24896,12 @@ function confirmGeOfferingEnrollmentQuota() {
   }
   const raw = document.getElementById('ge-enrollment-quota-planned-total')?.value;
   if (raw == null || String(raw).trim() === '') {
-    alert('请填写计划总人数（Quota）。');
+    alert('请填写课程Quota。');
     return;
   }
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
-    alert('请填写有效的计划总人数（非负整数）。');
+    alert('请填写有效的课程Quota（非负整数）。');
     return;
   }
   // 用户保存：去掉 mockVersion，后续演示升版不覆盖
@@ -24888,17 +24911,8 @@ function confirmGeOfferingEnrollmentQuota() {
     setAt: new Date().toISOString()
   };
   closeModal('modal-ge-enrollment-quota');
-  updateGeOfferingEnrollmentQuotaToolbarHint();
+  renderGeOfferingQuotaPage();
   alert(`Quota 已设定并生效：计划总人数 ${n}。\n已有开课课程的计划总人数不会被覆盖；新添加课程将自动带入该值。`);
-}
-
-function updateGeOfferingEnrollmentQuotaToolbarHint() {
-  const hint = document.getElementById('ge-enrollment-quota-toolbar-hint');
-  if (!hint) return;
-  const { cls, html } = formatGeOfferingEnrollmentQuotaHintHtml(getGeOfferingQuotaTermCode());
-  hint.classList.remove('is-set', 'is-unset');
-  hint.classList.add(cls);
-  hint.innerHTML = html;
 }
 
 function onGeOfferingDemandTermFilterChange() {
@@ -25069,6 +25083,20 @@ function renderGeOfferingQuotaMinGroupsCell(r) {
   return '<span class="offering-status-pill is-on">达标</span>';
 }
 
+function renderGeOfferingSharedCourseQuotaCell(termCode, rowCount, rowIndex, { editable = false } = {}) {
+  if (rowIndex !== 0 || rowCount <= 0) return '';
+  const n = getGeOfferingEnrollmentQuota(termCode);
+  if (editable) {
+    const val = n == null ? '' : String(n);
+    return `<td class="col-center ge-offering-course-quota-merge" rowspan="${rowCount}">`
+      + `<input class="input input-sm" id="ge-offering-quota-course-quota" type="number" min="0" step="1"`
+      + ` value="${escapeHtml(val)}" placeholder="例如 60" style="width:72px;text-align:center">`
+      + `</td>`;
+  }
+  const text = n == null ? '—' : String(n);
+  return `<td class="col-center ge-offering-course-quota-merge" rowspan="${rowCount}">${escapeHtml(text)}</td>`;
+}
+
 /** 编辑需开·2 / ·3 时同步「需开课程数」合计列 */
 function onGeOfferingQuotaMinGroupsInput(el) {
   const tr = el?.closest?.('tr');
@@ -25083,19 +25111,19 @@ function renderGeOfferingQuotaPage() {
   rebuildOfferingTermFilterSelect('ge-offering-quota-filter-term');
   syncElectivePlanKindTabChrome();
   renderGeOfferingDemandPage(); // 合页上段：开课需求
-  updateGeOfferingEnrollmentQuotaToolbarHint();
   renderMeOfferingPlanPage();
   const termCode = getGeOfferingQuotaTermCode();
   const tbody = document.getElementById('ge-offering-quota-type-body');
   if (!tbody) return;
   if (!termCode) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
+    bindGeOfferingCourseQuotaTips(tbody);
     return;
   }
   ensureGeOfferingQuota(termCode);
   const rows = getGeOfferingQuotaProgressRows(termCode);
   tbody.innerHTML = rows.length
-    ? rows.map((r) => {
+    ? rows.map((r, i) => {
       const label = GE_OFFERING_TYPE_LABELS[r.typeCode] || '';
       return `<tr>
         <td class="col-center col-ge-type"><code>${escapeHtml(r.typeCode)}</code></td>
@@ -25114,16 +25142,29 @@ function renderGeOfferingQuotaPage() {
         </td>
         <td class="col-center" data-ge-quota-min-total>${r.minGroups}</td>
         <td class="col-center">${r.actualGroups}</td>
-        <td class="col-center">${renderGeOfferingQuotaMinGroupsCell(r)}</td>
+        <td class="col-center ge-offering-quota-status-col">${renderGeOfferingQuotaMinGroupsCell(r)}</td>
+        ${renderGeOfferingSharedCourseQuotaCell(termCode, rows.length, i, { editable: true })}
       </tr>`;
     }).join('')
-    : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">暂无类型配额</td></tr>';
+    : '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">暂无类型配额</td></tr>';
+  bindGeOfferingCourseQuotaTips(tbody);
 }
 
 function saveGeOfferingQuotaPage() {
   const termCode = getGeOfferingQuotaTermCode();
   if (!termCode) {
     alert('请先选择开课学期。');
+    return;
+  }
+  const quotaEl = document.getElementById('ge-offering-quota-course-quota');
+  const quotaRaw = quotaEl ? String(quotaEl.value ?? '').trim() : '';
+  if (quotaEl && quotaRaw === '') {
+    alert('请填写课程Quota。');
+    return;
+  }
+  const quotaN = quotaEl ? Number(quotaRaw) : null;
+  if (quotaEl && (!Number.isFinite(quotaN) || quotaN < 0 || !Number.isInteger(quotaN))) {
+    alert('请填写有效的课程Quota（非负整数）。');
     return;
   }
   const byType = new Map(GE_OFFERING_TYPE_CODES.map(c => [c, { typeCode: c, minGroups2: 0, minGroups3: 0 }]));
@@ -25140,6 +25181,13 @@ function saveGeOfferingQuotaPage() {
     termCode,
     types: GE_OFFERING_TYPE_CODES.map(c => byType.get(c))
   };
+  if (quotaEl) {
+    GE_OFFERING_ENROLLMENT_QUOTA_BY_TERM[termCode] = {
+      termCode,
+      plannedTotal: quotaN,
+      setAt: new Date().toISOString()
+    };
+  }
   renderGeOfferingQuotaPage();
   alert('计划已保存。');
 }
@@ -25185,7 +25233,6 @@ function setElectivePlanKindTab(tab) {
 }
 
 function syncElectivePlanKindTabChrome() {
-  const isMe = electivePlanKindTab === 'me';
   document.querySelectorAll('[data-elective-plan-tab]').forEach(btn => {
     const active = btn.dataset.electivePlanTab === electivePlanKindTab;
     btn.classList.toggle('active', active);
@@ -25196,12 +25243,6 @@ function syncElectivePlanKindTabChrome() {
     panel.classList.toggle('active', active);
     panel.hidden = !active;
   });
-  const sub = document.getElementById('elective-plan-page-subtitle');
-  if (sub) {
-    sub.textContent = isMe
-      ? '上段查看 PHY / MAT / CHS 开课需求，下段由 AC 定各专业 Quota（下限）；可超额，无需确认'
-      : '上段查看开课需求，下段由 AC 定各类型（G01–G04）需开课程班/小组数（下限）；可超额，无需确认';
-  }
 }
 
 function getMeOfferingPlanDemandTipText() {
@@ -25423,19 +25464,67 @@ function getMeOfferingPlanPlannedQuota(termCode, programmeKey) {
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
 }
 
-function writeMeOfferingPlanQuota(termCode, byProgramme, { asUserSave = true } = {}) {
+function writeMeOfferingPlanQuota(termCode, byProgramme, {
+  asUserSave = true,
+  byProgrammeGroupCount,
+  byProgrammeSplit,
+  clearGroups = false
+} = {}) {
+  const prev = ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode] || {};
   const next = {};
   ME_OFFERING_PLAN_PROGRAMMES.forEach(p => {
     next[p.key] = Math.max(0, Math.round(Number(byProgramme?.[p.key]) || 0));
   });
-  ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode] = asUserSave
+  const rec = asUserSave
     ? { termCode, byProgramme: next, setAt: new Date().toISOString() }
     : { termCode, byProgramme: next, mockVersion: ME_OFFERING_PLAN_QUOTA_MOCK_VERSION };
+  const keepGroups = asUserSave && !clearGroups;
+  const srcGroups = byProgrammeGroupCount != null
+    ? byProgrammeGroupCount
+    : (keepGroups ? (prev.byProgrammeGroupCount || {}) : {});
+  const srcSplit = byProgrammeSplit != null
+    ? byProgrammeSplit
+    : (keepGroups ? (prev.byProgrammeSplit || {}) : {});
+  const nextGroups = {};
+  const nextSplit = {};
+  ME_OFFERING_PLAN_PROGRAMMES.forEach(p => {
+    const g = Number(srcGroups[p.key]);
+    if (Number.isInteger(g) && g > 0) nextGroups[p.key] = g;
+    if (srcSplit[p.key] && typeof srcSplit[p.key] === 'object') {
+      nextSplit[p.key] = { ...srcSplit[p.key] };
+    }
+  });
+  if (Object.keys(nextGroups).length) rec.byProgrammeGroupCount = nextGroups;
+  if (Object.keys(nextSplit).length) rec.byProgrammeSplit = nextSplit;
+  ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode] = rec;
 }
 
 function getMeOfferingPlanFormulaQuota(termCode, programmeKey) {
   const n = Number(formulaMeOfferingPlanQuotaMap(termCode)?.[programmeKey]);
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+}
+
+function getMeOfferingPlanPlannedGroupCount(termCode, programmeKey) {
+  const n = Number(ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode]?.byProgrammeGroupCount?.[programmeKey]);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+function getMeOfferingPlanQuotaSplit(termCode, programmeKey) {
+  const split = ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode]?.byProgrammeSplit?.[programmeKey];
+  return split && typeof split === 'object' ? split : null;
+}
+
+/** 按人数分：组数＝参考quota÷课程班/小组quota，四舍五入（例：825÷10→83） */
+function computeMeOfferingPlanGroupCountFromSplit(quota, mode, input) {
+  const q = Math.max(0, Math.round(Number(quota) || 0));
+  if (mode === 'bySize') {
+    const per = Math.floor(Number(input));
+    if (!Number.isFinite(per) || per <= 0) return null;
+    return Math.round(q / per);
+  }
+  const count = Math.floor(Number(input));
+  if (!Number.isFinite(count) || count <= 0) return null;
+  return count;
 }
 
 function patchMeOfferingPlanQuota(termCode, programmeKey, value, { asUserSave = true } = {}) {
@@ -25448,28 +25537,29 @@ function patchMeOfferingPlanQuota(termCode, programmeKey, value, { asUserSave = 
   writeMeOfferingPlanQuota(termCode, current, { asUserSave });
 }
 
-function formatMeOfferingPlanQuotaHintHtml(termCode) {
+function patchMeOfferingPlanQuotaSetting(termCode, programmeKey, {
+  quota,
+  groupCount,
+  split
+} = {}, { asUserSave = true } = {}) {
   ensureMeOfferingPlanQuota(termCode);
-  const parts = ME_OFFERING_PLAN_PROGRAMMES.map(p => {
-    const n = getMeOfferingPlanPlannedQuota(termCode, p.key);
-    return `${p.code} ${n}`;
+  const current = {};
+  const currentGroups = { ...(ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode]?.byProgrammeGroupCount || {}) };
+  const currentSplit = { ...(ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode]?.byProgrammeSplit || {}) };
+  ME_OFFERING_PLAN_PROGRAMMES.forEach(p => {
+    current[p.key] = getMeOfferingPlanPlannedQuota(termCode, p.key);
   });
-  const saved = ME_OFFERING_PLAN_QUOTA_BY_TERM[termCode]?.mockVersion == null;
-  return {
-    cls: saved ? 'is-set' : 'is-unset',
-    html: saved
-      ? `<span class="ge-quota-hint-label">当前计划 Quota</span><span class="ge-quota-hint-value">${parts.join(' · ')}</span><span class="ge-quota-hint-note">可超额，无需确认</span>`
-      : `<span class="ge-quota-hint-label">当前为公式默认 Quota</span><span class="ge-quota-hint-value">${parts.join(' · ')}</span><span class="ge-quota-hint-note">保存计划或设定 Quota 后生效</span>`
-  };
-}
-
-function updateMeOfferingPlanQuotaToolbarHint() {
-  const hint = document.getElementById('me-enrollment-quota-toolbar-hint');
-  if (!hint) return;
-  const { cls, html } = formatMeOfferingPlanQuotaHintHtml(getGeOfferingQuotaTermCode());
-  hint.classList.remove('is-set', 'is-unset');
-  hint.classList.add(cls);
-  hint.innerHTML = html;
+  current[programmeKey] = Math.max(0, Math.round(Number(quota) || 0));
+  const g = Math.floor(Number(groupCount));
+  if (Number.isInteger(g) && g > 0) currentGroups[programmeKey] = g;
+  else delete currentGroups[programmeKey];
+  if (split && typeof split === 'object') currentSplit[programmeKey] = { ...split };
+  else delete currentSplit[programmeKey];
+  writeMeOfferingPlanQuota(termCode, current, {
+    asUserSave,
+    byProgrammeGroupCount: currentGroups,
+    byProgrammeSplit: currentSplit
+  });
 }
 
 function renderMeOfferingPlanDemandCards(termCode, targetId = 'me-offering-plan-demand-cards') {
@@ -25680,40 +25770,36 @@ function renderMeOfferingPlanQuotaTable(termCode) {
   const tbody = document.getElementById('me-offering-plan-quota-body');
   if (!tbody) return;
   if (!termCode) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
-    bindMeOfferingOpenedCountTips(tbody.closest('table') || tbody);
+    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>';
     return;
   }
   const demand = ensureMeOfferingPlanDemand(termCode);
   ensureMeOfferingPlanQuota(termCode);
-  const actual = getMeOfferingPlanActualStatsByProgramme(termCode);
   const fmt = n => Number(n || 0).toLocaleString('en-US');
   tbody.innerHTML = ME_OFFERING_PLAN_PROGRAMMES.map(p => {
     const row = demand?.byProgramme?.[p.key] || {};
-    const stats = actual[p.key] || { offeringCount: 0, actualQuota: 0 };
-    const plannedQuota = getMeOfferingPlanPlannedQuota(termCode, p.key);
+    const plannedQuota = getMeOfferingPlanFormulaQuota(termCode, p.key);
+    const groupCount = getMeOfferingPlanPlannedGroupCount(termCode, p.key);
+    const refQuota = groupCount == null ? null : getMeOfferingPlanPlannedQuota(termCode, p.key);
     return `<tr>
       <td class="col-center"><code>${escapeHtml(p.code)}</code></td>
       <td class="col-center">${fmt(row.students || 0)}</td>
       <td class="col-center">${fmt(row.groupsTotal || 0)}</td>
       <td class="col-center">${fmt(plannedQuota)}</td>
-      <td class="col-center">${fmt(stats.offeringCount)}</td>
-      <td class="col-center">${fmt(stats.actualQuota)}</td>
-      <td class="col-center">${renderMeOfferingPlanQuotaStatusCell(plannedQuota, stats.actualQuota)}</td>
+      <td class="col-center">${groupCount == null ? '—' : fmt(groupCount)}</td>
+      <td class="col-center">${refQuota == null ? '—' : fmt(refQuota)}</td>
       <td class="col-center">
         <button class="btn btn-outline btn-sm" type="button"
           onclick="openMeOfferingPlanQuotaModal('${escapeHtml(p.key)}')">设定Quota</button>
       </td>
     </tr>`;
   }).join('');
-  bindMeOfferingOpenedCountTips(tbody.closest('table') || tbody);
 }
 
 function renderMeOfferingPlanPage() {
   const termCode = getGeOfferingQuotaTermCode();
   renderMeOfferingPlanDemandCards(termCode);
   renderMeOfferingPlanQuotaTable(termCode);
-  updateMeOfferingPlanQuotaToolbarHint();
 }
 
 function saveMeOfferingPlanQuotaPage() {
@@ -25737,9 +25823,9 @@ function resetMeOfferingPlanQuotaToFormula() {
     alert('请先选择开课学期。');
     return;
   }
-  writeMeOfferingPlanQuota(termCode, formulaMeOfferingPlanQuotaMap(termCode), { asUserSave: false });
+  writeMeOfferingPlanQuota(termCode, formulaMeOfferingPlanQuotaMap(termCode), { asUserSave: false, clearGroups: true });
   renderMeOfferingPlanPage();
-  alert('已按公式重新计算 Quota。点击「保存计划」后作为本学期计划保存。');
+  alert('已按公式重新计算 Quota。点击「保存计划」后作为本学期计划保存。计划课程班/小组数需在「设定Quota」中重新得出。');
 }
 
 function openMeOfferingPlanQuotaModal(programmeKey) {
@@ -25761,14 +25847,117 @@ function openMeOfferingPlanQuotaModal(programmeKey) {
   if (progEl) progEl.value = `${prog.code}${PROGRAMMES[prog.key]?.nameZh ? ` · ${PROGRAMMES[prog.key].nameZh}` : ''}`;
   const planned = String(getMeOfferingPlanPlannedQuota(termCode, prog.key));
   const input = document.getElementById('me-enrollment-quota-planned');
-  if (input) {
-    input.value = planned;
-    input.focus?.();
-  }
+  if (input) input.value = planned;
   const formula = getMeOfferingPlanFormulaQuota(termCode, prog.key);
-  const hint = document.getElementById('me-enrollment-quota-formula-hint');
-  if (hint) hint.textContent = `公式预计 Quota：${formula}（学生数 × 组数 × 1.05，四舍五入）`;
+  const formulaHint = document.getElementById('me-enrollment-quota-formula-hint');
+  if (formulaHint) formulaHint.textContent = `公式预计 Quota：${formula}（学生数 × 组数 × 1.05，四舍五入）`;
+  const split = getMeOfferingPlanQuotaSplit(termCode, prog.key);
+  const mode = split?.mode === 'bySize' ? 'bySize' : 'byCount';
+  const byCount = document.querySelector('input[name="me-enrollment-quota-split-mode"][value="byCount"]');
+  const bySize = document.querySelector('input[name="me-enrollment-quota-split-mode"][value="bySize"]');
+  if (mode === 'bySize' && bySize) bySize.checked = true;
+  else if (byCount) byCount.checked = true;
+  const countInput = document.getElementById('me-enrollment-quota-group-count');
+  const groupQuotaInput = document.getElementById('me-enrollment-quota-group-quota');
+  if (countInput) {
+    countInput.value = mode === 'byCount' && split?.groupCount ? String(split.groupCount) : '';
+  }
+  if (groupQuotaInput) {
+    groupQuotaInput.value = mode === 'bySize' && split?.perGroup ? String(split.perGroup) : '';
+  }
+  syncMeOfferingPlanQuotaSplitModeUi();
   openModal('modal-me-enrollment-quota');
+}
+
+function getMeOfferingPlanQuotaSplitMode() {
+  return document.querySelector('input[name="me-enrollment-quota-split-mode"]:checked')?.value || 'byCount';
+}
+
+function parseMeOfferingPlanPositiveInt(raw) {
+  if (raw == null || String(raw).trim() === '') return null;
+  const n = Number(String(raw).trim());
+  return Number.isInteger(n) && n >= 1 ? n : null;
+}
+
+function formatMeOfferingPlanGroupQuotaFromCount(quota, count) {
+  const q = Number(quota);
+  const c = Number(count);
+  if (!Number.isFinite(q) || !Number.isFinite(c) || c <= 0) return '';
+  const per = Math.round(q / c);
+  return Number.isFinite(per) && per >= 0 ? String(per) : '';
+}
+
+function setMeEnrollmentQuotaSplitInputEditable(input, editable, placeholder) {
+  if (!input) return;
+  input.readOnly = !editable;
+  input.classList.toggle('readonly', !editable);
+  if (editable) {
+    input.removeAttribute('tabindex');
+    const parsed = parseMeOfferingPlanPositiveInt(input.value);
+    input.type = 'number';
+    input.min = '1';
+    input.step = '1';
+    input.value = parsed != null ? String(parsed) : '';
+  } else {
+    input.setAttribute('tabindex', '-1');
+    input.type = 'text';
+  }
+  if (placeholder != null) input.placeholder = placeholder;
+}
+
+function syncMeOfferingPlanQuotaSplitFieldOrder(mode) {
+  const countWrap = document.getElementById('me-enrollment-quota-count-wrap');
+  const sizeWrap = document.getElementById('me-enrollment-quota-size-wrap');
+  const parent = countWrap?.parentNode;
+  if (!countWrap || !sizeWrap || !parent) return;
+  if (mode === 'bySize') parent.insertBefore(sizeWrap, countWrap);
+  else parent.insertBefore(countWrap, sizeWrap);
+}
+
+function syncMeOfferingPlanQuotaSplitModeUi() {
+  const mode = getMeOfferingPlanQuotaSplitMode();
+  const countWrap = document.getElementById('me-enrollment-quota-count-wrap');
+  const sizeWrap = document.getElementById('me-enrollment-quota-size-wrap');
+  const countInput = document.getElementById('me-enrollment-quota-group-count');
+  const groupQuotaInput = document.getElementById('me-enrollment-quota-group-quota');
+  const countEditable = mode === 'byCount';
+  syncMeOfferingPlanQuotaSplitFieldOrder(mode);
+  setMeEnrollmentQuotaSplitInputEditable(countInput, countEditable, countEditable ? '请输入组数' : '自动计算');
+  setMeEnrollmentQuotaSplitInputEditable(
+    groupQuotaInput,
+    !countEditable,
+    countEditable ? '自动计算' : '如 60'
+  );
+  countWrap?.querySelector('label')?.classList.toggle('req', countEditable);
+  sizeWrap?.querySelector('label')?.classList.toggle('req', !countEditable);
+  syncMeOfferingPlanQuotaSplitPreview();
+  const focusId = mode === 'bySize' ? 'me-enrollment-quota-group-quota' : 'me-enrollment-quota-group-count';
+  document.getElementById(focusId)?.focus();
+}
+
+function syncMeOfferingPlanQuotaSplitPreview() {
+  const countInput = document.getElementById('me-enrollment-quota-group-count');
+  const groupQuotaInput = document.getElementById('me-enrollment-quota-group-quota');
+  const quota = Math.round(Number(document.getElementById('me-enrollment-quota-planned')?.value) || 0);
+  const mode = getMeOfferingPlanQuotaSplitMode();
+  if (mode === 'bySize') {
+    const per = parseMeOfferingPlanPositiveInt(groupQuotaInput?.value);
+    if (per == null) {
+      if (countInput?.readOnly) countInput.value = '';
+      return;
+    }
+    const count = computeMeOfferingPlanGroupCountFromSplit(quota, 'bySize', per);
+    if (countInput?.readOnly) countInput.value = count ? String(count) : '';
+    return;
+  }
+  const count = parseMeOfferingPlanPositiveInt(countInput?.value);
+  if (count == null) {
+    if (groupQuotaInput?.readOnly) groupQuotaInput.value = '';
+    return;
+  }
+  if (groupQuotaInput?.readOnly) {
+    groupQuotaInput.value = formatMeOfferingPlanGroupQuotaFromCount(quota, count);
+  }
 }
 
 function initMeOfferingPlanQuotaModal() {
@@ -25777,6 +25966,7 @@ function initMeOfferingPlanQuotaModal() {
   if (!termCode || !programmeKey) return;
   const input = document.getElementById('me-enrollment-quota-planned');
   if (input) input.value = String(getMeOfferingPlanFormulaQuota(termCode, programmeKey));
+  syncMeOfferingPlanQuotaSplitPreview();
 }
 
 function confirmMeOfferingPlanQuotaModal() {
@@ -25789,19 +25979,47 @@ function confirmMeOfferingPlanQuotaModal() {
   }
   const raw = document.getElementById('me-enrollment-quota-planned')?.value;
   if (raw == null || String(raw).trim() === '') {
-    alert(`请填写 ${prog.code} 计划 Quota。`);
+    alert(`请填写 ${prog.code} 课程班/小组参考quota。`);
     return;
   }
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
-    alert(`${prog.code} 请填写有效的计划 Quota（非负整数）。`);
+    alert(`${prog.code} 请填写有效的课程班/小组参考quota（非负整数）。`);
     return;
   }
-  patchMeOfferingPlanQuota(termCode, programmeKey, n, { asUserSave: true });
+  const mode = getMeOfferingPlanQuotaSplitMode();
+  const inputEl = document.getElementById(
+    mode === 'bySize' ? 'me-enrollment-quota-group-quota' : 'me-enrollment-quota-group-count'
+  );
+  const inputRaw = inputEl?.value;
+  if (inputRaw == null || String(inputRaw).trim() === '') {
+    alert(mode === 'bySize' ? '请填写课程班/小组quota。' : '请填写组数。');
+    return;
+  }
+  const inputVal = Number(inputRaw);
+  if (!Number.isFinite(inputVal) || inputVal < 1 || !Number.isInteger(inputVal)) {
+    alert(mode === 'bySize' ? '课程班/小组quota请填写正整数。' : '组数请填写正整数。');
+    return;
+  }
+  const groupCount = computeMeOfferingPlanGroupCountFromSplit(n, mode, inputVal);
+  if (!groupCount) {
+    alert('无法得出组数：参考quota 不足一组。请调整参考quota 或课程班/小组quota。');
+    return;
+  }
+  patchMeOfferingPlanQuotaSetting(termCode, programmeKey, {
+    quota: n,
+    groupCount,
+    split: mode === 'bySize'
+      ? { mode: 'bySize', perGroup: inputVal, groupCount }
+      : { mode: 'byCount', groupCount }
+  }, { asUserSave: true });
   closeModal('modal-me-enrollment-quota');
   meOfferingPlanQuotaModalProgramme = '';
   renderMeOfferingPlanPage();
-  alert(`${prog.code} Quota 已设定并生效：${n}。`);
+  const groupQuotaDisplay = mode === 'bySize'
+    ? String(inputVal)
+    : formatMeOfferingPlanGroupQuotaFromCount(n, groupCount);
+  alert(`${prog.code} 已设定：课程班/小组参考quota ${n}，组数 ${groupCount}，课程班/小组quota ${groupQuotaDisplay}。`);
 }
 
 let geOfferingResultKindTab = 'ge';
@@ -25829,7 +26047,7 @@ function renderMeOfferingResultQuotaTable(termCode, tbodyId = 'me-offering-resul
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
   if (!termCode) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:16px">请先选择开课学期</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">请先选择开课学期</td></tr>';
     bindMeOfferingOpenedCountTips(tbody.closest('table') || tbody);
     return;
   }
@@ -25841,12 +26059,15 @@ function renderMeOfferingResultQuotaTable(termCode, tbodyId = 'me-offering-resul
     const row = demand?.byProgramme?.[p.key] || {};
     const stats = actual[p.key] || { offeringCount: 0, actualQuota: 0 };
     const plannedQuota = getMeOfferingPlanPlannedQuota(termCode, p.key);
+    const groupCount = getMeOfferingPlanPlannedGroupCount(termCode, p.key);
+    const planGroupQuota = groupCount == null ? null : plannedQuota;
     return `<tr>
       <td class="col-center"><code>${escapeHtml(p.code)}</code></td>
       <td class="col-center">${fmt(row.students || 0)}</td>
       <td class="col-center">${fmt(plannedQuota)}</td>
+      <td class="col-center">${groupCount == null ? '—' : fmt(groupCount)}</td>
+      <td class="col-center">${planGroupQuota == null ? '—' : fmt(planGroupQuota)}</td>
       <td class="col-center">${fmt(stats.offeringCount)}</td>
-      <td class="col-center">${fmt(stats.actualQuota)}</td>
       <td class="col-center">${renderMeOfferingPlanQuotaStatusCell(plannedQuota, stats.actualQuota)}</td>
     </tr>`;
   }).join('');
@@ -25856,17 +26077,16 @@ function renderMeOfferingResultQuotaTable(termCode, tbodyId = 'me-offering-resul
 function renderGeOfferingPlanQuotaProgress(termCode) {
   syncGeOfferingResultKindTabChrome();
   renderGeOfferingDemandSummary(termCode, 'ge-offering-plan-demand-summary');
-  updateGeOfferingPlanEnrollmentQuotaBanner(termCode);
   const tbody = document.getElementById('ge-offering-plan-quota-body');
   if (!tbody) return;
   if (!termCode) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">请先选择开课学期</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:16px">请先选择开课学期</td></tr>';
   } else {
     ensureGeOfferingQuota(termCode);
     // 固定展示 G01–G04；零需开且零已开仍保留行，避免类型列空白
     const rows = getGeOfferingQuotaProgressRows(termCode);
     tbody.innerHTML = rows.length
-      ? rows.map(r => {
+      ? rows.map((r, i) => {
           const label = GE_OFFERING_TYPE_LABELS[r.typeCode] || '';
           return `<tr>
           <td class="col-center"><code>${escapeHtml(r.typeCode)}</code></td>
@@ -25875,44 +26095,20 @@ function renderGeOfferingPlanQuotaProgress(termCode) {
           <td class="col-center">${r.minGroups3}</td>
           <td class="col-center">${r.minGroups}</td>
           <td class="col-center">${r.actualGroups}</td>
-          <td class="col-center">${renderGeOfferingQuotaMinGroupsCell(r)}</td>
+          <td class="col-center ge-offering-quota-status-col">${renderGeOfferingQuotaMinGroupsCell(r)}</td>
+          ${renderGeOfferingSharedCourseQuotaCell(termCode, rows.length, i)}
         </tr>`;
         }).join('')
-      : '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">请先在「通识选修计划」中维护类型需开组数</td></tr>';
+      : '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:16px">请先在「通识选修计划」中维护类型需开组数</td></tr>';
   }
+  bindGeOfferingCourseQuotaTips(tbody);
   renderMeOfferingPlanDemandCards(termCode, 'me-offering-result-demand-cards');
   renderMeOfferingResultQuotaTable(termCode);
 }
 
-function updateGeOfferingPlanEnrollmentQuotaBanner(termCode) {
-  const el = document.getElementById('ge-offering-plan-enrollment-quota-banner');
-  if (!el) return;
-  el.classList.remove('is-set', 'is-unset');
-  if (!termCode) {
-    el.classList.add('is-unset');
-    el.innerHTML = '<span class="ge-quota-banner-label">计划总人数 Quota</span><span class="ge-quota-banner-note">请先选择开课学期</span>';
-    return;
-  }
-  const n = getGeOfferingEnrollmentQuota(termCode);
-  if (n == null) {
-    el.classList.add('is-unset');
-    el.innerHTML = [
-      '<span class="ge-quota-banner-label">计划总人数 Quota</span>',
-      '<span class="ge-quota-banner-value">未设定</span>',
-      '<span class="ge-quota-banner-note">请先在「通识选修计划」中设定并保存生效，否则无法添加开课课程</span>'
-    ].join('');
-    return;
-  }
-  el.classList.add('is-set');
-  el.innerHTML = [
-    '<span class="ge-quota-banner-label">计划总人数 Quota</span>',
-    `<span class="ge-quota-banner-value">${n}</span>`,
-    '<span class="ge-quota-banner-note">新添加课程将自动带入该值，仍可在修改中调整</span>'
-  ].join('');
-}
-
 let geOfferingPlanQuotaCardExpanded = true;
 let geOfferingDemandCardExpanded = true;
+let meOfferingDemandCardExpanded = true;
 let geOfferingRosterStatsCardExpanded = true;
 let geOfferingRosterStatsTab = 'ge';
 
@@ -25930,6 +26126,14 @@ function toggleGeOfferingDemandCard() {
   const head = card?.querySelector('.ge-offering-demand-card-head');
   if (card) card.classList.toggle('is-collapsed', !geOfferingDemandCardExpanded);
   if (head) head.setAttribute('aria-expanded', geOfferingDemandCardExpanded ? 'true' : 'false');
+}
+
+function toggleMeOfferingDemandCard() {
+  meOfferingDemandCardExpanded = !meOfferingDemandCardExpanded;
+  const card = document.getElementById('me-offering-demand-card');
+  const head = card?.querySelector('.me-offering-demand-card-head');
+  if (card) card.classList.toggle('is-collapsed', !meOfferingDemandCardExpanded);
+  if (head) head.setAttribute('aria-expanded', meOfferingDemandCardExpanded ? 'true' : 'false');
 }
 
 function toggleGeOfferingRosterStatsCard() {
@@ -39180,7 +39384,7 @@ function renderGeOfferingRosterStats(termCode) {
     }
     const meBody = document.getElementById('ge-offering-roster-me-stats-body');
     if (meBody) {
-      meBody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:16px">请先选择开课学期</td></tr>';
+      meBody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">请先选择开课学期</td></tr>';
       bindMeOfferingOpenedCountTips(meBody.closest('table') || meBody);
     }
     return;

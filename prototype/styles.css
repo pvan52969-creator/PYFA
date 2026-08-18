@@ -528,7 +528,8 @@ body {
 }
 #ge-offering-plan-quota-card .ge-offering-plan-quota-head,
 #ge-offering-demand-card .ge-offering-demand-card-head,
-#ge-offering-roster-stats-card .ge-offering-roster-stats-card-head {
+#ge-offering-roster-stats-card .ge-offering-roster-stats-card-head,
+#me-offering-demand-card .me-offering-demand-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -542,14 +543,16 @@ body {
 }
 #ge-offering-plan-quota-card .ge-offering-plan-quota-title,
 #ge-offering-demand-card .ge-offering-demand-card-title,
-#ge-offering-roster-stats-card .ge-offering-roster-stats-card-title {
+#ge-offering-roster-stats-card .ge-offering-roster-stats-card-title,
+#me-offering-demand-card .me-offering-demand-card-title {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 #ge-offering-plan-quota-card .ge-offering-plan-quota-chevron,
 #ge-offering-demand-card .ge-offering-demand-card-chevron,
-#ge-offering-roster-stats-card .ge-offering-roster-stats-card-chevron {
+#ge-offering-roster-stats-card .ge-offering-roster-stats-card-chevron,
+#me-offering-demand-card .me-offering-demand-card-chevron {
   display: inline-block;
   font-size: 10px;
   color: var(--text-3);
@@ -557,17 +560,20 @@ body {
 }
 #ge-offering-plan-quota-card.is-collapsed .ge-offering-plan-quota-head,
 #ge-offering-demand-card.is-collapsed .ge-offering-demand-card-head,
-#ge-offering-roster-stats-card.is-collapsed .ge-offering-roster-stats-card-head {
+#ge-offering-roster-stats-card.is-collapsed .ge-offering-roster-stats-card-head,
+#me-offering-demand-card.is-collapsed .me-offering-demand-card-head {
   border-bottom: none;
 }
 #ge-offering-plan-quota-card.is-collapsed .ge-offering-plan-quota-chevron,
 #ge-offering-demand-card.is-collapsed .ge-offering-demand-card-chevron,
-#ge-offering-roster-stats-card.is-collapsed .ge-offering-roster-stats-card-chevron {
+#ge-offering-roster-stats-card.is-collapsed .ge-offering-roster-stats-card-chevron,
+#me-offering-demand-card.is-collapsed .me-offering-demand-card-chevron {
   transform: rotate(-90deg);
 }
 #ge-offering-plan-quota-card.is-collapsed #ge-offering-plan-quota-body-wrap,
 #ge-offering-demand-card.is-collapsed #ge-offering-demand-body-wrap,
-#ge-offering-roster-stats-card.is-collapsed #ge-offering-roster-stats-body-wrap {
+#ge-offering-roster-stats-card.is-collapsed #ge-offering-roster-stats-body-wrap,
+#me-offering-demand-card.is-collapsed #me-offering-demand-body-wrap {
   display: none;
 }
 .overflow-x { overflow-x: auto; }
@@ -7032,91 +7038,6 @@ code {
   gap: 8px 12px;
   align-items: center;
 }
-#page-course-ge-offering-quota #ge-enrollment-quota-toolbar-hint,
-#page-course-ge-offering-quota #me-enrollment-quota-toolbar-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 0 auto;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.35;
-  border: 1px solid transparent;
-}
-#page-course-ge-offering-quota #ge-enrollment-quota-toolbar-hint.is-unset,
-#page-course-ge-offering-quota #me-enrollment-quota-toolbar-hint.is-unset {
-  color: #9a3412;
-  background: #fff7ed;
-  border-color: #fdba74;
-}
-#page-course-ge-offering-quota #ge-enrollment-quota-toolbar-hint.is-set,
-#page-course-ge-offering-quota #me-enrollment-quota-toolbar-hint.is-set {
-  color: #1e3a8a;
-  background: #eff6ff;
-  border-color: #93c5fd;
-}
-#page-course-ge-offering-quota #ge-enrollment-quota-toolbar-hint .ge-quota-hint-label,
-#page-course-ge-offering-quota #me-enrollment-quota-toolbar-hint .ge-quota-hint-label {
-  font-weight: 700;
-}
-#page-course-ge-offering-quota #ge-enrollment-quota-toolbar-hint .ge-quota-hint-value,
-#page-course-ge-offering-quota #me-enrollment-quota-toolbar-hint .ge-quota-hint-value {
-  font-size: 15px;
-  font-weight: 800;
-  color: #1d4ed8;
-  font-variant-numeric: tabular-nums;
-}
-#page-course-ge-offering-quota #ge-enrollment-quota-toolbar-hint .ge-quota-hint-note,
-#page-course-ge-offering-quota #me-enrollment-quota-toolbar-hint .ge-quota-hint-note {
-  font-weight: 500;
-  color: var(--text-2, #475569);
-}
-/* 通识选修开课 · 需求与类型配额进度卡内：计划总人数 Quota 提示条 */
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  margin: 10px 16px 0;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  line-height: 1.3;
-}
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner.is-set {
-  color: #1e3a8a;
-  background: #eff6ff;
-  border-color: #93c5fd;
-}
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner.is-unset {
-  color: #9a3412;
-  background: #fff7ed;
-  border-color: #fdba74;
-}
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner .ge-quota-banner-label {
-  font-size: 12px;
-  font-weight: 700;
-}
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner .ge-quota-banner-value {
-  font-size: 14px;
-  font-weight: 800;
-  color: #1d4ed8;
-  font-variant-numeric: tabular-nums;
-}
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner.is-unset .ge-quota-banner-value {
-  color: #c2410c;
-  font-size: 13px;
-}
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner .ge-quota-banner-note {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-2, #475569);
-}
-#page-course-offering-ge #ge-offering-plan-enrollment-quota-banner.is-unset .ge-quota-banner-note {
-  color: #9a3412;
-}
 /* 开课需求 / 各学院配额表：加纵向框线 */
 #page-course-ge-offering-quota .data-table.compact th,
 #page-course-ge-offering-quota .data-table.compact td {
@@ -7154,6 +7075,16 @@ code {
 #page-course-ge-offering-quota .ge-offering-quota-type-table th.col-ge-min-3,
 #page-course-ge-offering-quota .ge-offering-quota-type-table td.col-ge-min-3 {
   white-space: nowrap;
+}
+#page-course-ge-offering-quota .ge-offering-course-quota-merge,
+#page-course-offering-ge .ge-offering-course-quota-merge {
+  vertical-align: middle;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+#page-course-ge-offering-quota .ge-offering-quota-status-col,
+#page-course-offering-ge .ge-offering-quota-status-col {
+  border-right: 1px solid var(--border-light, #e5e7eb) !important;
 }
 /* 通识选修开课 · 需求与配额进度表：加纵向框线（含末列状态，避免状态列缺右边框） */
 #page-course-offering-ge #ge-offering-plan-quota-card .table-scroll {
@@ -7363,6 +7294,14 @@ code {
   border-collapse: separate;
   border-spacing: 0;
 }
+#ge-offering-roster-stats-card .data-table th,
+#ge-offering-roster-stats-card .data-table td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+#ge-offering-roster-stats-card .data-table th:last-child,
+#ge-offering-roster-stats-card .data-table td:last-child {
+  border-right: none;
+}
 #ge-offering-roster-stats-card .ge-roster-unit-credit-stats thead th {
   background: var(--blue-50, #eff6ff);
 }
@@ -7396,6 +7335,10 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+#ge-offering-demand-panel-credit-split .ge-offering-quota-section-toolbar {
+  border-bottom: none;
+  border-top: none;
 }
 .ge-demand-credit-split-hint .ge-demand-credit-split-tip {
   margin-top: 0;
@@ -7505,12 +7448,7 @@ code {
   align-items: center;
   gap: 6px;
 }
-#me-offering-demand-card > .card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-#me-offering-demand-card > .card-head .btn {
+#me-offering-demand-card .me-offering-demand-card-head .btn {
   margin-left: auto;
 }
 .me-offering-plan-intake-details {
@@ -7627,13 +7565,17 @@ code {
   table-layout: fixed;
   width: 100%;
 }
-#page-course-ge-offering-quota .me-offering-plan-quota-table th:nth-last-child(2),
-#page-course-ge-offering-quota .me-offering-plan-quota-table td:nth-last-child(2) {
-  width: 88px;
-}
 #page-course-ge-offering-quota .me-offering-plan-quota-table th:last-child,
 #page-course-ge-offering-quota .me-offering-plan-quota-table td:last-child {
   width: 140px;
+}
+#modal-me-enrollment-quota .offering-auto-group-option:has(input:checked) {
+  border-color: var(--primary, #2563eb);
+  background: #eff6ff;
+}
+#modal-me-enrollment-quota #me-enrollment-quota-group-count[readonly],
+#modal-me-enrollment-quota #me-enrollment-quota-group-quota[readonly] {
+  cursor: default;
 }
 #modal-me-enrollment-quota .modal-foot .btn-outline {
   margin-right: auto;
@@ -14488,8 +14430,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   }
 }
 #modal-other-offering-add .modal-xl {
-  width: 960px;
-  max-width: 96vw;
+  width: min(96vw, 1100px);
+  max-width: 1100px;
 }
 #modal-ge-offering-add .modal-xl {
   width: min(96vw, 1180px);
@@ -14544,7 +14486,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 #modal-other-offering-add .picker-filter-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px 16px;
   align-items: end;
 }
@@ -14557,13 +14499,17 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   box-sizing: border-box;
 }
 #modal-other-offering-add .picker-filter-actions {
-  grid-column: 1 / -1;
   display: flex;
   gap: 8px;
+  align-self: end;
+  white-space: nowrap;
 }
 @media (max-width: 900px) {
   #modal-other-offering-add .picker-filter-grid {
-    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #modal-other-offering-add .picker-filter-actions {
+    grid-column: 1 / -1;
   }
 }
 /* ??????????????? */

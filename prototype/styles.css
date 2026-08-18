@@ -8414,6 +8414,13 @@ input#group-assign-recorded-hours {
 }
 .adj-cal-day:hover { background: var(--blue-50); }
 .adj-cal-day.adj-cal-other { color: var(--ink-4, #cbd5e1); }
+.adj-cal-day.is-disabled,
+.adj-cal-day.is-disabled:hover {
+  cursor: not-allowed;
+  color: var(--ink-4, #cbd5e1);
+  background: transparent;
+  opacity: .45;
+}
 .adj-cal-day.is-sel { background: var(--blue-100, #dbeafe); color: var(--blue-700); font-weight: 600; border-radius: 0; }
 .adj-cal-day.is-range-start { background: var(--blue-700); color: #fff; font-weight: 700; border-radius: 6px 0 0 6px; }
 .adj-cal-day.is-range-end { background: var(--blue-700); color: #fff; font-weight: 700; border-radius: 0 6px 6px 0; }
@@ -8627,15 +8634,21 @@ input#group-assign-recorded-hours {
   word-break: break-word;
   line-height: 1.35;
 }
-/* 调课详情 / 审批抽屉：页面 3/4 宽 */
-#modal-adjustment-detail.modal-drawer .modal {
-  width: 75vw;
-  max-width: 75vw;
-}
-/* 调课申请抽屉：右侧滑出至左侧导航 */
-#modal-adjustment-apply.modal-drawer .modal.adj-apply-drawer-modal {
+/* 调课管理抽屉：右侧滑出至左侧导航 */
+#modal-adjustment-apply.modal-drawer .modal,
+#modal-adjustment-detail.modal-drawer .modal,
+#modal-adjustment-holiday.modal-drawer .modal,
+#modal-adjustment-holiday-confirm.modal-drawer .modal,
+#modal-adjustment-holiday-detail.modal-drawer .modal,
+#modal-adjustment-density.modal-drawer .modal,
+#modal-adjustment-teacher-picker.modal-drawer .modal,
+#modal-adjustment-batch.modal-drawer .modal,
+#modal-adjustment-batch-detail.modal-drawer .modal,
+#modal-schedule-room-picker.is-approve-room .modal {
   width: calc(100vw - var(--sidebar-w));
   max-width: calc(100vw - var(--sidebar-w));
+}
+#modal-adjustment-apply.modal-drawer .modal.adj-apply-drawer-modal {
   display: flex;
   flex-direction: column;
 }
@@ -8915,9 +8928,8 @@ input#group-assign-recorded-hours {
   }
   .adj-apply-left { border-right: none; border-bottom: 1px solid var(--border); }
 }
-/* 调课选择类抽屉（节次 / 教师 / 教室）：右侧滑出，宽于普通表单抽屉以便表格筛选 */
+/* 排课选择类抽屉（课程 / 教室）：保持原宽，不随调课抽屉拉满 */
 .modal-overlay.modal-drawer .modal.adj-picker-drawer-modal,
-#modal-adjustment-teacher-picker.modal-drawer .modal,
 #modal-schedule-auto-time-course-picker.modal-drawer .modal,
 #modal-schedule-room-picker.modal-drawer:not(.is-lock-room):not(.is-approve-room) .modal {
   width: min(920px, 72vw);
@@ -8925,9 +8937,8 @@ input#group-assign-recorded-hours {
   display: flex;
   flex-direction: column;
 }
-#modal-schedule-room-picker.is-approve-room .modal {
-  width: min(96vw, 1280px);
-  max-width: 96vw;
+#modal-schedule-room-picker.is-approve-room .modal,
+#modal-adjustment-teacher-picker.modal-drawer .modal {
   display: flex;
   flex-direction: column;
 }
@@ -9037,7 +9048,8 @@ input#group-assign-recorded-hours {
   z-index: 1200;
 }
 #modal-adjustment-density.modal-drawer .adj-density-drawer-modal {
-  width: min(96vw, 1080px);
+  display: flex;
+  flex-direction: column;
 }
 .adj-density-filter-grid { margin-bottom: 8px; }
 .adj-density-hint {
@@ -11779,6 +11791,74 @@ code {
   flex-shrink: 0;
   margin-bottom: 12px;
 }
+/* 联合排课：顶部两行选择器（专业批次 / 教师），不进教室侧 clone */
+.schedule-joint-picker-bar {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.schedule-joint-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.schedule-joint-picker-label {
+  flex: 0 0 72px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.schedule-joint-multiselect {
+  flex: 1;
+  min-width: 0;
+  max-width: 560px;
+}
+.schedule-joint-kind {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #334155;
+  background: #e2e8f0;
+}
+.schedule-joint-kind.is-teacher {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+#page-schedule-joint .schedule-detail-grid-table.is-joint-object-cols {
+  --sch-object-w: 168px;
+  --sch-day-col-w: calc((100cqw - var(--sch-period-w) - var(--sch-object-w)) / var(--sch-day-count));
+}
+#page-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols .schedule-grid-object-col {
+  width: var(--sch-object-w);
+  min-width: var(--sch-object-w);
+  max-width: var(--sch-object-w);
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: #f1f5f9;
+  box-shadow: -1px 0 0 var(--border);
+  text-align: left;
+  font-weight: 600;
+  padding: 6px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#page-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols thead .schedule-grid-object-col {
+  z-index: 5;
+  text-align: center;
+}
 .schedule-detail-layout {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
@@ -13018,12 +13098,44 @@ code {
 }
 .schedule-room-course-search {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   padding: 8px;
   border-bottom: 1px solid var(--border);
   background: #fff;
   flex-shrink: 0;
+}
+.schedule-detail-course-search-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.schedule-detail-course-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.schedule-detail-course-search-row label {
+  flex: 0 0 72px;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.2;
+}
+.schedule-detail-course-search-row .input {
+  flex: 1;
+  min-width: 0;
+}
+#page-schedule-time-detail .schedule-detail-course-search-row[data-sch-phase-tab="room"] {
+  display: none !important;
+}
+#page-schedule-room-detail .schedule-detail-course-search-row[data-sch-phase-tab="room"] {
+  display: flex;
+}
+.schedule-detail-course-search-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
 }
 #page-schedule-time-detail #schedule-room-course-search-field,
 #page-schedule-room-detail #schedule-time-course-search-field {
@@ -14012,6 +14124,9 @@ code {
   padding: 0 2px;
 }
 .schedule-modal-ts-selected-chip button:hover { color: #b91c1c; }
+.schedule-modal-rs-room-row {
+  grid-template-columns: 18px minmax(140px, 1.6fr) repeat(4, minmax(56px, 1fr));
+}
 
 /* 学期排课时间 · 专业时间设置展开子行 */
 .schedule-time-table .col-expand {
@@ -14339,8 +14454,8 @@ code {
 
 /* ??????????? */
 #modal-adjustment-batch.modal-drawer .adjustment-batch-drawer-modal {
-  width: min(96vw, 960px);
-  max-width: 960px;
+  display: flex;
+  flex-direction: column;
 }
 #modal-adjustment-batch .adjustment-batch-card {
   border: none;
@@ -14554,77 +14669,115 @@ code {
   text-decoration: underline;
 }
 
-/* 排课表教室 · 场地冲突查询：沿用 page-list 框架；此处仅保留冲突表冻结列 */
-.schedule-room-conflict-filters {
+/* 课表/场地冲突查询：左右滚动冻结序号、冲突类型、操作 */
+.schedule-room-conflict-filters,
+.schedule-time-conflict-filters {
   flex-wrap: wrap;
 }
-.schedule-room-conflict-table {
+.sch-conflict-query-table {
   --sch-conflict-freeze-index-w: 56px;
-  --sch-conflict-freeze-term-w: 96px;
-  --sch-conflict-freeze-date-w: 112px;
-  min-width: 1680px;
+  --sch-conflict-freeze-type-w: 180px;
+  --sch-conflict-freeze-ops-w: 88px;
   border-collapse: separate;
   border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
 }
-.schedule-room-conflict-table thead th {
+.schedule-room-conflict-table,
+.schedule-time-conflict-table {
+  min-width: 100%;
+}
+.sch-conflict-query-table th,
+.sch-conflict-query-table td {
+  white-space: nowrap;
+  max-width: none;
+}
+.sch-conflict-query-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--table-head-bg, #f1f5f9);
   box-shadow: inset 0 -1px 0 var(--border);
 }
-/* 左右滚动时固定：序号、学期、日期 */
-.schedule-room-conflict-table .sch-conflict-freeze {
+.sch-conflict-query-table .sch-conflict-freeze {
   position: sticky;
   z-index: 3;
   background: #fff;
 }
-.schedule-room-conflict-table .sch-conflict-freeze-index {
+.sch-conflict-query-table .sch-conflict-freeze-index {
   left: 0;
   min-width: var(--sch-conflict-freeze-index-w);
   width: var(--sch-conflict-freeze-index-w);
   text-align: center;
-}
-.schedule-room-conflict-table .sch-conflict-freeze-term {
-  left: var(--sch-conflict-freeze-index-w);
-  min-width: var(--sch-conflict-freeze-term-w);
-  width: var(--sch-conflict-freeze-term-w);
-}
-.schedule-room-conflict-table .sch-conflict-freeze-date {
-  left: calc(var(--sch-conflict-freeze-index-w) + var(--sch-conflict-freeze-term-w));
-  min-width: var(--sch-conflict-freeze-date-w);
-  width: var(--sch-conflict-freeze-date-w);
   box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08);
 }
+.sch-conflict-query-table .sch-conflict-freeze-ops {
+  right: 0;
+  width: var(--sch-conflict-freeze-ops-w);
+  min-width: var(--sch-conflict-freeze-ops-w);
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22);
+}
+.sch-conflict-query-table .sch-conflict-freeze-type {
+  right: var(--sch-conflict-freeze-ops-w);
+  min-width: var(--sch-conflict-freeze-type-w);
+  width: auto;
+  white-space: nowrap;
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.12);
+}
 /*
- * 冻结列表头：需同时 sticky top + left。
+ * 冻结列表头：需同时 sticky top + left/right。
  * 选择器优先级须高于 page-list 通用表头规则，否则 z-index 被压成 2，
  * 纵向滚动时会被 tbody 冻结列（z-index:3）盖住。
  */
-.main .page.page-list.active .schedule-room-conflict-table thead th.sch-conflict-freeze,
-.schedule-room-conflict-table thead th.sch-conflict-freeze {
+.main .page.page-list.active .sch-conflict-query-table thead th.sch-conflict-freeze,
+.sch-conflict-query-table thead th.sch-conflict-freeze {
   position: sticky;
   top: 0;
   z-index: 6;
   background: var(--table-head-bg, #f1f5f9);
   box-shadow: inset 0 -1px 0 var(--border);
 }
-.main .page.page-list.active .schedule-room-conflict-table thead th.sch-conflict-freeze-date,
-.schedule-room-conflict-table thead th.sch-conflict-freeze-date {
+.main .page.page-list.active .sch-conflict-query-table thead th.sch-conflict-freeze-index,
+.sch-conflict-query-table thead th.sch-conflict-freeze-index {
   box-shadow: 2px 0 4px rgba(15, 23, 42, 0.08), inset 0 -1px 0 var(--border);
 }
-.schedule-room-conflict-table tbody tr:hover .sch-conflict-freeze {
+.main .page.page-list.active .sch-conflict-query-table thead th.sch-conflict-freeze-ops,
+.sch-conflict-query-table thead th.sch-conflict-freeze-ops {
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22), inset 0 -1px 0 var(--border);
+}
+.main .page.page-list.active .sch-conflict-query-table thead th.sch-conflict-freeze-type,
+.sch-conflict-query-table thead th.sch-conflict-freeze-type {
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.12), inset 0 -1px 0 var(--border);
+}
+.sch-conflict-query-table tbody tr:hover .sch-conflict-freeze {
   background: #fafbfc;
 }
-.schedule-room-conflict-table .sch-conflict-multiline {
-  white-space: normal;
+.sch-conflict-query-table .sch-conflict-multiline {
+  white-space: nowrap;
   line-height: 1.45;
   vertical-align: top;
-  max-width: 220px;
+  max-width: none;
 }
-.schedule-room-conflict-table .sch-conflict-detail-cell {
-  max-width: 320px;
-  min-width: 180px;
+.sch-conflict-query-table .sch-conflict-type-cell {
+  min-width: 140px;
+  max-width: none;
+  white-space: nowrap;
+}
+.sch-conflict-query-table .sch-conflict-type-cell .sch-conflict-type-tag {
+  margin: 0 4px 4px 0;
+  white-space: nowrap;
+}
+.sch-conflict-detail-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sch-conflict-detail-line {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  line-height: 1.5;
+  color: var(--text-1);
 }
 .sch-conflict-type-tag {
   display: inline-block;
@@ -14682,6 +14835,36 @@ code {
 #schedule-room-conflict-hint .sch-leg-item.is-room-type {
   background: #dcfce7;
   color: #166534;
+}
+
+/* 排课表时间 · 课表冲突查询色标 */
+.sch-conflict-type-tag.is-teacher,
+#schedule-time-conflict-hint .sch-leg-item.is-teacher { background: #fee2e2; color: #991b1b; }
+.sch-conflict-type-tag.is-student,
+#schedule-time-conflict-hint .sch-leg-item.is-student { background: #f3e8ff; color: #6b21a8; }
+.sch-conflict-type-tag.is-blackout,
+.sch-conflict-type-tag.is-elective,
+.sch-conflict-type-tag.is-teacherSlot,
+.sch-conflict-type-tag.is-rule,
+.sch-conflict-type-tag.is-lunch,
+#schedule-time-conflict-hint .sch-leg-item.is-blackout,
+#schedule-time-conflict-hint .sch-leg-item.is-elective,
+#schedule-time-conflict-hint .sch-leg-item.is-teacherSlot,
+#schedule-time-conflict-hint .sch-leg-item.is-rule,
+#schedule-time-conflict-hint .sch-leg-item.is-lunch { background: #f3f4f6; color: #4b5563; }
+.sch-conflict-type-tag.is-hours,
+#schedule-time-conflict-hint .sch-leg-item.is-hours { background: #fef3c7; color: #92400e; }
+.sch-conflict-type-tag.is-prereq,
+#schedule-time-conflict-hint .sch-leg-item.is-prereq { background: #cffafe; color: #155e75; }
+.sch-conflict-type-tag.is-retake,
+#schedule-time-conflict-hint .sch-leg-item.is-retake { background: #ffedd5; color: #9a3412; }
+#schedule-time-conflict-hint .sch-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 /* 自动排课：查询条件与执行按钮一体 */
@@ -14760,6 +14943,46 @@ code {
   border-bottom: 1px solid var(--border-light);
   background: rgba(255, 255, 255, 0.78);
 }
+.schedule-auto-board-head-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.schedule-auto-board-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.schedule-auto-board-head-actions .btn { font-weight: 600; }
+.schedule-auto-board-table th.schedule-auto-pick-col,
+.schedule-auto-board-table td.schedule-auto-pick-col {
+  width: 36px;
+  min-width: 36px;
+}
+.schedule-auto-lock-hint {
+  margin: 0;
+  padding: 6px 14px 8px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #9a3412;
+  background: #fff7ed;
+  border-bottom: 1px solid #fed7aa;
+}
+.schedule-auto-lock-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9a3412;
+  background: #ffedd5;
+  vertical-align: middle;
+}
+.schedule-auto-board-table tr.is-auto-locked td { background: #fff7ed; }
 .schedule-auto-board.is-pending .schedule-auto-board-head {
   color: #1d4ed8;
   border-bottom-color: #bfdbfe;

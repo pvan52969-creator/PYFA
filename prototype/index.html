@@ -155,6 +155,8 @@
       <a href="#" class="nav-item" data-page="schedule-time">按入学批次排</a>
       <a href="#" class="nav-item" data-page="schedule-teacher">按教师排</a>
       <a href="#" class="nav-item" data-page="schedule-course">按课程排</a>
+      <a href="#" class="nav-item" data-page="schedule-joint">联合排课</a>
+      <a href="#" class="nav-item" data-page="schedule-time-conflict">课表冲突查询</a>
       <div class="nav-group">自动排课表时间</div>
       <a href="#" class="nav-item" data-page="schedule-auto-time-rule">自动排课规则</a>
       <a href="#" class="nav-item" data-page="schedule-auto-time">自动排课</a>
@@ -2326,7 +2328,7 @@
       <div class="page-header">
         <div>
           <h1>排课时间设置</h1>
-          <p class="subtitle">维护每学期排课窗口、师生课表查看时间，以及不排课、选修课占位与教师排课时段</p>
+          <p class="subtitle">维护每学期排课窗口、师生课表查看时间，以及不排课、选修课占位、教师与教室排课时段</p>
         </div>
       </div>
       <div class="tab-bar" id="schedule-time-setting-tabs">
@@ -2334,6 +2336,7 @@
         <button type="button" class="tab" data-schedule-time-tab="blackout" onclick="activateScheduleTimeSettingTab('blackout')">课表不排课时间</button>
         <button type="button" class="tab" data-schedule-time-tab="elective" onclick="activateScheduleTimeSettingTab('elective')">选修课排课时间</button>
         <button type="button" class="tab" data-schedule-time-tab="teacher-slot" onclick="activateScheduleTimeSettingTab('teacher-slot')">教师排课时间</button>
+        <button type="button" class="tab" data-schedule-time-tab="room-slot" onclick="activateScheduleTimeSettingTab('room-slot')">教室排课时间</button>
       </div>
       <div class="tab-panel active" id="schedule-time-tab-term">
         <div class="card schedule-query-card">
@@ -2459,10 +2462,7 @@
             <div class="schedule-query-fields">
               <div class="schedule-query-field">
                 <label for="schedule-time-setting-term-teacher">学年学期</label>
-                <div class="clearable-select-wrap">
-                  <select class="input input-sm" id="schedule-time-setting-term-teacher" data-schedule-time-tab="teacher-slot" onchange="onScheduleTimeSettingTermChange('teacher-slot')"></select>
-                  <button type="button" class="clearable-select-clear" id="schedule-time-setting-term-teacher-clear" title="清除，查看全部学期" hidden onclick="clearScheduleTimeSettingTerm('teacher-slot')">×</button>
-                </div>
+                <select class="input input-sm" id="schedule-time-setting-term-teacher" data-schedule-time-tab="teacher-slot" onchange="onScheduleTimeSettingTermChange('teacher-slot')"></select>
               </div>
               <div class="schedule-query-field">
                 <label for="schedule-time-setting-teacher-id">教师工号</label>
@@ -2503,7 +2503,8 @@
           <div class="panel-toolbar">
             <button class="btn btn-primary btn-sm" type="button" onclick="openScheduleTeacherSlotModal()">新增</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="deleteSelectedScheduleTeacherProfiles()">删除</button>
-            <span class="hint">同一页面按教师维护只排课或不排课时段（二者择一），星期与节次支持多选</span>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openScheduleSlotCopyModal('teacher-slot')">复制其他学期</button>
+            <span class="hint">同一页面按教师维护只排课或不排课时段（二者择一），星期与节次支持多选；可从其他学期复制</span>
           </div>
           <div class="table-scroll">
             <table class="data-table schedule-time-table">
@@ -2527,6 +2528,78 @@
           </div>
         </div>
       </div>
+      <div class="tab-panel" id="schedule-time-tab-room-slot">
+        <div class="card schedule-query-card">
+          <div class="schedule-query-row">
+            <div class="schedule-query-fields">
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-term-room">学年学期</label>
+                <select class="input input-sm" id="schedule-time-setting-term-room" data-schedule-time-tab="room-slot" onchange="onScheduleTimeSettingTermChange('room-slot')"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-room-name">教室名称</label>
+                <input class="input input-sm" id="schedule-time-setting-room-name" type="text" placeholder="教室名称">
+              </div>
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-room-building">楼栋</label>
+                <select class="input input-sm" id="schedule-time-setting-room-building" onchange="onScheduleRoomSlotBuildingChange()"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-room-floor">楼层</label>
+                <select class="input input-sm" id="schedule-time-setting-room-floor"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-room-type">教室类型</label>
+                <select class="input input-sm" id="schedule-time-setting-room-type"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-room-week">周次</label>
+                <select class="input input-sm" id="schedule-time-setting-room-week"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-room-weekday">星期</label>
+                <select class="input input-sm" id="schedule-time-setting-room-weekday"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="schedule-time-setting-room-period">节次</label>
+                <select class="input input-sm" id="schedule-time-setting-room-period"></select>
+              </div>
+            </div>
+            <div class="schedule-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeSettingTab('room-slot')">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimeSettingQuery('room-slot')">重置</button>
+            </div>
+          </div>
+        </div>
+        <div class="card schedule-card">
+          <div class="panel-toolbar">
+            <button class="btn btn-primary btn-sm" type="button" onclick="openScheduleRoomSlotModal()">新增</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="deleteSelectedScheduleRoomProfiles()">删除</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openScheduleSlotCopyModal('room-slot')">复制其他学期</button>
+            <span class="hint">按教室维护不排课时段；可从其他学期复制</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table schedule-time-table">
+              <thead>
+                <tr>
+                  <th class="col-check"><input type="checkbox" id="schedule-room-profile-check-all" onchange="toggleScheduleRoomProfileCheckAll(this.checked)"></th>
+                  <th class="col-index">序号</th>
+                  <th>学年学期</th>
+                  <th>教室</th>
+                  <th class="col-center">楼栋</th>
+                  <th class="col-center">楼层</th>
+                  <th class="col-center">教室类型</th>
+                  <th class="col-center">座位数</th>
+                  <th>不排课时段</th>
+                  <th>备注</th>
+                  <th class="col-center">操作</th>
+                </tr>
+              </thead>
+              <tbody id="schedule-room-profile-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ═══ 排课管理 · 排课规则设置 ═══ -->
@@ -2534,12 +2607,12 @@
       <div class="page-header">
         <div>
           <h1>排课规则设置</h1>
-          <p class="subtitle">控制排课时的冲突判断：午休、学生节次上限与教师晚间授课限制</p>
+          <p class="subtitle">控制排课时的冲突判断：午休、学生节次上限、教师晚间授课限制，以及调课申请开放时限</p>
         </div>
       </div>
       <div class="card schedule-card">
         <div class="panel-toolbar">
-          <span class="hint">各规则可单独修改与启用；数值类规则单位见名称括号（小时 / 天）</span>
+          <span class="hint">各规则可单独修改与启用；数值类规则单位见名称括号（节数 / 天 / 天数）</span>
         </div>
         <div class="table-scroll">
           <table class="data-table schedule-time-table schedule-rule-table">
@@ -2637,32 +2710,42 @@
             <button type="button" class="schedule-detail-tab" data-tab="locked" data-sch-phase-tab="room" hidden onclick="setScheduleCourseTab('locked')">锁定 <span id="schedule-tab-locked-count">0</span></button>
           </div>
           <div class="schedule-room-course-search" id="schedule-room-course-search">
-            <select class="input input-sm schedule-detail-course-search-field" id="schedule-time-course-search-field"
-              aria-label="查询条件" onchange="onScheduleTimeCourseSearchFieldChange()">
-              <option value="courseCode">课程编号</option>
-              <option value="teacherName">教师姓名</option>
-              <option value="teacherId">教师工号</option>
-              <option value="sharedTeachingCode">共同授课码</option>
-            </select>
-            <select class="input input-sm schedule-detail-course-search-field schedule-room-course-search-field" id="schedule-room-course-search-field"
-              aria-label="查询条件" hidden onchange="onScheduleRoomCourseSearchFieldChange()">
-              <option value="courseCode">课程编号</option>
-              <option value="teacherName">教师姓名</option>
-              <option value="teacherId">教师工号</option>
-              <option value="sharedTeachingCode">共同授课码</option>
-              <option value="venueType">场地类型</option>
-              <option value="venueRemark">教室偏好</option>
-            </select>
-            <div class="schedule-room-course-search-input">
-              <input class="input input-sm" id="schedule-room-course-search-input" type="text"
-                placeholder="课程编号 / 教师工号 / 教师姓名 / 共同授课码"
-                oninput="onScheduleDetailCourseSearchInput(this)"
-                onkeydown="onScheduleDetailCourseSearchKeydown(event)">
-              <button type="button" class="schedule-room-course-search-clear"
-                id="schedule-room-course-search-clear" title="清空" aria-label="清空搜索条件"
-                onclick="clearScheduleDetailCourseSearch()" hidden>×</button>
+            <div class="schedule-detail-course-search-rows">
+              <div class="schedule-detail-course-search-row">
+                <label for="schedule-course-search-course-code">课程编号</label>
+                <input class="input input-sm" id="schedule-course-search-course-code" type="text" placeholder="请输入课程编号"
+                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+              </div>
+              <div class="schedule-detail-course-search-row">
+                <label for="schedule-course-search-teacher-name">教师姓名</label>
+                <input class="input input-sm" id="schedule-course-search-teacher-name" type="text" placeholder="请输入教师姓名"
+                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+              </div>
+              <div class="schedule-detail-course-search-row">
+                <label for="schedule-course-search-teacher-id">教师工号</label>
+                <input class="input input-sm" id="schedule-course-search-teacher-id" type="text" placeholder="请输入教师工号"
+                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+              </div>
+              <div class="schedule-detail-course-search-row">
+                <label for="schedule-course-search-shared-code">共同授课码</label>
+                <input class="input input-sm" id="schedule-course-search-shared-code" type="text" placeholder="请输入共同授课码"
+                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+              </div>
+              <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
+                <label for="schedule-course-search-venue-type">场地类型</label>
+                <input class="input input-sm" id="schedule-course-search-venue-type" type="text" placeholder="请输入场地类型"
+                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+              </div>
+              <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
+                <label for="schedule-course-search-venue-remark">教室偏好</label>
+                <input class="input input-sm" id="schedule-course-search-venue-remark" type="text" placeholder="请输入教室偏好"
+                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+              </div>
             </div>
-            <button type="button" class="btn btn-primary btn-sm" onclick="searchScheduleDetailCourseCards()">查询</button>
+            <div class="schedule-detail-course-search-actions">
+              <button type="button" class="btn btn-primary btn-sm" onclick="searchScheduleDetailCourseCards()">查询</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="clearScheduleDetailCourseSearch()">重置</button>
+            </div>
           </div>
           <ul class="schedule-detail-course-list" id="schedule-detail-course-list"></ul>
           <div class="schedule-detail-sidebar-foot">
@@ -2829,6 +2912,9 @@
       </div>
     </section>
 
+    <!-- 排课表时间 · 联合排课（由脚本从时间侧详情页克隆后补丁，避免改时间模板被教室侧 clone） -->
+    <section class="page schedule-page schedule-detail-page" id="page-schedule-joint" hidden aria-hidden="true"></section>
+
     <!-- ═══ 排课管理 · 排课表时间 · 按教师排 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-teacher">
       <div class="page-header">
@@ -2929,6 +3015,130 @@
         </tr></thead>
         <tbody id="schedule-course-body"></tbody>
       </table></div></div>
+    </section>
+
+    <!-- ═══ 排课管理 · 排课表时间 · 课表冲突查询 ═══ -->
+    <section class="page-list page schedule-page" id="page-schedule-time-conflict">
+      <div class="page-header">
+        <div>
+          <h1>课表冲突查询</h1>
+          <p class="subtitle">查询已排课表中的时间侧冲突（含忽略冲突后仍存在的冲突）</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-conflict-export" onclick="exportScheduleTimeConflictRows()" disabled>导出</button>
+        </div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields schedule-time-conflict-filters">
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-term">学年学期</label>
+              <select class="input input-sm" id="schedule-time-conflict-filter-term" onchange="onScheduleTimeConflictTermChange()"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-type">冲突类型</label>
+              <select class="input input-sm" id="schedule-time-conflict-filter-type">
+                <option value="">全部</option>
+                <option value="teacher">教师冲突</option>
+                <option value="student">学生冲突</option>
+                <option value="blackout">不排课时间</option>
+                <option value="elective">选修课占位</option>
+                <option value="teacherSlot">教师排课时间</option>
+                <option value="prereq">先修冲突</option>
+                <option value="retake">预重修冲突</option>
+                <option value="lunch">午休规则</option>
+                <option value="rule">排课规则</option>
+                <option value="hours">学时超排</option>
+                <option value="composite">综合冲突</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-school">学院</label>
+              <select class="input input-sm" id="schedule-time-conflict-filter-school" onchange="onScheduleTimeConflictSchoolChange()">
+                <option value="">全部学院</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-prog">专业</label>
+              <select class="input input-sm" id="schedule-time-conflict-filter-prog" onchange="onScheduleTimeConflictProgrammeChange()">
+                <option value="">全部专业</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-intake">入学批次</label>
+              <select class="input input-sm" id="schedule-time-conflict-filter-intake">
+                <option value="">全部入学批次</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-date">日期</label>
+              <input class="input input-sm" id="schedule-time-conflict-filter-date" type="date" onchange="onScheduleTimeConflictDateChange()">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-week">周次</label>
+              <input class="input input-sm" id="schedule-time-conflict-filter-week" type="number" min="1" placeholder="如 5" onchange="onScheduleTimeConflictWeekWeekdayChange()">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-weekday">星期</label>
+              <select class="input input-sm" id="schedule-time-conflict-filter-weekday" onchange="onScheduleTimeConflictWeekWeekdayChange()">
+                <option value="">全部</option>
+                <option value="1">周一</option>
+                <option value="2">周二</option>
+                <option value="3">周三</option>
+                <option value="4">周四</option>
+                <option value="5">周五</option>
+                <option value="6">周六</option>
+                <option value="7">周日</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-period">节次</label>
+              <select class="input input-sm" id="schedule-time-conflict-filter-period">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-course">课程号 / 名称</label>
+              <input class="input input-sm" id="schedule-time-conflict-filter-course" placeholder="课程号 / 课程名称">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-conflict-filter-teacher">教师工号 / 姓名</label>
+              <input class="input input-sm" id="schedule-time-conflict-filter-teacher" placeholder="教师工号 / 姓名">
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeConflicts()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimeConflictFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-time-conflict-hint"></div>
+      <div class="card schedule-card">
+        <div class="table-scroll schedule-time-conflict-table-wrap">
+          <table class="data-table schedule-time-conflict-table sch-conflict-query-table">
+            <thead>
+              <tr>
+                <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
+                <th>学期</th>
+                <th>日期</th>
+                <th>周次</th>
+                <th>星期</th>
+                <th>节次</th>
+                <th>课程号</th>
+                <th>课程名称</th>
+                <th>上课教师</th>
+                <th>上课小组（人数）</th>
+                <th>学院</th>
+                <th>专业</th>
+                <th>入学批次</th>
+                <th class="sch-conflict-freeze sch-conflict-freeze-type">冲突类型</th>
+                <th class="col-center sch-conflict-freeze sch-conflict-freeze-ops">操作</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-time-conflict-body"></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <!-- ═══ 自动排课表时间 · 自动排课规则设置 ═══ -->
@@ -3051,13 +3261,23 @@
           </div>
           <div class="schedule-auto-board is-success">
             <div class="schedule-auto-board-head">
-              <span>成功课程</span>
-              <strong id="sat-right-count">0</strong>
+              <div class="schedule-auto-board-head-title">
+                <span>成功课程</span>
+                <strong id="sat-right-count">0</strong>
+              </div>
+              <div class="schedule-auto-board-head-actions">
+                <button class="btn btn-outline btn-sm" type="button" id="btn-sat-lock" onclick="lockScheduleAutoTimeSelected()" disabled>锁定</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="btn-sat-unlock" onclick="unlockScheduleAutoTimeSelected()" disabled>解锁</button>
+              </div>
             </div>
+            <p class="schedule-auto-lock-hint">底色高亮标记为已锁定，标「已锁定」的成功课程，撤回结果时不会撤回；可勾选后锁定或解锁。</p>
             <div class="table-wrap schedule-auto-board-table-wrap">
               <table class="data-table schedule-auto-board-table">
                 <thead>
                   <tr>
+                    <th class="col-center srf-col-pick schedule-auto-pick-col">
+                      <input type="checkbox" id="sat-success-check-all" title="全选成功课程" onchange="toggleScheduleAutoTimeSuccessCheckAll(this.checked)">
+                    </th>
                     <th class="col-status schedule-auto-status-col">排课状态</th>
                     <th class="schedule-auto-code">课程号</th>
                     <th class="schedule-auto-nature">课程性质</th>
@@ -3194,7 +3414,7 @@
           <div class="schedule-query-fields schedule-room-conflict-filters">
             <div class="schedule-query-field">
               <label for="schedule-room-conflict-filter-term">学年学期</label>
-              <input class="input input-sm" id="schedule-room-conflict-filter-term" readonly placeholder="—">
+              <select class="input input-sm" id="schedule-room-conflict-filter-term" onchange="onScheduleRoomConflictTermChange()"></select>
             </div>
             <div class="schedule-query-field">
               <label for="schedule-room-conflict-filter-type">冲突类型</label>
@@ -3254,23 +3474,26 @@
       <div class="legend-bar" id="schedule-room-conflict-hint"></div>
       <div class="card schedule-card">
         <div class="table-scroll schedule-room-conflict-table-wrap">
-          <table class="data-table schedule-room-conflict-table">
+          <table class="data-table schedule-room-conflict-table sch-conflict-query-table">
             <thead>
               <tr>
                 <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
-                <th class="sch-conflict-freeze sch-conflict-freeze-term">学期</th>
-                <th class="sch-conflict-freeze sch-conflict-freeze-date">日期</th>
-                <th>起止周</th>
+                <th>学期</th>
+                <th>日期</th>
+                <th>周次</th>
                 <th>星期</th>
                 <th>节次</th>
                 <th>课程号</th>
                 <th>课程名称</th>
                 <th>上课教师</th>
                 <th>上课小组（人数）</th>
+                <th>学院</th>
+                <th>专业</th>
+                <th>入学批次</th>
                 <th>上课教室</th>
                 <th class="col-center">共同授课状态</th>
-                <th>冲突类型</th>
-                <th>冲突内容</th>
+                <th class="sch-conflict-freeze sch-conflict-freeze-type">冲突类型</th>
+                <th class="col-center sch-conflict-freeze sch-conflict-freeze-ops">操作</th>
               </tr>
             </thead>
             <tbody id="schedule-room-conflict-body"></tbody>
@@ -3399,13 +3622,23 @@
           </div>
           <div class="schedule-auto-board is-success">
             <div class="schedule-auto-board-head">
-              <span>成功课程</span>
-              <strong id="sar-right-count">0</strong>
+              <div class="schedule-auto-board-head-title">
+                <span>成功课程</span>
+                <strong id="sar-right-count">0</strong>
+              </div>
+              <div class="schedule-auto-board-head-actions">
+                <button class="btn btn-outline btn-sm" type="button" id="btn-sar-lock" onclick="lockScheduleAutoRoomSelected()" disabled>锁定</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="btn-sar-unlock" onclick="unlockScheduleAutoRoomSelected()" disabled>解锁</button>
+              </div>
             </div>
+            <p class="schedule-auto-lock-hint">底色高亮标记为已锁定，标「已锁定」的成功课程，撤回结果时不会撤回；可勾选后锁定或解锁。</p>
             <div class="table-wrap schedule-auto-board-table-wrap">
               <table class="data-table schedule-auto-board-table">
                 <thead>
                   <tr>
+                    <th class="col-center srf-col-pick schedule-auto-pick-col">
+                      <input type="checkbox" id="sar-success-check-all" title="全选成功课程" onchange="toggleScheduleAutoRoomSuccessCheckAll(this.checked)">
+                    </th>
                     <th class="col-status schedule-auto-status-col">排教室状态</th>
                     <th class="schedule-auto-code">课程号</th>
                     <th class="schedule-auto-nature">课程性质</th>
@@ -7953,7 +8186,11 @@
         <div class="form-item full"><label class="req">节次（可多选）</label>
           <div class="schedule-multi-check-grid" id="schedule-modal-blackout-periods"></div>
         </div>
-        <div class="form-item full"><label>备注</label><input type="text" class="input" id="schedule-modal-blackout-remark" placeholder="不排课备注"></div>
+        <div class="form-item full">
+          <label>备注</label>
+          <input type="text" class="input" id="schedule-modal-blackout-remark" placeholder="不排课备注">
+          <p class="form-hint">备注内容将展示为冲突提示的说明</p>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -7973,7 +8210,11 @@
         <div class="form-item full"><label class="req">节次（可多选）</label>
           <div class="schedule-multi-check-grid" id="schedule-modal-elective-periods"></div>
         </div>
-        <div class="form-item full"><label>占位备注</label><input type="text" class="input" id="schedule-modal-elective-remark" placeholder="选修课预占位"></div>
+        <div class="form-item full">
+          <label>占位备注</label>
+          <input type="text" class="input" id="schedule-modal-elective-remark" placeholder="选修课预占位">
+          <p class="form-hint">备注内容将展示为冲突提示的说明</p>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -8058,13 +8299,84 @@
         <div class="schedule-slot-entry-list" id="schedule-modal-ts-block-list"></div>
       </div>
       <div class="form-grid">
-        <div class="form-item full"><label>备注</label><input type="text" class="input" id="schedule-modal-ts-remark" placeholder="备注"></div>
+        <div class="form-item full">
+          <label>备注</label>
+          <input type="text" class="input" id="schedule-modal-ts-remark" placeholder="备注">
+          <p class="form-hint">备注内容将展示为冲突提示的说明</p>
+        </div>
       </div>
       <!-- 原单条固定时段（onlySlot/blockSlot）已改为可多条不连续时段（onlySlots/blockSlots） -->
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-teacher-slot')">取消</button>
       <button class="btn btn-primary" type="button" onclick="saveScheduleTeacherSlotModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay modal-drawer" id="modal-schedule-room-slot">
+  <div class="modal modal-xl">
+    <div class="modal-head"><h3 id="modal-schedule-room-slot-title">教室不排课时段</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-room-slot')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-item full"><label class="req">学年学期</label><select class="input" id="schedule-modal-rs-term" onchange="onScheduleModalRoomSlotTermChange()"></select></div>
+      </div>
+      <div id="schedule-modal-rs-room-wrap">
+        <div class="schedule-modal-ts-filter-bar" id="schedule-modal-rs-filter-bar">
+          <div class="schedule-query-field">
+            <label for="schedule-modal-rs-filter-name">教室名称</label>
+            <input class="input input-sm" id="schedule-modal-rs-filter-name" type="text" placeholder="请输入教室名称" onkeydown="if(event.key==='Enter'){event.preventDefault();applyScheduleRoomSlotModalFilters();}">
+          </div>
+          <div class="schedule-query-field">
+            <label for="schedule-modal-rs-filter-building">楼栋</label>
+            <select class="input input-sm" id="schedule-modal-rs-filter-building" onchange="onScheduleRoomSlotModalBuildingChange()"></select>
+          </div>
+          <div class="schedule-query-field">
+            <label for="schedule-modal-rs-filter-floor">楼层</label>
+            <select class="input input-sm" id="schedule-modal-rs-filter-floor"></select>
+          </div>
+          <div class="schedule-query-field">
+            <label for="schedule-modal-rs-filter-type">教室类型</label>
+            <select class="input input-sm" id="schedule-modal-rs-filter-type"></select>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="applyScheduleRoomSlotModalFilters()">查询</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleRoomSlotModalFilters()">重置</button>
+          </div>
+        </div>
+        <div class="schedule-modal-ts-picker-head">
+          <label class="schedule-modal-ts-checkall" id="schedule-modal-rs-checkall-wrap">
+            <input type="checkbox" id="schedule-modal-rs-check-all" onchange="toggleScheduleRoomSlotModalRoomsAll(this.checked)">
+            全选当前查询结果
+          </label>
+          <span class="text-muted" id="schedule-modal-rs-selected-count">已选 0 间</span>
+        </div>
+        <div class="schedule-modal-ts-teacher-list" id="schedule-modal-rs-room-list"></div>
+        <div class="schedule-modal-ts-selected-panel">
+          <div class="schedule-modal-ts-selected-title">已选教室</div>
+          <div class="schedule-modal-ts-selected-list" id="schedule-modal-rs-selected-list"></div>
+        </div>
+        <p class="form-hint" id="schedule-modal-rs-room-hint">可按教室名称 / 楼栋 / 楼层 / 教室类型筛选后勾选教室</p>
+      </div>
+      <div class="schedule-teacher-slot-form-section">
+        <div class="schedule-slot-section-head">
+          <div class="schedule-slot-section-title">不排课时段</div>
+          <button class="btn btn-outline btn-sm" type="button" onclick="addScheduleRoomSlotEntry()">添加时段</button>
+        </div>
+        <p class="form-hint">可添加多个周次、星期、节次不同的不连续时段</p>
+        <div class="schedule-slot-entry-list" id="schedule-modal-rs-block-list"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-item full">
+          <label>备注</label>
+          <input type="text" class="input" id="schedule-modal-rs-remark" placeholder="备注">
+          <p class="form-hint">备注内容将展示为冲突提示的说明</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-room-slot')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveScheduleRoomSlotModal()">保存</button>
     </div>
   </div>
 </div>
@@ -8218,6 +8530,14 @@
           </div>
           <div class="srf-item"><label>星期</label><select class="input input-sm" id="asf-weekday"></select></div>
           <div class="srf-item"><label>教室</label><select class="input input-sm" id="asf-room"></select></div>
+          <div class="srf-item" data-adj-admin-filter hidden>
+            <label for="asf-teacher-name">教师姓名</label>
+            <input class="input input-sm" id="asf-teacher-name" type="text" placeholder="请输入教师姓名">
+          </div>
+          <div class="srf-item" data-adj-admin-filter hidden>
+            <label for="asf-teacher-id">教师工号</label>
+            <input class="input input-sm" id="asf-teacher-id" type="text" placeholder="请输入教师工号">
+          </div>
         </div>
         <div class="table-scroll adj-apply-left-table-wrap">
           <table class="data-table compact adj-slot-picker-table" id="adjustment-apply-left-table">
@@ -8229,7 +8549,6 @@
                 <th class="col-center adj-slot-col-period">节次</th>
                 <th class="adj-slot-col-weeks">周次</th>
                 <th>课程</th>
-                <th class="col-center">学分</th>
                 <th>教师</th>
                 <th>上课小组</th>
                 <th>教室</th>
@@ -8339,6 +8658,28 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-density')">关闭</button>
       <button class="btn btn-primary" type="button" onclick="confirmAdjustmentDensitySelection()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 抽屉：课表冲突查询详情 -->
+<div class="modal-overlay modal-drawer" id="modal-schedule-time-conflict-detail">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3 id="schedule-time-conflict-detail-title">冲突详情</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-time-conflict-detail')">×</button></div>
+    <div class="modal-body" id="schedule-time-conflict-detail-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-time-conflict-detail')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 抽屉：场地冲突查询详情 -->
+<div class="modal-overlay modal-drawer" id="modal-schedule-room-conflict-detail">
+  <div class="modal modal-lg">
+    <div class="modal-head"><h3 id="schedule-room-conflict-detail-title">冲突详情</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-room-conflict-detail')">×</button></div>
+    <div class="modal-body" id="schedule-room-conflict-detail-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-room-conflict-detail')">关闭</button>
     </div>
   </div>
 </div>
@@ -8487,8 +8828,9 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-adjustment-holiday">
-  <div class="modal modal-md">
+<!-- 抽屉：新增公假日停课 -->
+<div class="modal-overlay modal-drawer" id="modal-adjustment-holiday">
+  <div class="modal modal-lg">
     <div class="modal-head"><h3>新增公假日停课</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-holiday')">×</button></div>
     <div class="modal-body">
       <div class="form-grid">
@@ -8511,9 +8853,9 @@
   </div>
 </div>
 
-<!-- 弹窗：公假日停课确认（对接人事系统） -->
-<div class="modal-overlay" id="modal-adjustment-holiday-confirm">
-  <div class="modal modal-xl">
+<!-- 抽屉：公假日停课确认（对接人事系统） -->
+<div class="modal-overlay modal-drawer" id="modal-adjustment-holiday-confirm">
+  <div class="modal modal-lg">
     <div class="modal-head"><h3>公假日停课确认</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-holiday-confirm')">×</button></div>
     <div class="modal-body">
       <div class="schedule-query-row" style="margin-bottom:12px">
@@ -8548,9 +8890,9 @@
   </div>
 </div>
 
-<!-- 弹窗：公假日停课明细 -->
-<div class="modal-overlay" id="modal-adjustment-holiday-detail">
-  <div class="modal modal-xl">
+<!-- 抽屉：公假日停课明细 -->
+<div class="modal-overlay modal-drawer" id="modal-adjustment-holiday-detail">
+  <div class="modal modal-lg">
     <div class="modal-head"><h3 id="adjustment-holiday-detail-title">停课明细</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-holiday-detail')">×</button></div>
     <div class="modal-body">
       <div class="adj-detail-info" id="adjustment-holiday-detail-meta"></div>

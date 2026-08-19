@@ -25232,10 +25232,15 @@ const SCHEDULE_TASK_STORE = {
 
 /** 入学批次排课详情页上下文 { programmeKey, intake, type, phase } */
 let scheduleBatchDetailContext = null;
-/** 联合排课：已选专业批次 key（programmeKey|intake）与教师工号 */
+/** 联合排课：已选专业 / 专业批次 / 教师单位 / 教师 */
+const SCHEDULE_JOINT_PICKER_KINDS = ['programme', 'batch', 'dept', 'teacher'];
+let scheduleJointSelectedProgrammes = [];
 let scheduleJointSelectedBatches = [];
+let scheduleJointSelectedDepts = [];
 let scheduleJointSelectedTeachers = [];
-let scheduleJointPickerSnapshot = { batch: null, teacher: null };
+let scheduleJointPickerSnapshot = { programme: null, batch: null, dept: null, teacher: null };
+let scheduleJointPickerDraft = { programme: null, batch: null, dept: null, teacher: null };
+let scheduleJointPickerQuery = { programme: '', batch: '', dept: '', teacher: '' };
 let scheduleJointPickerDocBound = false;
 /** time：排课表时间；room：排课表教室 */
 let scheduleDetailPhase = 'time';
@@ -31851,7 +31856,7 @@ function commitScheduleGridDragSelect(e) {
     hitSlots.forEach(s => scheduleSelectedSlotIds.add(s.id));
   } else if (scheduleSelectedSlotIds.size === 0 && !isScheduleDetailReadonly()) {
     // 纯空格框选（新排模式）：为当前激活课程批量新排矩形内的空格
-    bulkScheduleEmptyCells(minW, maxW, minP, maxP);
+    bulkScheduleEmptyCells(minW, maxW, minP, maxP, d.jointKey);
   }
   scheduleGridSuppressClick = true; // 抑制拖拽结束后紧跟的 click
   renderScheduleDetailPage();
@@ -31860,10 +31865,11 @@ function commitScheduleGridDragSelect(e) {
 }
 
 /** 框选空格批量新排：按剩余学时逐格裁剪周次，排满即停，不超排 */
-function bulkScheduleEmptyCells(minW, maxW, minP, maxP) {
+function bulkScheduleEmptyCells(minW, maxW, minP, maxP, jointKey) {
   if (isScheduleDetailReadonly()) return;
   const task = getScheduleActiveTask();
   if (!task) { alert('请先从左侧选择要排课的课程'); return; }
+  if (isScheduleJointContext()) notifyScheduleJointWrongPlaceIfNeeded(task, jointKey);
   if (!parseWeeksString(scheduleDraftWeeks).length) { alert('请先在上方选择排课周次'); return; }
   const tasks = getScheduleDetailTasks();
   const occupied = new Set();
@@ -33496,6 +33502,9 @@ function onScheduleGridCellClick(weekday, periodNo, ev) {
       }
       return;
     }
+    if (isScheduleJointContext()) {
+      notifyScheduleJointWrongPlaceIfNeeded(task || getScheduleActiveTask(), getScheduleJointKeyFromEvent(ev));
+    }
     tryMoveSelectedScheduleWithConflicts(tasks, weekday, periodNo, preview);
     return;
   }
@@ -33529,6 +33538,9 @@ function onScheduleGridCellClick(weekday, periodNo, ev) {
   // 新排：左侧已选课程后点单元格空白（空格/已排格空白）→ 排课并完整冲突检测
   // 重修检测中同样允许选课落点；检测着色冲突一并纳入弹窗提醒
   if (!hasSelection && task) {
+    if (isScheduleJointContext()) {
+      notifyScheduleJointWrongPlaceIfNeeded(task, getScheduleJointKeyFromEvent(ev));
+    }
     if (!parseWeeksString(scheduleDraftWeeks).length) {
       alert('请先在上方选择排课周次');
       return;
@@ -39211,6 +39223,7 @@ function getScheduleDetailTitle() {
 function getScheduleScopeSwitchInfo() {
   const ctx = scheduleBatchDetailContext;
   if (!ctx) return { label: '排课对象', current: '', options: [] };
+  if (ctx.type === 'joint') return { label: '排课对象', current: '', options: [] };
   if (ctx.type === 'weekday') {
     return {
       label: '当前星期',
@@ -39263,6 +39276,7 @@ function getScheduleScopeSwitchInfo() {
 }
 
 function renderScheduleScopeSwitcher() {
+  if (isScheduleJointContext()) return;
   const sel = scheduleDetailEl('schedule-scope-select');
   const lab = scheduleDetailEl('schedule-scope-label');
   if (!sel) return;
@@ -39662,6 +39676,68 @@ function filterScheduleTasksByJointRow(tasks, jointKey) {
   return (tasks || []).filter(t => taskHasScheduleTeacher(t, obj.teacherId));
 }
 
+function formatScheduleJointTaskBatchLabel(task) {
+  const keys = typeof getScheduleTaskBatchKeys === 'function' ? getScheduleTaskBatchKeys(task) : [];
+  if (!keys.length) return '—';
+  return keys.map(key => {
+    const [programmeKey, intake] = String(key || '').split('|');
+    const m = PROGRAMMES[programmeKey];
+    if (!programmeKey || !intake) return '';
+    return `${m?.nameZh || programmeKey} · ${formatIntakeDisplay(intake)}`;
+  }).filter(Boolean).join('、') || '—';
+}
+
+function scheduleJointTaskMatchesRow(task, obj) {
+  if (!task || !obj) return false;
+  if (obj.kind === 'batch') {
+    const batchKey = `${obj.programmeKey}|${obj.intake}`;
+    const keys = typeof getScheduleTaskBatchKeys === 'function' ? getScheduleTaskBatchKeys(task) : [];
+    return keys.includes(batchKey)
+      || (task.programmeKey === obj.programmeKey && String(task.intake) === String(obj.intake));
+  }
+  return typeof taskHasScheduleTeacher === 'function' && taskHasScheduleTeacher(task, obj.teacherId);
+}
+
+function getScheduleJointTaskTargetRows(task) {
+  return getScheduleJointRowObjects().filter(obj => scheduleJointTaskMatchesRow(task, obj));
+}
+
+function getScheduleJointTaskTargetRowKeys(task) {
+  return getScheduleJointTaskTargetRows(task).map(o => o.key);
+}
+
+let scheduleJointPlaceToastTimer = null;
+function showScheduleJointPlaceToast(message, durationMs = 2800) {
+  const page = document.getElementById('page-schedule-joint');
+  if (!page || !message) return;
+  let el = page.querySelector('#schedule-joint-place-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'schedule-joint-place-toast';
+    el.className = 'schedule-joint-place-toast';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    page.appendChild(el);
+  }
+  el.textContent = message;
+  el.hidden = false;
+  if (scheduleJointPlaceToastTimer) clearTimeout(scheduleJointPlaceToastTimer);
+  scheduleJointPlaceToastTimer = setTimeout(() => {
+    el.hidden = true;
+    scheduleJointPlaceToastTimer = null;
+  }, durationMs);
+}
+
+/** 联合排课：落点行不是本课专业批次/教师时提示，并按正确对象行校正（同一节次会同时出现在匹配的批次与教师格） */
+function notifyScheduleJointWrongPlaceIfNeeded(task, jointKey) {
+  if (!isScheduleJointContext() || !task || !jointKey) return false;
+  const targets = getScheduleJointTaskTargetRows(task);
+  if (!targets.length || targets.some(o => o.key === jointKey)) return false;
+  const names = targets.map(o => o.label).join('、');
+  showScheduleJointPlaceToast(names ? `落点错误，已自动校正到 ${names}` : '落点错误，已自动校正');
+  return true;
+}
+
 function getScheduleJointKeyFromEvent(ev) {
   return ev?.target?.closest?.('tr[data-joint-key]')?.getAttribute('data-joint-key')
     || ev?.currentTarget?.closest?.('tr[data-joint-key]')?.getAttribute('data-joint-key')
@@ -39697,13 +39773,20 @@ function ensureScheduleJointPage() {
   const mount = document.getElementById('page-schedule-joint');
   const src = document.getElementById('page-schedule-time-detail');
   if (!mount || !src) return;
-  if (mount.dataset.cloned === '1' && mount.querySelector('#schedule-joint-picker-bar')) return;
+  if (mount.dataset.cloned === '1' && mount.querySelector('#schedule-joint-picker-bar')) {
+    ensureScheduleJointPickerBar(mount);
+    bindScheduleJointPickerDocClose();
+    bindScheduleJointPickerTriggers();
+    return;
+  }
   const clone = src.cloneNode(true);
   clone.id = 'page-schedule-joint';
   clone.classList.add('schedule-detail-page', 'is-schedule-joint');
   clone.hidden = false;
   clone.removeAttribute('aria-hidden');
   clone.dataset.cloned = '1';
+  const scopeToolbar = clone.querySelector('.schedule-timetable-toolbar');
+  if (scopeToolbar) scopeToolbar.hidden = true;
   const scopeSwitch = clone.querySelector('.schedule-scope-switch');
   if (scopeSwitch) scopeSwitch.hidden = true;
   clone.querySelectorAll('.page-header-actions button.btn-ghost').forEach(btn => {
@@ -39728,44 +39811,71 @@ function ensureScheduleJointPage() {
   const picker = document.createElement('div');
   picker.className = 'schedule-joint-picker-bar';
   picker.id = 'schedule-joint-picker-bar';
-  picker.innerHTML = `
-    <div class="schedule-joint-picker-row">
-      <label class="schedule-joint-picker-label" for="schedule-joint-batch-btn">专业批次</label>
-      <div class="clo-multiselect schedule-joint-multiselect" id="schedule-joint-batch-multiselect">
-        <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-joint-batch-btn" onclick="toggleScheduleJointPicker('batch',event)">
-          <span class="clo-multiselect-display placeholder" id="schedule-joint-batch-display">请选择专业批次</span>
-          <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-        </button>
-        <div class="clo-multiselect-dropdown" id="schedule-joint-batch-dropdown" hidden>
-          <div class="clo-multiselect-options" id="schedule-joint-batch-options"></div>
-          <div class="clo-multiselect-foot">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="cancelScheduleJointPicker('batch',event)">取消</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="confirmScheduleJointPicker('batch',event)">确定</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="schedule-joint-picker-row">
-      <label class="schedule-joint-picker-label" for="schedule-joint-teacher-btn">教师</label>
-      <div class="clo-multiselect schedule-joint-multiselect" id="schedule-joint-teacher-multiselect">
-        <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-joint-teacher-btn" onclick="toggleScheduleJointPicker('teacher',event)">
-          <span class="clo-multiselect-display placeholder" id="schedule-joint-teacher-display">请选择教师</span>
-          <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-        </button>
-        <div class="clo-multiselect-dropdown" id="schedule-joint-teacher-dropdown" hidden>
-          <div class="clo-multiselect-options" id="schedule-joint-teacher-options"></div>
-          <div class="clo-multiselect-foot">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="cancelScheduleJointPicker('teacher',event)">取消</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="confirmScheduleJointPicker('teacher',event)">确定</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
+  picker.innerHTML = buildScheduleJointPickerBarHtml();
   const header = clone.querySelector('.page-header');
   if (header) header.insertAdjacentElement('afterend', picker);
   else clone.insertBefore(picker, clone.firstChild);
   mount.replaceWith(clone);
   bindScheduleJointPickerDocClose();
+  bindScheduleJointPickerTriggers();
+}
+
+function buildScheduleJointPickerFieldHtml(kind, label) {
+  const ph = getScheduleJointPickerPlaceholder(kind, false);
+  return `
+    <div class="schedule-joint-picker-field">
+      <label class="schedule-joint-picker-label" for="schedule-joint-${kind}-search">${label}</label>
+      <div class="clo-multiselect schedule-joint-multiselect" id="schedule-joint-${kind}-multiselect">
+        <div class="clo-multiselect-trigger input input-sm schedule-joint-picker-trigger" id="schedule-joint-${kind}-btn">
+          <div class="schedule-joint-picker-selected" id="schedule-joint-${kind}-selected"></div>
+          <input class="schedule-joint-picker-search" id="schedule-joint-${kind}-search" type="text" placeholder="${escapeHtml(ph)}" autocomplete="off"
+            onfocus="openScheduleJointPicker('${kind}',event)"
+            oninput="onScheduleJointPickerSearch('${kind}',event)"
+            onclick="event.stopPropagation()">
+          <button type="button" class="schedule-joint-picker-arrow" aria-label="展开${label}" onclick="toggleScheduleJointPicker('${kind}',event)">▾</button>
+        </div>
+        <div class="clo-multiselect-dropdown" id="schedule-joint-${kind}-dropdown" hidden>
+          <div class="clo-multiselect-options" id="schedule-joint-${kind}-options"></div>
+          <div class="clo-multiselect-foot">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="cancelScheduleJointPicker('${kind}',event)">取消</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="confirmScheduleJointPicker('${kind}',event)">确定</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildScheduleJointPickerBarHtml() {
+  return `
+    <div class="schedule-joint-picker-row">
+      ${buildScheduleJointPickerFieldHtml('programme', '专业')}
+      ${buildScheduleJointPickerFieldHtml('batch', '专业批次')}
+    </div>
+    <div class="schedule-joint-picker-row">
+      ${buildScheduleJointPickerFieldHtml('dept', '教师单位')}
+      ${buildScheduleJointPickerFieldHtml('teacher', '教师')}
+    </div>`;
+}
+
+function ensureScheduleJointPickerBar(page) {
+  const host = page || document.getElementById('page-schedule-joint');
+  if (!host) return;
+  let bar = host.querySelector('#schedule-joint-picker-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.className = 'schedule-joint-picker-bar';
+    bar.id = 'schedule-joint-picker-bar';
+    const header = host.querySelector('.page-header');
+    if (header) header.insertAdjacentElement('afterend', bar);
+    else host.insertBefore(bar, host.firstChild);
+  }
+  if (!host.querySelector('#schedule-joint-programme-search')) {
+    bar.innerHTML = buildScheduleJointPickerBarHtml();
+    SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+      const trigger = scheduleDetailEl(getScheduleJointPickerIds(kind).btn);
+      if (trigger) delete trigger.dataset.jointTriggerBound;
+    });
+  }
 }
 
 function bindScheduleJointPickerDocClose() {
@@ -39774,121 +39884,298 @@ function bindScheduleJointPickerDocClose() {
   document.addEventListener('click', e => {
     if (!isScheduleJointContext()) return;
     if (e.target?.closest?.('.schedule-joint-multiselect')) return;
-    closeScheduleJointPicker('batch');
-    closeScheduleJointPicker('teacher');
+    SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => closeScheduleJointPicker(kind));
   });
 }
 
 function getScheduleJointPickerIds(kind) {
-  const prefix = kind === 'teacher' ? 'teacher' : 'batch';
+  const prefix = SCHEDULE_JOINT_PICKER_KINDS.includes(kind) ? kind : 'batch';
   return {
     options: `schedule-joint-${prefix}-options`,
     dropdown: `schedule-joint-${prefix}-dropdown`,
-    display: `schedule-joint-${prefix}-display`,
-    btn: `schedule-joint-${prefix}-btn`
+    search: `schedule-joint-${prefix}-search`,
+    btn: `schedule-joint-${prefix}-btn`,
+    selected: `schedule-joint-${prefix}-selected`
   };
 }
 
-function getScheduleJointPickerOptions(kind) {
+function getScheduleJointPickerPlaceholder(kind, forSearch) {
+  if (kind === 'programme') return forSearch ? '搜索专业' : '请选择或搜索专业';
+  if (kind === 'dept') return forSearch ? '搜索教师单位' : '请选择或搜索教师单位';
+  if (kind === 'teacher') return forSearch ? '搜索教师' : '请选择或搜索教师';
+  return forSearch ? '搜索专业批次' : '请选择或搜索专业批次';
+}
+
+function formatScheduleJointDeptLabel(dept) {
+  const code = String(dept || '').trim();
+  if (!code || code === '—') return '—';
+  const name = (typeof SCHOOL_NAME_MAP !== 'undefined' && SCHOOL_NAME_MAP[code]) || '';
+  return name && name !== code ? `${code} ${name}` : code;
+}
+
+function getScheduleJointAllPickerOptions(kind) {
+  if (kind === 'programme') {
+    const seen = new Map();
+    buildScheduleBatchSummaries().forEach(s => {
+      if (!s.programmeKey || seen.has(s.programmeKey)) return;
+      const text = s.programmeCode
+        ? `${s.programmeName}（${s.programmeCode}）`
+        : (s.programmeName || s.programmeKey);
+      seen.set(s.programmeKey, {
+        value: s.programmeKey,
+        text,
+        search: `${s.programmeName || ''} ${s.programmeCode || ''} ${s.programmeKey}`
+      });
+    });
+    return [...seen.values()].sort((a, b) => a.text.localeCompare(b.text, 'zh-CN'));
+  }
+  if (kind === 'dept') {
+    const seen = new Map();
+    getScheduleTeacherGroupRows().forEach(r => {
+      const dept = String(r.dept || '').trim();
+      if (!dept || dept === '—' || seen.has(dept)) return;
+      seen.set(dept, {
+        value: dept,
+        text: formatScheduleJointDeptLabel(dept),
+        search: `${dept} ${typeof SCHOOL_NAME_MAP !== 'undefined' ? (SCHOOL_NAME_MAP[dept] || '') : ''}`
+      });
+    });
+    return [...seen.values()].sort((a, b) => a.text.localeCompare(b.text, 'zh-CN'));
+  }
   if (kind === 'teacher') {
     return getScheduleTeacherGroupRows().map(r => ({
       value: r.teacherId,
-      text: `${r.name}（${r.teacherId}）`
+      text: `${r.name}（${r.teacherId}）`,
+      search: `${r.name} ${r.teacherId} ${r.dept || ''}`,
+      dept: String(r.dept || '').trim()
     }));
   }
   return buildScheduleBatchSummaries().map(s => ({
     value: `${s.programmeKey}|${s.intake}`,
-    text: `${s.programmeName} · ${formatIntakeDisplay(s.intake)}`
+    text: `${s.programmeName} · ${formatIntakeDisplay(s.intake)}`,
+    search: `${s.programmeName} ${s.programmeCode || ''} ${s.programmeKey} ${s.intake} ${formatIntakeDisplay(s.intake)}`,
+    programmeKey: s.programmeKey
   }));
 }
 
+function getScheduleJointPickerOptions(kind) {
+  const all = getScheduleJointAllPickerOptions(kind);
+  if (kind === 'batch' && scheduleJointSelectedProgrammes.length) {
+    const allow = new Set(scheduleJointSelectedProgrammes);
+    return all.filter(o => allow.has(o.programmeKey || String(o.value || '').split('|')[0]));
+  }
+  if (kind === 'teacher' && scheduleJointSelectedDepts.length) {
+    const allow = new Set(scheduleJointSelectedDepts);
+    return all.filter(o => allow.has(o.dept));
+  }
+  return all;
+}
+
 function getScheduleJointSelectedValues(kind) {
-  return kind === 'teacher' ? scheduleJointSelectedTeachers.slice() : scheduleJointSelectedBatches.slice();
+  if (kind === 'programme') return scheduleJointSelectedProgrammes.slice();
+  if (kind === 'dept') return scheduleJointSelectedDepts.slice();
+  if (kind === 'teacher') return scheduleJointSelectedTeachers.slice();
+  return scheduleJointSelectedBatches.slice();
+}
+
+function getScheduleJointPickerDraft(kind) {
+  if (Array.isArray(scheduleJointPickerDraft[kind])) return scheduleJointPickerDraft[kind].slice();
+  return getScheduleJointSelectedValues(kind);
+}
+
+function filterScheduleJointPickerOptions(opts, kind) {
+  const q = String(scheduleJointPickerQuery[kind] || '').trim().toLowerCase();
+  if (!q) return opts;
+  return opts.filter(o => `${o.text} ${o.search || ''} ${o.value}`.toLowerCase().includes(q));
 }
 
 function fillScheduleJointPickerOptions(kind, selected) {
   const ids = getScheduleJointPickerIds(kind);
   const host = scheduleDetailEl(ids.options);
   if (!host) return;
-  const sel = new Set(selected || getScheduleJointSelectedValues(kind));
-  const opts = getScheduleJointPickerOptions(kind);
-  if (!opts.length) {
+  const sel = new Set(selected || getScheduleJointPickerDraft(kind));
+  const all = getScheduleJointPickerOptions(kind);
+  const opts = filterScheduleJointPickerOptions(all, kind);
+  if (!all.length) {
     host.innerHTML = '<div class="clo-multiselect-empty">暂无可选项</div>';
+    return;
+  }
+  if (!opts.length) {
+    host.innerHTML = '<div class="clo-multiselect-empty">无匹配项</div>';
     return;
   }
   host.innerHTML = opts.map(o => `
     <label class="clo-multiselect-option">
-      <input type="checkbox" value="${escapeHtml(o.value)}"${sel.has(o.value) ? ' checked' : ''}>
+      <input type="checkbox" value="${escapeHtml(o.value)}"${sel.has(o.value) ? ' checked' : ''}
+        onchange="onScheduleJointPickerCheck('${kind}', this)">
       <span>${escapeHtml(o.text)}</span>
     </label>`).join('');
 }
 
-function updateScheduleJointPickerDisplay(kind) {
+function ensureScheduleJointPickerChipsHost(kind) {
   const ids = getScheduleJointPickerIds(kind);
-  const display = scheduleDetailEl(ids.display);
-  if (!display) return;
-  const selected = getScheduleJointSelectedValues(kind);
-  const opts = getScheduleJointPickerOptions(kind);
-  const labels = selected.map(v => opts.find(o => o.value === v)?.text || v).filter(Boolean);
-  const placeholder = kind === 'teacher' ? '请选择教师' : '请选择专业批次';
-  if (!labels.length) {
-    display.textContent = placeholder;
-    display.classList.add('placeholder');
+  let host = scheduleDetailEl(ids.selected);
+  if (host) return host;
+  const trigger = scheduleDetailEl(ids.btn);
+  const input = scheduleDetailEl(ids.search);
+  if (!trigger || !input) return null;
+  host = document.createElement('div');
+  host.id = ids.selected;
+  host.className = 'schedule-joint-picker-selected';
+  trigger.insertBefore(host, input);
+  return host;
+}
+
+function bindScheduleJointPickerTriggers() {
+  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+    ensureScheduleJointPickerChipsHost(kind);
+    const trigger = scheduleDetailEl(getScheduleJointPickerIds(kind).btn);
+    if (!trigger || trigger.dataset.jointTriggerBound === '1') return;
+    trigger.dataset.jointTriggerBound = '1';
+    trigger.addEventListener('click', e => onScheduleJointPickerTriggerClick(kind, e));
+  });
+}
+
+function onScheduleJointPickerTriggerClick(kind, event) {
+  if (event?.target?.closest?.('.schedule-joint-picker-arrow')) return;
+  if (event?.target?.closest?.('.schedule-joint-picker-search')) return;
+  if (event?.target?.closest?.('.clo-multiselect-dropdown')) return;
+  event?.stopPropagation?.();
+  const ids = getScheduleJointPickerIds(kind);
+  const dd = scheduleDetailEl(ids.dropdown);
+  if (dd && !dd.hidden) {
+    scheduleDetailEl(ids.search)?.focus();
     return;
   }
-  display.textContent = labels.length <= 2 ? labels.join('、') : `已选 ${labels.length} 项`;
-  display.classList.remove('placeholder');
+  openScheduleJointPicker(kind, event);
+  scheduleDetailEl(ids.search)?.focus();
+}
+
+function updateScheduleJointPickerDisplay(kind) {
+  const ids = getScheduleJointPickerIds(kind);
+  const input = scheduleDetailEl(ids.search);
+  const host = ensureScheduleJointPickerChipsHost(kind);
+  const selected = getScheduleJointSelectedValues(kind);
+  const opts = getScheduleJointAllPickerOptions(kind);
+  const labels = selected.map(v => opts.find(o => o.value === v)?.text || v).filter(Boolean);
+  if (host) {
+    host.innerHTML = labels.map(text =>
+      `<span class="schedule-joint-picker-chip">${escapeHtml(text)}</span>`
+    ).join('');
+    host.hidden = !labels.length;
+  }
+  if (!input) return;
+  const dropdownOpen = !scheduleDetailEl(ids.dropdown)?.hidden;
+  const trigger = scheduleDetailEl(ids.btn);
+  trigger?.classList.toggle('has-selected', !!labels.length);
+  input.placeholder = labels.length ? '' : getScheduleJointPickerPlaceholder(kind, dropdownOpen);
+  if (!dropdownOpen) input.value = '';
 }
 
 function syncScheduleJointPickers() {
   if (!isScheduleJointContext()) return;
-  fillScheduleJointPickerOptions('batch', scheduleJointSelectedBatches);
-  fillScheduleJointPickerOptions('teacher', scheduleJointSelectedTeachers);
-  updateScheduleJointPickerDisplay('batch');
-  updateScheduleJointPickerDisplay('teacher');
+  ensureScheduleJointPickerBar();
+  bindScheduleJointPickerTriggers();
+  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+    fillScheduleJointPickerOptions(kind, getScheduleJointSelectedValues(kind));
+    updateScheduleJointPickerDisplay(kind);
+  });
 }
 
 function closeScheduleJointPicker(kind) {
   const dd = scheduleDetailEl(getScheduleJointPickerIds(kind).dropdown);
   if (dd) dd.hidden = true;
   scheduleJointPickerSnapshot[kind] = null;
+  scheduleJointPickerDraft[kind] = null;
+  scheduleJointPickerQuery[kind] = '';
+  updateScheduleJointPickerDisplay(kind);
+}
+
+function openScheduleJointPicker(kind, event, opts = {}) {
+  event?.stopPropagation?.();
+  const ids = getScheduleJointPickerIds(kind);
+  const dd = scheduleDetailEl(ids.dropdown);
+  if (!dd) return;
+  SCHEDULE_JOINT_PICKER_KINDS.forEach(other => {
+    if (other !== kind) closeScheduleJointPicker(other);
+  });
+  if (!dd.hidden) return;
+  const current = getScheduleJointSelectedValues(kind);
+  scheduleJointPickerSnapshot[kind] = current.slice();
+  scheduleJointPickerDraft[kind] = current.slice();
+  const input = scheduleDetailEl(ids.search);
+  const hasSelected = getScheduleJointSelectedValues(kind).length > 0;
+  if (!opts.keepQuery) {
+    scheduleJointPickerQuery[kind] = '';
+    if (input) {
+      input.value = '';
+      input.placeholder = hasSelected ? '' : getScheduleJointPickerPlaceholder(kind, true);
+    }
+  } else if (input) {
+    scheduleJointPickerQuery[kind] = input.value || '';
+    input.placeholder = hasSelected ? '' : getScheduleJointPickerPlaceholder(kind, true);
+  }
+  fillScheduleJointPickerOptions(kind, current);
+  dd.hidden = false;
 }
 
 function toggleScheduleJointPicker(kind, event) {
   event?.stopPropagation?.();
   event?.preventDefault?.();
-  const ids = getScheduleJointPickerIds(kind);
-  const dd = scheduleDetailEl(ids.dropdown);
+  const dd = scheduleDetailEl(getScheduleJointPickerIds(kind).dropdown);
   if (!dd) return;
-  const willOpen = dd.hidden;
-  closeScheduleJointPicker(kind === 'batch' ? 'teacher' : 'batch');
-  if (!willOpen) {
+  if (!dd.hidden) {
     closeScheduleJointPicker(kind);
     return;
   }
-  const current = getScheduleJointSelectedValues(kind);
-  scheduleJointPickerSnapshot[kind] = current.slice();
-  fillScheduleJointPickerOptions(kind, current);
-  dd.hidden = false;
+  openScheduleJointPicker(kind, event);
+  scheduleDetailEl(getScheduleJointPickerIds(kind).search)?.focus();
+}
+
+function onScheduleJointPickerSearch(kind, event) {
+  event?.stopPropagation?.();
+  const input = scheduleDetailEl(getScheduleJointPickerIds(kind).search);
+  scheduleJointPickerQuery[kind] = input?.value || '';
+  if (scheduleDetailEl(getScheduleJointPickerIds(kind).dropdown)?.hidden) {
+    openScheduleJointPicker(kind, event, { keepQuery: true });
+  }
+  fillScheduleJointPickerOptions(kind, getScheduleJointPickerDraft(kind));
+}
+
+function onScheduleJointPickerCheck(kind, checkbox) {
+  if (!checkbox) return;
+  const draft = new Set(getScheduleJointPickerDraft(kind));
+  if (checkbox.checked) draft.add(checkbox.value);
+  else draft.delete(checkbox.value);
+  scheduleJointPickerDraft[kind] = [...draft];
 }
 
 function cancelScheduleJointPicker(kind, event) {
   event?.stopPropagation?.();
   event?.preventDefault?.();
-  const snap = scheduleJointPickerSnapshot[kind];
-  if (snap) fillScheduleJointPickerOptions(kind, snap);
   closeScheduleJointPicker(kind);
+}
+
+function pruneScheduleJointCascadedSelections() {
+  if (scheduleJointSelectedProgrammes.length) {
+    const allow = new Set(getScheduleJointPickerOptions('batch').map(o => o.value));
+    scheduleJointSelectedBatches = scheduleJointSelectedBatches.filter(v => allow.has(v));
+  }
+  if (scheduleJointSelectedDepts.length) {
+    const allow = new Set(getScheduleJointPickerOptions('teacher').map(o => o.value));
+    scheduleJointSelectedTeachers = scheduleJointSelectedTeachers.filter(v => allow.has(v));
+  }
 }
 
 function confirmScheduleJointPicker(kind, event) {
   event?.stopPropagation?.();
   event?.preventDefault?.();
-  const host = scheduleDetailEl(getScheduleJointPickerIds(kind).options);
-  const next = host
-    ? [...host.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value)
-    : [];
-  if (kind === 'teacher') scheduleJointSelectedTeachers = next;
+  const next = getScheduleJointPickerDraft(kind);
+  if (kind === 'programme') scheduleJointSelectedProgrammes = next;
+  else if (kind === 'dept') scheduleJointSelectedDepts = next;
+  else if (kind === 'teacher') scheduleJointSelectedTeachers = next;
   else scheduleJointSelectedBatches = next;
+  if (kind === 'programme' || kind === 'dept') pruneScheduleJointCascadedSelections();
   if (scheduleBatchDetailContext?.type === 'joint') {
     scheduleBatchDetailContext.batches = scheduleJointSelectedBatches.slice();
     scheduleBatchDetailContext.teachers = scheduleJointSelectedTeachers.slice();
@@ -40822,7 +41109,8 @@ function renderScheduleJointTimetableGrid(term, tasks, activeTaskId, weekFilter)
     objects.forEach(obj => {
       const kindCls = obj.kind === 'teacher' ? ' is-teacher' : '';
       const kindText = obj.kind === 'teacher' ? '教师' : '批次';
-      html += `<tr data-joint-key="${escapeHtml(obj.key)}"><td class="schedule-grid-weekday-col">${escapeHtml(w.label)}</td>`;
+      const wdZebra = Number(w.value) % 2 ? 'odd' : 'even';
+      html += `<tr data-joint-key="${escapeHtml(obj.key)}" data-weekday="${w.value}"><td class="schedule-grid-weekday-col is-wd-zebra-${wdZebra}">${escapeHtml(w.label)}</td>`;
       periods.forEach(p => {
         const cells = occupancy.get(`${obj.key}|${w.value}-${p.periodNo}`) || [];
         const colCount = cells.length ? Math.min(cells.length, 3) : 1;
@@ -42749,7 +43037,11 @@ function renderScheduleDetailCourseList(tasks, activeTaskId) {
     const hourTypeLabel = unit.label || getScheduleHourTypeLabel(unit.key);
     const sharedCode = getScheduleTaskSharedTeachingCode(task) || '—';
     const statusField = `<span class="sdc-field sdc-field-status"><i class="sdc-k">${escapeHtml(hourTypeLabel || '学时')}</i><b class="sdc-v ${hoursCls}">${unit.done}/${unit.total}</b></span>`;
+    const batchField = isScheduleJointContext()
+      ? `<span class="sdc-field"><i class="sdc-k">专业批次</i><b class="sdc-v sdc-v-wrap">${escapeHtml(formatScheduleJointTaskBatchLabel(task))}</b></span>`
+      : '';
     const sharedFields = `<span class="sdc-field"><i class="sdc-k">上课小组</i><b class="sdc-v sdc-v-wrap">${escapeHtml(formatScheduleGroupNamesWithCount(task, unit.key))}</b></span>
+          ${batchField}
           <span class="sdc-field"><i class="sdc-k">授课教师</i><b class="sdc-v sdc-v-wrap sdc-v-teachers">${formatScheduleTeacherNameLinksHtml(task)}</b></span>
           <span class="sdc-field"><i class="sdc-k">共同授课码</i><b class="sdc-v sdc-v-wrap">${escapeHtml(sharedCode)}</b></span>`;
     const hoursStatusIcon = getScheduleUnitHoursStatusIconHtml(unit);
@@ -49248,6 +49540,207 @@ function renderPortalApps() {
   // grid.innerHTML = apps.map(app => { ... }).join('');
 }
 
+/** 排课管理页内可搜索下拉；弹窗 / 抽屉选择器不增强 */
+function isSearchableSelectModalScope(el) {
+  if (!el || el === document) return false;
+  if (el.id && (String(el.id).startsWith('modal-') || String(el.id).startsWith('drawer-'))) return true;
+  if (el.classList?.contains('modal-overlay') || el.classList?.contains('drawer-panel') || el.classList?.contains('drawer-backdrop')) return true;
+  return !!el.closest?.('.modal-overlay, .drawer-panel, [id^="modal-"], [id^="drawer-"]');
+}
+
+function shouldEnhanceScheduleSearchableSelect(select) {
+  if (!select || select.tagName !== 'SELECT' || select.multiple) return false;
+  if (select.hidden || select.hasAttribute('hidden')) return false;
+  if (select.getAttribute('aria-hidden') === 'true') return false;
+  if (select.closest('.ss-dropdown')) return false;
+  if (isSearchableSelectModalScope(select)) return false;
+  return !!select.closest('.schedule-page');
+}
+
+function getSearchableSelectLabel(select) {
+  const opt = select?.options?.[select.selectedIndex];
+  return opt ? String(opt.textContent || opt.label || '').trim() : '';
+}
+
+function syncSearchableSelectLabel(select, force) {
+  const input = select?._ssInput;
+  if (!input) return;
+  if (!force && document.activeElement === input && select._ssOpen) return;
+  input.value = getSearchableSelectLabel(select);
+}
+
+function closeSearchableSelect(select) {
+  if (!select?._ssDropdown) return;
+  select._ssOpen = false;
+  select._ssDropdown.hidden = true;
+  select._ssWrap?.classList.remove('is-open');
+  select._ssActiveIndex = -1;
+  syncSearchableSelectLabel(select, true);
+}
+
+function closeAllSearchableSelects(except) {
+  document.querySelectorAll('.ss-wrap.is-open').forEach(wrap => {
+    const sel = wrap.querySelector('select');
+    if (sel && sel !== except) closeSearchableSelect(sel);
+  });
+}
+
+function renderSearchableSelectOptions(select, query) {
+  const dropdown = select._ssDropdown;
+  if (!dropdown) return;
+  const q = String(query || '').trim().toLowerCase().replace(/\s+/g, '');
+  const opts = [...select.options];
+  const html = opts.map((opt, i) => {
+    const text = String(opt.textContent || opt.label || '').trim();
+    const hay = (text + String(opt.value || '')).toLowerCase().replace(/\s+/g, '');
+    if (q && !hay.includes(q)) return '';
+    const active = i === select.selectedIndex ? ' is-selected' : '';
+    const disabled = opt.disabled ? ' is-disabled' : '';
+    return `<button type="button" class="ss-option${active}${disabled}" data-index="${i}" ${opt.disabled ? 'disabled' : ''}>${escapeHtml(text || '—')}</button>`;
+  }).join('');
+  dropdown.innerHTML = html || '<div class="ss-empty">无匹配项</div>';
+  dropdown.querySelectorAll('.ss-option:not([disabled])').forEach(btn => {
+    btn.addEventListener('mousedown', ev => ev.preventDefault());
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.index);
+      if (!Number.isFinite(idx) || !select.options[idx] || select.options[idx].disabled) return;
+      const next = select.options[idx].value;
+      if (select.value !== next) {
+        select.value = next;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      closeSearchableSelect(select);
+    });
+  });
+}
+
+function openSearchableSelect(select, query) {
+  if (select.disabled) return;
+  closeAllSearchableSelects(select);
+  select._ssOpen = true;
+  select._ssWrap?.classList.add('is-open');
+  renderSearchableSelectOptions(select, query);
+  select._ssDropdown.hidden = false;
+}
+
+function bindSearchableSelectEvents(select) {
+  const input = select._ssInput;
+  const dropdown = select._ssDropdown;
+  if (!input || !dropdown || select._ssBound === '1') return;
+  select._ssBound = '1';
+  input.addEventListener('focus', () => {
+    if (select.disabled) return;
+    input.select();
+    openSearchableSelect(select, '');
+  });
+  input.addEventListener('input', () => openSearchableSelect(select, input.value));
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape') {
+      ev.preventDefault();
+      closeSearchableSelect(select);
+      input.blur();
+      return;
+    }
+    if (ev.key === 'Enter') {
+      const cur = dropdown.querySelector('.ss-option.is-selected') || dropdown.querySelector('.ss-option:not([disabled])');
+      if (cur && select._ssOpen) {
+        ev.preventDefault();
+        cur.click();
+      }
+    }
+  });
+  input.addEventListener('blur', () => {
+    setTimeout(() => closeSearchableSelect(select), 120);
+  });
+  select.addEventListener('change', () => syncSearchableSelectLabel(select, true));
+  const obs = new MutationObserver(() => {
+    input.disabled = !!select.disabled;
+    if (select._ssOpen) renderSearchableSelectOptions(select, input.value);
+    else syncSearchableSelectLabel(select, true);
+  });
+  obs.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+}
+
+function enhanceScheduleSearchableSelect(select) {
+  if (!shouldEnhanceScheduleSearchableSelect(select)) return;
+  const existingWrap = select.closest('.ss-wrap');
+  if (existingWrap) {
+    select._ssWrap = existingWrap;
+    select._ssInput = existingWrap.querySelector(':scope > .ss-input');
+    select._ssDropdown = existingWrap.querySelector(':scope > .ss-dropdown');
+    select.classList.add('ss-native');
+    select.dataset.ssReady = '1';
+    if (select._ssInput) {
+      select._ssInput.disabled = !!select.disabled;
+      bindSearchableSelectEvents(select);
+      syncSearchableSelectLabel(select, true);
+    }
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'ss-wrap';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'ss-input input';
+  if (select.classList.contains('input-sm')) input.classList.add('input-sm');
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-autocomplete', 'list');
+  const dropdown = document.createElement('div');
+  dropdown.className = 'ss-dropdown';
+  dropdown.hidden = true;
+  select.classList.add('ss-native');
+  select.dataset.ssReady = '1';
+  select.parentNode.insertBefore(wrap, select);
+  wrap.appendChild(select);
+  wrap.appendChild(input);
+  wrap.appendChild(dropdown);
+  select._ssWrap = wrap;
+  select._ssInput = input;
+  select._ssDropdown = dropdown;
+  input.disabled = !!select.disabled;
+  input.placeholder = select.getAttribute('placeholder') || '请选择或搜索';
+  bindSearchableSelectEvents(select);
+  syncSearchableSelectLabel(select, true);
+}
+
+function observeSchedulePageSearchableSelects(page) {
+  if (!page || page.dataset.ssObserved === '1') return;
+  page.dataset.ssObserved = '1';
+  new MutationObserver(muts => {
+    let need = false;
+    muts.forEach(m => {
+      m.addedNodes.forEach(n => {
+        if (n.nodeType !== 1) return;
+        if (n.closest?.('.ss-wrap, .ss-dropdown, .modal-overlay, .drawer-panel')) return;
+        if (n.matches?.('select') || n.querySelector?.('select')) need = true;
+      });
+    });
+    if (need) enhanceAllSelects(page);
+  }).observe(page, { childList: true, subtree: true });
+}
+
+function enhanceAllSelects(root) {
+  if (isSearchableSelectModalScope(root)) return;
+  const scope = root && root.nodeType === 1 ? root : document;
+  const pages = scope.classList?.contains('schedule-page')
+    ? [scope]
+    : [...scope.querySelectorAll('.schedule-page')];
+  pages.forEach(page => {
+    observeSchedulePageSearchableSelects(page);
+    page.querySelectorAll('select').forEach(enhanceScheduleSearchableSelect);
+  });
+}
+
+if (!window.__ssDocBound) {
+  window.__ssDocBound = true;
+  document.addEventListener('mousedown', ev => {
+    if (ev.target.closest?.('.ss-wrap')) return;
+    closeAllSearchableSelects();
+  });
+}
+
 function goPage(id) {
   id = resolveSchedulePageId(id);
   if (id === 'schedule-joint') openScheduleJointPage();
@@ -49358,6 +49851,8 @@ function goPage(id) {
   if (id === 'adjustment-holiday') renderAdjustmentHolidayPage();
   if (id === 'adjustment-batch') renderAdjustmentBatchPage();
   if (id === 'adjustment-record') renderAdjustmentRecordPage();
+  const pageEl = document.getElementById('page-' + id);
+  if (pageEl?.classList.contains('schedule-page')) enhanceAllSelects(pageEl);
 }
 
 const WORKFLOW_ZOOM = { scale: 1, min: 0.5, max: 1.8, step: 0.1 };

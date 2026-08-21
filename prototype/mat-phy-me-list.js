@@ -14,7 +14,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 2"
+    "remark": "PHY - Group 2"
   },
   {
     "code": "CST204",
@@ -27,7 +27,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "CST205",
@@ -40,7 +40,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "CST207",
@@ -53,7 +53,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "CST301",
@@ -65,7 +65,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 2"
+    "remark": "PHY - Group 2"
   },
   {
     "code": "CST304",
@@ -77,7 +77,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 2"
+    "remark": "PHY - Group 2"
   },
   {
     "code": "FIN209",
@@ -90,7 +90,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "FIN303",
@@ -103,7 +103,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "IBU304",
@@ -116,7 +116,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "MAT107",
@@ -128,7 +128,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 2"
+    "remark": "PHY - Group 2"
   },
   {
     "code": "MAT110",
@@ -140,7 +140,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT203",
@@ -152,7 +152,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 2"
+    "remark": "PHY - Group 2"
   },
   {
     "code": "MAT205",
@@ -164,7 +164,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT207",
@@ -176,7 +176,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT208",
@@ -188,7 +188,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT209",
@@ -200,7 +200,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT210",
@@ -212,7 +212,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT212",
@@ -224,7 +224,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT213",
@@ -236,7 +236,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT214",
@@ -248,7 +248,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT301",
@@ -260,7 +260,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT302",
@@ -272,7 +272,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT303",
@@ -285,7 +285,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group1 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1 / PHY - Group 2"
+    "remark": "MAT - Group1 / PHY - Group 2"
   },
   {
     "code": "MAT304",
@@ -297,7 +297,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT305",
@@ -309,7 +309,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT306",
@@ -322,7 +322,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group1 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1 / PHY - Group 2"
+    "remark": "MAT - Group1 / PHY - Group 2"
   },
   {
     "code": "MAT307",
@@ -335,7 +335,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group1 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1 / PHY - Group 2"
+    "remark": "MAT - Group1 / PHY - Group 2"
   },
   {
     "code": "MAT308",
@@ -348,7 +348,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group1 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1 / PHY - Group 2"
+    "remark": "MAT - Group1 / PHY - Group 2"
   },
   {
     "code": "MAT309",
@@ -360,7 +360,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT310",
@@ -372,7 +372,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT311",
@@ -384,7 +384,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT312",
@@ -397,7 +397,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group1 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1 / PHY - Group 2"
+    "remark": "MAT - Group1 / PHY - Group 2"
   },
   {
     "code": "MAT313",
@@ -409,7 +409,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT314",
@@ -421,7 +421,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT315",
@@ -433,7 +433,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT317",
@@ -445,7 +445,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT318",
@@ -457,7 +457,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT321",
@@ -469,7 +469,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT322",
@@ -481,7 +481,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT323",
@@ -493,7 +493,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT324",
@@ -505,7 +505,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT326",
@@ -517,7 +517,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT327",
@@ -529,7 +529,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "MAT328",
@@ -541,7 +541,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group1"
+    "remark": "MAT - Group1"
   },
   {
     "code": "PHY101",
@@ -553,7 +553,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY102",
@@ -565,7 +565,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY103",
@@ -577,7 +577,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY104",
@@ -589,7 +589,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY201",
@@ -601,7 +601,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY202",
@@ -613,7 +613,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY204",
@@ -625,7 +625,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY208",
@@ -637,7 +637,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY209",
@@ -649,7 +649,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY210",
@@ -661,7 +661,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY301",
@@ -673,7 +673,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "PHY305",
@@ -686,7 +686,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 1"
+    "remark": "MAT - Group2 / PHY - Group 1"
   },
   {
     "code": "PHY306",
@@ -699,7 +699,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 1"
+    "remark": "MAT - Group2 / PHY - Group 1"
   },
   {
     "code": "PHY307",
@@ -712,7 +712,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 1"
+    "remark": "MAT - Group2 / PHY - Group 1"
   },
   {
     "code": "PHY308",
@@ -724,7 +724,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY309",
@@ -736,7 +736,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY310",
@@ -749,7 +749,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 1"
+    "remark": "MAT - Group2 / PHY - Group 1"
   },
   {
     "code": "PHY311",
@@ -761,7 +761,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY312",
@@ -773,7 +773,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY402",
@@ -786,7 +786,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 1"
+    "remark": "MAT - Group2 / PHY - Group 1"
   },
   {
     "code": "PHY403",
@@ -799,7 +799,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 1"
+    "remark": "MAT - Group2 / PHY - Group 1"
   },
   {
     "code": "PHY404",
@@ -811,7 +811,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY405",
@@ -824,7 +824,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 1"
+    "remark": "MAT - Group2 / PHY - Group 1"
   },
   {
     "code": "PHY406",
@@ -836,7 +836,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY407",
@@ -848,7 +848,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "PHY408",
@@ -860,7 +860,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 1",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 1"
+    "remark": "PHY - Group 1"
   },
   {
     "code": "SEM103",
@@ -872,7 +872,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "SEM106",
@@ -884,7 +884,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 2"
+    "remark": "PHY - Group 2"
   },
   {
     "code": "SEM107",
@@ -897,7 +897,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "SEM108",
@@ -910,7 +910,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "SEM202",
@@ -923,7 +923,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "MAT - Group2 / PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2 / PHY - Group 2"
+    "remark": "MAT - Group2 / PHY - Group 2"
   },
   {
     "code": "SEM206",
@@ -935,7 +935,7 @@ var MAT_PHY_ME_LIST = [
       "phy"
     ],
     "groupRemark": "PHY - Group 2",
-    "remark": "来源：MAT & PHY - ME list；PHY - Group 2"
+    "remark": "PHY - Group 2"
   },
   {
     "code": "SOF103",
@@ -947,7 +947,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "SOF106",
@@ -959,7 +959,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "SOF108",
@@ -971,7 +971,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "SOF201",
@@ -983,7 +983,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "SOF202",
@@ -995,7 +995,7 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   },
   {
     "code": "SWE404",
@@ -1007,6 +1007,6 @@ var MAT_PHY_ME_LIST = [
       "mat"
     ],
     "groupRemark": "MAT - Group2",
-    "remark": "来源：MAT & PHY - ME list；MAT - Group2"
+    "remark": "MAT - Group2"
   }
 ];

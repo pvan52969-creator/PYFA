@@ -873,14 +873,11 @@
           <span class="mot-style2-step-label">ME</span>
         </button>
       </nav>
-      <div class="approval-tab-bar elective-plan-kind-tabs school-elective-me-library-tabs" id="school-elective-me-library-tabs" role="tablist" aria-label="ME 专业课程库" hidden>
-        <button type="button" class="approval-tab active" role="tab" aria-selected="true" data-school-elective-me-library="PHY"
-          onclick="setSchoolElectiveMeLibraryTab('PHY')">PHY</button>
-        <button type="button" class="approval-tab" role="tab" aria-selected="false" data-school-elective-me-library="MAT"
-          onclick="setSchoolElectiveMeLibraryTab('MAT')">MAT</button>
-        <button type="button" class="approval-tab" role="tab" aria-selected="false" data-school-elective-me-library="CHS"
-          onclick="setSchoolElectiveMeLibraryTab('CHS')">CHS</button>
+      <div class="school-elective-me-library-tabs-wrap" id="school-elective-me-library-tabs" hidden>
+        <div class="approval-tab-bar elective-plan-kind-tabs school-elective-me-library-tabs" id="school-elective-me-library-tab-list" role="tablist" aria-label="ME 专业课程库"></div>
+        <button type="button" class="school-elective-me-library-add" id="btn-school-elective-me-library-add" title="添加专业课程库" onclick="openSchoolElectiveMeLibraryAddModal()">＋</button>
       </div>
+      <div class="school-elective-me-group-summary" id="school-elective-me-group-summary" hidden></div>
       <div class="card course-major-query-card">
         <div class="course-major-query-grid school-elective-query-grid">
           <div class="course-time-query-field">
@@ -904,8 +901,12 @@
             </select>
           </div>
           <div class="course-time-query-field">
-            <label for="school-elective-filter-keyword">课程代码 / 课程名称</label>
-            <input class="input input-sm" id="school-elective-filter-keyword" placeholder="课程代码 / 课程名称">
+            <label for="school-elective-filter-code">课号</label>
+            <input class="input input-sm" id="school-elective-filter-code" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="school-elective-filter-name">课名</label>
+            <input class="input input-sm" id="school-elective-filter-name" placeholder="课名">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderSchoolElectiveCoursePage()">查询</button>
@@ -916,7 +917,8 @@
       <div class="card">
         <div class="panel-toolbar school-elective-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openSchoolElectiveCourseAddModal()">新增</button>
-          <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-category" onclick="openSchoolElectiveBatchCategoryModal()" hidden disabled>设置类别</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-me-group-settings" onclick="openSchoolElectiveMeGroupSettingsModal()" hidden>课程组设置</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-category" onclick="openSchoolElectiveBatchCategoryModal()" hidden disabled>分组</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-status" onclick="openSchoolElectiveBatchStatusModal()" disabled>修改状态</button>
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-school-elective-delete" onclick="deleteSelectedSchoolElectiveCourses()" disabled>删除</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" onclick="alert('导出 Excel（原型占位）')">导出 Excel</button> -->
@@ -957,8 +959,12 @@
             </select>
           </div>
           <div class="course-time-query-field">
-            <label for="special-course-filter-keyword">课程号</label>
-            <input class="input input-sm" id="special-course-filter-keyword" placeholder="课程号">
+            <label for="special-course-filter-keyword">课号</label>
+            <input class="input input-sm" id="special-course-filter-keyword" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="special-course-filter-name">课名</label>
+            <input class="input input-sm" id="special-course-filter-name" placeholder="课名">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderSpecialCourseSettingsPage()">查询</button>
@@ -1016,8 +1022,12 @@
             <select class="input input-sm" id="course-major-filter-offering-programme"><option value="">全部所属专业</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-filter-name">课程号</label>
-            <input class="input input-sm" id="course-major-filter-name" placeholder="课程号">
+            <label for="course-major-filter-name">课号</label>
+            <input class="input input-sm" id="course-major-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-filter-course-name">课名</label>
+            <input class="input input-sm" id="course-major-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-field">
             <label for="course-major-filter-submit-status">生效状态</label>
@@ -1138,8 +1148,11 @@
         <aside class="offering-grouping-course-list" id="offering-grouping-course-list" aria-label="Course">
           <div class="offering-grouping-course-list-toolbar" id="offering-grouping-course-list-toolbar" hidden>
             <div class="filter-bar inline offering-grouping-global-code-filter-bar">
-              <label for="offering-grouping-global-code-filter">课程号</label>
-              <input class="input input-sm" id="offering-grouping-global-code-filter" placeholder="课程号"
+              <label for="offering-grouping-global-code-filter">课号</label>
+              <input class="input input-sm" id="offering-grouping-global-code-filter" placeholder="课号"
+                onkeydown="if(event.key==='Enter'){queryOfferingGroupingGlobalCourseList()}">
+              <label for="offering-grouping-global-name-filter">课名</label>
+              <input class="input input-sm" id="offering-grouping-global-name-filter" placeholder="课名"
                 onkeydown="if(event.key==='Enter'){queryOfferingGroupingGlobalCourseList()}">
               <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingGroupingGlobalCourseList()">查询</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingGroupingGlobalCourseListFilter()">重置</button>
@@ -1407,8 +1420,12 @@
             <select class="input input-sm" id="course-major-task-filter-offering-unit"><option value="">全部所属部门</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-task-filter-name">课程号</label>
-            <input class="input input-sm" id="course-major-task-filter-name" placeholder="课程号">
+            <label for="course-major-task-filter-name">课号</label>
+            <input class="input input-sm" id="course-major-task-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-task-filter-course-name">课名</label>
+            <input class="input input-sm" id="course-major-task-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-field">
             <label for="course-major-task-filter-task-submit">提交状态</label>
@@ -1545,8 +1562,12 @@
           </div>
           -->
           <div class="course-time-query-field">
-            <label for="mot-style2-filter-name">课程号 / 名称</label>
-            <input class="input input-sm" id="mot-style2-filter-name" placeholder="课程号或名称" onkeydown="if(event.key==='Enter'){queryMajorOfferingTaskStyle2List()}">
+            <label for="mot-style2-filter-name">课号</label>
+            <input class="input input-sm" id="mot-style2-filter-name" placeholder="课号" onkeydown="if(event.key==='Enter'){queryMajorOfferingTaskStyle2List()}">
+          </div>
+          <div class="course-time-query-field">
+            <label for="mot-style2-filter-course-name">课名</label>
+            <input class="input input-sm" id="mot-style2-filter-course-name" placeholder="课名" onkeydown="if(event.key==='Enter'){queryMajorOfferingTaskStyle2List()}">
           </div>
           <div class="course-time-query-field">
             <label for="mot-style2-filter-task-submit">生效状态</label>
@@ -1555,6 +1576,7 @@
               <option value="submitted">已生效</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
+              <option value="cancelled">停课</option>
             </select>
           </div>
           <div class="course-time-query-field">
@@ -1626,8 +1648,12 @@
             <select class="input input-sm" id="course-major-roster-filter-offering-unit"><option value="">全部所属部门</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-roster-filter-name">课程号</label>
-            <input class="input input-sm" id="course-major-roster-filter-name" placeholder="课程号">
+            <label for="course-major-roster-filter-name">课号</label>
+            <input class="input input-sm" id="course-major-roster-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-major-roster-filter-course-name">课名</label>
+            <input class="input input-sm" id="course-major-roster-filter-course-name" placeholder="课名">
           </div>
           <!-- <div class="course-time-query-field">
             <label for="course-major-roster-filter-teaching-confirm">授课确认状态</label>
@@ -1825,7 +1851,7 @@
                   <th class="col-center">专业</th>
                   <th class="col-center">学生数</th>
                   <th class="col-center">合计组数</th>
-                  <th class="col-center">计划Quota</th>
+                  <th class="col-center">计划总Quota</th>
                   <th class="col-center">计划课程班/小组数</th>
                   <th class="col-center">计划课程班/小组quota</th>
                   <th class="col-center">操作</th>
@@ -1930,11 +1956,15 @@
           </div>
           <div class="course-time-query-field">
             <label for="ge-offering-task-filter-offering-programme">所属专业</label>
-            <select class="input input-sm" id="ge-offering-task-filter-offering-programme"><option value="">全部专业</option></select>
+            <select class="input input-sm" id="ge-offering-task-filter-offering-programme"><option value="">全部所属专业</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-offering-filter-ge">课程号 / 名称</label>
-            <input class="input input-sm" id="course-offering-filter-ge" placeholder="课程号 / 课程名称" oninput="renderGeOfferingPlanPage()">
+            <label for="course-offering-filter-ge">课号</label>
+            <input class="input input-sm" id="course-offering-filter-ge" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-offering-filter-ge-name">课名</label>
+            <input class="input input-sm" id="course-offering-filter-ge-name" placeholder="课名">
           </div>
           <div class="course-time-query-field">
             <label for="ge-offering-task-filter-task-submit">提交状态</label>
@@ -1943,6 +1973,7 @@
               <option value="submitted">已提交</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
+              <option value="cancelled">停课</option>
             </select>
           </div>
           <!-- 兼容旧任务列表学期同步 -->
@@ -2040,8 +2071,12 @@
             <select class="input input-sm" id="ge-offering-roster-filter-offering-unit"><option value="">全部所属部门</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="ge-offering-roster-filter-name">课程号</label>
-            <input class="input input-sm" id="ge-offering-roster-filter-name" placeholder="课程号">
+            <label for="ge-offering-roster-filter-name">课号</label>
+            <input class="input input-sm" id="ge-offering-roster-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-roster-filter-course-name">课名</label>
+            <input class="input input-sm" id="ge-offering-roster-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryGeOfferingRosterList()">查询</button>
@@ -2079,8 +2114,12 @@
             <select class="input input-sm" id="other-offering-filter-term" onchange="onOtherOfferingTermFilterChange()"></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-offering-filter-other">课程号</label>
-            <input class="input input-sm" id="course-offering-filter-other" placeholder="课程号">
+            <label for="course-offering-filter-other">课号</label>
+            <input class="input input-sm" id="course-offering-filter-other" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="course-offering-filter-other-name">课名</label>
+            <input class="input input-sm" id="course-offering-filter-other-name" placeholder="课名">
           </div>
           <div class="course-time-query-field">
             <label for="other-offering-filter-submit-status">生效状态</label>
@@ -2146,8 +2185,12 @@
             <select class="input input-sm" id="other-offering-task-filter-offering-unit"><option value="">全部所属部门</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="other-offering-task-filter-name">课程号</label>
-            <input class="input input-sm" id="other-offering-task-filter-name" placeholder="课程号">
+            <label for="other-offering-task-filter-name">课号</label>
+            <input class="input input-sm" id="other-offering-task-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-task-filter-course-name">课名</label>
+            <input class="input input-sm" id="other-offering-task-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-field">
             <label for="other-offering-task-filter-task-submit">生效状态</label>
@@ -2156,6 +2199,7 @@
               <option value="submitted">已生效</option>
               <option value="draft">草稿</option>
               <option value="reverted">回退</option>
+              <option value="cancelled">停课</option>
             </select>
           </div>
           <div class="course-time-query-actions">
@@ -2194,8 +2238,12 @@
             <select class="input input-sm" id="other-offering-roster-filter-offering-unit"><option value="">全部所属部门</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="other-offering-roster-filter-name">课程号</label>
-            <input class="input input-sm" id="other-offering-roster-filter-name" placeholder="课程号">
+            <label for="other-offering-roster-filter-name">课号</label>
+            <input class="input input-sm" id="other-offering-roster-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="other-offering-roster-filter-course-name">课名</label>
+            <input class="input input-sm" id="other-offering-roster-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryOtherOfferingRosterList()">查询</button>
@@ -2231,10 +2279,10 @@
     <!-- ═══ 开课管理 · 开课清单（任务安排已提交汇总） ═══ -->
     <section class="page" id="page-course-offering-manifest">
       <div class="page-header">
-        <div><h1>开课清单</h1><p class="subtitle">汇总专业、通识选修中任务安排已提交的课程信息</p></div>
+        <div><h1>开课清单</h1><p class="subtitle">汇总专业开课、选修开课、特殊开课中任务安排已提交的课程信息</p></div>
       </div>
       <div class="alert-info offering-module-hint">
-        <p>本页自动汇总专业与通识选修开课流程中<strong>任务安排已提交</strong>的数据，便于教务统一查阅课程、课程人数上限、当前学生名单人数与任课教师；如需调整请返回对应任务安排页。</p>
+        <p>本页自动汇总专业开课、选修开课与特殊开课流程中<strong>任务安排已提交</strong>的数据，便于教务统一查阅课程、课程人数上限、当前学生名单人数与任课教师；如需调整请返回对应任务安排页。</p>
       </div>
       <div class="legend-bar" id="course-offering-hint-manifest"></div>
       <div class="card course-major-query-card">
@@ -2250,8 +2298,9 @@
             <select class="input input-sm" id="offering-manifest-filter-type">
               <option value="">全部类型</option>
               <option value="major">专业开课</option>
-              <option value="ge">通识选修</option>
-              <!-- <option value="other">特殊开课</option> --> <!-- 特殊开课模块暂下线 -->
+              <option value="ge">选修开课</option>
+              <option value="other">特殊开课</option>
+              <!-- 原 ge 文案为「通识选修」；特殊开课模块暂下线时 option 曾注释 -->
             </select>
           </div>
           <div class="course-time-query-field">
@@ -2259,8 +2308,12 @@
             <select class="input input-sm" id="offering-manifest-filter-unit"><option value="">全部所属部门</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="offering-manifest-filter-name">课程号 / 课程名称</label>
-            <input class="input input-sm" id="offering-manifest-filter-name" placeholder="课程号 / 课程名称">
+            <label for="offering-manifest-filter-name">课号</label>
+            <input class="input input-sm" id="offering-manifest-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="offering-manifest-filter-course-name">课名</label>
+            <input class="input input-sm" id="offering-manifest-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingManifestList()">查询</button>
@@ -2341,8 +2394,12 @@
               </select>
             </div>
             <div class="course-time-query-field">
-              <label for="otr-filter-code">课程号</label>
-              <input class="input input-sm" id="otr-filter-code" placeholder="课程号" onkeydown="if(event.key==='Enter'){queryOfferingTeacherReplacePage()}">
+              <label for="otr-filter-code">课号</label>
+              <input class="input input-sm" id="otr-filter-code" placeholder="课号" onkeydown="if(event.key==='Enter'){queryOfferingTeacherReplacePage()}">
+            </div>
+            <div class="course-time-query-field">
+              <label for="otr-filter-name">课名</label>
+              <input class="input input-sm" id="otr-filter-name" placeholder="课名" onkeydown="if(event.key==='Enter'){queryOfferingTeacherReplacePage()}">
             </div>
             <div class="course-time-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingTeacherReplacePage()">查询</button>
@@ -2454,8 +2511,9 @@
             <select class="input input-sm" id="shared-teaching-filter-type">
               <option value="">全部类型</option>
               <option value="major">专业开课</option>
-              <option value="ge">通识选修</option>
-              <!-- <option value="other">特殊开课</option> --> <!-- 特殊开课模块暂下线 -->
+              <option value="ge">选修开课</option>
+              <option value="other">特殊开课</option>
+              <!-- 原 ge 文案为「通识选修」；特殊开课模块暂下线时 option 曾注释 -->
             </select>
           </div>
           <div class="course-time-query-field">
@@ -2471,8 +2529,12 @@
             </select>
           </div> --> <!-- 列表已默认仅展示已设共同授课码课程，独立授课不展示 -->
           <div class="course-time-query-field">
-            <label for="shared-teaching-filter-name">课程号 / 课程名称</label>
-            <input class="input input-sm" id="shared-teaching-filter-name" placeholder="课程号 / 课程名称">
+            <label for="shared-teaching-filter-name">课号</label>
+            <input class="input input-sm" id="shared-teaching-filter-name" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="shared-teaching-filter-course-name">课名</label>
+            <input class="input input-sm" id="shared-teaching-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="querySharedTeachingMaintenanceList()">查询</button>
@@ -2510,8 +2572,12 @@
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
-            <label for="offering-roster-change-log-filter-course">课程号 / 课程名称</label>
-            <input class="input input-sm" id="offering-roster-change-log-filter-course" placeholder="课程号 / 课程名称">
+            <label for="offering-roster-change-log-filter-code">课号</label>
+            <input class="input input-sm" id="offering-roster-change-log-filter-code" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="offering-roster-change-log-filter-course-name">课名</label>
+            <input class="input input-sm" id="offering-roster-change-log-filter-course-name" placeholder="课名">
           </div>
           <div class="course-time-query-field">
             <label for="offering-roster-change-log-filter-student-no">学号</label>
@@ -4657,8 +4723,12 @@
           </select>
         </div>
         <div class="form-item">
-          <label for="gmot-filter-code">课程号</label>
-          <input class="input input-sm" id="gmot-filter-code" placeholder="课程号">
+          <label for="gmot-filter-code">课号</label>
+          <input class="input input-sm" id="gmot-filter-code" placeholder="课号">
+        </div>
+        <div class="form-item">
+          <label for="gmot-filter-name">课名</label>
+          <input class="input input-sm" id="gmot-filter-name" placeholder="课名">
         </div>
         <div class="picker-filter-actions">
           <button class="btn btn-primary btn-sm" type="button" onclick="resetListPage('gmotPicker');renderGenerateMajorOfferingTaskPicker()">查询</button>
@@ -4693,21 +4763,8 @@
     </div>
     <div class="modal-body me-offering-modal-body">
       <div class="form-item" id="me-offering-library-tabs">
-        <label>专业</label>
-        <div class="form-radio-row" role="radiogroup" aria-label="专业">
-          <label class="form-radio-option" data-me-offering-library="PHY">
-            <input type="radio" name="me-offering-library" value="PHY" onchange="setMeOfferingLibraryTab('PHY')">
-            <span>PHY</span>
-          </label>
-          <label class="form-radio-option" data-me-offering-library="MAT">
-            <input type="radio" name="me-offering-library" value="MAT" onchange="setMeOfferingLibraryTab('MAT')">
-            <span>MAT</span>
-          </label>
-          <label class="form-radio-option" data-me-offering-library="CHS">
-            <input type="radio" name="me-offering-library" value="CHS" onchange="setMeOfferingLibraryTab('CHS')">
-            <span>CHS</span>
-          </label>
-        </div>
+        <label>开课专业</label>
+        <div class="form-radio-row" role="radiogroup" aria-label="开课专业"></div>
       </div>
       <!-- 原合并筛选：单框即时过滤；改为课号/课名/所属部门分框，需点「查询」生效
       <div class="form-item">
@@ -6865,24 +6922,24 @@
         <input class="input" id="support-apply-offering-unit" type="text" readonly tabindex="-1">
       </div>
       <div class="form-item">
-        <label>当前 Support 学院</label>
+        <label>当前 Support 专业</label>
         <div class="support-apply-current" id="support-apply-current" aria-live="polite"></div>
       </div>
       <div class="form-item">
-        <label>选择 Support 学院</label>
+        <label>选择 Support 专业</label>
         <div class="clo-multiselect" id="support-apply-multiselect">
           <button type="button" class="clo-multiselect-trigger input" onclick="toggleMajorOfferingSupportApplyDropdown(event)">
-            <span class="clo-multiselect-display placeholder" id="support-apply-display">请选择 Support 学院</span>
+            <span class="clo-multiselect-display placeholder" id="support-apply-display">请选择 Support 专业</span>
             <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
           </button>
           <div class="clo-multiselect-dropdown" id="support-apply-dropdown" hidden>
-            <div class="clo-multiselect-empty" id="support-apply-empty" hidden>暂无可选学院</div>
+            <div class="clo-multiselect-empty" id="support-apply-empty" hidden>暂无可选专业</div>
             <div class="clo-multiselect-options" id="support-apply-options"></div>
           </div>
         </div>
         <!-- <div class="section-coordinator-picks" id="support-apply-units"></div> --> <!-- 原平铺勾选列表 -->
       </div>
-      <p class="form-hint">不可选择本课所属部门；保存后任务将共享给所选 Support 学院，其管理员可在「安排教师」时安排本学院教师。</p>
+      <p class="form-hint">不可选择本课所属部门；保存后任务将共享给所选 Support 专业，其管理员可在「安排教师」时安排本学院教师。</p>
       <!-- <p class="form-hint">已勾选的为当前已申请的 Support 学院；...</p> -->
       <!-- <p class="form-hint section-coordinator-hint" id="support-apply-info"></p> -->
     </div>
@@ -7312,8 +7369,12 @@
           </div>
           <div class="shared-teaching-setup-toolbar">
             <div class="course-time-query-field">
-              <label for="shared-teaching-setup-keyword">课程号 / 名称</label>
-              <input class="input input-sm" id="shared-teaching-setup-keyword" placeholder="课程号或名称" onkeydown="if(event.key==='Enter'){querySharedTeachingSetupModalList()}">
+              <label for="shared-teaching-setup-code">课号</label>
+              <input class="input input-sm" id="shared-teaching-setup-code" placeholder="课号" onkeydown="if(event.key==='Enter'){querySharedTeachingSetupModalList()}">
+            </div>
+            <div class="course-time-query-field">
+              <label for="shared-teaching-setup-name">课名</label>
+              <input class="input input-sm" id="shared-teaching-setup-name" placeholder="课名" onkeydown="if(event.key==='Enter'){querySharedTeachingSetupModalList()}">
             </div>
             <div class="course-time-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="querySharedTeachingSetupModalList()">查询</button>
@@ -8434,7 +8495,7 @@
           <input class="input readonly" id="me-enrollment-quota-programme-label" type="text" readonly tabindex="-1" value="—">
         </div>
         <div class="form-item full">
-          <label class="req" for="me-enrollment-quota-planned">课程班/小组参考quota</label>
+          <label class="req" for="me-enrollment-quota-planned">计划总Quota</label>
           <input class="input" id="me-enrollment-quota-planned" type="number" min="0" step="1" placeholder="例如 600" oninput="syncMeOfferingPlanQuotaSplitPreview()">
           <p class="form-hint" id="me-enrollment-quota-formula-hint">公式预计 Quota：—</p>
         </div>
@@ -8445,14 +8506,14 @@
               <input type="radio" name="me-enrollment-quota-split-mode" value="byCount" checked onchange="syncMeOfferingPlanQuotaSplitModeUi()">
               <span class="offering-auto-group-option-text">
                 <strong>按组数分</strong>
-                <span>填写组数，课程班/小组quota由参考quota÷组数四舍五入得出</span>
+                <span>填写组数，课程班/小组quota由计划总Quota÷组数四舍五入得出</span>
               </span>
             </label>
             <label class="offering-auto-group-option">
               <input type="radio" name="me-enrollment-quota-split-mode" value="bySize" onchange="syncMeOfferingPlanQuotaSplitModeUi()">
               <span class="offering-auto-group-option-text">
                 <strong>按人数分</strong>
-                <span>填写课程班/小组quota，组数由参考quota÷该人数四舍五入得出</span>
+                <span>填写课程班/小组quota，组数由计划总Quota÷该人数四舍五入得出</span>
               </span>
             </label>
           </div>
@@ -8493,8 +8554,12 @@
           <select class="input input-sm" id="ge-offering-add-term" onchange="onGeOfferingAddTermFilterChange()"></select>
         </div>
         <div class="form-item">
-          <label for="ge-offering-add-keyword">课程代码 / 名称</label>
-          <input class="input input-sm" id="ge-offering-add-keyword" placeholder="课程代码 / 课程名称" oninput="renderGeOfferingAddModalPicker()">
+          <label for="ge-offering-add-code">课号</label>
+          <input class="input input-sm" id="ge-offering-add-code" placeholder="课号">
+        </div>
+        <div class="form-item">
+          <label for="ge-offering-add-name">课名</label>
+          <input class="input input-sm" id="ge-offering-add-name" placeholder="课名">
         </div>
         <div class="form-item">
           <label for="ge-offering-add-unit">所属部门</label>
@@ -8557,9 +8622,20 @@
       <dl class="detail-dl school-elective-edit-summary-col">
         <dt>类型</dt><dd id="ge-offering-scope-type">—</dd>
         <dt>校选类别</dt><dd id="ge-offering-scope-ge-category">—</dd>
+        <dt>所属专业</dt><dd id="ge-offering-scope-programme">—</dd>
       </dl>
     </div>
-    <p class="form-hint" id="ge-offering-scope-default-hint">默认从「校选课程管理」带入专业范围；可按本学期调整。范围按专业维护，该专业全部入学批次适用。</p>
+    <p class="form-hint" id="ge-offering-scope-default-hint">默认从「校选课程管理」带入专业范围；可按本学期调整。先设不可选年级学期，再选专业 / 专业批次；灰色项为不可选年级学期或与专业范围不符。</p>
+    <div class="form-item">
+      <label>不可选年级学期</label>
+      <div class="school-elective-student-type-picks" id="ge-offering-scope-excluded-years"></div>
+      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。将约束下方专业与专业批次可选范围。</p>
+    </div>
+    <div class="form-item">
+      <label class="req">可选学生类型</label>
+      <div class="school-elective-student-type-picks" id="ge-offering-scope-student-types"></div>
+      <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
+    </div>
     <div class="form-item">
       <label class="req">修读范围</label>
       <div class="ge-offering-scope-stack">
@@ -8570,19 +8646,16 @@
             <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
           </div>
         </div>
-        <!-- 原「批次」细化行已去掉：不再按入学批次收窄修读范围 -->
+        <div class="ge-offering-scope-stack-row">
+          <span class="ge-offering-scope-stack-label">批次</span>
+          <div class="input-with-btn school-elective-excluded-programmes-field">
+            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-batches">全部适用</div>
+            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-batches-btn" onclick="openGeOfferingScopeBatchPickerModal()">选择</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-batches-clear-btn" onclick="clearGeOfferingScopeBatchRefinement()">清空</button>
+          </div>
+        </div>
       </div>
-      <p class="form-hint">可选或不可选专业（两边都不选=全开放）；所选专业下全部入学批次均适用。</p>
-    </div>
-    <div class="form-item">
-      <label class="req">可选学生类型</label>
-      <div class="school-elective-student-type-picks" id="ge-offering-scope-student-types"></div>
-      <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
-    </div>
-    <div class="form-item">
-      <label>不可选年级学期</label>
-      <div class="school-elective-student-type-picks" id="ge-offering-scope-excluded-years"></div>
-      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。</p>
+      <p class="form-hint">可选或不可选专业（两边都不选=全开放）。未选专业批次表示所选专业全部批次适用；灰色项不可选。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -8624,12 +8697,12 @@
         <dt>课程代码</dt><dd id="ge-offering-scope-view-code">—</dd>
         <dt>课程名称</dt><dd id="ge-offering-scope-view-name">—</dd>
         <dt>限制类型</dt><dd id="ge-offering-scope-view-limit-type">—</dd>
-        <dt>专业</dt><dd id="ge-offering-scope-view-programmes">—</dd>
-        <!-- <dt>专业批次</dt><dd id="ge-offering-scope-view-batches">—</dd> --> <!-- 已取消批次细化 -->
         <dt>不可选年级学期</dt><dd id="ge-offering-scope-view-years">—</dd>
+        <dt>可选学生类型</dt><dd id="ge-offering-scope-view-student-types">—</dd>
+        <dt>专业</dt><dd id="ge-offering-scope-view-programmes">—</dd>
+        <dt>专业批次</dt><dd id="ge-offering-scope-view-batches">—</dd>
         <dt>冲突课程</dt><dd id="ge-offering-scope-view-conflicts">—</dd>
         <dt>先修课程</dt><dd id="ge-offering-scope-view-prereqs">—</dd>
-        <dt>可选学生类型</dt><dd id="ge-offering-scope-view-student-types">—</dd>
         <dt>备注信息</dt><dd id="ge-offering-scope-view-remark" class="school-elective-scope-view-remark">—</dd>
       </dl>
     </div>
@@ -8639,9 +8712,47 @@
   </div>
 </div>
 
-<!-- 原「通识选修开课 · 专业批次细化」弹窗已去掉：修读范围不再按入学批次细化
-<div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">...</div>
--->
+<!-- ═══ 弹窗：通识选修开课 · 专业批次（按不可选年级学期 / 专业范围置灰） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">
+  <div class="modal modal-xl ge-offering-batch-picker-modal">
+    <div class="modal-head">
+      <h3 id="ge-offering-batch-picker-title">选择专业批次</h3>
+      <button class="modal-close" type="button" onclick="closeGeOfferingScopeBatchPickerModal()">×</button>
+    </div>
+    <div class="modal-body ge-offering-batch-picker-body">
+      <p class="form-hint" id="ge-offering-batch-picker-hint">灰色专业 / 批次不可选：不在当前修读范围，或当前学期折算为不可选年级学期 / 无法折算。</p>
+      <div class="ge-offering-batch-picker-axes">
+        <div class="ge-offering-batch-picker-axis">
+          <div class="ge-offering-batch-picker-axis-head">
+            <span>专业</span>
+            <span class="text-muted ge-offering-batch-picker-axis-sub" id="ge-offering-batch-picker-prog-count">0</span>
+          </div>
+          <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-programmes"></div>
+        </div>
+        <div class="ge-offering-batch-picker-axis">
+          <div class="ge-offering-batch-picker-axis-head">
+            <span id="ge-offering-batch-picker-intake-title">入学批次</span>
+          </div>
+          <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-intakes"></div>
+        </div>
+      </div>
+      <div class="ge-offering-batch-picker-preview">
+        <div class="ge-offering-batch-picker-preview-head">
+          <span class="text-muted">已选专业批次</span>
+          <button class="btn btn-outline btn-sm" type="button" onclick="clearGeOfferingScopeBatchPickerWorking()">取消全部已选</button>
+        </div>
+        <div class="ge-offering-batch-picker-preview-list" id="ge-offering-batch-picker-preview-list"></div>
+      </div>
+    </div>
+    <div class="modal-foot school-elective-programme-picker-foot">
+      <span class="text-muted" id="ge-offering-batch-picker-count">已选 0</span>
+      <div class="school-elective-programme-picker-foot-actions">
+        <button class="btn btn-ghost" type="button" onclick="closeGeOfferingScopeBatchPickerModal()">取消</button>
+        <button class="btn btn-primary" type="button" onclick="confirmGeOfferingScopeBatchPicker()">确定</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ 弹窗：特殊开课 · 添加计划（课程库选择器） ═══ -->
 <div class="modal-overlay" id="modal-other-offering-add">
@@ -8669,8 +8780,12 @@
           <input class="input input-sm" id="other-offering-add-remark" placeholder="如 挂科重修、跨专业补修">
         </div>
         <div class="form-item">
-          <label for="other-offering-add-keyword">课程代码 / 名称</label>
-          <input class="input input-sm" id="other-offering-add-keyword" placeholder="课程代码 / 课程名称" oninput="renderOtherOfferingAddModalPicker()">
+          <label for="other-offering-add-code">课号</label>
+          <input class="input input-sm" id="other-offering-add-code" placeholder="课号">
+        </div>
+        <div class="form-item">
+          <label for="other-offering-add-name">课名</label>
+          <input class="input input-sm" id="other-offering-add-name" placeholder="课名">
         </div>
         <div class="form-item">
           <label for="other-offering-add-unit">所属部门</label>
@@ -8715,19 +8830,69 @@
 </div>
 
 <!-- ═══ 弹窗：校选课程 · 新增 ═══ -->
-<div class="modal-overlay" id="modal-school-elective-add">
+<div class="modal-overlay" id="modal-school-elective-me-library-add">
   <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>添加专业课程库</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-me-library-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="req" for="school-elective-me-library-add-programme">选择专业</label>
+        <select class="input input-sm" id="school-elective-me-library-add-programme">
+          <option value="">请选择</option>
+        </select>
+        <p class="form-hint">从专业目录选择尚未建库的专业；添加后该库为空，可用「新增」从教务课程库维护本专业 ME 课。</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-me-library-add')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveMeLibraryAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-school-elective-add">
+  <div class="modal modal-xl">
     <div class="modal-head">
       <h3>新增校选课程</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-add')">×</button>
     </div>
     <div class="modal-body">
-      <div class="form-item">
-        <label class="req" for="school-elective-add-catalog">选择课程</label>
-        <select class="input input-sm" id="school-elective-add-catalog">
-          <option value="">请选择</option>
-        </select>
-        <p class="form-hint">从教务课程库中选择尚未纳入校选课程列表的选修课；添加后可继续维护可选范围。</p>
+      <div class="picker-filter-grid">
+        <div class="form-item">
+          <label for="sec-add-filter-code">课号</label>
+          <input class="input input-sm" id="sec-add-filter-code" placeholder="课号" onkeydown="if(event.key==='Enter'){renderSchoolElectiveAddPicker()}">
+        </div>
+        <div class="form-item">
+          <label for="sec-add-filter-name">课名</label>
+          <input class="input input-sm" id="sec-add-filter-name" placeholder="课名" onkeydown="if(event.key==='Enter'){renderSchoolElectiveAddPicker()}">
+        </div>
+        <div class="form-item">
+          <label for="sec-add-filter-unit">所属部门</label>
+          <select class="input input-sm" id="sec-add-filter-unit" onchange="renderSchoolElectiveAddPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="form-item">
+          <label for="sec-add-filter-programme">所属专业</label>
+          <select class="input input-sm" id="sec-add-filter-programme" onchange="renderSchoolElectiveAddPicker()">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="picker-filter-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="renderSchoolElectiveAddPicker()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetSchoolElectiveAddFilters()">重置</button>
+        </div>
+      </div>
+      <div class="picker-table-wrap" style="margin-top:12px">
+        <table class="data-table compact sec-add-picker-table">
+          <thead><tr></tr></thead>
+          <tbody id="sec-add-picker-tbody"></tbody>
+        </table>
+      </div>
+      <div class="picker-table-footer">
+        <span id="sec-add-picker-count">共 0 条记录</span>
       </div>
     </div>
     <div class="modal-foot">
@@ -8748,14 +8913,24 @@
       <p class="form-hint">从教务课程库勾选课号纳入维护清单；添加后默认教室为全普通、无偏好，Support 为空，可再编辑。</p>
       <div class="picker-filter-grid">
         <div class="form-item">
+          <label for="scs-add-filter-code">课号</label>
+          <input class="input input-sm" id="scs-add-filter-code" placeholder="课号" onkeydown="if(event.key==='Enter'){renderSpecialCourseAddPicker()}">
+        </div>
+        <div class="form-item">
+          <label for="scs-add-filter-name">课名</label>
+          <input class="input input-sm" id="scs-add-filter-name" placeholder="课名" onkeydown="if(event.key==='Enter'){renderSpecialCourseAddPicker()}">
+        </div>
+        <div class="form-item">
           <label for="scs-add-filter-unit">所属部门</label>
           <select class="input input-sm" id="scs-add-filter-unit" onchange="renderSpecialCourseAddPicker()">
             <option value="">全部</option>
           </select>
         </div>
         <div class="form-item">
-          <label for="scs-add-filter-code">课程号</label>
-          <input class="input input-sm" id="scs-add-filter-code" placeholder="课程号" onkeydown="if(event.key==='Enter'){renderSpecialCourseAddPicker()}">
+          <label for="scs-add-filter-programme">所属专业</label>
+          <select class="input input-sm" id="scs-add-filter-programme" onchange="renderSpecialCourseAddPicker()">
+            <option value="">全部</option>
+          </select>
         </div>
         <div class="picker-filter-actions">
           <button class="btn btn-primary btn-sm" type="button" onclick="renderSpecialCourseAddPicker()">查询</button>
@@ -8796,12 +8971,12 @@
           </select>
         </div>
         <div class="form-item">
-          <label for="scs-peer-filter-code">课程号</label>
-          <input class="input input-sm" id="scs-peer-filter-code" placeholder="课程号" onkeydown="if(event.key==='Enter'){renderSpecialCourseSharedTeachingPeerPicker()}">
+          <label for="scs-peer-filter-code">课号</label>
+          <input class="input input-sm" id="scs-peer-filter-code" placeholder="课号" onkeydown="if(event.key==='Enter'){renderSpecialCourseSharedTeachingPeerPicker()}">
         </div>
         <div class="form-item">
-          <label for="scs-peer-filter-name">课程名称</label>
-          <input class="input input-sm" id="scs-peer-filter-name" placeholder="课程名称" onkeydown="if(event.key==='Enter'){renderSpecialCourseSharedTeachingPeerPicker()}">
+          <label for="scs-peer-filter-name">课名</label>
+          <input class="input input-sm" id="scs-peer-filter-name" placeholder="课名" onkeydown="if(event.key==='Enter'){renderSpecialCourseSharedTeachingPeerPicker()}">
         </div>
         <div class="picker-filter-actions">
           <button class="btn btn-primary btn-sm" type="button" onclick="renderSpecialCourseSharedTeachingPeerPicker()">查询</button>
@@ -8825,21 +9000,50 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：校选课程 · 批量修改状态 ═══ -->
+<!-- ═══ 弹窗：校选课程 · ME 课程组设置 ═══ -->
+<div class="modal-overlay" id="modal-school-elective-me-group-settings">
+  <div class="modal modal-lg school-elective-me-group-settings-modal">
+    <div class="modal-head">
+      <h3 id="school-elective-me-group-settings-title">课程组设置</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-me-group-settings')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="table-scroll school-elective-me-group-settings-table-wrap">
+        <table class="data-table compact school-elective-me-group-settings-table">
+          <thead>
+            <tr>
+              <th class="col-center">课程组</th>
+              <th class="col-center">最低修读学分</th>
+              <th>修读学分说明</th>
+              <th class="col-center col-actions">操作</th>
+            </tr>
+          </thead>
+          <tbody id="sec-me-group-settings-body"></tbody>
+        </table>
+      </div>
+      <div class="school-elective-me-group-settings-toolbar">
+        <button type="button" class="school-elective-me-group-settings-add" title="添加课程组" onclick="addSchoolElectiveMeGroupSettingsRow()">＋</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-me-group-settings')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveMeGroupSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-school-elective-batch-category">
   <div class="modal modal-sm">
     <div class="modal-head">
-      <h3>设置类别</h3>
+      <h3>设置课程组</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-batch-category')">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint" id="school-elective-batch-category-hint">将所选课程统一设为指定所属类别。</p>
+      <p class="form-hint" id="school-elective-batch-category-hint">将所选课程统一设为指定课程组。</p>
       <div class="form-item">
-        <label for="school-elective-batch-category">所属类别</label>
+        <label for="school-elective-batch-category">课程组</label>
         <select class="input input-sm" id="school-elective-batch-category">
           <option value="">—（不设置）</option>
-          <option value="G1">G1</option>
-          <option value="G2">G2</option>
         </select>
       </div>
     </div>
@@ -8891,16 +9095,14 @@
       <dl class="detail-dl school-elective-edit-summary-col">
         <dt>类型</dt><dd id="school-elective-edit-type">—</dd>
         <dt>校选类别</dt><dd id="school-elective-edit-ge-category">—</dd>
+        <dt>所属专业</dt><dd id="school-elective-edit-programme">—</dd>
       </dl>
     </div>
     <!-- 状态、备注信息已迁至「修改开课默认信息」抽屉 -->
     <div class="form-item">
-      <label class="req">修读范围</label>
-      <div class="input-with-btn school-elective-excluded-programmes-field">
-        <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-programmes">全开放</div>
-        <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectiveProgrammePickerModal()">选择</button>
-      </div>
-      <p class="form-hint">维护可选或不可选专业；两边都不选表示全开放。</p>
+      <label>不可选年级学期</label>
+      <div class="school-elective-student-type-picks" id="school-elective-edit-excluded-years"></div>
+      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。</p>
     </div>
     <div class="form-item">
       <label class="req">可选学生类型</label>
@@ -8908,9 +9110,12 @@
       <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
     </div>
     <div class="form-item">
-      <label>不可选年级学期</label>
-      <div class="school-elective-student-type-picks" id="school-elective-edit-excluded-years"></div>
-      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。</p>
+      <label class="req">修读范围</label>
+      <div class="input-with-btn school-elective-excluded-programmes-field">
+        <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-programmes">全开放</div>
+        <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectiveProgrammePickerModal()">选择</button>
+      </div>
+      <p class="form-hint">维护可选或不可选专业；两边都不选表示全开放。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -9130,8 +9335,12 @@
     <div class="modal-body">
       <div class="picker-filter-grid">
         <div class="form-item">
-          <label for="school-elective-course-link-keyword">课程代码 / 名称</label>
-          <input class="input input-sm" id="school-elective-course-link-keyword" type="text" placeholder="课程代码 / 课程名称" oninput="renderSchoolElectiveCourseLinkPicker()">
+          <label for="school-elective-course-link-code">课号</label>
+          <input class="input input-sm" id="school-elective-course-link-code" type="text" placeholder="课号">
+        </div>
+        <div class="form-item">
+          <label for="school-elective-course-link-name">课名</label>
+          <input class="input input-sm" id="school-elective-course-link-name" type="text" placeholder="课名">
         </div>
         <div class="form-item">
           <label for="school-elective-course-link-unit">所属部门</label>

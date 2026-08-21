@@ -7413,6 +7413,31 @@ code {
   font-weight: 600;
   border-top: 1px solid var(--border, #cbd5e1);
 }
+/* 通识名单 · 所属部门课程明细弹窗：列间竖线，表框与弹窗边框分开 */
+#modal-ge-offering-roster-credit-detail .modal-body {
+  padding: 16px 20px;
+}
+#modal-ge-offering-roster-credit-detail .ge-offering-roster-credit-detail-scroll {
+  max-height: min(60vh, 520px);
+  overflow: auto;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 8px;
+}
+#modal-ge-offering-roster-credit-detail .ge-offering-roster-credit-detail-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+#modal-ge-offering-roster-credit-detail .ge-offering-roster-credit-detail-table th,
+#modal-ge-offering-roster-credit-detail .ge-offering-roster-credit-detail-table td {
+  border-right: 1px solid var(--border-light, #e5e7eb);
+}
+#modal-ge-offering-roster-credit-detail .ge-offering-roster-credit-detail-table th:last-child,
+#modal-ge-offering-roster-credit-detail .ge-offering-roster-credit-detail-table td:last-child {
+  border-right: none;
+}
+#modal-ge-offering-roster-credit-detail .ge-offering-roster-credit-detail-table tbody tr:last-child td {
+  border-bottom: none;
+}
 .ge-demand-credit-split-hint {
   display: inline-flex;
   align-items: center;
@@ -10617,6 +10642,22 @@ code {
 }
 #modal-school-elective-me-group-settings .school-elective-me-group-settings-table .sec-me-group-row-cancel:hover {
   color: #6b7280;
+}
+#modal-school-elective-me-group-settings .school-elective-me-group-settings-table .sec-me-group-row-delete {
+  color: #e11d48;
+}
+#modal-school-elective-me-group-settings .school-elective-me-group-settings-table .sec-me-group-row-delete:hover {
+  color: #be123c;
+}
+#modal-school-elective-me-group-settings .school-elective-me-group-settings-table .sec-me-group-row-delete-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+#modal-school-elective-me-group-settings .school-elective-me-group-settings-table .sec-me-group-row-delete-icon svg {
+  display: block;
 }
 #modal-school-elective-me-group-settings .school-elective-me-group-settings-table .sec-me-group-row-cancel-icon {
   display: block;
@@ -14788,6 +14829,12 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #offering-group-split-size-wrap[hidden] {
   display: none !important;
 }
+#modal-offering-group-batch-add.is-elective-group-split #offering-group-split-modes-wrap {
+  display: none;
+}
+#modal-offering-group-batch-add.is-elective-group-split #offering-group-split-count-wrap {
+  margin-top: 0;
+}
 .offering-group-batch-add-body .form-item + .form-item {
   margin-top: 16px;
 }
@@ -16650,6 +16697,32 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .group-tree-node.is-root { background: var(--blue-50); font-weight: 600; }
 .group-tree-empty { padding: 12px 8px; font-size: 12px; }
 .group-tree-actions a { margin-left: 6px; text-decoration: none; font-size: 12px; }
+.group-tree-actions .group-tree-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  color: #e11d48;
+  font-size: 0;
+  line-height: 0;
+}
+.group-tree-actions .group-tree-delete:hover {
+  color: #be123c;
+}
+.group-tree-actions .group-tree-delete-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+.group-tree-actions .group-tree-delete-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
 .group-tree-remark {
   margin: 4px 0 0 0;
   padding: 4px 8px;

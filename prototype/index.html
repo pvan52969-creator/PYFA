@@ -1800,15 +1800,15 @@
                 <!-- <th class="col-index">序号</th> -->
                 <th class="col-center col-ge-type">类型</th>
                 <th class="col-center col-ge-category">校选课类别</th>
-                <th class="col-center col-ge-min-2">需开课程数（2学分）</th>
-                <th class="col-center col-ge-min-3">需开课程数（3学分）</th>
-                <th class="col-center">需开课程总数</th>
-                <th class="col-center">已开课程总数</th>
+                <th class="col-center col-ge-min-2">需开课程组数（2学分）</th>
+                <th class="col-center col-ge-min-3">需开课程组数（3学分）</th>
+                <th class="col-center">需开课程组总数</th>
+                <th class="col-center">已开课程组数</th>
                 <th class="col-center">进度</th>
                 <th class="col-center">
-                  <span class="offering-group-status-th-with-tip">课程Quota
+                  <span class="offering-group-status-th-with-tip">课程组quota
                     <span class="offering-group-status-th-tip cell-ellipsis-tip ge-offering-course-quota-tip"
-                      tabindex="0" role="button" aria-label="课程Quota说明"
+                      tabindex="0" role="button" aria-label="课程组quota说明"
                       onclick="event.stopPropagation()">!</span>
                   </span>
                 </th>
@@ -1852,8 +1852,14 @@
                   <th class="col-center">学生数</th>
                   <th class="col-center">合计组数</th>
                   <th class="col-center">计划总Quota</th>
-                  <th class="col-center">计划课程班/小组数</th>
-                  <th class="col-center">计划课程班/小组quota</th>
+                  <th class="col-center">计划课程组数</th>
+                  <th class="col-center">
+                    <span class="offering-group-status-th-with-tip">计划课程组quota
+                      <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-plan-group-quota-tip"
+                        tabindex="0" role="button" aria-label="计划课程组quota说明"
+                        onclick="event.stopPropagation()">!</span>
+                    </span>
+                  </th>
                   <th class="col-center">操作</th>
                 </tr>
               </thead>
@@ -1904,15 +1910,15 @@
                 <tr>
                   <th class="col-center">类型</th>
                   <th class="col-center">校选课类别</th>
-                  <th class="col-center">需开课程数（2学分）</th>
-                  <th class="col-center">需开课程数（3学分）</th>
-                  <th class="col-center">需开课程总数</th>
-                  <th class="col-center">已开课程总数</th>
+                  <th class="col-center">需开课程组数（2学分）</th>
+                  <th class="col-center">需开课程组数（3学分）</th>
+                  <th class="col-center">需开课程组总数</th>
+                  <th class="col-center">已开课程组数</th>
                   <th class="col-center">状态</th>
                   <th class="col-center">
-                    <span class="offering-group-status-th-with-tip">课程Quota
+                    <span class="offering-group-status-th-with-tip">课程组quota
                       <span class="offering-group-status-th-tip cell-ellipsis-tip ge-offering-course-quota-tip"
-                        tabindex="0" role="button" aria-label="课程Quota说明"
+                        tabindex="0" role="button" aria-label="课程组quota说明"
                         onclick="event.stopPropagation()">!</span>
                     </span>
                   </th>
@@ -1930,15 +1936,22 @@
                   <tr>
                     <th class="col-center">专业</th>
                     <th class="col-center">学生数</th>
-                    <th class="col-center">计划 Quota</th>
-                    <th class="col-center">计划课程班/小组数</th>
-                    <th class="col-center">计划课程班/小组quota</th>
+                    <th class="col-center">计划总Quota</th>
+                    <th class="col-center">计划课程组数</th>
                     <th class="col-center">
-                      <span class="offering-group-status-th-with-tip">已开课程班/组数
-                        <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-opened-count-tip"
-                          tabindex="0" role="button" aria-label="已开课程班/组数统计口径">!</span>
+                      <span class="offering-group-status-th-with-tip">计划课程组quota
+                        <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-plan-group-quota-tip"
+                          tabindex="0" role="button" aria-label="计划课程组quota说明"
+                          onclick="event.stopPropagation()">!</span>
                       </span>
                     </th>
+                    <th class="col-center">
+                      <span class="offering-group-status-th-with-tip">已开课程组数
+                        <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-opened-count-tip"
+                          tabindex="0" role="button" aria-label="已开课程组数统计口径">!</span>
+                      </span>
+                    </th>
+                    <th class="col-center">已开总Quota</th>
                     <th class="col-center">状态</th>
                   </tr>
                 </thead>
@@ -2041,15 +2054,22 @@
                     <tr>
                       <th class="col-center">专业</th>
                       <th class="col-center">学生数</th>
-                      <th class="col-center">计划 Quota</th>
-                      <th class="col-center">计划课程班/小组数</th>
-                      <th class="col-center">计划课程班/小组quota</th>
+                      <th class="col-center">计划总Quota</th>
+                      <th class="col-center">计划课程组数</th>
                       <th class="col-center">
-                        <span class="offering-group-status-th-with-tip">已开课程班/组数
-                          <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-opened-count-tip"
-                            tabindex="0" role="button" aria-label="已开课程班/组数统计口径">!</span>
+                        <span class="offering-group-status-th-with-tip">计划课程组quota
+                          <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-plan-group-quota-tip"
+                            tabindex="0" role="button" aria-label="计划课程组quota说明"
+                            onclick="event.stopPropagation()">!</span>
                         </span>
                       </th>
+                      <th class="col-center">
+                        <span class="offering-group-status-th-with-tip">已开课程组数
+                          <span class="offering-group-status-th-tip cell-ellipsis-tip me-offering-opened-count-tip"
+                            tabindex="0" role="button" aria-label="已开课程组数统计口径">!</span>
+                        </span>
+                      </th>
+                      <th class="col-center">已开总Quota</th>
                       <th class="col-center">状态</th>
                     </tr>
                   </thead>
@@ -6573,9 +6593,9 @@
       <h3 id="ge-offering-roster-credit-detail-title">课程明细</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-roster-credit-detail')">×</button>
     </div>
-    <div class="modal-body" style="padding:0">
-      <div class="table-scroll" style="max-height:min(60vh,520px)">
-        <table class="data-table compact">
+    <div class="modal-body">
+      <div class="table-scroll ge-offering-roster-credit-detail-scroll">
+        <table class="data-table compact ge-offering-roster-credit-detail-table">
           <thead>
             <tr>
               <th class="col-center col-term">开课学期</th>
@@ -6751,7 +6771,7 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：专业开课 · 分组（按组数 / 按人数 / 按专业） ═══ -->
+<!-- ═══ 弹窗：分组（专业开课：按组数 / 按人数 / 按专业；选修开课：只填组数） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-offering-group-batch-add">
   <div class="modal modal-sm offering-group-batch-add-modal">
     <div class="modal-head">
@@ -6759,7 +6779,7 @@
       <button class="modal-close" type="button" onclick="closeOfferingGroupSplitModal()">×</button>
     </div>
     <div class="modal-body offering-group-batch-add-body">
-      <div class="form-item">
+      <div class="form-item" id="offering-group-split-modes-wrap">
         <label class="req">分配方式</label>
         <div class="offering-group-split-modes" role="radiogroup" aria-label="分配方式">
           <label class="offering-auto-group-option">
@@ -6776,7 +6796,7 @@
               <span>填写每组人数上限，系统自动计算组数并尽量平均分配</span>
             </span>
           </label>
-          <label class="offering-auto-group-option">
+          <label class="offering-auto-group-option" id="offering-group-split-mode-programme">
             <input type="radio" name="offering-group-split-mode" value="byProgramme" onchange="syncOfferingGroupSplitModeUi()">
             <span class="offering-auto-group-option-text">
               <strong>按专业分组</strong>
@@ -6786,7 +6806,7 @@
         </div>
       </div>
       <div class="form-item" id="offering-group-split-count-wrap">
-        <label class="req" for="offering-group-batch-count">组数</label>
+        <label class="req" for="offering-group-batch-count">新增组数</label>
         <input class="input input-sm" id="offering-group-batch-count" type="number" min="1" max="99" step="1" placeholder="请输入组数" oninput="syncOfferingGroupSplitPreview()">
       </div>
       <div class="form-item" id="offering-group-split-size-wrap" hidden>
@@ -8458,14 +8478,14 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-ge-enrollment-quota')">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint" style="margin-top:0">为本学期通识选修开课设定统一的计划总人数。设定并保存生效后，才可在「通识选修开课」中添加开课课程；新课自动带入该值，仍可在修改中调整。已有课程的计划总人数不会被覆盖。</p>
+      <p class="form-hint" style="margin-top:0">为本学期通识选修开课设定统一的课程组quota。设定并保存生效后，才可在「选修开课安排」中添加开课课程；无分组时新课计划人数自动带入该值，仍可在修改中调整。已有课程的计划人数不会被覆盖。</p>
       <div class="form-grid">
         <div class="form-item">
           <label>开课学期</label>
           <input class="input readonly" id="ge-enrollment-quota-term-label" type="text" readonly tabindex="-1" value="—">
         </div>
         <div class="form-item">
-          <label class="req" for="ge-enrollment-quota-planned-total">课程Quota</label>
+          <label class="req" for="ge-enrollment-quota-planned-total">课程组quota</label>
           <input class="input" id="ge-enrollment-quota-planned-total" type="number" min="0" step="1" placeholder="例如 120">
         </div>
       </div>
@@ -8506,14 +8526,14 @@
               <input type="radio" name="me-enrollment-quota-split-mode" value="byCount" checked onchange="syncMeOfferingPlanQuotaSplitModeUi()">
               <span class="offering-auto-group-option-text">
                 <strong>按组数分</strong>
-                <span>填写组数，课程班/小组quota由计划总Quota÷组数四舍五入得出</span>
+                <span>填写组数，课程组quota由计划总Quota÷组数四舍五入得出</span>
               </span>
             </label>
             <label class="offering-auto-group-option">
               <input type="radio" name="me-enrollment-quota-split-mode" value="bySize" onchange="syncMeOfferingPlanQuotaSplitModeUi()">
               <span class="offering-auto-group-option-text">
                 <strong>按人数分</strong>
-                <span>填写课程班/小组quota，组数由计划总Quota÷该人数四舍五入得出</span>
+                <span>填写课程组quota，组数由计划总Quota÷该人数四舍五入得出</span>
               </span>
             </label>
           </div>
@@ -8523,7 +8543,7 @@
           <input class="input" id="me-enrollment-quota-group-count" type="number" min="1" step="1" placeholder="请输入组数" oninput="syncMeOfferingPlanQuotaSplitPreview()">
         </div>
         <div class="form-item full" id="me-enrollment-quota-size-wrap">
-          <label for="me-enrollment-quota-group-quota">课程班/小组quota</label>
+          <label for="me-enrollment-quota-group-quota">课程组quota</label>
           <input class="input readonly" id="me-enrollment-quota-group-quota" type="text" readonly tabindex="-1" placeholder="自动计算" oninput="syncMeOfferingPlanQuotaSplitPreview()">
         </div>
       </div>

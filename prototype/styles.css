@@ -7069,6 +7069,27 @@ code {
   flex-direction: column;
   min-height: calc(100vh - 88px);
 }
+#page-course-offering-ge .ge-offering-plan-sticky-head {
+  position: sticky;
+  top: -20px;
+  z-index: 32;
+  margin: -20px -24px 0;
+  padding: 20px 24px 8px;
+  background: #f0f4f8;
+}
+#page-course-offering-ge .ge-offering-plan-sticky-head #ge-offering-step-bar {
+  margin-bottom: 0;
+}
+#page-course-offering-ge #ge-offering-plan-quota-card {
+  overflow: visible;
+  margin-bottom: 12px;
+}
+#page-course-offering-ge #ge-offering-plan-quota-card .ge-offering-plan-quota-head {
+  position: sticky;
+  top: 54px;
+  z-index: 31;
+  background: var(--blue-50);
+}
 #page-course-offering-ge .ge-offering-plan-list-card {
   flex: 1;
   min-height: 0;
@@ -8109,10 +8130,16 @@ code {
 #page-course-section-change-log .section-change-log-filter-card .course-major-query-grid {
   align-items: end;
 }
-#page-course-offering-manifest .course-major-query-card,
+#page-course-offering-manifest .course-major-query-card {
+  margin-bottom: 0;
+  padding: 10px 14px;
+}
 #page-course-shared-teaching-maintenance .course-major-query-card,
 #page-course-offering-roster-change-log .course-major-query-card {
   margin-bottom: 16px;
+}
+#page-course-offering-manifest .offering-manifest-list-card {
+  margin-top: 8px;
 }
 #page-course-section-change-log .section-change-log-list-card {
   margin-top: 0;
@@ -8163,6 +8190,20 @@ code {
   flex-wrap: wrap;
   margin-left: auto;
 }
+#page-course-offering-manifest .offering-manifest-toolbar {
+  justify-content: flex-start;
+}
+#page-course-offering-manifest .offering-manifest-toolbar-actions {
+  margin-left: 0;
+}
+#page-course-offering-manifest .offering-manifest-table .link-student-count {
+  color: var(--blue-700);
+  font-weight: 600;
+  text-decoration: none;
+}
+#page-course-offering-manifest .offering-manifest-table .link-student-count:hover {
+  text-decoration: underline;
+}
 #page-course-shared-teaching-maintenance .shared-teaching-list-toolbar {
   justify-content: flex-start;
 }
@@ -8207,15 +8248,47 @@ code {
   padding-bottom: 4px;
 }
 #page-course-offering-manifest .offering-manifest-table {
-  min-width: 1780px;
-  /* min-width: 1680px; */ /* ???????????????? */
-  --major-offering-actions-col-width: 148px;
-  /* --major-offering-actions-col-width: 88px; */ /* ??????????? ? ????? */
+  /* 对齐专业开课安排样式二：按内容撑开 + 横向滚动，不靠 fixed 强压列宽 */
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  /* min-width: 1320px; table-layout: fixed; */ /* 曾过度收紧导致字段截断 */
+  /* min-width: 1980px; */ /* 更早偏宽 */
+  --major-offering-actions-col-width: 88px;
+  --manifest-course-info-col-width: 44px;
+  --manifest-scope-col-width: 44px;
+  --manifest-sticky-check: 32px;
+  --manifest-sticky-expand: 36px;
+  --manifest-sticky-status: 34px;
+  --manifest-sticky-task-submit: 56px;
+  --manifest-sticky-tcc-progress: 72px;
+  --manifest-sticky-term: 64px;
+  --manifest-sticky-offering-type: 104px;
+  --manifest-sticky-code: 80px;
+  --manifest-roster-count-col-width: 48px;
+}
+#page-course-offering-manifest .offering-manifest-table thead th {
+  white-space: nowrap;
+  font-size: var(--ui-list-th-font, 11px);
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 6px 8px;
+  text-align: center;
+  vertical-align: middle;
 }
 #page-course-offering-manifest .offering-manifest-table th,
 #page-course-offering-manifest .offering-manifest-table td {
   border-left: 1px solid var(--border-light, #e2e8f0);
   border-right: 1px solid var(--border-light, #e2e8f0);
+}
+#page-course-offering-manifest .offering-manifest-table tbody td {
+  padding: 3px 8px;
+  vertical-align: middle;
+  font-size: var(--ui-list-font, 12px);
+  line-height: 1.25;
+  overflow: visible;
 }
 #page-course-offering-manifest .offering-manifest-table th:first-child,
 #page-course-offering-manifest .offering-manifest-table td:first-child {
@@ -8225,9 +8298,366 @@ code {
 #page-course-offering-manifest .offering-manifest-table td:last-child {
   border-right: none;
 }
+#page-course-offering-manifest .offering-manifest-table .col-check {
+  width: var(--manifest-sticky-check);
+  min-width: var(--manifest-sticky-check);
+  max-width: var(--manifest-sticky-check);
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#page-course-offering-manifest .offering-manifest-table .col-expand {
+  width: var(--manifest-sticky-expand);
+  min-width: var(--manifest-sticky-expand);
+  max-width: 3em;
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+}
+#page-course-offering-manifest .offering-manifest-table .col-status {
+  width: var(--manifest-sticky-status);
+  min-width: var(--manifest-sticky-status);
+  max-width: 2.8em;
+  white-space: nowrap;
+}
+#page-course-offering-manifest .offering-manifest-table .col-tcc-progress {
+  width: var(--manifest-sticky-tcc-progress);
+  min-width: var(--manifest-sticky-tcc-progress);
+  max-width: var(--manifest-sticky-tcc-progress);
+  white-space: nowrap;
+  text-align: center;
+}
+#page-course-offering-manifest .offering-manifest-table .col-task-submit {
+  width: var(--manifest-sticky-task-submit);
+  min-width: var(--manifest-sticky-task-submit);
+  max-width: var(--manifest-sticky-task-submit);
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-task-submit,
+#page-course-offering-manifest .offering-manifest-table td.col-tcc-progress {
+  overflow: visible;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-manifest .offering-manifest-table .col-term {
+  width: var(--manifest-sticky-term);
+  min-width: var(--manifest-sticky-term);
+  max-width: var(--manifest-sticky-term);
+  white-space: nowrap;
+}
+#page-course-offering-manifest .offering-manifest-table .col-offering-type {
+  width: var(--manifest-sticky-offering-type);
+  min-width: var(--manifest-sticky-offering-type);
+  max-width: var(--manifest-sticky-offering-type);
+  white-space: nowrap;
+}
+#page-course-offering-manifest .offering-manifest-table .col-code {
+  width: var(--manifest-sticky-code);
+  min-width: var(--manifest-sticky-code);
+  max-width: var(--manifest-sticky-code);
+  text-align: center;
+  white-space: nowrap;
+}
+#page-course-offering-manifest .offering-manifest-table th.col-name {
+  min-width: 180px;
+  max-width: 280px;
+  white-space: normal;
+  word-break: break-word;
+  text-align: center;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-name {
+  min-width: 180px;
+  max-width: 280px;
+  white-space: normal;
+  word-break: break-word;
+  text-align: left;
+}
+#page-course-offering-manifest .offering-manifest-table .col-offering-programme {
+  min-width: 48px;
+  max-width: 72px;
+  width: 72px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-offering-programme code {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+#page-course-offering-manifest .offering-manifest-table .col-enrollment-type {
+  min-width: 2.8em;
+  max-width: 3.6em;
+  text-align: center;
+  white-space: nowrap;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-enrollment-type.th-v {
+  width: 2.8em;
+  min-width: 2.8em;
+  max-width: 3.6em;
+  padding: 6px 4px;
+}
+#page-course-offering-manifest .offering-manifest-table th.col-num.th-v,
+#page-course-offering-manifest .offering-manifest-table th.col-capacity-limit.th-v {
+  min-width: 2.8em;
+  width: 2.8em;
+  max-width: 3.6em;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#page-course-offering-manifest .offering-manifest-table th.col-num,
+#page-course-offering-manifest .offering-manifest-table td.col-num:not(.col-roster-count) {
+  min-width: 48px;
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: nowrap;
+  word-break: keep-all;
+  text-align: center;
+  overflow: visible;
+}
+/* 左侧冻结：勾选 → 开课详情 → … → 课程号 */
+#page-course-offering-manifest .offering-manifest-table th.col-check,
+#page-course-offering-manifest .offering-manifest-table td.col-check,
+#page-course-offering-manifest .offering-manifest-table th.col-expand,
+#page-course-offering-manifest .offering-manifest-table td.col-expand,
+#page-course-offering-manifest .offering-manifest-table th.col-status,
+#page-course-offering-manifest .offering-manifest-table td.col-status,
+#page-course-offering-manifest .offering-manifest-table th.col-task-submit,
+#page-course-offering-manifest .offering-manifest-table td.col-task-submit,
+#page-course-offering-manifest .offering-manifest-table th.col-tcc-progress,
+#page-course-offering-manifest .offering-manifest-table td.col-tcc-progress,
+#page-course-offering-manifest .offering-manifest-table th.col-term,
+#page-course-offering-manifest .offering-manifest-table td.col-term,
+#page-course-offering-manifest .offering-manifest-table th.col-offering-type,
+#page-course-offering-manifest .offering-manifest-table td.col-offering-type,
+#page-course-offering-manifest .offering-manifest-table th.col-code,
+#page-course-offering-manifest .offering-manifest-table td.col-code {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-check,
+#page-course-offering-manifest .offering-manifest-table thead th.col-expand,
+#page-course-offering-manifest .offering-manifest-table thead th.col-status,
+#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit,
+#page-course-offering-manifest .offering-manifest-table thead th.col-tcc-progress,
+#page-course-offering-manifest .offering-manifest-table thead th.col-term,
+#page-course-offering-manifest .offering-manifest-table thead th.col-offering-type,
+#page-course-offering-manifest .offering-manifest-table thead th.col-code {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-check,
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-expand,
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-status,
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-task-submit,
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-tcc-progress,
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-term,
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-offering-type,
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-code {
+  background: #fafbfc;
+}
+#page-course-offering-manifest .offering-manifest-table th.col-check,
+#page-course-offering-manifest .offering-manifest-table td.col-check {
+  left: 0;
+}
+#page-course-offering-manifest .offering-manifest-table th.col-expand,
+#page-course-offering-manifest .offering-manifest-table td.col-expand {
+  left: var(--manifest-sticky-check);
+}
+#page-course-offering-manifest .offering-manifest-table th.col-status,
+#page-course-offering-manifest .offering-manifest-table td.col-status {
+  left: calc(var(--manifest-sticky-check) + var(--manifest-sticky-expand));
+}
+#page-course-offering-manifest .offering-manifest-table th.col-tcc-progress,
+#page-course-offering-manifest .offering-manifest-table td.col-tcc-progress {
+  left: calc(var(--manifest-sticky-check) + var(--manifest-sticky-expand) + var(--manifest-sticky-status));
+}
+#page-course-offering-manifest .offering-manifest-table th.col-task-submit,
+#page-course-offering-manifest .offering-manifest-table td.col-task-submit {
+  left: calc(
+    var(--manifest-sticky-check)
+    + var(--manifest-sticky-expand)
+    + var(--manifest-sticky-status)
+    + var(--manifest-sticky-tcc-progress)
+  );
+}
+#page-course-offering-manifest .offering-manifest-table th.col-term,
+#page-course-offering-manifest .offering-manifest-table td.col-term {
+  left: calc(
+    var(--manifest-sticky-check)
+    + var(--manifest-sticky-expand)
+    + var(--manifest-sticky-status)
+    + var(--manifest-sticky-tcc-progress)
+    + var(--manifest-sticky-task-submit)
+  );
+}
+#page-course-offering-manifest .offering-manifest-table th.col-offering-type,
+#page-course-offering-manifest .offering-manifest-table td.col-offering-type {
+  left: calc(
+    var(--manifest-sticky-check)
+    + var(--manifest-sticky-expand)
+    + var(--manifest-sticky-status)
+    + var(--manifest-sticky-tcc-progress)
+    + var(--manifest-sticky-task-submit)
+    + var(--manifest-sticky-term)
+  );
+}
+#page-course-offering-manifest .offering-manifest-table th.col-code,
+#page-course-offering-manifest .offering-manifest-table td.col-code {
+  left: calc(
+    var(--manifest-sticky-check)
+    + var(--manifest-sticky-expand)
+    + var(--manifest-sticky-status)
+    + var(--manifest-sticky-tcc-progress)
+    + var(--manifest-sticky-task-submit)
+    + var(--manifest-sticky-term)
+    + var(--manifest-sticky-offering-type)
+  );
+  border-right: 1px solid var(--border, #94a3b8);
+  box-shadow:
+    1px 0 0 var(--border, #94a3b8),
+    8px 0 14px rgba(15, 23, 42, 0.1);
+  overflow: visible;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-num code {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  background: transparent;
+  padding: 0;
+}
 #page-course-offering-manifest .offering-manifest-table td.col-teachers {
   vertical-align: top;
   white-space: normal;
+  min-width: 120px;
+  max-width: 160px;
+  line-height: 1.25;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-tcc-progress .tcc-progress-pill,
+#page-course-offering-manifest .offering-manifest-table td.col-task-submit .offering-status-pill {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+/* 竖排表头：对齐专业开课安排样式二（开课详情 / 开课状态 / 人数上限等） */
+#page-course-offering-manifest .offering-manifest-table thead th.th-v {
+  white-space: nowrap;
+  width: 2.8em;
+  min-width: 2.8em;
+  max-width: 3.2em;
+  padding: 6px 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.th-v .th-inner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 100%;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.th-v .th-v-label {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  max-height: none;
+  height: auto;
+  overflow: visible;
+  white-space: nowrap;
+  word-break: keep-all;
+  margin: 0 auto;
+  font-size: var(--ui-list-th-font, 11px);
+  font-weight: 700;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.th-v .th-sort {
+  display: block;
+  margin: 0;
+  line-height: 1;
+  text-align: center;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-expand.th-v {
+  width: var(--manifest-sticky-expand);
+  min-width: var(--manifest-sticky-expand);
+  max-width: 3em;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-status.th-v {
+  width: var(--manifest-sticky-status);
+  min-width: var(--manifest-sticky-status);
+  max-width: 2.8em;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-tcc-progress.th-v {
+  width: var(--manifest-sticky-tcc-progress);
+  min-width: var(--manifest-sticky-tcc-progress);
+  max-width: var(--manifest-sticky-tcc-progress);
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit {
+  overflow: visible;
+  padding: 6px 2px;
+  white-space: normal;
+  line-height: 1.2;
+  vertical-align: middle;
+  width: var(--manifest-sticky-task-submit);
+  min-width: var(--manifest-sticky-task-submit);
+  max-width: var(--manifest-sticky-task-submit);
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit .offering-group-status-th-with-tip {
+  max-width: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: normal;
+  min-height: 100%;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit .mot-task-submit-th-main {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit .mot-task-submit-th-label {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  white-space: nowrap;
+  word-break: keep-all;
+  margin: 0;
+  font-size: var(--ui-list-th-font, 11px);
+  font-weight: 700;
+  text-align: center;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit .offering-group-status-th-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  line-height: 1;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit .th-sort {
+  display: inline-block;
+  line-height: 1;
+  margin: 0;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-task-submit .offering-status-pill {
+  white-space: nowrap;
 }
 #page-course-shared-teaching-maintenance .shared-teaching-table {
   min-width: 1280px;
@@ -8527,6 +8957,118 @@ code {
   vertical-align: middle;
   background: #f8fbff;
 }
+#page-course-offering-manifest .offering-manifest-table th.col-sticky-scope,
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-scope {
+  position: sticky;
+  right: calc(var(--major-offering-actions-col-width) + var(--manifest-course-info-col-width));
+  z-index: 4;
+  width: var(--manifest-scope-col-width);
+  min-width: var(--manifest-scope-col-width);
+  max-width: var(--manifest-scope-col-width);
+  background: #fff;
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-sticky-scope {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-sticky-scope.th-v {
+  width: var(--manifest-scope-col-width);
+  min-width: var(--manifest-scope-col-width);
+  max-width: var(--manifest-scope-col-width);
+  padding: 6px 2px;
+}
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-sticky-scope {
+  background: #fafbfc;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-scope a,
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-scope .action-disabled {
+  display: inline-block;
+  margin: 0;
+  text-align: center;
+  font-size: var(--ui-list-font, 12px);
+}
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-scope .action-disabled {
+  color: var(--text-3, #94a3b8);
+  cursor: not-allowed;
+}
+/* 右侧冻结（由右至左）：操作 → 课程信息 → 修读范围 → 当前学生名单人数 */
+#page-course-offering-manifest .offering-manifest-table th.col-roster-count,
+#page-course-offering-manifest .offering-manifest-table td.col-roster-count {
+  position: sticky;
+  right: calc(
+    var(--major-offering-actions-col-width)
+    + var(--manifest-course-info-col-width)
+    + var(--manifest-scope-col-width)
+  );
+  z-index: 4;
+  width: var(--manifest-roster-count-col-width);
+  min-width: var(--manifest-roster-count-col-width);
+  max-width: var(--manifest-roster-count-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-roster-count {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-roster-count.th-v {
+  width: var(--manifest-roster-count-col-width);
+  min-width: var(--manifest-roster-count-col-width);
+  max-width: var(--manifest-roster-count-col-width);
+  padding: 6px 2px;
+}
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-roster-count {
+  background: #fafbfc;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-roster-count .link-student-count {
+  display: inline-block;
+  max-width: 100%;
+}
+#page-course-offering-manifest .offering-manifest-table th.col-sticky-course-info,
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-course-info {
+  position: sticky;
+  right: var(--major-offering-actions-col-width);
+  z-index: 4;
+  width: var(--manifest-course-info-col-width);
+  min-width: var(--manifest-course-info-col-width);
+  max-width: var(--manifest-course-info-col-width);
+  background: #fff;
+  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-sticky-course-info {
+  z-index: 5;
+  background: var(--blue-50);
+}
+#page-course-offering-manifest .offering-manifest-table thead th.col-sticky-course-info.th-v {
+  width: var(--manifest-course-info-col-width);
+  min-width: var(--manifest-course-info-col-width);
+  max-width: var(--manifest-course-info-col-width);
+  padding: 6px 2px;
+}
+#page-course-offering-manifest .offering-manifest-table tr:hover td.col-sticky-course-info {
+  background: #fafbfc;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-course-info a {
+  font-size: var(--ui-list-font, 12px);
+}
 #page-course-offering-manifest .offering-manifest-table th.col-sticky-actions,
 #page-course-offering-manifest .offering-manifest-table td.col-sticky-actions {
   position: sticky;
@@ -8535,8 +9077,19 @@ code {
   min-width: var(--major-offering-actions-col-width);
   width: var(--major-offering-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-actions a,
+#page-course-offering-manifest .offering-manifest-table td.col-sticky-actions .action-disabled {
+  display: inline-block;
+  margin: 0;
+  text-align: center;
+  font-size: var(--ui-list-font, 12px);
 }
 #page-course-offering-manifest .offering-manifest-table thead th.col-sticky-actions {
   z-index: 5;
@@ -8544,6 +9097,66 @@ code {
 }
 #page-course-offering-manifest .offering-manifest-table tr:hover td.col-sticky-actions {
   background: #fafbfc;
+}
+#page-course-offering-manifest .offering-grouping-global-expand-btn {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#page-course-offering-manifest .offering-grouping-global-expand-btn:hover {
+  color: var(--blue-700);
+  border-color: var(--blue-400, #60a5fa);
+  background: var(--blue-50, #eff6ff);
+}
+#page-course-offering-manifest .offering-grouping-global-expand-btn.is-expanded {
+  color: var(--blue-800, #1e40af);
+  border-color: var(--blue-500, #3b82f6);
+  background: var(--blue-50, #eff6ff);
+}
+/* 开课状态圆标：对齐选修开课安排 */
+#page-course-offering-manifest .offering-grouping-course-status {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  color: #fff;
+  box-sizing: border-box;
+}
+#page-course-offering-manifest .offering-grouping-course-status.is-ok {
+  color: #fff;
+  background: var(--green);
+}
+#page-course-offering-manifest .offering-grouping-course-status.is-warn {
+  color: #fff;
+  background: var(--orange);
+}
+#page-course-offering-manifest .offering-grouping-course-status.is-missing {
+  color: #fff;
+  background: #c2410c;
+  border-radius: 4px;
+}
+#page-course-offering-manifest .offering-grouping-course-status.is-pending-copy {
+  color: #fff;
+  background: #2563eb;
+  border-radius: 4px;
 }
 #page-course-offering-manifest .table-footer,
 #page-course-shared-teaching-maintenance .table-footer,
@@ -9987,6 +10600,16 @@ code {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 88px);
+}
+#page-course-ge-offering-roster #ge-offering-roster-stats-card {
+  overflow: visible;
+  margin-bottom: 12px;
+}
+#page-course-ge-offering-roster #ge-offering-roster-stats-card .ge-offering-roster-stats-card-head {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--blue-50);
 }
 #page-course-ge-offering-roster .course-ge-roster-list-card {
   flex: 1;
@@ -15939,6 +16562,25 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .input-with-btn .btn {
   flex-shrink: 0;
 }
+.school-elective-programme-scope-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.school-elective-programme-mode-select {
+  width: 96px;
+  flex: 0 0 96px;
+  align-self: stretch;
+}
+.school-elective-programme-scope-row .school-elective-excluded-programmes-field {
+  flex: 1;
+  min-width: 0;
+}
+.ge-offering-scope-stack-row .school-elective-programme-mode-select {
+  width: 96px;
+  flex: 0 0 96px;
+  align-self: center;
+}
 #modal-major-classroom-picker.modal-nested {
   z-index: 1140;
 }
@@ -19593,8 +20235,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   background: #fff;
 }
 .ge-offering-batch-picker-modal {
-  width: min(860px, 96vw);
-  max-width: 860px;
+  width: min(980px, 96vw);
+  max-width: 980px;
 }
 .ge-offering-batch-picker-body {
   display: flex;
@@ -19606,6 +20248,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   grid-template-columns: 1.2fr 0.8fr;
   gap: 12px;
   min-height: 280px;
+}
+#modal-ge-offering-batch-picker .ge-offering-batch-picker-axes {
+  grid-template-columns: minmax(220px, 1fr) minmax(420px, 1.4fr);
 }
 .ge-offering-batch-picker-axis {
   display: flex;
@@ -19639,6 +20284,53 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.ge-offering-batch-picker-intake-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  padding: 0 6px 2px;
+  flex: 0 0 auto;
+}
+.ge-offering-batch-picker-intake-head[hidden] {
+  display: none;
+}
+.ge-offering-batch-picker-intake-head-cell {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 4.6em;
+  gap: 8px;
+  align-items: center;
+}
+#ge-offering-batch-picker-intakes.ge-offering-batch-picker-intake-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10px;
+  align-content: start;
+}
+.ge-offering-batch-picker-intake-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+#ge-offering-batch-picker-intakes.ge-offering-batch-picker-intake-grid .ge-offering-batch-picker-check-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 4.6em;
+  gap: 8px;
+  min-width: 0;
+}
+#ge-offering-batch-picker-intakes.ge-offering-batch-picker-intake-grid .ge-offering-batch-picker-check-item code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ge-offering-batch-picker-yxsx {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .ge-offering-batch-picker-check-item.is-active {
   background: var(--blue-50, #eff6ff);
@@ -19745,7 +20437,8 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   color: var(--text-3);
 }
 @media (max-width: 720px) {
-  .ge-offering-batch-picker-axes {
+  .ge-offering-batch-picker-axes,
+  #modal-ge-offering-batch-picker .ge-offering-batch-picker-axes {
     grid-template-columns: 1fr;
   }
 }
@@ -19973,9 +20666,6 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   align-items: center;
   justify-content: center;
   line-height: 1.2;
-}
-.school-elective-programme-picker-tabs {
-  margin-bottom: 0;
 }
 .school-elective-programme-picker-body {
   display: flex;

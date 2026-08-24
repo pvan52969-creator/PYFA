@@ -60,7 +60,7 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-task-style2">开课安排</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-major-offering-roster">开课名单</a>
           <!-- 原：专业开课计划 / 专业开课任务安排（样式一/二） / 专业开课学生名单管理 -->
-          <!-- 授课确认管理 / 授课确认（教师端）已迁至「开课清单」分组 -->
+          <!-- 授课确认管理 / 授课确认（教师端）已迁至「课程班管理」分组 -->
         </div>
       </div>
       <div class="nav-section">
@@ -90,12 +90,13 @@
       </div>
       <div class="nav-section">
         <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
-          <span class="nav-section-title-text">开课清单<span class="nav-section-status">（调整中）</span></span>
+          <span class="nav-section-title-text">课程班管理</span>
           <span class="nav-section-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="nav-section-body">
+          <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">课程班</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-teaching-load">Teaching Load</a>
-          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> -->
+          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> --> <!-- 已改名为「课程班」，置于 Teaching Load 上方 -->
           <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-confirmation-admin">授课确认管理</a>
           <a href="#" class="nav-item nav-item-sub" data-page="teacher-course-confirmation">授课确认（教师端）</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-offering-teacher-replace">授课教师替换</a>
@@ -946,9 +947,6 @@
           <h1>特殊课程设置</h1>
           <p class="subtitle">从教务课程库手动纳入课号，维护教室属性/偏好与默认 Support 学院；专业开课安排新建或仍为系统默认的班会自动带出。通识等其它开课后续复用同一配置。</p>
         </div>
-      </div>
-      <div class="legend-bar text-muted" style="margin-bottom:12px">
-        课号默认仅影响<strong>此后新建</strong>或教室仍为「全普通、无偏好」/ Support 仍为空的教学班；已在开课安排中改过的班不会被覆盖。
       </div>
       <div class="card course-major-query-card">
         <div class="course-major-query-grid school-elective-query-grid">
@@ -1872,6 +1870,7 @@
 
     <!-- ═══ 开课管理 · 通识选修开课（计划 + 安排合表） ═══ -->
     <section class="page" id="page-course-offering-ge">
+      <div class="ge-offering-plan-sticky-head">
       <nav class="mot-style2-step-bar" id="ge-offering-step-bar" aria-label="通识选修开课步骤">
         <!-- 原三步：1 课程班 / 2 其他学院 Support / 3 师资安排；改对齐专业任务样式二：1 Course Setting 融合课程班+Support -->
         <button type="button" class="mot-style2-step is-active" data-step="1" title="Course Setting：添加课程 · 修读范围 · 其他学院 Support" onclick="goGeOfferingPlanStep(1)">
@@ -1884,7 +1883,8 @@
           <span class="mot-style2-step-label">师资安排</span>
         </button>
       </nav>
-      <div class="card" id="ge-offering-plan-quota-card" style="margin-bottom:12px">
+      </div>
+      <div class="card" id="ge-offering-plan-quota-card">
         <div class="card-head ge-offering-plan-quota-head"
           role="button" tabindex="0" aria-expanded="true" aria-controls="ge-offering-plan-quota-body-wrap"
           onclick="toggleGeOfferingPlanQuotaCard()"
@@ -2296,15 +2296,16 @@
       </div>
     </section>
 
-    <!-- ═══ 开课管理 · 开课清单（任务安排已提交汇总） ═══ -->
+    <!-- ═══ 开课管理 · 课程班（汇总已开出课程班；支持停课） ═══ -->
+    <!-- 原：开课清单（任务安排已提交汇总） -->
     <section class="page" id="page-course-offering-manifest">
-      <div class="page-header">
-        <div><h1>开课清单</h1><p class="subtitle">汇总专业开课、选修开课、特殊开课中任务安排已提交的课程信息</p></div>
-      </div>
-      <div class="alert-info offering-module-hint">
-        <p>本页自动汇总专业开课、选修开课与特殊开课流程中<strong>任务安排已提交</strong>的数据，便于教务统一查阅课程、课程人数上限、当前学生名单人数与任课教师；如需调整请返回对应任务安排页。</p>
-      </div>
-      <div class="legend-bar" id="course-offering-hint-manifest"></div>
+      <!-- <div class="page-header">
+        <div><h1>课程班</h1><p class="subtitle">汇总专业开课、选修开课、特殊开课中已开出的课程班</p></div>
+      </div> -->
+      <!-- <div class="alert-info offering-module-hint">
+        <p>本页自动汇总专业开课、选修开课与特殊开课流程中<strong>已开出</strong>的课程班（含草稿、已生效与停课），便于教务统一查阅与停课；如需调整安排请返回对应开课安排页。</p>
+      </div> -->
+      <!-- <div class="legend-bar" id="course-offering-hint-manifest"></div> -->
       <div class="card course-major-query-card">
         <div class="course-major-query-grid">
           <div class="course-time-query-field">
@@ -2314,18 +2315,23 @@
             </select>
           </div>
           <div class="course-time-query-field">
-            <label for="offering-manifest-filter-type">开课类型</label>
+            <label for="offering-manifest-filter-type">开课模块</label>
+            <!-- 原：开课类型 -->
             <select class="input input-sm" id="offering-manifest-filter-type">
-              <option value="">全部类型</option>
+              <option value="">全部模块</option>
+              <!-- <option value="">全部类型</option> -->
               <option value="major">专业开课</option>
-              <option value="ge">选修开课</option>
+              <option value="ge-ge">选修开课(GE)</option>
+              <option value="ge-me">选修开课(ME)</option>
+              <!-- <option value="ge">选修开课</option> --> <!-- 原不区分 ME/GE -->
               <option value="other">特殊开课</option>
               <!-- 原 ge 文案为「通识选修」；特殊开课模块暂下线时 option 曾注释 -->
             </select>
           </div>
           <div class="course-time-query-field">
-            <label for="offering-manifest-filter-unit">所属部门</label>
-            <select class="input input-sm" id="offering-manifest-filter-unit"><option value="">全部所属部门</option></select>
+            <label for="offering-manifest-filter-programme">所属专业</label>
+            <select class="input input-sm" id="offering-manifest-filter-programme"><option value="">全部所属专业</option></select>
+            <!-- 原：offering-manifest-filter-unit 所属部门 -->
           </div>
           <div class="course-time-query-field">
             <label for="offering-manifest-filter-name">课号</label>
@@ -2343,11 +2349,12 @@
       </div>
       <div class="card offering-manifest-list-card">
         <div class="panel-toolbar offering-manifest-toolbar">
-          <span class="form-hint">一门课一条记录；已分组课程汇总展示课程人数上限、当前学生名单人数与任课教师</span>
-          <!-- <div class="offering-manifest-toolbar-actions">
-            <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-shared-code" onclick="openOfferingManifestSharedTeachingCodeModal()" disabled>设置共同授课码</button>
-            <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-clear-shared-code" onclick="clearOfferingManifestSharedTeachingCode()" disabled>解除共同授课</button>
-          </div> --> <!-- 原共同授课码批量操作，已从工具栏移除 -->
+          <div class="offering-manifest-toolbar-actions">
+            <button class="btn btn-danger btn-sm btn-offering-cancel" type="button" id="btn-offering-manifest-cancel" onclick="cancelSelectedOfferingManifestArrangements()" disabled title="已安排教师即可停课（含未生效）；停课后该课课时不再计入教师开课课时">停课</button>
+            <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-shared-code" onclick="openOfferingManifestSharedTeachingCodeModal()" disabled>设置共同授课码</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-clear-shared-code" onclick="clearOfferingManifestSharedTeachingCode()" disabled>解除共同授课</button> --> <!-- 原共同授课码批量操作，已从工具栏移除 -->
+          </div>
+          <!-- <span class="form-hint">一门课一条记录；已分组课程汇总展示课程人数上限与当前学生名单人数</span> -->
           <!-- <span class="form-hint">一门课一条记录；已分组课程汇总展示容量、人数与任课教师</span> --> <!-- 原文案 -->
           <!-- <span class="form-hint">按课程班展示；已分组课程按小组展开为多行</span> --> <!-- 原按小组展开 -->
         </div>
@@ -2355,18 +2362,23 @@
           <table class="data-table course-offering-table offering-manifest-table">
             <thead><tr id="offering-manifest-table-head">
               <th class="col-check"><input type="checkbox" id="offering-manifest-check-all" aria-label="全选"></th>
-              <th class="col-index">序号</th>
-              <th>负责人</th>
+              <!-- 序号 / 负责人已去掉；开课学期左侧为开课详情·开课状态·授课确认·生效状态 -->
+              <th class="col-center col-expand">开课详情</th>
+              <th class="col-center col-status">开课状态</th>
+              <th class="col-center col-tcc-progress">授课确认</th>
+              <th class="col-center col-task-submit">生效状态</th>
               <th class="col-center">开课学期</th>
-              <th class="col-center">开课类型</th>
+              <th class="col-center">开课模块</th>
+              <!-- <th class="col-center">开课类型</th> -->
               <th>课程号</th>
-              <th>课程名称</th>
+              <th class="col-center col-name">课程名称</th>
               <!-- <th>课程班名称</th> --> <!-- 原列名 -->
-              <th>所属部门</th>
+              <th class="col-center">所属专业</th>
+              <!-- <th>所属部门</th> --> <!-- 改所属专业 -->
               <th class="col-center">选课类型</th>
               <th class="col-center">学分</th>
               <th class="col-center">小组数</th>
-              <th class="col-center">起止周</th>
+              <!-- <th class="col-center">起止周</th> --> <!-- 已去掉 -->
               <!-- <th class="col-center">教学周数</th> --> <!-- 原教学周数列，已移除 -->
               <th class="col-center">总学时</th>
               <!-- <th class="col-center">计划学时</th> --> <!-- 原列名 -->
@@ -2376,8 +2388,11 @@
               <th class="col-center">当前学生名单人数</th>
               <!-- <th class="col-center">人数</th> --> <!-- 原列名 -->
               <!-- <th class="col-center">共同授课码</th> --> <!-- 原共同授课码列，已移除 -->
-              <th>任课教师</th>
+              <!-- 生效状态已移至开课学期左侧 -->
+              <!-- <th>任课教师</th> --> <!-- 已去掉 -->
               <!-- <th class="col-center">修改记录</th> --> <!-- 原修改记录列 -->
+              <th class="col-center col-sticky-scope th-v"><span class="th-v-label">修读范围</span></th>
+              <th class="col-center col-sticky-course-info">课程信息</th>
               <th class="col-sticky-actions">操作</th>
             </tr></thead>
             <tbody id="course-offering-manifest-body"></tbody>
@@ -2703,7 +2718,7 @@
       </div>
       <!-- 原型说明条按产品要求去掉，避免占位干扰列表
       <div class="alert-info offering-module-hint">
-        <p>按教师横向展示各学期授课学时（周学时 × 周次）。原型数据示意学院 Teaching Load 表结构；后续可与开课清单中已提交的教师安排联动。</p>
+        <p>按教师横向展示各学期授课学时（周学时 × 周次）。原型数据示意学院 Teaching Load 表结构；后续可与课程班中已提交的教师安排联动。</p>
       </div>
       -->
       <div class="card course-major-query-card">
@@ -5077,7 +5092,7 @@
         </div>
         -->
         <div class="form-item">
-          <label class="req" for="mos-edit-enrollment-type">选修/必修</label>
+          <label class="req" for="mos-edit-enrollment-type">选课方式</label>
           <select class="input input-sm" id="mos-edit-enrollment-type" onchange="onMajorOfferingEditEnrollmentTypeChange()">
             <option value="closed">必修</option>
             <option value="open">选修</option>
@@ -5379,8 +5394,8 @@
         </div>
         <div class="form-item">
           <label class="req" for="ge-edit-reserved-spots">预留名额</label>
-          <input class="input input-sm" id="ge-edit-reserved-spots" type="number" min="0" step="1" placeholder="5" required oninput="updateGeOfferingEditCapacityLimitDisplay()">
-          <p class="form-hint">默认 5，可修改；计入课程名额上限</p>
+          <input class="input input-sm" id="ge-edit-reserved-spots" type="number" min="0" step="1" placeholder="0" required oninput="updateGeOfferingEditCapacityLimitDisplay()">
+          <p class="form-hint">默认 0，可修改；计入课程名额上限</p>
         </div>
         <div class="form-item">
           <label for="ge-edit-capacity-limit">课程名额上限</label>
@@ -8660,10 +8675,19 @@
       <label class="req">修读范围</label>
       <div class="ge-offering-scope-stack">
         <div class="ge-offering-scope-stack-row">
+          <span class="ge-offering-scope-stack-label">类型</span>
+          <select class="input input-sm school-elective-programme-mode-select" id="ge-offering-scope-programme-mode" onchange="onGeOfferingScopeProgrammeModeChange()">
+            <option value="eligible">可选</option>
+            <option value="excluded">不可选</option>
+            <option value="unrestricted">不限</option>
+          </select>
+        </div>
+        <div class="ge-offering-scope-stack-row">
           <span class="ge-offering-scope-stack-label">专业</span>
           <div class="input-with-btn school-elective-excluded-programmes-field">
-            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-programmes">全开放</div>
+            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-programmes">不限</div>
             <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-programmes-clear-btn" onclick="clearGeOfferingScopeProgrammes()">清空</button>
           </div>
         </div>
         <div class="ge-offering-scope-stack-row">
@@ -8675,7 +8699,7 @@
           </div>
         </div>
       </div>
-      <p class="form-hint">可选或不可选专业（两边都不选=全开放）。未选专业批次表示所选专业全部批次适用；灰色项不可选。</p>
+      <p class="form-hint">先选择可选 / 不可选 / 不限，再选专业；不限时不可选专业。未选专业批次表示所选专业全部批次适用；灰色项不可选。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -8732,6 +8756,28 @@
   </div>
 </div>
 
+<!-- ═══ 弹窗：专业开课 · 查看修读范围（只读） ═══ -->
+<div class="modal-overlay" id="modal-major-offering-scope-view">
+  <div class="modal modal-md school-elective-scope-view-modal">
+    <div class="modal-head">
+      <h3>查看修读范围</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-major-offering-scope-view')">×</button>
+    </div>
+    <div class="modal-body">
+      <dl class="detail-dl school-elective-scope-view-dl">
+        <dt>开课模块</dt><dd id="major-offering-scope-view-module">—</dd>
+        <dt>选课类型</dt><dd id="major-offering-scope-view-enrollment-type">—</dd>
+        <dt>课程代码</dt><dd id="major-offering-scope-view-code">—</dd>
+        <dt>课程名称</dt><dd id="major-offering-scope-view-name">—</dd>
+        <dt id="major-offering-scope-view-programme-batches-label">上课专业批次</dt><dd id="major-offering-scope-view-programme-batches">—</dd>
+      </dl>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeModal('modal-major-offering-scope-view')">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：通识选修开课 · 专业批次（按不可选年级学期 / 专业范围置灰） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">
   <div class="modal modal-xl ge-offering-batch-picker-modal">
@@ -8752,6 +8798,14 @@
         <div class="ge-offering-batch-picker-axis">
           <div class="ge-offering-batch-picker-axis-head">
             <span id="ge-offering-batch-picker-intake-title">入学批次</span>
+          </div>
+          <div class="ge-offering-batch-picker-intake-head" id="ge-offering-batch-picker-intake-head" hidden>
+            <div class="ge-offering-batch-picker-intake-head-cell">
+              <span></span><span>入学批次</span><span>所属学期</span>
+            </div>
+            <div class="ge-offering-batch-picker-intake-head-cell">
+              <span></span><span>入学批次</span><span>所属学期</span>
+            </div>
           </div>
           <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-intakes"></div>
         </div>
@@ -9131,11 +9185,25 @@
     </div>
     <div class="form-item">
       <label class="req">修读范围</label>
-      <div class="input-with-btn school-elective-excluded-programmes-field">
-        <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-programmes">全开放</div>
-        <button class="btn btn-outline btn-sm" type="button" onclick="openSchoolElectiveProgrammePickerModal()">选择</button>
+      <div class="ge-offering-scope-stack">
+        <div class="ge-offering-scope-stack-row">
+          <span class="ge-offering-scope-stack-label">类型</span>
+          <select class="input input-sm school-elective-programme-mode-select" id="school-elective-edit-programme-mode" onchange="onSchoolElectiveProgrammeModeChange()">
+            <option value="eligible">可选</option>
+            <option value="excluded">不可选</option>
+            <option value="unrestricted">不限</option>
+          </select>
+        </div>
+        <div class="ge-offering-scope-stack-row">
+          <span class="ge-offering-scope-stack-label">专业</span>
+          <div class="input-with-btn school-elective-excluded-programmes-field">
+            <div class="input input-sm school-elective-excluded-display text-muted" id="school-elective-edit-programmes">不限</div>
+            <button class="btn btn-outline btn-sm" type="button" id="school-elective-edit-programmes-btn" onclick="openSchoolElectiveProgrammePickerModal()">选择</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="school-elective-edit-programmes-clear-btn" onclick="clearSchoolElectiveEditProgrammes()">清空</button>
+          </div>
+        </div>
       </div>
-      <p class="form-hint">维护可选或不可选专业；两边都不选表示全开放。</p>
+      <p class="form-hint">先选择类型（可选 / 不可选 / 不限），再选专业；不限时不可再选专业。不限表示全开放。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -9315,10 +9383,6 @@
       <button class="modal-close" type="button" onclick="closeSchoolElectiveProgrammePickerModal()">×</button>
     </div>
     <div class="modal-body school-elective-programme-picker-body">
-      <div class="tab-bar school-elective-programme-picker-tabs" id="school-elective-programme-picker-tabs">
-        <button type="button" class="tab" data-tab="excluded" onclick="switchSchoolElectiveProgrammePickerTab('excluded')">不可选专业</button>
-        <button type="button" class="tab" data-tab="eligible" onclick="switchSchoolElectiveProgrammePickerTab('eligible')">可选专业</button>
-      </div>
       <div class="school-elective-programme-picker-bar">
         <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(true)">全选</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="setSchoolElectiveProgrammePickerAll(false)">清空</button>
@@ -9331,7 +9395,7 @@
       </div>
       <div class="school-elective-programme-picker-tree" id="school-elective-programme-picker-list"></div>
       <p class="school-elective-programme-picker-hint" id="school-elective-programme-picker-hint" role="note">
-        <strong>提示：</strong>两边都不选表示全开放；请只维护可选或不可选其一。
+        <strong>提示：</strong>请勾选专业。限制类型请在抽屉中用「可选 / 不可选 / 不限」设置。
       </p>
     </div>
     <div class="modal-foot">

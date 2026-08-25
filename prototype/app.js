@@ -19757,7 +19757,7 @@ function renderSharedTeachingSetupConfiguredTable() {
     });
   tbody.innerHTML = rows.length
     ? rows.map(row => `<tr>
-        <td><strong>${escapeHtml(row.code)}</strong></td>
+        <td class="col-center"><strong>${escapeHtml(row.code)}</strong></td>
         <td class="col-nowrap">${escapeHtml(row.courseName || row.className || '—')}</td>
         <td class="col-center">${escapeHtml(row.typeLabel || '—')}</td>
         <td class="col-center"><code>${escapeHtml(row.offeringProgramme || '—')}</code></td>
@@ -19811,7 +19811,7 @@ function renderSharedTeachingSetupModalTable() {
   const sk = 'sharedTeachingSetup';
   if (theadRow) {
     theadRow.innerHTML = `
-      ${renderListSortTh(sk, '课程号', 'code')}
+      ${renderListSortTh(sk, '课程号', 'code', { center: true })}
       ${renderListSortTh(sk, '课程班名称', 'courseName')}
       ${renderListSortTh(sk, '开课类型', 'offeringType', { center: true })}
       ${renderListSortTh(sk, '课程类型', 'courseType', { center: true })}
@@ -19833,7 +19833,7 @@ function renderSharedTeachingSetupModalTable() {
     ? paged.items.map(row => {
         const marked = Boolean((row.sharedTeachingCode || '').trim());
         return `<tr class="${marked ? 'is-shared-teaching-marked' : ''}">
-          <td><strong>${escapeHtml(row.code)}</strong></td>
+          <td class="col-center"><strong>${escapeHtml(row.code)}</strong></td>
           <td class="col-nowrap">${escapeHtml(row.courseName || row.className || '—')}</td>
           <td class="col-center">${escapeHtml(row.typeLabel || '—')}</td>
           <td class="col-center col-nowrap">${escapeHtml(getSharedTeachingSetupCourseType(row))}</td>
@@ -40096,8 +40096,9 @@ function getSectionSharedTeachingPeerCourseCodes(sec) {
 }
 
 function formatSectionSharedTeachingPeerCourseCodesDisplay(sec) {
-  const labels = getSectionSharedTeachingPeerSections(sec).map(formatSharedTeachingSectionPeerLabel).filter(Boolean);
-  return labels.length ? labels.join('、') : '—';
+  const codes = getSectionSharedTeachingPeerCourseCodes(sec);
+  return codes.length ? codes.join('、') : '—';
+  // 原：附带专业批次 formatSharedTeachingSectionPeerLabel → FIN201（FIN2024/09…）
 }
 
 /** 与列表「授课确认」列展示对齐：confirmed / unconfirmed / none */

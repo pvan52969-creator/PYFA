@@ -1269,8 +1269,8 @@ body {
 }
 #modal-shared-teaching-setup .shared-teaching-setup-configured-wrap .data-table th.col-sticky-actions,
 #modal-shared-teaching-setup .shared-teaching-setup-configured-wrap .data-table td.col-sticky-actions {
-  min-width: 148px;
-  width: 148px;
+  min-width: 52px;
+  width: 52px;
 }
 #modal-shared-teaching-setup .data-table td.col-nowrap {
   white-space: normal;

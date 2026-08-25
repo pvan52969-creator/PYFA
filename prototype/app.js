@@ -19764,8 +19764,6 @@ function renderSharedTeachingSetupConfiguredTable() {
         <td>${formatSharedTeachingSetupTeachersHtml(row.teachers)}</td>
         <td class="col-nowrap">${formatSharedTeachingSetupProgrammeBatchHtml(row)}</td>
         <td class="actions col-center col-sticky-actions">
-          <a href="#" onclick='event.preventDefault();openSharedTeachingSlotLinkModal(${JSON.stringify(String(row.sharedTeachingCode || ''))},${JSON.stringify(String(row.termCode || ''))});return false'>管理联动安排</a>
-          ·
           <a href="#" onclick='event.preventDefault();removeSharedTeachingSetupConfiguredRow(${JSON.stringify(String(row.sectionId || ''))});return false'>移除</a>
         </td>
       </tr>`).join('')

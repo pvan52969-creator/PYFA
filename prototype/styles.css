@@ -1174,29 +1174,80 @@ body {
   width: 520px; max-width: 100%; max-height: 90vh;
   display: flex; flex-direction: column;
 }
-#modal-shared-teaching-setup .modal-lg {
-  width: min(1440px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+#modal-shared-teaching-setup .shared-teaching-setup-section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-section-label-row .shared-teaching-setup-section-label {
+  margin-bottom: 0;
+}
+
+/* 共同授课 · 设置弹窗（加宽；左侧为主，尽量避免横向滚动） */
+#modal-shared-teaching-setup .shared-teaching-setup-modal.modal-xl {
+  width: min(98vw, 1560px);
+  max-width: 1560px;
+  max-height: min(94vh, 920px);
   display: flex;
   flex-direction: column;
 }
 #modal-shared-teaching-setup .shared-teaching-setup-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: min(600px, calc(100vh - 160px));
+  gap: 14px;
+  min-height: min(680px, calc(100vh - 120px));
+  max-height: min(82vh, 800px);
+  overflow: hidden;
+  flex: 1;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+#modal-shared-teaching-setup #shared-teaching-setup-term-hint {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid var(--border-light, #e2e8f0);
+  line-height: 1.45;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-split {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(640px, 1.05fr) minmax(520px, 0.95fr);
+  gap: 20px;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-pane-left {
+  padding-right: 20px;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-configured-wrap {
+  min-height: 220px;
+  max-height: none;
+  flex: 1;
+  overflow-x: visible;
+  overflow-y: auto;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-pane-right .shared-teaching-setup-table-wrap {
+  min-height: 280px;
+  max-height: none;
+  flex: 1;
   overflow: auto;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-table-wrap {
+  max-height: none;
 }
 #modal-shared-teaching-setup .data-table th,
 #modal-shared-teaching-setup .data-table td {
-  padding: 5px 6px;
-  font-size: 11px;
-  line-height: 1.35;
+  padding: 7px 8px;
+  font-size: 12px;
+  line-height: 1.4;
   border-left: 1px solid var(--border-light, #e2e8f0);
   border-right: 1px solid var(--border-light, #e2e8f0);
 }
 #modal-shared-teaching-setup .data-table th {
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
   border-bottom: 1px solid var(--border, #cbd5e1);
 }
@@ -1208,31 +1259,266 @@ body {
 #modal-shared-teaching-setup .data-table td:last-child {
   border-right: none;
 }
-#modal-shared-teaching-setup .data-table .col-check {
-  width: 28px;
+#modal-shared-teaching-setup .data-table th.col-sticky-actions,
+#modal-shared-teaching-setup .data-table td.col-sticky-actions {
+  white-space: nowrap;
+  min-width: 52px;
+  width: 52px;
   padding-left: 4px;
   padding-right: 4px;
 }
-#modal-shared-teaching-setup .data-table .col-index {
-  width: 36px;
-  padding-left: 4px;
-  padding-right: 4px;
+#modal-shared-teaching-setup .shared-teaching-setup-configured-wrap .data-table th.col-sticky-actions,
+#modal-shared-teaching-setup .shared-teaching-setup-configured-wrap .data-table td.col-sticky-actions {
+  min-width: 148px;
+  width: 148px;
 }
 #modal-shared-teaching-setup .data-table td.col-nowrap {
   white-space: normal;
   word-break: break-word;
 }
-#modal-shared-teaching-setup .data-table th.col-sticky-actions,
-#modal-shared-teaching-setup .data-table td.col-sticky-actions {
-  white-space: nowrap;
-  min-width: 48px;
-  width: 48px;
-}
 #modal-shared-teaching-setup .tcc-stacked-line,
 #modal-shared-teaching-setup .shared-teaching-setup-current-line {
-  font-size: 11px;
+  font-size: 12px;
 }
-.modal-xl { width: 860px; }
+@media (max-width: 1280px) {
+  #modal-shared-teaching-setup .shared-teaching-setup-modal.modal-xl {
+    width: min(98vw, 1180px);
+    max-width: 1180px;
+  }
+  #modal-shared-teaching-setup .shared-teaching-setup-split {
+    grid-template-columns: 1fr;
+  }
+  #modal-shared-teaching-setup .shared-teaching-setup-configured-wrap {
+    overflow: auto;
+  }
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-modal.modal-xl {
+  width: min(96vw, 1280px);
+  max-width: 1280px;
+  max-height: min(92vh, 900px);
+  display: flex;
+  flex-direction: column;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  max-height: min(80vh, 760px);
+}
+.shared-teaching-slot-link-panes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.shared-teaching-slot-link-pane {
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: 6px;
+  padding: 10px 12px;
+  min-width: 0;
+  width: 100%;
+}
+.shared-teaching-slot-link-pane-head {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+.shared-teaching-slot-link-pane-head .text-muted {
+  font-size: 12px;
+}
+.shared-teaching-slot-link-pane-table {
+  max-height: none;
+  overflow: visible;
+}
+.shared-teaching-slot-link-pane-table .data-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table th,
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table td {
+  border-left: 1px solid var(--border-light, #e2e8f0);
+  border-right: 1px solid var(--border-light, #e2e8f0);
+  vertical-align: middle;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table th:first-child,
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table td:first-child {
+  border-left: none;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table th:last-child,
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table td:last-child {
+  border-right: none;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-check { width: 36px; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-group { width: 22%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-hour-type { width: 10%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-week { width: 8%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-weekly { width: 7%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-teacher { width: 14%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-classroom-attr { width: 10%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-classroom-pref { width: 12%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table col.col-stl-link { width: 8%; }
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table th.col-check,
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table td.col-check {
+  width: 36px;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table td {
+  word-break: break-word;
+}
+.shared-teaching-slot-link-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.shared-teaching-slot-link-group-card {
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: #f8fafc;
+}
+.shared-teaching-slot-link-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.shared-teaching-slot-link-group-table-wrap {
+  overflow-x: auto;
+}
+.shared-teaching-slot-link-group-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  background: #fff;
+  min-width: 1040px;
+}
+.shared-teaching-slot-link-group-table th,
+.shared-teaching-slot-link-group-table td {
+  border-left: 1px solid var(--border-light, #e2e8f0);
+  border-right: 1px solid var(--border-light, #e2e8f0);
+  vertical-align: middle;
+  word-break: break-word;
+}
+.shared-teaching-slot-link-group-table th:first-child,
+.shared-teaching-slot-link-group-table td:first-child {
+  border-left: none;
+}
+.shared-teaching-slot-link-group-table th:last-child,
+.shared-teaching-slot-link-group-table td:last-child {
+  border-right: none;
+}
+.shared-teaching-slot-link-group-table col.col-stl-term { width: 88px; }
+.shared-teaching-slot-link-group-table col.col-stl-offering-type { width: 88px; }
+.shared-teaching-slot-link-group-table col.col-stl-code { width: 88px; }
+.shared-teaching-slot-link-group-table td.col-stl-term {
+  white-space: nowrap;
+}
+.shared-teaching-slot-link-group-table col.col-stl-group { width: 18%; }
+.shared-teaching-slot-link-group-table col.col-stl-hour-type { width: 88px; }
+.shared-teaching-slot-link-group-table col.col-stl-week { width: 72px; }
+.shared-teaching-slot-link-group-table col.col-stl-weekly { width: 64px; }
+.shared-teaching-slot-link-group-table col.col-stl-teacher { width: 14%; }
+.shared-teaching-slot-link-group-table col.col-stl-classroom-attr { width: 88px; }
+.shared-teaching-slot-link-group-table col.col-stl-classroom-pref { width: 12%; }
+.shared-teaching-slot-link-group-table td.col-stl-code {
+  white-space: nowrap;
+  text-align: center;
+}
+.shared-teaching-slot-link-group-items {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2, #475569);
+}
+.shared-teaching-slot-link-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #dbeafe;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.shared-teaching-slot-link-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  cursor: help;
+  vertical-align: middle;
+}
+.shared-teaching-slot-link-peers {
+  display: block;
+  font-size: 11px;
+  color: var(--text-2, #475569);
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-word;
+  text-align: center;
+}
+#modal-shared-teaching-slot-link-view .shared-teaching-slot-link-view-modal.modal-xl {
+  width: min(98vw, 1320px);
+  max-width: 1320px;
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+}
+#modal-shared-teaching-slot-link-view .shared-teaching-slot-link-view-body {
+  overflow: auto;
+  max-height: min(72vh, 560px);
+}
+.shared-teaching-slot-link-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.shared-teaching-slot-link-stack-line {
+  display: block;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .offering-hour-summary-groups,
+#modal-shared-teaching-slot-link-view .offering-hour-summary-groups,
+.shared-teaching-slot-link-group-table .offering-hour-summary-groups {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+#modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .offering-hour-summary-group-line,
+#modal-shared-teaching-slot-link-view .offering-hour-summary-group-line,
+.shared-teaching-slot-link-group-table .offering-hour-summary-group-line {
+  display: block;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.shared-teaching-slot-link-view-btn {
+  white-space: nowrap;
+}
+.offering-group-status-assign-table .col-slot-link {
+  width: 88px;
+  min-width: 72px;
+  max-width: 100px;
+  white-space: nowrap;
+  padding-left: 4px;
+  padding-right: 4px;
+  vertical-align: middle;
+}
+/* 共同授课 · 联动排课安排 */
 #modal-add-course .modal-xl { width: min(98vw, 1280px); max-width: 1280px; }
 .modal-md { width: 560px; }
 
@@ -8882,9 +9168,14 @@ code {
   border: 1px solid var(--border-light);
   border-radius: 8px;
 }
-#modal-shared-teaching-setup .shared-teaching-setup-table-wrap,
+#modal-shared-teaching-setup .shared-teaching-setup-table-wrap {
+  overflow: auto;
+  max-height: none;
+}
 #modal-shared-teaching-setup .shared-teaching-setup-configured-wrap {
-  overflow-x: auto;
+  overflow-x: visible;
+  overflow-y: auto;
+  max-height: none;
 }
 #modal-shared-teaching-setup .shared-teaching-setup-table-wrap .data-table,
 #modal-shared-teaching-setup .shared-teaching-setup-configured-wrap .data-table {

@@ -2165,7 +2165,7 @@
           <th class="col-check"><input type="checkbox" id="other-offering-check-all" aria-label="全选" onchange="toggleOtherOfferingCheckAll(this.checked)"></th>
           <th>负责人</th>
           <th class="col-center">开课学期</th><th class="col-center">生效状态</th>
-          <th>课程号</th><th>课程名称</th>
+          <th>课程号</th><th>课程班名称</th>
           <th class="col-center">所属部门</th>
           <th class="col-center">所属专业</th>
           <th class="col-center">预计容量</th>
@@ -2278,7 +2278,7 @@
             <thead><tr>
               <th class="col-index">序号</th>
               <th class="col-center">开课学期</th>
-              <th>课程号</th><th>课程名称</th>
+              <th>课程号</th><th>课程班名称</th>
               <th class="col-center">所属部门</th><th class="col-center">起止周</th>
               <!-- <th class="col-center">专业</th><th class="col-center">入学批次</th> -->
               <th class="col-center">小组数</th>
@@ -4998,8 +4998,9 @@
           <input class="input input-sm readonly" id="mos-edit-course-code" type="text" readonly tabindex="-1">
         </div>
         <div class="form-item">
-          <label class="req" for="mos-edit-course-name">课程名称</label>
-          <input class="input input-sm readonly" id="mos-edit-course-name" type="text" readonly tabindex="-1">
+          <label class="req" for="mos-edit-course-name">课程班名称</label>
+          <input class="input input-sm" id="mos-edit-course-name" type="text">
+          <p class="form-hint">默认等于课名；开课安排生效后不可修改</p>
         </div>
         <div class="form-item">
           <label class="req" for="mos-edit-credits">学分</label>
@@ -5373,9 +5374,14 @@
           <label class="req" for="ge-edit-offering-unit">所属部门</label>
           <input class="input input-sm readonly" id="ge-edit-offering-unit" type="text" readonly tabindex="-1">
         </div>
+        <div class="form-item">
+          <label class="req" for="ge-edit-offering-programme">所属专业</label>
+          <input class="input input-sm readonly" id="ge-edit-offering-programme" type="text" readonly tabindex="-1">
+        </div>
         <div class="form-item full">
-          <label class="req" for="ge-edit-course-name">课程名称</label>
-          <input class="input input-sm readonly" id="ge-edit-course-name" type="text" readonly tabindex="-1">
+          <label class="req" for="ge-edit-course-name">课程班名称</label>
+          <input class="input input-sm" id="ge-edit-course-name" type="text">
+          <p class="form-hint">默认等于课名；开课安排生效后不可修改</p>
         </div>
         <div class="form-item">
           <label class="req" for="ge-edit-credits">学分</label>
@@ -5546,8 +5552,9 @@
           <input class="input input-sm readonly" id="other-edit-offering-unit" type="text" readonly tabindex="-1">
         </div>
         <div class="form-item full">
-          <label class="req" for="other-edit-course-name">课程名称</label>
-          <input class="input input-sm readonly" id="other-edit-course-name" type="text" readonly tabindex="-1">
+          <label class="req" for="other-edit-course-name">课程班名称</label>
+          <input class="input input-sm" id="other-edit-course-name" type="text">
+          <p class="form-hint">默认等于课名；开课安排生效后不可修改</p>
         </div>
         <div class="form-item">
           <label class="req" for="other-edit-credits">学分</label>
@@ -7353,7 +7360,7 @@
 
 <!-- ═══ 弹窗：共同授课维护 · 设置共同授课（本学期开课清单） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-shared-teaching-setup">
-  <div class="modal modal-lg">
+  <div class="modal modal-xl shared-teaching-setup-modal">
     <div class="modal-head">
       <h3>设置共同授课</h3>
       <button class="modal-close" type="button" onclick="closeSharedTeachingSetupModal()">×</button>
@@ -7367,15 +7374,19 @@
             <div class="shared-teaching-setup-current-grid" id="shared-teaching-setup-current-body"></div>
           </div>
           <div class="shared-teaching-setup-configured">
-            <div class="shared-teaching-setup-section-label">已设置共同授课</div>
+            <div class="shared-teaching-setup-section-label-row">
+              <div class="shared-teaching-setup-section-label">已设置共同授课</div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-shared-teaching-setup-slot-link" hidden
+                onclick="openSharedTeachingSlotLinkModalFromSeed()">管理联动安排</button>
+            </div>
             <div class="table-scroll shared-teaching-setup-configured-wrap">
               <table class="data-table compact course-offering-table">
                 <thead>
                   <tr>
                     <th>课程号</th>
-                    <th>课程名称</th>
+                    <th>课程班名称</th>
                     <th class="col-center">开课类型</th>
-                    <th class="col-center">所属部门</th>
+                    <th class="col-center">所属专业</th>
                     <th>任课教师</th>
                     <th>专业批次</th>
                     <th class="col-center col-sticky-actions">操作</th>
@@ -7393,10 +7404,11 @@
               <button type="button" class="slt-info-btn shared-teaching-setup-rules-btn" aria-label="共同授课规则" onclick="toggleSharedTeachingSetupRulesTip(event)">!</button>
               <div class="slt-info-popover shared-teaching-setup-rules-popover">
                 <p class="slt-info-item"><strong>共同授课规则</strong></p>
-                <p class="slt-info-formula">1. 须选择两门及以上<strong>不同课程号</strong>的课程。</p>
-                <p class="slt-info-formula">2. 所选课程须至少有一名<strong>相同任课教师</strong>。</p>
-                <p class="slt-info-formula">3. 右侧列表仅展示与当前课程有相同任课教师、且尚未与本课共同授课的开课记录。</p>
-                <p class="slt-info-formula">4. 点击「添加」后系统自动打上共同授课标记；排课时该教师可为这些课程忽略时间冲突。</p>
+                <p class="slt-info-formula">1. 须选择至少 <strong>2 个不同教学班</strong>（可同课号）。</p>
+                <p class="slt-info-formula">2. 所选教学班须至少有一名<strong>相同任课教师</strong>。</p>
+                <p class="slt-info-formula">3. 右侧列表仅展示与当前教学班有相同任课教师、且尚未与本课共同授课的开课记录。</p>
+                <p class="slt-info-formula">4. 点击「添加」后系统自动打上共同授课标记；排课时该教师可为这些班忽略时间冲突。</p>
+                <p class="slt-info-formula">5. 已设置后可「管理联动安排」，将各班学时安排行按周次/周学时一致绑定，供后续同堂排课。</p>
               </div>
             </div>
           </div>
@@ -7419,10 +7431,10 @@
               <thead>
                 <tr id="shared-teaching-setup-head-row">
                   <th>课程号</th>
-                  <th>课程名称</th>
+                  <th>课程班名称</th>
                   <th class="col-center">开课类型</th>
                   <th class="col-center">课程类型</th>
-                  <th class="col-center">所属部门</th>
+                  <th class="col-center">所属专业</th>
                   <th>任课教师</th>
                   <th>专业批次</th>
                   <th class="col-center col-sticky-actions">操作</th>
@@ -7443,6 +7455,49 @@
       <div class="shared-teaching-setup-foot-actions">
         <button class="btn btn-primary" type="button" onclick="closeSharedTeachingSetupModal()">关闭</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：共同授课 · 联动排课安排 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-shared-teaching-slot-link">
+  <div class="modal modal-xl shared-teaching-slot-link-modal">
+    <div class="modal-head">
+      <h3>联动排课安排</h3>
+      <button class="modal-close" type="button" onclick="closeSharedTeachingSlotLinkModal()">×</button>
+    </div>
+    <div class="modal-body shared-teaching-slot-link-body">
+      <p class="form-hint" id="shared-teaching-slot-link-hint">绑定后排课将同时间同教室；开课侧仅要求周次、周学时一致。</p>
+      <div class="shared-teaching-slot-link-panes" id="shared-teaching-slot-link-panes"></div>
+      <div class="shared-teaching-slot-link-actions">
+        <span class="text-muted" id="shared-teaching-slot-link-selection-hint">请勾选至少 2 条安排行</span>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-shared-teaching-slot-link-create" disabled
+          onclick="createSharedTeachingSlotLinkFromSelection()">建立联动</button>
+      </div>
+      <div class="shared-teaching-slot-link-groups-wrap">
+        <div class="shared-teaching-setup-section-label">已建立联动组</div>
+        <div id="shared-teaching-slot-link-groups"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeSharedTeachingSlotLinkModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 弹窗：共同授课 · 查看联动组 ═══ -->
+<div class="modal-overlay modal-nested" id="modal-shared-teaching-slot-link-view">
+  <div class="modal modal-xl shared-teaching-slot-link-view-modal">
+    <div class="modal-head">
+      <h3 id="shared-teaching-slot-link-view-title">联动组</h3>
+      <button class="modal-close" type="button" onclick="closeSharedTeachingSlotLinkViewModal()">×</button>
+    </div>
+    <div class="modal-body shared-teaching-slot-link-view-body">
+      <p class="form-hint" id="shared-teaching-slot-link-view-hint">以下安排行已绑定联动。</p>
+      <div id="shared-teaching-slot-link-view-content"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeSharedTeachingSlotLinkViewModal()">关闭</button>
     </div>
   </div>
 </div>

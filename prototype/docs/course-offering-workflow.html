@@ -72,20 +72,23 @@
       <rect x="60" y="548" width="880" height="380" rx="12" fill="#ecfeff" opacity="0.28"/>
       <text x="500" y="570" text-anchor="middle" class="lane-label">课程班管理</text>
 
-      <!-- 准备连线 -->
-      <path d="M 500 76 L 500 108" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
-      <path d="M 180 168 L 180 220" fill="none" stroke="#16a34a" stroke-width="1.15"/>
-      <path d="M 470 168 L 470 220" fill="none" stroke="#ea580c" stroke-width="1.15"/>
-      <path d="M 740 168 L 740 220" fill="none" stroke="#9333ea" stroke-width="1.15"/>
-      <path d="M 260 142 L 390 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
-      <path d="M 550 142 L 670 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+      <!-- 开课时间设置 → 三项开课设置（扇出） -->
+      <path d="M 500 76 L 500 98" fill="none" stroke="#94a3b8" stroke-width="1.25"/>
+      <path d="M 200 98 L 740 98" fill="none" stroke="#94a3b8" stroke-width="1.25"/>
+      <path d="M 200 98 L 200 116" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
+      <path d="M 470 98 L 470 116" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
+      <path d="M 740 98 L 740 116" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
 
-      <!-- 分支到三泳道 -->
-      <path d="M 200 220 L 200 268" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
-      <path d="M 470 220 L 470 268" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
-      <path d="M 740 220 L 740 268" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
+      <!-- 开课设置三项之间虚线串联 -->
+      <path d="M 280 142 L 390 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+      <path d="M 550 142 L 660 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
 
-      <!-- 专业竖链 -->
+      <!-- 三项设置 → 三泳道入口 -->
+      <path d="M 200 168 L 200 268" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
+      <path d="M 470 168 L 470 268" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
+      <path d="M 740 168 L 740 268" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
+
+      <!-- 专业竖链：计划 → 安排 → 名单 → 汇合线 -->
       <path d="M 200 320 L 200 348" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
       <path d="M 200 400 L 200 428" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
       <path d="M 200 480 L 200 518" fill="none" stroke="#16a34a" stroke-width="1.15"/>
@@ -100,7 +103,7 @@
       <path d="M 740 400 L 740 428" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
       <path d="M 740 480 L 740 518" fill="none" stroke="#9333ea" stroke-width="1.15"/>
 
-      <!-- 汇入课程班 -->
+      <!-- 三泳道汇入课程班 -->
       <path d="M 200 518 L 740 518" fill="none" stroke="#0891b2" stroke-width="1.15" stroke-linecap="round"/>
       <path d="M 500 518 L 500 584" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
 
@@ -109,12 +112,12 @@
       <path d="M 550 374 L 620 374" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3"/>
       <path d="M 820 374 L 860 374 L 860 584 L 700 584" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3"/>
 
-      <!-- 课程班旁支 / 下游 -->
+      <!-- 课程班旁支 / 下游（节点底边 y=636） -->
       <path d="M 420 610 L 260 610" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr-c)"/>
       <path d="M 180 636 L 180 664" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr-c)"/>
       <path d="M 580 610 L 700 610" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
-      <path d="M 780 664 L 780 692" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
-      <path d="M 500 662 L 500 768" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
+      <path d="M 780 636 L 780 664" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
+      <path d="M 500 636 L 500 768" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
 
       <!-- 开课设置 -->
       <foreignObject x="420" y="24" width="160" height="52">
@@ -123,7 +126,7 @@
           <div class="node-sub">当前学期 · 授课确认截止日期</div>
         </div>
       </foreignObject>
-      <foreignObject x="100" y="116" width="160" height="52">
+      <foreignObject x="120" y="116" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
           <div class="node-title">执行计划已提交</div>
           <div class="node-sub">专业批次 · 生成开课任务前置</div>

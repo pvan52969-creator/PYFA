@@ -13,13 +13,13 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
+from prd_folder_paths import BASE as BASE_OUT, menu_dir, version_dir
 from prd_submenu_fields import FIELD_COL_WIDTHS, FIELD_HEADERS, MENU_FIELD_PACKS
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parent
-BASE_OUT = ROOT / "参考文档" / "2、开课管理"
 
-# 二级菜单 → 一级菜单（母文件夹）
+# 二级菜单 → 一级菜单（母文件夹键名，路径见 prd_folder_paths）
 MENU_PARENT = {
     "开课时间设置": "开课设置",
     "特殊课程设置": "开课设置",
@@ -27,6 +27,7 @@ MENU_PARENT = {
     "开课计划": "专业开课",
     "开课安排": "专业开课",
     "开课名单": "专业开课",
+    "课程班": "课程班管理",
 }
 
 LANDSCAPE_SCALE = 1.35
@@ -650,8 +651,7 @@ def build_one(spec: dict, *, version: str, date_ymd: str, allow_overwrite: bool 
 
     filename = f"{spec['folder']}{date_ymd}{version}.docx"
     parent = MENU_PARENT[spec["folder"]]
-    # 每版本一文件夹：…/<菜单>/<菜单><日期><Vn>/<菜单><日期><Vn>.docx
-    ver_dir = BASE_OUT / parent / spec["folder"] / f"{spec['folder']}{date_ymd}{version}"
+    ver_dir = version_dir(spec["folder"], date_ymd, version, parent)
     out = ver_dir / filename
     ver_dir.mkdir(parents=True, exist_ok=True)
     if out.exists() and not allow_overwrite:
@@ -783,7 +783,7 @@ def main():
             raise SystemExit(f"未知菜单：{', '.join(sorted(missing))}")
 
     for spec in specs:
-        folder = BASE_OUT / MENU_PARENT[spec["folder"]] / spec["folder"]
+        folder = menu_dir(spec["folder"])
         if args.bump:
             n = _latest_version_num(folder, spec["folder"]) + 1
             if n < 1:

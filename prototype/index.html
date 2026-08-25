@@ -878,7 +878,6 @@
         <div class="approval-tab-bar elective-plan-kind-tabs school-elective-me-library-tabs" id="school-elective-me-library-tab-list" role="tablist" aria-label="ME 专业课程库"></div>
         <button type="button" class="school-elective-me-library-add" id="btn-school-elective-me-library-add" title="添加专业课程库" onclick="openSchoolElectiveMeLibraryAddModal()">＋</button>
       </div>
-      <div class="school-elective-me-group-summary" id="school-elective-me-group-summary" hidden></div>
       <div class="card course-major-query-card">
         <div class="course-major-query-grid school-elective-query-grid">
           <div class="course-time-query-field">
@@ -918,7 +917,6 @@
       <div class="card">
         <div class="panel-toolbar school-elective-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openSchoolElectiveCourseAddModal()">新增</button>
-          <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-me-group-settings" onclick="openSchoolElectiveMeGroupSettingsModal()" hidden>课程组设置</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-category" onclick="openSchoolElectiveBatchCategoryModal()" hidden disabled>分组</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-status" onclick="openSchoolElectiveBatchStatusModal()" disabled>修改状态</button>
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-school-elective-delete" onclick="deleteSelectedSchoolElectiveCourses()" disabled>删除</button>
@@ -9074,51 +9072,22 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：校选课程 · ME 课程组设置 ═══ -->
-<div class="modal-overlay" id="modal-school-elective-me-group-settings">
-  <div class="modal modal-lg school-elective-me-group-settings-modal">
-    <div class="modal-head">
-      <h3 id="school-elective-me-group-settings-title">课程组设置</h3>
-      <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-me-group-settings')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="table-scroll school-elective-me-group-settings-table-wrap">
-        <table class="data-table compact school-elective-me-group-settings-table">
-          <thead>
-            <tr>
-              <th class="col-center">课程组</th>
-              <th class="col-center">最低修读学分</th>
-              <th>修读学分说明</th>
-              <th class="col-center col-actions">操作</th>
-            </tr>
-          </thead>
-          <tbody id="sec-me-group-settings-body"></tbody>
-        </table>
-      </div>
-      <div class="school-elective-me-group-settings-toolbar">
-        <button type="button" class="school-elective-me-group-settings-add" title="添加课程组" onclick="addSchoolElectiveMeGroupSettingsRow()">＋</button>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-school-elective-me-group-settings')">取消</button>
-      <button class="btn btn-primary" type="button" onclick="confirmSchoolElectiveMeGroupSettings()">保存</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-school-elective-batch-category">
-  <div class="modal modal-sm">
+  <div class="modal modal-xl school-elective-batch-category-modal">
     <div class="modal-head">
       <h3>设置课程组</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-school-elective-batch-category')">×</button>
     </div>
     <div class="modal-body">
       <p class="form-hint" id="school-elective-batch-category-hint">将所选课程统一设为指定课程组。</p>
-      <div class="form-item">
-        <label for="school-elective-batch-category">课程组</label>
-        <select class="input input-sm" id="school-elective-batch-category">
-          <option value="">—（不设置）</option>
-        </select>
+      <div class="school-elective-batch-mapping-panel">
+        <div class="school-elective-batch-mapping-head">
+          <span>适用 Intake / Version</span>
+          <span>课程组</span>
+          <span class="school-elective-batch-mapping-head-action" aria-hidden="true"></span>
+        </div>
+        <div id="school-elective-batch-mapping-list"></div>
+        <button type="button" class="school-elective-batch-mapping-add" onclick="addSchoolElectiveBatchMappingRow()">＋ 新增</button>
       </div>
     </div>
     <div class="modal-foot">

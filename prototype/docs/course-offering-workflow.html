@@ -40,13 +40,14 @@
   <div class="header">
     <div class="header-left">
       <h1>XMUM 开课管理 · 操作流程</h1>
-      <p>对齐当前侧栏：开课设置 → 专业 / 通识（计划 → 安排 → <strong>授课确认</strong> → 名单）→ 开课清单；未完成授课确认不可提交到开课名单。特殊开课模块暂下线，不进入本图</p>
+      <p>对齐当前侧栏：<strong>开课设置</strong> → <strong>专业 / 选修 / 特殊开课</strong>（计划 → 安排 → 名单）→ <strong>课程班管理</strong>（课程班汇总 · 停课 · 授课确认 · Teaching Load）。安排生效须完成授课确认；停课统一在「课程班」页操作。</p>
     </div>
     <div class="legend">
       <span class="legend-item" style="background:#eff6ff"><span class="legend-dot" style="background:#2563eb"></span>开课设置</span>
       <span class="legend-item" style="background:#f0fdf4"><span class="legend-dot" style="background:#16a34a"></span>专业开课</span>
-      <span class="legend-item" style="background:#fff7ed"><span class="legend-dot" style="background:#ea580c"></span>通识选修</span>
-      <span class="legend-item" style="background:#ecfeff"><span class="legend-dot" style="background:#0891b2"></span>开课清单</span>
+      <span class="legend-item" style="background:#fff7ed"><span class="legend-dot" style="background:#ea580c"></span>选修开课</span>
+      <span class="legend-item" style="background:#faf5ff"><span class="legend-dot" style="background:#9333ea"></span>特殊开课</span>
+      <span class="legend-item" style="background:#ecfeff"><span class="legend-dot" style="background:#0891b2"></span>课程班管理</span>
     </div>
   </div>
   <div class="diagram-area">
@@ -55,55 +56,67 @@
         <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/></marker>
         <marker id="arr-g" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#16a34a"/></marker>
         <marker id="arr-o" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#ea580c"/></marker>
+        <marker id="arr-p" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#9333ea"/></marker>
         <marker id="arr-c" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#0891b2"/></marker>
       </defs>
 
-      <!-- 泳道弱底：专业 + 通识 -->
-      <rect x="100" y="248" width="200" height="380" rx="10" fill="#f0fdf4" opacity="0.45"/>
-      <rect x="400" y="248" width="200" height="380" rx="10" fill="#fff7ed" opacity="0.45"/>
-      <text x="200" y="270" text-anchor="middle" class="lane-label">专业开课</text>
-      <text x="500" y="270" text-anchor="middle" class="lane-label">通识选修（设计中）</text>
+      <!-- 泳道弱底 -->
+      <rect x="100" y="232" width="200" height="288" rx="10" fill="#f0fdf4" opacity="0.45"/>
+      <rect x="370" y="232" width="200" height="288" rx="10" fill="#fff7ed" opacity="0.45"/>
+      <rect x="640" y="232" width="200" height="288" rx="10" fill="#faf5ff" opacity="0.45"/>
+      <text x="200" y="252" text-anchor="middle" class="lane-label">专业开课</text>
+      <text x="470" y="252" text-anchor="middle" class="lane-label">选修开课</text>
+      <text x="740" y="252" text-anchor="middle" class="lane-label">特殊开课</text>
 
-      <!-- 开课清单区弱底 -->
-      <rect x="60" y="660" width="880" height="260" rx="12" fill="#ecfeff" opacity="0.28"/>
-      <text x="500" y="682" text-anchor="middle" class="lane-label">开课清单（调整中）</text>
+      <!-- 课程班管理区弱底 -->
+      <rect x="60" y="548" width="880" height="380" rx="12" fill="#ecfeff" opacity="0.28"/>
+      <text x="500" y="570" text-anchor="middle" class="lane-label">课程班管理</text>
 
       <!-- 准备连线 -->
       <path d="M 500 76 L 500 108" fill="none" stroke="#94a3b8" stroke-width="1.25" marker-end="url(#arr)"/>
       <path d="M 180 168 L 180 220" fill="none" stroke="#16a34a" stroke-width="1.15"/>
-      <path d="M 500 168 L 500 220" fill="none" stroke="#ea580c" stroke-width="1.15"/>
-      <path d="M 260 142 L 420 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
-      <path d="M 580 142 L 740 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+      <path d="M 470 168 L 470 220" fill="none" stroke="#ea580c" stroke-width="1.15"/>
+      <path d="M 740 168 L 740 220" fill="none" stroke="#9333ea" stroke-width="1.15"/>
+      <path d="M 260 142 L 390 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+      <path d="M 550 142 L 670 142" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
 
-      <!-- 分支到两泳道 -->
-      <path d="M 180 220 L 500 220" fill="none" stroke="#64748b" stroke-width="1.15" stroke-linecap="round"/>
-      <path d="M 200 220 L 200 288" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
-      <path d="M 500 220 L 500 288" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
+      <!-- 分支到三泳道 -->
+      <path d="M 200 220 L 200 268" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
+      <path d="M 470 220 L 470 268" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
+      <path d="M 740 220 L 740 268" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
 
-      <!-- 专业竖链：计划 → 安排 → 授课确认 → 名单 -->
-      <path d="M 200 340 L 200 368" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
-      <path d="M 200 420 L 200 448" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
-      <path d="M 200 500 L 200 528" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
-      <path d="M 200 580 L 200 628" fill="none" stroke="#16a34a" stroke-width="1.15"/>
+      <!-- 专业竖链 -->
+      <path d="M 200 320 L 200 348" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
+      <path d="M 200 400 L 200 428" fill="none" stroke="#16a34a" stroke-width="1.15" marker-end="url(#arr-g)"/>
+      <path d="M 200 480 L 200 518" fill="none" stroke="#16a34a" stroke-width="1.15"/>
 
-      <!-- 通识竖链：计划 → 开课 → 授课确认 → 名单 -->
-      <path d="M 500 340 L 500 368" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
-      <path d="M 500 420 L 500 448" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
-      <path d="M 500 500 L 500 528" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
-      <path d="M 500 580 L 500 628" fill="none" stroke="#ea580c" stroke-width="1.15"/>
+      <!-- 选修竖链 -->
+      <path d="M 470 320 L 470 348" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
+      <path d="M 470 400 L 470 428" fill="none" stroke="#ea580c" stroke-width="1.15" marker-end="url(#arr-o)"/>
+      <path d="M 470 480 L 470 518" fill="none" stroke="#ea580c" stroke-width="1.15"/>
 
-      <!-- 汇入开课清单 -->
-      <path d="M 200 628 L 500 628" fill="none" stroke="#0891b2" stroke-width="1.15" stroke-linecap="round"/>
-      <path d="M 500 628 L 500 696" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
+      <!-- 特殊竖链 -->
+      <path d="M 740 320 L 740 348" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
+      <path d="M 740 400 L 740 428" fill="none" stroke="#9333ea" stroke-width="1.15" marker-end="url(#arr-p)"/>
+      <path d="M 740 480 L 740 518" fill="none" stroke="#9333ea" stroke-width="1.15"/>
 
-      <!-- 清单旁支 / 下游 -->
-      <path d="M 420 722 L 260 722" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr-c)"/>
-      <path d="M 180 748 L 180 776" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr-c)"/>
-      <path d="M 580 722 L 700 722" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
-      <path d="M 780 748 L 780 776" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
-      <path d="M 500 748 L 500 852" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
+      <!-- 汇入课程班 -->
+      <path d="M 200 518 L 740 518" fill="none" stroke="#0891b2" stroke-width="1.15" stroke-linecap="round"/>
+      <path d="M 500 518 L 500 584" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
 
-      <!-- 准备节点 -->
+      <!-- 安排 → 授课确认管理（虚线） -->
+      <path d="M 280 374 L 620 374 L 620 584 L 700 584" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr-c)"/>
+      <path d="M 550 374 L 620 374" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3"/>
+      <path d="M 820 374 L 860 374 L 860 584 L 700 584" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3"/>
+
+      <!-- 课程班旁支 / 下游 -->
+      <path d="M 420 610 L 260 610" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr-c)"/>
+      <path d="M 180 636 L 180 664" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr-c)"/>
+      <path d="M 580 610 L 700 610" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
+      <path d="M 780 664 L 780 692" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
+      <path d="M 500 662 L 500 768" fill="none" stroke="#0891b2" stroke-width="1.15" marker-end="url(#arr-c)"/>
+
+      <!-- 开课设置 -->
       <foreignObject x="420" y="24" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
           <div class="node-title">开课时间设置</div>
@@ -116,106 +129,114 @@
           <div class="node-sub">专业批次 · 生成开课任务前置</div>
         </div>
       </foreignObject>
-      <foreignObject x="420" y="116" width="160" height="52">
+      <foreignObject x="390" y="116" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
           <div class="node-title">校选课程管理</div>
-          <div class="node-sub">通识选修课程库 · 修读范围</div>
+          <div class="node-sub">GE/ME 课程库 · 修读范围</div>
         </div>
       </foreignObject>
-      <foreignObject x="740" y="116" width="160" height="52">
+      <foreignObject x="660" y="116" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
           <div class="node-title">特殊课程设置</div>
-          <div class="node-sub">开课设置 · 特殊课程规则</div>
+          <div class="node-sub">课号默认 · 教室/Support</div>
         </div>
       </foreignObject>
 
       <!-- 专业开课 -->
-      <foreignObject x="120" y="288" width="160" height="52">
+      <foreignObject x="120" y="268" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
           <div class="node-title">开课计划</div>
-          <div class="node-sub">生成任务 · 合分班 · 提交</div>
+          <div class="node-sub">生成任务 · 合班 · 生效</div>
         </div>
       </foreignObject>
-      <foreignObject x="120" y="368" width="160" height="52">
+      <foreignObject x="120" y="348" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
           <div class="node-title">开课安排</div>
           <div class="node-sub">课程班 · Support · 师资</div>
         </div>
       </foreignObject>
-      <foreignObject x="120" y="448" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
-          <div class="node-title">授课确认</div>
-          <div class="node-sub">确认后方可提交开课名单</div>
-        </div>
-      </foreignObject>
-      <foreignObject x="120" y="528" width="160" height="52">
+      <foreignObject x="120" y="428" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
           <div class="node-title">开课名单</div>
-          <div class="node-sub">预置批次 · 分组学生 · 一键分配</div>
+          <div class="node-sub">预置 · 分组 · 一键分配</div>
         </div>
       </foreignObject>
 
-      <!-- 通识选修 -->
-      <foreignObject x="420" y="288" width="160" height="52">
+      <!-- 选修开课 -->
+      <foreignObject x="390" y="268" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">通识选修计划</div>
-          <div class="node-sub">配额 · 需求（设计中）</div>
+          <div class="node-title">选修开课计划</div>
+          <div class="node-sub">配额 · 计划行</div>
         </div>
       </foreignObject>
-      <foreignObject x="420" y="368" width="160" height="52">
+      <foreignObject x="390" y="348" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">通识选修开课</div>
-          <div class="node-sub">开课 + 任务安排（设计中）</div>
+          <div class="node-title">选修开课安排</div>
+          <div class="node-sub">计划 · 安排合页</div>
         </div>
       </foreignObject>
-      <foreignObject x="420" y="448" width="160" height="52">
+      <foreignObject x="390" y="428" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">授课确认</div>
-          <div class="node-sub">确认后方可提交开课名单</div>
-        </div>
-      </foreignObject>
-      <foreignObject x="420" y="528" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
-          <div class="node-title">通识选修名单</div>
-          <div class="node-sub">开放选课 · 选课应用（设计中）</div>
+          <div class="node-title">选修开课名单</div>
+          <div class="node-sub">开放选课 · 名单维护</div>
         </div>
       </foreignObject>
 
-      <!-- 开课清单 -->
-      <foreignObject x="420" y="696" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
-          <div class="node-title">开课清单</div>
-          <div class="node-sub">已生效任务汇总（调整中）</div>
+      <!-- 特殊开课 -->
+      <foreignObject x="660" y="268" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">特殊开课计划</div>
+          <div class="node-sub">生成任务 · 生效</div>
         </div>
       </foreignObject>
-      <foreignObject x="100" y="696" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
-          <div class="node-title">教师开课学时统计</div>
-          <div class="node-sub">Teaching Load · 超限阈值</div>
+      <foreignObject x="660" y="348" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">特殊开课安排</div>
+          <div class="node-sub">课程班 · 师资 · 生效</div>
         </div>
       </foreignObject>
-      <foreignObject x="700" y="696" width="160" height="52">
+      <foreignObject x="660" y="428" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">特殊开课名单</div>
+          <div class="node-sub">名单维护 · 退回安排</div>
+        </div>
+      </foreignObject>
+
+      <!-- 课程班管理 -->
+      <foreignObject x="420" y="584" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">课程班</div>
+          <div class="node-sub">汇总已开出 · 统一停课</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="100" y="584" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">Teaching Load</div>
+          <div class="node-sub">教师学时统计 · 超限阈值</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="700" y="584" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
           <div class="node-title">授课确认管理</div>
-          <div class="node-sub">管理端入口 · 进度与催办</div>
+          <div class="node-sub">发送 · 代确认 · 进度</div>
         </div>
       </foreignObject>
-      <foreignObject x="700" y="776" width="160" height="52">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
-          <div class="node-title">授课确认（教师端）</div>
-          <div class="node-sub">教师端入口 · 确认授课任务</div>
-        </div>
-      </foreignObject>
-      <foreignObject x="100" y="776" width="160" height="52">
+      <foreignObject x="100" y="664" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
           <div class="node-title">授课教师替换</div>
-          <div class="node-sub">替换任课教师并留痕</div>
+          <div class="node-sub">已生效班 · 整行替换</div>
         </div>
       </foreignObject>
-      <foreignObject x="420" y="852" width="160" height="52">
+      <foreignObject x="700" y="664" width="160" height="52">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">授课确认（教师端）</div>
+          <div class="node-sub">Pending · 确认/不同意</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="420" y="768" width="160" height="52">
         <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
           <div class="node-title">排课 / 选课应用</div>
-          <div class="node-sub">仅消费已授课确认生效的数据</div>
+          <div class="node-sub">消费已生效 · 已确认数据</div>
         </div>
       </foreignObject>
     </svg>
@@ -223,19 +244,17 @@
 
   <div class="workflow-phases">
     <div class="workflow-phases-title">阶段说明（对照当前原型侧栏）</div>
-    <p><strong>开课设置：</strong>开课时间设置、校选课程管理、特殊课程设置；专业开课依赖已提交执行计划；通识选修依赖校选课程库。</p>
-    <p><strong>专业开课：</strong>开课计划 → 开课安排 → <strong>授课确认</strong> → 开课名单。未完成授课确认，不可提交到开课名单。</p>
-    <p><strong>通识选修（设计中）：</strong>通识选修计划 → 通识选修开课 → <strong>授课确认</strong> → 通识选修名单；同样以授课确认为名单前提。</p>
-    <p><strong>特殊开课：</strong>侧栏已隐藏（模块暂下线），本图不展示该泳道。</p>
-    <p><strong>开课清单（调整中）：</strong>汇总入口；「授课确认管理 / 授课确认（教师端）」为侧栏入口，对应泳道中的授课确认门槛。另含教师开课学时统计、授课教师替换。下游排课 / 选课仅消费已授课确认生效的数据。</p>
+    <p><strong>开课设置：</strong>开课时间设置、校选课程管理、特殊课程设置；专业开课依赖已锁定执行计划；选修开课依赖校选课程库。</p>
+    <p><strong>专业 / 选修 / 特殊开课：</strong>各走「计划 → 安排 → 名单」。安排步骤含师资与授课确认门槛；<strong>停课</strong>不在各安排页工具栏，统一在「课程班」页批量操作。</p>
+    <p><strong>课程班管理：</strong>「课程班」汇总三类已开出课程班（含草稿/已生效/停课）；Teaching Load、授课确认管理/教师端、授课教师替换为并列入口。下游排课/选课消费已生效且授课确认完成的数据。</p>
   </div>
 
   <div class="footer">
-    <div class="footer-item"><strong>数据粒度</strong><br>计划按类型维护；清单侧汇总已生效任务</div>
-    <div class="footer-item"><strong>前置依赖</strong><br>当前开课学期有效 · 提交名单须先授课确认</div>
-    <div class="footer-item"><strong>下游</strong><br>开课名单 · 开课清单 · 排课/选课</div>
+    <div class="footer-item"><strong>数据粒度</strong><br>计划按类型维护；课程班侧汇总已开出 section</div>
+    <div class="footer-item"><strong>前置依赖</strong><br>当前开课学期有效 · 安排生效须授课确认</div>
+    <div class="footer-item"><strong>下游</strong><br>课程班 · 名单 · 排课/选课</div>
   </div>
-  <div class="meta">开课管理原型流程图 · 对齐当前侧栏导航</div>
+  <div class="meta">开课管理原型流程图 · 2026-08-25 对齐侧栏</div>
 </div>
 </body>
 </html>

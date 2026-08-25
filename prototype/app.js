@@ -3914,12 +3914,462 @@ let schoolElectiveMeLibraryTab = 'PHY';
 
 const SCHOOL_ELECTIVE_ME_LIBRARY_DEFAULT_PROGRAMMES = ['PHY', 'MAT', 'CHS'];
 let SCHOOL_ELECTIVE_ME_LIBRARY_PROGRAMMES = SCHOOL_ELECTIVE_ME_LIBRARY_DEFAULT_PROGRAMMES.slice();
-const SCHOOL_ELECTIVE_ME_SEED_VERSION = 'v5';
-const SCHOOL_ELECTIVE_ME_GROUP_COUNT_MAX = 10;
-let SCHOOL_ELECTIVE_ME_GROUP_SETTINGS = {};
-let schoolElectiveMeGroupSettingsDraft = null;
-let schoolElectiveMeGroupSettingsEditIndex = null;
-let schoolElectiveMeGroupSettingsEditSnapshot = null;
+const SCHOOL_ELECTIVE_ME_SEED_VERSION = 'v6';
+const SCHOOL_ELECTIVE_ME_GROUP_FIXED_INDICES = [1, 2, 3];
+
+function parseSchoolElectiveMeGroupCode(code) {
+  const m = String(code || '').toUpperCase().match(/^G(\d+)$/);
+  return m ? Number(m[1]) || 0 : 0;
+}
+
+function schoolElectiveMeGroupCode(index) {
+  return `G${index}`;
+}
+
+function formatSchoolElectiveMeGroupCategoryLabel(code) {
+  const n = parseSchoolElectiveMeGroupCode(code);
+  return n ? `Group${n}` : '—';
+}
+
+function programmeCodeToKey(code) {
+  return String(code || '').trim().toLowerCase();
+}
+
+function getProgrammeVersionsForMeLibrary(libraryCode) {
+  const key = programmeCodeToKey(libraryCode);
+  if (!key || !PROGRAMMES[key]) return [];
+  // 未审批版本不出现在分组弹窗
+  return getVersionsByProgramme(key)
+    .filter(v => v.status === 'approved')
+    .sort((a, b) => a.startIntake.localeCompare(b.startIntake));
+}
+
+function buildSchoolElectiveBatchGroupOptionsHtml(selectedCode) {
+  const selected = String(selectedCode || '').toUpperCase();
+  const base = '<option value="">—</option>';
+  const options = SCHOOL_ELECTIVE_ME_GROUP_FIXED_INDICES.map(index => {
+    const code = schoolElectiveMeGroupCode(index);
+    const label = formatSchoolElectiveMeGroupCategoryLabel(code);
+    return `<option value="${code}"${selected === code ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+  }).join('');
+  return base + options;
+}
+
+function assignmentsToSchoolElectiveBatchMappingDraft(assignments) {
+  const byGroup = new Map();
+  (assignments || []).forEach(a => {
+    const code = String(a.groupCode || '').toUpperCase();
+    const versionId = Number(a.versionId);
+    if (!versionId || !parseSchoolElectiveMeGroupCode(code)) return;
+    if (!byGroup.has(code)) byGroup.set(code, []);
+    byGroup.get(code).push(versionId);
+  });
+  return [...byGroup.entries()].map(([groupCode, versionIds]) => ({
+    versionIds: [...new Set(versionIds)].sort((a, b) => a - b),
+    groupCode
+  }));
+}
+
+function getProgrammeApprovedVersions(programmeKey) {
+  return getVersionsByProgramme(programmeKey)
+    .filter(v => v.status === 'approved')
+    .sort((a, b) => a.startIntake.localeCompare(b.startIntake));
+}
+
+function groupContiguousApprovedVersions(selectedVersions) {
+  const list = (selectedVersions || []).filter(Boolean)
+    .sort((a, b) => a.startIntake.localeCompare(b.startIntake));
+  if (!list.length) return [];
+  const allApproved = getProgrammeApprovedVersions(list[0].programmeKey);
+  const idToIdx = new Map(allApproved.map((v, i) => [v.id, i]));
+  const ordered = list.filter(v => idToIdx.has(v.id));
+  if (!ordered.length) return [];
+  const runs = [[ordered[0]]];
+  for (let i = 1; i < ordered.length; i++) {
+    const prevIdx = idToIdx.get(ordered[i - 1].id);
+    const curIdx = idToIdx.get(ordered[i].id);
+    if (curIdx === prevIdx + 1) runs[runs.length - 1].push(ordered[i]);
+    else runs.push([ordered[i]]);
+  }
+  return runs;
+}
+
+function formatVersionIntakeSegment(versions) {
+  if (!versions?.length) return '—';
+  const first = versions[0];
+  const last = versions[versions.length - 1];
+  const from = formatIntakeDisplay(first.startIntake);
+  const to = last.endIntake ? formatIntakeDisplay(last.endIntake) : '至今';
+  return `${from}～${to}`;
+}
+
+function formatContiguousIntakeSegments(versions, { withLabel = false } = {}) {
+  const runs = groupContiguousApprovedVersions(versions);
+  if (!runs.length) return withLabel ? 'Intake：—' : '—';
+  const text = runs.map(formatVersionIntakeSegment).join('、');
+  return withLabel ? `Intake：${text}` : text;
+}
+
+function resolveSchoolElectiveBatchSelectedVersions(versionIds) {
+  return (versionIds || [])
+    .map(id => findVersionById(Number(id)))
+    .filter(Boolean)
+    .sort((a, b) => a.startIntake.localeCompare(b.startIntake));
+}
+
+function formatSchoolElectiveBatchVersionDisplay(versions) {
+  if (!versions.length) return '请选择版本';
+  if (versions.length === 1) return formatSchoolElectiveVersionOptionLabel(versions[0]);
+  return formatContiguousIntakeSegments(versions);
+}
+
+function formatSchoolElectiveBatchRowIntakeText(versionIds) {
+  const versions = resolveSchoolElectiveBatchSelectedVersions(versionIds);
+  if (!versions.length) return 'Intake：—';
+  return formatMeGroupAssignmentIntakeRange(versions);
+}
+
+function getSchoolElectiveBatchRowUsedVersionIds(excludeIndex) {
+  const used = new Set();
+  schoolElectiveBatchMappingDraft.forEach((row, index) => {
+    if (index === excludeIndex) return;
+    (row.versionIds || []).forEach(id => used.add(Number(id)));
+  });
+  return used;
+}
+
+function renderSchoolElectiveBatchRowVersionMultiselect(index, library, selectedIds, excludeIds) {
+  const selected = new Set((selectedIds || []).map(id => Number(id)).filter(id => id > 0));
+  const exclude = excludeIds instanceof Set ? excludeIds : new Set((excludeIds || []).map(id => Number(id)));
+  const versions = getProgrammeVersionsForMeLibrary(library);
+  const options = versions
+    .filter(v => !exclude.has(v.id) || selected.has(v.id))
+    .map(v => `<label class="clo-multiselect-option">
+      <input type="checkbox" class="school-elective-batch-row-version-check" data-row="${index}" value="${v.id}" ${selected.has(v.id) ? 'checked' : ''} onchange="onSchoolElectiveBatchMappingVersionToggle(event, ${index})">
+      <span>${escapeHtml(formatSchoolElectiveVersionOptionLabel(v))}</span>
+    </label>`).join('');
+  let display = '请选择版本';
+  if (selected.size) {
+    const selectedVersions = resolveSchoolElectiveBatchSelectedVersions([...selected]);
+    display = formatSchoolElectiveBatchVersionDisplay(selectedVersions);
+  }
+  return `<div class="clo-multiselect school-elective-batch-row-version-ms" data-row="${index}">
+    <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleSchoolElectiveBatchRowVersionDropdown(event, ${index})">
+      <span class="clo-multiselect-display${selected.size ? '' : ' placeholder'}">${escapeHtml(display)}</span>
+      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+    </button>
+    <div class="clo-multiselect-dropdown" hidden onclick="event.stopPropagation()">
+      <div class="clo-multiselect-options">${options || '<div class="clo-multiselect-empty">暂无已审批版本</div>'}</div>
+    </div>
+  </div>`;
+}
+
+function toggleSchoolElectiveBatchRowVersionDropdown(event, rowIndex) {
+  event.preventDefault();
+  event.stopPropagation();
+  readSchoolElectiveBatchMappingDraftFromForm();
+  const row = event.currentTarget?.closest('.school-elective-batch-mapping-row');
+  const dd = row?.querySelector('.clo-multiselect-dropdown');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeSchoolElectiveBatchRowVersionDropdowns();
+  if (willOpen) {
+    renderSchoolElectiveBatchMappingRows();
+    const newRow = document.querySelector(`#school-elective-batch-mapping-list .school-elective-batch-mapping-row[data-index="${rowIndex}"]`);
+    const newDd = newRow?.querySelector('.clo-multiselect-dropdown');
+    if (newDd) newDd.hidden = false;
+  }
+}
+
+function closeSchoolElectiveBatchRowVersionDropdowns() {
+  document.querySelectorAll('#school-elective-batch-mapping-list .clo-multiselect-dropdown').forEach(dd => {
+    dd.hidden = true;
+  });
+}
+
+function ensureSchoolElectiveBatchRowVersionOutsideClose() {
+  if (window._schoolElectiveBatchRowVersionOutsideBound) return;
+  window._schoolElectiveBatchRowVersionOutsideBound = true;
+  document.addEventListener('click', (e) => {
+    const modal = document.getElementById('modal-school-elective-batch-category');
+    if (!modal?.classList.contains('open')) return;
+    if (e.target.closest('.school-elective-batch-row-version-ms')) return;
+    closeSchoolElectiveBatchRowVersionDropdowns();
+  });
+}
+
+let schoolElectiveBatchMappingDraft = [];
+let schoolElectiveBatchMappingLibrary = '';
+
+function getSelectedSchoolElectiveCoursesForBatch() {
+  ensureSchoolElectiveCourseStore();
+  return SCHOOL_ELECTIVE_COURSES.filter(row =>
+    schoolElectiveSelectedIds.has(row.id) && resolveSchoolElectiveType(row) === 'ME'
+  );
+}
+
+function serializeSchoolElectiveMeGroupAssignments(assignments) {
+  return JSON.stringify(
+    (assignments || [])
+      .map(a => ({ versionId: Number(a.versionId), groupCode: String(a.groupCode || '').toUpperCase() }))
+      .filter(a => a.versionId && parseSchoolElectiveMeGroupCode(a.groupCode))
+      .sort((a, b) => a.versionId - b.versionId || a.groupCode.localeCompare(b.groupCode))
+  );
+}
+
+function initSchoolElectiveBatchMappingDraft(library) {
+  schoolElectiveBatchMappingLibrary = library;
+  const courses = getSelectedSchoolElectiveCoursesForBatch();
+  if (courses.length === 1) {
+    normalizeMeGroupAssignments(courses[0]);
+    schoolElectiveBatchMappingDraft = assignmentsToSchoolElectiveBatchMappingDraft(courses[0].meGroupAssignments);
+  } else if (courses.length > 1) {
+    const signatures = courses.map(c => {
+      normalizeMeGroupAssignments(c);
+      return serializeSchoolElectiveMeGroupAssignments(c.meGroupAssignments);
+    });
+    const allSame = signatures.length && signatures.every(s => s === signatures[0]);
+    if (allSame && courses[0].meGroupAssignments.length) {
+      schoolElectiveBatchMappingDraft = assignmentsToSchoolElectiveBatchMappingDraft(courses[0].meGroupAssignments);
+    } else {
+      schoolElectiveBatchMappingDraft = [{ versionIds: [], groupCode: '' }];
+    }
+  } else {
+    schoolElectiveBatchMappingDraft = [{ versionIds: [], groupCode: '' }];
+  }
+  if (!schoolElectiveBatchMappingDraft.length) {
+    schoolElectiveBatchMappingDraft = [{ versionIds: [], groupCode: '' }];
+  }
+}
+
+function readSchoolElectiveBatchMappingDraftFromForm() {
+  const listEl = document.getElementById('school-elective-batch-mapping-list');
+  if (!listEl) return schoolElectiveBatchMappingDraft;
+  schoolElectiveBatchMappingDraft = [...listEl.querySelectorAll('.school-elective-batch-mapping-row')].map(row => ({
+    versionIds: [...row.querySelectorAll('.school-elective-batch-row-version-check:checked')]
+      .map(el => Number(el.value))
+      .filter(id => id > 0),
+    groupCode: String(row.querySelector('.school-elective-batch-row-group')?.value || '').toUpperCase()
+  }));
+  return schoolElectiveBatchMappingDraft;
+}
+
+function renderSchoolElectiveBatchMappingRows() {
+  const listEl = document.getElementById('school-elective-batch-mapping-list');
+  if (!listEl) return;
+  const library = schoolElectiveBatchMappingLibrary || getSchoolElectiveMeLibraryTab();
+  const rows = schoolElectiveBatchMappingDraft.length
+    ? schoolElectiveBatchMappingDraft
+    : [{ versionIds: [], groupCode: '' }];
+  schoolElectiveBatchMappingDraft = rows;
+  ensureSchoolElectiveBatchRowVersionOutsideClose();
+  listEl.innerHTML = rows.map((row, index) => {
+    const versionIds = Array.isArray(row.versionIds) ? row.versionIds : (row.versionId ? [Number(row.versionId)] : []);
+    const excludeIds = getSchoolElectiveBatchRowUsedVersionIds(index);
+    const canRemove = rows.length > 1;
+    const hasVersions = versionIds.length > 0;
+    return `<div class="school-elective-batch-mapping-row" data-index="${index}">
+      <div class="school-elective-batch-mapping-version">
+        ${renderSchoolElectiveBatchRowVersionMultiselect(index, library, versionIds, excludeIds)}
+        <p class="school-elective-batch-row-intake text-muted">${escapeHtml(formatSchoolElectiveBatchRowIntakeText(versionIds))}</p>
+      </div>
+      <div class="school-elective-batch-mapping-group">
+        <select class="input input-sm school-elective-batch-row-group"${hasVersions ? '' : ' disabled'}>
+          ${buildSchoolElectiveBatchGroupOptionsHtml(row.groupCode)}
+        </select>
+      </div>
+      <div class="school-elective-batch-mapping-action">
+        ${canRemove
+          ? `<button type="button" class="school-elective-batch-mapping-remove" title="删除" aria-label="删除" onclick="removeSchoolElectiveBatchMappingRow(${index})">×</button>`
+          : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateSchoolElectiveBatchRowVersionDisplay(rowEl, versionIds) {
+  const displayEl = rowEl?.querySelector('.clo-multiselect-display');
+  if (!displayEl) return;
+  const versions = resolveSchoolElectiveBatchSelectedVersions(versionIds);
+  if (!versions.length) {
+    displayEl.textContent = '请选择版本';
+    displayEl.classList.add('placeholder');
+    return;
+  }
+  displayEl.textContent = formatSchoolElectiveBatchVersionDisplay(versions);
+  displayEl.classList.remove('placeholder');
+}
+
+function onSchoolElectiveBatchMappingRowChange(index) {
+  const rowEl = document.querySelector(`#school-elective-batch-mapping-list .school-elective-batch-mapping-row[data-index="${index}"]`);
+  if (!rowEl) return;
+  const versionIds = [...rowEl.querySelectorAll('.school-elective-batch-row-version-check:checked')]
+    .map(el => Number(el.value))
+    .filter(id => id > 0);
+  const groupCode = String(rowEl.querySelector('.school-elective-batch-row-group')?.value || '').toUpperCase();
+  if (schoolElectiveBatchMappingDraft[index]) {
+    schoolElectiveBatchMappingDraft[index].versionIds = versionIds;
+    schoolElectiveBatchMappingDraft[index].groupCode = groupCode;
+  }
+  updateSchoolElectiveBatchRowVersionDisplay(rowEl, versionIds);
+  const intakeEl = rowEl.querySelector('.school-elective-batch-row-intake');
+  if (intakeEl) intakeEl.textContent = formatSchoolElectiveBatchRowIntakeText(versionIds);
+  const groupSel = rowEl.querySelector('.school-elective-batch-row-group');
+  if (groupSel) groupSel.disabled = !versionIds.length;
+}
+
+function onSchoolElectiveBatchMappingVersionToggle(event, index) {
+  if (event) event.stopPropagation();
+  onSchoolElectiveBatchMappingRowChange(index);
+}
+
+function addSchoolElectiveBatchMappingRow() {
+  readSchoolElectiveBatchMappingDraftFromForm();
+  schoolElectiveBatchMappingDraft.push({ versionIds: [], groupCode: '' });
+  renderSchoolElectiveBatchMappingRows();
+}
+
+function removeSchoolElectiveBatchMappingRow(index) {
+  readSchoolElectiveBatchMappingDraftFromForm();
+  if (schoolElectiveBatchMappingDraft.length <= 1) return;
+  schoolElectiveBatchMappingDraft.splice(index, 1);
+  renderSchoolElectiveBatchMappingRows();
+}
+
+function formatVersionIntakeRangeForMeGroup(v) {
+  if (!v) return '—';
+  const from = formatIntakeDisplay(v.startIntake);
+  const to = v.endIntake ? formatIntakeDisplay(v.endIntake) : '至今';
+  return `${from}～${to}`;
+}
+
+function formatMeGroupAssignmentIntakeRange(versions) {
+  return formatContiguousIntakeSegments(versions, { withLabel: true });
+}
+
+function formatMeGroupAssignmentsMergedDisplay(assignments) {
+  const items = (assignments || []).filter(a => a && a.versionId);
+  if (!items.length) return '—';
+  const groupLabel = items[0].groupName
+    || formatSchoolElectiveMeGroupCategoryLabel(items[0].groupCode);
+  const versions = items
+    .map(a => findVersionById(Number(a.versionId)))
+    .filter(Boolean)
+    .sort((a, b) => a.startIntake.localeCompare(b.startIntake));
+  if (!versions.length) return groupLabel || '—';
+  return `${groupLabel}（${formatMeGroupAssignmentIntakeRange(versions)}）`;
+}
+
+function formatMeGroupAssignmentDisplay(assignment) {
+  return formatMeGroupAssignmentsMergedDisplay([assignment]);
+}
+
+function formatSchoolElectiveVersionOptionLabel(v) {
+  const intake = formatIntakeDisplay(v.version || v.startIntake);
+  return `${intake} Version（${formatVersionIntakeRangeForMeGroup(v)}）`;
+}
+
+function getMeGroupsFromVersionContent(content) {
+  const tree = content?.classificationTree;
+  if (!tree) return [];
+  const l2 = findClassificationNode('l2-me', tree);
+  if (!l2?.children?.length) return [];
+  return l2.children.filter(n => n && n.level === 3);
+}
+
+function findMeGroupNodeInVersionContent(content, groupNodeId) {
+  return getMeGroupsFromVersionContent(content).find(g => g.id === groupNodeId) || null;
+}
+
+function normalizeMeGroupAssignments(row) {
+  if (!row) return [];
+  if (!Array.isArray(row.meGroupAssignments)) row.meGroupAssignments = [];
+  const byVersion = new Map();
+  row.meGroupAssignments.forEach(raw => {
+    if (!raw || !raw.versionId) return;
+    let groupCode = String(raw.groupCode || '').toUpperCase();
+    if (!parseSchoolElectiveMeGroupCode(groupCode) && raw.groupName) {
+      const m = String(raw.groupName).match(/Group\s*(\d+)/i);
+      if (m) groupCode = schoolElectiveMeGroupCode(Number(m[1]));
+    }
+    if (!parseSchoolElectiveMeGroupCode(groupCode) && raw.groupNodeId) {
+      const node = findMeGroupNodeInVersionContent(getVersionContentSnapshot(raw.versionId), raw.groupNodeId);
+      if (node?.name) {
+        const m = String(node.name).match(/Group\s*(\d+)/i);
+        if (m) groupCode = schoolElectiveMeGroupCode(Number(m[1]));
+      }
+    }
+    if (!parseSchoolElectiveMeGroupCode(groupCode)) return;
+    // 同一培养方案版本仅保留一个 group
+    byVersion.set(Number(raw.versionId), {
+      versionId: Number(raw.versionId),
+      groupCode,
+      groupName: formatSchoolElectiveMeGroupCategoryLabel(groupCode)
+    });
+  });
+  row.meGroupAssignments = [...byVersion.values()];
+  return row.meGroupAssignments;
+}
+
+function findMeGroupNodeByLegacyCode(content, legacyCode) {
+  const n = parseSchoolElectiveMeGroupCode(legacyCode);
+  if (!n) return null;
+  const groups = getMeGroupsFromVersionContent(content);
+  return groups.find(g => new RegExp(`^Group\\s*${n}$`, 'i').test(String(g.name || '')))
+    || groups[n - 1]
+    || null;
+}
+
+function buildMeGroupAssignmentFromLegacyCategory(library, legacyCode, versionId) {
+  const code = parseSchoolElectiveMeGroupCode(legacyCode);
+  if (!code) return null;
+  let v = versionId ? findVersionById(Number(versionId)) : null;
+  if (!v) {
+    const approved = getProgrammeVersionsForMeLibrary(library);
+    v = approved[approved.length - 1] || null;
+  }
+  if (!v || v.status !== 'approved') return null;
+  const groupCode = String(legacyCode).toUpperCase();
+  return {
+    versionId: v.id,
+    groupCode,
+    groupName: formatSchoolElectiveMeGroupCategoryLabel(groupCode)
+  };
+}
+
+function getSchoolElectiveMeGroupAssignmentLines(row) {
+  normalizeMeGroupAssignments(row);
+  if (!row?.meGroupAssignments?.length) return [];
+  const byGroup = new Map();
+  row.meGroupAssignments.forEach(a => {
+    const code = String(a.groupCode || '').toUpperCase();
+    if (!byGroup.has(code)) byGroup.set(code, []);
+    byGroup.get(code).push(a);
+  });
+  return [...byGroup.values()]
+    .map(formatMeGroupAssignmentsMergedDisplay)
+    .sort((a, b) => a.localeCompare(b, 'en'));
+}
+
+function formatSchoolElectiveMeGroupCategoryDisplay(row) {
+  const lines = getSchoolElectiveMeGroupAssignmentLines(row);
+  if (!lines.length) return '—';
+  return lines.join('\n');
+}
+
+function renderSchoolElectiveMeGroupCategoryCell(row) {
+  const lines = getSchoolElectiveMeGroupAssignmentLines(row);
+  if (!lines.length) return escapeHtml('—');
+  if (lines.length === 1) return escapeHtml(lines[0]);
+  const html = lines.map(line => escapeHtml(line)).join('<br>');
+  const full = lines.join('\n');
+  return `<span class="cell-ellipsis-tip cell-me-group-multiline" data-tip="${escapeHtml(full)}" tabindex="0">${html}</span>`;
+}
+
+function schoolElectiveMeGroupCategorySortRank(row) {
+  const lines = getSchoolElectiveMeGroupAssignmentLines(row);
+  return lines.length ? lines[0] : 'zzz';
+}
 
 function getSchoolElectiveKindTab() {
   return schoolElectiveKindTab === 'ME' ? 'ME' : 'GE';
@@ -3961,130 +4411,6 @@ function renderSchoolElectiveMeLibraryTabs() {
     addBtn.disabled = leftover === 0;
     addBtn.title = leftover === 0 ? '专业目录中已无尚未建库的专业' : '添加专业课程库';
   }
-}
-
-function parseSchoolElectiveMeGroupCode(code) {
-  const m = String(code || '').toUpperCase().match(/^G(\d+)$/);
-  return m ? Number(m[1]) || 0 : 0;
-}
-
-function schoolElectiveMeGroupCode(index) {
-  return `G${index}`;
-}
-
-function formatSchoolElectiveMeGroupCategoryLabel(code) {
-  const n = parseSchoolElectiveMeGroupCode(code);
-  return n ? `Group${n}` : '—';
-}
-
-function schoolElectiveMeGroupCategoryIsActive(row) {
-  const code = String(row?.meGroupCategory || '').toUpperCase();
-  if (!parseSchoolElectiveMeGroupCode(code)) return false;
-  const library = String(row?.meLibraryProgramme || getSchoolElectiveMeLibraryTab() || '').toUpperCase();
-  return isSchoolElectiveMeGroupCodeAllowed(code, library);
-}
-
-function formatSchoolElectiveMeGroupCategoryDisplay(row) {
-  if (!schoolElectiveMeGroupCategoryIsActive(row)) return '—';
-  return formatSchoolElectiveMeGroupCategoryLabel(row.meGroupCategory);
-}
-
-function schoolElectiveMeGroupCategorySortRank(row) {
-  if (!schoolElectiveMeGroupCategoryIsActive(row)) return 999;
-  return parseSchoolElectiveMeGroupCode(row.meGroupCategory) || 999;
-}
-
-function cloneSchoolElectiveMeGroupSettings(src) {
-  const groups = Array.isArray(src?.groups) ? src.groups : [];
-  return {
-    totalMinCredits: src?.totalMinCredits == null || src.totalMinCredits === '' ? null : Number(src.totalMinCredits),
-    groups: groups.map((g, i) => ({
-      code: g?.code || schoolElectiveMeGroupCode(i + 1),
-      sourceCode: g?.sourceCode || g?.code || schoolElectiveMeGroupCode(i + 1),
-      minCredits: g?.minCredits == null || g.minCredits === '' ? null : Number(g.minCredits),
-      remark: String(g?.remark || '')
-    }))
-  };
-}
-
-function defaultSchoolElectiveMeGroupSettings(library) {
-  const lib = String(library || '').toUpperCase();
-  if (lib === 'PHY') {
-    return {
-      totalMinCredits: null,
-      groups: [
-        { code: 'G1', minCredits: 8, remark: 'Minimum 8 credits' },
-        { code: 'G2', minCredits: null, remark: '' }
-      ]
-    };
-  }
-  if (lib === 'MAT') {
-    return {
-      totalMinCredits: null,
-      groups: [
-        { code: 'G1', minCredits: 16, remark: 'Minimum 16 credits' },
-        { code: 'G2', minCredits: null, remark: 'Students from China need to take PHY101 Mechanics' }
-      ]
-    };
-  }
-  return {
-    totalMinCredits: null,
-    groups: []
-  };
-}
-
-function ensureSchoolElectiveMeGroupSettings(library) {
-  const lib = String(library || '').toUpperCase();
-  if (!lib) return defaultSchoolElectiveMeGroupSettings('');
-  if (!SCHOOL_ELECTIVE_ME_GROUP_SETTINGS[lib]) {
-    SCHOOL_ELECTIVE_ME_GROUP_SETTINGS[lib] = defaultSchoolElectiveMeGroupSettings(lib);
-  }
-  return SCHOOL_ELECTIVE_ME_GROUP_SETTINGS[lib];
-}
-
-function getSchoolElectiveMeGroupCodes(library) {
-  return ensureSchoolElectiveMeGroupSettings(library).groups.map(g => g.code);
-}
-
-function renderSchoolElectiveMeGroupSummary() {
-  const el = document.getElementById('school-elective-me-group-summary');
-  if (!el) return;
-  const isMe = getSchoolElectiveKindTab() === 'ME';
-  el.hidden = !isMe;
-  if (!isMe) {
-    el.innerHTML = '';
-    return;
-  }
-  const library = getSchoolElectiveMeLibraryTab();
-  const groups = ensureSchoolElectiveMeGroupSettings(library).groups || [];
-  if (!groups.length) {
-    el.innerHTML = `<article class="school-elective-me-group-summary-card is-empty"><p class="text-muted">暂无课程组</p></article>`;
-    return;
-  }
-  el.innerHTML = groups.map(g => {
-    const name = formatSchoolElectiveMeGroupCategoryLabel(g.code);
-    const credits = g.minCredits == null || Number.isNaN(Number(g.minCredits)) ? '—' : String(g.minCredits);
-    const remark = String(g.remark || '').trim() || '—';
-    return `<article class="school-elective-me-group-summary-card">
-      <h4>${escapeHtml(name)}</h4>
-      <ul>
-        <li>最低修读学分：${escapeHtml(credits)}</li>
-        <li>修读学分说明：${escapeHtml(remark)}</li>
-      </ul>
-    </article>`;
-  }).join('');
-}
-
-function isSchoolElectiveMeGroupCodeAllowed(code, library) {
-  return getSchoolElectiveMeGroupCodes(library).includes(String(code || '').toUpperCase());
-}
-
-function fillSchoolElectiveMeGroupSelect(sel) {
-  if (!sel) return;
-  const library = getSchoolElectiveMeLibraryTab();
-  const codes = getSchoolElectiveMeGroupCodes(library);
-  sel.innerHTML = '<option value="">全部所属专业</option>' +
-    codes.map(code => `<option value="${escapeHtml(code)}">${escapeHtml(formatSchoolElectiveMeGroupCategoryLabel(code))}</option>`).join('');
 }
 
 function inferMeGroupCategoryFromRemark(remark, programmeCode) {
@@ -4155,8 +4481,6 @@ function syncSchoolElectiveKindTabChrome() {
   if (tab === 'ME') renderSchoolElectiveMeLibraryTabs();
   const batchCatBtn = document.getElementById('btn-school-elective-batch-category');
   if (batchCatBtn) batchCatBtn.hidden = tab !== 'ME';
-  const groupSettingsBtn = document.getElementById('btn-school-elective-me-group-settings');
-  if (groupSettingsBtn) groupSettingsBtn.hidden = tab !== 'ME';
 }
 
 function setSchoolElectiveKindTab(tab) {
@@ -4525,8 +4849,16 @@ function normalizeSchoolElectiveCourseRow(row) {
     row.geCategory = null;
     const lib = String(row.meLibraryProgramme || '').trim().toUpperCase();
     row.meLibraryProgramme = SCHOOL_ELECTIVE_ME_LIBRARY_PROGRAMMES.includes(lib) ? lib : (lib || '');
-    const cat = String(row.meGroupCategory || '').toUpperCase();
-    row.meGroupCategory = parseSchoolElectiveMeGroupCode(cat) ? cat : '';
+    normalizeMeGroupAssignments(row);
+    if (!row.meGroupAssignments.length) {
+      const legacy = String(row.meGroupCategory || '').toUpperCase();
+      const legacyCode = parseSchoolElectiveMeGroupCode(legacy) ? legacy : '';
+      if (legacyCode) {
+        const migrated = buildMeGroupAssignmentFromLegacyCategory(row.meLibraryProgramme, legacyCode);
+        if (migrated) row.meGroupAssignments = [migrated];
+      }
+    }
+    delete row.meGroupCategory;
   } else if (!row.geCategory) {
     row.geCategory = inferSchoolElectiveGeCategory(row.code || row.id);
   }
@@ -4680,9 +5012,12 @@ function buildSchoolElectiveCourseFromMatPhyMeItem(item, { libraryProgramme } = 
   const library = String(libraryProgramme || item.libraryProgramme || '').trim().toUpperCase();
   const offeringProg = String(item.offeringProgrammeCode || '').trim().toUpperCase();
   const codeKey = String(item.code || '').replace(/\*/g, '').toLowerCase();
-  const category = parseSchoolElectiveMeGroupCode(item.meGroupCategory)
+  const legacyCategory = parseSchoolElectiveMeGroupCode(item.meGroupCategory)
     ? String(item.meGroupCategory).toUpperCase()
     : inferMeGroupCategoryFromRemark(item.groupRemark, library);
+  const meGroupAssignments = [];
+  const assignment = buildMeGroupAssignmentFromLegacyCategory(library, legacyCategory);
+  if (assignment) meGroupAssignments.push(assignment);
   return {
     id: library ? `sec-me-${library.toLowerCase()}-${codeKey}` : `sec-me-${codeKey}`,
     code: item.code,
@@ -4691,7 +5026,7 @@ function buildSchoolElectiveCourseFromMatPhyMeItem(item, { libraryProgramme } = 
     electiveType: 'ME',
     geCategory: null,
     meLibraryProgramme: library || '',
-    meGroupCategory: category,
+    meGroupAssignments,
     department: (typeof SCHOOL_NAME_MAP !== 'undefined' && SCHOOL_NAME_MAP[unit]) || unit,
     offeringUnitAbbr: unit,
     offeringProgrammeCode: offeringProg,
@@ -5339,7 +5674,7 @@ function confirmSchoolElectiveCourseAdd() {
       categoryId: tab === 'ME' ? 'major' : 'general',
       geCategory: tab === 'ME' ? null : inferSchoolElectiveGeCategory(cat.code || cat.id),
       meLibraryProgramme: tab === 'ME' ? library : '',
-      meGroupCategory: '',
+      meGroupAssignments: [],
       offeringProgrammeCode: tab === 'ME' ? library : undefined,
       eligibleProgrammeKeys: tab === 'ME' ? [libraryKey] : undefined,
       excludedProgrammeKeys: tab === 'ME' ? [] : undefined
@@ -5444,13 +5779,13 @@ function openSchoolElectiveBatchCategoryModal() {
     alert('请先勾选需要设置课程组的课程。');
     return;
   }
+  const library = getSchoolElectiveMeLibraryTab();
   const hint = document.getElementById('school-elective-batch-category-hint');
   if (hint) {
-    hint.textContent = `已选 ${schoolElectiveSelectedIds.size} 门课程，将统一设为下方课程组（非必填，选「—」即清空）。`;
+    hint.textContent = `已选 ${schoolElectiveSelectedIds.size} 门课程。每行可多选版本并指定同一 Group；左侧自动合并 Intake，右侧选 Group。可新增多行设置不同 Group。`;
   }
-  const sel = document.getElementById('school-elective-batch-category');
-  fillSchoolElectiveMeGroupSelect(sel);
-  if (sel) sel.value = '';
+  initSchoolElectiveBatchMappingDraft(library);
+  renderSchoolElectiveBatchMappingRows();
   openModal('modal-school-elective-batch-category');
 }
 
@@ -5460,252 +5795,69 @@ function confirmSchoolElectiveBatchCategory() {
     alert('请先勾选需要设置课程组的课程。');
     return;
   }
-  const library = getSchoolElectiveMeLibraryTab();
-  const raw = String(document.getElementById('school-elective-batch-category')?.value || '').toUpperCase();
-  const next = isSchoolElectiveMeGroupCodeAllowed(raw, library) ? raw : '';
+  readSchoolElectiveBatchMappingDraftFromForm();
+  const rows = schoolElectiveBatchMappingDraft.filter(r => (r.versionIds || []).length > 0);
+  const seen = new Set();
+  for (const row of rows) {
+    for (const versionId of row.versionIds) {
+      if (seen.has(versionId)) {
+        alert('同一培养方案版本不能出现在多行，请合并到同一行的版本多选中。');
+        return;
+      }
+      seen.add(versionId);
+    }
+  }
+  const draftByVersion = new Map();
+  rows.forEach(row => {
+    const groupCode = String(row.groupCode || '').toUpperCase();
+    row.versionIds.forEach(versionId => {
+      if (parseSchoolElectiveMeGroupCode(groupCode)) {
+        draftByVersion.set(Number(versionId), {
+          versionId: Number(versionId),
+          groupCode,
+          groupName: formatSchoolElectiveMeGroupCategoryLabel(groupCode)
+        });
+      } else {
+        draftByVersion.set(Number(versionId), null);
+      }
+    });
+  });
+  if (!rows.length) {
+    alert('请至少在一行中选择培养方案版本。');
+    return;
+  }
   const selectedIds = new Set(schoolElectiveSelectedIds);
   ensureSchoolElectiveCourseStore();
   let updated = 0;
   SCHOOL_ELECTIVE_COURSES.forEach(row => {
     if (!selectedIds.has(row.id)) return;
     if (resolveSchoolElectiveType(row) !== 'ME') return;
-    row.meGroupCategory = next;
+    normalizeMeGroupAssignments(row);
+    const touched = new Set([...draftByVersion.keys()]);
+    let rest = row.meGroupAssignments.filter(a => !touched.has(Number(a.versionId)));
+    draftByVersion.forEach((assignment, versionId) => {
+      if (assignment) rest.push(assignment);
+    });
+    row.meGroupAssignments = rest;
     updated += 1;
   });
   closeModal('modal-school-elective-batch-category');
   renderSchoolElectiveCoursePage();
-  const label = formatSchoolElectiveMeGroupCategoryLabel(next);
-  alert(`已将 ${updated} 门课程所属类别设为「${label}」。`);
-}
-
-function readSchoolElectiveMeGroupSettingsDraftFromForm() {
-  if (!schoolElectiveMeGroupSettingsDraft) return null;
-  const idx = schoolElectiveMeGroupSettingsEditIndex;
-  if (idx == null) return schoolElectiveMeGroupSettingsDraft;
-  const g = schoolElectiveMeGroupSettingsDraft.groups[idx];
-  if (!g) return schoolElectiveMeGroupSettingsDraft;
-  const body = document.getElementById('sec-me-group-settings-body');
-  const creditEl = body?.querySelector(`[data-me-group-credit="${idx}"]`);
-  const remarkEl = body?.querySelector(`[data-me-group-remark="${idx}"]`);
-  const creditRaw = String(creditEl?.value || '').trim();
-  g.minCredits = creditRaw === '' ? null : Number(creditRaw);
-  g.remark = String(remarkEl?.value || '');
-  return schoolElectiveMeGroupSettingsDraft;
-}
-
-function renumberSchoolElectiveMeGroupSettingsDraft() {
-  if (!schoolElectiveMeGroupSettingsDraft) return;
-  schoolElectiveMeGroupSettingsDraft.groups.forEach((g, i) => {
-    g.code = schoolElectiveMeGroupCode(i + 1);
-  });
-}
-
-function renderSchoolElectiveMeGroupSettingsRows() {
-  const body = document.getElementById('sec-me-group-settings-body');
-  if (!body || !schoolElectiveMeGroupSettingsDraft) return;
-  const groups = schoolElectiveMeGroupSettingsDraft.groups;
-  if (!groups.length) {
-    body.innerHTML = '<tr><td colspan="4" class="text-muted" style="text-align:center;padding:20px">暂无课程组，请点下方「＋」添加</td></tr>';
-    return;
-  }
-  body.innerHTML = groups.map((g, i) => {
-    const editing = schoolElectiveMeGroupSettingsEditIndex === i;
-    const credit = g.minCredits == null || Number.isNaN(g.minCredits) ? '' : g.minCredits;
-    const creditCell = editing
-      ? `<input class="input input-sm" type="number" min="0" step="1" data-me-group-credit="${i}" value="${escapeHtml(String(credit))}" placeholder="选填">`
-      : escapeHtml(credit === '' ? '—' : String(credit));
-    const remarkCell = editing
-      ? `<input class="input input-sm" type="text" data-me-group-remark="${i}" value="${escapeHtml(g.remark || '')}" placeholder="修读学分说明">`
-      : escapeHtml(g.remark || '—');
-    const actions = editing
-      ? `<a href="#" class="sec-me-group-row-save" title="保存" aria-label="保存" onclick="saveSchoolElectiveMeGroupSettingsRow(${i});return false">✓</a>
-        <a href="#" class="sec-me-group-row-cancel" title="取消" aria-label="取消" onclick="cancelSchoolElectiveMeGroupSettingsRow(${i});return false"><span class="sec-me-group-row-cancel-icon" aria-hidden="true"></span></a>`
-      : `<a href="#" title="编辑" aria-label="编辑" onclick="editSchoolElectiveMeGroupSettingsRow(${i});return false">✎</a>
-        <a href="#" class="sec-me-group-row-delete" title="删除" aria-label="删除" onclick="deleteSchoolElectiveMeGroupSettingsRow(${i});return false"><span class="sec-me-group-row-delete-icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.25 2.5h5.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><path d="M7 2.5v-.6a1 1 0 0 1 1-1h0a1 1 0 0 1 1 1v.6" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><path d="M3.5 4.25h9" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><path d="M4.5 4.25v8A1.25 1.25 0 0 0 5.75 13.5h4.5A1.25 1.25 0 0 0 11.5 12.25v-8" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5v4M8 6.5v4M9.5 6.5v4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg></span></a>`;
-    return `<tr class="${editing ? 'is-editing' : ''}">
-      <td class="col-center">${escapeHtml(formatSchoolElectiveMeGroupCategoryLabel(g.code))}</td>
-      <td class="col-center">${creditCell}</td>
-      <td>${remarkCell}</td>
-      <td class="col-center col-actions"><span class="sec-me-group-row-actions">${actions}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-function addSchoolElectiveMeGroupSettingsRow() {
-  if (!schoolElectiveMeGroupSettingsDraft) return;
-  readSchoolElectiveMeGroupSettingsDraftFromForm();
-  if (schoolElectiveMeGroupSettingsDraft.groups.length >= SCHOOL_ELECTIVE_ME_GROUP_COUNT_MAX) {
-    alert(`课程组最多 ${SCHOOL_ELECTIVE_ME_GROUP_COUNT_MAX} 个。`);
-    return;
-  }
-  schoolElectiveMeGroupSettingsDraft.groups.push({
-    code: '',
-    sourceCode: '',
-    minCredits: null,
-    remark: ''
-  });
-  renumberSchoolElectiveMeGroupSettingsDraft();
-  schoolElectiveMeGroupSettingsEditIndex = schoolElectiveMeGroupSettingsDraft.groups.length - 1;
-  snapshotSchoolElectiveMeGroupSettingsRow(schoolElectiveMeGroupSettingsEditIndex, true);
-  renderSchoolElectiveMeGroupSettingsRows();
-}
-
-function snapshotSchoolElectiveMeGroupSettingsRow(index, isNew) {
-  const g = schoolElectiveMeGroupSettingsDraft?.groups[index];
-  schoolElectiveMeGroupSettingsEditSnapshot = g
-    ? { index, isNew: !!isNew, group: { ...g } }
-    : null;
-}
-
-function clearSchoolElectiveMeGroupSettingsEditState() {
-  schoolElectiveMeGroupSettingsEditIndex = null;
-  schoolElectiveMeGroupSettingsEditSnapshot = null;
-}
-
-function saveSchoolElectiveMeGroupSettingsRow(index) {
-  if (!schoolElectiveMeGroupSettingsDraft) return;
-  schoolElectiveMeGroupSettingsEditIndex = index;
-  readSchoolElectiveMeGroupSettingsDraftFromForm();
-  const g = schoolElectiveMeGroupSettingsDraft.groups[index];
-  if (g && g.minCredits != null && (!Number.isFinite(g.minCredits) || g.minCredits < 0)) {
-    alert('最低修读学分须为不小于 0 的数字，或留空。');
-    return;
-  }
-  clearSchoolElectiveMeGroupSettingsEditState();
-  renderSchoolElectiveMeGroupSettingsRows();
-}
-
-function cancelSchoolElectiveMeGroupSettingsRow(index) {
-  if (!schoolElectiveMeGroupSettingsDraft) return;
-  if (schoolElectiveMeGroupSettingsEditIndex !== index) return;
-  const snap = schoolElectiveMeGroupSettingsEditSnapshot;
-  if (snap?.isNew) {
-    schoolElectiveMeGroupSettingsDraft.groups.splice(index, 1);
-    renumberSchoolElectiveMeGroupSettingsDraft();
-  } else if (snap?.group && schoolElectiveMeGroupSettingsDraft.groups[index]) {
-    schoolElectiveMeGroupSettingsDraft.groups[index] = { ...snap.group };
-  }
-  clearSchoolElectiveMeGroupSettingsEditState();
-  renderSchoolElectiveMeGroupSettingsRows();
-}
-
-function editSchoolElectiveMeGroupSettingsRow(index) {
-  if (!schoolElectiveMeGroupSettingsDraft) return;
-  readSchoolElectiveMeGroupSettingsDraftFromForm();
-  schoolElectiveMeGroupSettingsEditIndex = index;
-  snapshotSchoolElectiveMeGroupSettingsRow(index, false);
-  renderSchoolElectiveMeGroupSettingsRows();
-}
-
-function deleteSchoolElectiveMeGroupSettingsRow(index) {
-  if (!schoolElectiveMeGroupSettingsDraft) return;
-  readSchoolElectiveMeGroupSettingsDraftFromForm();
-  schoolElectiveMeGroupSettingsDraft.groups.splice(index, 1);
-  renumberSchoolElectiveMeGroupSettingsDraft();
-  if (schoolElectiveMeGroupSettingsEditIndex === index) {
-    clearSchoolElectiveMeGroupSettingsEditState();
-  } else if (schoolElectiveMeGroupSettingsEditIndex > index) {
-    schoolElectiveMeGroupSettingsEditIndex -= 1;
-    if (schoolElectiveMeGroupSettingsEditSnapshot) {
-      schoolElectiveMeGroupSettingsEditSnapshot.index -= 1;
+  const msgLines = rows.map(row => {
+    const groupCode = String(row.groupCode || '').toUpperCase();
+    if (!parseSchoolElectiveMeGroupCode(groupCode)) {
+      return row.versionIds.map(versionId => {
+        const v = findVersionById(Number(versionId));
+        return `${formatIntakeDisplay(v?.version || v?.startIntake)} Version 分配已清空`;
+      }).join('；');
     }
-  }
-  renderSchoolElectiveMeGroupSettingsRows();
-}
-
-function openSchoolElectiveMeGroupSettingsModal() {
-  if (getSchoolElectiveKindTab() !== 'ME') return;
-  const library = getSchoolElectiveMeLibraryTab();
-  if (!library) {
-    alert('请先选择专业课程库。');
-    return;
-  }
-  schoolElectiveMeGroupSettingsDraft = cloneSchoolElectiveMeGroupSettings(ensureSchoolElectiveMeGroupSettings(library));
-  clearSchoolElectiveMeGroupSettingsEditState();
-  const title = document.getElementById('school-elective-me-group-settings-title');
-  if (title) title.textContent = `课程组设置 · ${library}`;
-  renderSchoolElectiveMeGroupSettingsRows();
-  openModal('modal-school-elective-me-group-settings');
-}
-
-function remapSchoolElectiveMeGroupCourseAssignments(library, groups) {
-  ensureSchoolElectiveCourseStore();
-  const lib = String(library || '').toUpperCase();
-  const map = new Map();
-  groups.forEach(g => {
-    const from = String(g.sourceCode || '').toUpperCase();
-    if (from) map.set(from, g.code);
+    return formatMeGroupAssignmentsMergedDisplay(row.versionIds.map(versionId => ({
+      versionId,
+      groupCode,
+      groupName: formatSchoolElectiveMeGroupCategoryLabel(groupCode)
+    })));
   });
-  let cleared = 0;
-  SCHOOL_ELECTIVE_COURSES.forEach(row => {
-    if (resolveSchoolElectiveType(row) !== 'ME') return;
-    if (String(row.meLibraryProgramme || '').toUpperCase() !== lib) return;
-    const old = String(row.meGroupCategory || '').toUpperCase();
-    if (!old) return;
-    if (map.has(old)) {
-      row.meGroupCategory = map.get(old);
-      return;
-    }
-    row.meGroupCategory = '';
-    cleared += 1;
-  });
-  return cleared;
-}
-
-function confirmSchoolElectiveMeGroupSettings() {
-  if (getSchoolElectiveKindTab() !== 'ME') return;
-  const library = getSchoolElectiveMeLibraryTab();
-  if (!library || !schoolElectiveMeGroupSettingsDraft) return;
-  readSchoolElectiveMeGroupSettingsDraftFromForm();
-  const count = schoolElectiveMeGroupSettingsDraft.groups.length;
-  if (count > SCHOOL_ELECTIVE_ME_GROUP_COUNT_MAX) {
-    alert(`课程组最多 ${SCHOOL_ELECTIVE_ME_GROUP_COUNT_MAX} 个。`);
-    return;
-  }
-  for (const g of schoolElectiveMeGroupSettingsDraft.groups) {
-    if (g.minCredits != null && (!Number.isFinite(g.minCredits) || g.minCredits < 0)) {
-      alert(`${formatSchoolElectiveMeGroupCategoryLabel(g.code)} 的最低修读学分须为不小于 0 的数字，或留空。`);
-      return;
-    }
-  }
-  const prevCodes = new Set(getSchoolElectiveMeGroupCodes(library));
-  const keptSources = new Set(
-    schoolElectiveMeGroupSettingsDraft.groups.map(g => String(g.sourceCode || '').toUpperCase()).filter(Boolean)
-  );
-  const dropped = [...prevCodes].filter(code => !keptSources.has(code));
-  if (dropped.length) {
-    const overflow = countSchoolElectiveMeCoursesOutOfGroupRangeByCodes(library, dropped);
-    if (overflow > 0) {
-      const labels = dropped.map(formatSchoolElectiveMeGroupCategoryLabel).join('、');
-      const ok = confirm(`删除 ${labels} 后，本库 ${overflow} 门课的课程组将被清空。是否继续？`);
-      if (!ok) return;
-    }
-  }
-  remapSchoolElectiveMeGroupCourseAssignments(library, schoolElectiveMeGroupSettingsDraft.groups);
-  const prev = ensureSchoolElectiveMeGroupSettings(library);
-  SCHOOL_ELECTIVE_ME_GROUP_SETTINGS[library] = {
-    totalMinCredits: prev.totalMinCredits,
-    groups: schoolElectiveMeGroupSettingsDraft.groups.map((g, i) => ({
-      code: schoolElectiveMeGroupCode(i + 1),
-      minCredits: g.minCredits == null || Number.isNaN(g.minCredits) ? null : g.minCredits,
-      remark: String(g.remark || '')
-    }))
-  };
-  schoolElectiveMeGroupSettingsDraft = null;
-  clearSchoolElectiveMeGroupSettingsEditState();
-  closeModal('modal-school-elective-me-group-settings');
-  renderSchoolElectiveCoursePage();
-}
-
-function countSchoolElectiveMeCoursesOutOfGroupRangeByCodes(library, codes) {
-  ensureSchoolElectiveCourseStore();
-  const lib = String(library || '').toUpperCase();
-  const drop = new Set((codes || []).map(c => String(c).toUpperCase()));
-  return SCHOOL_ELECTIVE_COURSES.filter(row => {
-    if (resolveSchoolElectiveType(row) !== 'ME') return false;
-    if (String(row.meLibraryProgramme || '').toUpperCase() !== lib) return false;
-    return drop.has(String(row.meGroupCategory || '').toUpperCase());
-  }).length;
+  alert(`已更新 ${updated} 门课程：${msgLines.join('；')}`);
 }
 
 function deleteSelectedSchoolElectiveCourses() {
@@ -5744,7 +5896,7 @@ const SCHOOL_ELECTIVE_COURSE_SORT_COLUMNS = {
   termOfferedYn: { get: row => formatSchoolElectiveTermOfferedYn(row) },
   electiveType: { get: row => getSchoolElectiveTypeLabel(resolveSchoolElectiveType(row)) },
   geCategory: { get: row => formatSchoolElectiveGeCategoryDisplay(row) },
-  meGroupCategory: { get: row => schoolElectiveMeGroupCategorySortRank(row), type: 'number' },
+  meGroupCategory: { get: row => schoolElectiveMeGroupCategorySortRank(row) },
   credits: { get: row => row.credits, type: 'number' },
   totalHours: { get: row => row.totalHours, type: 'number' },
   offeringUnit: { get: row => resolveSchoolElectiveOfferingUnitAbbr(row) },
@@ -5786,7 +5938,6 @@ function renderSchoolElectiveCourseTableHeader() {
 
 function renderSchoolElectiveCoursePage() {
   syncSchoolElectiveKindTabChrome();
-  renderSchoolElectiveMeGroupSummary();
   ensureSchoolElectiveFilterOptions();
   const tbody = document.getElementById('school-elective-course-body');
   if (!tbody) return;
@@ -5808,7 +5959,7 @@ function renderSchoolElectiveCoursePage() {
         <td class="col-code"><code>${escapeHtml(row.code)}</code></td>
         <td class="col-course-name">${formatEllipsisTipCell(row.name || '—', row.name || '—', 'span')}</td>
         ${tab === 'GE' ? `<td class="col-center col-ge-category">${escapeHtml(formatSchoolElectiveGeCategoryDisplay(row))}</td>` : ''}
-        ${tab === 'ME' ? `<td class="col-center col-me-category">${escapeHtml(formatSchoolElectiveMeGroupCategoryDisplay(row))}</td>` : ''}
+        ${tab === 'ME' ? `<td class="col-center col-me-category">${renderSchoolElectiveMeGroupCategoryCell(row)}</td>` : ''}
         <td class="col-center col-credits">${row.credits ?? '—'}</td>
         <td class="col-center col-hours">${row.totalHours ?? '—'}</td>
         <td class="col-center col-offering-unit"><code>${escapeHtml(resolveSchoolElectiveOfferingUnitAbbr(row))}</code></td>
@@ -13518,7 +13669,7 @@ function renderMeOfferingCourseTableHeader() {
     renderListSortTh(lk, '学时', 'totalHours', { center: true, extraClass: 'col-hours' }) +
     renderListSortTh(lk, '所属部门', 'offeringUnit', { center: true }) +
     renderListSortTh(lk, '所属专业', 'offeringProgramme', { center: true, extraClass: 'col-offering-programme' }) +
-    renderListSortTh(lk, '课程组', 'category', { center: true, extraClass: 'col-category' });
+    renderListSortTh(lk, '课程组', 'category', { extraClass: 'col-category' });
 }
 
 function resolveMeOfferingCatalogId(course) {
@@ -13837,7 +13988,7 @@ function renderMeOfferingCourseList() {
       <td class="col-center col-hours">${row.totalHours ?? '—'}</td>
       <td class="col-center"><code>${escapeHtml(row.offeringUnitAbbr || resolveSchoolElectiveOfferingUnitAbbr(row) || '—')}</code></td>
       <td class="col-center col-offering-programme"><code>${escapeHtml(programmeCode)}</code></td>
-      <td class="col-center col-category">${escapeHtml(formatSchoolElectiveMeGroupCategoryDisplay(row))}</td>
+      <td class="col-category">${renderSchoolElectiveMeGroupCategoryCell(row)}</td>
     </tr>`;
   }).join('');
 }
@@ -63656,6 +63807,7 @@ function openModal(id) {
 }
 function closeModal(id) {
   document.getElementById(id)?.classList.remove('open');
+  if (id === 'modal-school-elective-batch-category') closeSchoolElectiveBatchRowVersionDropdowns();
   if (id === 'modal-add-course') {
     courseModalReadonly = false;
     courseModalExecLimited = false;
@@ -64315,7 +64467,14 @@ const SEED_CLASSIFICATION_TREE = [
           { id: 'l3-sci', level: 3, name: 'Science', studyType: 'elective', creditsMin: 4 }
         ]
       },
-      { id: 'l2-me', level: 2, name: 'Major Elective', studyType: 'elective', creditsMin: 15, creditsMax: 17 }
+      {
+        id: 'l2-me', level: 2, name: 'Major Elective', studyType: 'elective', creditsMin: 15, creditsMax: 17,
+        children: [
+          { id: 'l3-me-g1', level: 3, name: 'Group1', studyType: 'elective', creditsMin: 6 },
+          { id: 'l3-me-g2', level: 3, name: 'Group2', studyType: 'elective', creditsMin: 6 },
+          { id: 'l3-me-g3', level: 3, name: 'Group3', studyType: 'elective', creditsMin: 3 }
+        ]
+      }
     ]
   }
 ];

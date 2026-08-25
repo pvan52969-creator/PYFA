@@ -44,6 +44,7 @@ DATE = "20260821"
 DATE_DISP = "2026 年 8 月 21 日"
 CHANGE_DATE = "2026-08-21"
 BASE = ROOT / "参考文档" / "2、开课管理"
+from prd_folder_paths import menu_dir  # noqa: E402
 
 DOCS_BY_CN = {d["meta"]["cn"]: d for d in old_gen.DOCS}
 
@@ -117,9 +118,9 @@ MENUS = [
     {
         "cn": "Teaching Load",
         "en": "Teaching Load (hour)",
-        "parent": "开课清单",
-        "parent_en": "Offering Manifest",
-        "path": "开课管理 → 开课清单 → Teaching Load",
+        "parent": "课程班管理",
+        "parent_en": "Course Section Management",
+        "path": "开课管理 → 课程班管理 → Teaching Load",
         "page": "page-course-teacher-teaching-load",
         "prev": None,
         "ver": "V1",
@@ -128,9 +129,9 @@ MENUS = [
     {
         "cn": "授课确认管理",
         "en": "Teacher Course Confirmation (Admin)",
-        "parent": "开课清单",
-        "parent_en": "Offering Manifest",
-        "path": "开课管理 → 开课清单 → 授课确认管理",
+        "parent": "课程班管理",
+        "parent_en": "Course Section Management",
+        "path": "开课管理 → 课程班管理 → 授课确认管理",
         "page": "page-course-teacher-confirmation-admin",
         "prev": None,
         "ver": "V1",
@@ -139,9 +140,9 @@ MENUS = [
     {
         "cn": "授课确认（教师端）",
         "en": "Teacher Course Confirmation (Portal)",
-        "parent": "开课清单",
-        "parent_en": "Offering Manifest",
-        "path": "开课管理 → 开课清单 → 授课确认（教师端）",
+        "parent": "课程班管理",
+        "parent_en": "Course Section Management",
+        "path": "开课管理 → 课程班管理 → 授课确认（教师端）",
         "page": "page-teacher-course-confirmation",
         "prev": None,
         "ver": "V1",
@@ -155,7 +156,7 @@ def folder_name(m):
 
 
 def out_dir(m):
-    return BASE / m["parent"] / m["cn"] / folder_name(m)
+    return menu_dir(m["cn"])
 
 
 def patch_fields(cn: str, tables):
@@ -784,7 +785,7 @@ def main():
         for r in changes:
             overview_rows.append((m["path"], r["where"], r["type"], r["content"], r["status"]))
 
-    batch = BASE / f"指定侧栏菜单需求{DATE}调整说明"
+    batch = BASE / "00_规范与变更说明" / f"20260821_指定侧栏菜单需求调整说明"
     batch.mkdir(parents=True, exist_ok=True)
     batch_md = batch / f"指定侧栏菜单需求{DATE}调整说明.md"
     lines = [

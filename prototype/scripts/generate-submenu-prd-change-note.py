@@ -17,9 +17,10 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
+from prd_folder_paths import BASE, menu_dir, version_dir
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT = SCRIPT_DIR.parent
-BASE = ROOT / "参考文档" / "2、开课管理"
 TEMPLATE = (
     ROOT
     / "参考文档"
@@ -27,7 +28,15 @@ TEMPLATE = (
     / "需求调整变更说明模板（简版）.docx"
 )
 
-MENUS = ("开课时间设置", "特殊课程设置", "校选课程管理", "开课计划", "开课安排", "开课名单")
+MENUS = (
+    "开课时间设置",
+    "特殊课程设置",
+    "校选课程管理",
+    "开课计划",
+    "开课安排",
+    "开课名单",
+    "课程班",
+)
 
 MENU_PARENT = {
     "开课时间设置": "开课设置",
@@ -36,6 +45,7 @@ MENU_PARENT = {
     "开课计划": "专业开课",
     "开课安排": "专业开课",
     "开课名单": "专业开课",
+    "课程班": "课程班管理",
 }
 
 MENU_PATH = {
@@ -45,11 +55,12 @@ MENU_PATH = {
     "开课计划": "开课管理 → 专业开课 → 开课计划",
     "开课安排": "开课管理 → 专业开课 → 开课安排",
     "开课名单": "开课管理 → 专业开课 → 开课名单",
+    "课程班": "开课管理 → 课程班管理 → 课程班",
 }
 
 
-def menu_dir(menu: str) -> Path:
-    return BASE / MENU_PARENT[menu] / menu
+def menu_dir_fn(menu: str) -> Path:
+    return menu_dir(menu)
 
 
 def set_cell_text(cell, text: str, bold: bool = False):
@@ -67,7 +78,7 @@ def find_version_files(menu: str, version: str) -> tuple[Path | None, Path | Non
 
     优先在版本文件夹 `<菜单><日期><Vn>/` 内查找；兼容二级菜单根目录平铺旧布局。
     """
-    folder = menu_dir(menu)
+    folder = menu_dir_fn(menu)
     if not folder.is_dir():
         return None, None, None
     dir_pat = re.compile(rf"^{re.escape(menu)}(\d{{8}}){re.escape(version)}$")
@@ -129,8 +140,6 @@ def write_md(
         f"| 需求文档名称 | 厦大马来分校本科教务系统产品需求文档 — {menu} |",
         f"| 上一版 → 本版 | {from_ver} → {to_ver} |",
         f"| 变更日期 | {change_date} |",
-        "| 填写人 / 确认人 | |",
-        "| 确认状态 | □ 待确认　□ 已确认 |",
         "",
         "## 2 本次改了什么（总览）",
         "",
@@ -182,8 +191,10 @@ def write_docx_from_template(
     set_cell_text(t0.rows[1].cells[1], f"厦大马来分校本科教务系统产品需求文档 — {menu}")
     set_cell_text(t0.rows[2].cells[1], f"{from_ver} → {to_ver}")
     set_cell_text(t0.rows[3].cells[1], change_date)
-    set_cell_text(t0.rows[4].cells[1], "")
-    set_cell_text(t0.rows[5].cells[1], "□ 待确认　□ 已确认")
+    if len(t0.rows) > 4:
+        for row in t0.rows[4:]:
+            for cell in row.cells:
+                set_cell_text(cell, "")
 
     # table 1: 总览（保留表头，从第 1 数据行起填充；不足则只填已有行）
     t1 = doc.tables[1]
@@ -268,7 +279,7 @@ def main():
 
     stem = f"{menu}{from_date}{from_ver}→{to_date}{to_ver}变更说明"
     # 变更说明写入新版本文件夹
-    ver_dir = menu_dir(menu) / f"{menu}{to_date}{to_ver}"
+    ver_dir = version_dir(menu, to_date, to_ver)
     ver_dir.mkdir(parents=True, exist_ok=True)
     md_out = ver_dir / f"{stem}.md"
     docx_out = ver_dir / f"{stem}.docx"

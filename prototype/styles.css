@@ -11116,8 +11116,141 @@ code {
   cursor: not-allowed;
 }
 #page-school-elective-courses .school-elective-course-table .col-me-category {
-  width: 88px;
+  min-width: 300px;
+  max-width: 480px;
+  white-space: normal;
+  overflow: hidden;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.45;
+  vertical-align: middle;
+}
+#page-school-elective-courses .school-elective-course-table .col-me-category .cell-ellipsis-tip {
+  display: block;
+  max-width: 100%;
+}
+#page-school-elective-courses .school-elective-course-table .col-me-category .cell-me-group-multiline {
+  white-space: normal;
+  line-height: 1.45;
+}
+#page-school-elective-courses .school-elective-course-table .col-me-category .cell-ellipsis-tip:not(.cell-me-group-multiline) {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+#modal-school-elective-batch-category .school-elective-batch-category-modal {
+  width: min(94vw, 820px);
+  max-height: min(92vh, 760px);
+  overflow: visible;
+}
+#modal-school-elective-batch-category .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: visible;
+  min-height: 280px;
+}
+#modal-school-elective-batch-category .modal-body > .form-hint {
+  margin: 0;
+  line-height: 1.55;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: visible;
+}
+#modal-school-elective-batch-category #school-elective-batch-mapping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: visible;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-head,
+#modal-school-elective-batch-category .school-elective-batch-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px 28px;
+  gap: 12px;
+  align-items: start;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-head {
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2, #64748b);
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-row {
+  padding: 10px 12px;
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 8px;
+  background: var(--gray-50, #f8fafc);
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-row:has(.clo-multiselect-dropdown:not([hidden])) {
+  z-index: 20;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-version {
+  overflow: visible;
+  min-width: 0;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-version .clo-multiselect {
+  position: relative;
+}
+#modal-school-elective-batch-category .school-elective-batch-row-version-ms .clo-multiselect-dropdown {
+  z-index: 100;
+  max-height: 320px;
+}
+#modal-school-elective-batch-category .school-elective-batch-row-version-ms .clo-multiselect-option span {
+  white-space: normal;
+  line-height: 1.45;
+  word-break: break-word;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-version .input,
+#modal-school-elective-batch-category .school-elective-batch-mapping-group .input,
+#modal-school-elective-batch-category .school-elective-batch-mapping-version .clo-multiselect-trigger {
+  width: 100%;
+}
+#modal-school-elective-batch-category .school-elective-batch-row-intake {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 29px;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-remove {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3, #94a3b8);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-remove:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-add {
+  align-self: flex-start;
+  border: 1px dashed var(--border-light, #cbd5e1);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue-600, #2563eb);
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+#modal-school-elective-batch-category .school-elective-batch-mapping-add:hover {
+  border-color: var(--blue-400, #60a5fa);
+  background: var(--blue-50, #eff6ff);
 }
 #modal-me-offering-from-school-elective #me-offering-library-tabs {
   margin: 0;
@@ -20444,14 +20577,14 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 /* ME开课：校选 ME → 专业开课计划（上下结构：选课 → 专业批次选择器） */
 #modal-me-offering-from-school-elective .me-offering-modal.modal-xl {
-  width: min(96vw, 1100px);
-  max-width: 1100px;
+  width: min(96vw, 1280px);
+  max-width: 1280px;
 }
 .me-offering-modal .me-offering-modal-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: min(78vh, 720px);
+  max-height: min(82vh, 800px);
 }
 .me-offering-filter-row {
   display: grid;
@@ -20486,7 +20619,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   gap: 8px;
 }
 .me-offering-course-table-wrap {
-  max-height: 280px;
+  max-height: 340px;
   overflow: auto;
   border: 1px solid var(--border-light);
   border-radius: 6px;
@@ -20530,8 +20663,21 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   white-space: nowrap;
 }
 .me-offering-course-table .col-category {
-  min-width: 88px;
-  white-space: nowrap;
+  min-width: 280px;
+  max-width: 420px;
+  white-space: normal;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.45;
+  vertical-align: middle;
+}
+.me-offering-course-table .col-category .cell-ellipsis-tip {
+  display: block;
+  max-width: 100%;
+}
+.me-offering-course-table .col-category .cell-me-group-multiline {
+  white-space: normal;
+  line-height: 1.45;
 }
 .me-offering-status-pill {
   display: inline-block;

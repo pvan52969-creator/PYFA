@@ -172,6 +172,7 @@
       <a href="#" class="nav-item" data-page="schedule-timetable-query">课表查询</a>
       <a href="#" class="nav-item" data-page="schedule-density-query">课表密度查询</a>
       <div class="nav-group">调课管理</div>
+      <a href="#" class="nav-item" data-page="adjustment-room-open">教室开放时间设置</a>
       <a href="#" class="nav-item" data-page="adjustment-reason-type">调课原因类型</a>
       <a href="#" class="nav-item" data-page="adjustment-teacher">我的调课申请</a>
       <a href="#" class="nav-item" data-page="adjustment-approval">调课申请审批</a>
@@ -2607,7 +2608,7 @@
       <div class="page-header">
         <div>
           <h1>排课规则设置</h1>
-          <p class="subtitle">控制排课时的冲突判断：午休、学生节次上限、教师晚间授课限制，以及调课申请开放时限</p>
+          <p class="subtitle">控制排课时的冲突判断：午休、学生节次上限、教师晚间授课限制</p>
         </div>
       </div>
       <div class="card schedule-card">
@@ -2727,14 +2728,21 @@
                   onkeydown="onScheduleDetailCourseSearchKeydown(event)">
               </div>
               <div class="schedule-detail-course-search-row">
-                <label for="schedule-course-search-shared-code">共同授课码</label>
-                <input class="input input-sm" id="schedule-course-search-shared-code" type="text" placeholder="请输入共同授课码"
+                <label for="schedule-course-search-shared-code">共同授课课号</label>
+                <input class="input input-sm" id="schedule-course-search-shared-code" type="text" placeholder="请输入共同授课课号"
                   onkeydown="onScheduleDetailCourseSearchKeydown(event)">
               </div>
               <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
-                <label for="schedule-course-search-venue-type">场地类型</label>
-                <input class="input input-sm" id="schedule-course-search-venue-type" type="text" placeholder="请输入场地类型"
-                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+                <label>场地类型</label>
+                <div class="clo-multiselect" id="schedule-course-search-venue-type-multiselect">
+                  <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-search-venue-type-btn" onclick="toggleScheduleCourseSearchVenueTypeDropdown(event)">
+                    <span class="clo-multiselect-display placeholder" id="schedule-course-search-venue-type-display">全部</span>
+                    <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                  </button>
+                  <div class="clo-multiselect-dropdown" id="schedule-course-search-venue-type-dropdown" hidden>
+                    <div class="clo-multiselect-options" id="schedule-course-search-venue-type-options"></div>
+                  </div>
+                </div>
               </div>
               <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
                 <label for="schedule-course-search-venue-remark">教室偏好</label>
@@ -2803,7 +2811,18 @@
                 <div class="srf-item"><label for="srtf-room">教室</label><input class="input input-sm" id="srtf-room" type="text" placeholder="教室名称"></div>
                 <div class="srf-item"><label for="srtf-building">楼栋</label><select class="input input-sm" id="srtf-building"></select></div>
                 <div class="srf-item"><label for="srtf-room-type">教室类型</label><select class="input input-sm" id="srtf-room-type"></select></div>
-                <div class="srf-item"><label for="srtf-venue-type">场地类型</label><select class="input input-sm" id="srtf-venue-type"></select></div>
+                <div class="srf-item">
+                  <label>场地类型</label>
+                  <div class="clo-multiselect" id="srtf-venue-type-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="srtf-venue-type-btn" onclick="toggleScheduleRoomTimetableVenueTypeDropdown(event)">
+                      <span class="clo-multiselect-display placeholder" id="srtf-venue-type-display">全部</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="srtf-venue-type-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="srtf-venue-type-options"></div>
+                    </div>
+                  </div>
+                </div>
                 <div class="srf-item"><label for="srtf-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srtf-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srtf-seats-max" type="number" min="0" placeholder="最大"></div></div>
                 <div class="srf-item"><label for="srtf-equipment">教室设备</label><select class="input input-sm" id="srtf-equipment"></select></div>
                 <div class="srf-item"><label for="srtf-software">教室软件</label><select class="input input-sm" id="srtf-software"></select></div>
@@ -4091,30 +4110,7 @@
 
       <div class="tab-panel active" id="tab-schedule-student-density" data-density-tab="student">
         <div class="card schedule-query-card">
-          <div class="schedule-room-filter-grid adj-density-filter-grid schedule-density-filter-grid">
-            <div class="srf-item"><label>学期</label><select class="input input-sm" id="sdf-term"></select></div>
-            <div class="srf-item"><label>学生学号</label><input class="input input-sm" id="sdf-student-id" type="text" placeholder="请输入学号"></div>
-            <div class="srf-item"><label>学生姓名</label><input class="input input-sm" id="sdf-student-name" type="text" placeholder="请输入姓名"></div>
-            <div class="srf-actions">
-              <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleStudentDensity()">查询</button>
-              <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleStudentDensityQuery()">重置</button>
-            </div>
-            <div class="srf-item"><label>专业</label><select class="input input-sm" id="sdf-programme"></select></div>
-            <div class="srf-item"><label>批次</label><select class="input input-sm" id="sdf-batch"></select></div>
-            <div class="srf-item"><label>性别</label><select class="input input-sm no-search" id="sdf-gender"><option value="">全部</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
-            <div class="srf-item"><label>周数</label><select class="input input-sm no-search" id="sdf-week" onchange="queryScheduleStudentDensity()"></select></div>
-            <div class="srf-item schedule-density-date-range-item">
-              <label>日期范围</label>
-              <div class="schedule-density-date-range">
-                <input class="input input-sm" id="sdf-date-from" type="date" title="开始日期">
-                <span class="schedule-density-date-sep">至</span>
-                <input class="input input-sm" id="sdf-date-to" type="date" title="结束日期">
-              </div>
-            </div>
-            <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="sdf-teacher-id" type="text" placeholder="请输入工号"></div>
-            <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="sdf-teacher-name" type="text" placeholder="请输入姓名"></div>
-            <div class="srf-item"><label>密度维度</label><select class="input input-sm no-search" id="sdf-dimension" onchange="renderScheduleStudentDensityTable()"><option value="ratio" selected>比率</option><option value="count">人数</option></select></div>
-          </div>
+          <div class="schedule-room-filter-grid adj-density-filter-grid schedule-density-filter-grid" id="schedule-student-density-filters"></div>
         </div>
         <div class="schedule-density-hint adj-density-hint" id="schedule-student-density-hint"></div>
         <div class="card schedule-timetable-wrap">
@@ -4129,25 +4125,7 @@
 
       <div class="tab-panel" id="tab-schedule-teacher-density" data-density-tab="teacher">
         <div class="card schedule-query-card">
-          <div class="schedule-room-filter-grid adj-density-filter-grid schedule-density-filter-grid">
-            <div class="srf-item"><label>学期</label><select class="input input-sm" id="tdf-term"></select></div>
-            <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="tdf-teacher-id" type="text" placeholder="请输入工号"></div>
-            <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="tdf-teacher-name" type="text" placeholder="请输入姓名"></div>
-            <div class="srf-actions">
-              <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTeacherDensity()">查询</button>
-              <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleTeacherDensityQuery()">重置</button>
-            </div>
-            <div class="srf-item"><label>周数</label><select class="input input-sm no-search" id="tdf-week" onchange="queryScheduleTeacherDensity()"></select></div>
-            <div class="srf-item schedule-density-date-range-item">
-              <label>日期范围</label>
-              <div class="schedule-density-date-range">
-                <input class="input input-sm" id="tdf-date-from" type="date" title="开始日期">
-                <span class="schedule-density-date-sep">至</span>
-                <input class="input input-sm" id="tdf-date-to" type="date" title="结束日期">
-              </div>
-            </div>
-            <div class="srf-item"><label>密度维度</label><select class="input input-sm no-search" id="tdf-dimension" onchange="renderScheduleTeacherDensityTable()"><option value="ratio" selected>比率</option><option value="count">人数</option></select></div>
-          </div>
+          <div class="schedule-room-filter-grid adj-density-filter-grid schedule-density-filter-grid" id="schedule-teacher-density-filters"></div>
         </div>
         <div class="schedule-density-hint adj-density-hint" id="schedule-teacher-density-hint"></div>
         <div class="card schedule-timetable-wrap">
@@ -4327,12 +4305,75 @@
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyModal('makeup')">发起补课</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyModal('addclass')">发起加课</button>
         </div>
-        <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-2">
+        <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
         <thead><tr>
-          <th class="col-index">序号</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">审批状态</th><th class="col-center">操作</th>
+          <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
+          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="adjustment-teacher-body"></tbody>
+      </table></div></div>
+    </section>
+
+    <!-- ═══ 调课管理 · 教室开放时间设置 ═══ -->
+    <section class="page-list page adjustment-page" id="page-adjustment-room-open">
+      <div class="page-header">
+        <div><h1>教室开放时间设置</h1><p class="subtitle">新增时选择教室并设置开放时间；每间教室仅一条记录，之后通过修改维护；未维护教室不限制。仅调课申请审批按开放时间限制，批量调课管理不受限制</p></div>
+      </div>
+      <div class="card schedule-query-card">
+        <div class="schedule-query-row">
+          <div class="schedule-query-fields schedule-query-fields-wide">
+            <div class="schedule-query-field">
+              <label class="req" for="adjustment-room-open-term">学年学期</label>
+              <select class="input input-sm" id="adjustment-room-open-term"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-room-open-venue">场地类型</label>
+              <select class="input input-sm" id="adjustment-room-open-venue">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-room-open-name">教室名称</label>
+              <input class="input input-sm" id="adjustment-room-open-name" placeholder="教室名称关键字">
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-room-open-building">楼栋</label>
+              <select class="input input-sm" id="adjustment-room-open-building" onchange="onAdjustmentRoomOpenBuildingChange()">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-room-open-floor">楼层</label>
+              <select class="input input-sm" id="adjustment-room-open-floor">
+                <option value="">全部</option>
+              </select>
+            </div>
+          </div>
+          <div class="schedule-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentRoomOpenPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentRoomOpenQuery()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend-bar" id="adjustment-room-open-hint"></div>
+      <div class="card schedule-card">
+        <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+          <button class="btn btn-primary btn-sm" type="button" id="adjustment-room-open-create-btn" onclick="openAdjustmentRoomOpenCreateModal();event.stopPropagation();">新增</button>
+          <button class="btn btn-outline btn-sm" type="button" id="adjustment-room-open-batch-btn" onclick="openAdjustmentRoomOpenBatchModal();event.stopPropagation();">批量修改</button>
+        </div>
+        <div class="table-scroll"><table class="data-table adj-room-open-table">
+        <thead><tr>
+          <th class="col-check"><input type="checkbox" id="adjustment-room-open-check-all" aria-label="全选" onchange="toggleAdjustmentRoomOpenListAll(this.checked)"></th>
+          <th class="col-index">序号</th>
+          <th>场地类型</th>
+          <th>教室名称</th>
+          <th>楼栋</th>
+          <th class="col-center">楼层</th>
+          <th>教室类型</th>
+          <th>开放时间</th>
+          <th class="col-center">操作</th>
+        </tr></thead>
+        <tbody id="adjustment-room-open-body"></tbody>
       </table></div></div>
     </section>
 
@@ -4444,10 +4485,10 @@
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('makeup')">代发起补课</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('addclass')">代发起加课</button>
         </div>
-        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-2">
+        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status">
         <thead><tr>
-          <th class="col-index">序号</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">审批状态</th><th class="col-center">操作</th>
+          <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
+          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="adjustment-admin-body"></tbody>
       </table></div></div>
@@ -4486,7 +4527,7 @@
       <div class="card schedule-card"><div class="table-scroll"><table class="data-table adjustment-table adj-freeze-2">
         <thead><tr>
           <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="adjustment-approval-body"></tbody>
       </table></div></div>
@@ -4645,10 +4686,10 @@
         </div>
       </div>
       <div class="legend-bar" id="adjustment-record-hint"></div>
-      <div class="card schedule-card"><div class="table-scroll"><table class="data-table adjustment-table adj-freeze-2">
+      <div class="card schedule-card"><div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status">
         <thead><tr>
-          <th class="col-index">序号</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">审批状态</th><th class="col-center">操作</th>
+          <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
+          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="adjustment-record-body"></tbody>
       </table></div></div>
@@ -8287,7 +8328,7 @@
           <div class="schedule-slot-section-title">只排课时段</div>
           <button class="btn btn-outline btn-sm" type="button" onclick="addScheduleTeacherSlotEntry('only')">添加时段</button>
         </div>
-        <p class="form-hint">可添加多个周次、星期、节次不同的不连续时段</p>
+        <p class="form-hint">周次可在日历中点击所在教学周后确定；选择星期后将显示各星期对应日期</p>
         <div class="schedule-slot-entry-list" id="schedule-modal-ts-only-list"></div>
       </div>
       <div class="schedule-teacher-slot-form-section">
@@ -8295,7 +8336,7 @@
           <div class="schedule-slot-section-title">不排课时段</div>
           <button class="btn btn-outline btn-sm" type="button" onclick="addScheduleTeacherSlotEntry('block')">添加时段</button>
         </div>
-        <p class="form-hint">可添加多个周次、星期、节次不同的不连续时段</p>
+        <p class="form-hint">周次可在日历中点击所在教学周后确定；选择星期后将显示各星期对应日期</p>
         <div class="schedule-slot-entry-list" id="schedule-modal-ts-block-list"></div>
       </div>
       <div class="form-grid">
@@ -8363,7 +8404,7 @@
           <div class="schedule-slot-section-title">不排课时段</div>
           <button class="btn btn-outline btn-sm" type="button" onclick="addScheduleRoomSlotEntry()">添加时段</button>
         </div>
-        <p class="form-hint">可添加多个周次、星期、节次不同的不连续时段</p>
+        <p class="form-hint">周次可在日历中点击所在教学周后确定；选择星期后将显示各星期对应日期</p>
         <div class="schedule-slot-entry-list" id="schedule-modal-rs-block-list"></div>
       </div>
       <div class="form-grid">
@@ -8548,9 +8589,9 @@
                 <th class="col-center adj-slot-col-weekday">星期</th>
                 <th class="col-center adj-slot-col-period">节次</th>
                 <th class="adj-slot-col-weeks">周次</th>
-                <th>课程</th>
+                <th class="adj-col-course">课程</th>
                 <th>教师</th>
-                <th>上课小组</th>
+                <th class="adj-col-group">上课小组</th>
                 <th>教室</th>
               </tr>
             </thead>
@@ -8582,6 +8623,14 @@
         </div>
         <div class="adj-apply-right-head">
           <div class="adj-apply-right-title" id="adjustment-apply-slot-list-label">调课设置</div>
+          <div class="adj-apply-batch-actions" id="adjustment-apply-batch-actions" hidden>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyBatchDatePicker(event)">选择日期</button>
+            <div class="adj-apply-batch-period-host" id="adjustment-apply-batch-period-host">
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyBatchPeriodPicker(event)">选择节次</button>
+            </div>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyBatchTeacherPicker()">选择老师</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyBatchRoomPreferModal()">设置教室偏好</button>
+          </div>
         </div>
         <div class="adj-apply-course-info" id="adjustment-apply-course-info" hidden></div>
         <div class="adj-apply-detail-wrap" id="adjustment-apply-perslot-list"></div>
@@ -8729,7 +8778,25 @@
     <div class="modal-foot">
       <span id="adjustment-teacher-picker-count" class="text-muted">已选 0 人</span>
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-teacher-picker')">取消</button>
-      <button class="btn btn-primary" type="button" onclick="confirmAdjustmentTeacherPicker()">确定</button>
+      <button class="btn btn-outline" type="button" onclick="confirmAdjustmentTeacherPicker('append')">追加安排</button>
+      <button class="btn btn-primary" type="button" onclick="confirmAdjustmentTeacherPicker('replace')">覆盖安排</button>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗：批量设置教室偏好 -->
+<div class="modal-overlay modal-nested" id="modal-adjustment-apply-room-prefer">
+  <div class="modal modal-sm">
+    <div class="modal-head"><h3>设置教室偏好</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-apply-room-prefer')">×</button></div>
+    <div class="modal-body">
+      <div class="form-item full">
+        <label for="adjustment-apply-batch-room-prefer">教室偏好</label>
+        <input class="input" id="adjustment-apply-batch-room-prefer" type="text" placeholder="请输入教室偏好（可选）">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-apply-room-prefer')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmAdjustmentApplyBatchRoomPrefer()">确定</button>
     </div>
   </div>
 </div>
@@ -8765,6 +8832,117 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-review')">取消</button>
       <button class="btn btn-primary" type="button" onclick="submitAdjustmentReview()">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay modal-drawer" id="modal-adjustment-room-open">
+  <div class="modal">
+    <div class="modal-head"><h3 id="adjustment-room-open-modal-title">新增开放时间</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-room-open')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="adjustment-room-open-edit-id">
+      <div class="form-item full" id="adjustment-room-open-batch-scope-wrap" hidden>
+        <label class="req">修改范围</label>
+        <div class="adj-room-open-batch-scope">
+          <label><input type="radio" name="adjustment-room-open-batch-scope" value="selected" checked onchange="onAdjustmentRoomOpenBatchScopeChange()">按勾选条件修改</label>
+          <label><input type="radio" name="adjustment-room-open-batch-scope" value="query" onchange="onAdjustmentRoomOpenBatchScopeChange()">按查询条件修改</label>
+        </div>
+        <p class="form-hint" id="adjustment-room-open-batch-scope-hint">请选择修改范围</p>
+      </div>
+      <div id="adjustment-room-open-picker-wrap">
+        <div class="adj-room-open-picker-query">
+          <div class="schedule-query-row">
+            <div class="schedule-query-fields schedule-query-fields-wide">
+              <div class="schedule-query-field">
+                <label for="adjustment-room-open-pick-venue">场地类型</label>
+                <select class="input input-sm" id="adjustment-room-open-pick-venue">
+                  <option value="">全部</option>
+                </select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-room-open-pick-name">教室名称</label>
+                <input class="input input-sm" id="adjustment-room-open-pick-name" placeholder="教室名称关键字" onkeydown="if(event.key==='Enter'){event.preventDefault();queryAdjustmentRoomOpenPicker();}">
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-room-open-pick-building">楼栋</label>
+                <select class="input input-sm" id="adjustment-room-open-pick-building" onchange="onAdjustmentRoomOpenPickBuildingChange()">
+                  <option value="">全部</option>
+                </select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-room-open-pick-floor">楼层</label>
+                <select class="input input-sm" id="adjustment-room-open-pick-floor">
+                  <option value="">全部</option>
+                </select>
+              </div>
+            </div>
+            <div class="schedule-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="queryAdjustmentRoomOpenPicker()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentRoomOpenPickerQuery()">重置</button>
+            </div>
+          </div>
+        </div>
+        <div class="legend-bar" id="adjustment-room-open-pick-hint"></div>
+        <div class="table-scroll">
+          <table class="data-table adj-room-open-table">
+            <thead><tr>
+              <th class="col-check"><input type="checkbox" id="adjustment-room-open-pick-all" aria-label="全选" onchange="toggleAdjustmentRoomOpenPickerAll(this.checked)"></th>
+              <th class="col-index">序号</th>
+              <th>场地类型</th>
+              <th>教室名称</th>
+              <th>楼栋</th>
+              <th class="col-center">楼层</th>
+              <th>教室类型</th>
+            </tr></thead>
+            <tbody id="adjustment-room-open-picker-list"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="adjustment-room-open-picker-pagination"></div>
+        </div>
+        <p class="form-hint">已维护日期的教室不再列出；未维护教室默认不限制开放。每间教室仅一条开放时间。</p>
+      </div>
+      <div class="form-item full" id="adjustment-room-open-rooms-readonly-wrap" hidden>
+        <label>教室</label>
+        <div class="adj-room-open-rooms-label" id="adjustment-room-open-rooms-label">—</div>
+      </div>
+      <div class="form-grid adj-room-open-form">
+        <div class="form-item">
+          <label class="req">开始日期</label>
+          <input type="hidden" id="adjustment-room-open-date-from">
+          <button type="button" class="input adj-pick-btn" id="adjustment-room-open-date-from-btn" onclick="openAdjustmentRoomOpenDatePicker('from', event)">请选择开始日期</button>
+        </div>
+        <div class="form-item">
+          <label class="req">截止日期</label>
+          <input type="hidden" id="adjustment-room-open-date-to">
+          <button type="button" class="input adj-pick-btn" id="adjustment-room-open-date-to-btn" onclick="openAdjustmentRoomOpenDatePicker('to', event)">请选择截止日期</button>
+        </div>
+        <div class="form-item full">
+          <label for="adjustment-room-open-weeks">涉及周次</label>
+          <input class="input" type="text" id="adjustment-room-open-weeks" readonly placeholder="根据起止日期自动带出">
+        </div>
+        <div class="form-item full">
+          <label>星期</label>
+          <div class="adj-room-open-weekdays" id="adjustment-room-open-weekdays"></div>
+          <p class="form-hint">默认不选。不选或全选，均表示起止日期内的全部星期</p>
+        </div>
+        <div class="form-item">
+          <label class="req" for="adjustment-room-open-period-from">起始节次</label>
+          <select class="input" id="adjustment-room-open-period-from"></select>
+        </div>
+        <div class="form-item">
+          <label class="req" for="adjustment-room-open-period-to">结束节次</label>
+          <select class="input" id="adjustment-room-open-period-to"></select>
+        </div>
+        <div class="form-item full">
+          <label for="adjustment-room-open-remark">备注</label>
+          <input class="input" type="text" id="adjustment-room-open-remark" placeholder="可选">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-room-open')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveAdjustmentRoomOpenModal()">保存</button>
     </div>
   </div>
 </div>
@@ -8955,8 +9133,34 @@
           </div>
           <div class="form-grid adjustment-batch-form">
             <div class="form-item full">
+              <label>日期选择方式</label>
+              <div class="adj-batch-date-mode" role="group" aria-label="日期选择方式">
+                <button type="button" class="adj-batch-date-mode-btn is-active" data-scope="time" data-mode="date" onclick="onAdjustmentBatchTimeDateModeChange('date')">按日期</button>
+                <button type="button" class="adj-batch-date-mode-btn" data-scope="time" data-mode="weekday" onclick="onAdjustmentBatchTimeDateModeChange('weekday')">按星期</button>
+              </div>
+            </div>
+            <div class="form-item full">
               <label class="req">源日期</label>
-              <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-time-date-btn" onclick="openAdjustmentBatchDatePicker('time', event)">选择起止日期</button>
+              <div class="adj-batch-date-pane" id="adjustment-batch-time-date-pane">
+                <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-time-date-btn" onclick="openAdjustmentBatchDatePicker('time', event)">选择起止日期</button>
+              </div>
+              <div class="adj-batch-weekday-pane" id="adjustment-batch-time-weekday-pane" hidden>
+                <div class="adj-batch-weekday-fields">
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-time-week-from">起始周</label>
+                    <select class="input input-sm" id="adjustment-batch-time-week-from" onchange="onAdjustmentBatchWeekdayFieldChange('time')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-time-week-to">截止周</label>
+                    <select class="input input-sm" id="adjustment-batch-time-week-to" onchange="onAdjustmentBatchWeekdayFieldChange('time')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field adj-batch-weekday-field-wide">
+                    <label>星期</label>
+                    <select id="adjustment-batch-time-weekdays" multiple hidden></select>
+                    <div id="adjustment-batch-time-weekdays-mount"></div>
+                  </div>
+                </div>
+              </div>
               <div class="adjustment-batch-date-summary" id="adjustment-batch-time-dates">尚未选择日期</div>
             </div>
             <div class="form-item full">
@@ -8965,25 +9169,58 @@
             </div>
             <div class="form-item full">
               <label class="req">目标日期</label>
-              <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-timeTarget-date-btn" onclick="openAdjustmentBatchDatePicker('timeTarget', event)">选择起止日期</button>
+              <div class="adj-batch-date-pane" id="adjustment-batch-timeTarget-date-pane">
+                <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-timeTarget-date-btn" onclick="openAdjustmentBatchDatePicker('timeTarget', event)">选择起止日期</button>
+              </div>
+              <div class="adj-batch-weekday-pane" id="adjustment-batch-timeTarget-weekday-pane" hidden>
+                <div class="adj-batch-weekday-fields">
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-timeTarget-week-from">起始周</label>
+                    <select class="input input-sm" id="adjustment-batch-timeTarget-week-from" onchange="onAdjustmentBatchWeekdayFieldChange('timeTarget')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-timeTarget-week-to">截止周</label>
+                    <select class="input input-sm" id="adjustment-batch-timeTarget-week-to" onchange="onAdjustmentBatchWeekdayFieldChange('timeTarget')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field adj-batch-weekday-field-wide">
+                    <label>星期</label>
+                    <select id="adjustment-batch-timeTarget-weekdays" multiple hidden></select>
+                    <div id="adjustment-batch-timeTarget-weekdays-mount"></div>
+                  </div>
+                </div>
+              </div>
               <div class="adjustment-batch-date-summary" id="adjustment-batch-timeTarget-dates">尚未选择日期</div>
             </div>
             <div class="form-item full">
               <label class="req">目标节次（可多选）</label>
               <div class="schedule-multi-check-grid" id="adjustment-batch-time-target-periods"></div>
             </div>
+            <div class="form-item full">
+              <label>课程</label>
+              <select id="adjustment-batch-time-courses" multiple hidden></select>
+              <div id="adjustment-batch-time-courses-mount"></div>
+              <p class="form-hint">不选则不限制课程；多选后仅生成所选课程的调课明细</p>
+            </div>
           </div>
           <div class="adjustment-batch-table-head">
             <div class="adjustment-batch-table-actions">
               <button class="btn btn-outline btn-sm" type="button" onclick="generateAdjustmentBatchTimePreview()">确定生成调课明细</button>
-              <button class="btn btn-ghost btn-sm" type="button" onclick="clearAdjustmentBatchTimePreview()">清空调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="clearAdjustmentBatchTimePreview()">清空调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="deleteAdjustmentBatchTimePreview()">删除调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchTimeRowsPicker()">调教室</button>
             </div>
+            <div class="adj-batch-order-hint">多选日期和节次时，按顺位对应调课（第 N 个源日期 → 第 N 个目标日期，第 N 个源节次 → 第 N 个目标节次）</div>
+            <label class="adj-batch-conflict-only">
+              <input type="checkbox" id="adjustment-batch-time-conflict-only" onchange="onAdjustmentBatchTimeConflictOnlyChange()">
+              仅查询冲突数据
+            </label>
             <div class="adjustment-batch-preview-tip" id="adjustment-batch-time-tip" hidden></div>
           </div>
           <div class="table-scroll">
-            <table class="data-table adjustment-table adj-freeze-left-2 adj-batch-preview-table adj-batch-time-preview">
+            <table class="data-table adjustment-table adj-freeze-left-3 adj-batch-preview-table adj-batch-time-preview">
               <thead>
                 <tr>
+                  <th class="col-check"><input type="checkbox" id="adjustment-batch-time-check-all" onclick="onAdjustmentBatchTimeSelectAll(this.checked)" aria-label="全选调课明细"></th>
                   <th class="col-index">序号</th>
                   <th>课程编号</th>
                   <th>课程名称</th>
@@ -8994,7 +9231,9 @@
                   <th>教室</th>
                   <th class="col-center">调整后日期</th>
                   <th class="col-center">调整后节次</th>
+                  <th>调后教室</th>
                   <th class="adj-batch-conflict-col">冲突情况</th>
+                  <th class="col-center col-ops">操作</th>
                 </tr>
               </thead>
               <tbody id="adjustment-batch-time-preview-body"></tbody>
@@ -9029,7 +9268,30 @@
           <div class="form-grid adjustment-batch-form">
             <div class="form-item full">
               <label class="req">源日期</label>
-              <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-room-date-btn" onclick="openAdjustmentBatchDatePicker('room', event)">选择起止日期</button>
+              <div class="adj-batch-date-mode" role="group" aria-label="源日期选择方式">
+                <button type="button" class="adj-batch-date-mode-btn is-active" data-kind="room" data-mode="date" onclick="onAdjustmentBatchDateModeChange('room','date')">按日期</button>
+                <button type="button" class="adj-batch-date-mode-btn" data-kind="room" data-mode="weekday" onclick="onAdjustmentBatchDateModeChange('room','weekday')">按星期</button>
+              </div>
+              <div class="adj-batch-date-pane" id="adjustment-batch-room-date-pane">
+                <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-room-date-btn" onclick="openAdjustmentBatchDatePicker('room', event)">选择起止日期</button>
+              </div>
+              <div class="adj-batch-weekday-pane" id="adjustment-batch-room-weekday-pane" hidden>
+                <div class="adj-batch-weekday-fields">
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-room-week-from">起始周</label>
+                    <select class="input input-sm" id="adjustment-batch-room-week-from" onchange="onAdjustmentBatchWeekdayFieldChange('room')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-room-week-to">截止周</label>
+                    <select class="input input-sm" id="adjustment-batch-room-week-to" onchange="onAdjustmentBatchWeekdayFieldChange('room')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field adj-batch-weekday-field-wide">
+                    <label>星期</label>
+                    <select id="adjustment-batch-room-weekdays" multiple hidden></select>
+                    <div id="adjustment-batch-room-weekdays-mount"></div>
+                  </div>
+                </div>
+              </div>
               <div class="adjustment-batch-date-summary" id="adjustment-batch-room-dates">尚未选择日期</div>
             </div>
             <div class="form-item full">
@@ -9050,14 +9312,21 @@
           <div class="adjustment-batch-table-head">
             <div class="adjustment-batch-table-actions">
               <button class="btn btn-outline btn-sm" type="button" onclick="generateAdjustmentBatchRoomPreview()">确定生成调课明细</button>
-              <button class="btn btn-ghost btn-sm" type="button" onclick="clearAdjustmentBatchRoomPreview()">清空调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="clearAdjustmentBatchRoomPreview()">清空调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="deleteAdjustmentBatchRoomPreview()">删除调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchRoomRowsPicker()">调教室</button>
             </div>
+            <label class="adj-batch-conflict-only">
+              <input type="checkbox" id="adjustment-batch-room-conflict-only" onchange="onAdjustmentBatchRoomConflictOnlyChange()">
+              仅查询冲突项
+            </label>
             <div class="adjustment-batch-preview-tip" id="adjustment-batch-room-tip" hidden></div>
           </div>
           <div class="table-scroll">
-            <table class="data-table adjustment-table adj-freeze-left-2 adj-batch-preview-table">
+            <table class="data-table adjustment-table adj-freeze-left-3 adj-batch-preview-table adj-batch-room-preview">
               <thead>
                 <tr>
+                  <th class="col-check"><input type="checkbox" id="adjustment-batch-room-check-all" onclick="onAdjustmentBatchRoomSelectVisible(this.checked)" aria-label="全选可见明细"></th>
                   <th class="col-index">序号</th>
                   <th>课程编号</th>
                   <th>课程名称</th>
@@ -9066,6 +9335,8 @@
                   <th class="col-center">节次</th>
                   <th>原教室</th>
                   <th>目标教室</th>
+                  <th class="adj-batch-conflict-col">冲突情况</th>
+                  <th class="col-center col-ops">操作</th>
                 </tr>
               </thead>
               <tbody id="adjustment-batch-room-preview-body"></tbody>
@@ -9162,24 +9433,39 @@
     </div>
     <div class="modal-body">
       <div class="schedule-room-picker-hint" id="schedule-room-picker-hint" hidden></div>
-      <div class="schedule-room-picker-occ-bar" id="schedule-room-picker-occ-bar" hidden>
-        <div class="srf-item">
-          <label for="srf-occ-weekday">星期</label>
-          <select class="input input-sm" id="srf-occ-weekday"></select>
-        </div>
-        <div class="srf-item">
-          <label for="srf-occ-week">周次</label>
-          <input class="input input-sm" id="srf-occ-week" type="number" min="1" placeholder="如 3（空=全部周）">
-        </div>
-        <div class="srf-actions">
-          <button class="btn btn-primary btn-sm" type="button" onclick="queryAdjustmentApproveRoomOccupancy()">查询占用</button>
-        </div>
-      </div>
+      <div class="schedule-room-picker-occ-bar" id="schedule-room-picker-occ-bar" hidden></div>
+      <div id="schedule-approve-room-occ-toast" class="schedule-approve-room-occ-toast" hidden role="status" aria-live="polite"></div>
       <div class="schedule-room-filter-grid">
         <div class="srf-item srf-item-room-select"><label>教室</label><select class="input input-sm" id="srf-room"></select></div>
         <div class="srf-item srf-item-room-input"><label>教室</label><input class="input input-sm" id="srf-room-text" type="text" placeholder="请输入教室名称"></div>
-        <div class="srf-item"><label>楼栋</label><select class="input input-sm" id="srf-building"></select></div>
-        <div class="srf-item"><label>楼层</label><select class="input input-sm" id="srf-floor"></select></div>
+        <div class="srf-item">
+          <label>楼栋</label>
+          <select class="input input-sm srf-native-select" id="srf-building"></select>
+          <div class="clo-multiselect srf-approve-ms" id="srf-building-ms">
+            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleScheduleApproveRoomMs('building', event)">
+              <span class="clo-multiselect-display placeholder" id="srf-building-ms-display">全部</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="srf-building-ms-dropdown" hidden>
+              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-building-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('building', this.value)"></div>
+              <div class="clo-multiselect-options" id="srf-building-ms-options"></div>
+            </div>
+          </div>
+        </div>
+        <div class="srf-item">
+          <label>楼层</label>
+          <select class="input input-sm srf-native-select" id="srf-floor"></select>
+          <div class="clo-multiselect srf-approve-ms" id="srf-floor-ms">
+            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleScheduleApproveRoomMs('floor', event)">
+              <span class="clo-multiselect-display placeholder" id="srf-floor-ms-display">全部</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="srf-floor-ms-dropdown" hidden>
+              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-floor-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('floor', this.value)"></div>
+              <div class="clo-multiselect-options" id="srf-floor-ms-options"></div>
+            </div>
+          </div>
+        </div>
         <div class="srf-actions">
           <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleRoomModal()">查询</button>
           <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleRoomModal()">重置</button>
@@ -9201,6 +9487,7 @@
               <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
             </button>
             <div class="clo-multiselect-dropdown" id="srf-type-dropdown" hidden>
+              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-type-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('venueType', this.value)"></div>
               <div class="clo-multiselect-options" id="srf-type-options"></div>
             </div>
           </div>
@@ -9213,12 +9500,39 @@
               <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
             </button>
             <div class="clo-multiselect-dropdown" id="srf-classroom-type-dropdown" hidden>
+              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-classroom-type-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('classroomType', this.value)"></div>
               <div class="clo-multiselect-options" id="srf-classroom-type-options"></div>
             </div>
           </div>
         </div>
-        <div class="srf-item"><label>教室设备</label><select class="input input-sm" id="srf-equip"></select></div>
-        <div class="srf-item"><label>教室软件</label><select class="input input-sm" id="srf-software"></select></div>
+        <div class="srf-item">
+          <label>教室设备</label>
+          <select class="input input-sm srf-native-select" id="srf-equip"></select>
+          <div class="clo-multiselect srf-approve-ms" id="srf-equipment-ms">
+            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleScheduleApproveRoomMs('equipment', event)">
+              <span class="clo-multiselect-display placeholder" id="srf-equipment-ms-display">全部</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="srf-equipment-ms-dropdown" hidden>
+              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-equipment-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('equipment', this.value)"></div>
+              <div class="clo-multiselect-options" id="srf-equipment-ms-options"></div>
+            </div>
+          </div>
+        </div>
+        <div class="srf-item">
+          <label>教室软件</label>
+          <select class="input input-sm srf-native-select" id="srf-software"></select>
+          <div class="clo-multiselect srf-approve-ms" id="srf-software-ms">
+            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleScheduleApproveRoomMs('software', event)">
+              <span class="clo-multiselect-display placeholder" id="srf-software-ms-display">全部</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="srf-software-ms-dropdown" hidden>
+              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-software-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('software', this.value)"></div>
+              <div class="clo-multiselect-options" id="srf-software-ms-options"></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="table-scroll" id="schedule-room-modal-scroll">
         <table class="data-table compact schedule-room-modal-table">

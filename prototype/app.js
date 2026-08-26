@@ -286,6 +286,9 @@ const LIST_SORT_REFRESH = {
   },
   scheduleRoomPicker: () => {
     if (typeof renderScheduleRoomModalRows === 'function') renderScheduleRoomModalRows();
+  },
+  adjustmentRoomOpenPicker: () => {
+    if (typeof renderAdjustmentRoomOpenPicker === 'function') renderAdjustmentRoomOpenPicker();
   }
 };
 
@@ -356,7 +359,8 @@ const LIST_PAGE_REFRESH = {
   presetRosterGrouping: () => renderPresetRosterGroupingDrawer(),
   majorOfferingStudentRemovalLog: () => renderMajorOfferingStudentRemovalLogDrawer(),
   majorOfferingTeacherPicker: () => renderMajorOfferingTeacherPickerModal(),
-  entityChangeLog: () => renderEntityChangeLogDrawer()
+  entityChangeLog: () => renderEntityChangeLogDrawer(),
+  adjustmentRoomOpenPicker: () => renderAdjustmentRoomOpenPicker()
 };
 
 function goListPage(listKey, page) {
@@ -25232,12 +25236,16 @@ const SCHEDULE_TASK_STORE = {
 
 /** 入学批次排课详情页上下文 { programmeKey, intake, type, phase } */
 let scheduleBatchDetailContext = null;
-/** 联合排课：已选专业 / 专业批次 / 教师单位 / 教师 */
+/** 联合排课：已选专业 / 专业批次 / 教师单位 / 教师（草稿，点确定后才查询） */
 const SCHEDULE_JOINT_PICKER_KINDS = ['programme', 'batch', 'dept', 'teacher'];
+let scheduleJointDraftTerm = '';
 let scheduleJointSelectedProgrammes = [];
 let scheduleJointSelectedBatches = [];
 let scheduleJointSelectedDepts = [];
 let scheduleJointSelectedTeachers = [];
+let scheduleJointAppliedTerm = '';
+let scheduleJointAppliedBatches = [];
+let scheduleJointAppliedTeachers = [];
 let scheduleJointPickerSnapshot = { programme: null, batch: null, dept: null, teacher: null };
 let scheduleJointPickerDraft = { programme: null, batch: null, dept: null, teacher: null };
 let scheduleJointPickerQuery = { programme: '', batch: '', dept: '', teacher: '' };
@@ -25337,14 +25345,14 @@ const SCHEDULE_COURSE_SEARCH_INPUT_IDS = {
   teacherName: 'schedule-course-search-teacher-name',
   teacherId: 'schedule-course-search-teacher-id',
   sharedTeachingCode: 'schedule-course-search-shared-code',
-  venueType: 'schedule-course-search-venue-type',
+  venueType: 'schedule-course-search-venue-type-options',
   venueRemark: 'schedule-course-search-venue-remark'
 };
 function emptyScheduleTimeCourseSearchFilters() {
   return { courseCode: '', teacherName: '', teacherId: '', sharedTeachingCode: '' };
 }
 function emptyScheduleRoomCourseSearchFilters() {
-  return { ...emptyScheduleTimeCourseSearchFilters(), venueType: '', venueRemark: '' };
+  return { ...emptyScheduleTimeCourseSearchFilters(), venueType: [], venueRemark: '' };
 }
 /** 排时间左侧课程卡片分字段搜索（点击查询后生效） */
 let scheduleTimeCourseSearchFilters = emptyScheduleTimeCourseSearchFilters();
@@ -25411,7 +25419,6 @@ function clearScheduleRoomSlotPending(slot) {
 const SCHEDULE_ROOM_TIMETABLE_FILTER_FIELDS = [
   { id: 'srtf-building', key: 'building' },
   { id: 'srtf-room-type', key: 'roomType', get: r => r.roomType || r.classroomTypeZh || '' },
-  { id: 'srtf-venue-type', key: 'venueType', isVenue: true },
   { id: 'srtf-equipment', key: 'equipment' },
   { id: 'srtf-software', key: 'software' },
   { id: 'srtf-remark', key: 'remark', get: r => getScheduleRoomInfoRemark(r) }
@@ -25478,23 +25485,8 @@ function normalizeScheduleRuleStore(store) {
         r.periodTo = 7;
       }
       if (r.id === 'lunch-duration' && (r.value == null || Number(r.value) < 2)) r.value = 2;
-      if (r.id === 'adjustment-apply-window') {
-        r.name = '调课申请开放时限';
-        r.unit = '天数';
-        r.valueType = 'days';
-        if (r.value == null || Number(r.value) < 1) r.value = 14;
-      }
     });
-    if (!store.rules.some(r => r.id === 'adjustment-apply-window')) {
-      store.rules.push({
-        id: 'adjustment-apply-window',
-        name: '调课申请开放时限',
-        unit: '天数',
-        enabled: false,
-        valueType: 'days',
-        value: 14
-      });
-    }
+    store.rules = store.rules.filter(r => r.id !== 'adjustment-apply-window');
     return store;
   }
   // 兼容旧版扁平结构
@@ -25503,8 +25495,7 @@ function normalizeScheduleRuleStore(store) {
     { id: 'lunch-duration', name: '午休时长下限', unit: '节数', enabled: true, valueType: 'periodCount', value: store.lunchDurationPeriods ?? 2 },
     { id: 'student-daily-max', name: '每日累计排课时长上限', unit: '节数', enabled: true, valueType: 'hours', value: store.studentDailyMax ?? 8 },
     { id: 'student-consecutive-max', name: '每日连续排课时长上限', unit: '节数', enabled: true, valueType: 'hours', value: store.studentConsecutiveMax ?? 4 },
-    { id: 'teacher-evening-max', name: '教师晚间授课天数上限', unit: '天', enabled: true, valueType: 'hours', value: store.teacherEveningDaysMax ?? 2 },
-    { id: 'adjustment-apply-window', name: '调课申请开放时限', unit: '天数', enabled: false, valueType: 'days', value: 14 }
+    { id: 'teacher-evening-max', name: '教师晚间授课天数上限', unit: '天', enabled: true, valueType: 'hours', value: store.teacherEveningDaysMax ?? 2 }
   ];
   return store;
 }
@@ -25920,12 +25911,305 @@ function getScheduleWeekdayOptions(selected) {
   ).join('');
 }
 
-function getScheduleWeekNoOptions(selected, maxWeek = 20) {
+function formatScheduleSettingPeriodLabel(periodNo, term) {
+  const n = Number(periodNo);
+  if (!n) return '';
+  return formatAdjustmentPeriodLabel(n, n, term) || `第${n}节`;
+}
+
+function getScheduleWeekNoOptions(selected, maxWeek = 20, term) {
+  const termStart = term ? getScheduleTermStartDate(term) : '';
   let html = '';
   for (let i = 1; i <= maxWeek; i++) {
-    html += `<option value="${i}"${i === selected ? ' selected' : ''}>第 ${i} 周</option>`;
+    let label = `第 ${i} 周`;
+    if (termStart) {
+      const mon = getScheduleDateByTeachingWeek(termStart, i, 1);
+      const sun = getScheduleDateByTeachingWeek(termStart, i, 7);
+      if (mon && sun) label += `（${mon} ~ ${sun}）`;
+    }
+    html += `<option value="${i}"${Number(selected) === i ? ' selected' : ''}>${escapeHtml(label)}</option>`;
   }
   return html;
+}
+
+function formatScheduleWeekNoDisplay(weekNo, term) {
+  const n = Number(weekNo) || 0;
+  if (!n) return '请选择周次';
+  const termStart = term ? getScheduleTermStartDate(term) : '';
+  let label = `第 ${n} 周`;
+  if (termStart) {
+    const mon = getScheduleDateByTeachingWeek(termStart, n, 1);
+    const sun = getScheduleDateByTeachingWeek(termStart, n, 7);
+    if (mon && sun) label += `（${mon} ~ ${sun}）`;
+  }
+  return label;
+}
+
+function renderScheduleSlotWeekPickerField(entryId, role, weekNo, term) {
+  const n = Number(weekNo) || 0;
+  const empty = !n;
+  return `<div class="schedule-slot-week-pick-wrap">
+    <input type="hidden" data-role="${role}" value="${n || ''}">
+    <button type="button" class="input adj-pick-btn schedule-slot-week-pick${empty ? ' is-empty' : ''}" data-role="${role}-btn" onclick="openScheduleSlotWeekCalendar('${entryId}','${role}',event)">${escapeHtml(formatScheduleWeekNoDisplay(n, term))}</button>
+  </div>`;
+}
+
+let scheduleSlotWeekCalState = null;
+
+function closeScheduleSlotWeekCalendar() {
+  document.getElementById('schedule-slot-week-cal-dd')?.remove();
+  scheduleSlotWeekCalState = null;
+  document.removeEventListener('mousedown', closeScheduleSlotWeekCalendarOutside);
+}
+
+function closeScheduleSlotWeekCalendarOutside(e) {
+  const dd = document.getElementById('schedule-slot-week-cal-dd');
+  const btn = e.target.closest?.('.schedule-slot-week-pick');
+  if (dd && !dd.contains(e.target) && !btn) closeScheduleSlotWeekCalendar();
+}
+
+function getScheduleSlotWeekCalAnchorDate(term, weekNo) {
+  const termStart = getScheduleTermStartDate(term);
+  if (!termStart) return new Date();
+  const ds = getScheduleDateByTeachingWeek(termStart, Number(weekNo) || 1, 1);
+  return ds ? new Date(`${ds}T00:00:00`) : new Date(`${termStart}T00:00:00`);
+}
+
+function positionScheduleSlotWeekCalendar(anchor) {
+  const dd = document.getElementById('schedule-slot-week-cal-dd');
+  if (!dd || !anchor) return;
+  const r = anchor.getBoundingClientRect();
+  const ddH = dd.offsetHeight;
+  const ddW = dd.offsetWidth;
+  let top = r.bottom + 4;
+  if (top + ddH > window.innerHeight - 8) top = Math.max(8, r.top - 4 - ddH);
+  let left = r.left;
+  if (left + ddW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - ddW);
+  dd.style.top = `${top}px`;
+  dd.style.left = `${left}px`;
+}
+
+function openScheduleSlotWeekCalendar(entryId, role, event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  const same = scheduleSlotWeekCalState?.entryId === entryId && scheduleSlotWeekCalState?.role === role;
+  if (same && document.getElementById('schedule-slot-week-cal-dd')) {
+    closeScheduleSlotWeekCalendar();
+    return;
+  }
+  closeScheduleSlotWeekCalendar();
+  const entryEl = document.querySelector(`.schedule-slot-entry[data-entry-id="${entryId}"]`);
+  const term = getScheduleSlotEntryTerm(entryEl);
+  const current = parseInt(entryEl?.querySelector?.(`[data-role="${role}"]`)?.value, 10) || 0;
+  const maxWeek = getOfferingTermTeachingWeeks(term) || 14;
+  const anchorDate = getScheduleSlotWeekCalAnchorDate(term, current || 1);
+  scheduleSlotWeekCalState = {
+    entryId,
+    role,
+    term,
+    maxWeek,
+    draftWeek: current || 0,
+    year: anchorDate.getFullYear(),
+    month: anchorDate.getMonth()
+  };
+  const dd = document.createElement('div');
+  dd.className = 'adj-cal-dropdown schedule-slot-week-cal';
+  dd.id = 'schedule-slot-week-cal-dd';
+  dd.onclick = e => e.stopPropagation();
+  document.body.appendChild(dd);
+  renderScheduleSlotWeekCalendar();
+  positionScheduleSlotWeekCalendar(event?.currentTarget);
+  setTimeout(() => document.addEventListener('mousedown', closeScheduleSlotWeekCalendarOutside), 0);
+}
+
+function onScheduleSlotWeekCalNav(delta, event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  if (!scheduleSlotWeekCalState) return;
+  scheduleSlotWeekCalState.month += Number(delta) || 0;
+  if (scheduleSlotWeekCalState.month < 0) {
+    scheduleSlotWeekCalState.month = 11;
+    scheduleSlotWeekCalState.year -= 1;
+  } else if (scheduleSlotWeekCalState.month > 11) {
+    scheduleSlotWeekCalState.month = 0;
+    scheduleSlotWeekCalState.year += 1;
+  }
+  renderScheduleSlotWeekCalendar();
+}
+
+function onScheduleSlotWeekCalPick(weekNo, event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  if (!scheduleSlotWeekCalState) return;
+  const n = Number(weekNo) || 0;
+  if (!n || n > scheduleSlotWeekCalState.maxWeek) return;
+  scheduleSlotWeekCalState.draftWeek = n;
+  renderScheduleSlotWeekCalendar();
+}
+
+function confirmScheduleSlotWeekCalendar(event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  const st = scheduleSlotWeekCalState;
+  if (!st?.draftWeek) return;
+  const entryEl = document.querySelector(`.schedule-slot-entry[data-entry-id="${st.entryId}"]`);
+  const hidden = entryEl?.querySelector?.(`[data-role="${st.role}"]`);
+  const btn = entryEl?.querySelector?.(`[data-role="${st.role}-btn"]`);
+  if (hidden) hidden.value = String(st.draftWeek);
+  if (btn) {
+    btn.textContent = formatScheduleWeekNoDisplay(st.draftWeek, st.term);
+    btn.classList.toggle('is-empty', false);
+  }
+  refreshScheduleSlotEntryDates(entryEl);
+  closeScheduleSlotWeekCalendar();
+}
+
+function renderScheduleSlotWeekCalendar() {
+  const host = document.getElementById('schedule-slot-week-cal-dd');
+  const st = scheduleSlotWeekCalState;
+  if (!host || !st) return;
+  const termStart = getScheduleTermStartDate(st.term);
+  const y = st.year;
+  const m = st.month;
+  const pad = n => String(n).padStart(2, '0');
+  const first = new Date(y, m, 1);
+  const offset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+  const last = new Date(y, m + 1, 0);
+  const cursor = new Date(y, m, 1 - offset);
+  const rows = [];
+  while (true) {
+    const weekInfo = getScheduleWeekAndWeekdayFromDate(
+      termStart,
+      `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`,
+      st.term
+    );
+    const weekNo = weekInfo?.weekNo && weekInfo.weekNo <= st.maxWeek ? weekInfo.weekNo : 0;
+    const weekOn = weekNo && weekNo === st.draftWeek;
+    const weekClick = weekNo ? ` onclick="onScheduleSlotWeekCalPick(${weekNo},event)"` : '';
+    const weekCls = weekNo ? ` is-clickable${weekOn ? ' is-sel' : ''}` : '';
+    let cells = '';
+    for (let i = 0; i < 7; i++) {
+      const ds = `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`;
+      const info = getScheduleWeekAndWeekdayFromDate(termStart, ds, st.term);
+      const inTerm = !!(info?.weekNo && info.weekNo <= st.maxWeek);
+      const other = cursor.getMonth() !== m ? ' adj-cal-other' : '';
+      const sel = inTerm && info.weekNo === st.draftWeek ? ' is-sel' : '';
+      const dis = inTerm ? '' : ' is-disabled';
+      const click = inTerm ? ` onclick="onScheduleSlotWeekCalPick(${info.weekNo},event)"` : '';
+      cells += `<td class="adj-cal-day${other}${sel}${dis}"${click}>${cursor.getDate()}</td>`;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    rows.push(`<tr><td class="adj-cal-wk${weekCls}"${weekClick} title="${weekNo ? '第' + weekNo + '教学周，点击选择该周' : ''}">${weekNo ? '第' + weekNo + '周' : '—'}</td>${cells}</tr>`);
+    if (cursor > last) break;
+  }
+  const tip = st.draftWeek
+    ? `已选：${formatScheduleWeekNoDisplay(st.draftWeek, st.term)}`
+    : '点击教学周或日期，选择所在周';
+  host.innerHTML = `
+    <div class="adj-cal-head">
+      <button type="button" class="adj-cal-nav" onclick="onScheduleSlotWeekCalNav(-1,event)">‹</button>
+      <span class="adj-cal-title">${y}年${m + 1}月</span>
+      <button type="button" class="adj-cal-nav" onclick="onScheduleSlotWeekCalNav(1,event)">›</button>
+    </div>
+    <table class="adj-cal-table">
+      <thead><tr><th class="adj-cal-wk">教学周</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>
+    <div class="adj-cal-tip">${escapeHtml(tip)}</div>
+    <div class="adj-cal-foot">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeScheduleSlotWeekCalendar()">取消</button>
+      <button type="button" class="btn btn-primary btn-sm" ${st.draftWeek ? '' : 'disabled'} onclick="confirmScheduleSlotWeekCalendar(event)">确定</button>
+    </div>`;
+}
+
+function getScheduleWeekdayDatesInRange(term, weekFrom, weekTo, weekday) {
+  const from = Number(weekFrom) || 0;
+  const to = Number(weekTo) || from;
+  const day = Number(weekday) || 0;
+  if (!from || !to || !day) return [];
+  const termStart = getScheduleTermStartDate(term);
+  if (!termStart) return [];
+  const start = Math.min(from, to);
+  const end = Math.max(from, to);
+  const dates = [];
+  for (let w = start; w <= end; w++) {
+    const d = getScheduleDateByTeachingWeek(termStart, w, day);
+    if (d) dates.push(d);
+  }
+  return dates;
+}
+
+function renderScheduleSlotWeekdayDateLines(weekFrom, weekTo, weekdays, term) {
+  const days = uniqueSortedNumbers(weekdays);
+  if (!days.length) {
+    return '<span class="schedule-slot-entry-date-empty">选择星期后显示每个星期对应的日期</span>';
+  }
+  const termStart = getScheduleTermStartDate(term);
+  if (!termStart) {
+    return '<span class="schedule-slot-entry-date-empty">当前学期未配置教学周起始日</span>';
+  }
+  return days.map(day => {
+    const dates = getScheduleWeekdayDatesInRange(term, weekFrom, weekTo, day);
+    const label = getScheduleWeekdayLabel(day);
+    const text = dates.length ? dates.join('、') : '暂无对应日期';
+    return `<div class="schedule-slot-entry-date-line">${escapeHtml(label)}：${escapeHtml(text)}</div>`;
+  }).join('');
+}
+
+function getScheduleSlotEntryTerm(entryEl) {
+  if (entryEl?.closest?.('#modal-schedule-room-slot')) return getScheduleRoomSlotModalTerm();
+  return getScheduleTeacherSlotModalTerm();
+}
+
+function readScheduleSlotEntryWeekdays(entryEl) {
+  const sel = entryEl?.querySelector?.('select[data-role="weekday"]');
+  if (sel) {
+    const n = parseInt(sel.value, 10);
+    return n ? [n] : [];
+  }
+  return uniqueSortedNumbers(
+    [...(entryEl?.querySelectorAll?.('[data-role="weekday"]:checked') || [])].map(el => el.value)
+  );
+}
+
+function refreshScheduleSlotEntryDates(entryEl) {
+  if (!entryEl) return;
+  const weekFrom = parseInt(entryEl.querySelector('[data-role="week-from"]')?.value, 10) || 1;
+  const weekTo = parseInt(entryEl.querySelector('[data-role="week-to"]')?.value, 10) || weekFrom;
+  const weekdays = readScheduleSlotEntryWeekdays(entryEl);
+  const box = entryEl.querySelector('[data-role="dates"]');
+  if (box) box.innerHTML = renderScheduleSlotWeekdayDateLines(weekFrom, weekTo, weekdays, getScheduleSlotEntryTerm(entryEl));
+}
+
+function onScheduleSlotEntryWeekOrWeekdayChange(event) {
+  refreshScheduleSlotEntryDates(event?.target?.closest?.('.schedule-slot-entry'));
+}
+
+function enhanceScheduleSlotEntrySelects(root) {
+  if (typeof enhanceAllSelects === 'function' && root) enhanceAllSelects(root);
+}
+
+function renderScheduleTimeSlotEntryFields(entry, term) {
+  const weekFrom = Number(entry.weekFrom) || 1;
+  const weekTo = Number(entry.weekTo) || weekFrom;
+  const weekdays = uniqueSortedNumbers(entry.weekdays);
+  const periods = uniqueSortedNumbers(entry.periods);
+  const weekdayChecks = SCHEDULE_WEEKDAYS.map(w =>
+    `<label class="schedule-multi-check"><input type="checkbox" data-entry="${entry.id}" data-role="weekday" value="${w.value}"${weekdays.includes(w.value) ? ' checked' : ''} onchange="onScheduleSlotEntryWeekOrWeekdayChange(event)">${w.label}</label>`
+  ).join('');
+  const periodChecks = ensureSchedulePeriods(term).map(p => {
+    const label = formatScheduleSettingPeriodLabel(p.periodNo, term) || `第 ${p.periodNo} 节`;
+    return `<label class="schedule-multi-check"><input type="checkbox" data-entry="${entry.id}" data-role="period" value="${p.periodNo}"${periods.includes(p.periodNo) ? ' checked' : ''}>${escapeHtml(label)}</label>`;
+  }).join('');
+  return `
+      <div class="form-item"><label class="req">起始周次</label>${renderScheduleSlotWeekPickerField(entry.id, 'week-from', weekFrom, term)}</div>
+      <div class="form-item"><label class="req">截止周次</label>${renderScheduleSlotWeekPickerField(entry.id, 'week-to', weekTo, term)}</div>
+      <div class="form-item full">
+        <label class="req">星期（可多选）</label>
+        <div class="schedule-multi-check-group">${weekdayChecks}</div>
+        <div class="form-hint schedule-slot-entry-dates" data-role="dates">${renderScheduleSlotWeekdayDateLines(weekFrom, weekTo, weekdays, term)}</div>
+      </div>
+      <div class="form-item full"><label class="req">节次（可多选）</label><div class="schedule-multi-check-group">${periodChecks}</div></div>`;
 }
 
 const SCHEDULE_BLACKOUT_DEMO_PERIODS = [6, 7, 8, 9, 10];
@@ -26161,30 +26445,30 @@ function formatScheduleWeekdayMultiLabel(weekdays) {
   return list.map(v => getScheduleWeekdayLabel(v)).join('、');
 }
 
-function formatSchedulePeriodMultiLabel(periods) {
+function formatSchedulePeriodMultiLabel(periods, term) {
   const list = uniqueSortedNumbers(periods);
   if (!list.length) return '';
-  return list.map(v => `第${v}节`).join('、');
+  return list.map(v => formatScheduleSettingPeriodLabel(v, term) || `第${v}节`).join('、');
 }
 
-function formatScheduleTeacherSlotRuleDisplay(rule) {
+function formatScheduleTeacherSlotRuleDisplay(rule, term) {
   const slot = normalizeScheduleTeacherSlotRule(rule);
   if (!slot.weekdays.length && !slot.periods.length) return '—';
   const parts = [`第 ${slot.weekFrom}-${slot.weekTo} 周`];
   const weekdayText = formatScheduleWeekdayMultiLabel(slot.weekdays);
-  const periodText = formatSchedulePeriodMultiLabel(slot.periods);
+  const periodText = formatSchedulePeriodMultiLabel(slot.periods, term);
   if (weekdayText) parts.push(weekdayText);
   if (periodText) parts.push(periodText);
   return parts.join(' · ');
 }
 
-function renderScheduleTeacherSlotListCell(list) {
+function renderScheduleTeacherSlotListCell(list, term) {
   const slots = (list || [])
     .map(normalizeScheduleTeacherSlotRule)
     .filter(s => s.weekdays.length > 0 && s.periods.length > 0);
   if (!slots.length) return '—';
   return slots
-    .map(s => `<div class="schedule-slot-cell-line">${escapeHtml(formatScheduleTeacherSlotRuleDisplay(s))}</div>`)
+    .map(s => `<div class="schedule-slot-cell-line">${escapeHtml(formatScheduleTeacherSlotRuleDisplay(s, term))}</div>`)
     .join('');
 }
 
@@ -26199,29 +26483,19 @@ let scheduleTeacherSlotEntrySeq = 1;
 function nextTeacherSlotEntryId() { return `tse-${scheduleTeacherSlotEntrySeq++}`; }
 
 function renderScheduleTeacherSlotEntryCard(type, entry, idx, term) {
-  const weekdays = uniqueSortedNumbers(entry.weekdays);
-  const periods = uniqueSortedNumbers(entry.periods);
-  const weekdayChecks = SCHEDULE_WEEKDAYS.map(w =>
-    `<label class="schedule-multi-check"><input type="checkbox" data-entry="${entry.id}" data-role="weekday" value="${w.value}"${weekdays.includes(w.value) ? ' checked' : ''}>${w.label}</label>`
-  ).join('');
-  const periodChecks = ensureSchedulePeriods(term).map(p =>
-    `<label class="schedule-multi-check"><input type="checkbox" data-entry="${entry.id}" data-role="period" value="${p.periodNo}"${periods.includes(p.periodNo) ? ' checked' : ''}>第 ${p.periodNo} 节</label>`
-  ).join('');
   return `<div class="schedule-slot-entry" data-entry-id="${entry.id}">
     <div class="schedule-slot-entry-head">
       <span class="schedule-slot-entry-index">时段 ${idx + 1}</span>
       <button class="btn btn-ghost btn-sm" type="button" onclick="removeScheduleTeacherSlotEntry('${type}', '${entry.id}')">删除</button>
     </div>
     <div class="form-grid">
-      <div class="form-item"><label class="req">起始周次</label><select class="input" data-entry="${entry.id}" data-role="week-from">${getScheduleWeekNoOptions(entry.weekFrom || 1)}</select></div>
-      <div class="form-item"><label class="req">截止周次</label><select class="input" data-entry="${entry.id}" data-role="week-to">${getScheduleWeekNoOptions(entry.weekTo || 14)}</select></div>
-      <div class="form-item full"><label class="req">星期（可多选）</label><div class="schedule-multi-check-group">${weekdayChecks}</div></div>
-      <div class="form-item full"><label class="req">节次（可多选）</label><div class="schedule-multi-check-group">${periodChecks}</div></div>
+      ${renderScheduleTimeSlotEntryFields(entry, term)}
     </div>
   </div>`;
 }
 
 function renderScheduleTeacherSlotEntries(type, term) {
+  closeScheduleSlotWeekCalendar();
   const listEl = document.getElementById(`schedule-modal-ts-${type}-list`);
   if (!listEl) return;
   const entries = scheduleTeacherSlotDraft[type] || [];
@@ -26230,6 +26504,7 @@ function renderScheduleTeacherSlotEntries(type, term) {
     return;
   }
   listEl.innerHTML = entries.map((entry, idx) => renderScheduleTeacherSlotEntryCard(type, entry, idx, term)).join('');
+  enhanceScheduleSlotEntrySelects(listEl);
 }
 
 function captureScheduleTeacherSlotDraft() {
@@ -26241,9 +26516,7 @@ function captureScheduleTeacherSlotDraft() {
       const id = entryEl.dataset.entryId;
       const weekFrom = parseInt(entryEl.querySelector('[data-role="week-from"]')?.value, 10) || 1;
       const weekTo = parseInt(entryEl.querySelector('[data-role="week-to"]')?.value, 10) || weekFrom;
-      const weekdays = uniqueSortedNumbers(
-        [...entryEl.querySelectorAll('[data-role="weekday"]:checked')].map(el => el.value)
-      );
+      const weekdays = readScheduleSlotEntryWeekdays(entryEl);
       const periods = uniqueSortedNumbers(
         [...entryEl.querySelectorAll('[data-role="period"]:checked')].map(el => el.value)
       );
@@ -26274,9 +26547,17 @@ function addScheduleTeacherSlotEntry(type) {
     });
     return;
   }
+  const term = getScheduleTeacherSlotModalTerm();
+  const maxWeek = getOfferingTermTeachingWeeks(term) || 14;
   scheduleTeacherSlotDraft[type] = scheduleTeacherSlotDraft[type] || [];
-  scheduleTeacherSlotDraft[type].push({ id: nextTeacherSlotEntryId(), weekFrom: 1, weekTo: 14, weekdays: [], periods: [] });
-  renderScheduleTeacherSlotEntries(type, getScheduleTeacherSlotModalTerm());
+  scheduleTeacherSlotDraft[type].push({
+    id: nextTeacherSlotEntryId(),
+    weekFrom: 1,
+    weekTo: maxWeek,
+    weekdays: [],
+    periods: []
+  });
+  renderScheduleTeacherSlotEntries(type, term);
 }
 
 function removeScheduleTeacherSlotEntry(type, entryId) {
@@ -26285,11 +26566,20 @@ function removeScheduleTeacherSlotEntry(type, entryId) {
   renderScheduleTeacherSlotEntries(type, getScheduleTeacherSlotModalTerm());
 }
 
-function initScheduleTeacherSlotDraft(profile, term) {
-  const build = list => (list || []).map(s => {
+function expandScheduleSlotDraftEntries(list) {
+  return (list || []).map(s => {
     const rule = normalizeScheduleTeacherSlotRule(s);
-    return { id: nextTeacherSlotEntryId(), ...rule };
+    return {
+      weekFrom: rule.weekFrom,
+      weekTo: rule.weekTo,
+      weekdays: rule.weekdays.slice(),
+      periods: (rule.periods || []).slice()
+    };
   });
+}
+
+function initScheduleTeacherSlotDraft(profile, term) {
+  const build = list => expandScheduleSlotDraftEntries(list).map(s => ({ id: nextTeacherSlotEntryId(), ...s }));
   scheduleTeacherSlotDraft = {
     only: build(profile?.onlySlots),
     block: build(profile?.blockSlots)
@@ -27619,6 +27909,21 @@ function registerScheduleChangeLogMetas() {
       { key: 'enabled', label: '是否启用', format: boolZh }
     ]
   });
+  registerEntityChangeLogMeta('adjustment-room-open', {
+    titlePrefix: '教室开放时间修改记录',
+    fields: [
+      { key: 'term', label: '学年学期', format: v => (typeof formatCourseTermDisplay === 'function' ? formatCourseTermDisplay(v) : v) || v },
+      { key: 'room', label: '教室' },
+      { key: 'venueType', label: '场地类型', format: v => getScheduleVenueTypeLabel(v) || v },
+      { key: 'dateFrom', label: '开始日期' },
+      { key: 'dateTo', label: '结束日期' },
+      { key: 'weeks', label: '周次' },
+      { key: 'weekdays', label: '星期', format: v => formatAdjustmentRoomOpenWeekdays(v) },
+      { key: 'periodFrom', label: '起始节次' },
+      { key: 'periodTo', label: '结束节次' },
+      { key: 'remark', label: '备注' }
+    ]
+  });
   registerEntityChangeLogMeta('adjustment-holiday', {
     titlePrefix: '公假日停课修改记录',
     fields: [
@@ -27853,6 +28158,15 @@ function seedScheduleChangeLogs() {
         { fieldKey: 'name', fieldLabel: '原因类型', before: '空', after: art.name },
         { fieldKey: 'enabled', fieldLabel: '是否启用', before: '空', after: art.enabled ? '是' : '否' }
       ], 10);
+    }
+    if (typeof ensureAdjustmentRoomOpenStore === 'function') ensureAdjustmentRoomOpenStore();
+    const aro = (ADJUSTMENT_ROOM_OPEN_STORE.profiles || [])[0];
+    if (aro) {
+      push('adjustment-room-open', aro.id, aro.room || aro.id, 'create', [
+        { fieldKey: 'room', fieldLabel: '教室', before: '空', after: aro.room },
+        { fieldKey: 'dateFrom', fieldLabel: '开始日期', before: '空', after: aro.dateFrom || '—' },
+        { fieldKey: 'dateTo', fieldLabel: '结束日期', before: '空', after: aro.dateTo || '—' }
+      ], 12);
     }
     const hol = (ADJUSTMENT_STORE.holidays || [])[0];
     if (hol) {
@@ -28576,10 +28890,10 @@ function normalizeScheduleBlackoutPeriods(row) {
   return out;
 }
 
-function formatScheduleBlackoutPeriods(row) {
+function formatScheduleBlackoutPeriods(row, term) {
   const ps = normalizeScheduleBlackoutPeriods(row);
   if (!ps.length) return '—';
-  return ps.map(p => `第${p}节`).join('、');
+  return formatSchedulePeriodMultiLabel(ps, term || row?.termCode);
 }
 
 function fillScheduleModalPeriodChecks(hostId, term, selectedSet) {
@@ -28587,7 +28901,7 @@ function fillScheduleModalPeriodChecks(hostId, term, selectedSet) {
   if (!host) return;
   const selected = selectedSet instanceof Set ? selectedSet : new Set(selectedSet || []);
   host.innerHTML = ensureSchedulePeriods(term).map(p =>
-    `<label class="schedule-multi-check"><input type="checkbox" value="${p.periodNo}"${selected.has(p.periodNo) ? ' checked' : ''}>第 ${p.periodNo} 节</label>`
+    `<label class="schedule-multi-check"><input type="checkbox" value="${p.periodNo}"${selected.has(p.periodNo) ? ' checked' : ''}>${escapeHtml(formatScheduleSettingPeriodLabel(p.periodNo, term) || `第 ${p.periodNo} 节`)}</label>`
   ).join('') || '<span class="text-muted">请先维护课表节次</span>';
 }
 
@@ -28875,15 +29189,11 @@ function validateScheduleTeacherSlotDraftEntries() {
   captureScheduleTeacherSlotDraft();
   for (const type of ['only', 'block']) {
     for (const entry of scheduleTeacherSlotDraft[type] || []) {
-      const hasWeekday = entry.weekdays.length > 0;
-      const hasPeriod = entry.periods.length > 0;
-      if (!hasWeekday && !hasPeriod) continue;
-      if (!hasWeekday || !hasPeriod) {
+      const hasWhen = (entry.weekdays || []).length > 0;
+      const hasPeriod = (entry.periods || []).length > 0;
+      if (!hasWhen && !hasPeriod) continue;
+      if (!hasWhen || !hasPeriod) {
         alert(`${getScheduleTeacherSlotTypeLabel(type)}中的每个时段都需同时选择星期与节次`);
-        return null;
-      }
-      if (entry.weekFrom > entry.weekTo) {
-        alert('起始周次不能大于截止周次');
         return null;
       }
     }
@@ -28891,7 +29201,7 @@ function validateScheduleTeacherSlotDraftEntries() {
   const onlySlots = normalizeScheduleTeacherSlotList(scheduleTeacherSlotDraft.only);
   const blockSlots = normalizeScheduleTeacherSlotList(scheduleTeacherSlotDraft.block);
   if (!onlySlots.length && !blockSlots.length) {
-    alert('请至少维护只排课或不排课时段中的任一类，并勾选星期与节次');
+    alert('请至少维护只排课或不排课时段中的任一类，并选择星期与节次');
     return null;
   }
   if (onlySlots.length && blockSlots.length) {
@@ -29100,10 +29410,7 @@ function fillScheduleTeacherSlotFilterOptions() {
   const maxWeek = getOfferingTermTeachingWeeks(term) || 20;
   if (weekSel) {
     const cur = weekSel.value;
-    weekSel.innerHTML = `<option value="">全部</option>` + Array.from({ length: maxWeek }, (_, i) => {
-      const n = i + 1;
-      return `<option value="${n}">第 ${n} 周</option>`;
-    }).join('');
+    weekSel.innerHTML = `<option value="">全部</option>` + getScheduleWeekNoOptions(Number(cur) || 0, maxWeek, term);
     weekSel.value = cur && Number(cur) >= 1 && Number(cur) <= maxWeek ? cur : '';
   }
   if (weekdaySel) {
@@ -29117,7 +29424,7 @@ function fillScheduleTeacherSlotFilterOptions() {
     const cur = periodSel.value;
     const periods = ensureSchedulePeriods(term);
     periodSel.innerHTML = `<option value="">全部</option>` + periods.map(p =>
-      `<option value="${p.periodNo}">第 ${p.periodNo} 节</option>`
+      `<option value="${p.periodNo}">${escapeHtml(formatScheduleSettingPeriodLabel(p.periodNo, term) || `第 ${p.periodNo} 节`)}</option>`
     ).join('');
     periodSel.value = periods.some(p => String(p.periodNo) === String(cur)) ? cur : '';
   }
@@ -29195,8 +29502,8 @@ function renderScheduleTeacherSlotTable() {
     <td>${escapeHtml(row.teacherName || '—')}</td>
     <td class="col-center">${escapeHtml(row.schoolCode || '—')}</td>
     <td class="col-center">${escapeHtml(row.staffType || '—')}</td>
-    <td>${renderScheduleTeacherSlotListCell(row.onlySlots)}</td>
-    <td>${renderScheduleTeacherSlotListCell(row.blockSlots)}</td>
+    <td>${renderScheduleTeacherSlotListCell(row.onlySlots, row.termCode)}</td>
+    <td>${renderScheduleTeacherSlotListCell(row.blockSlots, row.termCode)}</td>
     <td>${escapeHtml(row.remark || '—')}</td>
     ${scheduleOpsCell(
       `openScheduleTeacherSlotModal('${row.id}','${escapeHtml(row.termCode)}')`,
@@ -29314,10 +29621,7 @@ function fillScheduleRoomSlotFilterOptions() {
   const maxWeek = getOfferingTermTeachingWeeks(term) || 20;
   if (weekSel) {
     const cur = weekSel.value;
-    weekSel.innerHTML = '<option value="">全部</option>' + Array.from({ length: maxWeek }, (_, i) => {
-      const n = i + 1;
-      return `<option value="${n}">第 ${n} 周</option>`;
-    }).join('');
+    weekSel.innerHTML = '<option value="">全部</option>' + getScheduleWeekNoOptions(Number(cur) || 0, maxWeek, term);
     weekSel.value = cur && Number(cur) >= 1 && Number(cur) <= maxWeek ? cur : '';
   }
   if (weekdaySel) {
@@ -29331,7 +29635,7 @@ function fillScheduleRoomSlotFilterOptions() {
     const cur = periodSel.value;
     const periods = ensureSchedulePeriods(term);
     periodSel.innerHTML = '<option value="">全部</option>' + periods.map(p =>
-      `<option value="${p.periodNo}">第 ${p.periodNo} 节</option>`
+      `<option value="${p.periodNo}">${escapeHtml(formatScheduleSettingPeriodLabel(p.periodNo, term) || `第 ${p.periodNo} 节`)}</option>`
     ).join('');
     periodSel.value = periods.some(p => String(p.periodNo) === String(cur)) ? cur : '';
   }
@@ -29413,7 +29717,7 @@ function renderScheduleRoomSlotTable() {
     <td class="col-center">${escapeHtml(formatScheduleRoomFloorLabel(row.floor))}</td>
     <td class="col-center">${escapeHtml(row.roomType || '—')}</td>
     <td class="col-center">${escapeHtml(row.seats != null && row.seats !== '' ? String(row.seats) : '—')}</td>
-    <td>${renderScheduleTeacherSlotListCell(row.blockSlots)}</td>
+    <td>${renderScheduleTeacherSlotListCell(row.blockSlots, row.termCode)}</td>
     <td>${escapeHtml(row.remark || '—')}</td>
     ${scheduleOpsCell(
       `openScheduleRoomSlotModal('${row.id}','${escapeHtml(row.termCode)}')`,
@@ -29497,29 +29801,19 @@ function deleteSelectedScheduleRoomProfiles() {
 }
 
 function renderScheduleRoomSlotEntryCard(entry, idx, term) {
-  const weekdays = uniqueSortedNumbers(entry.weekdays);
-  const periods = uniqueSortedNumbers(entry.periods);
-  const weekdayChecks = SCHEDULE_WEEKDAYS.map(w =>
-    `<label class="schedule-multi-check"><input type="checkbox" data-entry="${entry.id}" data-role="weekday" value="${w.value}"${weekdays.includes(w.value) ? ' checked' : ''}>${w.label}</label>`
-  ).join('');
-  const periodChecks = ensureSchedulePeriods(term).map(p =>
-    `<label class="schedule-multi-check"><input type="checkbox" data-entry="${entry.id}" data-role="period" value="${p.periodNo}"${periods.includes(p.periodNo) ? ' checked' : ''}>第 ${p.periodNo} 节</label>`
-  ).join('');
   return `<div class="schedule-slot-entry" data-entry-id="${entry.id}">
     <div class="schedule-slot-entry-head">
       <span class="schedule-slot-entry-index">时段 ${idx + 1}</span>
       <button class="btn btn-ghost btn-sm" type="button" onclick="removeScheduleRoomSlotEntry('${entry.id}')">删除</button>
     </div>
     <div class="form-grid">
-      <div class="form-item"><label class="req">起始周次</label><select class="input" data-entry="${entry.id}" data-role="week-from">${getScheduleWeekNoOptions(entry.weekFrom || 1)}</select></div>
-      <div class="form-item"><label class="req">截止周次</label><select class="input" data-entry="${entry.id}" data-role="week-to">${getScheduleWeekNoOptions(entry.weekTo || 14)}</select></div>
-      <div class="form-item full"><label class="req">星期（可多选）</label><div class="schedule-multi-check-group">${weekdayChecks}</div></div>
-      <div class="form-item full"><label class="req">节次（可多选）</label><div class="schedule-multi-check-group">${periodChecks}</div></div>
+      ${renderScheduleTimeSlotEntryFields(entry, term)}
     </div>
   </div>`;
 }
 
 function renderScheduleRoomSlotEntries(term) {
+  closeScheduleSlotWeekCalendar();
   const listEl = document.getElementById('schedule-modal-rs-block-list');
   if (!listEl) return;
   if (!scheduleRoomSlotDraft.length) {
@@ -29529,6 +29823,7 @@ function renderScheduleRoomSlotEntries(term) {
   listEl.innerHTML = scheduleRoomSlotDraft.map((entry, idx) =>
     renderScheduleRoomSlotEntryCard(entry, idx, term)
   ).join('');
+  enhanceScheduleSlotEntrySelects(listEl);
 }
 
 function captureScheduleRoomSlotDraft() {
@@ -29539,9 +29834,7 @@ function captureScheduleRoomSlotDraft() {
     const id = entryEl.dataset.entryId;
     const weekFrom = parseInt(entryEl.querySelector('[data-role="week-from"]')?.value, 10) || 1;
     const weekTo = parseInt(entryEl.querySelector('[data-role="week-to"]')?.value, 10) || weekFrom;
-    const weekdays = uniqueSortedNumbers(
-      [...entryEl.querySelectorAll('[data-role="weekday"]:checked')].map(el => el.value)
-    );
+    const weekdays = readScheduleSlotEntryWeekdays(entryEl);
     const periods = uniqueSortedNumbers(
       [...entryEl.querySelectorAll('[data-role="period"]:checked')].map(el => el.value)
     );
@@ -29552,14 +29845,16 @@ function captureScheduleRoomSlotDraft() {
 
 function addScheduleRoomSlotEntry() {
   captureScheduleRoomSlotDraft();
+  const term = getScheduleRoomSlotModalTerm();
+  const maxWeek = getOfferingTermTeachingWeeks(term) || 14;
   scheduleRoomSlotDraft.push({
     id: nextRoomSlotEntryId(),
     weekFrom: 1,
-    weekTo: 14,
+    weekTo: maxWeek,
     weekdays: [],
     periods: []
   });
-  renderScheduleRoomSlotEntries(getScheduleRoomSlotModalTerm());
+  renderScheduleRoomSlotEntries(term);
 }
 
 function removeScheduleRoomSlotEntry(entryId) {
@@ -29569,31 +29864,27 @@ function removeScheduleRoomSlotEntry(entryId) {
 }
 
 function initScheduleRoomSlotDraft(profile, term) {
-  scheduleRoomSlotDraft = (profile?.blockSlots || []).map(s => {
-    const rule = normalizeScheduleTeacherSlotRule(s);
-    return { id: nextRoomSlotEntryId(), ...rule };
-  });
+  scheduleRoomSlotDraft = expandScheduleSlotDraftEntries(profile?.blockSlots).map(s => ({
+    id: nextRoomSlotEntryId(),
+    ...s
+  }));
   renderScheduleRoomSlotEntries(term);
 }
 
 function validateScheduleRoomSlotDraftEntries() {
   captureScheduleRoomSlotDraft();
   for (const entry of scheduleRoomSlotDraft) {
-    const hasWeekday = entry.weekdays.length > 0;
-    const hasPeriod = entry.periods.length > 0;
-    if (!hasWeekday && !hasPeriod) continue;
-    if (!hasWeekday || !hasPeriod) {
+    const hasWhen = (entry.weekdays || []).length > 0;
+    const hasPeriod = (entry.periods || []).length > 0;
+    if (!hasWhen && !hasPeriod) continue;
+    if (!hasWhen || !hasPeriod) {
       alert('每个不排课时段都需同时选择星期与节次');
-      return null;
-    }
-    if (entry.weekFrom > entry.weekTo) {
-      alert('起始周次不能大于截止周次');
       return null;
     }
   }
   const blockSlots = normalizeScheduleTeacherSlotList(scheduleRoomSlotDraft);
   if (!blockSlots.length) {
-    alert('请至少维护一条不排课时段，并勾选星期与节次');
+    alert('请至少维护一条不排课时段，并选择星期与节次');
     return null;
   }
   return blockSlots;
@@ -30362,7 +30653,7 @@ function bindScheduleBlackoutFields(cfg) {
 
 function getSchedulePeriodNoOptions(term, selected) {
   return ensureSchedulePeriods(term).map(p =>
-    `<option value="${p.periodNo}"${p.periodNo === selected ? ' selected' : ''}>第 ${p.periodNo} 节</option>`
+    `<option value="${p.periodNo}"${p.periodNo === selected ? ' selected' : ''}>${escapeHtml(formatScheduleSettingPeriodLabel(p.periodNo, term) || `第 ${p.periodNo} 节`)}</option>`
   ).join('');
 }
 
@@ -32192,7 +32483,7 @@ function syncScheduleRoomPickerModalLayout() {
   const modal = document.getElementById('modal-schedule-room-picker');
   if (!modal) return;
   modal.classList.toggle('is-lock-room', scheduleRoomPickerMode === 'lockRoom');
-  modal.classList.toggle('is-approve-room', scheduleRoomPickerMode === 'adjustmentApprove');
+  modal.classList.toggle('is-approve-room', isScheduleApproveRoomPicker());
   bindScheduleRoomModalFreezeShadow();
 }
 
@@ -32521,10 +32812,180 @@ const SCHEDULE_ROOM_FILTER_FIELDS = [
   { id: 'srf-software', key: 'software' }
 ];
 
+/** 调课审批选教室：可搜索多选筛选（仅 adjustmentApprove） */
+const SCHEDULE_APPROVE_ROOM_MS_FIELDS = [
+  { key: 'building', split: false },
+  { key: 'floor', split: false },
+  { key: 'equipment', split: true },
+  { key: 'software', split: true }
+];
+let scheduleApproveRoomMsSelected = { building: [], floor: [], equipment: [], software: [] };
+let scheduleApproveRoomMsKeyword = { building: '', floor: '', equipment: '', software: '', venueType: '', classroomType: '' };
+
 /** 选择教室抽屉 · 场地类型多选筛选（一级 value；空 = 全部） */
 let scheduleRoomTypeFilterSelected = [];
 /** 选择教室抽屉 · 教室类型多选筛选（二级细类文案；空 = 全部） */
 let scheduleRoomClassroomTypeFilterSelected = [];
+
+function isAdjustmentBatchTimeRoomPicker() {
+  return scheduleRoomPickerMode === 'batchTimeRow' || scheduleRoomPickerMode === 'batchTimeRows';
+}
+
+function isAdjustmentBatchRoomPicker() {
+  return scheduleRoomPickerMode === 'batch'
+    || scheduleRoomPickerMode === 'batchRoomRow'
+    || scheduleRoomPickerMode === 'batchRoomRows';
+}
+
+function isScheduleApproveRoomPicker() {
+  return scheduleRoomPickerMode === 'adjustmentApprove'
+    || isAdjustmentBatchTimeRoomPicker()
+    || isAdjustmentBatchRoomPicker();
+}
+
+function splitScheduleApproveRoomAttrTokens(raw) {
+  return String(raw == null ? '' : raw)
+    .split(/[、,，;/|]+/)
+    .map(s => s.trim())
+    .filter(s => s && s !== '—' && s !== '--' && s !== '-');
+}
+
+function getScheduleApproveRoomMsOptions(key) {
+  const field = SCHEDULE_APPROVE_ROOM_MS_FIELDS.find(f => f.key === key);
+  const pool = getScheduleRoomPickerMetaPool();
+  const vals = new Set();
+  pool.forEach(r => {
+    const raw = r?.[key];
+    if (field?.split) splitScheduleApproveRoomAttrTokens(raw).forEach(t => vals.add(t));
+    else if (raw !== undefined && raw !== null && String(raw).trim() !== '') vals.add(String(raw));
+  });
+  const list = [...vals];
+  if (key === 'floor') list.sort((a, b) => Number(a) - Number(b));
+  else list.sort((a, b) => String(a).localeCompare(String(b), 'zh'));
+  return list;
+}
+
+function scheduleApproveRoomFieldMatches(raw, selected, key) {
+  if (!selected?.length) return true;
+  const field = SCHEDULE_APPROVE_ROOM_MS_FIELDS.find(f => f.key === key);
+  if (field?.split) {
+    const tokens = splitScheduleApproveRoomAttrTokens(raw);
+    return selected.some(s => tokens.includes(String(s)));
+  }
+  return selected.some(s => String(raw) === String(s));
+}
+
+function renderScheduleApproveRoomMsOptions(key) {
+  const box = document.getElementById(`srf-${key}-ms-options`);
+  if (!box) return;
+  const selected = new Set((scheduleApproveRoomMsSelected[key] || []).map(String));
+  const kw = String(scheduleApproveRoomMsKeyword[key] || '').trim().toLowerCase();
+  const items = getScheduleApproveRoomMsOptions(key).filter(v => !kw || String(v).toLowerCase().includes(kw));
+  if (!items.length) {
+    box.innerHTML = '<div class="clo-multiselect-empty">无匹配项</div>';
+    return;
+  }
+  box.innerHTML = items.map(v => `
+    <label class="clo-multiselect-option" onclick="event.stopPropagation()">
+      <input type="checkbox" value="${escapeHtml(String(v))}" ${selected.has(String(v)) ? 'checked' : ''}
+        onchange="onScheduleApproveRoomMsCheck('${key}', this.value, this.checked)">
+      <span>${escapeHtml(String(v))}</span>
+    </label>`).join('');
+}
+
+function syncScheduleApproveRoomMsDisplay(key) {
+  const display = document.getElementById(`srf-${key}-ms-display`);
+  const selected = scheduleApproveRoomMsSelected[key] || [];
+  if (!display) return;
+  if (!selected.length) {
+    display.textContent = '全部';
+    display.classList.add('placeholder');
+    return;
+  }
+  display.classList.remove('placeholder');
+  display.innerHTML = selected.map(v =>
+    `<span class="srf-ms-chip">${escapeHtml(String(v))}<button type="button" class="srf-ms-chip-x" aria-label="移除" onclick="event.stopPropagation();removeScheduleApproveRoomMs('${key}','${escapeHtml(String(v))}')">×</button></span>`
+  ).join('');
+}
+
+function ensureScheduleApproveRoomMs(key) {
+  renderScheduleApproveRoomMsOptions(key);
+  syncScheduleApproveRoomMsDisplay(key);
+}
+
+function closeScheduleApproveRoomMsDropdowns(exceptKey) {
+  SCHEDULE_APPROVE_ROOM_MS_FIELDS.forEach(f => {
+    if (exceptKey && f.key === exceptKey) return;
+    const dd = document.getElementById(`srf-${f.key}-ms-dropdown`);
+    if (dd) dd.hidden = true;
+  });
+}
+
+function toggleScheduleApproveRoomMs(key, event) {
+  if (!isScheduleApproveRoomPicker()) return;
+  event?.stopPropagation?.();
+  const dd = document.getElementById(`srf-${key}-ms-dropdown`);
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeScheduleApproveRoomMsDropdowns(key);
+  closeScheduleRoomTypeFilterDropdown();
+  closeScheduleRoomClassroomTypeFilterDropdown();
+  if (!willOpen) return;
+  ensureScheduleApproveRoomMs(key);
+  dd.hidden = false;
+  const search = document.getElementById(`srf-${key}-ms-search`);
+  if (search) {
+    search.value = scheduleApproveRoomMsKeyword[key] || '';
+    setTimeout(() => search.focus(), 0);
+  }
+}
+
+function onScheduleApproveRoomMsSearch(key, value) {
+  scheduleApproveRoomMsKeyword[key] = String(value || '');
+  if (key === 'venueType') {
+    ensureScheduleRoomTypeFilterMultiselect();
+    return;
+  }
+  if (key === 'classroomType') {
+    ensureScheduleRoomClassroomTypeFilterMultiselect();
+    return;
+  }
+  renderScheduleApproveRoomMsOptions(key);
+}
+
+function onScheduleApproveRoomMsCheck(key, value, checked) {
+  const next = new Set((scheduleApproveRoomMsSelected[key] || []).map(String));
+  if (checked) next.add(String(value));
+  else next.delete(String(value));
+  scheduleApproveRoomMsSelected[key] = [...next];
+  syncScheduleApproveRoomMsDisplay(key);
+}
+
+function removeScheduleApproveRoomMs(key, value) {
+  scheduleApproveRoomMsSelected[key] = (scheduleApproveRoomMsSelected[key] || []).filter(v => String(v) !== String(value));
+  ensureScheduleApproveRoomMs(key);
+}
+
+function resetScheduleApproveRoomMs() {
+  scheduleApproveRoomMsSelected = { building: [], floor: [], equipment: [], software: [] };
+  scheduleApproveRoomMsKeyword = { building: '', floor: '', equipment: '', software: '', venueType: '', classroomType: '' };
+  ['srf-building-ms-search', 'srf-floor-ms-search', 'srf-equipment-ms-search', 'srf-software-ms-search', 'srf-type-ms-search', 'srf-classroom-type-ms-search']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  SCHEDULE_APPROVE_ROOM_MS_FIELDS.forEach(f => ensureScheduleApproveRoomMs(f.key));
+  closeScheduleApproveRoomMsDropdowns();
+}
+
+function removeScheduleRoomTypeFilterChip(value) {
+  scheduleRoomTypeFilterSelected = getScheduleRoomTypeFilterSelected().filter(t => String(t) !== String(value));
+  ensureScheduleRoomTypeFilterMultiselect();
+  pruneScheduleRoomClassroomTypeFilterSelection();
+}
+
+function removeScheduleRoomClassroomTypeFilterChip(value) {
+  scheduleRoomClassroomTypeFilterSelected = getScheduleRoomClassroomTypeFilterSelected()
+    .filter(t => String(t) !== String(value));
+  ensureScheduleRoomClassroomTypeFilterMultiselect();
+}
 
 /** 当前抽屉可用的教室库（锁定教室模式排除普通教室） */
 function getScheduleRoomPickerMetaPool() {
@@ -32547,7 +33008,20 @@ function ensureScheduleRoomTypeFilterMultiselect() {
   const options = document.getElementById('srf-type-options');
   if (!options) return;
   const selected = new Set(scheduleRoomTypeFilterSelected);
-  options.innerHTML = getScheduleRoomTypeFilterValues().map(type => {
+  const kw = isScheduleApproveRoomPicker()
+    ? String(scheduleApproveRoomMsKeyword.venueType || '').trim().toLowerCase()
+    : '';
+  const values = getScheduleRoomTypeFilterValues().filter(type => {
+    if (!kw) return true;
+    const label = String(getScheduleVenueTypeLabel(type) || type).toLowerCase();
+    return label.includes(kw) || String(type).toLowerCase().includes(kw);
+  });
+  if (!values.length) {
+    options.innerHTML = '<div class="clo-multiselect-empty">无匹配项</div>';
+    updateScheduleRoomTypeFilterDisplay();
+    return;
+  }
+  options.innerHTML = values.map(type => {
     const disabled = isScheduleRoomTypeFilterDisabled(type);
     const checked = !disabled && selected.has(String(type));
     return `<label class="clo-multiselect-option${disabled ? ' is-disabled' : ''}" onclick="event.stopPropagation()"${disabled ? ' title="锁定教室不可选普通教室"' : ''}>
@@ -32564,8 +33038,30 @@ function ensureScheduleRoomTypeFilterMultiselect() {
   updateScheduleRoomTypeFilterDisplay();
 }
 
+function renderScheduleApproveRoomMsChips(displayEl, items, removeFnName) {
+  if (!displayEl) return;
+  if (!items.length) {
+    displayEl.textContent = '全部';
+    displayEl.classList.add('placeholder');
+    return;
+  }
+  displayEl.classList.remove('placeholder');
+  displayEl.innerHTML = items.map(it =>
+    `<span class="srf-ms-chip">${escapeHtml(it.label)}<button type="button" class="srf-ms-chip-x" aria-label="移除" onclick="event.stopPropagation();${removeFnName}('${escapeHtml(String(it.value))}')">×</button></span>`
+  ).join('');
+}
+
 function getScheduleRoomTypeFilterSelected() {
   const all = [...document.querySelectorAll('#srf-type-options .srf-type-check:not(:disabled)')];
+  if (isScheduleApproveRoomPicker()) {
+    const visible = new Set(all.map(el => el.value));
+    const checked = new Set(all.filter(el => el.checked).map(el => el.value));
+    (scheduleRoomTypeFilterSelected || []).forEach(t => {
+      if (!visible.has(String(t))) checked.add(String(t));
+    });
+    return normalizeScheduleVenueTypes([...checked])
+      .filter(t => t !== SCHEDULE_VENUE_TYPE_NONE && !isScheduleRoomTypeFilterDisabled(t));
+  }
   if (all.length || document.querySelector('#srf-type-options .srf-type-check')) {
     return normalizeScheduleVenueTypes(all.filter(el => el.checked).map(el => el.value))
       .filter(t => t !== SCHEDULE_VENUE_TYPE_NONE && !isScheduleRoomTypeFilterDisabled(t));
@@ -32588,6 +33084,14 @@ function updateScheduleRoomTypeFilterDisplay() {
   const display = document.getElementById('srf-type-display');
   if (!display) return;
   const selected = getScheduleRoomTypeFilterSelected();
+  if (isScheduleApproveRoomPicker()) {
+    renderScheduleApproveRoomMsChips(
+      display,
+      selected.map(t => ({ value: t, label: getScheduleVenueTypeLabel(t) || t })),
+      'removeScheduleRoomTypeFilterChip'
+    );
+    return;
+  }
   if (selected.length) {
     display.textContent = formatScheduleVenueTypesLabel(selected);
     display.classList.remove('placeholder');
@@ -32625,7 +33129,18 @@ function ensureScheduleRoomClassroomTypeFilterMultiselect() {
   const options = document.getElementById('srf-classroom-type-options');
   if (!options) return;
   const selected = new Set(scheduleRoomClassroomTypeFilterSelected.map(t => String(t).toLowerCase()));
-  options.innerHTML = getScheduleRoomClassroomTypeFilterValues().map(type =>
+  const kw = isScheduleApproveRoomPicker()
+    ? String(scheduleApproveRoomMsKeyword.classroomType || '').trim().toLowerCase()
+    : '';
+  const values = getScheduleRoomClassroomTypeFilterValues().filter(type =>
+    !kw || String(type).toLowerCase().includes(kw)
+  );
+  if (!values.length) {
+    options.innerHTML = '<div class="clo-multiselect-empty">无匹配项</div>';
+    updateScheduleRoomClassroomTypeFilterDisplay();
+    return;
+  }
+  options.innerHTML = values.map(type =>
     `<label class="clo-multiselect-option" onclick="event.stopPropagation()">
       <input type="checkbox" class="srf-classroom-type-check" value="${escapeHtml(String(type))}" ${selected.has(String(type).toLowerCase()) ? 'checked' : ''} onchange="onScheduleRoomClassroomTypeFilterToggle()">
       <span>${escapeHtml(type)}</span>
@@ -32642,6 +33157,14 @@ function ensureScheduleRoomClassroomTypeFilterMultiselect() {
 
 function getScheduleRoomClassroomTypeFilterSelected() {
   const all = [...document.querySelectorAll('#srf-classroom-type-options .srf-classroom-type-check')];
+  if (isScheduleApproveRoomPicker()) {
+    const visible = new Set(all.map(el => el.value));
+    const checked = all.filter(el => el.checked).map(el => el.value).filter(Boolean);
+    (scheduleRoomClassroomTypeFilterSelected || []).forEach(t => {
+      if (!visible.has(String(t))) checked.push(String(t));
+    });
+    return [...new Set(checked)];
+  }
   if (all.length) {
     return all.filter(el => el.checked).map(el => el.value).filter(Boolean);
   }
@@ -32667,6 +33190,14 @@ function updateScheduleRoomClassroomTypeFilterDisplay() {
   const display = document.getElementById('srf-classroom-type-display');
   if (!display) return;
   const selected = getScheduleRoomClassroomTypeFilterSelected();
+  if (isScheduleApproveRoomPicker()) {
+    renderScheduleApproveRoomMsChips(
+      display,
+      selected.map(t => ({ value: t, label: t })),
+      'removeScheduleRoomClassroomTypeFilterChip'
+    );
+    return;
+  }
   if (selected.length) {
     display.textContent = selected.join('、');
     display.classList.remove('placeholder');
@@ -32688,9 +33219,14 @@ function toggleScheduleRoomClassroomTypeFilterDropdown(event) {
   const willOpen = dd.hidden;
   closeScheduleRoomTypeFilterDropdown();
   closeScheduleRoomClassroomTypeFilterDropdown();
+  closeScheduleApproveRoomMsDropdowns();
   if (willOpen) {
     ensureScheduleRoomClassroomTypeFilterMultiselect();
     dd.hidden = false;
+    if (isScheduleApproveRoomPicker()) {
+      const search = document.getElementById('srf-classroom-type-ms-search');
+      if (search) setTimeout(() => search.focus(), 0);
+    }
   }
 }
 
@@ -32769,9 +33305,14 @@ function toggleScheduleRoomTypeFilterDropdown(event) {
   const willOpen = dd.hidden;
   closeScheduleRoomTypeFilterDropdown();
   closeScheduleRoomClassroomTypeFilterDropdown();
+  closeScheduleApproveRoomMsDropdowns();
   if (willOpen) {
     ensureScheduleRoomTypeFilterMultiselect();
     dd.hidden = false;
+    if (isScheduleApproveRoomPicker()) {
+      const search = document.getElementById('srf-type-ms-search');
+      if (search) setTimeout(() => search.focus(), 0);
+    }
   }
 }
 
@@ -32792,6 +33333,9 @@ function buildScheduleRoomFilterOptions() {
   });
   ensureScheduleRoomTypeFilterMultiselect();
   ensureScheduleRoomClassroomTypeFilterMultiselect();
+  if (isScheduleApproveRoomPicker()) {
+    SCHEDULE_APPROVE_ROOM_MS_FIELDS.forEach(f => ensureScheduleApproveRoomMs(f.key));
+  }
 }
 
 function resetScheduleRoomFilterSelects() {
@@ -32807,10 +33351,11 @@ function resetScheduleRoomFilterSelects() {
   setScheduleRoomClassroomTypeFilterSelected([]);
   closeScheduleRoomTypeFilterDropdown();
   closeScheduleRoomClassroomTypeFilterDropdown();
+  resetScheduleApproveRoomMs();
 }
 
 function scheduleRoomMatchesApproveTextFilters(r) {
-  if (scheduleRoomPickerMode !== 'adjustmentApprove') return true;
+  if (!isScheduleApproveRoomPicker()) return true;
   const q = (document.getElementById('srf-room-text')?.value || '').trim().toLowerCase();
   if (q && !String(r.room || '').toLowerCase().includes(q)) return false;
   const minRaw = (document.getElementById('srf-seats-min')?.value || '').trim();
@@ -32824,12 +33369,15 @@ function scheduleRoomMatchesApproveTextFilters(r) {
     const max = Number(maxRaw);
     if (Number.isFinite(max) && !(Number.isFinite(seats) && seats <= max)) return false;
   }
-  return true;
+  return SCHEDULE_APPROVE_ROOM_MS_FIELDS.every(f =>
+    scheduleApproveRoomFieldMatches(r[f.key], scheduleApproveRoomMsSelected[f.key], f.key)
+  );
 }
 
 function queryScheduleRoomModal() {
   closeScheduleRoomTypeFilterDropdown();
   closeScheduleRoomClassroomTypeFilterDropdown();
+  closeScheduleApproveRoomMsDropdowns();
   renderScheduleRoomModalRows();
 }
 
@@ -32837,6 +33385,11 @@ function resetScheduleRoomModal() {
   resetScheduleRoomFilterSelects();
   if (scheduleRoomPickerMode === 'lockRoom') {
     setScheduleRoomTypeFilterSelected(getScheduleLockRoomDefaultTypeFilters());
+  } else if (isAdjustmentBatchRoomPicker()) {
+    const types = getAdjustmentBatchRoomOriginVenueTypes(getAdjustmentBatchRoomPickerOriginRoom());
+    if (types.length) setScheduleRoomTypeFilterSelected(types);
+  } else if (isScheduleApproveRoomPicker()) {
+    setScheduleRoomTypeFilterSelected(getAdjustmentApproveRoomDefaultVenueTypes());
   }
   renderScheduleRoomModalRows();
 }
@@ -32915,7 +33468,7 @@ function syncScheduleRoomModalTableHead() {
   const table = theadRow?.closest('table');
   if (!theadRow || !table) return;
   const isLock = scheduleRoomPickerMode === 'lockRoom';
-  const isApprove = scheduleRoomPickerMode === 'adjustmentApprove';
+  const isApprove = isScheduleApproveRoomPicker();
   const periodHeads = isApprove
     ? getAdjustmentApproveRoomPeriods().map(p => {
       const target = Number(adjustmentApproveRoomContext?.period) === Number(p.periodNo)
@@ -32930,12 +33483,13 @@ function syncScheduleRoomModalTableHead() {
     <th class="col-center">楼层</th>
     ${renderScheduleRoomSeatsSortTh('scheduleRoomPicker')}
     <th>场地类型</th>
-    ${isApprove ? periodHeads : `<th>教室类型</th>
+    ${isApprove ? `<th>教室设备</th>${periodHeads}<th class="srf-col-open-time">开放时间</th>` : `<th>教室类型</th>
     <th>教室设备</th>
     <th>教室软件</th>
     ${isLock ? '<th class="srf-col-lock-status">锁定状态</th><th class="srf-col-lock-owner">锁定对象</th>' : ''}`}`;
   table.classList.toggle('has-lock-cols', isLock);
   table.classList.toggle('has-occ-cols', isApprove);
+  table.classList.toggle('has-open-time-col', isApprove);
 }
 
 function getAdjustmentApproveRoomPeriods() {
@@ -32952,24 +33506,62 @@ function getAdjustmentApproveOccupancyTasks() {
 }
 
 function getAdjustmentApproveQueryWeekday() {
-  const sel = document.getElementById('srf-occ-weekday');
-  if (sel?.value) return Number(sel.value);
-  return Number(adjustmentApproveRoomContext?.queryWeekday || adjustmentApproveRoomContext?.weekday || 0);
+  return Number(adjustmentApproveRoomContext?.weekday || 0);
 }
 
 function getAdjustmentApproveQueryWeekFilter() {
-  const input = (document.getElementById('srf-occ-week')?.value || '').trim();
-  if (input) return input;
-  if (adjustmentApproveRoomContext?.queryWeek) return String(adjustmentApproveRoomContext.queryWeek);
-  const weeks = typeof parseWeeksString === 'function'
-    ? parseWeeksString(adjustmentApproveRoomContext?.weeks || '')
+  return String(adjustmentApproveRoomContext?.weeks || '').trim();
+}
+
+function getAdjustmentApproveRoomOpenTerm() {
+  const reqId = adjustmentApproveRoomContext?.reqId;
+  const r = reqId ? ADJUSTMENT_STORE.requests.find(x => x.id === reqId) : null;
+  return r?.term
+    || (typeof getActiveOfferingTermSetting === 'function' && getActiveOfferingTermSetting()?.termCode)
+    || (typeof getSelectedScheduleTimeSettingTerm === 'function' && getSelectedScheduleTimeSettingTerm())
+    || '';
+}
+
+/** 教室开放时间仅约束调课申请审批选教室，批量调课管理不限制 */
+function shouldEnforceAdjustmentRoomOpenLimit() {
+  return scheduleRoomPickerMode === 'adjustmentApprove';
+}
+
+/** 审批选教室：开放时间文案 + 调后时间是否可选（未维护不限制；批量调课不置灰） */
+function getAdjustmentApproveRoomOpenInfo(room) {
+  const term = getAdjustmentApproveRoomOpenTerm();
+  const profiles = typeof getAdjustmentRoomOpenProfiles === 'function'
+    ? getAdjustmentRoomOpenProfiles(term, room)
     : [];
-  return weeks[0] ? String(weeks[0]) : '';
+  const profile = profiles[0] || null;
+  if (!profile) {
+    return { maintained: false, selectable: true, label: '未维护（不限制）' };
+  }
+  const label = typeof formatAdjustmentRoomOpenSummary === 'function'
+    ? formatAdjustmentRoomOpenSummary(profile)
+    : '已维护';
+  const ctx = adjustmentApproveRoomContext || {};
+  if (!shouldEnforceAdjustmentRoomOpenLimit()
+    || !Number(ctx.weekday || 0)
+    || !Number(ctx.period || 0)) {
+    return { maintained: true, selectable: true, label };
+  }
+  const open = typeof isAdjustmentRoomOpenAt === 'function'
+    ? isAdjustmentRoomOpenAt(room, {
+      term,
+      date: ctx.date || '',
+      weeks: ctx.weeks || '',
+      weekday: Number(ctx.weekday || 0),
+      period: Number(ctx.period || 0)
+    })
+    : true;
+  return { maintained: true, selectable: open, label };
 }
 
 function getAdjustmentApproveRoomPeriodOccupancy(room, weekday, periodNo, weekFilter, tasks) {
   tasks = tasks || getAdjustmentApproveOccupancyTasks();
   const names = [];
+  const details = [];
   const seen = new Set();
   (tasks || []).forEach(task => {
     normalizeTaskTimeSlots(task).forEach(slot => {
@@ -32983,48 +33575,49 @@ function getAdjustmentApproveRoomPeriodOccupancy(room, weekday, periodNo, weekFi
       const label = `${code} ${task.name || ''}`.trim();
       if (!label || seen.has(label)) return;
       seen.add(label);
+      const group = task.groupLabel || '上课小组';
+      const count = typeof getAdjustmentGroupStudentCount === 'function' ? getAdjustmentGroupStudentCount(task) : 0;
+      const teacherId = typeof getScheduleTaskTeacherId === 'function' ? getScheduleTaskTeacherId(task) : '';
+      const teacher = (typeof getAdjustmentTeacherName === 'function' ? getAdjustmentTeacherName(teacherId) : '')
+        || task.teacherName || '';
+      const weekText = slot.weeks || task.weeks || weekFilter || '';
       names.push({ code, label });
+      details.push([
+        label,
+        group + (count > 0 ? `（${count}人）` : ''),
+        teacher,
+        weekText ? `周次 ${weekText}` : ''
+      ].filter(Boolean).join(' · '));
     });
   });
-  const weeksStr = weekFilter
-    ? `${weekFilter}-${weekFilter}`
-    : (adjustmentApproveRoomContext?.weeks || '');
-  const blocked = typeof isScheduleRoomPeriodBlockedByNonSchedule === 'function'
-    && isScheduleRoomPeriodBlockedByNonSchedule(room, weekday, periodNo, weeksStr);
+  const weeksStr = weekFilter || (adjustmentApproveRoomContext?.weeks || '');
+  const nsoHits = typeof findScheduleRoomNonScheduleOccupancyHits === 'function'
+    ? findScheduleRoomNonScheduleOccupancyHits(room, {
+      weekday: Number(weekday),
+      periodFrom: Number(periodNo),
+      periodTo: Number(periodNo),
+      weeks: weeksStr
+    })
+    : [];
+  nsoHits.forEach(hit => {
+    const kind = (SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL && SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL[hit.kind])
+      || '占用';
+    details.push(`${kind}：${hit.title || ''}`.trim());
+  });
   const slotBlocked = isScheduleRoomPeriodBlockedByRoomSlot(room, weekday, periodNo, weeksStr);
-  if (!names.length && !blocked && !slotBlocked) return { busy: false, text: '', title: '空闲', courseBusy: false };
-  if (!names.length && slotBlocked) return { busy: true, text: '不排课', title: '教室不排课', courseBusy: false };
-  const text = names[0]?.code || '占用';
-  const title = names.length ? names.map(n => n.label).join('、') : '时段占用';
-  return { busy: true, text, title, courseBusy: names.length > 0 };
+  if (slotBlocked) details.push('教室不排课');
+  if (!details.length) return { busy: false, text: '', title: '空闲', courseBusy: false };
+  const text = names[0]?.code || (slotBlocked ? '不排课' : (nsoHits[0] ? '占用' : '占用'));
+  return { busy: true, text, title: details.join('\n'), courseBusy: names.length > 0 };
 }
 
 function syncScheduleRoomPickerOccBar() {
   const bar = document.getElementById('schedule-room-picker-occ-bar');
-  if (!bar) return;
-  const show = scheduleRoomPickerMode === 'adjustmentApprove';
-  bar.hidden = !show;
-  if (!show) return;
-  const sel = document.getElementById('srf-occ-weekday');
-  if (sel) {
-    sel.innerHTML = SCHEDULE_WEEKDAYS.map(w =>
-      `<option value="${w.value}">${escapeHtml(w.label)}</option>`
-    ).join('');
-    sel.value = String(adjustmentApproveRoomContext?.queryWeekday || adjustmentApproveRoomContext?.weekday || 1);
-  }
-  const weekEl = document.getElementById('srf-occ-week');
-  if (weekEl) {
-    const weeks = typeof parseWeeksString === 'function'
-      ? parseWeeksString(adjustmentApproveRoomContext?.weeks || '')
-      : [];
-    weekEl.value = adjustmentApproveRoomContext?.queryWeek || (weeks[0] ? String(weeks[0]) : '');
-  }
+  if (bar) bar.hidden = true;
 }
 
 function queryAdjustmentApproveRoomOccupancy() {
-  if (!adjustmentApproveRoomContext) return;
-  adjustmentApproveRoomContext.queryWeekday = getAdjustmentApproveQueryWeekday();
-  adjustmentApproveRoomContext.queryWeek = (document.getElementById('srf-occ-week')?.value || '').trim();
+  if (!isScheduleApproveRoomPicker()) return;
   renderScheduleRoomModalRows();
 }
 
@@ -33062,10 +33655,10 @@ function renderScheduleRoomModalRows() {
   syncScheduleRoomModalTableHead();
   syncScheduleRoomPickerHint();
   bindScheduleRoomModalFreezeShadow();
-  const isApprove = scheduleRoomPickerMode === 'adjustmentApprove';
+  const isApprove = isScheduleApproveRoomPicker();
   const filters = {};
   SCHEDULE_ROOM_FILTER_FIELDS.forEach(f => {
-    if (isApprove && (f.key === 'room' || f.key === 'seats')) return;
+    if (isApprove && (f.key === 'room' || f.key === 'seats' || f.key === 'building' || f.key === 'floor' || f.key === 'equipment' || f.key === 'software')) return;
     filters[f.key] = document.getElementById(f.id)?.value || '';
   });
   const typeFilters = getScheduleRoomTypeFilterSelected();
@@ -33096,8 +33689,13 @@ function renderScheduleRoomModalRows() {
   const occWeekday = isApprove ? getAdjustmentApproveQueryWeekday() : 0;
   const occWeek = isApprove ? getAdjustmentApproveQueryWeekFilter() : '';
   const occTasks = isApprove ? getAdjustmentApproveOccupancyTasks() : [];
-  const colSpan = isApprove ? (6 + periods.length) : (isLock ? 11 : 9);
+  const colSpan = isApprove ? (8 + periods.length) : (isLock ? 11 : 9);
+  if (shouldEnforceAdjustmentRoomOpenLimit() && scheduleRoomPickerSelected
+    && !getAdjustmentApproveRoomOpenInfo(scheduleRoomPickerSelected).selectable) {
+    scheduleRoomPickerSelected = '';
+  }
   if (!rooms.length) {
+    hideAdjustmentApproveRoomOccToast();
     body.innerHTML = `<tr><td colspan="${colSpan}" class="empty-cell">未找到匹配的教室</td></tr>`;
     return;
   }
@@ -33110,9 +33708,12 @@ function renderScheduleRoomModalRows() {
     const tagHtml = tags.labels.length
       ? ` <span class="${tags.hard ? 'srf-tag-hard' : 'srf-tag-soft'}">(${escapeHtml(tags.labels.join('·'))})</span>`
       : '';
+    const openInfo = isApprove ? getAdjustmentApproveRoomOpenInfo(r.room) : null;
+    const closed = !!(openInfo && !openInfo.selectable);
     const trCls = [
       picked ? 'is-current-room' : '',
-      tags.hard ? 'is-room-hard' : ''
+      tags.hard ? 'is-room-hard' : '',
+      closed ? 'is-room-closed' : ''
     ].filter(Boolean).join(' ');
     const venueLabel = formatScheduleRoomListVenueLabel(r, typeFilters);
     const classroomLabel = formatScheduleRoomListClassroomTypeLabel(r);
@@ -33122,7 +33723,7 @@ function renderScheduleRoomModalRows() {
          <td class="srf-col-lock-owner" title="${escapeHtml(lockInfo.ownerLabel)}">${escapeHtml(lockInfo.ownerLabel)}</td>`
       : '';
     const occCols = isApprove
-      ? periods.map(p => {
+      ? `<td>${escapeHtml(r.equipment || '—')}</td>` + periods.map(p => {
         const occ = getAdjustmentApproveRoomPeriodOccupancy(r.room, occWeekday, p.periodNo, occWeek, occTasks);
         const isTarget = Number(adjustmentApproveRoomContext?.period) === Number(p.periodNo)
           && Number(occWeekday) === Number(adjustmentApproveRoomContext?.weekday);
@@ -33131,14 +33732,15 @@ function renderScheduleRoomModalRows() {
           occ.busy ? 'is-busy' : 'is-free',
           isTarget ? 'is-target' : ''
         ].filter(Boolean).join(' ');
-        return `<td class="${cls}" title="${escapeHtml(occ.title)}">${escapeHtml(occ.busy ? (occ.text || '占用') : '')}</td>`;
-      }).join('')
+        const tipAttr = occ.busy ? ` data-occ-tip="${escapeHtml(occ.title)}"` : '';
+        return `<td class="${cls}"${tipAttr}>${escapeHtml(occ.busy ? (occ.text || '占用') : '')}</td>`;
+      }).join('') + `<td class="srf-col-open-time${closed ? ' is-closed' : ''}" title="${escapeHtml(closed ? '当前调后时间不在教室开放时间内，无法选择' : openInfo.label)}">${escapeHtml(openInfo.label)}</td>`
       : `<td>${escapeHtml(classroomLabel)}</td>
       <td>${escapeHtml(r.equipment || '—')}</td>
       <td>${escapeHtml(r.software || '—')}</td>
       ${lockCols}`;
-    return `<tr class="${trCls}" onclick="onScheduleRoomModalPick('${escapeHtml(r.room)}')">
-      <td class="col-center srf-col-pick"><input type="radio" name="schedule-room-pick" value="${escapeHtml(r.room)}" ${picked ? 'checked' : ''} onclick="event.stopPropagation();onScheduleRoomModalPick('${escapeHtml(r.room)}')"></td>
+    return `<tr class="${trCls}" ${closed ? `title="${escapeHtml('当前调后时间不在教室开放时间内，无法选择')}"` : ''} onclick="onScheduleRoomModalPick('${escapeHtml(r.room)}')">
+      <td class="col-center srf-col-pick"><input type="radio" name="schedule-room-pick" value="${escapeHtml(r.room)}" ${picked ? 'checked' : ''} ${closed ? 'disabled' : ''} onclick="event.stopPropagation();onScheduleRoomModalPick('${escapeHtml(r.room)}')"></td>
       <td class="srf-col-room">${escapeHtml(r.room)}${active ? ' <span class="tag tag-sm tag-blue">当前</span>' : ''}${tagHtml}</td>
       <td>${escapeHtml(r.building)}</td>
       <td class="col-center">${escapeHtml(String(r.floor))}</td>
@@ -33147,9 +33749,57 @@ function renderScheduleRoomModalRows() {
       ${occCols}
     </tr>`;
   }).join('');
+  bindAdjustmentApproveRoomOccToasts(body);
+}
+
+function hideAdjustmentApproveRoomOccToast() {
+  const el = document.getElementById('schedule-approve-room-occ-toast');
+  if (el) el.hidden = true;
+}
+
+function showAdjustmentApproveRoomOccToast(message, evt) {
+  const el = document.getElementById('schedule-approve-room-occ-toast');
+  if (!el || !message) return;
+  if (el.parentElement !== document.body) document.body.appendChild(el);
+  el.textContent = message;
+  el.hidden = false;
+  const x = Number(evt?.clientX);
+  const y = Number(evt?.clientY);
+  el.style.left = '0px';
+  el.style.top = '0px';
+  const tip = el.getBoundingClientRect();
+  const gap = 12;
+  const margin = 8;
+  let left = Number.isFinite(x) ? x + gap : margin;
+  let top = Number.isFinite(y) ? y - 8 : margin;
+  if (left + tip.width > window.innerWidth - margin) {
+    left = (Number.isFinite(x) ? x : margin) - tip.width - gap;
+  }
+  if (left < margin) left = margin;
+  if (top + tip.height > window.innerHeight - margin) {
+    top = window.innerHeight - tip.height - margin;
+  }
+  if (top < margin) top = margin;
+  el.style.left = `${left}px`;
+  el.style.top = `${top}px`;
+}
+
+function bindAdjustmentApproveRoomOccToasts(root) {
+  hideAdjustmentApproveRoomOccToast();
+  if (!isScheduleApproveRoomPicker() || !root) return;
+  root.querySelectorAll('.srf-occ-cell.is-busy[data-occ-tip]').forEach(cell => {
+    const show = e => showAdjustmentApproveRoomOccToast(cell.dataset.occTip || '', e);
+    cell.addEventListener('mouseenter', show);
+    cell.addEventListener('mousemove', show);
+    cell.addEventListener('mouseleave', hideAdjustmentApproveRoomOccToast);
+  });
 }
 
 function onScheduleRoomModalPick(room) {
+  if (shouldEnforceAdjustmentRoomOpenLimit()
+    && !getAdjustmentApproveRoomOpenInfo(room).selectable) {
+    return;
+  }
   // 锁定教室：再次点击已选项可取消选中（便于清除）
   if (scheduleRoomPickerMode === 'lockRoom' && scheduleRoomPickerSelected === room) {
     scheduleRoomPickerSelected = '';
@@ -33173,6 +33823,10 @@ function confirmScheduleRoomSelection() {
       return;
     }
     const room = String(scheduleRoomPickerSelected || '').trim();
+    if (!getAdjustmentApproveRoomOpenInfo(room).selectable) {
+      alert('该教室当前调后时间不在开放时间内，无法选择');
+      return;
+    }
     const ctx = adjustmentApproveRoomContext;
     if (ctx && ctx.weekday && ctx.period) {
       const probe = {
@@ -33200,21 +33854,46 @@ function confirmScheduleRoomSelection() {
     applyAdjustmentApproveRoomValue(scheduleRoomPickerSelected, false);
     return;
   }
-  if (scheduleRoomPickerMode === 'batch') {
-    const roomState = ADJUSTMENT_BATCH_STATE.room;
-    if (scheduleRoomPickerBatchField === 'source') {
-      roomState.sourceRoom = scheduleRoomPickerSelected || '';
-      syncAdjustmentBatchSourceRoomButton();
-    } else {
-      roomState.targetRoom = scheduleRoomPickerSelected || '';
-      syncAdjustmentBatchRoomButton();
+  if (isAdjustmentBatchTimeRoomPicker()) {
+    if (!String(scheduleRoomPickerSelected || '').trim()) {
+      alert('请选择教室');
+      return;
     }
-    roomState.preview = [];
-    roomState.generatedKey = '';
-    setAdjustmentBatchRoomTip('');
-    scheduleRoomPickerMode = 'schedule';
-    closeModal('modal-schedule-room-picker');
-    renderAdjustmentBatchPreview('room');
+    const room = String(scheduleRoomPickerSelected || '').trim();
+    if (scheduleRoomPickerMode === 'batchTimeRows') {
+      applyAdjustmentBatchTimeRowsRoom(room);
+    } else {
+      applyAdjustmentBatchTimeRowRoom(room);
+    }
+    closeAdjustmentBatchTimeRoomPicker();
+    return;
+  }
+  if (isAdjustmentBatchRoomPicker()) {
+    if (!String(scheduleRoomPickerSelected || '').trim()) {
+      alert('请选择教室');
+      return;
+    }
+    const room = String(scheduleRoomPickerSelected || '').trim();
+    if (scheduleRoomPickerMode === 'batchRoomRow') {
+      applyAdjustmentBatchRoomRowRoom(room);
+    } else if (scheduleRoomPickerMode === 'batchRoomRows') {
+      applyAdjustmentBatchRoomRowsRoom(room);
+    } else {
+      const roomState = ADJUSTMENT_BATCH_STATE.room;
+      if (scheduleRoomPickerBatchField === 'source') {
+        roomState.sourceRoom = room;
+        syncAdjustmentBatchSourceRoomButton();
+      } else {
+        roomState.targetRoom = room;
+        syncAdjustmentBatchRoomButton();
+      }
+      roomState.preview = [];
+      roomState.generatedKey = '';
+      roomState.selectedIdx = new Set();
+      setAdjustmentBatchRoomTip('');
+      renderAdjustmentBatchPreview('room');
+    }
+    closeAdjustmentBatchRoomPicker();
     return;
   }
   if (scheduleRoomPickerMode === 'lockRoom') {
@@ -34293,7 +34972,34 @@ function syncScheduleRoomPickerHint() {
     hint.innerHTML = '';
     return;
   }
-  if (scheduleRoomPickerMode === 'adjustmentApprove') {
+  if (isAdjustmentBatchRoomPicker()) {
+    const src = getAdjustmentBatchRoomPickerOriginRoom();
+    const ctx = adjustmentApproveRoomContext;
+    const parts = [];
+    if (src) {
+      const seats = typeof getScheduleRoomAvailableSeats === 'function'
+        ? getScheduleRoomAvailableSeats(src)
+        : 0;
+      parts.push(`<p class="srph-row"><span class="srph-k">原教室：</span>${escapeHtml(src)}</p>`);
+      parts.push(`<p class="srph-row"><span class="srph-k">原教室座位数：</span>${seats > 0 ? seats : '—'}</p>`);
+    }
+    if (ctx?.weekday && ctx?.period) {
+      const wd = getScheduleWeekdayLabel(ctx.weekday);
+      const time = typeof getAdjustmentPeriodTimeRange === 'function'
+        ? getAdjustmentPeriodTimeRange(ctx.period, ctx.period) : '';
+      const periodLabel = time ? `第${ctx.period}节（${time}）` : `第${ctx.period}节`;
+      parts.unshift(`<p class="srph-row"><span class="srph-k">目标时间：</span>${escapeHtml([ctx.date, wd, periodLabel, ctx.weeks].filter(Boolean).join(' · '))}</p>`);
+    }
+    if (!parts.length) {
+      hint.hidden = true;
+      hint.innerHTML = '';
+      return;
+    }
+    hint.hidden = false;
+    hint.innerHTML = parts.join('');
+    return;
+  }
+  if (isScheduleApproveRoomPicker()) {
     const ctx = adjustmentApproveRoomContext;
     if (!ctx || !ctx.weekday || !ctx.period) {
       hint.hidden = true;
@@ -34306,7 +35012,12 @@ function syncScheduleRoomPickerHint() {
     const periodLabel = time ? `第${ctx.period}节（${time}）` : `第${ctx.period}节`;
     hint.hidden = false;
     const prefer = String(ctx.roomPrefer || '').trim();
+    const group = String(ctx.group || '').trim() || '上课小组';
+    const count = Number(ctx.studentCount);
+    const countText = Number.isFinite(count) && count > 0 ? `${count}人` : '—';
     hint.innerHTML = `<p class="srph-row"><span class="srph-k">目标时间：</span>${escapeHtml([ctx.date, wd, periodLabel, ctx.weeks].filter(Boolean).join(' · '))}</p>
+      <p class="srph-row"><span class="srph-k">上课小组：</span>${escapeHtml(group)}</p>
+      <p class="srph-row"><span class="srph-k">人数：</span>${escapeHtml(countText)}</p>
       <p class="srph-row"><span class="srph-k">教室偏好：</span>${escapeHtml(prefer || '未填写')}</p>`;
     return;
   }
@@ -35355,7 +36066,7 @@ function detectSchedulePrereqConflicts(activeTask, weekday, periodNo, weeksStr) 
  */
 function detectSchedulePlaceConflicts(tasks, activeTask, weekday, periodNo, weeks, room, opts = {}) {
   const result = {
-    teacher: [], student: [], room: [],
+    teacher: [], teacherShared: [], student: [], room: [],
     blackout: [], elective: [], teacherSlot: [], lunch: [], rule: [],
     retake: [], prereq: [],
     hasConflict: false, hasHardConflict: false, hasSoftConflict: false, canContinue: false
@@ -35394,18 +36105,13 @@ function detectSchedulePlaceConflicts(tasks, activeTask, weekday, periodNo, week
       const other = `${formatScheduleCourseCode(t.code)} ${t.name || ''}（${formatScheduleGroupNames(t)} · ${s.weeks || t.weeks || '全部周'}）`;
       // 排教室待排演示课不参与排时间侧学生冲突着色（学生冲突仅保留 CDF201 单节次锚点）
       if (scheduleDetailPhase === 'time' && t.roomPendingDemo) {
-        if (scheduleTasksShareTeacher(activeTask, t) && !scheduleTasksShareTeachingCode(activeTask, t)) {
-          pushUniq(result.teacher, `${at} 与 ${other} 教师冲突`);
-        }
+        pushSchedulePlaceTeacherConflict(result, activeTask, t, `${at} 与 ${other} 教师冲突`, pushUniq);
         return;
       }
       if (t.programmeKey === activeTask.programmeKey && t.intake === activeTask.intake) {
         pushUniq(result.student, `${at} 与 ${other} 学生冲突`);
       }
-      // 共同授课码一致：同一合排单元，自动忽略教师冲突
-      if (scheduleTasksShareTeacher(activeTask, t) && !scheduleTasksShareTeachingCode(activeTask, t)) {
-        pushUniq(result.teacher, `${at} 与 ${other} 教师冲突`);
-      }
+      pushSchedulePlaceTeacherConflict(result, activeTask, t, `${at} 与 ${other} 教师冲突`, pushUniq);
       // 教室冲突仅在排教室侧处理；排时间侧不检测
       if (scheduleDetailPhase !== 'time') {
         const otherRoom = s.room || t.location || '';
@@ -35444,13 +36150,13 @@ function detectSchedulePlaceConflicts(tasks, activeTask, weekday, periodNo, week
   return recomputeSchedulePlaceConflictFlags(result);
 }
 
-/** 是否存在师生/教室等不可强制的硬冲突（学时超排单独处理，可强制继续） */
+/** 是否存在师生/教室等不可强制的硬冲突（学时超排单独处理，可强制继续；共同授课教师冲突不算硬冲突） */
 function hasScheduleNonHoursHardConflicts(conflicts) {
   return !!(conflicts?.teacher?.length || conflicts?.student?.length
     || conflicts?.room?.length || conflicts?.roomTime?.length);
 }
 
-/** 是否允许在冲突提醒中强制继续排课（学时超排/排课规则/午休/不排课/教师时段/先修/预重修可；师生教室硬冲突不可） */
+/** 是否允许在冲突提醒中强制继续排课（学时超排/排课规则/午休/不排课/教师时段/先修/预重修/共同授课教师冲突可；师生教室硬冲突不可） */
 function canForceSchedulePlaceDespiteConflicts(conflicts) {
   if (!conflicts) return false;
   if (hasScheduleNonHoursHardConflicts(conflicts)) return false;
@@ -35460,6 +36166,8 @@ function canForceSchedulePlaceDespiteConflicts(conflicts) {
   if (conflicts.prereq?.length || conflicts.retake?.length) return true;
   // 排教室软冲突：座位数 / 场地类型可继续
   if (conflicts.roomSeats?.length || conflicts.roomType?.length) return true;
+  // 排时间侧：互为共同授课的教师冲突可继续
+  if (conflicts.teacherShared?.length) return true;
   // 纯选修预占位：展示「继续排课」入口，但点击时会拦截
   return !!conflicts.elective?.length;
 }
@@ -35513,7 +36221,7 @@ function getScheduleConflictPaintWeeks() {
 
 function emptySchedulePlaceConflicts() {
   return {
-    teacher: [], student: [], room: [], roomTime: [], roomSeats: [], roomType: [],
+    teacher: [], teacherShared: [], student: [], room: [], roomTime: [], roomSeats: [], roomType: [],
     blackout: [], elective: [], teacherSlot: [], lunch: [], rule: [], hours: [],
     retake: [], prereq: [],
     hasConflict: false, hasHardConflict: false, hasSoftConflict: false, canContinue: false, primary: ''
@@ -35522,7 +36230,7 @@ function emptySchedulePlaceConflicts() {
 
 function mergeSchedulePlaceConflicts(into, from) {
   const pushUniq = (arr, msg) => { if (msg && !arr.includes(msg)) arr.push(msg); };
-  ['teacher', 'student', 'room', 'roomTime', 'roomSeats', 'roomType', 'blackout', 'elective', 'teacherSlot', 'lunch', 'rule', 'hours', 'retake', 'prereq']
+  ['teacher', 'teacherShared', 'student', 'room', 'roomTime', 'roomSeats', 'roomType', 'blackout', 'elective', 'teacherSlot', 'lunch', 'rule', 'hours', 'retake', 'prereq']
     .forEach(k => {
       if (!into[k]) into[k] = [];
       (from?.[k] || []).forEach(msg => pushUniq(into[k], msg));
@@ -35658,8 +36366,10 @@ function openSchedulePlaceConflictModal(conflicts, pendingPlace) {
     const summary = primaryLabel
       ? `<div class="sch-conflict-summary is-${escapeHtml(conflicts.primary || '')}">冲突类型：${escapeHtml(primaryLabel)}</div>`
       : '';
+    const teacherLines = [...(conflicts.teacher || []), ...(conflicts.teacherShared || [])];
+    const hasSharedTeachingTeacher = !!(conflicts?.teacherShared?.length);
     const roomOnly = !!(conflicts?.roomTime?.length || conflicts?.roomSeats?.length || conflicts?.roomType?.length)
-      && !(conflicts?.teacher?.length || conflicts?.student?.length || conflicts?.blackout?.length
+      && !(conflicts?.teacher?.length || conflicts?.teacherShared?.length || conflicts?.student?.length || conflicts?.blackout?.length
         || conflicts?.elective?.length || conflicts?.teacherSlot?.length || conflicts?.rule?.length
         || conflicts?.retake?.length || conflicts?.prereq?.length || conflicts?.hours?.length);
     const html = summary +
@@ -35670,7 +36380,7 @@ function openSchedulePlaceConflictModal(conflicts, pendingPlace) {
           line('场地类型不一致', conflicts.roomType || [], 'is-room-type')
         )
         : (
-          line('教师冲突', conflicts.teacher || [], 'is-teacher') +
+          line('教师冲突', teacherLines, 'is-teacher') +
           line('学生冲突', conflicts.student || [], 'is-student') +
           line('教室冲突', conflicts.room || conflicts.roomTime || [], 'is-room') +
           line('座位数冲突', conflicts.roomSeats || [], 'is-room-seats') +
@@ -35685,6 +36395,9 @@ function openSchedulePlaceConflictModal(conflicts, pendingPlace) {
           line('先修冲突', conflicts.prereq || [], 'is-prereq')
         ));
     body.innerHTML = html || '<p class="text-muted">存在冲突</p>';
+    if (hasSharedTeachingTeacher) {
+      body.innerHTML += '<p class="form-hint" style="margin-top:10px">教师冲突，课程为共同授课</p>';
+    }
     if (canContinue) {
       let tip;
       if (hasHoursTip) {
@@ -35693,6 +36406,8 @@ function openSchedulePlaceConflictModal(conflicts, pendingPlace) {
         tip = '含午休/排课规则提示时，可选择「继续排课」强制落点，或「关闭」取消。';
       } else if (conflicts?.elective?.length) {
         tip = '该时段命中选修课预占位，用于保障学生最低选修课学时；点击「继续排课」将无法落点，请选择「关闭」。';
+      } else if (hasSharedTeachingTeacher && !conflicts?.teacher?.length) {
+        tip = '课程互为共同授课，可选择「继续排课」强制落点，或「关闭」取消。';
       } else if (conflicts?.retake?.length && !conflicts?.prereq?.length) {
         tip = '含预重修冲突提示时，可选择「继续排课」强制落点，或「关闭」取消。';
       } else if (conflicts?.prereq?.length || conflicts?.retake?.length) {
@@ -37150,6 +37865,7 @@ function recomputeSchedulePlaceConflictFlags(result) {
   if (!result.rule) result.rule = [];
   if (!result.retake) result.retake = [];
   if (!result.prereq) result.prereq = [];
+  if (!result.teacherShared) result.teacherShared = [];
   // 排时间侧不检测/不展示教室冲突（教室冲突留给排教室侧）
   if (scheduleDetailPhase === 'time') {
     result.room = [];
@@ -37158,12 +37874,15 @@ function recomputeSchedulePlaceConflictFlags(result) {
     result.roomType = [];
   }
   result.hasHardConflict = !!(result.teacher?.length || result.student?.length || result.room?.length || result.hours?.length);
-  result.hasSoftConflict = !!(result.blackout?.length || result.elective?.length || result.teacherSlot?.length || result.lunch?.length || result.rule?.length || result.retake?.length || result.prereq?.length);
+  result.hasSoftConflict = !!(result.blackout?.length || result.elective?.length || result.teacherSlot?.length || result.lunch?.length || result.rule?.length || result.retake?.length || result.prereq?.length || result.teacherShared?.length);
   result.hasConflict = result.hasHardConflict || result.hasSoftConflict;
-  result.hasForceableSoft = !!(result.blackout?.length || result.teacherSlot?.length || result.lunch?.length || result.rule?.length || result.retake?.length || result.prereq?.length);
+  result.hasForceableSoft = !!(result.blackout?.length || result.teacherSlot?.length || result.lunch?.length || result.rule?.length || result.retake?.length || result.prereq?.length || result.teacherShared?.length);
   result.canContinue = result.hasSoftConflict && !result.hasHardConflict;
   // 冲突主类型：按检测顺序取最后一个（弹窗标题/摘要）；课表格着色另用 getScheduleConflictPaintPrimary
   const allKinds = collectSchedulePlaceGridConflictKinds(result);
+  if (result.teacherShared?.length && !allKinds.includes('teacher') && !result.teacher?.length) {
+    allKinds.unshift('teacher');
+  }
   if (result.hours?.length) allKinds.push('hours');
   if (allKinds.length) result.primary = allKinds[allKinds.length - 1];
   else if (result.lunch?.length) result.primary = 'soft';
@@ -37505,11 +38224,18 @@ function scheduleTasksShareTeacher(taskA, taskB) {
   return false;
 }
 
-/** 任务共同授课码（优先开课节次上的 sharedTeachingCode） */
+/** 任务共同授课课号（取值开课任务授课码 teachingCode；兼容共同授课码） */
 function getScheduleTaskSharedTeachingCode(task) {
   if (!task) return '';
   const sec = typeof getScheduleOfferingSection === 'function' ? getScheduleOfferingSection(task) : null;
-  return String(sec?.sharedTeachingCode || task.sharedTeachingCode || '').trim();
+  return String(
+    sec?.teachingCode
+    || task.teachingCode
+    || sec?.sharedTeachingCode
+    || task.sharedTeachingCode
+    || sec?.teachingClassNo
+    || ''
+  ).trim();
 }
 
 /** 两门课是否同属一个共同授课组（码非空且相同） */
@@ -37517,6 +38243,83 @@ function scheduleTasksShareTeachingCode(taskA, taskB) {
   const a = getScheduleTaskSharedTeachingCode(taskA);
   const b = getScheduleTaskSharedTeachingCode(taskB);
   return !!(a && b && a === b);
+}
+
+function normalizeScheduleCourseNo(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+/** 任务上维护的共同授课码（不含普通授课码） */
+function getScheduleTaskSharedTeachingRawCode(task) {
+  if (!task) return '';
+  const sec = typeof getScheduleOfferingSection === 'function' ? getScheduleOfferingSection(task) : null;
+  return String(sec?.sharedTeachingCode || task.sharedTeachingCode || '').trim();
+}
+
+/**
+ * 两门课是否互为共同授课：
+ * 1）共同授课码非空且相同；
+ * 2）或各自的共同授课课号指向对方课程号。
+ */
+function scheduleTasksAreSharedTeachingPair(taskA, taskB) {
+  if (!taskA || !taskB || taskA.id === taskB.id) return false;
+  const rawA = getScheduleTaskSharedTeachingRawCode(taskA);
+  const rawB = getScheduleTaskSharedTeachingRawCode(taskB);
+  if (rawA && rawB && rawA === rawB) return true;
+  const courseA = normalizeScheduleCourseNo(taskA.code);
+  const courseB = normalizeScheduleCourseNo(taskB.code);
+  if (!courseA || !courseB || courseA === courseB) return false;
+  const pointA = normalizeScheduleCourseNo(rawA);
+  const pointB = normalizeScheduleCourseNo(rawB);
+  return !!(pointA && pointB && pointA === courseB && pointB === courseA);
+}
+
+/** 排时间侧「共同授课课号」展示：对方课程号（多门用顿号拼接） */
+function getScheduleTaskSharedTeachingPartnerLabel(task) {
+  if (!task) return '';
+  const myCourse = normalizeScheduleCourseNo(task.code);
+  const raw = getScheduleTaskSharedTeachingRawCode(task);
+  if (!raw && !myCourse) return '';
+  const all = typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : [];
+  const partnerCodes = [];
+  const seen = new Set();
+  all.forEach(other => {
+    if (!other || other.id === task.id) return;
+    const otherCourse = normalizeScheduleCourseNo(other.code);
+    if (!otherCourse || otherCourse === myCourse) return;
+    if (!scheduleTasksAreSharedTeachingPair(task, other)) return;
+    if (seen.has(otherCourse)) return;
+    seen.add(otherCourse);
+    partnerCodes.push(formatScheduleCourseCode(other.code) || other.code);
+  });
+  if (partnerCodes.length) return partnerCodes.join('、');
+  const pointed = normalizeScheduleCourseNo(raw);
+  if (pointed && pointed !== myCourse) return formatScheduleCourseCode(raw) || raw;
+  return '';
+}
+
+/**
+ * 落点教师冲突：同教师则记冲突。
+ * 排时间侧若互为共同授课课号，记入 teacherShared（弹窗可继续）；否则记入硬冲突 teacher。
+ * 排教室侧共同授课/同授课码仍自动忽略，保持原口径。
+ */
+function pushSchedulePlaceTeacherConflict(result, activeTask, otherTask, msg, pushUniq) {
+  if (!result || !msg || typeof pushUniq !== 'function') return;
+  if (!scheduleTasksShareTeacher(activeTask, otherTask)) return;
+  const sharedCourseNo = scheduleTasksAreSharedTeachingPair(activeTask, otherTask);
+  if (scheduleDetailPhase === 'time') {
+    if (sharedCourseNo) {
+      if (!result.teacherShared) result.teacherShared = [];
+      pushUniq(result.teacherShared, msg);
+      return;
+    }
+    if (!result.teacher) result.teacher = [];
+    pushUniq(result.teacher, msg);
+    return;
+  }
+  if (sharedCourseNo || scheduleTasksShareTeachingCode(activeTask, otherTask)) return;
+  if (!result.teacher) result.teacher = [];
+  pushUniq(result.teacher, msg);
 }
 
 function formatScheduleTeacherNames(task) {
@@ -37938,8 +38741,11 @@ function buildScheduleTaskFromSection(sec, prev) {
   };
   if (sec.conflictDemo) task.conflictDemo = true;
   if (sec.roomPendingDemo) task.roomPendingDemo = true;
-  const sharedCode = String(sec.sharedTeachingCode || '').trim();
-  if (sharedCode) task.sharedTeachingCode = sharedCode;
+  const sharedCourseNo = String(sec.teachingCode || sec.teachingClassNo || sec.sharedTeachingCode || '').trim();
+  if (sharedCourseNo) {
+    task.teachingCode = String(sec.teachingCode || sec.teachingClassNo || '').trim();
+    task.sharedTeachingCode = String(sec.sharedTeachingCode || '').trim();
+  }
   syncTaskLegacyTimeFields(task);
   return task;
 }
@@ -38006,16 +38812,13 @@ function getScheduleTimeArrangeScopeTasks(tasks) {
   const selectedIds = new Set(list.map(t => t.id));
   const partnerById = new Map();
   list.forEach(t => {
-    const code = typeof getScheduleTaskSharedTeachingCode === 'function'
-      ? getScheduleTaskSharedTeachingCode(t)
-      : String(t.sharedTeachingCode || '').trim();
-    if (!code) return;
     schedulable.forEach(other => {
       if (selectedIds.has(other.id) || partnerById.has(other.id)) return;
-      const otherCode = typeof getScheduleTaskSharedTeachingCode === 'function'
-        ? getScheduleTaskSharedTeachingCode(other)
-        : String(other.sharedTeachingCode || '').trim();
-      if (otherCode === code) partnerById.set(other.id, other);
+      if (typeof scheduleTasksAreSharedTeachingPair === 'function'
+        ? scheduleTasksAreSharedTeachingPair(t, other)
+        : false) {
+        partnerById.set(other.id, other);
+      }
     });
   });
   if (partnerById.size) {
@@ -38111,14 +38914,14 @@ function getScheduleTasksForBatch(programmeKey, intake) {
 
 /**
  * 排时间侧冲突演示样本（海洋环境化学 · 202409）
- * 含：学生 / 教师 / 先修 / 预重修 / 共同授课（同码忽略教师冲突）。
+ * 含：学生 / 教师 / 先修 / 预重修 / 共同授课（同码仍报教师冲突，可继续排课）。
  *
  * | 冲突 | 已排锚点 | 操作探测课 → 落点 |
  * | 学生 | CDF201 周二5 | CDF203 → 周二5 |
  * | 教师 | 跨批 CDF-TX 周二2（同教师 T3202） | CDF202 → 周二2 |
  * | 先修 | FIN101 周四1 | FIN201 → 周四1 |
  * | 预重修 | 跨批 CDF105 周四3（重修生课表） | CDF208 → 周四3 |
- * | 共同授课 | CST201 周三4（码 ST-DEMO-01） | CST202 → 周三4（应忽略教师冲突） |
+ * | 共同授课 | 跨批 CST201 周三4（共同授课课号 CST202） | CST202 → 周三4（教师冲突可继续） |
  */
 function getScheduleTimeConflictDemoSamples() {
   const weeks = '1-14周';
@@ -38163,15 +38966,15 @@ function getScheduleTimeConflictDemoSamples() {
       code: 'CST201', name: 'Shared Teaching · Anchor', dept: '教务演示',
       teacherId: 'T3210', teachers: '共同授课甲', groupName: '共同授课演示组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
-      sharedTeachingCode: 'ST-DEMO-01',
-      slots: [[3, 4, '', weeks]], remark: '示例数据·共同授课锚点（码 ST-DEMO-01，周三第4节）'
+      sharedTeachingCode: 'CST202',
+      slots: [], remark: '示例数据·共同授课列表伙伴（占用在跨批 CST201，周三第4节）'
     },
     {
       code: 'CST202', name: 'Shared Teaching · Probe', dept: '教务演示',
       teacherId: 'T3210', teachers: '共同授课甲', groupName: '共同授课演示组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
-      sharedTeachingCode: 'ST-DEMO-01',
-      slots: [], remark: '示例数据·共同授课探测（选本课点周三第4节，应忽略教师冲突）'
+      sharedTeachingCode: 'CST201',
+      slots: [], remark: '示例数据·共同授课探测（选本课点周三第4节，教师冲突可继续）'
     }
   ];
 }
@@ -38295,6 +39098,23 @@ function getScheduleTimeConflictCrossOccupants(mainProgrammeKey, intake) {
       room: '',
       weeks,
       remark: '示例数据·跨批预重修个人课表占用'
+    },
+    {
+      programmeKey: crossProgramme,
+      intake,
+      code: 'CST201',
+      name: 'Shared Teaching · Anchor',
+      teacherId: 'T3210',
+      teachers: '共同授课甲',
+      groupName: '共同授课演示组',
+      dept: '教务演示',
+      unit: 'AAO',
+      weekday: 3,
+      period: 4,
+      room: '',
+      weeks,
+      sharedTeachingCode: 'CST202',
+      remark: '示例数据·跨批共同授课锚点（共同授课课号 CST202，周三第4节）'
     }
   ];
 }
@@ -38427,7 +39247,7 @@ const SCHEDULE_TEACHER_META = {
   T3201: { name: '锚点甲', dept: '教务演示', staffType: '专任教师' },
   T3203: { name: '锚点丙', dept: '教务演示', staffType: '专任教师' },
   T3206: { name: '锚点己', dept: '教务演示', staffType: '专任教师' },
-  /** 共同授课演示：CST201/CST202 同教师同授课码 */
+  /** 共同授课演示：CST201/CST202 同教师，互为共同授课课号 */
   T3210: { name: '共同授课甲', dept: '教务演示', staffType: '专任教师' },
   /** 预重修探测课专用，避免与同批已排课教师叠成综合冲突 */
   T3099: { name: '冲突演示', dept: '教务演示', staffType: '专任教师' },
@@ -38739,7 +39559,9 @@ function pushScheduleGlobalDemoSample(s, programmeKey, intake, grade) {
       studentCount: 0
     })),
     groupAssignments: [],
-    teachingClassNo: `GDEMO${s.code}`, category: 'Major Core', courseNature: '必修', assessment: '考试',
+    teachingClassNo: `GDEMO${s.code}`,
+    teachingCode: String(s.teachingCode || s.sharedTeachingCode || `GDEMO${s.code}`).trim(),
+    category: 'Major Core', courseNature: '必修', assessment: '考试',
     credits: line.credits, totalHours: total, theoryHours, practiceHours,
     tutorHours, otherHours, teachingWeeks: teachingWeekCount, weekRange,
     isScheduled: s.isScheduled || 'yes', timeSlots: slots,
@@ -39014,6 +39836,8 @@ function pushScheduleTimeConflictCrossOccupant(c, grade) {
     }],
     groupAssignments: [],
     teachingClassNo: `GDEMOX${c.code}`,
+    teachingCode: String(c.teachingCode || c.sharedTeachingCode || `GDEMOX${c.code}`).trim(),
+    sharedTeachingCode: String(c.sharedTeachingCode || '').trim(),
     category: 'Major Core',
     courseNature: '必修',
     assessment: '考试',
@@ -39057,6 +39881,7 @@ function patchScheduleSharedTeachingDemoCodes(store) {
     const code = sampleMap.get(String(sec.code || '').toUpperCase());
     if (!code) return;
     if (String(sec.sharedTeachingCode || '').trim() !== code) sec.sharedTeachingCode = code;
+    if (!String(sec.teachingCode || '').trim()) sec.teachingCode = code;
   });
 }
 
@@ -39381,7 +40206,8 @@ function ensureScheduleRoomDetailPage() {
     && mount.querySelector('[data-tab="locked"][data-sch-phase-tab="room"]')
     && mount.querySelector('#schedule-room-course-search')
     && mount.querySelector('#schedule-course-search-course-code')
-    && mount.querySelector('#schedule-course-search-venue-type')
+    && mount.querySelector('#schedule-course-search-venue-type-btn')
+    && mount.querySelector('#srtf-venue-type-btn')
     && !mount.querySelector('#schedule-detail-active-course')
     && !mount.querySelector('#btn-schedule-slot-deselect')
   ) return;
@@ -39614,23 +40440,28 @@ function getScheduleTasksForScopeCtx(ctx) {
 
 function getScheduleJointUnionTasks(ctx) {
   const source = ctx || scheduleBatchDetailContext || {};
-  const batchKeys = source.batches || scheduleJointSelectedBatches || [];
-  const teacherIds = source.teachers || scheduleJointSelectedTeachers || [];
+  const batchKeys = source.batches || scheduleJointAppliedBatches || [];
+  const teacherIds = source.teachers || scheduleJointAppliedTeachers || [];
+  const termCode = source.termCode || scheduleJointAppliedTerm || '';
   const seen = new Set();
   const out = [];
+  const accept = task => {
+    if (!task?.id || seen.has(task.id)) return false;
+    if (termCode && String(task.termCode || '') !== termCode) return false;
+    seen.add(task.id);
+    return true;
+  };
   batchKeys.forEach(key => {
     const [programmeKey, intake] = String(key || '').split('|');
     if (!programmeKey || !intake) return;
     getScheduleTasksForBatch(programmeKey, intake).forEach(t => {
-      if (!t?.id || seen.has(t.id)) return;
-      seen.add(t.id);
+      if (!accept(t)) return;
       out.push(t);
     });
   });
   teacherIds.forEach(tid => {
     getScheduleTaskRows().filter(t => taskHasScheduleTeacher(t, tid)).forEach(t => {
-      if (!t?.id || seen.has(t.id)) return;
-      seen.add(t.id);
+      if (!accept(t)) return;
       out.push(t);
     });
   });
@@ -39639,8 +40470,8 @@ function getScheduleJointUnionTasks(ctx) {
 
 function getScheduleJointRowObjects() {
   const ctx = scheduleBatchDetailContext || {};
-  const batchKeys = ctx.batches || scheduleJointSelectedBatches || [];
-  const teacherIds = ctx.teachers || scheduleJointSelectedTeachers || [];
+  const batchKeys = ctx.batches || scheduleJointAppliedBatches || [];
+  const teacherIds = ctx.teachers || scheduleJointAppliedTeachers || [];
   const objs = [];
   batchKeys.forEach(key => {
     const [programmeKey, intake] = String(key || '').split('|');
@@ -39759,11 +40590,13 @@ function openScheduleJointPage() {
   }
   const wasJoint = scheduleBatchDetailContext?.type === 'joint';
   scheduleDetailPhase = 'time';
+  if (!scheduleJointDraftTerm) scheduleJointDraftTerm = getDefaultScheduleJointTerm();
   scheduleBatchDetailContext = {
     type: 'joint',
     phase: 'time',
-    batches: scheduleJointSelectedBatches.slice(),
-    teachers: scheduleJointSelectedTeachers.slice()
+    termCode: scheduleJointAppliedTerm,
+    batches: scheduleJointAppliedBatches.slice(),
+    teachers: scheduleJointAppliedTeachers.slice()
   };
   if (!wasJoint) resetScheduleDetailState();
   ensureScheduleJointPage();
@@ -39836,10 +40669,6 @@ function buildScheduleJointPickerFieldHtml(kind, label) {
         </div>
         <div class="clo-multiselect-dropdown" id="schedule-joint-${kind}-dropdown" hidden>
           <div class="clo-multiselect-options" id="schedule-joint-${kind}-options"></div>
-          <div class="clo-multiselect-foot">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="cancelScheduleJointPicker('${kind}',event)">取消</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="confirmScheduleJointPicker('${kind}',event)">确定</button>
-          </div>
         </div>
       </div>
     </div>`;
@@ -39847,6 +40676,12 @@ function buildScheduleJointPickerFieldHtml(kind, label) {
 
 function buildScheduleJointPickerBarHtml() {
   return `
+    <div class="schedule-joint-picker-row schedule-joint-picker-row-term">
+      <div class="schedule-joint-picker-field">
+        <label class="schedule-joint-picker-label req" for="schedule-joint-term">学年学期</label>
+        <select class="input input-sm" id="schedule-joint-term" onchange="onScheduleJointTermChange()"></select>
+      </div>
+    </div>
     <div class="schedule-joint-picker-row">
       ${buildScheduleJointPickerFieldHtml('programme', '专业')}
       ${buildScheduleJointPickerFieldHtml('batch', '专业批次')}
@@ -39854,6 +40689,10 @@ function buildScheduleJointPickerBarHtml() {
     <div class="schedule-joint-picker-row">
       ${buildScheduleJointPickerFieldHtml('dept', '教师单位')}
       ${buildScheduleJointPickerFieldHtml('teacher', '教师')}
+    </div>
+    <div class="schedule-joint-picker-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="schedule-joint-query-confirm" onclick="confirmScheduleJointQuery(event)">确定</button>
+      <button type="button" class="btn btn-outline btn-sm" id="schedule-joint-query-reset" onclick="resetScheduleJointQuery(event)">重置</button>
     </div>`;
 }
 
@@ -39869,7 +40708,7 @@ function ensureScheduleJointPickerBar(page) {
     if (header) header.insertAdjacentElement('afterend', bar);
     else host.insertBefore(bar, host.firstChild);
   }
-  if (!host.querySelector('#schedule-joint-programme-search')) {
+  if (!host.querySelector('#schedule-joint-term') || !host.querySelector('#schedule-joint-query-confirm')) {
     bar.innerHTML = buildScheduleJointPickerBarHtml();
     SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
       const trigger = scheduleDetailEl(getScheduleJointPickerIds(kind).btn);
@@ -39913,10 +40752,64 @@ function formatScheduleJointDeptLabel(dept) {
   return name && name !== code ? `${code} ${name}` : code;
 }
 
+function getDefaultScheduleJointTerm() {
+  return getActiveOfferingTermSetting()?.termCode || getScheduleTermCodes().slice(-1)[0] || '';
+}
+
+function getScheduleJointDraftTerm() {
+  return scheduleJointDraftTerm || '';
+}
+
+function scheduleJointTaskMatchesDraftTerm(task) {
+  const term = getScheduleJointDraftTerm();
+  if (!term) return true;
+  return String(task?.termCode || '') === term;
+}
+
+function getScheduleJointTermScopedBatchSummaries() {
+  return buildScheduleBatchSummaries().filter(s => {
+    if (!getScheduleJointDraftTerm()) return true;
+    return getScheduleTasksForBatch(s.programmeKey, s.intake).some(scheduleJointTaskMatchesDraftTerm);
+  });
+}
+
+function getScheduleJointTermScopedTeacherRows() {
+  return getScheduleTeacherGroupRows().filter(r => {
+    if (!getScheduleJointDraftTerm()) return true;
+    return (r.tasks || []).some(scheduleJointTaskMatchesDraftTerm);
+  });
+}
+
+function fillScheduleJointTermSelect() {
+  const sel = scheduleDetailEl('schedule-joint-term');
+  if (!sel) return;
+  const terms = getScheduleTermCodes();
+  if (!scheduleJointDraftTerm) scheduleJointDraftTerm = getDefaultScheduleJointTerm();
+  const cur = scheduleJointDraftTerm;
+  sel.innerHTML = terms.map(code =>
+    `<option value="${escapeHtml(code)}">${escapeHtml(formatCourseTermDisplay(code))}</option>`
+  ).join('');
+  if (cur && terms.includes(cur)) sel.value = cur;
+  else if (terms.length) {
+    sel.value = getDefaultScheduleJointTerm() || terms[0];
+    scheduleJointDraftTerm = sel.value;
+  }
+}
+
+function onScheduleJointTermChange() {
+  const sel = scheduleDetailEl('schedule-joint-term');
+  scheduleJointDraftTerm = sel?.value || '';
+  pruneScheduleJointTermSelections();
+  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+    fillScheduleJointPickerOptions(kind, getScheduleJointSelectedValues(kind));
+    updateScheduleJointPickerDisplay(kind);
+  });
+}
+
 function getScheduleJointAllPickerOptions(kind) {
   if (kind === 'programme') {
     const seen = new Map();
-    buildScheduleBatchSummaries().forEach(s => {
+    getScheduleJointTermScopedBatchSummaries().forEach(s => {
       if (!s.programmeKey || seen.has(s.programmeKey)) return;
       const text = s.programmeCode
         ? `${s.programmeName}（${s.programmeCode}）`
@@ -39931,7 +40824,7 @@ function getScheduleJointAllPickerOptions(kind) {
   }
   if (kind === 'dept') {
     const seen = new Map();
-    getScheduleTeacherGroupRows().forEach(r => {
+    getScheduleJointTermScopedTeacherRows().forEach(r => {
       const dept = String(r.dept || '').trim();
       if (!dept || dept === '—' || seen.has(dept)) return;
       seen.set(dept, {
@@ -39943,14 +40836,14 @@ function getScheduleJointAllPickerOptions(kind) {
     return [...seen.values()].sort((a, b) => a.text.localeCompare(b.text, 'zh-CN'));
   }
   if (kind === 'teacher') {
-    return getScheduleTeacherGroupRows().map(r => ({
+    return getScheduleJointTermScopedTeacherRows().map(r => ({
       value: r.teacherId,
       text: `${r.name}（${r.teacherId}）`,
       search: `${r.name} ${r.teacherId} ${r.dept || ''}`,
       dept: String(r.dept || '').trim()
     }));
   }
-  return buildScheduleBatchSummaries().map(s => ({
+  return getScheduleJointTermScopedBatchSummaries().map(s => ({
     value: `${s.programmeKey}|${s.intake}`,
     text: `${s.programmeName} · ${formatIntakeDisplay(s.intake)}`,
     search: `${s.programmeName} ${s.programmeCode || ''} ${s.programmeKey} ${s.intake} ${formatIntakeDisplay(s.intake)}`,
@@ -40076,6 +40969,7 @@ function syncScheduleJointPickers() {
   if (!isScheduleJointContext()) return;
   ensureScheduleJointPickerBar();
   bindScheduleJointPickerTriggers();
+  fillScheduleJointTermSelect();
   SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
     fillScheduleJointPickerOptions(kind, getScheduleJointSelectedValues(kind));
     updateScheduleJointPickerDisplay(kind);
@@ -40142,12 +41036,32 @@ function onScheduleJointPickerSearch(kind, event) {
   fillScheduleJointPickerOptions(kind, getScheduleJointPickerDraft(kind));
 }
 
+function applyScheduleJointPickerValues(kind, next) {
+  const values = Array.isArray(next) ? next.slice() : [];
+  if (kind === 'programme') scheduleJointSelectedProgrammes = values;
+  else if (kind === 'dept') scheduleJointSelectedDepts = values;
+  else if (kind === 'teacher') scheduleJointSelectedTeachers = values;
+  else scheduleJointSelectedBatches = values;
+  if (kind === 'programme' || kind === 'dept') pruneScheduleJointCascadedSelections();
+}
+
 function onScheduleJointPickerCheck(kind, checkbox) {
   if (!checkbox) return;
   const draft = new Set(getScheduleJointPickerDraft(kind));
   if (checkbox.checked) draft.add(checkbox.value);
   else draft.delete(checkbox.value);
-  scheduleJointPickerDraft[kind] = [...draft];
+  const next = [...draft];
+  scheduleJointPickerDraft[kind] = next;
+  applyScheduleJointPickerValues(kind, next);
+  updateScheduleJointPickerDisplay(kind);
+  if (kind === 'programme') {
+    fillScheduleJointPickerOptions('batch', getScheduleJointSelectedValues('batch'));
+    updateScheduleJointPickerDisplay('batch');
+  }
+  if (kind === 'dept') {
+    fillScheduleJointPickerOptions('teacher', getScheduleJointSelectedValues('teacher'));
+    updateScheduleJointPickerDisplay('teacher');
+  }
 }
 
 function cancelScheduleJointPicker(kind, event) {
@@ -40167,20 +41081,85 @@ function pruneScheduleJointCascadedSelections() {
   }
 }
 
+function pruneScheduleJointTermSelections() {
+  const allowProg = new Set(getScheduleJointAllPickerOptions('programme').map(o => o.value));
+  scheduleJointSelectedProgrammes = scheduleJointSelectedProgrammes.filter(v => allowProg.has(v));
+  const allowDept = new Set(getScheduleJointAllPickerOptions('dept').map(o => o.value));
+  scheduleJointSelectedDepts = scheduleJointSelectedDepts.filter(v => allowDept.has(v));
+  pruneScheduleJointCascadedSelections();
+  const allowBatch = new Set(getScheduleJointPickerOptions('batch').map(o => o.value));
+  scheduleJointSelectedBatches = scheduleJointSelectedBatches.filter(v => allowBatch.has(v));
+  const allowTeacher = new Set(getScheduleJointPickerOptions('teacher').map(o => o.value));
+  scheduleJointSelectedTeachers = scheduleJointSelectedTeachers.filter(v => allowTeacher.has(v));
+}
+
 function confirmScheduleJointPicker(kind, event) {
   event?.stopPropagation?.();
   event?.preventDefault?.();
-  const next = getScheduleJointPickerDraft(kind);
-  if (kind === 'programme') scheduleJointSelectedProgrammes = next;
-  else if (kind === 'dept') scheduleJointSelectedDepts = next;
-  else if (kind === 'teacher') scheduleJointSelectedTeachers = next;
-  else scheduleJointSelectedBatches = next;
-  if (kind === 'programme' || kind === 'dept') pruneScheduleJointCascadedSelections();
-  if (scheduleBatchDetailContext?.type === 'joint') {
-    scheduleBatchDetailContext.batches = scheduleJointSelectedBatches.slice();
-    scheduleBatchDetailContext.teachers = scheduleJointSelectedTeachers.slice();
-  }
+  applyScheduleJointPickerValues(kind, getScheduleJointPickerDraft(kind));
   closeScheduleJointPicker(kind);
+}
+
+function applyScheduleJointQueryContext() {
+  if (scheduleBatchDetailContext?.type !== 'joint') return;
+  scheduleBatchDetailContext.termCode = scheduleJointAppliedTerm;
+  scheduleBatchDetailContext.batches = scheduleJointAppliedBatches.slice();
+  scheduleBatchDetailContext.teachers = scheduleJointAppliedTeachers.slice();
+}
+
+function resolveScheduleJointQueryScope() {
+  let batches = scheduleJointSelectedBatches.slice();
+  let teachers = scheduleJointSelectedTeachers.slice();
+  if (!batches.length && scheduleJointSelectedProgrammes.length) {
+    batches = getScheduleJointPickerOptions('batch').map(o => o.value);
+  }
+  if (!teachers.length && scheduleJointSelectedDepts.length) {
+    teachers = getScheduleJointPickerOptions('teacher').map(o => o.value);
+  }
+  if (!batches.length && !teachers.length) {
+    batches = getScheduleJointPickerOptions('batch').map(o => o.value);
+  }
+  return { batches, teachers };
+}
+
+function validateScheduleJointQuery() {
+  const term = scheduleJointDraftTerm || scheduleDetailEl('schedule-joint-term')?.value || '';
+  if (!term) {
+    alert('请选择学年学期。');
+    return false;
+  }
+  return true;
+}
+
+function confirmScheduleJointQuery(event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+    applyScheduleJointPickerValues(kind, getScheduleJointPickerDraft(kind));
+    closeScheduleJointPicker(kind);
+  });
+  if (!validateScheduleJointQuery()) return;
+  const scope = resolveScheduleJointQueryScope();
+  scheduleJointAppliedTerm = scheduleJointDraftTerm || getDefaultScheduleJointTerm();
+  scheduleJointAppliedBatches = scope.batches;
+  scheduleJointAppliedTeachers = scope.teachers;
+  applyScheduleJointQueryContext();
+  renderScheduleDetailPage();
+}
+
+function resetScheduleJointQuery(event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => closeScheduleJointPicker(kind));
+  scheduleJointDraftTerm = getDefaultScheduleJointTerm();
+  scheduleJointSelectedProgrammes = [];
+  scheduleJointSelectedBatches = [];
+  scheduleJointSelectedDepts = [];
+  scheduleJointSelectedTeachers = [];
+  scheduleJointAppliedTerm = '';
+  scheduleJointAppliedBatches = [];
+  scheduleJointAppliedTeachers = [];
+  applyScheduleJointQueryContext();
   renderScheduleDetailPage();
 }
 
@@ -41566,14 +42545,31 @@ function getScheduleDetailCourseSearchFilters() {
   return scheduleDetailPhase === 'room' ? scheduleRoomCourseSearchFilters : scheduleTimeCourseSearchFilters;
 }
 
+function normalizeScheduleSearchVenueTypeList(value) {
+  if (Array.isArray(value)) {
+    return normalizeScheduleVenueTypes(value).filter(t => t && t !== SCHEDULE_VENUE_TYPE_NONE);
+  }
+  const text = String(value || '').trim();
+  return text ? normalizeScheduleVenueTypes([text]).filter(t => t && t !== SCHEDULE_VENUE_TYPE_NONE) : [];
+}
+
 function hasScheduleDetailCourseSearchFilters(filters) {
   const src = filters || getScheduleDetailCourseSearchFilters();
-  return getScheduleCourseSearchKeys().some(key => String(src[key] || '').trim());
+  return getScheduleCourseSearchKeys().some(key => {
+    const value = src[key];
+    if (key === 'venueType') return normalizeScheduleSearchVenueTypeList(value).length > 0;
+    return String(value || '').trim();
+  });
 }
 
 function getScheduleDetailCourseSearchQuery() {
   const filters = getScheduleDetailCourseSearchFilters();
-  return getScheduleCourseSearchKeys().map(key => String(filters[key] || '').trim()).filter(Boolean).join(' ');
+  return getScheduleCourseSearchKeys().map(key => {
+    if (key === 'venueType') {
+      return normalizeScheduleSearchVenueTypeList(filters[key]).map(getScheduleVenueTypeLabel).filter(Boolean).join('、');
+    }
+    return String(filters[key] || '').trim();
+  }).filter(Boolean).join(' ');
 }
 
 function collectScheduleDetailCourseSearchFiltersFromInputs() {
@@ -41581,6 +42577,10 @@ function collectScheduleDetailCourseSearchFiltersFromInputs() {
     ? emptyScheduleRoomCourseSearchFilters()
     : emptyScheduleTimeCourseSearchFilters();
   getScheduleCourseSearchKeys().forEach(key => {
+    if (key === 'venueType') {
+      filters.venueType = getScheduleCourseSearchVenueTypesSelected();
+      return;
+    }
     const id = SCHEDULE_COURSE_SEARCH_INPUT_IDS[key];
     filters[key] = String(scheduleDetailEl(id)?.value || '').trim();
   });
@@ -41589,9 +42589,115 @@ function collectScheduleDetailCourseSearchFiltersFromInputs() {
 
 function fillScheduleDetailCourseSearchInputs(filters) {
   getScheduleCourseSearchKeys().forEach(key => {
+    if (key === 'venueType') {
+      setScheduleCourseSearchVenueTypesSelected(filters?.venueType);
+      return;
+    }
     const el = scheduleDetailEl(SCHEDULE_COURSE_SEARCH_INPUT_IDS[key]);
     if (el) el.value = String(filters?.[key] || '');
   });
+}
+
+function ensureScheduleCourseSearchVenueTypeMultiselect() {
+  const options = scheduleDetailEl('schedule-course-search-venue-type-options');
+  if (!options) return;
+  if (options.dataset.ready === 'v1-l1') return;
+  options.innerHTML = getScheduleRoomTypeFilterValues().map(type =>
+    `<label class="clo-multiselect-option" onclick="event.stopPropagation()">
+      <input type="checkbox" class="schedule-course-search-venue-type-check" value="${escapeHtml(type)}" onchange="updateScheduleCourseSearchVenueTypeDisplay()">
+      <span>${escapeHtml(getScheduleVenueTypeLabel(type))}</span>
+    </label>`
+  ).join('');
+  options.dataset.ready = 'v1-l1';
+  const dd = scheduleDetailEl('schedule-course-search-venue-type-dropdown');
+  if (dd && !dd.dataset.boundStop) {
+    dd.addEventListener('click', e => e.stopPropagation());
+    dd.addEventListener('mousedown', e => e.stopPropagation());
+    dd.dataset.boundStop = '1';
+  }
+}
+
+function getScheduleCourseSearchVenueTypesSelected() {
+  ensureScheduleCourseSearchVenueTypeMultiselect();
+  const options = scheduleDetailEl('schedule-course-search-venue-type-options');
+  if (!options) return [];
+  return normalizeScheduleSearchVenueTypeList(
+    [...options.querySelectorAll('.schedule-course-search-venue-type-check:checked')].map(el => el.value)
+  );
+}
+
+function setScheduleCourseSearchVenueTypesSelected(types) {
+  ensureScheduleCourseSearchVenueTypeMultiselect();
+  const set = new Set(normalizeScheduleSearchVenueTypeList(types));
+  const options = scheduleDetailEl('schedule-course-search-venue-type-options');
+  options?.querySelectorAll('.schedule-course-search-venue-type-check').forEach(el => {
+    el.checked = set.has(el.value);
+  });
+  updateScheduleCourseSearchVenueTypeDisplay();
+}
+
+function updateScheduleCourseSearchVenueTypeDisplay() {
+  const display = scheduleDetailEl('schedule-course-search-venue-type-display');
+  if (!display) return;
+  const selected = getScheduleCourseSearchVenueTypesSelected();
+  const label = selected.map(getScheduleVenueTypeLabel).filter(Boolean).join('、');
+  if (label) {
+    display.textContent = label;
+    display.classList.remove('placeholder');
+  } else {
+    display.textContent = '全部';
+    display.classList.add('placeholder');
+  }
+}
+
+function positionScheduleFixedMultiselectDropdown(btn, dd, optionCount = 4) {
+  if (!btn || !dd || dd.hidden) return;
+  const rect = btn.getBoundingClientRect();
+  const width = Math.max(rect.width, 180);
+  let left = rect.left;
+  if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+  let top = rect.bottom + 4;
+  const estHeight = Math.min(220, (optionCount || 1) * 36 + 8);
+  if (top + estHeight > window.innerHeight - 8 && rect.top > estHeight + 8) {
+    top = rect.top - estHeight - 4;
+  }
+  dd.style.position = 'fixed';
+  dd.style.left = `${left}px`;
+  dd.style.top = `${top}px`;
+  dd.style.width = `${width}px`;
+  dd.style.right = 'auto';
+  dd.style.zIndex = '9999';
+}
+
+function resetScheduleFixedMultiselectDropdown(dd) {
+  if (!dd) return;
+  dd.hidden = true;
+  dd.style.position = '';
+  dd.style.left = '';
+  dd.style.top = '';
+  dd.style.width = '';
+  dd.style.right = '';
+  dd.style.zIndex = '';
+}
+
+function toggleScheduleCourseSearchVenueTypeDropdown(event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  const dd = scheduleDetailEl('schedule-course-search-venue-type-dropdown');
+  const btn = scheduleDetailEl('schedule-course-search-venue-type-btn');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeScheduleCourseSearchVenueTypeDropdown();
+  closeScheduleRoomTimetableVenueTypeDropdown();
+  if (!willOpen) return;
+  ensureScheduleCourseSearchVenueTypeMultiselect();
+  updateScheduleCourseSearchVenueTypeDisplay();
+  dd.hidden = false;
+  positionScheduleFixedMultiselectDropdown(btn, dd, getScheduleRoomTypeFilterValues().length);
+}
+
+function closeScheduleCourseSearchVenueTypeDropdown() {
+  document.querySelectorAll('#schedule-course-search-venue-type-dropdown').forEach(resetScheduleFixedMultiselectDropdown);
 }
 
 function getScheduleTimeCourseSearchField() {
@@ -41633,11 +42739,10 @@ function scheduleRoomCardMatchesSearchField(card, query, field) {
     push(card.sharedTeachingCode);
     (card.entries || []).forEach(({ task }) => push(getScheduleTaskSharedTeachingCode(task)));
   } else if (fieldKey === 'venueType') {
-    push(card.venueLabel);
-    (card.venueTypes || []).forEach(type => {
-      push(type);
-      push(getScheduleVenueTypeLabel(type));
-    });
+    const selected = normalizeScheduleSearchVenueTypeList(query);
+    if (!selected.length) return true;
+    const cardTypes = normalizeScheduleVenueTypes(card.venueTypes || []);
+    return selected.some(type => cardTypes.includes(type));
   } else if (fieldKey === 'venueRemark') {
     push(card.remarkLabel);
     (card.entries || []).forEach(({ slot }) => push(slot?.venueRemark));
@@ -41680,7 +42785,8 @@ function scheduleTimeUnitRowMatchesSearchField(row, query, field) {
   } else if (fieldKey === 'teacherId') {
     getScheduleTaskTeacherEntries(task).forEach(teacher => push(teacher.staffId));
   } else if (fieldKey === 'sharedTeachingCode') {
-    push(getScheduleTaskSharedTeachingCode(task));
+    push(getScheduleTaskSharedTeachingPartnerLabel(task));
+    push(getScheduleTaskSharedTeachingRawCode(task));
   } else {
     push(task.code);
     push(formatScheduleCourseCode(task.code));
@@ -41708,6 +42814,7 @@ function syncScheduleDetailCourseSearchUi() {
     });
   }
   fillScheduleDetailCourseSearchInputs(getScheduleDetailCourseSearchFilters());
+  if (isRoom) ensureScheduleCourseSearchVenueTypeMultiselect();
 }
 /** @deprecated 兼容旧名 */
 function syncScheduleRoomCourseSearchUi() { return syncScheduleDetailCourseSearchUi(); }
@@ -41892,6 +42999,7 @@ function clearScheduleRoomTimetableFilterDom() {
     const el = scheduleDetailEl(id);
     if (el) el.value = '';
   });
+  setScheduleRoomTimetableVenueTypesSelected([]);
 }
 
 /** 选中课程卡片的计划人数 → 有效座位数筛选最小值（不回填上限） */
@@ -41917,20 +43025,19 @@ function syncScheduleRoomFilterFromActiveCard() {
   const lockedRooms = getScheduleActiveRoomLockedRooms();
   const venueTypes = normalizeScheduleVenueTypes(card.venueTypes || [])
     .filter(t => t !== SCHEDULE_VENUE_TYPE_NONE);
-  const primaryVenue = venueTypes[0] || '';
   const { seatsMin, seatsMax } = getScheduleRoomCardSeatFilterRange(card);
   clearScheduleRoomTimetableFilterDom();
   if (lockedRooms.length) {
     scheduleRoomFilterMode = 'lockedRoom';
     scheduleRoomFilterLockedRooms = lockedRooms;
-    scheduleRoomTimetableFilterDraft = primaryVenue ? { venueType: primaryVenue } : {};
+    scheduleRoomTimetableFilterDraft = venueTypes.length ? { venueTypes: [...venueTypes] } : {};
     // 初始按锁定教室并集查询；场地类型写入表单供继续改查
     scheduleRoomTimetableFilterApplied = { lockedRoomUnion: true };
-    if (primaryVenue) scheduleRoomTimetableFilterDraft.venueType = primaryVenue;
+    if (venueTypes.length) scheduleRoomTimetableFilterDraft.venueTypes = [...venueTypes];
   } else {
     scheduleRoomFilterMode = 'venueType';
     scheduleRoomFilterLockedRooms = [];
-    scheduleRoomTimetableFilterDraft = primaryVenue ? { venueType: primaryVenue } : {};
+    scheduleRoomTimetableFilterDraft = venueTypes.length ? { venueTypes: [...venueTypes] } : {};
     scheduleRoomTimetableFilterApplied = { ...scheduleRoomTimetableFilterDraft };
   }
   if (seatsMin != null) {
@@ -41942,11 +43049,7 @@ function syncScheduleRoomFilterFromActiveCard() {
     scheduleRoomTimetableFilterApplied.seatsMax = seatsMax;
   }
   ensureScheduleRoomTimetableFilterOptions();
-  const venueSel = scheduleDetailEl('srtf-venue-type');
-  if (venueSel) {
-    venueSel.disabled = false;
-    venueSel.value = primaryVenue || '';
-  }
+  setScheduleRoomTimetableVenueTypesSelected(venueTypes);
   applyScheduleRoomSeatFilterRangeToDom(seatsMin, seatsMax);
   // 锁定教室仅作初始 applied（lockedRoomUnion），不写入「教室」文本框，避免改条件重查时被旧教室名卡死
 }
@@ -42708,7 +43811,8 @@ function applyScheduleRoomTimetableUserFilters(rows) {
       if (rt !== f.roomType) return false;
     }
     // 锁定教室并集模式下场地类型仅回显，不参与二次过滤
-    if (!f.lockedRoomUnion && f.venueType && !scheduleRoomMatchesVenueTypeFilters(r, [f.venueType])) return false;
+    const venueTypes = f.venueTypes || (f.venueType ? [f.venueType] : []);
+    if (!f.lockedRoomUnion && venueTypes.length && !scheduleRoomMatchesVenueTypeFilters(r, venueTypes)) return false;
     if (f.seatsMin != null || f.seatsMax != null) {
       const seats = getScheduleRoomAvailableSeats(r);
       if (f.seatsMin != null && seats < f.seatsMin) return false;
@@ -42733,6 +43837,78 @@ function getScheduleRoomTimetableHasMoreRows() {
   return all.length > unlocked.length;
 }
 
+function ensureScheduleRoomTimetableVenueTypeMultiselect() {
+  const options = scheduleDetailEl('srtf-venue-type-options');
+  if (!options) return;
+  if (options.dataset.ready === 'v1-l1') return;
+  options.innerHTML = getScheduleRoomTypeFilterValues().map(type =>
+    `<label class="clo-multiselect-option" onclick="event.stopPropagation()">
+      <input type="checkbox" class="srtf-venue-type-check" value="${escapeHtml(type)}" onchange="updateScheduleRoomTimetableVenueTypeDisplay()">
+      <span>${escapeHtml(getScheduleVenueTypeLabel(type))}</span>
+    </label>`
+  ).join('');
+  options.dataset.ready = 'v1-l1';
+  const dd = scheduleDetailEl('srtf-venue-type-dropdown');
+  if (dd && !dd.dataset.boundStop) {
+    dd.addEventListener('click', e => e.stopPropagation());
+    dd.addEventListener('mousedown', e => e.stopPropagation());
+    dd.dataset.boundStop = '1';
+  }
+}
+
+function getScheduleRoomTimetableVenueTypesSelected() {
+  ensureScheduleRoomTimetableVenueTypeMultiselect();
+  const options = scheduleDetailEl('srtf-venue-type-options');
+  if (!options) return [];
+  return normalizeScheduleSearchVenueTypeList(
+    [...options.querySelectorAll('.srtf-venue-type-check:checked')].map(el => el.value)
+  );
+}
+
+function setScheduleRoomTimetableVenueTypesSelected(types) {
+  ensureScheduleRoomTimetableVenueTypeMultiselect();
+  const set = new Set(normalizeScheduleSearchVenueTypeList(types));
+  const options = scheduleDetailEl('srtf-venue-type-options');
+  options?.querySelectorAll('.srtf-venue-type-check').forEach(el => {
+    el.checked = set.has(el.value);
+  });
+  updateScheduleRoomTimetableVenueTypeDisplay();
+}
+
+function updateScheduleRoomTimetableVenueTypeDisplay() {
+  const display = scheduleDetailEl('srtf-venue-type-display');
+  if (!display) return;
+  const selected = getScheduleRoomTimetableVenueTypesSelected();
+  const label = selected.map(getScheduleVenueTypeLabel).filter(Boolean).join('、');
+  if (label) {
+    display.textContent = label;
+    display.classList.remove('placeholder');
+  } else {
+    display.textContent = '全部';
+    display.classList.add('placeholder');
+  }
+}
+
+function toggleScheduleRoomTimetableVenueTypeDropdown(event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  const dd = scheduleDetailEl('srtf-venue-type-dropdown');
+  const btn = scheduleDetailEl('srtf-venue-type-btn');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeScheduleRoomTimetableVenueTypeDropdown();
+  closeScheduleCourseSearchVenueTypeDropdown();
+  if (!willOpen) return;
+  ensureScheduleRoomTimetableVenueTypeMultiselect();
+  updateScheduleRoomTimetableVenueTypeDisplay();
+  dd.hidden = false;
+  positionScheduleFixedMultiselectDropdown(btn, dd, getScheduleRoomTypeFilterValues().length);
+}
+
+function closeScheduleRoomTimetableVenueTypeDropdown() {
+  document.querySelectorAll('#srtf-venue-type-dropdown').forEach(resetScheduleFixedMultiselectDropdown);
+}
+
 function ensureScheduleRoomTimetableFilterOptions() {
   if (scheduleDetailPhase !== 'room') return;
   const pool = getScheduleRoomTimetableBasePool();
@@ -42750,14 +43926,11 @@ function ensureScheduleRoomTimetableFilterOptions() {
   };
   fill('srtf-building', pool.map(r => r.building));
   fill('srtf-room-type', pool.map(r => r.roomType || r.classroomTypeZh || ''));
-  const venueSel = scheduleDetailEl('srtf-venue-type');
-  if (venueSel) {
-    const cur = venueSel.value || '';
-    venueSel.innerHTML = '<option value="">全部</option>' + getScheduleRoomTypeFilterValues().map(v =>
-      `<option value="${escapeHtml(v)}">${escapeHtml(getScheduleVenueTypeLabel(v))}</option>`
-    ).join('');
-    venueSel.value = cur || scheduleRoomTimetableFilterDraft.venueType || '';
-  }
+  ensureScheduleRoomTimetableVenueTypeMultiselect();
+  const draftVenueTypes = scheduleRoomTimetableFilterDraft.venueTypes
+    || (scheduleRoomTimetableFilterDraft.venueType ? [scheduleRoomTimetableFilterDraft.venueType] : []);
+  if (draftVenueTypes.length) setScheduleRoomTimetableVenueTypesSelected(draftVenueTypes);
+  else updateScheduleRoomTimetableVenueTypeDisplay();
   fill('srtf-equipment', pool.map(r => r.equipment));
   fill('srtf-software', pool.map(r => r.software));
   fill('srtf-remark', pool.map(r => getScheduleRoomInfoRemark(r)).filter(Boolean));
@@ -42768,7 +43941,7 @@ function readScheduleRoomTimetableFilterDraftFromDom() {
   const room = scheduleDetailEl('srtf-room')?.value || '';
   const building = scheduleDetailEl('srtf-building')?.value || '';
   const roomType = scheduleDetailEl('srtf-room-type')?.value || '';
-  const venueType = scheduleDetailEl('srtf-venue-type')?.value || '';
+  const venueTypes = getScheduleRoomTimetableVenueTypesSelected();
   const seatsMinRaw = scheduleDetailEl('srtf-seats-min')?.value || '';
   const seatsMaxRaw = scheduleDetailEl('srtf-seats-max')?.value || '';
   const seatsMin = Number(seatsMinRaw);
@@ -42779,7 +43952,7 @@ function readScheduleRoomTimetableFilterDraftFromDom() {
   if (room.trim()) draft.room = room.trim();
   if (building) draft.building = building;
   if (roomType) draft.roomType = roomType;
-  if (venueType) draft.venueType = venueType;
+  if (venueTypes.length) draft.venueTypes = venueTypes;
   if (seatsMinRaw && !Number.isNaN(seatsMin)) draft.seatsMin = seatsMin;
   if (seatsMaxRaw && !Number.isNaN(seatsMax)) draft.seatsMax = seatsMax;
   if (equipment) draft.equipment = equipment;
@@ -42812,6 +43985,7 @@ function syncScheduleRoomTimetableFilterPanel() {
 
 function queryScheduleRoomTimetableFilter() {
   if (scheduleDetailPhase !== 'room') return;
+  closeScheduleRoomTimetableVenueTypeDropdown();
   scheduleRoomTimetableFilterDraft = readScheduleRoomTimetableFilterDraftFromDom();
   // 用户主动查询：以当前表单条件为准，退出「仅锁定教室并集」初始同步模式
   scheduleRoomFilterMode = 'venueType';
@@ -42984,7 +44158,7 @@ function renderScheduleDetailCourseList(tasks, activeTaskId) {
             <span class="sdc-field"><i class="sdc-k">计划人数</i><b class="sdc-v">${card.planned || '—'}</b></span>
             <span class="sdc-field"><i class="sdc-k">上限人数</i><b class="sdc-v">${card.limit || '—'}</b></span>
             <span class="sdc-field"><i class="sdc-k">教师</i><b class="sdc-v sdc-v-wrap">${escapeHtml(formatScheduleRoomCardTeacherStaffIdNames(card))}</b></span>
-            <span class="sdc-field"><i class="sdc-k">共同授课码</i><b class="sdc-v sdc-v-wrap">${escapeHtml(card.sharedTeachingCode || '—')}</b></span>
+            <span class="sdc-field"><i class="sdc-k">共同授课课号</i><b class="sdc-v sdc-v-wrap">${escapeHtml(card.sharedTeachingCode || '—')}</b></span>
             <span class="sdc-field"><i class="sdc-k">起止周</i><b class="sdc-v sdc-v-wrap">${escapeHtml(card.weeks)}</b></span>
             <span class="sdc-field"><i class="sdc-k">节次时间</i><b class="sdc-v sdc-v-wrap">${timeHtml}</b></span>
             <span class="sdc-field"><i class="sdc-k">场地类型</i><b class="sdc-v sdc-v-wrap${scopeType === 'weekday' ? ' sdc-v-teachers' : ''}">${venueHtml}</b></span>
@@ -43035,7 +44209,7 @@ function renderScheduleDetailCourseList(tasks, activeTaskId) {
     const weeklyLabel = weeklyHours > 0 ? String(weeklyHours) : '—';
     const hoursCls = unit.done > unit.total ? 'hr-over' : (unit.complete ? 'hr-done' : 'hr-todo');
     const hourTypeLabel = unit.label || getScheduleHourTypeLabel(unit.key);
-    const sharedCode = getScheduleTaskSharedTeachingCode(task) || '—';
+    const sharedCode = getScheduleTaskSharedTeachingPartnerLabel(task) || '—';
     const statusField = `<span class="sdc-field sdc-field-status"><i class="sdc-k">${escapeHtml(hourTypeLabel || '学时')}</i><b class="sdc-v ${hoursCls}">${unit.done}/${unit.total}</b></span>`;
     const batchField = isScheduleJointContext()
       ? `<span class="sdc-field"><i class="sdc-k">专业批次</i><b class="sdc-v sdc-v-wrap">${escapeHtml(formatScheduleJointTaskBatchLabel(task))}</b></span>`
@@ -43043,7 +44217,7 @@ function renderScheduleDetailCourseList(tasks, activeTaskId) {
     const sharedFields = `<span class="sdc-field"><i class="sdc-k">上课小组</i><b class="sdc-v sdc-v-wrap">${escapeHtml(formatScheduleGroupNamesWithCount(task, unit.key))}</b></span>
           ${batchField}
           <span class="sdc-field"><i class="sdc-k">授课教师</i><b class="sdc-v sdc-v-wrap sdc-v-teachers">${formatScheduleTeacherNameLinksHtml(task)}</b></span>
-          <span class="sdc-field"><i class="sdc-k">共同授课码</i><b class="sdc-v sdc-v-wrap">${escapeHtml(sharedCode)}</b></span>`;
+          <span class="sdc-field"><i class="sdc-k">共同授课课号</i><b class="sdc-v sdc-v-wrap">${escapeHtml(sharedCode)}</b></span>`;
     const hoursStatusIcon = getScheduleUnitHoursStatusIconHtml(unit);
     return `<li class="schedule-detail-course-li">
       <label class="schedule-detail-course-check" onclick="event.stopPropagation()">
@@ -43208,7 +44382,9 @@ function renderScheduleDetailPage() {
     }
   }
   renderScheduleDetailCourseList(tasks, scheduleActiveTaskId);
-  const term = getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm();
+  const term = isScheduleJointContext()
+    ? (scheduleBatchDetailContext?.termCode || getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm())
+    : (getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm());
   renderScheduleTimetableGrid(term, tasks, scheduleActiveTaskId);
   if (weeksEl) weeksEl.value = scheduleWeekSource();
   renderScheduleDetailWeekGrid(activeTask);
@@ -43318,9 +44494,11 @@ function renderScheduleDetailModeUi(activeTask) {
       if (applied?.lockedRoomUnion && (scheduleRoomFilterLockedRooms.length || lockedRooms.length)) {
         const rooms = scheduleRoomFilterLockedRooms.length ? scheduleRoomFilterLockedRooms : lockedRooms;
         venueFilterTip = `已同步锁定教室（${rooms.join('、')}）到筛选条件；可修改条件后点「查询」重新筛选。`;
-      } else if (applied?.venueType || venueFilter.length) {
-        const vt = applied?.venueType || venueFilter[0];
-        venueFilterTip = `已同步场地类型「${getScheduleVenueTypeLabel(vt) || formatScheduleVenueTypesLabel(venueFilter)}」到筛选条件；可修改条件后点「查询」重新筛选。`;
+      } else if (applied?.venueTypes?.length || applied?.venueType || venueFilter.length) {
+        const types = applied?.venueTypes?.length
+          ? applied.venueTypes
+          : (applied?.venueType ? [applied.venueType] : venueFilter);
+        venueFilterTip = `已同步场地类型「${formatScheduleVenueTypesLabel(types)}」到筛选条件；可修改条件后点「查询」重新筛选。`;
       } else if (activeTask) {
         venueFilterTip = '可在下方教室筛选中设置条件并点「查询」。';
       }
@@ -43416,6 +44594,8 @@ function getScheduleTeacherGroupRows() {
       name: resolveScheduleTeacherName(g.teacherId, meta.name || poolPick?.name || g.name),
       dept: meta.dept || poolPick?.departmentCode || '—',
       staffType: meta.staffType || poolPick?.teacherType || '—',
+      gender: poolPick?.gender || meta.gender || (typeof resolveScheduleTeacherDemoGender === 'function'
+        ? resolveScheduleTeacherDemoGender(g.teacherId) : ''),
       schoolCode,
       tasks, courseLabel, courseCount: stats.courseCount,
       groupCount: stats.groupCount,
@@ -43645,8 +44825,7 @@ const SCHEDULE_ROOM_CONFLICT_TYPE_LABEL = {
 };
 
 function getScheduleJointTeachingInfo(task) {
-  const sec = getScheduleOfferingSection(task);
-  const code = String(sec?.sharedTeachingCode || task?.sharedTeachingCode || '').trim();
+  const code = getScheduleTaskSharedTeachingCode(task);
   return {
     jointTeachingStatus: code ? 'Y' : 'N',
     jointTeachingGroupId: code
@@ -49245,6 +50424,7 @@ const SCHEDULE_PAGE_IDS = new Set([
   'adjustment-admin',
   'adjustment-approval',
   'adjustment-reason-type',
+  'adjustment-room-open',
   'adjustment-holiday',
   'adjustment-batch',
   'adjustment-record'
@@ -49848,6 +51028,12 @@ function goPage(id) {
   if (id === 'adjustment-admin') renderAdjustmentAdminPage();
   if (id === 'adjustment-approval') renderAdjustmentApprovalPage();
   if (id === 'adjustment-reason-type') renderAdjustmentReasonTypePage();
+  if (id === 'adjustment-room-open') {
+    document.querySelectorAll('.modal-overlay.open').forEach(el => {
+      if (el.id !== 'modal-adjustment-room-open') closeModal(el.id);
+    });
+    renderAdjustmentRoomOpenPage();
+  }
   if (id === 'adjustment-holiday') renderAdjustmentHolidayPage();
   if (id === 'adjustment-batch') renderAdjustmentBatchPage();
   if (id === 'adjustment-record') renderAdjustmentRecordPage();
@@ -50016,7 +51202,13 @@ document.querySelectorAll('#page-exec-edit .tab-bar .tab').forEach(tab => {
 
 // ── Modals ──
 function openModal(id) {
-  document.getElementById(id)?.classList.add('open');
+  const overlay = document.getElementById(id);
+  if (!overlay) return;
+  overlay.dataset.skipBackdropClose = '1';
+  overlay.classList.add('open');
+  requestAnimationFrame(() => {
+    setTimeout(() => { overlay.dataset.skipBackdropClose = ''; }, 80);
+  });
   if (id === 'modal-add-category') {
     if (categoryFormMode === 'add-l2') {
       onH1Change();
@@ -50061,6 +51253,12 @@ function closeModal(id) {
     if (unspecBtn) unspecBtn.hidden = true;
     syncScheduleRoomPickerModalLayout();
     syncScheduleRoomPickerOccBar();
+  }
+  if (id === 'modal-schedule-teacher-slot' || id === 'modal-schedule-room-slot') {
+    closeScheduleSlotWeekCalendar();
+  }
+  if (id === 'modal-adjustment-room-open' && typeof closeAdjustmentRoomOpenDatePicker === 'function') {
+    closeAdjustmentRoomOpenDatePicker();
   }
 }
 
@@ -50137,9 +51335,14 @@ function confirmDeleteConfirm() {
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('mousedown', e => {
+    if (overlay.dataset.skipBackdropClose === '1') {
+      overlay.dataset.backdropDown = '';
+      return;
+    }
     overlay.dataset.backdropDown = e.target === overlay ? '1' : '';
   });
   overlay.addEventListener('click', e => {
+    if (overlay.dataset.skipBackdropClose === '1') return;
     if (e.target === overlay && overlay.dataset.backdropDown === '1') {
       closeModal(overlay.id);
     }
@@ -50188,12 +51391,15 @@ document.addEventListener('click', e => {
   if (geVenueTypeWrap && !geVenueTypeWrap.contains(e.target)) closeGeOfferingVenueTypeDropdown();
   const scheduleVenueTypeWrap = document.getElementById('schedule-detail-venue-types-multiselect');
   if (scheduleVenueTypeWrap && !scheduleVenueTypeWrap.contains(e.target)) cancelScheduleVenueTypeDropdown();
+  if (!e.target.closest('#schedule-course-search-venue-type-multiselect')) closeScheduleCourseSearchVenueTypeDropdown();
+  if (!e.target.closest('#srtf-venue-type-multiselect')) closeScheduleRoomTimetableVenueTypeDropdown();
   const scheduleRoomTypeFilterWrap = document.getElementById('srf-type-multiselect');
   if (scheduleRoomTypeFilterWrap && !scheduleRoomTypeFilterWrap.contains(e.target)) closeScheduleRoomTypeFilterDropdown();
   const scheduleRoomClassroomTypeFilterWrap = document.getElementById('srf-classroom-type-multiselect');
   if (scheduleRoomClassroomTypeFilterWrap && !scheduleRoomClassroomTypeFilterWrap.contains(e.target)) {
     closeScheduleRoomClassroomTypeFilterDropdown();
   }
+  if (!e.target.closest('.srf-approve-ms')) closeScheduleApproveRoomMsDropdowns();
   const tahHourTypeWrap = document.getElementById('tah-hour-type-multiselect');
   if (tahHourTypeWrap && !tahHourTypeWrap.contains(e.target)) closeTeacherHourTypeDropdown();
   const teacherLoadTermWrap = document.getElementById('teacher-load-filter-term-multiselect');
@@ -56657,6 +57863,7 @@ let adjustmentApplyFiles = [];
 let adjustmentLastConflict = null;
 let adjustmentPerSlotState = {};
 let adjustmentSelectedSlotVals = [];
+let adjustmentApplyBatchSelected = new Set();
 let adjustmentSlotPickerTemp = new Set();
 let adjustmentPickerTargetVal = null;
 let adjustmentTeacherPickerSel = new Set();
@@ -56678,6 +57885,14 @@ const ADJUSTMENT_LEAVE_FORM_HINT = '请先提交 Academic-Related Travel / Leave
 const ADJUSTMENT_LEAVE_NO_OVERLAP_HINT = '无与本次调课时间重叠的请假记录';
 const ADJUSTMENT_REASON_TYPE_STORE = { seeded: false, seq: 1, items: [] };
 const ADJUSTMENT_LEAVE_RECORD_STORE = { seeded: false, items: [] };
+const ADJUSTMENT_ROOM_OPEN_STORE = { seeded: false, seq: 1, profiles: [] };
+const ADJUSTMENT_ROOM_OPEN_PICKER_LIST_KEY = 'adjustmentRoomOpenPicker';
+const adjustmentRoomOpenSelected = new Set();
+const adjustmentRoomOpenListSelected = new Set();
+let adjustmentRoomOpenModalRooms = [];
+let adjustmentRoomOpenModalMode = 'create';
+let adjustmentRoomOpenCalState = null;
+listPageSize[ADJUSTMENT_ROOM_OPEN_PICKER_LIST_KEY] = 10;
 
 const ADJUSTMENT_STATUS_META = {
   pending: { label: '待审批', cls: 'pending' },
@@ -56824,7 +58039,7 @@ function getAdjustmentPeriodCatalog(termCode) {
 /** 探测某调课行在指定节次下的冲突（不影响当前已选节次；密度忽略标记不参与探测） */
 function probeAdjustmentPeriodConflict(val, periodNo) {
   const empty = { teacher: [], student: [], room: [], hasConflict: false };
-  if (!val || !periodNo || val === '__shared__') return empty;
+  if (!val || !periodNo || val === '__shared__' || val === '__batch__') return empty;
   const st = ensureAdjustmentRowState(val);
   if (!st) return empty;
   if (!st.weekday && !st.date) return empty;
@@ -57009,6 +58224,7 @@ function closeAdjustmentPeriodDropdownOutside(e) {
     return;
   }
   if (e.target.closest('.adj-period-dd-wrap') || e.target.closest('.adj-period-dd')) return;
+  if (e.target.closest('#adjustment-apply-batch-period-host')) return;
   closeAdjustmentPeriodDropdowns();
 }
 
@@ -57016,6 +58232,10 @@ function selectAdjustmentPeriodOption(val, rawValue) {
   closeAdjustmentPeriodDropdowns();
   const parsed = parseAdjustmentPeriodSelectValue(rawValue);
   const storeVal = parsed.startTime ? `${parsed.period}|${parsed.startTime}` : String(parsed.period || rawValue || '');
+  if (val === '__batch__') {
+    applyAdjustmentApplyBatchPeriod(storeVal);
+    return;
+  }
   if (val === '__shared__') {
     const el = document.getElementById('adjustment-apply-to-period');
     if (el) {
@@ -57064,7 +58284,7 @@ function getAdjustmentDateByWeekAndWeekday(week, weekday) {
 
 /** 打开密度弹窗时，按当前调课行同步专业/批次/周次，使密度与目标节次可选口径一致 */
 function syncAdjustmentDensityFiltersFromContext(val) {
-  if (!val || val === '__shared__') return;
+  if (!val || val === '__shared__' || val === '__batch__') return;
   const task = resolveAdjustmentApplyTask(val);
   if (!task) return;
   const slot = isAdjustmentAddclassVal(val)
@@ -57182,7 +58402,10 @@ function getAdjustmentDensityStudentUniverse() {
       intake: s.intake,
       batchKey: s.batchKey || `${s.programmeKey}|${s.intake}`,
       programmeName: s.programmeName,
-      gender: getMockStudentGender(i)
+      gender: getMockStudentGender(i),
+      schoolCode: typeof getProgrammeSchoolCode === 'function' ? getProgrammeSchoolCode(s.programmeKey) : '',
+      nationality: (typeof getStudentNationality === 'function' ? getStudentNationality(s) : '')
+        || (typeof getMockStudentNationality === 'function' ? getMockStudentNationality(i) : '')
     });
   });
   batches.forEach((b, bi) => {
@@ -57203,7 +58426,9 @@ function getAdjustmentDensityStudentUniverse() {
         intake: b.intake,
         batchKey: b.batchKey,
         programmeName: b.programmeName,
-        gender: getMockStudentGender(bi * 17 + i)
+        gender: getMockStudentGender(bi * 17 + i),
+        schoolCode: typeof getProgrammeSchoolCode === 'function' ? getProgrammeSchoolCode(b.programmeKey) : '',
+        nationality: typeof getMockStudentNationality === 'function' ? getMockStudentNationality(bi * 17 + i) : ''
       });
     }
   });
@@ -57232,6 +58457,69 @@ function resolveAdjustmentDensityTeacherIds(filters) {
   return list.map(t => t.teacherId);
 }
 
+function densityListIncludes(selected, value) {
+  const list = Array.isArray(selected)
+    ? selected.map(v => String(v || '').trim()).filter(Boolean)
+    : (selected ? [String(selected).trim()] : []);
+  if (!list.length) return true;
+  return list.includes(String(value || '').trim());
+}
+
+function normalizeDensityWeekFilters(weekFilter) {
+  if (Array.isArray(weekFilter)) return weekFilter.map(v => String(v || '').trim()).filter(Boolean);
+  return weekFilter ? [String(weekFilter).trim()] : [];
+}
+
+function densityWeekMatches(weeksStr, weekFilters) {
+  const list = normalizeDensityWeekFilters(weekFilters);
+  if (!list.length) return true;
+  return list.some(week => scheduleWeekMatches(weeksStr, week));
+}
+
+function densityTaskCourseNo(task) {
+  const raw = String(task?.courseNo || task?.code || '').trim();
+  if (!raw) return '';
+  return typeof formatScheduleCourseCode === 'function' ? String(formatScheduleCourseCode(raw) || raw).trim() : raw;
+}
+
+function densityTaskCourseName(task) {
+  return String(task?.courseName || task?.name || '').trim();
+}
+
+function densityTaskMatchesCourses(task, filters) {
+  const courseNos = (filters && filters.courseNos) || [];
+  const courseNames = (filters && filters.courseNames) || [];
+  const groups = (filters && filters.groups) || [];
+  if (courseNos.length && !courseNos.includes(densityTaskCourseNo(task))) return false;
+  if (courseNames.length && !courseNames.includes(densityTaskCourseName(task))) return false;
+  if (groups.length) {
+    const names = typeof getScheduleTaskGroupNames === 'function'
+      ? getScheduleTaskGroupNames(task)
+      : [];
+    if (!names.some(n => groups.includes(String(n)))) return false;
+  }
+  return true;
+}
+
+function densityStudentMatchesCourses(stu, filters) {
+  const courseNos = (filters && filters.courseNos) || [];
+  const courseNames = (filters && filters.courseNames) || [];
+  const groups = (filters && filters.groups) || [];
+  if (!courseNos.length && !courseNames.length && !groups.length) return true;
+  return getScheduleTasksForBatch(stu.programmeKey, stu.intake).some(task => densityTaskMatchesCourses(task, filters));
+}
+
+function densityTeacherMatchesCourses(teacher, filters) {
+  const courseNos = (filters && filters.courseNos) || [];
+  const courseNames = (filters && filters.courseNames) || [];
+  const groups = (filters && filters.groups) || [];
+  if (!courseNos.length && !courseNames.length && !groups.length) return true;
+  const tasks = typeof getAdjustmentTeacherTasks === 'function'
+    ? getAdjustmentTeacherTasks(teacher.teacherId)
+    : getScheduleTaskRows().filter(t => taskHasScheduleTeacher(t, teacher.teacherId));
+  return tasks.some(task => densityTaskMatchesCourses(task, filters));
+}
+
 /**
  * 查询优先级：学生姓名 > 教师姓名 > 其他条件
  * （姓名命中时以其为主，不再叠加其余筛选）
@@ -57248,9 +58536,12 @@ function filterAdjustmentDensityStudents(all, filters) {
   }
   return all.filter(s => {
     if (filters.studentId && !String(s.id || '').toLowerCase().includes(filters.studentId.toLowerCase())) return false;
-    if (filters.programmeKey && s.programmeKey !== filters.programmeKey) return false;
-    if (filters.batchKey && s.batchKey !== filters.batchKey) return false;
-    if (filters.gender && s.gender !== filters.gender) return false;
+    if (!densityListIncludes(filters.programmeKeys || filters.programmeKey, s.programmeKey)) return false;
+    if (!densityListIncludes(filters.batchKeys || filters.batchKey, s.batchKey)) return false;
+    if (!densityListIncludes(filters.genders || filters.gender, s.gender)) return false;
+    if (!densityListIncludes(filters.schoolCodes, s.schoolCode)) return false;
+    if (!densityListIncludes(filters.nationalities, s.nationality)) return false;
+    if (!densityStudentMatchesCourses(s, filters)) return false;
     if (filters.teacherId) {
       const teacherIds = resolveAdjustmentDensityTeacherIds({ teacherId: filters.teacherId });
       if (!teacherIds.length || !adjustmentDensityStudentHasTeacher(s, teacherIds)) return false;
@@ -57268,10 +58559,10 @@ function densitySlotMatchesDateRange(slot, task, dateFrom, dateTo, weekFilter) {
   const weeksStr = slot.weeks || task.weeks || '';
   let weeks = [...parseScheduleWeeksToSet(weeksStr)];
   if (!weeks.length) weeks = Array.from({ length: 18 }, (_, i) => i + 1);
-  if (weekFilter) {
-    const w = Number(weekFilter);
-    if (!w || !weeks.includes(w)) return false;
-    weeks = [w];
+  const weekFilters = normalizeDensityWeekFilters(weekFilter);
+  if (weekFilters.length) {
+    weeks = weeks.filter(w => weekFilters.includes(String(w)));
+    if (!weeks.length) return false;
   }
   const wd = Number(slot.weekday);
   if (!wd) return false;
@@ -57286,8 +58577,8 @@ function densitySlotMatchesDateRange(slot, task, dateFrom, dateTo, weekFilter) {
   });
 }
 
-function computeAdjustmentDensityMatrix(students, weekFilter, termCode, dateFrom, dateTo) {
-  const term = termCode || getScheduleQueryTerm();
+function computeAdjustmentDensityMatrix(students, weekFilter, termCode, dateFrom, dateTo, extraFilters) {
+  const term = (Array.isArray(termCode) ? termCode[0] : termCode) || getScheduleQueryTerm();
   // 与目标节次下拉共用节次目录；星期含周六日，避免调到周末时密度表无对应列
   const periods = getAdjustmentPeriodCatalog(term);
   const weekdays = SCHEDULE_WEEKDAYS.slice();
@@ -57296,8 +58587,9 @@ function computeAdjustmentDensityMatrix(students, weekFilter, termCode, dateFrom
   students.forEach(stu => {
     const occupied = new Set();
     getScheduleTasksForBatch(stu.programmeKey, stu.intake).filter(taskHasBatchTime).forEach(task => {
+      if (!densityTaskMatchesCourses(task, extraFilters || {})) return;
       normalizeTaskTimeSlots(task).forEach(slot => {
-        if (weekFilter && !scheduleWeekMatches(slot.weeks || task.weeks || '', weekFilter)) return;
+        if (!densityWeekMatches(slot.weeks || task.weeks || '', weekFilter)) return;
         if (!densitySlotMatchesDateRange(slot, task, dateFrom || '', dateTo || '', weekFilter)) return;
         const wd = Number(slot.weekday);
         const pf = Number(slot.periodFrom);
@@ -57393,6 +58685,23 @@ function applyAdjustmentDensitySelectionToTarget(weekday, period, week) {
   const dateStr = getAdjustmentDateByWeekAndWeekday(week, weekday);
   const weeksLabel = `第${week}周`;
   const val = adjustmentDensityContextVal;
+  if (val === '__batch__') {
+    const vals = getAdjustmentApplyBatchSelectedVals();
+    if (!vals.length) return;
+    vals.forEach(v => {
+      const st = ensureAdjustmentRowState(v);
+      if (!st) return;
+      st.date = dateStr;
+      st.weekday = Number(weekday);
+      st.period = Number(period);
+      st.weeks = weeksLabel;
+      st.ignoreStudentConflict = true;
+      syncAdjustmentMergedSlotState(v);
+    });
+    renderAdjustmentPerSlotConfigs();
+    refreshAdjustmentRowConflicts();
+    return;
+  }
   if (val === '__shared__') {
     const dateEl = document.getElementById('adjustment-apply-to-date');
     const weeksEl = document.getElementById('adjustment-apply-to-weeks');
@@ -57518,45 +58827,373 @@ function fillDensityTermWeekOptions(termSelId, weekSelId, rootEl) {
   if (typeof enhanceAllSelects === 'function' && rootEl) enhanceAllSelects(rootEl);
 }
 
-function buildScheduleStudentDensityFilterOptions() {
-  fillDensityTermWeekOptions('sdf-term', 'sdf-week', document.getElementById('tab-schedule-student-density'));
+const scheduleDensityMsStore = {};
+
+function getScheduleDensityMsState(key) {
+  if (!scheduleDensityMsStore[key]) {
+    scheduleDensityMsStore[key] = { selected: [], options: [], keyword: '', inited: false };
+  }
+  return scheduleDensityMsStore[key];
+}
+
+function getScheduleDensityMsSelected(key) {
+  return (getScheduleDensityMsState(key).selected || []).slice();
+}
+
+function setScheduleDensityMsSelected(key, values) {
+  const state = getScheduleDensityMsState(key);
+  state.selected = (values || []).map(v => String(v || '').trim()).filter(Boolean);
+  state.inited = true;
+  syncScheduleDensityMsDisplay(key);
+  renderScheduleDensityMsOptions(key);
+}
+
+function fillScheduleDensityMs(key, options, selectedIfUnset) {
+  const state = getScheduleDensityMsState(key);
+  state.options = options || [];
+  if (!state.inited) {
+    state.selected = (selectedIfUnset || []).map(v => String(v || '').trim()).filter(Boolean);
+    state.inited = true;
+  }
+  syncScheduleDensityMsDisplay(key);
+  renderScheduleDensityMsOptions(key);
+}
+
+function buildScheduleDensityMsHtml(key) {
+  return `<div class="clo-multiselect density-ms" id="${key}-ms">
+    <button type="button" class="clo-multiselect-trigger input input-sm" id="${key}-btn" onclick="toggleScheduleDensityMs('${key}', event)">
+      <span class="clo-multiselect-display placeholder" id="${key}-display">全部</span>
+      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+    </button>
+    <div class="clo-multiselect-dropdown" id="${key}-dropdown" hidden>
+      <div class="density-ms-search">
+        <input class="input input-sm" id="${key}-search" type="text" placeholder="搜索" autocomplete="off"
+          onclick="event.stopPropagation()"
+          oninput="onScheduleDensityMsSearch('${key}', this.value)">
+      </div>
+      <div class="clo-multiselect-options" id="${key}-options"></div>
+    </div>
+  </div>`;
+}
+
+function toggleScheduleDensityMs(key, event) {
+  if (event) event.stopPropagation();
+  const dd = document.getElementById(`${key}-dropdown`);
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeScheduleDensityMsDropdowns(key);
+  if (!willOpen) return;
+  dd.hidden = false;
+  const search = document.getElementById(`${key}-search`);
+  if (search) {
+    search.value = getScheduleDensityMsState(key).keyword || '';
+    setTimeout(() => search.focus(), 0);
+  }
+}
+
+function closeScheduleDensityMsDropdowns(exceptKey) {
+  document.querySelectorAll('#page-schedule-density-query .density-ms .clo-multiselect-dropdown').forEach(dd => {
+    if (exceptKey && dd.id === `${exceptKey}-dropdown`) return;
+    dd.hidden = true;
+  });
+}
+
+function onScheduleDensityMsSearch(key, value) {
+  getScheduleDensityMsState(key).keyword = String(value || '');
+  renderScheduleDensityMsOptions(key);
+}
+
+function onScheduleDensityMsCheck(key, value, checked) {
+  const next = new Set(getScheduleDensityMsSelected(key));
+  if (checked) next.add(String(value));
+  else next.delete(String(value));
+  setScheduleDensityMsSelected(key, [...next]);
+  if (key === 'sdf-course-no' || key === 'sdf-course-name') refreshScheduleDensityGroupOptions('student');
+  if (key === 'tdf-course-no' || key === 'tdf-course-name') refreshScheduleDensityGroupOptions('teacher');
+}
+
+function renderScheduleDensityMsOptions(key) {
+  const box = document.getElementById(`${key}-options`);
+  if (!box) return;
+  const state = getScheduleDensityMsState(key);
+  const kw = String(state.keyword || '').trim().toLowerCase();
+  const selected = new Set((state.selected || []).map(String));
+  const items = (state.options || []).filter(it => {
+    if (!kw) return true;
+    return String(it.label || '').toLowerCase().includes(kw) || String(it.value || '').toLowerCase().includes(kw);
+  });
+  if (!items.length) {
+    box.innerHTML = '<div class="clo-multiselect-empty">无匹配项</div>';
+    return;
+  }
+  box.innerHTML = items.map(it => `
+    <label class="clo-multiselect-option" onclick="event.stopPropagation()">
+      <input type="checkbox" value="${escapeHtml(it.value)}" ${selected.has(String(it.value)) ? 'checked' : ''}
+        onchange="onScheduleDensityMsCheck('${key}', this.value, this.checked)">
+      <span>${escapeHtml(it.label)}</span>
+    </label>`).join('');
+}
+
+function syncScheduleDensityMsDisplay(key) {
+  const display = document.getElementById(`${key}-display`);
+  if (!display) return;
+  const state = getScheduleDensityMsState(key);
+  const labels = (state.selected || []).map(v =>
+    (state.options || []).find(it => String(it.value) === String(v))?.label || v
+  );
+  if (!labels.length) {
+    display.textContent = '全部';
+    display.classList.add('placeholder');
+    return;
+  }
+  display.classList.remove('placeholder');
+  display.textContent = labels.length <= 2 ? labels.join('、') : `已选 ${labels.length} 项`;
+}
+
+function bindScheduleDensityMsDocClose() {
+  if (bindScheduleDensityMsDocClose.bound) return;
+  bindScheduleDensityMsDocClose.bound = true;
+  document.addEventListener('click', e => {
+    if (e.target.closest('#page-schedule-density-query .density-ms')) return;
+    closeScheduleDensityMsDropdowns();
+  });
+}
+
+function getDefaultDensityTermSelected() {
+  const offering = typeof getActiveOfferingTermSetting === 'function' ? getActiveOfferingTermSetting() : null;
+  const term = offering?.termCode || (typeof getScheduleQueryTerm === 'function' ? getScheduleQueryTerm() : '') || '';
+  return term ? [term] : [];
+}
+
+function getDefaultDensityWeekSelected() {
+  const w = typeof getAdjustmentCurrentTeachingWeek === 'function' ? getAdjustmentCurrentTeachingWeek() : 1;
+  return w ? [String(w)] : [];
+}
+
+function getScheduleDensityTermOptions() {
+  const terms = typeof getScheduleTermCodes === 'function' ? getScheduleTermCodes() : [];
+  const fallback = getDefaultDensityTermSelected();
+  return (terms.length ? terms : fallback).map(code => ({
+    value: code,
+    label: typeof formatCourseTermDisplay === 'function' ? formatCourseTermDisplay(code) : code
+  }));
+}
+
+function getScheduleDensityWeekOptions() {
+  return Array.from({ length: 18 }, (_, i) => ({ value: String(i + 1), label: `第${i + 1}周` }));
+}
+
+function getScheduleDensityProgrammeOptions() {
   const batches = typeof buildScheduleBatchSummaries === 'function' ? buildScheduleBatchSummaries() : [];
-  const progSel = document.getElementById('sdf-programme');
-  if (progSel) {
-    const prev = progSel.value;
-    const progs = [...new Map(batches.map(b => [b.programmeKey, b.programmeName || b.programmeKey])).entries()]
-      .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'zh'));
-    progSel.innerHTML = '<option value="">全部</option>' + progs.map(([k, n]) =>
-      `<option value="${escapeHtml(k)}">${escapeHtml(n)}</option>`
-    ).join('');
-    if (prev && [...progSel.options].some(o => o.value === prev)) progSel.value = prev;
+  return [...new Map(batches.map(b => [b.programmeKey, b.programmeName || b.programmeKey])).entries()]
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'zh'))
+    .map(([k, n]) => ({ value: k, label: n }));
+}
+
+function getScheduleDensityBatchOptions() {
+  const batches = typeof buildScheduleBatchSummaries === 'function' ? buildScheduleBatchSummaries() : [];
+  return batches.map(b => ({
+    value: b.batchKey,
+    label: `${b.programmeName || b.programmeKey} · ${formatIntakeDisplay(b.intake)}`
+  }));
+}
+
+function getScheduleDensityGenderOptions() {
+  return [
+    { value: 'Male', label: 'Male' },
+    { value: 'Female', label: 'Female' }
+  ];
+}
+
+function getScheduleDensityCourseNoOptions() {
+  const rows = typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : [];
+  const set = new Set();
+  rows.forEach(t => {
+    const no = densityTaskCourseNo(t);
+    if (no && no !== '—') set.add(no);
+  });
+  return [...set].sort().map(v => ({ value: v, label: v }));
+}
+
+function getScheduleDensityCourseNameOptions() {
+  const rows = typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : [];
+  const set = new Set();
+  rows.forEach(t => {
+    const name = densityTaskCourseName(t);
+    if (name) set.add(name);
+  });
+  return [...set].sort((a, b) => a.localeCompare(b, 'zh')).map(v => ({ value: v, label: v }));
+}
+
+function getScheduleDensityGroupOptions(courseNos, courseNames) {
+  const rows = typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : [];
+  const filters = { courseNos: courseNos || [], courseNames: courseNames || [] };
+  const set = new Set();
+  rows.forEach(t => {
+    if (!densityTaskMatchesCourses(t, filters)) return;
+    const names = typeof getScheduleTaskGroupNames === 'function'
+      ? getScheduleTaskGroupNames(t)
+      : [];
+    names.forEach(n => {
+      const label = String(n || '').trim();
+      if (label && label !== '—') set.add(label);
+    });
+  });
+  return [...set].sort((a, b) => a.localeCompare(b, 'zh')).map(v => ({ value: v, label: v }));
+}
+
+function refreshScheduleDensityGroupOptions(kind) {
+  const isTeacher = kind === 'teacher';
+  const noKey = isTeacher ? 'tdf-course-no' : 'sdf-course-no';
+  const nameKey = isTeacher ? 'tdf-course-name' : 'sdf-course-name';
+  const groupKey = isTeacher ? 'tdf-group' : 'sdf-group';
+  const options = getScheduleDensityGroupOptions(
+    getScheduleDensityMsSelected(noKey),
+    getScheduleDensityMsSelected(nameKey)
+  );
+  const allowed = new Set(options.map(o => String(o.value)));
+  const state = getScheduleDensityMsState(groupKey);
+  state.options = options;
+  state.selected = (state.selected || []).filter(v => allowed.has(String(v)));
+  syncScheduleDensityMsDisplay(groupKey);
+  renderScheduleDensityMsOptions(groupKey);
+}
+
+function getScheduleDensitySchoolOptions() {
+  const codes = typeof SCHOOL_CODES !== 'undefined' ? SCHOOL_CODES.slice() : [];
+  return [...new Set(codes)].filter(Boolean).sort().map(c => ({ value: c, label: c }));
+}
+
+function getScheduleDensityNationalityOptions() {
+  const set = new Set();
+  if (typeof getMockStudentNationality === 'function') {
+    for (let i = 0; i < 20; i++) set.add(getMockStudentNationality(i));
   }
-  const batchSel = document.getElementById('sdf-batch');
-  if (batchSel) {
-    const prev = batchSel.value;
-    batchSel.innerHTML = '<option value="">全部</option>' + batches.map(b =>
-      `<option value="${escapeHtml(b.batchKey)}">${escapeHtml(`${b.programmeName || b.programmeKey} · ${formatIntakeDisplay(b.intake)}`)}</option>`
-    ).join('');
-    if (prev && [...batchSel.options].some(o => o.value === prev)) batchSel.value = prev;
+  return [...set].filter(Boolean).sort().map(v => ({ value: v, label: v }));
+}
+
+function getScheduleDensityStaffTypeOptions() {
+  const set = new Set(typeof TEACHER_TYPE_CODES !== 'undefined' ? TEACHER_TYPE_CODES : []);
+  (typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : []).forEach(t => {
+    if (t.staffType && t.staffType !== '—') set.add(t.staffType);
+  });
+  return [...set].filter(Boolean).sort().map(v => ({ value: v, label: v }));
+}
+
+function buildScheduleDensityDateRangeHtml(fromId, toId) {
+  return `<div class="srf-item schedule-density-date-range-item">
+    <label>日期范围</label>
+    <div class="schedule-density-date-range">
+      <input class="input input-sm" id="${fromId}" type="date" title="开始日期">
+      <span class="schedule-density-date-sep">至</span>
+      <input class="input input-sm" id="${toId}" type="date" title="结束日期">
+    </div>
+  </div>`;
+}
+
+function buildScheduleDensityDimensionHtml(id, onchange) {
+  return `<div class="srf-item"><label>密度维度</label>
+    <select class="input input-sm no-search" id="${id}" onchange="${onchange}">
+      <option value="ratio" selected>比率</option>
+      <option value="count">人数</option>
+    </select>
+  </div>`;
+}
+
+function buildScheduleStudentDensityFilterHtml() {
+  return `
+    <div class="srf-item"><label>学期</label>${buildScheduleDensityMsHtml('sdf-term')}</div>
+    <div class="srf-item"><label>学生学号</label><input class="input input-sm" id="sdf-student-id" type="text" placeholder="请输入学号"></div>
+    <div class="srf-item"><label>学生姓名</label><input class="input input-sm" id="sdf-student-name" type="text" placeholder="请输入姓名"></div>
+    <div class="srf-actions">
+      <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleStudentDensity()">查询</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleStudentDensityQuery()">重置</button>
+    </div>
+    <div class="srf-item"><label>专业</label>${buildScheduleDensityMsHtml('sdf-programme')}</div>
+    <div class="srf-item"><label>批次</label>${buildScheduleDensityMsHtml('sdf-batch')}</div>
+    <div class="srf-item"><label>所属学院</label>${buildScheduleDensityMsHtml('sdf-school')}</div>
+    <div class="srf-item"><label>性别</label>${buildScheduleDensityMsHtml('sdf-gender')}</div>
+    <div class="srf-item"><label>国籍</label>${buildScheduleDensityMsHtml('sdf-nationality')}</div>
+    <div class="srf-item"><label>课程号</label>${buildScheduleDensityMsHtml('sdf-course-no')}</div>
+    <div class="srf-item"><label>课程名称</label>${buildScheduleDensityMsHtml('sdf-course-name')}</div>
+    <div class="srf-item"><label>上课小组</label>${buildScheduleDensityMsHtml('sdf-group')}</div>
+    <div class="srf-item"><label>周数</label>${buildScheduleDensityMsHtml('sdf-week')}</div>
+    ${buildScheduleDensityDateRangeHtml('sdf-date-from', 'sdf-date-to')}
+    <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="sdf-teacher-id" type="text" placeholder="请输入工号"></div>
+    <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="sdf-teacher-name" type="text" placeholder="请输入姓名"></div>
+    ${buildScheduleDensityDimensionHtml('sdf-dimension', 'renderScheduleStudentDensityTable()')}`;
+}
+
+function buildScheduleTeacherDensityFilterHtml() {
+  return `
+    <div class="srf-item"><label>学期</label>${buildScheduleDensityMsHtml('tdf-term')}</div>
+    <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="tdf-teacher-id" type="text" placeholder="请输入工号"></div>
+    <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="tdf-teacher-name" type="text" placeholder="请输入姓名"></div>
+    <div class="srf-actions">
+      <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTeacherDensity()">查询</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleTeacherDensityQuery()">重置</button>
+    </div>
+    <div class="srf-item"><label>所属学院</label>${buildScheduleDensityMsHtml('tdf-school')}</div>
+    <div class="srf-item"><label>教工类型</label>${buildScheduleDensityMsHtml('tdf-staff-type')}</div>
+    <div class="srf-item"><label>性别</label>${buildScheduleDensityMsHtml('tdf-gender')}</div>
+    <div class="srf-item"><label>课程号</label>${buildScheduleDensityMsHtml('tdf-course-no')}</div>
+    <div class="srf-item"><label>课程名称</label>${buildScheduleDensityMsHtml('tdf-course-name')}</div>
+    <div class="srf-item"><label>上课小组</label>${buildScheduleDensityMsHtml('tdf-group')}</div>
+    <div class="srf-item"><label>周数</label>${buildScheduleDensityMsHtml('tdf-week')}</div>
+    ${buildScheduleDensityDateRangeHtml('tdf-date-from', 'tdf-date-to')}
+    ${buildScheduleDensityDimensionHtml('tdf-dimension', 'renderScheduleTeacherDensityTable()')}`;
+}
+
+function ensureScheduleDensityFilterGrids() {
+  bindScheduleDensityMsDocClose();
+  const studentHost = document.getElementById('schedule-student-density-filters');
+  if (studentHost && studentHost.dataset.densityReady !== 'v3-group') {
+    studentHost.innerHTML = buildScheduleStudentDensityFilterHtml();
+    studentHost.dataset.densityReady = 'v3-group';
   }
+  const teacherHost = document.getElementById('schedule-teacher-density-filters');
+  if (teacherHost && teacherHost.dataset.densityReady !== 'v3-group') {
+    teacherHost.innerHTML = buildScheduleTeacherDensityFilterHtml();
+    teacherHost.dataset.densityReady = 'v3-group';
+  }
+}
+
+function buildScheduleStudentDensityFilterOptions() {
+  ensureScheduleDensityFilterGrids();
+  const termDefault = getDefaultDensityTermSelected();
+  const weekDefault = getDefaultDensityWeekSelected();
+  fillScheduleDensityMs('sdf-term', getScheduleDensityTermOptions(), termDefault);
+  fillScheduleDensityMs('sdf-programme', getScheduleDensityProgrammeOptions());
+  fillScheduleDensityMs('sdf-batch', getScheduleDensityBatchOptions());
+  fillScheduleDensityMs('sdf-gender', getScheduleDensityGenderOptions());
+  fillScheduleDensityMs('sdf-week', getScheduleDensityWeekOptions(), weekDefault);
+  fillScheduleDensityMs('sdf-course-no', getScheduleDensityCourseNoOptions());
+  fillScheduleDensityMs('sdf-course-name', getScheduleDensityCourseNameOptions());
+  fillScheduleDensityMs('sdf-school', getScheduleDensitySchoolOptions());
+  fillScheduleDensityMs('sdf-nationality', getScheduleDensityNationalityOptions());
   const dimSel = document.getElementById('sdf-dimension');
   if (dimSel && !dimSel.value) dimSel.value = 'ratio';
 }
 
 function getScheduleStudentDensityFilters() {
   return {
-    term: document.getElementById('sdf-term')?.value || '',
+    term: getScheduleDensityMsSelected('sdf-term'),
     studentId: (document.getElementById('sdf-student-id')?.value || '').trim(),
     studentName: (document.getElementById('sdf-student-name')?.value || '').trim(),
-    programmeKey: document.getElementById('sdf-programme')?.value || '',
-    batchKey: document.getElementById('sdf-batch')?.value || '',
-    gender: document.getElementById('sdf-gender')?.value || '',
-    week: document.getElementById('sdf-week')?.value || '',
+    programmeKeys: getScheduleDensityMsSelected('sdf-programme'),
+    batchKeys: getScheduleDensityMsSelected('sdf-batch'),
+    genders: getScheduleDensityMsSelected('sdf-gender'),
+    week: getScheduleDensityMsSelected('sdf-week'),
     dateFrom: document.getElementById('sdf-date-from')?.value || '',
     dateTo: document.getElementById('sdf-date-to')?.value || '',
     teacherId: (document.getElementById('sdf-teacher-id')?.value || '').trim(),
     teacherName: (document.getElementById('sdf-teacher-name')?.value || '').trim(),
-    dimension: document.getElementById('sdf-dimension')?.value || 'ratio'
+    dimension: document.getElementById('sdf-dimension')?.value || 'ratio',
+    courseNos: getScheduleDensityMsSelected('sdf-course-no'),
+    courseNames: getScheduleDensityMsSelected('sdf-course-name'),
+    groups: getScheduleDensityMsSelected('sdf-group'),
+    schoolCodes: getScheduleDensityMsSelected('sdf-school'),
+    nationalities: getScheduleDensityMsSelected('sdf-nationality')
   };
 }
 
@@ -57592,28 +59229,26 @@ function queryScheduleStudentDensity() {
   const all = getAdjustmentDensityStudentUniverse();
   const students = filterAdjustmentDensityStudents(all, filters);
   scheduleStudentDensityData = computeAdjustmentDensityMatrix(
-    students, filters.week, filters.term, filters.dateFrom, filters.dateTo
+    students, filters.week, filters.term, filters.dateFrom, filters.dateTo, filters
   );
   updateScheduleStudentDensityHint();
   renderScheduleStudentDensityTable();
 }
 
 function resetScheduleStudentDensityQuery() {
+  ensureScheduleDensityFilterGrids();
   ['sdf-student-id', 'sdf-student-name', 'sdf-teacher-id', 'sdf-teacher-name', 'sdf-date-from', 'sdf-date-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  ['sdf-programme', 'sdf-batch', 'sdf-gender'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+  setScheduleDensityMsSelected('sdf-term', getDefaultDensityTermSelected());
+  setScheduleDensityMsSelected('sdf-week', getDefaultDensityWeekSelected());
+  ['sdf-programme', 'sdf-batch', 'sdf-gender', 'sdf-course-no', 'sdf-course-name', 'sdf-group', 'sdf-school', 'sdf-nationality'].forEach(key => {
+    setScheduleDensityMsSelected(key, []);
   });
-  const weekSel = document.getElementById('sdf-week');
-  if (weekSel) weekSel.value = String(typeof getAdjustmentCurrentTeachingWeek === 'function' ? getAdjustmentCurrentTeachingWeek() : 1);
+  refreshScheduleDensityGroupOptions('student');
   const dim = document.getElementById('sdf-dimension');
   if (dim) dim.value = 'ratio';
-  const offering = typeof getActiveOfferingTermSetting === 'function' ? getActiveOfferingTermSetting() : null;
-  const termSel = document.getElementById('sdf-term');
-  if (termSel) termSel.value = offering?.termCode || getScheduleQueryTerm() || termSel.options[0]?.value || '';
   queryScheduleStudentDensity();
 }
 
@@ -57633,20 +59268,34 @@ function renderScheduleStudentDensityPage() {
 }
 
 function buildScheduleTeacherDensityFilterOptions() {
-  fillDensityTermWeekOptions('tdf-term', 'tdf-week', document.getElementById('page-schedule-teacher-density'));
+  ensureScheduleDensityFilterGrids();
+  fillScheduleDensityMs('tdf-term', getScheduleDensityTermOptions(), getDefaultDensityTermSelected());
+  fillScheduleDensityMs('tdf-week', getScheduleDensityWeekOptions(), getDefaultDensityWeekSelected());
+  fillScheduleDensityMs('tdf-course-no', getScheduleDensityCourseNoOptions());
+  fillScheduleDensityMs('tdf-course-name', getScheduleDensityCourseNameOptions());
+  refreshScheduleDensityGroupOptions('teacher');
+  fillScheduleDensityMs('tdf-staff-type', getScheduleDensityStaffTypeOptions());
+  fillScheduleDensityMs('tdf-gender', getScheduleDensityGenderOptions());
+  fillScheduleDensityMs('tdf-school', getScheduleDensitySchoolOptions());
   const dimSel = document.getElementById('tdf-dimension');
   if (dimSel && !dimSel.value) dimSel.value = 'ratio';
 }
 
 function getScheduleTeacherDensityFilters() {
   return {
-    term: document.getElementById('tdf-term')?.value || '',
+    term: getScheduleDensityMsSelected('tdf-term'),
     teacherId: (document.getElementById('tdf-teacher-id')?.value || '').trim(),
     teacherName: (document.getElementById('tdf-teacher-name')?.value || '').trim(),
-    week: document.getElementById('tdf-week')?.value || '',
+    week: getScheduleDensityMsSelected('tdf-week'),
     dateFrom: document.getElementById('tdf-date-from')?.value || '',
     dateTo: document.getElementById('tdf-date-to')?.value || '',
-    dimension: document.getElementById('tdf-dimension')?.value || 'ratio'
+    dimension: document.getElementById('tdf-dimension')?.value || 'ratio',
+    courseNos: getScheduleDensityMsSelected('tdf-course-no'),
+    courseNames: getScheduleDensityMsSelected('tdf-course-name'),
+    groups: getScheduleDensityMsSelected('tdf-group'),
+    staffTypes: getScheduleDensityMsSelected('tdf-staff-type'),
+    genders: getScheduleDensityMsSelected('tdf-gender'),
+    schoolCodes: getScheduleDensityMsSelected('tdf-school')
   };
 }
 
@@ -57658,12 +59307,16 @@ function filterTeacherDensityTeachers(all, filters) {
   }
   return list.filter(t => {
     if (filters.teacherId && !String(t.teacherId || '').toLowerCase().includes(filters.teacherId.toLowerCase())) return false;
+    if (!densityListIncludes(filters.staffTypes, t.staffType || t.teacherType)) return false;
+    if (!densityListIncludes(filters.genders || filters.gender, t.gender)) return false;
+    if (!densityListIncludes(filters.schoolCodes, t.schoolCode)) return false;
+    if (!densityTeacherMatchesCourses(t, filters)) return false;
     return true;
   });
 }
 
-function computeTeacherDensityMatrix(teachers, weekFilter, termCode, dateFrom, dateTo) {
-  const term = termCode || getScheduleQueryTerm();
+function computeTeacherDensityMatrix(teachers, weekFilter, termCode, dateFrom, dateTo, extraFilters) {
+  const term = (Array.isArray(termCode) ? termCode[0] : termCode) || getScheduleQueryTerm();
   const periods = getAdjustmentPeriodCatalog(term);
   const weekdays = SCHEDULE_WEEKDAYS.slice();
   const cells = {};
@@ -57674,8 +59327,9 @@ function computeTeacherDensityMatrix(teachers, weekFilter, termCode, dateFrom, d
       ? getAdjustmentTeacherTasks(teacher.teacherId)
       : getScheduleTaskRows().filter(t => taskHasScheduleTeacher(t, teacher.teacherId));
     tasks.filter(taskHasBatchTime).forEach(task => {
+      if (!densityTaskMatchesCourses(task, extraFilters || {})) return;
       normalizeTaskTimeSlots(task).forEach(slot => {
-        if (weekFilter && !scheduleWeekMatches(slot.weeks || task.weeks || '', weekFilter)) return;
+        if (!densityWeekMatches(slot.weeks || task.weeks || '', weekFilter)) return;
         if (!densitySlotMatchesDateRange(slot, task, dateFrom || '', dateTo || '', weekFilter)) return;
         const wd = Number(slot.weekday);
         const pf = Number(slot.periodFrom);
@@ -57723,24 +59377,26 @@ function queryScheduleTeacherDensity() {
   const all = typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : [];
   const teachers = filterTeacherDensityTeachers(all, filters);
   scheduleTeacherDensityData = computeTeacherDensityMatrix(
-    teachers, filters.week, filters.term, filters.dateFrom, filters.dateTo
+    teachers, filters.week, filters.term, filters.dateFrom, filters.dateTo, filters
   );
   updateScheduleTeacherDensityHint();
   renderScheduleTeacherDensityTable();
 }
 
 function resetScheduleTeacherDensityQuery() {
+  ensureScheduleDensityFilterGrids();
   ['tdf-teacher-id', 'tdf-teacher-name', 'tdf-date-from', 'tdf-date-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  const weekSel = document.getElementById('tdf-week');
-  if (weekSel) weekSel.value = String(typeof getAdjustmentCurrentTeachingWeek === 'function' ? getAdjustmentCurrentTeachingWeek() : 1);
+  setScheduleDensityMsSelected('tdf-term', getDefaultDensityTermSelected());
+  setScheduleDensityMsSelected('tdf-week', getDefaultDensityWeekSelected());
+  ['tdf-course-no', 'tdf-course-name', 'tdf-group', 'tdf-staff-type', 'tdf-gender', 'tdf-school'].forEach(key => {
+    setScheduleDensityMsSelected(key, []);
+  });
+  refreshScheduleDensityGroupOptions('teacher');
   const dim = document.getElementById('tdf-dimension');
   if (dim) dim.value = 'ratio';
-  const offering = typeof getActiveOfferingTermSetting === 'function' ? getActiveOfferingTermSetting() : null;
-  const termSel = document.getElementById('tdf-term');
-  if (termSel) termSel.value = offering?.termCode || getScheduleQueryTerm() || termSel.options[0]?.value || '';
   queryScheduleTeacherDensity();
 }
 
@@ -57972,6 +59628,30 @@ function getAdjustmentRequestTimeSpan(r) {
   return summarizeAdjustmentTimePoints(collectAdjustmentItemTimePoints(
     typeof getAdjustmentItems === 'function' ? getAdjustmentItems(r) : (r?.items || [])
   ));
+}
+
+/** 申请单调前日期（原上课日期），不含调后日期 */
+function getAdjustmentRequestFromDates(r) {
+  const items = typeof getAdjustmentItems === 'function' ? getAdjustmentItems(r) : (r?.items || []);
+  const dates = [];
+  items.forEach((it, i) => {
+    const from = typeof getAdjustmentItemFrom === 'function' ? getAdjustmentItemFrom(r, it, i) : (it?.from || null);
+    const d = String(from?.date || '').trim();
+    if (d && !dates.includes(d)) dates.push(d);
+  });
+  return dates.sort();
+}
+
+/** 列表「调课时间」：只取调前日期，多日展示起止 */
+function formatAdjustmentRequestApplyTime(r) {
+  const dates = getAdjustmentRequestFromDates(r);
+  if (!dates.length) return '—';
+  if (dates.length === 1) return dates[0];
+  return `${dates[0]} ~ ${dates[dates.length - 1]}`;
+}
+
+function renderAdjustmentRequestTimeCell(r) {
+  return escapeHtml(formatAdjustmentRequestApplyTime(r));
 }
 
 function collectAdjustmentDraftTimePoints() {
@@ -58655,6 +60335,1043 @@ function deleteAdjustmentReasonType(id) {
   renderAdjustmentReasonTypePage();
 }
 
+/* ── 教务：教室开放时间设置 ── */
+function mapAdjustmentRoomVenueType(roomOrMeta) {
+  const meta = typeof roomOrMeta === 'string'
+    ? (typeof getScheduleRoomMetaByName === 'function' ? getScheduleRoomMetaByName(roomOrMeta) : null)
+    : roomOrMeta;
+  return mapScheduleVenueTypeValue(meta?.roomType) || SCHEDULE_VENUE_TYPE_DEFAULT;
+}
+
+function getAdjustmentRoomOpenVenueTypes() {
+  return (SCHEDULE_VENUE_TYPES || []).filter(t => t.value && t.value !== SCHEDULE_VENUE_TYPE_NONE);
+}
+
+function ensureAdjustmentRoomOpenStore() {
+  if (!ADJUSTMENT_ROOM_OPEN_STORE.seeded) {
+    ADJUSTMENT_ROOM_OPEN_STORE.seeded = true;
+    const term = getActiveOfferingTermSetting()?.termCode || getScheduleTermCodes()?.[0] || '';
+    if (term) {
+      const room = '教学楼A-102';
+      const dateFrom = '2026-03-02';
+      const dateTo = '2026-06-07';
+      ADJUSTMENT_ROOM_OPEN_STORE.profiles.push({
+        id: `aro-${ADJUSTMENT_ROOM_OPEN_STORE.seq++}`,
+        term,
+        venueType: mapAdjustmentRoomVenueType(room),
+        room,
+        dateFrom,
+        dateTo,
+        weeks: formatAdjustmentRoomOpenWeeksValue(dateFrom, dateTo, term),
+        weekdays: [1],
+        periodFrom: 1,
+        periodTo: 2,
+        remark: '演示：仅周一第1-2节开放'
+      });
+    }
+  }
+  normalizeAdjustmentRoomOpenStore();
+}
+
+function normalizeAdjustmentRoomOpenStore() {
+  const seen = new Set();
+  ADJUSTMENT_ROOM_OPEN_STORE.profiles = (ADJUSTMENT_ROOM_OPEN_STORE.profiles || []).filter(p => {
+    const key = `${p.term || ''}::${p.room || ''}`;
+    if (!p.room || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getAdjustmentRoomOpenProfiles(term, room) {
+  ensureAdjustmentRoomOpenStore();
+  const t = String(term || '');
+  const name = String(room || '').trim();
+  return ADJUSTMENT_ROOM_OPEN_STORE.profiles.filter(p => p.term === t && p.room === name && p.dateFrom && p.dateTo);
+}
+
+function findAdjustmentRoomOpenProfile(id) {
+  ensureAdjustmentRoomOpenStore();
+  return ADJUSTMENT_ROOM_OPEN_STORE.profiles.find(p => p.id === id) || null;
+}
+
+function isAdjustmentRoomOpenWeekdaysUnrestricted(list) {
+  const arr = [...new Set((Array.isArray(list) ? list : []).map(Number).filter(n => n >= 1 && n <= 7))];
+  return arr.length === 0 || arr.length === 7;
+}
+
+function formatAdjustmentRoomOpenWeekdays(list) {
+  if (isAdjustmentRoomOpenWeekdaysUnrestricted(list)) return '全部星期';
+  return (list || []).map(v => getScheduleWeekdayLabel(Number(v))).filter(Boolean).join('、');
+}
+
+function formatAdjustmentRoomOpenWeeksValue(dateFrom, dateTo, term) {
+  if (!dateFrom || !dateTo) return '';
+  const a = getAdjustmentDateInfoForTerm(dateFrom, term).week;
+  const b = getAdjustmentDateInfoForTerm(dateTo, term).week;
+  if (!a || !b) return '';
+  const from = Math.min(a, b);
+  const to = Math.max(a, b);
+  return from === to ? String(from) : `${from}-${to}`;
+}
+
+function formatAdjustmentRoomOpenWeeksLabel(weeks) {
+  if (!weeks) return '';
+  const nums = [...parseScheduleWeeksToSet(weeks)].sort((a, b) => a - b);
+  if (!nums.length) return weeks;
+  const parts = [];
+  let from = nums[0];
+  let to = nums[0];
+  nums.slice(1).concat([null]).forEach(n => {
+    if (n === to + 1) { to = n; return; }
+    parts.push(from === to ? `第${from}周` : `第${from}-${to}周`);
+    from = n;
+    to = n;
+  });
+  return parts.join('、');
+}
+
+function formatAdjustmentRoomOpenDateBtn(date, term) {
+  if (!date) return '';
+  const info = getAdjustmentDateInfoForTerm(date, term);
+  const wd = info.weekday ? getScheduleWeekdayLabel(info.weekday) : '';
+  const week = info.week ? `第${info.week}周` : '';
+  const extra = [week, wd].filter(Boolean).join('·');
+  return extra ? `${date}（${extra}）` : date;
+}
+
+function formatAdjustmentRoomOpenSummary(p) {
+  if (!p) return '未维护（不限制）';
+  const datePart = (p.dateFrom || p.dateTo)
+    ? `${p.dateFrom || '—'} 至 ${p.dateTo || '—'}`
+    : '';
+  const weekPart = p.weeks ? `涉及${formatAdjustmentRoomOpenWeeksLabel(p.weeks)}` : '';
+  const wdPart = formatAdjustmentRoomOpenWeekdays(p.weekdays);
+  const pf = Number(p.periodFrom) || 0;
+  const pt = Number(p.periodTo) || pf;
+  const periodPart = pf
+    ? (pt && pt !== pf ? `第${pf}-${pt}节` : `第${pf}节`)
+    : '';
+  const remark = p.remark ? `（${p.remark}）` : '';
+  return [datePart, weekPart, wdPart, periodPart].filter(Boolean).join(' · ') + remark;
+}
+
+function getAdjustmentDateInfoForTerm(dateStr, termCode) {
+  const termStart = getScheduleTermStartDate(termCode);
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (isNaN(d.getTime())) return { weekday: 0, week: 0 };
+  const jsDay = d.getDay();
+  const weekday = jsDay === 0 ? 7 : jsDay;
+  const start = new Date(termStart);
+  start.setHours(0, 0, 0, 0);
+  const diff = Math.floor((d - start) / 86400000);
+  let week = Math.floor(diff / 7) + 1;
+  if (week < 1) week = 1;
+  return { weekday, week };
+}
+
+function getAdjustmentRoomOpenItemCtx(it, term) {
+  if (!it?.to) return null;
+  if (it.to.roomUnspecified) return { skip: true };
+  const room = String(it.to.room || it.to.roomPrefer || it.roomPrefer || '').trim();
+  if (!room) return { skip: true };
+  const { period } = getAdjustmentToPeriodInfo(it.to);
+  let weekday = Number(it.to.weekday)
+    || SCHEDULE_WEEKDAYS.find(w => w.label === it.to.weekdayLabel)?.value
+    || 0;
+  const date = it.to.date || '';
+  if (!weekday && date) weekday = getAdjustmentDateInfoForTerm(date, term).weekday;
+  return {
+    skip: false,
+    room,
+    term,
+    date,
+    weeks: it.to.weeks || '',
+    weekday,
+    period
+  };
+}
+
+function profileMatchesAdjustmentRoomOpen(p, ctx) {
+  const date = ctx.date || '';
+  if (p.dateFrom && date && date < p.dateFrom) return false;
+  if (p.dateTo && date && date > p.dateTo) return false;
+  const weekday = Number(ctx.weekday) || 0;
+  const weekdays = (p.weekdays || []).map(Number);
+  if (!isAdjustmentRoomOpenWeekdaysUnrestricted(weekdays) && weekday && !weekdays.includes(weekday)) return false;
+  const period = Number(ctx.period) || 0;
+  const pf = Number(p.periodFrom) || 0;
+  const pt = Number(p.periodTo) || pf;
+  if (period && pf && (period < pf || period > pt)) return false;
+  if (p.weeks) {
+    const profWeeks = parseScheduleWeeksToSet(p.weeks);
+    if (profWeeks.size) {
+      let hit = false;
+      if (ctx.weeks) {
+        parseScheduleWeeksToSet(ctx.weeks).forEach(w => {
+          if (profWeeks.has(w)) hit = true;
+        });
+      }
+      if (!hit && date) {
+        const info = getAdjustmentDateInfoForTerm(date, ctx.term);
+        if (info.week && profWeeks.has(info.week)) hit = true;
+      }
+      if (!hit && (date || ctx.weeks)) return false;
+    }
+  }
+  return true;
+}
+
+function isAdjustmentRoomOpenAt(room, ctx) {
+  const roomName = String(room || '').trim();
+  if (!roomName || ctx?.roomUnspecified) return true;
+  const profiles = getAdjustmentRoomOpenProfiles(ctx?.term, roomName);
+  if (!profiles.length) return true;
+  return profiles.some(p => profileMatchesAdjustmentRoomOpen(p, ctx || {}));
+}
+
+function collectAdjustmentRoomOpenViolations(request) {
+  if (!request || request.type === 'cancel') return [];
+  const term = request.term || getAdjustmentRequestTermCode();
+  const items = getAdjustmentItems(request);
+  const out = [];
+  items.forEach((it, idx) => {
+    const ctx = getAdjustmentRoomOpenItemCtx(it, term);
+    if (!ctx || ctx.skip) return;
+    if (isAdjustmentRoomOpenAt(ctx.room, ctx)) return;
+    const wd = ctx.weekday ? getScheduleWeekdayLabel(ctx.weekday) : '';
+    const periodPart = ctx.period ? `第${ctx.period}节` : '';
+    out.push({
+      itemIndex: idx,
+      room: ctx.room,
+      date: ctx.date,
+      weekday: ctx.weekday,
+      period: ctx.period,
+      reason: [ctx.room, ctx.date, wd, periodPart].filter(Boolean).join(' · ')
+    });
+  });
+  return out;
+}
+
+function formatAdjustmentRoomOpenViolationText(violations) {
+  if (!violations?.length) return '';
+  return `调后时间不在教室开放时间内：${violations.map(v => v.reason).join('；')}。不能审批。`;
+}
+
+function formatAdjustmentRoomOpenViolationBanner(r) {
+  const vs = collectAdjustmentRoomOpenViolations(r);
+  if (!vs.length) return '';
+  return `<div class="adj-room-open-warn">${escapeHtml(formatAdjustmentRoomOpenViolationText(vs))}</div>`;
+}
+
+function formatAdjustmentRoomOpenListHint() {
+  if (typeof ensureAdjustmentRoomOpenStore === 'function') ensureAdjustmentRoomOpenStore();
+  const profiles = ADJUSTMENT_ROOM_OPEN_STORE?.profiles || [];
+  const term = typeof getAdjustmentRequestTermCode === 'function' ? getAdjustmentRequestTermCode() : '';
+  const has = profiles.some(p => p && p.room && (!term || !p.term || p.term === term));
+  if (!has) return '';
+  return '教室开放时间已维护：仅调课申请审批校验；调后安排须落在目标教室开放时间内，否则无法审批。批量调课管理不受此限制。';
+}
+
+function appendAdjustmentRoomOpenListHint(hintEl) {
+  if (!hintEl) return;
+  const text = formatAdjustmentRoomOpenListHint();
+  if (!text) return;
+  hintEl.insertAdjacentHTML('beforeend', `<span class="legend-item">${escapeHtml(text)}</span>`);
+}
+
+function syncAdjustmentRoomOpenApproveUi(r) {
+  const approveBtn = document.getElementById('adjustment-detail-approve-btn');
+  if (!approveBtn || approveBtn.hidden || !r) return;
+  const vs = collectAdjustmentRoomOpenViolations(r);
+  approveBtn.disabled = vs.length > 0;
+  approveBtn.title = vs.length ? formatAdjustmentRoomOpenViolationText(vs) : '';
+}
+
+function assertAdjustmentRoomOpenMix(items, term) {
+  let hasIn = false;
+  let hasOut = false;
+  (items || []).forEach(it => {
+    const ctx = getAdjustmentRoomOpenItemCtx(it, term);
+    if (!ctx || ctx.skip) return;
+    if (isAdjustmentRoomOpenAt(ctx.room, ctx)) hasIn = true;
+    else hasOut = true;
+  });
+  if (hasIn && hasOut) {
+    return {
+      ok: false,
+      message: '同一申请单不能同时包含「在教室开放时间内」和「不在开放时间内且已指定教室」的调后安排。不在开放时间内的条目请设为不指定教室，或拆成两张申请单。'
+    };
+  }
+  return { ok: true };
+}
+
+function getAdjustmentRoomOpenTerm() {
+  return document.getElementById('adjustment-room-open-term')?.value || '';
+}
+
+function fillAdjustmentRoomOpenTermSelect() {
+  const sel = document.getElementById('adjustment-room-open-term');
+  if (!sel) return;
+  const terms = getScheduleTermCodes();
+  const cur = sel.value || getActiveOfferingTermSetting()?.termCode || terms[0] || '';
+  sel.innerHTML = terms.map(t =>
+    `<option value="${escapeHtml(t)}">${escapeHtml(formatCourseTermDisplay(t) || t)}</option>`
+  ).join('');
+  if (cur && terms.includes(cur)) sel.value = cur;
+  else if (terms[0]) sel.value = terms[0];
+}
+
+function fillAdjustmentRoomOpenVenueSelect() {
+  const sel = document.getElementById('adjustment-room-open-venue');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部</option>' + getAdjustmentRoomOpenVenueTypes().map(t =>
+    `<option value="${escapeHtml(t.value)}">${escapeHtml(t.label)}</option>`
+  ).join('');
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function getAdjustmentRoomOpenBuildings() {
+  return [...new Set((SCHEDULE_ROOM_META || []).map(r => r.building).filter(Boolean))];
+}
+
+function getAdjustmentRoomOpenFloors(building) {
+  let rooms = SCHEDULE_ROOM_META || [];
+  if (building) rooms = rooms.filter(r => r.building === building);
+  return [...new Set(rooms.map(r => r.floor).filter(f => f != null && f !== ''))]
+    .sort((a, b) => Number(a) - Number(b));
+}
+
+function fillAdjustmentRoomOpenBuildingOptions() {
+  const sel = document.getElementById('adjustment-room-open-building');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部</option>' + getAdjustmentRoomOpenBuildings().map(b =>
+    `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`
+  ).join('');
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  fillAdjustmentRoomOpenFloorOptions();
+}
+
+function fillAdjustmentRoomOpenFloorOptions() {
+  const sel = document.getElementById('adjustment-room-open-floor');
+  if (!sel) return;
+  const building = document.getElementById('adjustment-room-open-building')?.value || '';
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部</option>' + getAdjustmentRoomOpenFloors(building).map(f =>
+    `<option value="${escapeHtml(String(f))}">${escapeHtml(formatScheduleRoomFloorLabel(f))}</option>`
+  ).join('');
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function onAdjustmentRoomOpenBuildingChange() {
+  fillAdjustmentRoomOpenFloorOptions();
+}
+
+function resetAdjustmentRoomOpenQuery() {
+  const name = document.getElementById('adjustment-room-open-name');
+  if (name) name.value = '';
+  const venue = document.getElementById('adjustment-room-open-venue');
+  if (venue) venue.value = '';
+  const building = document.getElementById('adjustment-room-open-building');
+  if (building) building.value = '';
+  fillAdjustmentRoomOpenTermSelect();
+  fillAdjustmentRoomOpenFloorOptions();
+  renderAdjustmentRoomOpenPage();
+}
+
+function getAdjustmentRoomOpenFilteredProfiles() {
+  const term = getAdjustmentRoomOpenTerm();
+  const venue = document.getElementById('adjustment-room-open-venue')?.value || '';
+  const name = (document.getElementById('adjustment-room-open-name')?.value || '').trim().toLowerCase();
+  const building = document.getElementById('adjustment-room-open-building')?.value || '';
+  const floor = document.getElementById('adjustment-room-open-floor')?.value || '';
+  return ADJUSTMENT_ROOM_OPEN_STORE.profiles.filter(p => {
+    if ((p.term || '') !== term) return false;
+    if (!p.dateFrom || !p.dateTo) return false;
+    const meta = (typeof getScheduleRoomMetaByName === 'function' ? getScheduleRoomMetaByName(p.room) : null) || {};
+    const venueType = p.venueType || mapAdjustmentRoomVenueType(p.room);
+    if (venue && venueType !== venue) return false;
+    if (name && !String(p.room || '').toLowerCase().includes(name)) return false;
+    if (building && meta.building !== building) return false;
+    if (floor !== '' && String(meta.floor) !== String(floor)) return false;
+    return true;
+  });
+}
+
+function renderAdjustmentRoomOpenPage() {
+  ensureAdjustmentRoomOpenStore();
+  ensureScheduleChangeLogDemo();
+  fillAdjustmentRoomOpenTermSelect();
+  fillAdjustmentRoomOpenVenueSelect();
+  fillAdjustmentRoomOpenBuildingOptions();
+  const term = getAdjustmentRoomOpenTerm();
+  const tbody = document.getElementById('adjustment-room-open-body');
+  const hint = document.getElementById('adjustment-room-open-hint');
+  const rows = term ? getAdjustmentRoomOpenFilteredProfiles() : [];
+  const total = term
+    ? ADJUSTMENT_ROOM_OPEN_STORE.profiles.filter(p => p.term === term && p.dateFrom && p.dateTo).length
+    : 0;
+  if (hint) {
+    hint.innerHTML = `<span class="legend-item">本学期已维护日期 <strong>${total}</strong> 间教室 · 当前筛选 <strong>${rows.length}</strong> 条 · 未维护教室默认不限制开放</span>`;
+  }
+  if (!tbody) return;
+  if (!term) {
+    renderScheduleEmptyRow(tbody, 9, '请选择学年学期');
+    syncAdjustmentRoomOpenListCheckAll();
+    return;
+  }
+  if (!rows.length) {
+    renderScheduleEmptyRow(tbody, 9, '暂无已维护日期的教室开放时间，可点击上方按钮新增');
+    syncAdjustmentRoomOpenListCheckAll();
+    return;
+  }
+  const storeIds = new Set((ADJUSTMENT_ROOM_OPEN_STORE.profiles || []).map(p => p.id));
+  [...adjustmentRoomOpenListSelected].forEach(id => {
+    if (!storeIds.has(id)) adjustmentRoomOpenListSelected.delete(id);
+  });
+  tbody.innerHTML = rows.map((p, i) => {
+    const meta = (typeof getScheduleRoomMetaByName === 'function' ? getScheduleRoomMetaByName(p.room) : null) || {};
+    const venueType = p.venueType || mapAdjustmentRoomVenueType(p.room);
+    const checked = adjustmentRoomOpenListSelected.has(p.id) ? ' checked' : '';
+    const actions = `<a href="#" onclick="openAdjustmentRoomOpenEditModal('${p.id}');return false">修改</a>`
+      + ` · <a href="#" style="color:var(--red)" onclick="deleteAdjustmentRoomOpenProfile('${p.id}');return false">删除</a>`
+      + ` · ${entityChangeLogLink('adjustment-room-open', p.id, p.room)}`;
+    return `<tr>
+      <td class="col-check"><input type="checkbox" class="adjustment-room-open-row-check" value="${escapeHtml(p.id)}"${checked} onchange="onAdjustmentRoomOpenListCheck('${escapeHtml(p.id)}', this.checked)"></td>
+      <td class="col-index">${i + 1}</td>
+      <td>${escapeHtml(getScheduleVenueTypeLabel(venueType) || venueType)}</td>
+      <td>${escapeHtml(p.room)}</td>
+      <td>${escapeHtml(meta.building || '—')}</td>
+      <td class="col-center">${escapeHtml(formatScheduleRoomFloorLabel(meta.floor))}</td>
+      <td>${escapeHtml(meta.roomType || '—')}</td>
+      <td class="adj-room-open-seg">${escapeHtml(formatAdjustmentRoomOpenSummary(p))}</td>
+      <td class="col-center actions">${actions}</td>
+    </tr>`;
+  }).join('');
+  syncAdjustmentRoomOpenListCheckAll();
+}
+
+function onAdjustmentRoomOpenListCheck(id, checked) {
+  if (checked) adjustmentRoomOpenListSelected.add(id);
+  else adjustmentRoomOpenListSelected.delete(id);
+  syncAdjustmentRoomOpenListCheckAll();
+}
+
+function toggleAdjustmentRoomOpenListAll(checked) {
+  getAdjustmentRoomOpenFilteredProfiles().forEach(p => {
+    if (checked) adjustmentRoomOpenListSelected.add(p.id);
+    else adjustmentRoomOpenListSelected.delete(p.id);
+  });
+  renderAdjustmentRoomOpenPage();
+}
+
+function syncAdjustmentRoomOpenListCheckAll() {
+  const el = document.getElementById('adjustment-room-open-check-all');
+  if (!el) return;
+  const rows = getAdjustmentRoomOpenFilteredProfiles();
+  el.checked = rows.length > 0 && rows.every(p => adjustmentRoomOpenListSelected.has(p.id));
+}
+
+function getAdjustmentRoomOpenBatchScope() {
+  return document.querySelector('input[name="adjustment-room-open-batch-scope"]:checked')?.value || 'selected';
+}
+
+function getAdjustmentRoomOpenBatchTargets() {
+  if (getAdjustmentRoomOpenBatchScope() === 'query') {
+    return getAdjustmentRoomOpenFilteredProfiles();
+  }
+  return getAdjustmentRoomOpenFilteredProfiles().filter(p => adjustmentRoomOpenListSelected.has(p.id));
+}
+
+function syncAdjustmentRoomOpenBatchScopeHint() {
+  const hint = document.getElementById('adjustment-room-open-batch-scope-hint');
+  if (!hint) return;
+  const scope = getAdjustmentRoomOpenBatchScope();
+  if (scope === 'query') {
+    const n = getAdjustmentRoomOpenFilteredProfiles().length;
+    hint.textContent = n
+      ? `将按当前查询条件修改 ${n} 条已维护开放时间`
+      : '当前查询条件下没有可修改的开放时间';
+    return;
+  }
+  const n = getAdjustmentRoomOpenBatchTargets().length;
+  hint.textContent = n
+    ? `将按勾选条件修改 ${n} 条开放时间`
+    : '请先在列表勾选要修改的教室';
+}
+
+function onAdjustmentRoomOpenBatchScopeChange() {
+  syncAdjustmentRoomOpenBatchScopeHint();
+}
+
+function setAdjustmentRoomOpenModalChrome(mode) {
+  adjustmentRoomOpenModalMode = mode;
+  const title = document.getElementById('adjustment-room-open-modal-title');
+  const picker = document.getElementById('adjustment-room-open-picker-wrap');
+  const readonlyWrap = document.getElementById('adjustment-room-open-rooms-readonly-wrap');
+  const batchWrap = document.getElementById('adjustment-room-open-batch-scope-wrap');
+  if (title) {
+    title.textContent = mode === 'batch' ? '批量修改开放时间' : (mode === 'edit' ? '修改开放时间' : '新增开放时间');
+  }
+  if (picker) picker.hidden = mode !== 'create';
+  if (readonlyWrap) readonlyWrap.hidden = mode !== 'edit';
+  if (batchWrap) batchWrap.hidden = mode !== 'batch';
+}
+
+function fillAdjustmentRoomOpenPeriodSelects(term, fromVal, toVal) {
+  const periods = typeof ensureSchedulePeriods === 'function' ? ensureSchedulePeriods(term) : [];
+  const opts = periods.map(p => {
+    const n = Number(p.periodNo);
+    const label = p.startTime && p.endTime ? `第${n}节（${p.startTime}-${p.endTime}）` : `第${n}节`;
+    return `<option value="${n}">${escapeHtml(label)}</option>`;
+  }).join('');
+  const fromEl = document.getElementById('adjustment-room-open-period-from');
+  const toEl = document.getElementById('adjustment-room-open-period-to');
+  if (fromEl) {
+    fromEl.innerHTML = opts;
+    if (fromVal) fromEl.value = String(fromVal);
+  }
+  if (toEl) {
+    toEl.innerHTML = opts;
+    if (toVal) toEl.value = String(toVal);
+  }
+}
+
+function fillAdjustmentRoomOpenWeekdayChecks(selected) {
+  const box = document.getElementById('adjustment-room-open-weekdays');
+  if (!box) return;
+  const sel = new Set((selected || []).map(Number));
+  box.innerHTML = SCHEDULE_WEEKDAYS.map(w =>
+    `<label><input type="checkbox" class="adjustment-room-open-wd" value="${w.value}"${sel.has(w.value) ? ' checked' : ''}>${escapeHtml(w.label)}</label>`
+  ).join('');
+}
+
+function readAdjustmentRoomOpenWeekdays() {
+  return [...document.querySelectorAll('#adjustment-room-open-weekdays .adjustment-room-open-wd:checked')]
+    .map(el => Number(el.value))
+    .filter(n => n);
+}
+
+function fillAdjustmentRoomOpenPickerFilters() {
+  const venueSel = document.getElementById('adjustment-room-open-pick-venue');
+  if (venueSel && !venueSel.dataset.inited) {
+    venueSel.innerHTML = '<option value="">全部</option>' + getAdjustmentRoomOpenVenueTypes().map(t =>
+      `<option value="${escapeHtml(t.value)}">${escapeHtml(t.label)}</option>`
+    ).join('');
+    venueSel.dataset.inited = '1';
+  }
+  const buildingSel = document.getElementById('adjustment-room-open-pick-building');
+  if (buildingSel) {
+    const cur = buildingSel.value;
+    buildingSel.innerHTML = '<option value="">全部</option>' + getAdjustmentRoomOpenBuildings().map(b =>
+      `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`
+    ).join('');
+    if ([...buildingSel.options].some(o => o.value === cur)) buildingSel.value = cur;
+  }
+  fillAdjustmentRoomOpenPickerFloorOptions();
+}
+
+function fillAdjustmentRoomOpenPickerFloorOptions() {
+  const sel = document.getElementById('adjustment-room-open-pick-floor');
+  if (!sel) return;
+  const building = document.getElementById('adjustment-room-open-pick-building')?.value || '';
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部</option>' + getAdjustmentRoomOpenFloors(building).map(f =>
+    `<option value="${escapeHtml(String(f))}">${escapeHtml(formatScheduleRoomFloorLabel(f))}</option>`
+  ).join('');
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+
+function onAdjustmentRoomOpenPickBuildingChange() {
+  fillAdjustmentRoomOpenPickerFloorOptions();
+}
+
+function resetAdjustmentRoomOpenPickerQuery() {
+  const venue = document.getElementById('adjustment-room-open-pick-venue');
+  const name = document.getElementById('adjustment-room-open-pick-name');
+  const building = document.getElementById('adjustment-room-open-pick-building');
+  if (venue) venue.value = '';
+  if (name) name.value = '';
+  if (building) building.value = '';
+  fillAdjustmentRoomOpenPickerFloorOptions();
+  queryAdjustmentRoomOpenPicker();
+}
+
+function queryAdjustmentRoomOpenPicker() {
+  resetListPage(ADJUSTMENT_ROOM_OPEN_PICKER_LIST_KEY);
+  renderAdjustmentRoomOpenPicker();
+}
+
+function getAdjustmentRoomOpenPickerCandidates() {
+  const term = getAdjustmentRoomOpenTerm();
+  const taken = new Set(
+    ADJUSTMENT_ROOM_OPEN_STORE.profiles
+      .filter(p => p.term === term && p.dateFrom && p.dateTo)
+      .map(p => p.room)
+  );
+  const venue = document.getElementById('adjustment-room-open-pick-venue')?.value || '';
+  const building = document.getElementById('adjustment-room-open-pick-building')?.value || '';
+  const floor = document.getElementById('adjustment-room-open-pick-floor')?.value || '';
+  const name = (document.getElementById('adjustment-room-open-pick-name')?.value || '').trim().toLowerCase();
+  return (SCHEDULE_ROOM_META || []).filter(r => {
+    if (taken.has(r.room)) return false;
+    if (venue && mapAdjustmentRoomVenueType(r) !== venue) return false;
+    if (building && r.building !== building) return false;
+    if (floor !== '' && String(r.floor) !== String(floor)) return false;
+    if (name && !String(r.room || '').toLowerCase().includes(name)) return false;
+    return true;
+  });
+}
+
+function renderAdjustmentRoomOpenPicker() {
+  const list = document.getElementById('adjustment-room-open-picker-list');
+  const hint = document.getElementById('adjustment-room-open-pick-hint');
+  if (!list) return;
+  const rooms = getAdjustmentRoomOpenPickerCandidates();
+  const paged = paginateListItems(rooms, ADJUSTMENT_ROOM_OPEN_PICKER_LIST_KEY);
+  if (hint) {
+    hint.innerHTML = `<span class="legend-item">可新增 <strong>${paged.total}</strong> 间 · 已维护日期的教室不再列出</span>`;
+  }
+  renderListPagination('adjustment-room-open-picker-pagination', ADJUSTMENT_ROOM_OPEN_PICKER_LIST_KEY, paged.total);
+  if (!paged.items.length) {
+    renderScheduleEmptyRow(list, 7, '没有可新增的教室（已维护日期的不再列出）');
+    const all = document.getElementById('adjustment-room-open-pick-all');
+    if (all) all.checked = false;
+    return;
+  }
+  const offset = (paged.page - 1) * paged.pageSize;
+  list.innerHTML = paged.items.map((r, i) => {
+    const checked = adjustmentRoomOpenSelected.has(r.room) ? ' checked' : '';
+    const venueType = mapAdjustmentRoomVenueType(r);
+    return `<tr>
+      <td class="col-check"><input type="checkbox" class="adjustment-room-open-pick" value="${escapeHtml(r.room)}"${checked} onchange="onAdjustmentRoomOpenPickChange(this.value,this.checked)"></td>
+      <td class="col-index">${offset + i + 1}</td>
+      <td>${escapeHtml(getScheduleVenueTypeLabel(venueType) || venueType)}</td>
+      <td>${escapeHtml(r.room)}</td>
+      <td>${escapeHtml(r.building || '—')}</td>
+      <td class="col-center">${escapeHtml(formatScheduleRoomFloorLabel(r.floor))}</td>
+      <td>${escapeHtml(r.roomType || '—')}</td>
+    </tr>`;
+  }).join('');
+  syncAdjustmentRoomOpenPickerAll();
+}
+
+function onAdjustmentRoomOpenPickChange(room, checked) {
+  const name = String(room || '');
+  if (checked) adjustmentRoomOpenSelected.add(name);
+  else adjustmentRoomOpenSelected.delete(name);
+  syncAdjustmentRoomOpenPickerAll();
+}
+
+function toggleAdjustmentRoomOpenPickerAll(checked) {
+  document.querySelectorAll('.adjustment-room-open-pick').forEach(el => {
+    el.checked = !!checked;
+    if (checked) adjustmentRoomOpenSelected.add(el.value);
+    else adjustmentRoomOpenSelected.delete(el.value);
+  });
+}
+
+function syncAdjustmentRoomOpenPickerAll() {
+  const boxes = [...document.querySelectorAll('.adjustment-room-open-pick')];
+  const all = document.getElementById('adjustment-room-open-pick-all');
+  if (!all) return;
+  all.checked = boxes.length > 0 && boxes.every(el => el.checked);
+}
+
+function syncAdjustmentRoomOpenDateButtons() {
+  const term = getAdjustmentRoomOpenTerm() || getAdjustmentRequestTermCode();
+  const from = document.getElementById('adjustment-room-open-date-from')?.value || '';
+  const to = document.getElementById('adjustment-room-open-date-to')?.value || '';
+  const fromBtn = document.getElementById('adjustment-room-open-date-from-btn');
+  const toBtn = document.getElementById('adjustment-room-open-date-to-btn');
+  if (fromBtn) {
+    fromBtn.textContent = from ? formatAdjustmentRoomOpenDateBtn(from, term) : '请选择开始日期';
+    fromBtn.classList.toggle('is-empty', !from);
+  }
+  if (toBtn) {
+    toBtn.textContent = to ? formatAdjustmentRoomOpenDateBtn(to, term) : '请选择截止日期';
+    toBtn.classList.toggle('is-empty', !to);
+  }
+}
+
+function syncAdjustmentRoomOpenInvolvedWeeks() {
+  const term = getAdjustmentRoomOpenTerm() || getAdjustmentRequestTermCode();
+  const from = document.getElementById('adjustment-room-open-date-from')?.value || '';
+  const to = document.getElementById('adjustment-room-open-date-to')?.value || '';
+  const weeksEl = document.getElementById('adjustment-room-open-weeks');
+  if (!weeksEl) return '';
+  const raw = formatAdjustmentRoomOpenWeeksValue(from, to, term);
+  weeksEl.value = raw ? formatAdjustmentRoomOpenWeeksLabel(raw) : '';
+  weeksEl.dataset.weeks = raw;
+  return raw;
+}
+
+function fillAdjustmentRoomOpenTimeFields(profile) {
+  const term = getAdjustmentRoomOpenTerm() || getAdjustmentRequestTermCode();
+  const df = document.getElementById('adjustment-room-open-date-from');
+  const dt = document.getElementById('adjustment-room-open-date-to');
+  const remark = document.getElementById('adjustment-room-open-remark');
+  if (df) df.value = profile?.dateFrom || '';
+  if (dt) dt.value = profile?.dateTo || '';
+  if (remark) remark.value = profile?.remark || '';
+  syncAdjustmentRoomOpenDateButtons();
+  syncAdjustmentRoomOpenInvolvedWeeks();
+  fillAdjustmentRoomOpenWeekdayChecks(profile?.weekdays || []);
+  fillAdjustmentRoomOpenPeriodSelects(term, profile?.periodFrom || 1, profile?.periodTo || 2);
+}
+
+function closeAdjustmentRoomOpenDatePicker() {
+  const dd = document.getElementById('adj-room-open-cal-dd');
+  if (dd) dd.remove();
+  document.removeEventListener('mousedown', closeAdjustmentRoomOpenDatePickerOutside);
+  adjustmentRoomOpenCalState = null;
+}
+
+function closeAdjustmentRoomOpenDatePickerOutside(e) {
+  const dd = document.getElementById('adj-room-open-cal-dd');
+  const btn = e.target.closest && e.target.closest('#adjustment-room-open-date-from-btn, #adjustment-room-open-date-to-btn');
+  if (dd && !dd.contains(e.target) && !btn) closeAdjustmentRoomOpenDatePicker();
+}
+
+function openAdjustmentRoomOpenDatePicker(role, ev) {
+  ev?.stopPropagation?.();
+  ev?.preventDefault?.();
+  const same = adjustmentRoomOpenCalState?.role === role && document.getElementById('adj-room-open-cal-dd');
+  if (same) {
+    closeAdjustmentRoomOpenDatePicker();
+    return;
+  }
+  closeAdjustmentRoomOpenDatePicker();
+  const term = getAdjustmentRoomOpenTerm() || getAdjustmentRequestTermCode();
+  const current = document.getElementById(role === 'from' ? 'adjustment-room-open-date-from' : 'adjustment-room-open-date-to')?.value || '';
+  const base = current ? new Date(`${current}T00:00:00`) : new Date(getScheduleTermStartDate(term));
+  adjustmentRoomOpenCalState = {
+    role,
+    term,
+    draftDate: current,
+    year: base.getFullYear(),
+    month: base.getMonth()
+  };
+  const dd = document.createElement('div');
+  dd.className = 'adj-cal-dropdown';
+  dd.id = 'adj-room-open-cal-dd';
+  dd.onclick = e => e.stopPropagation();
+  document.body.appendChild(dd);
+  renderAdjustmentRoomOpenCalendar();
+  const btn = ev?.currentTarget;
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    const ddH = dd.offsetHeight;
+    const ddW = dd.offsetWidth;
+    let top = r.bottom + 4;
+    if (top + ddH > window.innerHeight - 8) top = Math.max(8, r.top - 4 - ddH);
+    let left = r.left;
+    if (left + ddW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - ddW);
+    dd.style.top = `${top}px`;
+    dd.style.left = `${left}px`;
+  }
+  setTimeout(() => document.addEventListener('mousedown', closeAdjustmentRoomOpenDatePickerOutside), 0);
+}
+
+function onAdjustmentRoomOpenCalNav(delta, event) {
+  event?.stopPropagation?.();
+  if (!adjustmentRoomOpenCalState) return;
+  adjustmentRoomOpenCalState.month += Number(delta) || 0;
+  if (adjustmentRoomOpenCalState.month < 0) {
+    adjustmentRoomOpenCalState.month = 11;
+    adjustmentRoomOpenCalState.year -= 1;
+  } else if (adjustmentRoomOpenCalState.month > 11) {
+    adjustmentRoomOpenCalState.month = 0;
+    adjustmentRoomOpenCalState.year += 1;
+  }
+  renderAdjustmentRoomOpenCalendar();
+}
+
+function onAdjustmentRoomOpenCalPick(ds, event) {
+  event?.stopPropagation?.();
+  if (!adjustmentRoomOpenCalState) return;
+  adjustmentRoomOpenCalState.draftDate = ds;
+  renderAdjustmentRoomOpenCalendar();
+}
+
+function confirmAdjustmentRoomOpenDatePicker(event) {
+  event?.stopPropagation?.();
+  const st = adjustmentRoomOpenCalState;
+  if (!st?.draftDate) return;
+  const id = st.role === 'from' ? 'adjustment-room-open-date-from' : 'adjustment-room-open-date-to';
+  const el = document.getElementById(id);
+  if (el) el.value = st.draftDate;
+  const from = document.getElementById('adjustment-room-open-date-from')?.value || '';
+  const to = document.getElementById('adjustment-room-open-date-to')?.value || '';
+  if (from && to && from > to) {
+    const a = document.getElementById('adjustment-room-open-date-from');
+    const b = document.getElementById('adjustment-room-open-date-to');
+    if (a && b) { a.value = to; b.value = from; }
+  }
+  syncAdjustmentRoomOpenDateButtons();
+  syncAdjustmentRoomOpenInvolvedWeeks();
+  closeAdjustmentRoomOpenDatePicker();
+}
+
+function renderAdjustmentRoomOpenCalendar() {
+  const host = document.getElementById('adj-room-open-cal-dd');
+  const st = adjustmentRoomOpenCalState;
+  if (!host || !st) return;
+  const termStart = getScheduleTermStartDate(st.term);
+  const maxWeek = getOfferingTermTeachingWeeks(st.term) || 14;
+  const y = st.year;
+  const m = st.month;
+  const pad = n => String(n).padStart(2, '0');
+  const first = new Date(y, m, 1);
+  const offset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+  const last = new Date(y, m + 1, 0);
+  const cursor = new Date(y, m, 1 - offset);
+  const rows = [];
+  while (true) {
+    const weekInfo = getScheduleWeekAndWeekdayFromDate(
+      termStart,
+      `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`,
+      st.term
+    );
+    const weekNo = weekInfo?.weekNo && weekInfo.weekNo <= maxWeek ? weekInfo.weekNo : 0;
+    let cells = '';
+    for (let i = 0; i < 7; i++) {
+      const ds = `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`;
+      const info = getScheduleWeekAndWeekdayFromDate(termStart, ds, st.term);
+      const inTerm = !!(info?.weekNo && info.weekNo <= maxWeek);
+      const other = cursor.getMonth() !== m ? ' adj-cal-other' : '';
+      const sel = inTerm && ds === st.draftDate ? ' is-sel is-range-start is-range-end' : '';
+      const dis = inTerm ? '' : ' is-disabled';
+      const click = inTerm ? ` onclick="onAdjustmentRoomOpenCalPick('${ds}',event)"` : '';
+      cells += `<td class="adj-cal-day${other}${sel}${dis}"${click}>${cursor.getDate()}</td>`;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    rows.push(`<tr><td class="adj-cal-wk" title="${weekNo ? '第' + weekNo + '教学周' : ''}">${weekNo ? '第' + weekNo + '周' : '—'}</td>${cells}</tr>`);
+    if (cursor > last) break;
+  }
+  const tip = st.draftDate
+    ? `已选 ${formatAdjustmentRoomOpenDateBtn(st.draftDate, st.term)}`
+    : (st.role === 'from' ? '点击选择开始日期' : '点击选择截止日期');
+  host.innerHTML = `
+    <div class="adj-cal-head">
+      <button type="button" class="adj-cal-nav" onclick="onAdjustmentRoomOpenCalNav(-1,event)">‹</button>
+      <span class="adj-cal-title">${y}年${m + 1}月</span>
+      <button type="button" class="adj-cal-nav" onclick="onAdjustmentRoomOpenCalNav(1,event)">›</button>
+    </div>
+    <table class="adj-cal-table">
+      <thead><tr><th class="adj-cal-wk">教学周</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>
+    <div class="adj-cal-tip">${escapeHtml(tip)}</div>
+    <div class="adj-cal-foot">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeAdjustmentRoomOpenDatePicker()">取消</button>
+      <button type="button" class="btn btn-primary btn-sm" ${st.draftDate ? '' : 'disabled'} onclick="confirmAdjustmentRoomOpenDatePicker(event)">确定</button>
+    </div>`;
+}
+
+function openAdjustmentRoomOpenCreateModal() {
+  if (typeof fillAdjustmentRoomOpenTermSelect === 'function') fillAdjustmentRoomOpenTermSelect();
+  const term = getAdjustmentRoomOpenTerm();
+  if (!term) { alert('请先选择学年学期'); return; }
+  document.querySelectorAll('.modal-overlay.open').forEach(el => {
+    if (el.id !== 'modal-adjustment-room-open') closeModal(el.id);
+  });
+  adjustmentRoomOpenSelected.clear();
+  adjustmentRoomOpenModalRooms = [];
+  const idEl = document.getElementById('adjustment-room-open-edit-id');
+  if (idEl) idEl.value = '';
+  setAdjustmentRoomOpenModalChrome('create');
+  const nameEl = document.getElementById('adjustment-room-open-pick-name');
+  if (nameEl) nameEl.value = '';
+  const venueSel = document.getElementById('adjustment-room-open-pick-venue');
+  if (venueSel) venueSel.value = '';
+  openModal('modal-adjustment-room-open');
+  fillAdjustmentRoomOpenPickerFilters();
+  if (typeof queryAdjustmentRoomOpenPicker === 'function') queryAdjustmentRoomOpenPicker();
+  else renderAdjustmentRoomOpenPicker();
+  fillAdjustmentRoomOpenTimeFields(null);
+}
+
+function openAdjustmentRoomOpenEditModal(id) {
+  const p = findAdjustmentRoomOpenProfile(id);
+  if (!p) return;
+  adjustmentRoomOpenModalRooms = [p.room];
+  const idEl = document.getElementById('adjustment-room-open-edit-id');
+  if (idEl) idEl.value = p.id;
+  setAdjustmentRoomOpenModalChrome('edit');
+  const label = document.getElementById('adjustment-room-open-rooms-label');
+  if (label) {
+    const venue = getScheduleVenueTypeLabel(p.venueType || mapAdjustmentRoomVenueType(p.room));
+    label.textContent = `${p.room}${venue ? `（${venue}）` : ''}`;
+  }
+  fillAdjustmentRoomOpenTimeFields(p);
+  openModal('modal-adjustment-room-open');
+}
+
+function openAdjustmentRoomOpenBatchModal() {
+  if (typeof fillAdjustmentRoomOpenTermSelect === 'function') fillAdjustmentRoomOpenTermSelect();
+  const term = getAdjustmentRoomOpenTerm();
+  if (!term) { alert('请先选择学年学期'); return; }
+  const selected = document.querySelector('input[name="adjustment-room-open-batch-scope"][value="selected"]');
+  const query = document.querySelector('input[name="adjustment-room-open-batch-scope"][value="query"]');
+  const hasChecked = getAdjustmentRoomOpenFilteredProfiles().some(p => adjustmentRoomOpenListSelected.has(p.id));
+  if (selected) selected.checked = hasChecked;
+  if (query) query.checked = !hasChecked;
+  const targets = getAdjustmentRoomOpenBatchTargets();
+  if (!targets.length) {
+    if (getAdjustmentRoomOpenBatchScope() === 'query') {
+      alert('当前查询条件下没有可修改的开放时间');
+    } else {
+      alert('请先勾选要修改的教室，或改用「按查询条件修改」');
+    }
+    return;
+  }
+  document.querySelectorAll('.modal-overlay.open').forEach(el => {
+    if (el.id !== 'modal-adjustment-room-open') closeModal(el.id);
+  });
+  const idEl = document.getElementById('adjustment-room-open-edit-id');
+  if (idEl) idEl.value = '';
+  setAdjustmentRoomOpenModalChrome('batch');
+  fillAdjustmentRoomOpenTimeFields(targets[0] || null);
+  syncAdjustmentRoomOpenBatchScopeHint();
+  openModal('modal-adjustment-room-open');
+}
+
+function snapshotAdjustmentRoomOpenProfile(p) {
+  return typeof cloneEntitySnapshot === 'function' ? cloneEntitySnapshot(p) : (p ? { ...p } : null);
+}
+
+function saveAdjustmentRoomOpenModal() {
+  const term = getAdjustmentRoomOpenTerm() || getAdjustmentRequestTermCode();
+  if (!term) { alert('请先选择学年学期'); return; }
+  const editId = document.getElementById('adjustment-room-open-edit-id')?.value || '';
+  const dateFrom = (document.getElementById('adjustment-room-open-date-from')?.value || '').trim();
+  const dateTo = (document.getElementById('adjustment-room-open-date-to')?.value || '').trim();
+  const weeks = syncAdjustmentRoomOpenInvolvedWeeks();
+  const remark = (document.getElementById('adjustment-room-open-remark')?.value || '').trim();
+  let weekdays = readAdjustmentRoomOpenWeekdays();
+  if (isAdjustmentRoomOpenWeekdaysUnrestricted(weekdays)) weekdays = [];
+  const periodFrom = Number(document.getElementById('adjustment-room-open-period-from')?.value) || 0;
+  const periodTo = Number(document.getElementById('adjustment-room-open-period-to')?.value) || 0;
+  if (!dateFrom || !dateTo) { alert('请选择开始日期和截止日期'); return; }
+  if (dateFrom > dateTo) { alert('开始日期不能晚于截止日期'); return; }
+  if (!weeks) { alert('起止日期须落在本学期教学周内'); return; }
+  if (!periodFrom || !periodTo) { alert('请选择节次'); return; }
+  if (periodFrom > periodTo) { alert('起始节次不能大于结束节次'); return; }
+  if (adjustmentRoomOpenModalMode === 'batch') {
+    const targets = getAdjustmentRoomOpenBatchTargets();
+    if (!targets.length) {
+      alert(getAdjustmentRoomOpenBatchScope() === 'query'
+        ? '当前查询条件下没有可修改的开放时间'
+        : '请先勾选要修改的教室');
+      return;
+    }
+    const scopeLabel = getAdjustmentRoomOpenBatchScope() === 'query' ? '当前查询条件' : '已勾选';
+    if (!confirm(`确认按${scopeLabel}将开放时间更新到 ${targets.length} 条记录？`)) return;
+    targets.forEach(exist => {
+      const before = snapshotAdjustmentRoomOpenProfile(exist);
+      exist.dateFrom = dateFrom;
+      exist.dateTo = dateTo;
+      exist.weeks = weeks;
+      exist.weekdays = weekdays.slice();
+      exist.periodFrom = periodFrom;
+      exist.periodTo = periodTo;
+      exist.remark = remark;
+      exist.term = term;
+      exist.venueType = mapAdjustmentRoomVenueType(exist.room);
+      appendEntityChangeLog({
+        entityType: 'adjustment-room-open',
+        entityId: exist.id,
+        entityLabel: exist.room,
+        action: 'update',
+        before,
+        after: snapshotAdjustmentRoomOpenProfile(exist)
+      });
+    });
+    closeModal('modal-adjustment-room-open');
+    renderAdjustmentRoomOpenPage();
+    return;
+  }
+  const exist = editId ? findAdjustmentRoomOpenProfile(editId) : null;
+  if (editId && !exist) { alert('未找到要修改的开放时间'); return; }
+  const rooms = exist ? [exist.room] : [...adjustmentRoomOpenSelected];
+  if (!rooms.length) { alert('请选择教室'); return; }
+  if (exist) {
+    const before = snapshotAdjustmentRoomOpenProfile(exist);
+    exist.dateFrom = dateFrom;
+    exist.dateTo = dateTo;
+    exist.weeks = weeks;
+    exist.weekdays = weekdays;
+    exist.periodFrom = periodFrom;
+    exist.periodTo = periodTo;
+    exist.remark = remark;
+    exist.term = term;
+    exist.venueType = mapAdjustmentRoomVenueType(exist.room);
+    appendEntityChangeLog({
+      entityType: 'adjustment-room-open',
+      entityId: exist.id,
+      entityLabel: exist.room,
+      action: 'update',
+      before,
+      after: snapshotAdjustmentRoomOpenProfile(exist)
+    });
+  } else {
+    rooms.forEach(room => {
+      const rec = {
+        id: `aro-${ADJUSTMENT_ROOM_OPEN_STORE.seq++}`,
+        term,
+        venueType: mapAdjustmentRoomVenueType(room),
+        room,
+        dateFrom,
+        dateTo,
+        weeks,
+        weekdays: weekdays.slice(),
+        periodFrom,
+        periodTo,
+        remark
+      };
+      if (getAdjustmentRoomOpenProfiles(term, room).length) return;
+      ADJUSTMENT_ROOM_OPEN_STORE.profiles.push(rec);
+      appendEntityChangeLog({
+        entityType: 'adjustment-room-open',
+        entityId: rec.id,
+        entityLabel: rec.room,
+        action: 'create',
+        changes: [
+          { fieldKey: 'room', fieldLabel: '教室', before: '空', after: rec.room },
+          { fieldKey: 'dateFrom', fieldLabel: '开始日期', before: '空', after: rec.dateFrom },
+          { fieldKey: 'dateTo', fieldLabel: '结束日期', before: '空', after: rec.dateTo },
+          { fieldKey: 'weekdays', fieldLabel: '星期', before: '空', after: formatAdjustmentRoomOpenWeekdays(rec.weekdays) },
+          { fieldKey: 'periodFrom', fieldLabel: '起始节次', before: '空', after: String(rec.periodFrom) },
+          { fieldKey: 'periodTo', fieldLabel: '结束节次', before: '空', after: String(rec.periodTo) }
+        ]
+      });
+    });
+  }
+  closeModal('modal-adjustment-room-open');
+  renderAdjustmentRoomOpenPage();
+}
+
+function deleteAdjustmentRoomOpenProfile(id) {
+  const row = findAdjustmentRoomOpenProfile(id);
+  if (!row) return;
+  if (!confirm(`确定删除「${row.room}」的开放时间？`)) return;
+  const before = snapshotAdjustmentRoomOpenProfile(row);
+  ADJUSTMENT_ROOM_OPEN_STORE.profiles = ADJUSTMENT_ROOM_OPEN_STORE.profiles.filter(p => p.id !== id);
+  appendEntityChangeLog({
+    entityType: 'adjustment-room-open',
+    entityId: row.id,
+    entityLabel: row.room,
+    action: 'delete',
+    before,
+    after: null,
+    changes: [{ fieldKey: 'room', fieldLabel: '教室', before: row.room, after: '已删除' }]
+  });
+  renderAdjustmentRoomOpenPage();
+}
+
 function syncAdjustmentApplyMeta() {
   const profile = getAdjustmentApplicantProfile(getAdjustmentApplyApplicantId());
   const span = summarizeAdjustmentTimePoints(collectAdjustmentDraftTimePoints());
@@ -58764,9 +61481,28 @@ function getAdjustmentAddclassSlotByVal(val) {
 
 function ensureAdjustmentRowState(val) {
   if (isAdjustmentAddclassVal(val)) return getAdjustmentAddclassSlotByVal(val);
-  if (!val || val === '__shared__') return null;
+  if (!val || val === '__shared__' || val === '__batch__') return null;
   if (!adjustmentPerSlotState[val]) adjustmentPerSlotState[val] = {};
   return adjustmentPerSlotState[val];
+}
+
+/** 调课后信息缺省时回填原节次（日期 / 星期 / 节次 / 教师），已改过的字段不覆盖 */
+function seedAdjustmentPerSlotFromOriginal(memberVal, meta, termStart) {
+  const minfo = resolveAdjustmentSlot(memberVal);
+  if (!minfo) return null;
+  const st = ensureAdjustmentRowState(memberVal);
+  const teacherIds = getAdjustmentRowTeacherIds(st, minfo.teacherId);
+  if (teacherIds.length) setAdjustmentRowTeachers(st, teacherIds);
+  if (st.roomPrefer == null) st.roomPrefer = '';
+  if (meta && meta.fromCancel) return st;
+  const weeks = minfo.slot.weeks || minfo.task.weeks || '';
+  const dstr = getScheduleSlotDateLabel(termStart, weeks, minfo.slot.weekday);
+  const di = getAdjustmentDateInfo(dstr);
+  if (!st.date) st.date = dstr;
+  if (!st.weekday) st.weekday = Number(minfo.slot.weekday) || di.weekday;
+  if (st.period == null || st.period === '') st.period = minfo.slot.periodFrom;
+  if (!st.weeks) st.weeks = di.weeksLabel || weeks;
+  return st;
 }
 
 function resolveAdjustmentApplyTask(val) {
@@ -58804,7 +61540,9 @@ function teacherHasAdjustmentSlots(teacherId) {
 function resolveAdjustmentActiveTeacherId(teachers) {
   const list = teachers || getScheduleTeacherGroupRows();
   if (!list.length) return '';
-  if (adjustmentActiveTeacherId && list.some(t => t.teacherId === adjustmentActiveTeacherId)) {
+  if (adjustmentActiveTeacherId
+    && list.some(t => t.teacherId === adjustmentActiveTeacherId)
+    && teacherHasAdjustmentSlots(adjustmentActiveTeacherId)) {
     return adjustmentActiveTeacherId;
   }
   const withSlots = list.find(t => teacherHasAdjustmentSlots(t.teacherId));
@@ -58916,6 +61654,150 @@ function pickAdjustmentDemoPlacement(teacher, offset = 0) {
   return pool[offset % pool.length];
 }
 
+function pickAdjustmentDemoPlacementAny(teacher, offset = 0) {
+  const picked = pickAdjustmentDemoPlacement(teacher, offset);
+  if (picked.slot) return picked;
+  const rows = typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : [];
+  const pool = [];
+  rows.forEach(task => {
+    normalizeTaskTimeSlots(task).forEach(slot => {
+      if (slot?.weekday && slot?.periodFrom) pool.push({ task, slot });
+    });
+  });
+  return pool.length ? pool[offset % pool.length] : picked;
+}
+
+function getAdjustmentDemoTeacherPool() {
+  const all = typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : [];
+  const withSlots = all.filter(t => (t.tasks || []).some(k =>
+    normalizeTaskTimeSlots(k).some(s => s.weekday && s.periodFrom)
+  ));
+  return withSlots.length ? withSlots : all;
+}
+
+function isAdjustmentApplicationListRow(r, source) {
+  if (!r || r.source !== source) return false;
+  if (r.holidayId || r.makeupSeed) return false;
+  return true;
+}
+
+function isAdjustmentOperableListDemo(r, source) {
+  return isAdjustmentApplicationListRow(r, source)
+    && r.demoOps
+    && (r.status === 'pending' || r.status === 'reviewing');
+}
+
+function pushAdjustmentDemoRequest(spec, teacher, task, slot) {
+  const term = getAdjustmentRequestTermCode();
+  const meta = ADJUSTMENT_TYPE_META[spec.type];
+  const seq = ADJUSTMENT_STORE.reqSeq++;
+  const source = spec.source || 'teacher';
+  const fromLabel = meta.needFrom ? adjustmentSlotLabel(slot) : '—';
+  const toLabel = meta.needTo
+    ? adjustmentTargetText(spec.toWd, spec.toPd, spec.weeks, spec.room)
+    : (spec.type === 'cancel' ? '停课' : '—');
+  const fromStruct = meta.needFrom ? adjustmentSlotStruct(slot, task) : null;
+  const toStruct = meta.needTo ? adjustmentTargetStruct(spec.toWd, spec.toPd, spec.weeks, teacher.name, spec.room) : null;
+  if (toStruct && spec.type === 'addclass') {
+    toStruct.compulsory = isAdjustmentCompulsoryYes(spec.compulsory) ? 'Y' : 'N';
+  }
+  const submittedAt = adjustmentDemoTime(spec.hoursAgo || 0);
+  const done = spec.status === 'approved' || spec.status === 'rejected';
+  const demoItems = [{
+    teacherName: teacher.name,
+    code: task?.code || '',
+    courseName: task?.name || '',
+    group: task?.groupLabel || '上课小组',
+    credits: getAdjustmentTaskCredits(task),
+    studentCount: getAdjustmentGroupStudentCount(task),
+    roomPrefer: spec.room || '',
+    compulsory: spec.type === 'addclass' ? (isAdjustmentCompulsoryYes(spec.compulsory) ? 'Y' : 'N') : undefined,
+    taskId: task?.id || '',
+    fromLabel, toLabel, from: fromStruct, to: toStruct
+  }];
+  const demoSpan = summarizeAdjustmentTimePoints(collectAdjustmentItemTimePoints(demoItems));
+  ADJUSTMENT_STORE.requests.push({
+    id: `adj-${seq}`, no: `TK${String(seq).padStart(4, '0')}`,
+    type: spec.type, source,
+    teacherId: teacher.teacherId || teacher.id || 'TDEMO',
+    teacherName: teacher.name || '演示教师',
+    code: task?.code || '', courseName: task?.name || '', groupLabel: task?.groupLabel || '',
+    slotCount: 1,
+    slotRefs: (task && slot) ? [`${task.id}::${slot.id}`] : [],
+    items: demoItems,
+    applyStart: demoSpan.start,
+    applyEnd: demoSpan.end,
+    dayCount: demoSpan.dayCount,
+    fromText: fromLabel,
+    toText: meta.needTo ? toLabel : (spec.type === 'cancel' ? '停课' : '—'),
+    reason: spec.reason,
+    reasonType: spec.reasonType || inferAdjustmentReasonType(spec.reason),
+    reasonTypeCode: spec.reasonTypeCode || findAdjustmentReasonTypeByCode(spec.reasonType)?.code || '',
+    leaveRecordId: spec.leaveRecordId || '',
+    leaveRecordLabel: spec.leaveRecordId
+      ? formatAdjustmentLeaveRecordLabel(ADJUSTMENT_LEAVE_RECORD_STORE.items.find(x => x.id === spec.leaveRecordId))
+      : '',
+    status: spec.status,
+    stage: spec.stage || getAdjustmentStageLabel({ status: spec.status }),
+    term,
+    attachments: spec.attachments || [],
+    submittedAt,
+    reviewedAt: done ? adjustmentDemoTime(Math.max(0, (spec.hoursAgo || 0) - 6)) : '',
+    reviewer: done ? (spec.reviewer || '教务管理员') : '',
+    reviewComment: spec.status === 'rejected'
+      ? (spec.comment || '不予通过')
+      : (spec.status === 'approved' ? (spec.comment || '同意') : ''),
+    proxyBy: source === 'admin' ? '教务管理员' : '',
+    cancelledAt: spec.status === 'cancelled' ? submittedAt : '',
+    demoOps: true,
+    listDemo: true
+  });
+}
+
+const ADJUSTMENT_TEACHER_LIST_DEMO_SPECS = [
+  { ti: 0, si: 0, type: 'reschedule', toWd: 3, toPd: 5, weeks: '第6周', room: '教学楼A-203', reason: 'Academic-Related travel, request to reschedule this Wednesday', reasonType: 'Academic-Related', reasonTypeCode: 'academic-related', leaveRecordId: 'leave-1', status: 'pending', stage: '教务初审', hoursAgo: 2, attachments: [{ name: 'Academic-Related-Travel-Form.pdf', size: 268000 }] },
+  { ti: 0, si: 1, type: 'cancel', reason: '参加师资培训，申请本次停课', reasonType: 'Other', status: 'pending', stage: '教务初审', hoursAgo: 5 },
+  { ti: 1, si: 0, type: 'makeup', toWd: 6, toPd: 3, weeks: '第7周', room: '教学楼B-402', reason: '补上因病请假缺的课时', reasonType: 'Medical Condition', status: 'reviewing', stage: '学院审核', hoursAgo: 8 },
+  { ti: 2, si: 0, type: 'addclass', toWd: 4, toPd: 7, weeks: '第11周', room: '实验楼-206', compulsory: 'Y', reason: '实验项目验收前需加课辅导一次', reasonType: 'Other', status: 'pending', stage: '教务初审', hoursAgo: 18 },
+  { ti: 1, si: 1, type: 'reschedule', toWd: 2, toPd: 6, weeks: '第9周', room: '教学楼C-105', reason: '学院活动冲突，申请调整本次上课时间', reasonType: 'Other', status: 'reviewing', stage: '学院审核', hoursAgo: 4 },
+  { ti: 0, si: 2, type: 'reschedule', toWd: 5, toPd: 2, weeks: '第4周', room: '教学楼A-101', reason: '上周调课已完成，用于查看已申请记录', reasonType: 'Other', status: 'approved', stage: '审批完成', hoursAgo: 72, comment: '同意' },
+  { ti: 2, si: 1, type: 'cancel', reason: '临时停课申请未获通过', reasonType: 'Other', status: 'rejected', stage: '已驳回', hoursAgo: 96, comment: '材料不足，不予通过' }
+];
+
+const ADJUSTMENT_ADMIN_LIST_DEMO_SPECS = [
+  { ti: 0, si: 0, type: 'reschedule', toWd: 1, toPd: 3, weeks: '第12周', room: '教学楼A-205', reason: '公假日调课，教务代为申请', reasonType: 'Public Holiday', status: 'pending', stage: '学院审核', source: 'admin', hoursAgo: 3 },
+  { ti: 2, si: 0, type: 'cancel', reason: '家庭紧急情况，教务代申请停课', reasonType: 'Family Emergency', status: 'reviewing', stage: '教务复核', source: 'admin', hoursAgo: 20 },
+  { ti: 1, si: 1, type: 'makeup', toWd: 5, toPd: 2, weeks: '第8周', room: '教学楼B-305', reason: '此前停课后的补课，教务代教师提交', reasonType: 'Other', status: 'pending', stage: '教务初审', source: 'admin', hoursAgo: 12 },
+  { ti: 1, si: 0, type: 'addclass', toWd: 5, toPd: 8, weeks: '第13周', room: '教学楼C-201', reason: '期末答疑加课，教务代教师提交', reasonType: 'Other', status: 'pending', stage: '教务初审', source: 'admin', hoursAgo: 10 },
+  { ti: 0, si: 1, type: 'reschedule', toWd: 4, toPd: 4, weeks: '第10周', room: '教学楼A-301', reason: '教室检修，教务代申请调整上课时间', reasonType: 'Other', status: 'pending', stage: '教务初审', source: 'admin', hoursAgo: 6 }
+];
+
+function seedAdjustmentOperableListDemos() {
+  const teachers = getAdjustmentDemoTeacherPool();
+  const fallback = { teacherId: 'TDEMO', name: '演示教师', tasks: [] };
+  const fill = (source, specs) => {
+    const live = ADJUSTMENT_STORE.requests.filter(r =>
+      isAdjustmentApplicationListRow(r, source) && r.demoOps
+    );
+    const term = getAdjustmentRequestTermCode();
+    live.forEach(r => { if (term && !r.term) r.term = term; });
+    if (live.length >= specs.length) return;
+    specs.slice(live.length).forEach(spec => {
+      const pool = teachers.length ? teachers : [fallback];
+      const teacher = pool[spec.ti % pool.length];
+      const { task, slot } = pickAdjustmentDemoPlacementAny(teacher, spec.si || 0);
+      try {
+        pushAdjustmentDemoRequest({ ...spec, source: spec.source || source }, teacher, task, slot);
+      } catch (err) {
+        console.error('[adjustment-demo]', spec.type, err);
+      }
+    });
+  };
+  fill('teacher', ADJUSTMENT_TEACHER_LIST_DEMO_SPECS);
+  fill('admin', ADJUSTMENT_ADMIN_LIST_DEMO_SPECS);
+  ADJUSTMENT_STORE.seeded = true;
+}
+
 /** 演示用：相对当前时间回退若干小时，便于列表区分提交先后 */
 function adjustmentDemoTime(hoursAgo = 0) {
   const d = new Date(Date.now() - Math.max(0, hoursAgo) * 3600 * 1000);
@@ -59005,95 +61887,7 @@ function ensureAdjustmentDemo() {
   ensureAdjustmentScheduleSlotsForDemo();
   ensureAdjustmentReasonTypeStore();
   ensureAdjustmentLeaveRecordStore();
-  if (!ADJUSTMENT_STORE.seeded) {
-    const allTeachers = getScheduleTeacherGroupRows();
-    // 仅使用「有已排课节次」的教师，保证详情页原上课时间不为空
-    const teachers = allTeachers.filter(t => t.tasks.some(k => normalizeTaskTimeSlots(k).length));
-    if (teachers.length) {
-      ADJUSTMENT_STORE.seeded = true;
-      const term = getAdjustmentRequestTermCode();
-      // 我的调课申请 / 调课申请管理：初始化每类型 1 条演示；用户新增后追加展示
-      // 调课申请记录：汇总上述两入口的申请（含初始化演示与用户新增）
-      const specs = [
-        // —— 我的调课申请（source=teacher，每类型 1 条）——
-        { ti: 0, si: 0, type: 'reschedule', toWd: 3, toPd: 5, weeks: '第6周', room: '教学楼A-203', reason: 'Academic-Related travel, request to reschedule this Wednesday', reasonType: 'Academic-Related', reasonTypeCode: 'academic-related', leaveRecordId: 'leave-1', status: 'pending', stage: '教务初审', hoursAgo: 2, demoOps: true, attachments: [{ name: 'Academic-Related-Travel-Form.pdf', size: 268000 }] },
-        { ti: 0, si: 1, type: 'cancel', reason: '参加师资培训，申请本次停课', reasonType: 'Other', status: 'pending', stage: '教务初审', hoursAgo: 5, demoOps: true },
-        { ti: 1, si: 0, type: 'makeup', toWd: 6, toPd: 3, weeks: '第7周', room: '教学楼B-402', reason: '补上因病请假缺的课时', reasonType: 'Medical Condition', status: 'reviewing', stage: '学院审核', hoursAgo: 8, demoOps: true },
-        { ti: 2, si: 0, type: 'addclass', toWd: 4, toPd: 7, weeks: '第11周', room: '实验楼-206', compulsory: 'Y', reason: '实验项目验收前需加课辅导一次', reasonType: 'Other', status: 'pending', stage: '教务初审', hoursAgo: 18, demoOps: true },
-        // —— 调课申请管理 · 代申请（source=admin，每类型 1 条）——
-        { ti: 0, si: 0, type: 'reschedule', toWd: 1, toPd: 3, weeks: '第12周', room: '教学楼A-205', reason: '公假日调课，教务代为申请', reasonType: 'Public Holiday', status: 'pending', stage: '学院审核', source: 'admin', hoursAgo: 3, demoOps: true },
-        { ti: 2, si: 0, type: 'cancel', reason: '家庭紧急情况，教务代申请停课', reasonType: 'Family Emergency', status: 'reviewing', stage: '教务复核', source: 'admin', hoursAgo: 20, demoOps: true },
-        { ti: 1, si: 1, type: 'makeup', toWd: 5, toPd: 2, weeks: '第8周', room: '教学楼B-305', reason: '此前停课后的补课，教务代教师提交', reasonType: 'Other', status: 'pending', stage: '教务初审', source: 'admin', hoursAgo: 12, demoOps: true },
-        { ti: 1, si: 0, type: 'addclass', toWd: 5, toPd: 8, weeks: '第13周', room: '教学楼C-201', reason: '期末答疑加课，教务代教师提交', reasonType: 'Other', status: 'pending', stage: '教务初审', source: 'admin', hoursAgo: 10, demoOps: true }
-      ];
-      specs.forEach(spec => {
-        const teacher = teachers[spec.ti % teachers.length];
-        const { task, slot } = pickAdjustmentDemoPlacement(teacher, spec.si || 0);
-        const meta = ADJUSTMENT_TYPE_META[spec.type];
-        const seq = ADJUSTMENT_STORE.reqSeq++;
-        const source = spec.source || 'teacher';
-        const fromLabel = meta.needFrom ? adjustmentSlotLabel(slot) : '—';
-        const toLabel = meta.needTo
-          ? adjustmentTargetText(spec.toWd, spec.toPd, spec.weeks, spec.room)
-          : (spec.type === 'cancel' ? '停课' : '—');
-        const fromStruct = meta.needFrom ? adjustmentSlotStruct(slot, task) : null;
-        const toStruct = meta.needTo ? adjustmentTargetStruct(spec.toWd, spec.toPd, spec.weeks, teacher.name, spec.room) : null;
-        if (toStruct && spec.type === 'addclass') {
-          toStruct.compulsory = isAdjustmentCompulsoryYes(spec.compulsory) ? 'Y' : 'N';
-        }
-        const submittedAt = adjustmentDemoTime(spec.hoursAgo || 0);
-        const done = spec.status === 'approved' || spec.status === 'rejected';
-        const demoItems = [{
-            teacherName: teacher.name,
-            code: task?.code || '',
-            courseName: task?.name || '',
-            group: task?.groupLabel || '上课小组',
-            credits: getAdjustmentTaskCredits(task),
-            studentCount: getAdjustmentGroupStudentCount(task),
-            roomPrefer: spec.room || '',
-            compulsory: spec.type === 'addclass' ? (isAdjustmentCompulsoryYes(spec.compulsory) ? 'Y' : 'N') : undefined,
-            taskId: task?.id || '',
-            fromLabel, toLabel, from: fromStruct, to: toStruct
-          }];
-        const demoSpan = summarizeAdjustmentTimePoints(collectAdjustmentItemTimePoints(demoItems));
-        ADJUSTMENT_STORE.requests.push({
-          id: `adj-${seq}`, no: `TK${String(seq).padStart(4, '0')}`,
-          type: spec.type, source,
-          teacherId: teacher.teacherId, teacherName: teacher.name,
-          code: task?.code || '', courseName: task?.name || '', groupLabel: task?.groupLabel || '',
-          slotCount: 1,
-          slotRefs: (task && slot) ? [`${task.id}::${slot.id}`] : [],
-          items: demoItems,
-          applyStart: demoSpan.start,
-          applyEnd: demoSpan.end,
-          dayCount: demoSpan.dayCount,
-          fromText: fromLabel,
-          toText: meta.needTo ? toLabel : (spec.type === 'cancel' ? '停课' : '—'),
-          reason: spec.reason,
-          reasonType: spec.reasonType || inferAdjustmentReasonType(spec.reason),
-          reasonTypeCode: spec.reasonTypeCode || findAdjustmentReasonTypeByCode(spec.reasonType)?.code || '',
-          leaveRecordId: spec.leaveRecordId || '',
-          leaveRecordLabel: spec.leaveRecordId
-            ? formatAdjustmentLeaveRecordLabel(ADJUSTMENT_LEAVE_RECORD_STORE.items.find(x => x.id === spec.leaveRecordId))
-            : '',
-          status: spec.status,
-          stage: spec.stage || getAdjustmentStageLabel({ status: spec.status }),
-          term,
-          attachments: spec.attachments || [],
-          submittedAt,
-          reviewedAt: done ? adjustmentDemoTime(Math.max(0, (spec.hoursAgo || 0) - 6)) : '',
-          reviewer: done ? (spec.reviewer || '教务管理员') : '',
-          reviewComment: spec.status === 'rejected'
-            ? (spec.comment || '不予通过')
-            : (spec.status === 'approved' ? (spec.comment || '同意') : ''),
-          proxyBy: source === 'admin' ? '教务管理员' : '',
-          cancelledAt: spec.status === 'cancelled' ? submittedAt : '',
-          demoOps: !!spec.demoOps
-        });
-      });
-      ADJUSTMENT_STORE.requests.sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
-    }
-  }
+  seedAdjustmentOperableListDemos();
   seedAdjustmentBatchRecords();
   seedAdjustmentHolidays();
   ensureAdjustmentHolidayCancelRequests();
@@ -59193,7 +61987,10 @@ function limitAdjustmentRowsOnePerType(rows) {
 
 /** 当前调课申请应写入的学年学期（与演示种子、列表筛选口径一致） */
 function getAdjustmentRequestTermCode() {
-  return getActiveOfferingTermSetting()?.termCode || getDefaultOfferingTermCode() || '';
+  return getActiveOfferingTermSetting()?.termCode
+    || (typeof getDefaultOfferingTermCode === 'function' ? getDefaultOfferingTermCode() : '')
+    || (typeof getScheduleTermCodes === 'function' ? (getScheduleTermCodes()[0] || '') : '')
+    || '';
 }
 
 /** 保存/撤销后刷新相关列表（提交来源页必刷，其它调课页若已打开也同步） */
@@ -59585,7 +62382,7 @@ function ensureAdjustmentTeacherTermSelect() {
   sel.innerHTML = '<option value="">全部</option>' +
     terms.map(code => `<option value="${code}">${formatCourseTermDisplay(code)}</option>`).join('');
   if (cur && terms.includes(cur)) sel.value = cur;
-  else if (!sel.dataset.inited) { sel.value = getActiveOfferingTermSetting()?.termCode || ''; sel.dataset.inited = '1'; }
+  else if (!sel.dataset.inited) { sel.value = ''; sel.dataset.inited = '1'; }
 }
 
 function resetAdjustmentTeacherQuery() {
@@ -59612,11 +62409,14 @@ function ensureAdjustmentAdminSelects() {
   const teacherSel = document.getElementById('adjustment-admin-teacher');
   if (teacherSel) {
     const teachers = getScheduleTeacherGroupRows();
-    teacherSel.innerHTML = teachers.length
+    const cur = teacherSel.value;
+    teacherSel.innerHTML = '<option value="">全部</option>' + (teachers.length
       ? teachers.map(t => `<option value="${escapeHtml(t.teacherId)}">${escapeHtml(t.name)}（${escapeHtml(t.teacherId)}）</option>`).join('')
-      : '<option value="">暂无教师</option>';
-    adjustmentActiveTeacherId = resolveAdjustmentActiveTeacherId(teachers);
-    teacherSel.value = adjustmentActiveTeacherId;
+      : '');
+    if (cur && teachers.some(t => t.teacherId === cur)) teacherSel.value = cur;
+    else teacherSel.value = '';
+    teacherSel.dataset.inited = '1';
+    if (teacherSel.value) adjustmentActiveTeacherId = teacherSel.value;
   }
 }
 
@@ -59640,30 +62440,33 @@ function renderAdjustmentAdminPage() {
   const status = document.getElementById('adjustment-admin-status')?.value || '';
   const hint = document.getElementById('adjustment-admin-hint');
   // 管理页演示：优先展示代申请；每个类型只保留一条
-  let rows = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin');
-  if (!rows.length) rows = ADJUSTMENT_STORE.requests.filter(r => r.source === 'teacher' || r.source === 'admin');
-  if (term) rows = rows.filter(r => (r.term || '') === term);
+  let rows = ADJUSTMENT_STORE.requests.filter(r => isAdjustmentApplicationListRow(r, 'admin'));
+  if (!rows.length) rows = ADJUSTMENT_STORE.requests.filter(r =>
+    isAdjustmentApplicationListRow(r, 'teacher') || isAdjustmentApplicationListRow(r, 'admin')
+  );
+  if (term) rows = rows.filter(r => !r.term || r.term === term);
   if (teacherId) rows = rows.filter(r => r.teacherId === teacherId);
   if (type) rows = rows.filter(r => r.type === type);
   if (status) rows = rows.filter(r => r.status === status);
-  rows = limitAdjustmentRowsOnePerType(rows);
   if (hint) {
     const adminCount = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin').length;
     const userCount = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin' && !r.demoOps).length;
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条 · 代申请库 <strong>${adminCount}</strong> 条 · 用户新增 <strong>${userCount}</strong> 条</span>`;
   }
   if (!tbody) return;
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 10, '暂无申请记录，可点击上方按钮代教师发起申请'); return; }
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录，可点击上方按钮代教师发起申请'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-index">${i + 1}</td>
+    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
+    <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
     <td><code>${escapeHtml(r.no)}</code>${r.source === 'admin' ? ' <span class="adj-type-badge adj-admin">代申请</span>' : ''}</td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
     <td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
+    <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td>${escapeHtml(r.reason)}</td>
     <td class="col-center">${escapeHtml(r.submittedAt)}</td>
-    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
     <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing') ? `<a href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');renderAdjustmentAdminPage();return false">撤销</a> · ` : ''}<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a> · ${entityChangeLogLink('adjustment-request', r.id, r.no || r.id)}</td>
   </tr>`).join('');
 }
@@ -59672,8 +62475,7 @@ function openAdjustmentAdminApplyModal(type) {
   ensureAdjustmentDemo();
   ensureAdjustmentAdminSelects();
   const teacherId = document.getElementById('adjustment-admin-teacher')?.value || '';
-  if (!teacherId) { alert('请先选择代申请教师'); return; }
-  adjustmentActiveTeacherId = teacherId;
+  if (teacherId) adjustmentActiveTeacherId = teacherId;
   openAdjustmentApplyModal(type, true);
 }
 
@@ -59686,28 +62488,31 @@ function renderAdjustmentTeacherPage() {
   const type = document.getElementById('adjustment-teacher-type')?.value || '';
   const status = document.getElementById('adjustment-teacher-status')?.value || '';
   const hint = document.getElementById('adjustment-teacher-hint');
-  const all = ADJUSTMENT_STORE.requests.filter(r => r.source === 'teacher');
+  const all = ADJUSTMENT_STORE.requests.filter(r => isAdjustmentApplicationListRow(r, 'teacher'));
   let rows = all;
-  if (term) rows = rows.filter(r => (r.term || '') === term);
+  if (term) rows = rows.filter(r => !r.term || r.term === term);
   if (type) rows = rows.filter(r => r.type === type);
   if (status) rows = rows.filter(r => r.status === status);
-  rows = limitAdjustmentRowsOnePerType(rows);
+  rows = rows.slice().sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
   if (hint) {
     const pend = all.filter(r => r.status === 'pending' || r.status === 'reviewing').length;
     const userCount = all.filter(r => !r.demoOps).length;
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条 · 待处理 <strong>${pend}</strong> 条 · 用户新增 <strong>${userCount}</strong> 条</span>`;
+    appendAdjustmentRoomOpenListHint(hint);
   }
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 10, '暂无申请记录，可点击表格左上角发起申请'); return; }
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录，可点击表格左上角发起申请'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-index">${i + 1}</td>
+    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
+    <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
     <td><code>${escapeHtml(r.no)}</code></td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
     <td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
+    <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td>${escapeHtml(r.reason)}</td>
     <td class="col-center">${escapeHtml(r.submittedAt)}</td>
-    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
     <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing') ? `<a href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');return false">撤销</a> · ` : ''}<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a> · ${entityChangeLogLink('adjustment-request', r.id, r.no || r.id)}</td>
   </tr>`).join('');
 }
@@ -59970,9 +62775,9 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
     const compulsoryCell = isAddclass ? renderAdjustmentApproveCompulsoryCell(r, it, i, editable) : '';
     const toColspan = isAddclass ? 7 : 6;
     const toCells = isCancel
-      ? `<td class="col-center adj-detail-cancel" colspan="6">To Be Confirmed</td>${conflictCell}`
+      ? `<td class="col-center adj-detail-cancel adj-detail-to-split" colspan="6">To Be Confirmed</td>${conflictCell}`
       : (t
-        ? `<td class="col-center${chg(t.date, f && f.date)}">${escapeHtml(t.date || '—')}</td>`
+        ? `<td class="col-center adj-detail-to-split${chg(t.date, f && f.date)}">${escapeHtml(t.date || '—')}</td>`
         + `<td class="col-center${chg(t.weekdayLabel, f && f.weekdayLabel)}">${escapeHtml(t.weekdayLabel || '—')}</td>`
         + `<td class="col-center adj-approve-period-cell${chg(t.periodLabel, f && f.periodLabel)}">${periodCell}</td>`
         + `<td class="col-center${chg(t.weeks, f && f.weeks)}">${escapeHtml(t.weeks || '—')}</td>`
@@ -59980,7 +62785,7 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
         + roomCell
         + compulsoryCell
         + conflictCell
-        : `<td class="col-center" colspan="${toColspan}">${dash}</td>${conflictCell}`);
+        : `<td class="col-center adj-detail-to-split" colspan="${toColspan}">${dash}</td>${conflictCell}`);
     return `<tr>
       <td class="col-index adj-detail-freeze-col adj-detail-freeze-1">${gi + 1}</td>
       <td class="adj-detail-freeze-col adj-detail-freeze-2">${escapeHtml(courseLabel)}</td>
@@ -60006,12 +62811,12 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
         <th class="adj-detail-freeze-col adj-detail-freeze-3" rowspan="2">上课小组</th>
         <th rowspan="2">任课教师</th>
         ${fromHead}
-        <th class="col-center adj-detail-group" colspan="${r.type === 'addclass' ? 7 : 6}">调后安排</th>
+        <th class="col-center adj-detail-group adj-detail-to-split" colspan="${r.type === 'addclass' ? 7 : 6}">调后安排</th>
         <th rowspan="2" class="col-center adj-detail-conflict-col">是否冲突</th>
       </tr>
       <tr>
         ${fromSub}
-        <th class="col-center">日期</th><th class="col-center">星期</th><th class="col-center">节次</th><th class="col-center">周次</th><th>教师</th><th>教室</th>
+        <th class="col-center adj-detail-to-split">日期</th><th class="col-center">星期</th><th class="col-center">节次</th><th class="col-center">周次</th><th>教师</th><th>教室</th>
         ${r.type === 'addclass' ? '<th class="col-center">compulsory</th>' : ''}
       </tr>
     </thead>
@@ -60105,8 +62910,49 @@ function refreshAdjustmentDetailInfoSection(r) {
   if (!host || !r) return;
   const items = getAdjustmentItems(r);
   const editable = r.status === 'pending' || r.status === 'reviewing';
-  host.innerHTML = `<h4 class="adj-detail-h">调课信息</h4>${renderAdjustmentDetailInfoTable(r, items, { editable })}`;
+  host.innerHTML = `<h4 class="adj-detail-h">调课信息</h4>${formatAdjustmentRoomOpenViolationBanner(r)}${renderAdjustmentDetailInfoTable(r, items, { editable })}`;
   if (typeof enhanceAllSelects === 'function') enhanceAllSelects(host);
+  syncAdjustmentRoomOpenApproveUi(r);
+}
+
+/** 审批选教室：默认场地类型 = 原排课节次 / 开课任务场地设置 */
+function getAdjustmentApproveRoomDefaultVenueTypes(req, itemIdx) {
+  const ctx = adjustmentApproveRoomContext || {};
+  const r = req || ADJUSTMENT_STORE.requests.find(x => x.id === ctx.reqId);
+  const idx = itemIdx != null ? itemIdx : ctx.itemIdx;
+  if (!r || idx == null) return [SCHEDULE_VENUE_TYPE_DEFAULT];
+  const items = getAdjustmentItems(r);
+  const indexes = typeof getAdjustmentDetailMergeIndexes === 'function'
+    ? getAdjustmentDetailMergeIndexes(r, idx)
+    : [idx];
+  const seen = new Set();
+  const types = [];
+  const push = list => {
+    (list || []).forEach(t => {
+      if (!t || t === SCHEDULE_VENUE_TYPE_NONE || seen.has(t)) return;
+      seen.add(t);
+      types.push(t);
+    });
+  };
+  indexes.forEach(i => {
+    const it = items[i];
+    if (!it) return;
+    const ref = (r.slotRefs || [])[i];
+    const info = ref && typeof resolveAdjustmentSlot === 'function' ? resolveAdjustmentSlot(ref) : null;
+    const task = info?.task
+      || (it.taskId ? getScheduleTaskRows().find(t => t.id === it.taskId) : null)
+      || getScheduleTaskRows().find(t => t.code === it.code && (t.groupLabel || '上课小组') === (it.group || '上课小组'))
+      || getScheduleTaskRows().find(t => t.code === it.code);
+    if (info?.slot && typeof resolveScheduleSlotVenueTypes === 'function') {
+      push(resolveScheduleSlotVenueTypes(info.slot, task || info.task));
+      return;
+    }
+    if (typeof getScheduleTaskDefaultVenueTypes === 'function') {
+      push(getScheduleTaskDefaultVenueTypes(task));
+    }
+  });
+  if (!types.length) types.push(SCHEDULE_VENUE_TYPE_DEFAULT);
+  return types.filter(t => typeof isScheduleRoomTypeFilterDisabled !== 'function' || !isScheduleRoomTypeFilterDisabled(t));
 }
 
 /** 审批选教室：复用排教室列表，带入该行目标时间以展示占用 */
@@ -60116,15 +62962,23 @@ function openAdjustmentApproveRoomPicker(reqId, itemIdx) {
   const items = getAdjustmentItems(r);
   const it = items[itemIdx];
   if (!it?.to) return;
+  if (typeof ensureScheduleGlobalDemo === 'function') ensureScheduleGlobalDemo();
+  if (typeof ensureScheduleTasksFromOffering === 'function') ensureScheduleTasksFromOffering();
   const weekday = Number(it.to.weekday)
     || SCHEDULE_WEEKDAYS.find(w => w.label === it.to.weekdayLabel)?.value
     || 0;
   const period = Number(getAdjustmentToPeriodInfo(it.to).period) || 0;
+  const task = it.taskId
+    ? getScheduleTaskRows().find(row => row.id === it.taskId)
+    : getScheduleTaskRows().find(row => row.code === it.code && (row.groupLabel || '上课小组') === (it.group || '上课小组'))
+      || getScheduleTaskRows().find(row => row.code === it.code);
   adjustmentApproveRoomContext = {
     reqId, itemIdx, weekday, period,
     weeks: it.to.weeks || '',
     date: it.to.date || '',
-    roomPrefer: it.to.roomPrefer != null ? it.to.roomPrefer : (it.roomPrefer || '')
+    roomPrefer: it.to.roomPrefer != null ? it.to.roomPrefer : (it.roomPrefer || ''),
+    group: it.group || r.groupLabel || '上课小组',
+    studentCount: it.studentCount || getAdjustmentGroupStudentCount(task)
   };
   scheduleRoomPickerMode = 'adjustmentApprove';
   scheduleRoomPickerSelected = it.to.roomUnspecified ? '' : (it.to.room || '');
@@ -60132,12 +62986,11 @@ function openAdjustmentApproveRoomPicker(reqId, itemIdx) {
   if (title) title.textContent = '选择调后教室';
   const unspecBtn = document.getElementById('schedule-room-picker-unspecified-btn');
   if (unspecBtn) unspecBtn.hidden = false;
-  if (typeof ensureScheduleGlobalDemo === 'function') ensureScheduleGlobalDemo();
-  if (typeof ensureScheduleTasksFromOffering === 'function') ensureScheduleTasksFromOffering();
   syncScheduleRoomPickerModalLayout();
   syncScheduleRoomPickerOccBar();
   buildScheduleRoomFilterOptions();
   resetScheduleRoomFilterSelects();
+  setScheduleRoomTypeFilterSelected(getAdjustmentApproveRoomDefaultVenueTypes(r, itemIdx));
   syncScheduleRoomPickerHint();
   renderScheduleRoomModalRows();
   openModal('modal-schedule-room-picker');
@@ -60369,10 +63222,16 @@ function openAdjustmentDetail(id, withApprove) {
     </div>
     <div class="adj-detail-section adj-detail-section-info">
       <h4 class="adj-detail-h">调课信息</h4>
+      ${formatAdjustmentRoomOpenViolationBanner(r)}
       ${renderAdjustmentDetailInfoTable(r, items, { editable: !!withApprove })}
     </div>`;
   const approveBtn = document.getElementById('adjustment-detail-approve-btn');
-  if (approveBtn) approveBtn.hidden = !(withApprove && (r.status === 'pending' || r.status === 'reviewing'));
+  if (approveBtn) {
+    approveBtn.hidden = !(withApprove && (r.status === 'pending' || r.status === 'reviewing'));
+    approveBtn.disabled = false;
+    approveBtn.title = '';
+    if (!approveBtn.hidden) syncAdjustmentRoomOpenApproveUi(r);
+  }
   openModal('modal-adjustment-detail');
 }
 
@@ -60402,6 +63261,7 @@ function openAdjustmentApplyModal(type, asAdmin) {
   adjustmentLastConflict = null;
   adjustmentPerSlotState = {};
   adjustmentSelectedSlotVals = [];
+  adjustmentApplyBatchSelected = new Set();
   adjustmentAddclassCourses = [];
   adjustmentAddclassSlots = [];
   adjustmentAddclassSlotSeq = 1;
@@ -60441,7 +63301,7 @@ function openAdjustmentApplyModal(type, asAdmin) {
     if (el) el.value = '';
   });
   ensureAdjustmentReasonTypeOptions();
-  ['asf-course', 'asf-group', 'asf-week', 'asf-date-from', 'asf-date-to'].forEach(id => {
+  ['asf-course', 'asf-group', 'asf-week', 'asf-date-from', 'asf-date-to', 'asf-weekday', 'asf-room', 'asf-teacher-name', 'asf-teacher-id'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -60549,6 +63409,7 @@ function syncAdjustmentMergedSlotState(val) {
     st.weeks = src.weeks;
     st.teacherId = src.teacherId;
     st.teacherIds = getAdjustmentRowTeacherIds(src).slice();
+    st.teacherPicked = !!src.teacherPicked;
     st.roomPrefer = src.roomPrefer;
     st.ignoreStudentConflict = src.ignoreStudentConflict;
   });
@@ -60566,11 +63427,14 @@ function mergeAdjustmentConflictResults(vals) {
   return res;
 }
 
-function getAdjustmentSlotRows() {
+function getAdjustmentSlotRows(opts = {}) {
   const termStart = getScheduleTermStartDate();
   let list = getAdjustmentAllSlots();
-  if (!adjustmentAdminMode && adjustmentActiveTeacherId) {
-    list = list.filter(x => taskHasScheduleTeacher(x.task, adjustmentActiveTeacherId));
+  const teacherId = opts.teacherId !== undefined
+    ? opts.teacherId
+    : (!adjustmentAdminMode ? adjustmentActiveTeacherId : '');
+  if (teacherId) {
+    list = list.filter(x => taskHasScheduleTeacher(x.task, teacherId));
   }
   return list.map(({ task: t, slot: s, teacherId }) => {
     const pf = Number(s.periodFrom), pt = Number(s.periodTo || s.periodFrom);
@@ -60681,7 +63545,15 @@ function getAdjustmentPickerSlotRows() {
   const meta = ADJUSTMENT_TYPE_META[adjustmentApplyType];
   if (meta && meta.slotMode === 'course') return getAdjustmentAddclassCourseRows();
   const rows = meta && meta.fromCancel ? getAdjustmentCancelledSlots() : getAdjustmentSlotRows();
-  return mergeAdjustmentSlotRows(rows);
+  const merged = mergeAdjustmentSlotRows(rows);
+  // 我的调课申请 · 选择上课节次：固定 3 条；当前教师不足时用其他已排节次补齐
+  if (!adjustmentAdminMode && adjustmentApplyType === 'reschedule') {
+    if (merged.length >= 3) return merged.slice(0, 3);
+    const extras = mergeAdjustmentSlotRows(getAdjustmentSlotRows({ teacherId: '' }))
+      .filter(r => !merged.some(m => m.val === r.val));
+    return merged.concat(extras).slice(0, 3);
+  }
+  return merged;
 }
 
 function adjustmentPickActionLabel(type) {
@@ -60708,6 +63580,9 @@ function syncAdjustmentApplyLeftFilterVisibility() {
     const item = el?.closest('.srf-item, .adj-apply-date-range');
     if (item) item.style.display = isAdd ? 'none' : '';
   });
+  document.querySelectorAll('#modal-adjustment-apply [data-adj-admin-filter]').forEach(el => {
+    el.hidden = !adjustmentAdminMode;
+  });
 }
 
 function syncAdjustmentApplyLeftTableMode() {
@@ -60716,19 +63591,30 @@ function syncAdjustmentApplyLeftTableMode() {
   document.querySelector('#modal-adjustment-apply .adj-apply-left-table-wrap')?.classList.toggle('is-addclass', isAdd);
 }
 
+function showAdjustmentLeftTeacherCol() {
+  return !!adjustmentAdminMode;
+}
+
+function getAdjustmentLeftTableColSpan() {
+  const isAdd = adjustmentApplyType === 'addclass';
+  const teacherCol = showAdjustmentLeftTeacherCol() ? 1 : 0;
+  return isAdd ? 4 + teacherCol : 8 + teacherCol;
+}
+
 function renderAdjustmentApplyLeftThead() {
   const thead = document.getElementById('adjustment-slot-picker-thead');
   if (!thead) return;
   const showCredits = adjustmentApplyType === 'addclass';
   const isAdd = adjustmentApplyType === 'addclass';
+  const teacherTh = showAdjustmentLeftTeacherCol() ? '<th>教师</th>' : '';
   syncAdjustmentApplyLeftTableMode();
   thead.innerHTML = isAdd
     ? `<tr>
         <th class="col-center srf-col-pick" aria-label="选择"></th>
-        <th>课程</th>
+        <th class="adj-col-course">课程</th>
         <th class="col-center">学分</th>
-        <th>教师</th>
-        <th>上课小组</th>
+        ${teacherTh}
+        <th class="adj-col-group">上课小组</th>
       </tr>`
     : `<tr>
         <th class="col-center srf-col-pick" aria-label="选择"></th>
@@ -60736,10 +63622,10 @@ function renderAdjustmentApplyLeftThead() {
         <th class="col-center adj-slot-col-weekday">星期</th>
         <th class="col-center adj-slot-col-period">节次</th>
         <th class="adj-slot-col-weeks">周次</th>
-        <th>课程</th>
+        <th class="adj-col-course">课程</th>
         ${showCredits ? '<th class="col-center">学分</th>' : ''}
-        <th>教师</th>
-        <th>上课小组</th>
+        ${teacherTh}
+        <th class="adj-col-group">上课小组</th>
         <th>教室</th>
       </tr>`;
 }
@@ -60840,7 +63726,7 @@ function renderAdjustmentSlotPickerRows() {
   const isMakeup = adjustmentApplyType === 'makeup';
   const selected = getAdjustmentLeftSelectedSet();
   const rows = filterAdjustmentLeftRows(getAdjustmentPickerSlotRows());
-  const colSpan = isAdd ? 5 : 9;
+  const colSpan = getAdjustmentLeftTableColSpan();
   if (!rows.length) {
     const empty = isAdd
       ? '暂无匹配课程'
@@ -60863,10 +63749,10 @@ function renderAdjustmentSlotPickerRows() {
       return `<tr class="${checked ? 'is-current-room' : ''}" onclick="toggleAdjustmentSlotPick('${v}')">
         <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
         ${extra}
-        <td class="adj-slot-col-merge">${escapeHtml(courseLabel || '—')}</td>
+        <td class="adj-col-course">${escapeHtml(courseLabel || '—')}</td>
         ${creditsCell}
-        <td>${escapeHtml(formatAdjustmentSlotTeacherLabel(r))}</td>
-        <td class="adj-slot-col-merge">${escapeHtml(r.groupWithCount || r.group)}</td>
+        ${showAdjustmentLeftTeacherCol() ? `<td>${escapeHtml(formatAdjustmentSlotTeacherLabel(r))}</td>` : ''}
+        <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
         ${isAdd ? '' : `<td>${escapeHtml(r.room || '未排')}</td>`}
       </tr>`;
     }).join('');
@@ -61014,15 +63900,259 @@ function formatAdjustmentCourseLabelWithCredits(label, credits) {
 }
 
 function getAdjustmentApplyDetailColSpan(showCredits) {
-  return showCredits ? 11 : 10;
+  const extra = adjustmentApplySupportsBatchEdit() ? 1 : 0;
+  return (showCredits ? 11 : 10) + extra;
+}
+
+function adjustmentApplySupportsBatchEdit() {
+  return adjustmentApplyType === 'reschedule' || adjustmentApplyType === 'makeup' || adjustmentApplyType === 'addclass';
+}
+
+function getAdjustmentApplyDetailGroups() {
+  const vals = getAdjustmentSelectedSlotVals();
+  if (!vals.length) return [];
+  const selectedSet = new Set(vals.flatMap(v => expandAdjustmentSlotVal(v)));
+  let groups = getAdjustmentPickerSlotRows().filter(r => {
+    const members = r.vals || expandAdjustmentSlotVal(r.val);
+    return members.length && members.every(v => selectedSet.has(v));
+  });
+  if (!groups.length) {
+    const seen = new Set();
+    groups = vals.map(v => {
+      const row = findAdjustmentPickerRowByVal(v);
+      const key = row?.val || v;
+      if (seen.has(key)) return null;
+      seen.add(key);
+      return row || { val: v, vals: expandAdjustmentSlotVal(v) };
+    }).filter(Boolean);
+  }
+  return groups;
+}
+
+function getAdjustmentApplyBatchableVals() {
+  if (adjustmentApplyType === 'addclass') {
+    return adjustmentAddclassSlots.map(s => `add:${s.id}`);
+  }
+  if (adjustmentApplyType === 'reschedule' || adjustmentApplyType === 'makeup') {
+    return getAdjustmentApplyDetailGroups().map(group => {
+      const members = group.vals || expandAdjustmentSlotVal(group.val);
+      return members[0];
+    }).filter(Boolean);
+  }
+  return [];
+}
+
+function pruneAdjustmentApplyBatchSelection() {
+  const live = new Set(getAdjustmentApplyBatchableVals());
+  Array.from(adjustmentApplyBatchSelected).forEach(val => {
+    if (!live.has(val)) adjustmentApplyBatchSelected.delete(val);
+  });
+}
+
+function syncAdjustmentApplyBatchBar() {
+  const bar = document.getElementById('adjustment-apply-batch-actions');
+  if (!bar) return;
+  pruneAdjustmentApplyBatchSelection();
+  bar.hidden = !(adjustmentApplySupportsBatchEdit() && getAdjustmentApplyBatchableVals().length > 0);
+}
+
+function isAdjustmentApplyBatchValSelected(val) {
+  return adjustmentApplyBatchSelected.has(val);
+}
+
+function toggleAdjustmentApplyBatchVal(val, checked) {
+  if (!val || val === '__shared__' || val === '__batch__') return;
+  if (checked) adjustmentApplyBatchSelected.add(val);
+  else adjustmentApplyBatchSelected.delete(val);
+  syncAdjustmentApplyBatchHeaderCheck();
+}
+
+function toggleAdjustmentApplyBatchAll(checked) {
+  getAdjustmentApplyBatchableVals().forEach(val => {
+    if (checked) adjustmentApplyBatchSelected.add(val);
+    else adjustmentApplyBatchSelected.delete(val);
+  });
+  document.querySelectorAll('#adjustment-apply-perslot-list input[data-adj-batch-val]').forEach(el => {
+    el.checked = !!checked;
+  });
+  syncAdjustmentApplyBatchHeaderCheck();
+}
+
+function syncAdjustmentApplyBatchHeaderCheck() {
+  const head = document.getElementById('adjustment-apply-batch-check-all');
+  if (!head) return;
+  const vals = getAdjustmentApplyBatchableVals();
+  head.checked = vals.length > 0 && vals.every(val => adjustmentApplyBatchSelected.has(val));
+  head.indeterminate = vals.some(val => adjustmentApplyBatchSelected.has(val)) && !head.checked;
+}
+
+function getAdjustmentApplyBatchSelectedVals() {
+  pruneAdjustmentApplyBatchSelection();
+  return getAdjustmentApplyBatchableVals().filter(val => adjustmentApplyBatchSelected.has(val));
+}
+
+function requireAdjustmentApplyBatchSelection() {
+  const vals = getAdjustmentApplyBatchSelectedVals();
+  if (!vals.length) {
+    alert('请先勾选要批量设置的节次');
+    return null;
+  }
+  return vals;
+}
+
+function renderAdjustmentApplyBatchCheckHead() {
+  if (!adjustmentApplySupportsBatchEdit()) return '';
+  return `<th class="adj-apply-col-check"><input type="checkbox" id="adjustment-apply-batch-check-all" title="全选" onchange="toggleAdjustmentApplyBatchAll(this.checked)"></th>`;
+}
+
+function renderAdjustmentApplyBatchCheckCell(val, rowspan) {
+  if (!adjustmentApplySupportsBatchEdit()) return '';
+  const rs = rowspan > 1 ? ` rowspan="${rowspan}"` : '';
+  const checked = isAdjustmentApplyBatchValSelected(val) ? ' checked' : '';
+  return `<td class="adj-apply-col-check"${rs}><input type="checkbox" data-adj-batch-val="${escapeHtml(val)}"${checked} onchange="toggleAdjustmentApplyBatchVal('${escapeHtml(val)}', this.checked)"></td>`;
+}
+
+function openAdjustmentApplyBatchDatePicker(ev) {
+  if (!requireAdjustmentApplyBatchSelection()) return;
+  openAdjustmentDatePicker(ev, '__batch__');
+}
+
+function applyAdjustmentApplyBatchDate(dateStr) {
+  const vals = requireAdjustmentApplyBatchSelection();
+  if (!vals) return;
+  const di = getAdjustmentDateInfo(dateStr);
+  vals.forEach(val => {
+    const st = ensureAdjustmentRowState(val);
+    if (!st) return;
+    st.date = dateStr;
+    st.weekday = di.weekday;
+    st.weeks = di.weeksLabel;
+    st.ignoreStudentConflict = false;
+    if (st.period && !isAdjustmentPeriodConflictFree(val, st.period)) st.period = '';
+    syncAdjustmentMergedSlotState(val);
+  });
+  renderAdjustmentPerSlotConfigs();
+  refreshAdjustmentRowConflicts();
+}
+
+function openAdjustmentApplyBatchPeriodPicker(ev) {
+  if (!requireAdjustmentApplyBatchSelection()) return;
+  ev?.stopPropagation?.();
+  const host = document.getElementById('adjustment-apply-batch-period-host');
+  if (!host) return;
+  const existing = host.querySelector('.adj-period-dd');
+  if (existing && !existing.hidden) {
+    closeAdjustmentPeriodDropdowns();
+    host.querySelectorAll('.adj-period-dd-wrap').forEach(el => el.remove());
+    return;
+  }
+  const vals = getAdjustmentApplyBatchSelectedVals();
+  const first = ensureAdjustmentRowState(vals[0]) || {};
+  host.querySelectorAll('.adj-period-dd-wrap').forEach(el => el.remove());
+  host.insertAdjacentHTML('beforeend', buildAdjustmentPeriodDropdownHtml('__batch__', first.period, first.periodStartTime));
+  const wrap = host.querySelector('.adj-period-dd-wrap');
+  const dd = wrap?.querySelector('.adj-period-dd');
+  if (!dd) return;
+  closeAdjustmentPeriodDropdowns();
+  dd.hidden = false;
+  const btn = ev && ev.currentTarget;
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    const width = Math.max(rect.width, 220);
+    let left = rect.left;
+    if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+    let top = rect.bottom + 4;
+    const estH = 280;
+    if (top + estH > window.innerHeight - 8 && rect.top > estH + 8) top = rect.top - estH - 4;
+    dd.style.position = 'fixed';
+    dd.style.left = `${left}px`;
+    dd.style.top = `${top}px`;
+    dd.style.width = `${width}px`;
+    dd.style.zIndex = '10050';
+  } else {
+    positionAdjustmentPeriodDropdown(wrap);
+  }
+}
+
+function applyAdjustmentApplyBatchPeriod(storeVal) {
+  const vals = requireAdjustmentApplyBatchSelection();
+  if (!vals) return;
+  const parsed = parseAdjustmentPeriodSelectValue(storeVal);
+  vals.forEach(val => {
+    const st = ensureAdjustmentRowState(val);
+    if (!st) return;
+    st.period = parsed.period || Number(storeVal) || '';
+    st.periodStartTime = parsed.startTime || '';
+    st.ignoreStudentConflict = false;
+    syncAdjustmentMergedSlotState(val);
+  });
+  const host = document.getElementById('adjustment-apply-batch-period-host');
+  host?.querySelectorAll('.adj-period-dd-wrap').forEach(el => el.remove());
+  renderAdjustmentPerSlotConfigs();
+  refreshAdjustmentRowConflicts();
+}
+
+function openAdjustmentApplyBatchTeacherPicker() {
+  if (!requireAdjustmentApplyBatchSelection()) return;
+  openAdjustmentTeacherPicker('__batch__');
+}
+
+function applyAdjustmentApplyBatchTeachers(pickedIds, mode) {
+  const vals = requireAdjustmentApplyBatchSelection();
+  if (!vals) return;
+  vals.forEach(val => {
+    const st = ensureAdjustmentRowState(val);
+    if (!st) return;
+    const prevIds = getAdjustmentRowTeacherIds(st);
+    const nextIds = mode === 'append' ? [...new Set(prevIds.concat(pickedIds))] : pickedIds;
+    setAdjustmentRowTeachers(st, nextIds);
+    st.teacherPicked = true;
+    st.ignoreStudentConflict = false;
+    syncAdjustmentMergedSlotState(val);
+  });
+  closeModal('modal-adjustment-teacher-picker');
+  renderAdjustmentPerSlotConfigs();
+  refreshAdjustmentRowConflicts();
+}
+
+function openAdjustmentApplyBatchRoomPreferModal() {
+  const vals = requireAdjustmentApplyBatchSelection();
+  if (!vals) return;
+  const prefers = vals.map(val => String(ensureAdjustmentRowState(val)?.roomPrefer || ensureAdjustmentRowState(val)?.room || '').trim());
+  const same = prefers.length && prefers.every(v => v === prefers[0]) ? prefers[0] : '';
+  const input = document.getElementById('adjustment-apply-batch-room-prefer');
+  if (input) input.value = same;
+  openModal('modal-adjustment-apply-room-prefer');
+  setTimeout(() => input?.focus(), 0);
+}
+
+function confirmAdjustmentApplyBatchRoomPrefer() {
+  const vals = getAdjustmentApplyBatchSelectedVals();
+  if (!vals.length) {
+    alert('请先勾选要批量设置的节次');
+    closeModal('modal-adjustment-apply-room-prefer');
+    return;
+  }
+  const prefer = String(document.getElementById('adjustment-apply-batch-room-prefer')?.value || '').trim();
+  vals.forEach(val => {
+    const st = ensureAdjustmentRowState(val);
+    if (!st) return;
+    st.roomPrefer = prefer;
+    st.room = prefer;
+    syncAdjustmentMergedSlotState(val);
+  });
+  closeModal('modal-adjustment-apply-room-prefer');
+  renderAdjustmentPerSlotConfigs();
+  refreshAdjustmentRowConflicts();
 }
 
 function renderAdjustmentApplyDetailHead(showCredits) {
   return `<thead><tr>
+    ${renderAdjustmentApplyBatchCheckHead()}
     <th class="adj-apply-row-type"></th>
-    <th class="adj-apply-col-merge">课程</th>
+    <th class="adj-apply-col-merge adj-col-course">课程</th>
     ${showCredits ? '<th class="col-center">学分</th>' : ''}
-    <th class="adj-apply-col-merge">上课小组</th>
+    <th class="adj-apply-col-merge adj-col-group">上课小组</th>
     <th>教师</th>
     <th>日期</th>
     <th class="col-center">星期</th>
@@ -61050,41 +64180,21 @@ function renderAdjustmentPerSlotConfigs() {
     const verb = adjustmentApplyType === 'cancel' ? '停课' : adjustmentApplyType === 'makeup' ? '补课' : '调课';
     const src = adjustmentApplyType === 'makeup' ? '停课记录' : '课表';
     wrap.innerHTML = `<div class="adj-apply-empty">请在左侧勾选要${verb}的${src}</div>`;
+    syncAdjustmentApplyBatchBar();
     return;
   }
   const termStart = getScheduleTermStartDate();
   const showCredits = false;
   const isMakeup = adjustmentApplyType === 'makeup';
   const colSpan = getAdjustmentApplyDetailColSpan(showCredits);
-  const groups = getAdjustmentPickerSlotRows().filter(r =>
-    (r.vals || expandAdjustmentSlotVal(r.val)).every(v => vals.includes(v))
-  );
+  const groups = getAdjustmentApplyDetailGroups();
   const rows = groups.map(group => {
     const members = group.vals || expandAdjustmentSlotVal(group.val);
     const val = members[0];
     const info = resolveAdjustmentSlot(val);
     if (!info) return '';
     const { task: t, slot: s, teacherId } = info;
-    members.forEach(memberVal => {
-      const minfo = resolveAdjustmentSlot(memberVal);
-      if (!minfo) return;
-      if (adjustmentPerSlotState[memberVal]) return;
-      if (meta.fromCancel) {
-        adjustmentPerSlotState[memberVal] = { date: '', weekday: '', period: '', weeks: '', teacherId: minfo.teacherId, roomPrefer: '' };
-      } else {
-        const weeks = minfo.slot.weeks || minfo.task.weeks || '';
-        const dstr = getScheduleSlotDateLabel(termStart, weeks, minfo.slot.weekday);
-        const di = getAdjustmentDateInfo(dstr);
-        adjustmentPerSlotState[memberVal] = {
-          date: dstr,
-          weekday: Number(minfo.slot.weekday) || di.weekday,
-          period: minfo.slot.periodFrom,
-          weeks: di.weeksLabel || weeks,
-          teacherId: minfo.teacherId,
-          roomPrefer: ''
-        };
-      }
-    });
+    members.forEach(memberVal => seedAdjustmentPerSlotFromOriginal(memberVal, meta, termStart));
     syncAdjustmentMergedSlotState(val);
     const st = adjustmentPerSlotState[val] || {};
     const v = escapeHtml(val);
@@ -61106,10 +64216,11 @@ function renderAdjustmentPerSlotConfigs() {
       )
       : (group.courseLabel || `${formatScheduleCourseCode(t.code)} ${t.name}`);
     const origRow = `<tr class="adj-apply-orig-row" data-adj-val="${v}">
+      ${renderAdjustmentApplyBatchCheckCell(val, rowSpan)}
       <td class="adj-apply-row-type">原课信息</td>
-      <td class="adj-apply-col-merge" rowspan="${rowSpan}">${escapeHtml(courseText)}</td>
+      <td class="adj-apply-col-merge adj-col-course" rowspan="${rowSpan}">${escapeHtml(courseText)}</td>
       ${showCredits ? `<td class="col-center" rowspan="${rowSpan}">${escapeHtml(String(group.credits ?? getAdjustmentTaskCredits(t)))}</td>` : ''}
-      <td class="adj-apply-col-merge" rowspan="${rowSpan}">${escapeHtml(group.groupWithCount || formatAdjustmentGroupWithCount(t.groupLabel || '上课小组', getAdjustmentGroupStudentCount(t)))}</td>
+      <td class="adj-apply-col-merge adj-col-group" rowspan="${rowSpan}">${escapeHtml(group.groupWithCount || formatAdjustmentGroupWithCount(t.groupLabel || '上课小组', getAdjustmentGroupStudentCount(t)))}</td>
       <td>${escapeHtml(getAdjustmentTeacherName(teacherId))}</td>
       <td class="col-center">${escapeHtml(origDate || '—')}</td>
       <td class="col-center">${escapeHtml(getScheduleWeekdayLabel(Number(s.weekday)) || '—')}</td>
@@ -61140,16 +64251,20 @@ function renderAdjustmentPerSlotConfigs() {
     <tbody>${rows}</tbody>
   </table>`;
   if (typeof enhanceAllSelects === 'function') enhanceAllSelects(wrap);
+  syncAdjustmentApplyBatchBar();
+  syncAdjustmentApplyBatchHeaderCheck();
 }
 
 function renderAdjustmentAddclassDetailTable(wrap) {
   if (!adjustmentAddclassCourses.length) {
     wrap.innerHTML = '<div class="adj-apply-empty">请在左侧勾选要加课的课程</div>';
+    syncAdjustmentApplyBatchBar();
     return;
   }
   adjustmentAddclassCourses.forEach(id => ensureAdjustmentAddclassSlotForCourse(id));
   if (!adjustmentAddclassSlots.length) {
     wrap.innerHTML = '<div class="adj-apply-empty">请在左侧勾选要加课的课程</div>';
+    syncAdjustmentApplyBatchBar();
     return;
   }
   const rows = adjustmentAddclassSlots.map(st => {
@@ -61176,8 +64291,9 @@ function renderAdjustmentAddclassDetailTable(wrap) {
     );
     const compulsory = isAdjustmentCompulsoryYes(st.compulsory) ? 'Y' : 'N';
     return `<tr class="adj-apply-to-row" data-adj-val="${v}">
-      <td>${escapeHtml(courseLabel)}</td>
-      <td>${escapeHtml(groupName)}</td>
+      ${renderAdjustmentApplyBatchCheckCell(val, 1)}
+      <td class="adj-col-course">${escapeHtml(courseLabel)}</td>
+      <td class="adj-col-group">${escapeHtml(groupName)}</td>
       <td><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date || '选择日期')}</button></td>
       <td class="col-center">${escapeHtml(weekdayText)}</td>
       <td>${periodDd}</td>
@@ -61191,12 +64307,13 @@ function renderAdjustmentAddclassDetailTable(wrap) {
       </td>
       <td class="col-center adj-apply-col-action"><button class="btn btn-ghost btn-sm" type="button" onclick="removeAdjustmentAddclassSlot('${v}')">移除</button></td>
     </tr>
-    <tr class="adj-apply-conf-row" data-adj-conf="${v}"><td colspan="9">${confHtml}</td></tr>`;
+    <tr class="adj-apply-conf-row" data-adj-conf="${v}"><td colspan="10">${confHtml}</td></tr>`;
   }).join('');
-  wrap.innerHTML = `<table class="data-table compact adj-apply-detail-table adj-addclass-slot-table">
+    wrap.innerHTML = `<table class="data-table compact adj-apply-detail-table adj-addclass-slot-table">
     <thead><tr>
-      <th>课程</th>
-      <th>上课小组（人数）</th>
+      ${renderAdjustmentApplyBatchCheckHead()}
+      <th class="adj-col-course">课程</th>
+      <th class="adj-col-group">上课小组（人数）</th>
       <th>上课日期</th>
       <th class="col-center">星期</th>
       <th>节次</th>
@@ -61208,6 +64325,8 @@ function renderAdjustmentAddclassDetailTable(wrap) {
     <tbody>${rows}</tbody>
   </table>`;
   if (typeof enhanceAllSelects === 'function') enhanceAllSelects(wrap);
+  syncAdjustmentApplyBatchBar();
+  syncAdjustmentApplyBatchHeaderCheck();
 }
 
 let adjustmentCalTargetVal = null;
@@ -61331,6 +64450,10 @@ function onAdjustmentDatePick(dateStr) {
   closeAdjustmentDateDropdown();
   if (val === '__shared__') {
     applyAdjustmentSharedDate(dateStr);
+    return;
+  }
+  if (val === '__batch__') {
+    applyAdjustmentApplyBatchDate(dateStr);
     return;
   }
   const st = ensureAdjustmentRowState(val);
@@ -61578,7 +64701,7 @@ const ADJUSTMENT_TEACHER_FILTER_FIELDS = [
 
 function openAdjustmentTeacherPicker(val) {
   adjustmentPickerTargetVal = val;
-  adjustmentTeacherPickerSel = new Set(getAdjustmentRowTeacherIds(ensureAdjustmentRowState(val)));
+  adjustmentTeacherPickerSel = new Set();
   buildAdjustmentTeacherFilterOptions();
   ADJUSTMENT_TEACHER_FILTER_FIELDS.forEach(f => { const el = document.getElementById(f.id); if (el) el.value = ''; });
   renderAdjustmentTeacherPicker();
@@ -61649,17 +64772,25 @@ function toggleAdjustmentTeacherPickerAll(checked) {
   renderAdjustmentTeacherPicker();
 }
 
-function confirmAdjustmentTeacherPicker() {
+function confirmAdjustmentTeacherPicker(mode) {
   const val = adjustmentPickerTargetVal;
-  const st = ensureAdjustmentRowState(val);
-  const nextIds = [...adjustmentTeacherPickerSel];
-  if (!nextIds.length) {
+  const pickedIds = [...adjustmentTeacherPickerSel];
+  if (!pickedIds.length) {
     alert('请至少选择一名调后教师');
     return;
   }
+  if (val === '__batch__') {
+    applyAdjustmentApplyBatchTeachers(pickedIds, mode);
+    return;
+  }
+  const st = ensureAdjustmentRowState(val);
   const prevIds = getAdjustmentRowTeacherIds(st);
+  const nextIds = mode === 'append'
+    ? [...new Set(prevIds.concat(pickedIds))]
+    : pickedIds;
   if (st) {
     setAdjustmentRowTeachers(st, nextIds);
+    st.teacherPicked = true;
     st.ignoreStudentConflict = false;
   }
   syncAdjustmentMergedSlotState(val);
@@ -62070,6 +65201,8 @@ function submitAdjustmentApplyCore() {
   }
   if (!reasonTypeCode) { alert('请选择原因类型'); return; }
   if (!reason) { alert('请填写申请事由'); return; }
+  const roomOpenMix = assertAdjustmentRoomOpenMix(items, getAdjustmentRequestTermCode());
+  if (!roomOpenMix.ok) { alert(roomOpenMix.message); return; }
   const leaveCheck = validateAdjustmentAcademicLeaveSelection();
   if (!leaveCheck.ok) { alert(leaveCheck.message); return; }
   if (meta.needTo) {
@@ -62200,8 +65333,9 @@ function renderAdjustmentApprovalPage() {
     const inFlight = base.filter(r => r.status === 'pending' || r.status === 'reviewing').length;
     const all = base.length;
     hint.innerHTML = `<span class="legend-item">待审批 <strong>${pend}</strong> 条 · 过程中 <strong>${inFlight}</strong> 条 · 全部 <strong>${all}</strong> 条</span>`;
+    appendAdjustmentRoomOpenListHint(hint);
   }
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 11, '暂无申请记录'); return; }
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-index">${i + 1}</td>
     <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
@@ -62209,6 +65343,7 @@ function renderAdjustmentApprovalPage() {
     <td><code>${escapeHtml(r.no)}</code></td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
     <td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
+    <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td>${escapeHtml(r.reason)}</td>
@@ -62228,6 +65363,11 @@ function openAdjustmentApprove(id) {
 function openAdjustmentReview() {
   const r = ADJUSTMENT_STORE.requests.find(x => x.id === adjustmentDetailId);
   if (!r) return;
+  const roomOpenVs = collectAdjustmentRoomOpenViolations(r);
+  if (roomOpenVs.length) {
+    alert(formatAdjustmentRoomOpenViolationText(roomOpenVs));
+    return;
+  }
   adjustmentRejectId = adjustmentDetailId;
   const result = document.getElementById('adjustment-review-result');
   if (result) result.value = 'approved';
@@ -62256,6 +65396,11 @@ function submitAdjustmentReviewCore() {
   if (result === 'approved') {
     getAdjustmentItems(r).forEach(syncAdjustmentItemRoomFromPrefer);
     if (!assertAdjustmentApproveRoomsReady(r)) return;
+    const roomOpenVs = collectAdjustmentRoomOpenViolations(r);
+    if (roomOpenVs.length) {
+      alert(formatAdjustmentRoomOpenViolationText(roomOpenVs));
+      return;
+    }
     // 审批通过：以详情中（可能已修改的）调后节次写回课表
     applyAdjustmentApprovedSchedule(r);
   }
@@ -62838,10 +65983,529 @@ let adjustmentBatchDateDraft = { start: '', end: '' };
 let scheduleRoomPickerMode = 'schedule';
 let scheduleRoomPickerBatchField = 'target';
 const ADJUSTMENT_BATCH_STATE = {
-  time: { dates: [], range: { start: '', end: '' }, preview: [], files: [], generatedKey: '' },
-  timeTarget: { dates: [], range: { start: '', end: '' } },
-  room: { dates: [], range: { start: '', end: '' }, preview: [], files: [], sourceRoom: '', targetRoom: '', generatedKey: '' }
+  time: {
+    dates: [], range: { start: '', end: '' },
+    dateMode: 'date', weekFrom: 0, weekTo: 0, weekdays: [],
+    courseCodes: [],
+    preview: [], files: [], generatedKey: '', selectedIdx: new Set(), conflictOnly: false
+  },
+  timeTarget: {
+    dates: [], range: { start: '', end: '' },
+    dateMode: 'date', weekFrom: 0, weekTo: 0, weekdays: []
+  },
+  room: {
+    dates: [], range: { start: '', end: '' },
+    dateMode: 'date', weekFrom: 0, weekTo: 0, weekdays: [],
+    preview: [], files: [], sourceRoom: '', targetRoom: '', generatedKey: '',
+    conflictOnly: false, selectedIdx: new Set()
+  }
 };
+
+let adjustmentBatchTimeRoomRowIndex = -1;
+let adjustmentBatchRoomRowIndex = -1;
+
+function getAdjustmentBatchFormTermCode() {
+  return document.getElementById('adjustment-batch-filter-term')?.value
+    || getActiveOfferingTermSetting()?.termCode
+    || getDefaultOfferingTermCode()
+    || '';
+}
+
+function emptyAdjustmentBatchWeekdayFields(state) {
+  if (!state) return;
+  state.weekFrom = 0;
+  state.weekTo = 0;
+  state.weekdays = [];
+}
+
+function clearAdjustmentBatchTimeGenerated() {
+  ADJUSTMENT_BATCH_STATE.time.preview = [];
+  ADJUSTMENT_BATCH_STATE.time.generatedKey = '';
+  ADJUSTMENT_BATCH_STATE.time.selectedIdx = new Set();
+  setAdjustmentBatchTimeTip('');
+}
+
+function ensureAdjustmentBatchRoomSelectedSet() {
+  const state = ADJUSTMENT_BATCH_STATE.room;
+  if (!(state.selectedIdx instanceof Set)) state.selectedIdx = new Set();
+  return state.selectedIdx;
+}
+
+function clearAdjustmentBatchRoomGenerated() {
+  const state = ADJUSTMENT_BATCH_STATE.room;
+  state.preview = [];
+  state.generatedKey = '';
+  state.selectedIdx = new Set();
+  setAdjustmentBatchRoomTip('');
+}
+
+function clearAdjustmentBatchGeneratedByKind(kind) {
+  if (kind === 'room') {
+    clearAdjustmentBatchRoomGenerated();
+    renderAdjustmentBatchPreview('room');
+    return;
+  }
+  clearAdjustmentBatchTimeGenerated();
+  renderAdjustmentBatchPreview('time');
+}
+
+function fillAdjustmentBatchWeekSelects(kind) {
+  const term = getAdjustmentBatchFormTermCode();
+  const max = getOfferingTermTeachingWeeks(term) || 14;
+  const state = ADJUSTMENT_BATCH_STATE[kind];
+  ['week-from', 'week-to'].forEach(suffix => {
+    const sel = document.getElementById(`adjustment-batch-${kind}-${suffix}`);
+    if (!sel) return;
+    const cur = suffix === 'week-from' ? state.weekFrom : state.weekTo;
+    sel.innerHTML = `<option value="">请选择</option>` + Array.from({ length: max }, (_, i) => {
+      const n = i + 1;
+      return `<option value="${n}"${Number(cur) === n ? ' selected' : ''}>第${n}周</option>`;
+    }).join('');
+  });
+}
+
+function expandAdjustmentBatchWeekdayDates(weekFrom, weekTo, weekdays, termCode) {
+  const from = Number(weekFrom) || 0;
+  const to = Number(weekTo) || 0;
+  const days = [...new Set((weekdays || []).map(Number).filter(n => n >= 1 && n <= 7))].sort((a, b) => a - b);
+  if (!from || !to || from > to || !days.length) return [];
+  const termStart = getScheduleTermStartDate(termCode || getAdjustmentBatchFormTermCode());
+  const dates = [];
+  for (let w = from; w <= to; w++) {
+    days.forEach(wd => {
+      const ds = getScheduleDateByTeachingWeek(termStart, w, wd);
+      if (ds && !dates.includes(ds)) dates.push(ds);
+    });
+  }
+  return dates.sort();
+}
+
+function syncAdjustmentBatchWeekdayDates(kind) {
+  const state = ADJUSTMENT_BATCH_STATE[kind];
+  if (!state || state.dateMode !== 'weekday') return;
+  state.dates = expandAdjustmentBatchWeekdayDates(state.weekFrom, state.weekTo, state.weekdays, getAdjustmentBatchFormTermCode());
+  if (state.dates.length) {
+    state.range = { start: state.dates[0], end: state.dates[state.dates.length - 1] };
+  } else {
+    state.range = { start: '', end: '' };
+  }
+}
+
+function setAdjustmentBatchSsMultiOpen(dd, open) {
+  if (!dd) return;
+  dd.classList.toggle('is-open', !!open);
+  dd.hidden = !open;
+}
+
+function closeAdjustmentBatchSsMultiDropdowns(except) {
+  document.querySelectorAll('#modal-adjustment-batch .adj-batch-ss-multi-dd').forEach(dd => {
+    if (except && dd === except) return;
+    setAdjustmentBatchSsMultiOpen(dd, false);
+  });
+}
+
+function renderAdjustmentBatchSsMulti(selectId, mountId, config = {}) {
+  const select = document.getElementById(selectId);
+  const mount = document.getElementById(mountId);
+  if (!select || !mount) return;
+  const placeholder = config.placeholder || '请选择或搜索';
+  const options = config.options || [];
+  const selected = new Set((config.selected || []).map(String));
+  select.innerHTML = options.map(o =>
+    `<option value="${escapeHtml(String(o.value))}"${selected.has(String(o.value)) ? ' selected' : ''}>${escapeHtml(o.label)}</option>`
+  ).join('');
+  const syncFromSelect = () => [...select.selectedOptions].map(o => o.value);
+  const updateTrigger = () => {
+    const vals = syncFromSelect();
+    const labelEl = mount.querySelector('.adj-batch-ss-multi-label');
+    if (!labelEl) return;
+    if (!vals.length) {
+      labelEl.textContent = placeholder;
+      mount.classList.add('is-empty');
+      return;
+    }
+    mount.classList.remove('is-empty');
+    if (vals.length <= 2) {
+      labelEl.textContent = vals.map(v => options.find(o => String(o.value) === String(v))?.label || v).join('、');
+    } else {
+      labelEl.textContent = `已选 ${vals.length} 项`;
+    }
+  };
+  const renderList = (q = '') => {
+    const list = mount.querySelector('.adj-batch-ss-multi-list');
+    if (!list) return;
+    const needle = String(q || '').trim().toLowerCase();
+    const chosen = new Set(syncFromSelect());
+    const rows = options.filter(o => {
+      if (!needle) return true;
+      return String(o.label).toLowerCase().includes(needle) || String(o.value).toLowerCase().includes(needle);
+    });
+    list.innerHTML = rows.length
+      ? rows.map(o => `<label class="adj-batch-ss-multi-item">
+          <input type="checkbox" value="${escapeHtml(String(o.value))}"${chosen.has(String(o.value)) ? ' checked' : ''}>
+          <span>${escapeHtml(o.label)}</span>
+        </label>`).join('')
+      : '<div class="text-muted" style="padding:8px">无匹配项</div>';
+  };
+  mount.className = 'adj-batch-ss-multi is-empty';
+  mount.innerHTML = `
+    <button type="button" class="input adj-pick-btn adj-batch-ss-multi-trigger">
+      <span class="adj-batch-ss-multi-label">${escapeHtml(placeholder)}</span>
+    </button>
+    <div class="adj-batch-ss-multi-dd" hidden>
+      <input class="input input-sm adj-batch-ss-multi-search" type="text" placeholder="搜索" autocomplete="off">
+      <div class="adj-batch-ss-multi-list"></div>
+    </div>`;
+  updateTrigger();
+  renderList();
+  const trigger = mount.querySelector('.adj-batch-ss-multi-trigger');
+  const dd = mount.querySelector('.adj-batch-ss-multi-dd');
+  const search = mount.querySelector('.adj-batch-ss-multi-search');
+  const list = mount.querySelector('.adj-batch-ss-multi-list');
+  setAdjustmentBatchSsMultiOpen(dd, false);
+  trigger.onclick = ev => {
+    ev.stopPropagation();
+    const willOpen = !dd.classList.contains('is-open');
+    closeAdjustmentBatchSsMultiDropdowns(willOpen ? dd : null);
+    setAdjustmentBatchSsMultiOpen(dd, willOpen);
+    if (willOpen) {
+      search.value = '';
+      renderList();
+      search.focus();
+    }
+  };
+  search.oninput = () => renderList(search.value);
+  list.onchange = ev => {
+    const cb = ev.target;
+    if (!cb || cb.type !== 'checkbox') return;
+    const opt = [...select.options].find(o => o.value === cb.value);
+    if (opt) opt.selected = cb.checked;
+    updateTrigger();
+    if (typeof config.onChange === 'function') config.onChange(syncFromSelect());
+  };
+}
+
+if (!window.__adjBatchSsMultiBound) {
+  window.__adjBatchSsMultiBound = true;
+  document.addEventListener('mousedown', ev => {
+    if (ev.target.closest?.('.adj-batch-ss-multi')) return;
+    closeAdjustmentBatchSsMultiDropdowns();
+  });
+}
+
+function initAdjustmentBatchWeekdaySelect(kind) {
+  const state = ADJUSTMENT_BATCH_STATE[kind];
+  if (!state) return;
+  renderAdjustmentBatchSsMulti(
+    `adjustment-batch-${kind}-weekdays`,
+    `adjustment-batch-${kind}-weekdays-mount`,
+    {
+      placeholder: '请选择星期',
+      options: SCHEDULE_WEEKDAYS.map(w => ({ value: String(w.value), label: w.label })),
+      selected: state.weekdays || [],
+      onChange: vals => {
+        state.weekdays = vals.map(Number).filter(n => n >= 1 && n <= 7);
+        syncAdjustmentBatchWeekdayDates(kind);
+        renderAdjustmentBatchDateSummary(kind);
+        clearAdjustmentBatchGeneratedByKind(kind === 'room' ? 'room' : 'time');
+      }
+    }
+  );
+}
+
+function getAdjustmentBatchSelectedCourseCodes() {
+  const sel = document.getElementById('adjustment-batch-time-courses');
+  if (sel) {
+    const vals = [...sel.selectedOptions].map(o => String(o.value || '').trim()).filter(Boolean);
+    ADJUSTMENT_BATCH_STATE.time.courseCodes = vals;
+    return vals;
+  }
+  return ADJUSTMENT_BATCH_STATE.time.courseCodes || [];
+}
+
+function initAdjustmentBatchCourseSelect() {
+  const seen = new Set();
+  const options = [];
+  (typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : []).forEach(task => {
+    const code = String(task?.code || '').trim();
+    if (!code) return;
+    const key = code.toUpperCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    const name = String(task.name || '').trim();
+    options.push({
+      value: code,
+      label: `${typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(code) : code}${name ? ` ${name}` : ''}`
+    });
+  });
+  options.sort((a, b) => String(a.value).localeCompare(String(b.value)));
+  renderAdjustmentBatchSsMulti('adjustment-batch-time-courses', 'adjustment-batch-time-courses-mount', {
+    placeholder: '请选择或搜索课程（可多选）',
+    options,
+    selected: ADJUSTMENT_BATCH_STATE.time.courseCodes || [],
+    onChange: vals => {
+      ADJUSTMENT_BATCH_STATE.time.courseCodes = vals;
+      clearAdjustmentBatchTimeGenerated();
+      renderAdjustmentBatchPreview('time');
+    }
+  });
+}
+
+function syncAdjustmentBatchDateModeUi(kind) {
+  const state = ADJUSTMENT_BATCH_STATE[kind];
+  if (!state) return;
+  const mode = state.dateMode === 'weekday' ? 'weekday' : 'date';
+  document.querySelectorAll(`.adj-batch-date-mode-btn[data-kind="${kind}"]`).forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.mode === mode);
+  });
+  if (kind === 'time' || kind === 'timeTarget') {
+    const shared = ADJUSTMENT_BATCH_STATE.time.dateMode === 'weekday' ? 'weekday' : 'date';
+    document.querySelectorAll('.adj-batch-date-mode-btn[data-scope="time"]').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.mode === shared);
+    });
+  }
+  const datePane = document.getElementById(`adjustment-batch-${kind}-date-pane`);
+  const weekPane = document.getElementById(`adjustment-batch-${kind}-weekday-pane`);
+  if (datePane) datePane.hidden = mode !== 'date';
+  if (weekPane) weekPane.hidden = mode !== 'weekday';
+}
+
+function applyAdjustmentBatchDateMode(kind, mode, opts = {}) {
+  const state = ADJUSTMENT_BATCH_STATE[kind];
+  if (!state) return;
+  const next = mode === 'weekday' ? 'weekday' : 'date';
+  if (state.dateMode === next && !opts.force) {
+    syncAdjustmentBatchDateModeUi(kind);
+    return;
+  }
+  state.dateMode = next;
+  state.dates = [];
+  state.range = { start: '', end: '' };
+  emptyAdjustmentBatchWeekdayFields(state);
+  if (next === 'weekday') {
+    fillAdjustmentBatchWeekSelects(kind);
+    initAdjustmentBatchWeekdaySelect(kind);
+  }
+  syncAdjustmentBatchDateModeUi(kind);
+  renderAdjustmentBatchDateSummary(kind);
+  if (!opts.skipClear) {
+    clearAdjustmentBatchGeneratedByKind(kind === 'room' ? 'room' : 'time');
+  }
+}
+
+function onAdjustmentBatchTimeDateModeChange(mode) {
+  applyAdjustmentBatchDateMode('time', mode, { skipClear: true });
+  applyAdjustmentBatchDateMode('timeTarget', mode, { skipClear: true });
+  closeAdjustmentBatchSsMultiDropdowns();
+  clearAdjustmentBatchGeneratedByKind('time');
+}
+
+function onAdjustmentBatchDateModeChange(kind, mode) {
+  if (kind === 'time' || kind === 'timeTarget') {
+    onAdjustmentBatchTimeDateModeChange(mode);
+    return;
+  }
+  applyAdjustmentBatchDateMode(kind, mode);
+}
+
+function onAdjustmentBatchWeekdayFieldChange(kind) {
+  const state = ADJUSTMENT_BATCH_STATE[kind];
+  if (!state) return;
+  state.weekFrom = Number(document.getElementById(`adjustment-batch-${kind}-week-from`)?.value || 0);
+  state.weekTo = Number(document.getElementById(`adjustment-batch-${kind}-week-to`)?.value || 0);
+  syncAdjustmentBatchWeekdayDates(kind);
+  renderAdjustmentBatchDateSummary(kind);
+  clearAdjustmentBatchGeneratedByKind(kind === 'room' ? 'room' : 'time');
+}
+
+function ensureAdjustmentBatchTimeSelectedSet() {
+  const state = ADJUSTMENT_BATCH_STATE.time;
+  if (!(state.selectedIdx instanceof Set)) state.selectedIdx = new Set();
+  return state.selectedIdx;
+}
+
+function getAdjustmentBatchTimeVisibleIndexes() {
+  const rows = ADJUSTMENT_BATCH_STATE.time.preview || [];
+  const conflictOnly = !!ADJUSTMENT_BATCH_STATE.time.conflictOnly;
+  const indexes = [];
+  rows.forEach((r, idx) => {
+    if (conflictOnly && !r?.conflict?.hasConflict) return;
+    indexes.push(idx);
+  });
+  return indexes;
+}
+
+function syncAdjustmentBatchTimeCheckAll() {
+  const el = document.getElementById('adjustment-batch-time-check-all');
+  if (!el) return;
+  const visible = getAdjustmentBatchTimeVisibleIndexes();
+  const selected = ensureAdjustmentBatchTimeSelectedSet();
+  el.checked = visible.length > 0 && visible.every(idx => selected.has(idx));
+}
+
+function onAdjustmentBatchTimeConflictOnlyChange() {
+  const el = document.getElementById('adjustment-batch-time-conflict-only');
+  ADJUSTMENT_BATCH_STATE.time.conflictOnly = !!el?.checked;
+  renderAdjustmentBatchPreview('time');
+}
+
+function onAdjustmentBatchTimeRowCheck(idx, checked) {
+  const selected = ensureAdjustmentBatchTimeSelectedSet();
+  if (checked) selected.add(idx);
+  else selected.delete(idx);
+  syncAdjustmentBatchTimeCheckAll();
+}
+
+function onAdjustmentBatchTimeSelectAll(checked) {
+  const selected = ensureAdjustmentBatchTimeSelectedSet();
+  getAdjustmentBatchTimeVisibleIndexes().forEach(idx => {
+    if (checked) selected.add(idx);
+    else selected.delete(idx);
+  });
+  renderAdjustmentBatchPreview('time');
+}
+
+function resolveAdjustmentBatchHitRoom(task, slot) {
+  const candidates = [
+    slot?.room,
+    slot?.location,
+    slot?.classroom,
+    task?.location,
+    task?.room,
+    task?.classroom
+  ];
+  for (const raw of candidates) {
+    const name = String(raw || '').trim();
+    if (name && name !== '—') return name;
+  }
+  return '';
+}
+
+function renderAdjustmentBatchRoomName(roomName) {
+  const name = String(roomName || '').trim();
+  return escapeHtml(name && name !== '—' ? name : '未排');
+}
+
+function renderAdjustmentBatchRoomPickerBtn(roomName, onclick) {
+  const name = String(roomName || '').trim();
+  const label = name && name !== '—' ? name : '选择教室';
+  return `<button type="button" class="input adj-pick-btn${name && name !== '—' ? '' : ' is-empty'}" onclick="${onclick}">${escapeHtml(label)}</button>`;
+}
+
+function setAdjustmentBatchTimeRoomPickerContext(row) {
+  const dateStr = row?.targetDateStr || row?.dateStr || '';
+  const weekday = Number(row?.targetWeekday) || (dateStr ? getAdjustmentDateWeekday(dateStr) : 0) || 0;
+  const period = Number(row?.targetPeriod || row?.period) || 0;
+  const weekNo = Number(row?.targetWeekNo)
+    || (dateStr && typeof adjustmentTeachingWeekOf === 'function'
+      ? adjustmentTeachingWeekOf(new Date(`${dateStr}T00:00:00`))
+      : 0);
+  const task = row?.task;
+  adjustmentApproveRoomContext = {
+    weekday,
+    period,
+    weeks: weekNo ? String(weekNo) : '',
+    date: dateStr,
+    group: row?.groupLabel || task?.groupLabel || '',
+    studentCount: typeof getAdjustmentGroupStudentCount === 'function' ? getAdjustmentGroupStudentCount(task) : 0
+  };
+}
+
+function closeAdjustmentBatchTimeRoomPicker() {
+  adjustmentBatchTimeRoomRowIndex = -1;
+  adjustmentApproveRoomContext = null;
+  scheduleRoomPickerMode = 'schedule';
+  const unspecBtn = document.getElementById('schedule-room-picker-unspecified-btn');
+  if (unspecBtn) unspecBtn.hidden = true;
+  closeModal('modal-schedule-room-picker');
+}
+
+function openAdjustmentBatchTimeRoomPicker(mode, row, selectedRoom, title) {
+  if (typeof ensureScheduleGlobalDemo === 'function') ensureScheduleGlobalDemo();
+  if (typeof ensureScheduleTasksFromOffering === 'function') ensureScheduleTasksFromOffering();
+  scheduleRoomPickerMode = mode;
+  scheduleRoomPickerSelected = String(selectedRoom || '').trim();
+  setAdjustmentBatchTimeRoomPickerContext(row);
+  const titleEl = document.getElementById('modal-schedule-room-picker-title');
+  if (titleEl) titleEl.textContent = title || '选择调后教室';
+  const unspecBtn = document.getElementById('schedule-room-picker-unspecified-btn');
+  if (unspecBtn) unspecBtn.hidden = true;
+  syncScheduleRoomPickerModalLayout();
+  syncScheduleRoomPickerOccBar();
+  buildScheduleRoomFilterOptions();
+  resetScheduleRoomFilterSelects();
+  syncScheduleRoomPickerHint();
+  renderScheduleRoomModalRows();
+  openModal('modal-schedule-room-picker');
+}
+
+function openAdjustmentBatchTimeRowRoomPicker(rowIndex) {
+  const row = ADJUSTMENT_BATCH_STATE.time.preview?.[rowIndex];
+  if (!row) return;
+  adjustmentBatchTimeRoomRowIndex = rowIndex;
+  openAdjustmentBatchTimeRoomPicker(
+    'batchTimeRow',
+    row,
+    row.targetRoom || row.room || '',
+    '选择调后教室'
+  );
+}
+
+function openAdjustmentBatchTimeRowsPicker() {
+  const rows = ADJUSTMENT_BATCH_STATE.time.preview || [];
+  if (!rows.length) {
+    setAdjustmentBatchTimeTip('请先生成调课明细，再勾选后调教室', true);
+    alert('请先生成调课明细');
+    return;
+  }
+  const selected = ensureAdjustmentBatchTimeSelectedSet();
+  const picked = getAdjustmentBatchTimeVisibleIndexes().filter(idx => selected.has(idx));
+  if (!picked.length) {
+    setAdjustmentBatchTimeTip('请先勾选要调教室的明细', true);
+    alert('请先勾选要调教室的明细');
+    return;
+  }
+  const first = rows[picked[0]];
+  openAdjustmentBatchTimeRoomPicker(
+    'batchTimeRows',
+    first,
+    first?.targetRoom || first?.room || '',
+    '批量调教室'
+  );
+}
+
+function applyAdjustmentBatchTimeRowRoom(room) {
+  const idx = adjustmentBatchTimeRoomRowIndex;
+  const rows = ADJUSTMENT_BATCH_STATE.time.preview || [];
+  if (idx < 0 || !rows[idx]) return;
+  rows[idx].targetRoom = String(room || '').trim();
+  annotateAdjustmentBatchTimeConflicts(rows);
+  renderAdjustmentBatchPreview('time');
+  const conflictCount = countAdjustmentBatchTimeConflicts(rows);
+  if (conflictCount) {
+    setAdjustmentBatchTimeTip(`已更新调后教室，仍有 ${conflictCount} 条冲突，无法提交`, true);
+  } else {
+    setAdjustmentBatchTimeTip('已更新调后教室，未检测到冲突', false);
+  }
+}
+
+function applyAdjustmentBatchTimeRowsRoom(room) {
+  const next = String(room || '').trim();
+  if (!next) return;
+  const rows = ADJUSTMENT_BATCH_STATE.time.preview || [];
+  const selected = ensureAdjustmentBatchTimeSelectedSet();
+  rows.forEach((row, idx) => {
+    if (selected.has(idx) && row) row.targetRoom = next;
+  });
+  annotateAdjustmentBatchTimeConflicts(rows);
+  renderAdjustmentBatchPreview('time');
+  const conflictCount = countAdjustmentBatchTimeConflicts(rows);
+  if (conflictCount) {
+    setAdjustmentBatchTimeTip(`已更新勾选行的调后教室，仍有 ${conflictCount} 条冲突，无法提交`, true);
+  } else {
+    setAdjustmentBatchTimeTip('已更新勾选行的调后教室，未检测到冲突', false);
+  }
+}
 
 function getAdjustmentBatchSourceDayCount() {
   const src = ADJUSTMENT_BATCH_STATE.time;
@@ -62922,7 +66586,19 @@ function renderAdjustmentBatchDateSummary(kind) {
   const state = ADJUSTMENT_BATCH_STATE[kind];
   const host = document.getElementById(`adjustment-batch-${kind}-dates`);
   const btn = document.getElementById(`adjustment-batch-${kind}-date-btn`);
-  if (!host) return;
+  if (!host || !state) return;
+  if (state.dateMode === 'weekday') {
+    const n = state.dates.length;
+    if (!state.weekFrom || !state.weekTo || !state.weekdays?.length || !n) {
+      host.textContent = '尚未选择星期';
+      host.classList.add('is-empty');
+      return;
+    }
+    const wdText = [...state.weekdays].sort((a, b) => a - b).map(getScheduleWeekdayLabel).join('、');
+    host.textContent = `第${state.weekFrom}–${state.weekTo}周 · ${wdText}（${n} 天）`;
+    host.classList.remove('is-empty');
+    return;
+  }
   const n = state.dates.length;
   if (!n) {
     host.textContent = '尚未选择日期';
@@ -63069,16 +66745,13 @@ function confirmAdjustmentBatchDatePicker(ev) {
   if (!state) return;
   state.range = { start: r.start, end: r.end };
   state.dates = draftDates;
-  if (kind === 'time' || kind === 'room') state.preview = [];
+  if (kind === 'time') state.preview = [];
   if (kind === 'time' || kind === 'timeTarget') {
     ADJUSTMENT_BATCH_STATE.time.preview = [];
     ADJUSTMENT_BATCH_STATE.time.generatedKey = '';
     setAdjustmentBatchTimeTip('');
   }
-  if (kind === 'room') {
-    ADJUSTMENT_BATCH_STATE.room.generatedKey = '';
-    setAdjustmentBatchRoomTip('');
-  }
+  if (kind === 'room') clearAdjustmentBatchRoomGenerated();
   renderAdjustmentBatchDateSummary(kind);
   if (kind === 'time' || kind === 'room') renderAdjustmentBatchPreview(kind);
   else if (kind === 'timeTarget') renderAdjustmentBatchPreview('time');
@@ -63117,6 +66790,17 @@ function initAdjustmentBatchMultiChecks(kind) {
         `<label class="schedule-multi-check"><input type="checkbox" value="${p.periodNo}"${selected.has(p.periodNo) ? ' checked' : ''}>${escapeHtml(formatAdjustmentPeriodLabel(p.periodNo, p.periodNo, term))}</label>`
       ).join('') || '<span class="text-muted">请先维护课表节次</span>';
     }
+    const onPeriodChange = () => {
+      clearAdjustmentBatchTimeGenerated();
+      renderAdjustmentBatchPreview('time');
+    };
+    periodHost?.querySelectorAll('input[type="checkbox"]').forEach(el => el.addEventListener('change', onPeriodChange));
+    tpHost?.querySelectorAll('input[type="checkbox"]').forEach(el => el.addEventListener('change', onPeriodChange));
+  } else if (kind === 'room') {
+    periodHost?.querySelectorAll('input[type="checkbox"]').forEach(el => el.addEventListener('change', () => {
+      clearAdjustmentBatchRoomGenerated();
+      renderAdjustmentBatchPreview('room');
+    }));
   }
 }
 
@@ -63127,18 +66811,22 @@ function collectAdjustmentBatchHits(kind) {
   if (!periods.length) return null;
   const periodSet = new Set(periods);
   const sourceRoom = kind === 'room' ? (state.sourceRoom || '') : '';
+  const courseFilter = kind === 'time'
+    ? new Set(getAdjustmentBatchSelectedCourseCodes().map(c => String(c).toUpperCase()))
+    : new Set();
   const hits = [];
   state.dates.forEach(dateStr => {
     const weekday = getAdjustmentDateWeekday(dateStr);
     if (!weekday) return;
     getScheduleTaskRows().forEach(task => {
+      if (courseFilter.size && !courseFilter.has(String(task.code || '').toUpperCase())) return;
       normalizeTaskTimeSlots(task).forEach(slot => {
         if (Number(slot.weekday) !== weekday) return;
         const pf = Number(slot.periodFrom);
         const pt = Number(slot.periodTo || slot.periodFrom);
         for (let p = pf; p <= pt; p++) {
           if (!periodSet.has(p)) continue;
-          const room = slot.room || task.location || '—';
+          const room = resolveAdjustmentBatchHitRoom(task, slot);
           if (sourceRoom && room !== sourceRoom) continue;
           hits.push({
             dateStr,
@@ -63155,6 +66843,7 @@ function collectAdjustmentBatchHits(kind) {
       });
     });
   });
+  if (!hits.length && courseFilter.size) return hits;
   if (!hits.length) {
     const demoRoom = sourceRoom || '教学楼A-101';
     state.dates.forEach(dateStr => {
@@ -63221,8 +66910,23 @@ function validateAdjustmentBatchPeriodSelection(srcPeriods, tgtPeriods) {
   return srcPeriods.length === tgtPeriods.length;
 }
 
+function validateAdjustmentBatchWeekdaySide(kind, label) {
+  const state = ADJUSTMENT_BATCH_STATE[kind];
+  if (!state || state.dateMode !== 'weekday') return '';
+  if (!state.weekFrom || !state.weekTo) return `请选择${label}起止周`;
+  if (state.weekFrom > state.weekTo) return `${label}起始周不能晚于截止周`;
+  if (!state.weekdays?.length) return `请选择${label}星期`;
+  syncAdjustmentBatchWeekdayDates(kind);
+  if (!state.dates.length) return `${label}按星期展开后没有可用日期，请检查起止周与星期`;
+  return '';
+}
+
 function validateAdjustmentBatchTimeForm() {
   setAdjustmentBatchTimeTip('');
+  const srcErr = validateAdjustmentBatchWeekdaySide('time', '源日期');
+  if (srcErr) return failAdjustmentBatchTime(srcErr);
+  const tgtErr = validateAdjustmentBatchWeekdaySide('timeTarget', '目标日期');
+  if (tgtErr) return failAdjustmentBatchTime(tgtErr);
   const srcDates = ADJUSTMENT_BATCH_STATE.time.dates || [];
   const tgtDates = ADJUSTMENT_BATCH_STATE.timeTarget.dates || [];
   const srcPeriods = getAdjustmentBatchSelectedPeriods('time');
@@ -63242,11 +66946,20 @@ function validateAdjustmentBatchTimeForm() {
 }
 
 function getAdjustmentBatchTimeSelectionKey() {
-  const srcDates = [...(ADJUSTMENT_BATCH_STATE.time.dates || [])].sort().join(',');
-  const tgtDates = [...(ADJUSTMENT_BATCH_STATE.timeTarget.dates || [])].sort().join(',');
+  const src = ADJUSTMENT_BATCH_STATE.time;
+  const tgt = ADJUSTMENT_BATCH_STATE.timeTarget;
+  const srcDates = [...(src.dates || [])].sort().join(',');
+  const tgtDates = [...(tgt.dates || [])].sort().join(',');
   const srcPeriods = getAdjustmentBatchSelectedPeriods('time').slice().sort((a, b) => a - b).join(',');
   const tgtPeriods = getAdjustmentBatchTargetPeriods().slice().sort((a, b) => a - b).join(',');
-  return `${srcDates}|${srcPeriods}|${tgtDates}|${tgtPeriods}`;
+  const courses = getAdjustmentBatchSelectedCourseCodes().slice().sort().join(',');
+  return [
+    src.dateMode || 'date',
+    src.weekFrom || '', src.weekTo || '', [...(src.weekdays || [])].sort((a, b) => a - b).join('.'),
+    tgt.dateMode || 'date',
+    tgt.weekFrom || '', tgt.weekTo || '', [...(tgt.weekdays || [])].sort((a, b) => a - b).join('.'),
+    srcDates, srcPeriods, tgtDates, tgtPeriods, courses
+  ].join('|');
 }
 
 function generateAdjustmentBatchTimePreview() {
@@ -63257,6 +66970,7 @@ function generateAdjustmentBatchTimePreview() {
     return failAdjustmentBatchTime('所选日期节次已生成调课明细，请先清空后再重新生成');
   }
   previewAdjustmentBatch('time', true);
+  state.selectedIdx = new Set();
   const rows = state.preview || [];
   if (rows.length) {
     state.generatedKey = key;
@@ -63271,6 +66985,12 @@ function generateAdjustmentBatchTimePreview() {
     }
   } else {
     state.generatedKey = '';
+    setAdjustmentBatchTimeTip(
+      getAdjustmentBatchSelectedCourseCodes().length
+        ? '未命中所选课程，请调整课程或日期节次后重试'
+        : '未命中课节，请调整日期或节次后重试',
+      true
+    );
   }
 }
 
@@ -63286,8 +67006,58 @@ function clearAdjustmentBatchTimePreview() {
   setAdjustmentBatchTimeTip('已清空调课明细，可修改日期节次后重新生成', false);
 }
 
+function deleteAdjustmentBatchPreviewRows(kind) {
+  const isRoom = kind === 'room';
+  const state = isRoom ? ADJUSTMENT_BATCH_STATE.room : ADJUSTMENT_BATCH_STATE.time;
+  const selected = isRoom ? ensureAdjustmentBatchRoomSelectedSet() : ensureAdjustmentBatchTimeSelectedSet();
+  const tip = isRoom ? setAdjustmentBatchRoomTip : setAdjustmentBatchTimeTip;
+  if (!state.preview?.length) {
+    tip('当前没有可删除的调课明细', false);
+    return;
+  }
+  if (!selected.size) {
+    tip('请先勾选要删除的调课明细', true);
+    return;
+  }
+  const remain = state.preview.filter((_, idx) => !selected.has(idx));
+  const removed = state.preview.length - remain.length;
+  state.preview = remain;
+  selected.clear();
+  if (!remain.length) state.generatedKey = '';
+  renderAdjustmentBatchPreview(kind);
+  tip(remain.length ? `已删除 ${removed} 条调课明细` : '已删除所选调课明细，列表已空', false);
+}
+
+function deleteAdjustmentBatchPreviewRow(kind, idx) {
+  const isRoom = kind === 'room';
+  const state = isRoom ? ADJUSTMENT_BATCH_STATE.room : ADJUSTMENT_BATCH_STATE.time;
+  const selected = isRoom ? ensureAdjustmentBatchRoomSelectedSet() : ensureAdjustmentBatchTimeSelectedSet();
+  const tip = isRoom ? setAdjustmentBatchRoomTip : setAdjustmentBatchTimeTip;
+  if (!state.preview?.[idx]) return;
+  state.preview.splice(idx, 1);
+  const next = new Set();
+  selected.forEach(i => {
+    if (i === idx) return;
+    next.add(i > idx ? i - 1 : i);
+  });
+  state.selectedIdx = next;
+  if (!state.preview.length) state.generatedKey = '';
+  renderAdjustmentBatchPreview(kind);
+  tip(state.preview.length ? '已删除 1 条调课明细' : '已删除所选调课明细，列表已空', false);
+}
+
+function deleteAdjustmentBatchTimePreview() {
+  deleteAdjustmentBatchPreviewRows('time');
+}
+
+function deleteAdjustmentBatchRoomPreview() {
+  deleteAdjustmentBatchPreviewRows('room');
+}
+
 function validateAdjustmentBatchRoomForm() {
   setAdjustmentBatchRoomTip('');
+  const srcErr = validateAdjustmentBatchWeekdaySide('room', '源日期');
+  if (srcErr) return failAdjustmentBatchRoom(srcErr);
   const srcDates = ADJUSTMENT_BATCH_STATE.room.dates || [];
   const srcPeriods = getAdjustmentBatchSelectedPeriods('room');
   const sourceRoom = ADJUSTMENT_BATCH_STATE.room.sourceRoom || '';
@@ -63301,11 +67071,16 @@ function validateAdjustmentBatchRoomForm() {
 }
 
 function getAdjustmentBatchRoomSelectionKey() {
-  const srcDates = [...(ADJUSTMENT_BATCH_STATE.room.dates || [])].sort().join(',');
+  const src = ADJUSTMENT_BATCH_STATE.room;
+  const srcDates = [...(src.dates || [])].sort().join(',');
   const srcPeriods = getAdjustmentBatchSelectedPeriods('room').slice().sort((a, b) => a - b).join(',');
-  const sourceRoom = ADJUSTMENT_BATCH_STATE.room.sourceRoom || '';
-  const targetRoom = ADJUSTMENT_BATCH_STATE.room.targetRoom || '';
-  return `${srcDates}|${srcPeriods}|${sourceRoom}|${targetRoom}`;
+  const sourceRoom = src.sourceRoom || '';
+  const targetRoom = src.targetRoom || '';
+  return [
+    src.dateMode || 'date',
+    src.weekFrom || '', src.weekTo || '', [...(src.weekdays || [])].sort((a, b) => a - b).join('.'),
+    srcDates, srcPeriods, sourceRoom, targetRoom
+  ].join('|');
 }
 
 function generateAdjustmentBatchRoomPreview() {
@@ -63319,9 +67094,12 @@ function generateAdjustmentBatchRoomPreview() {
   const rows = state.preview || [];
   if (rows.length) {
     state.generatedKey = key;
-    setAdjustmentBatchRoomTip(`已生成 ${rows.length} 条调课明细`, false);
+    state.selectedIdx = new Set();
+    refreshAdjustmentBatchRoomConflictTip(rows, 'generated');
   } else {
     state.generatedKey = '';
+    state.selectedIdx = new Set();
+    setAdjustmentBatchRoomTip('未命中课节，请调整日期、节次或源教室后重试', true);
   }
 }
 
@@ -63331,8 +67109,7 @@ function clearAdjustmentBatchRoomPreview() {
     setAdjustmentBatchRoomTip('当前没有可清空的调课明细', false);
     return;
   }
-  state.preview = [];
-  state.generatedKey = '';
+  clearAdjustmentBatchRoomGenerated();
   renderAdjustmentBatchPreview('room');
   setAdjustmentBatchRoomTip('已清空调课明细，可修改日期节次教室后重新生成', false);
 }
@@ -63368,13 +67145,22 @@ function previewAdjustmentBatch(kind, skipValidate) {
         targetDates,
         targetWeekday,
         targetWeekNo,
-        targetPeriods
+        targetPeriods,
+        targetRoom: resolveAdjustmentBatchHitRoom(h.task, h.slot) || (h.room && h.room !== '—' ? h.room : '')
       };
     });
     annotateAdjustmentBatchTimeConflicts(ADJUSTMENT_BATCH_STATE.time.preview);
   } else {
     const room = ADJUSTMENT_BATCH_STATE.room.targetRoom || document.getElementById('adjustment-batch-room-target')?.value || '';
-    ADJUSTMENT_BATCH_STATE.room.preview = hits.map(h => ({ ...h, targetRoom: room }));
+    ADJUSTMENT_BATCH_STATE.room.preview = hits.map(h => ({
+      ...h,
+      targetRoom: room,
+      targetDateStr: h.dateStr,
+      targetPeriod: h.period,
+      targetWeekday: h.weekday,
+      targetWeekNo: h.weekNo
+    }));
+    annotateAdjustmentBatchRoomConflicts(ADJUSTMENT_BATCH_STATE.room.preview);
   }
   try {
     renderAdjustmentBatchPreview(kind);
@@ -63402,9 +67188,11 @@ function checkAdjustmentBatchTimeRowConflict(row, allRows, idx, occ) {
     : '';
   const programmeKey = task.programmeKey || '';
   const intake = task.intake || '';
-  const roomRaw = row.room && row.room !== '—'
-    ? row.room
-    : (row.slot?.room || task.location || '');
+  const roomRaw = row.targetRoom && row.targetRoom !== '—'
+    ? row.targetRoom
+    : (row.room && row.room !== '—'
+      ? row.room
+      : (row.slot?.room || task.location || ''));
   const room = String(roomRaw || '').trim();
   const weekNo = Number(row.targetWeekNo) || 0;
   const weeksSet = weekNo ? new Set([weekNo]) : new Set();
@@ -63436,9 +67224,11 @@ function checkAdjustmentBatchTimeRowConflict(row, allRows, idx, occ) {
     const oTeacherId = typeof getScheduleTaskTeacherId === 'function'
       ? getScheduleTaskTeacherId(oTask)
       : '';
-    const oRoomRaw = otherRow.room && otherRow.room !== '—'
-      ? otherRow.room
-      : (otherRow.slot?.room || oTask.location || '');
+    const oRoomRaw = otherRow.targetRoom && otherRow.targetRoom !== '—'
+      ? otherRow.targetRoom
+      : (otherRow.room && otherRow.room !== '—'
+        ? otherRow.room
+        : (otherRow.slot?.room || oTask.location || ''));
     const oRoom = String(oRoomRaw || '').trim();
     const other = `${formatScheduleCourseCode(oTask.code)} ${oTask.name || ''}${otherRow.groupLabel ? `(${otherRow.groupLabel})` : ''}（本批其他明细）`;
     if (teacherId && oTeacherId && String(oTeacherId) === String(teacherId)) {
@@ -63488,23 +67278,313 @@ function countAdjustmentBatchTimeConflicts(rows) {
   return (rows || []).filter(r => r?.conflict?.hasConflict).length;
 }
 
+function adjustmentBatchRoomWeeksOverlap(a, b) {
+  const toArr = x => {
+    if (!x) return [];
+    if (x instanceof Set) return [...x];
+    if (Array.isArray(x)) return x;
+    return [];
+  };
+  const aa = toArr(a);
+  const bb = toArr(b);
+  if (!aa.length || !bb.length) return true;
+  const setB = new Set(bb);
+  return aa.some(w => setB.has(w));
+}
+
+/** 批量调教室明细：仅检测目标教室场地冲突（日期节次不变） */
+function checkAdjustmentBatchRoomRowConflict(row, allRows, idx, occ) {
+  const result = { teacher: [], student: [], room: [], hasConflict: false };
+  const weekday = Number(row?.weekday || row?.targetWeekday) || 0;
+  const period = Number(row?.period || row?.targetPeriod) || 0;
+  const room = String(row?.targetRoom || '').trim();
+  if (!weekday || !period || !room || room === '—') return result;
+  const weekNo = Number(row?.weekNo || row?.targetWeekNo) || 0;
+  const weeksSet = weekNo ? new Set([weekNo]) : new Set();
+  const at = `${getScheduleWeekdayLabel(weekday)}第${period}节`;
+  const selfSlotId = row?.slot?.id;
+  const pushUniq = (arr, msg) => { if (msg && !arr.includes(msg)) arr.push(msg); };
+
+  (occ || []).forEach(o => {
+    if (Number(o.weekday) !== weekday || Number(o.period) !== period) return;
+    if (!adjustmentBatchRoomWeeksOverlap(o.weeks, weeksSet)) return;
+    if (!o.room || o.room !== room) return;
+    const other = `${formatScheduleCourseCode(o.code)} ${o.name || ''}${o.group ? `(${o.group})` : ''}`;
+    pushUniq(result.room, `${at} · ${room} 与 ${other} 冲突`);
+  });
+
+  (allRows || []).forEach((otherRow, j) => {
+    if (j === idx) return;
+    if (Number(otherRow.weekday || otherRow.targetWeekday) !== weekday) return;
+    if (Number(otherRow.period || otherRow.targetPeriod) !== period) return;
+    const oRoom = String(otherRow.targetRoom || '').trim();
+    if (!oRoom || oRoom === '—' || oRoom !== room) return;
+    const oWeek = Number(otherRow.weekNo || otherRow.targetWeekNo) || 0;
+    const oWeeks = oWeek ? new Set([oWeek]) : new Set();
+    if (!adjustmentBatchRoomWeeksOverlap(weeksSet, oWeeks)) return;
+    if (selfSlotId && otherRow?.slot?.id && selfSlotId === otherRow.slot.id) return;
+    const oTask = otherRow.task || {};
+    const other = `${formatScheduleCourseCode(oTask.code)} ${oTask.name || ''}${otherRow.groupLabel ? `(${otherRow.groupLabel})` : ''}（本批其他明细）`;
+    pushUniq(result.room, `${at} · ${room} 与 ${other} 冲突`);
+  });
+
+  result.hasConflict = result.room.length > 0;
+  return result;
+}
+
+function annotateAdjustmentBatchRoomConflicts(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const excludeIds = new Set(list.map(r => r?.slot?.id).filter(Boolean));
+  const occ = typeof buildAdjustmentOccupancy === 'function'
+    ? buildAdjustmentOccupancy(excludeIds)
+    : [];
+  list.forEach((row, idx) => {
+    row.conflict = checkAdjustmentBatchRoomRowConflict(row, list, idx, occ);
+  });
+  return list;
+}
+
+function countAdjustmentBatchRoomConflicts(rows) {
+  return (rows || []).filter(r => r?.conflict?.hasConflict).length;
+}
+
+function refreshAdjustmentBatchRoomConflictTip(rows, source) {
+  const list = rows || ADJUSTMENT_BATCH_STATE.room.preview || [];
+  const conflictCount = countAdjustmentBatchRoomConflicts(list);
+  if (source === 'generated') {
+    if (conflictCount) {
+      setAdjustmentBatchRoomTip(
+        `已生成 ${list.length} 条调课明细，其中 ${conflictCount} 条存在冲突（浅黄高亮），无法提交`,
+        true
+      );
+    } else {
+      setAdjustmentBatchRoomTip(`已生成 ${list.length} 条调课明细，未检测到冲突`, false);
+    }
+    return;
+  }
+  if (conflictCount) {
+    setAdjustmentBatchRoomTip(`已更新目标教室，仍有 ${conflictCount} 条冲突，无法提交`, true);
+  } else {
+    setAdjustmentBatchRoomTip('已更新目标教室，未检测到冲突', false);
+  }
+}
+
+function getAdjustmentBatchRoomVisibleIndexes() {
+  const rows = ADJUSTMENT_BATCH_STATE.room.preview || [];
+  const conflictOnly = !!ADJUSTMENT_BATCH_STATE.room.conflictOnly;
+  const indexes = [];
+  rows.forEach((r, idx) => {
+    if (conflictOnly && !r?.conflict?.hasConflict) return;
+    indexes.push(idx);
+  });
+  return indexes;
+}
+
+function syncAdjustmentBatchRoomCheckAll() {
+  const el = document.getElementById('adjustment-batch-room-check-all');
+  if (!el) return;
+  const visible = getAdjustmentBatchRoomVisibleIndexes();
+  const selected = ensureAdjustmentBatchRoomSelectedSet();
+  el.checked = visible.length > 0 && visible.every(idx => selected.has(idx));
+}
+
+function onAdjustmentBatchRoomConflictOnlyChange() {
+  const el = document.getElementById('adjustment-batch-room-conflict-only');
+  ADJUSTMENT_BATCH_STATE.room.conflictOnly = !!el?.checked;
+  renderAdjustmentBatchPreview('room');
+}
+
+function onAdjustmentBatchRoomRowCheck(idx, checked) {
+  const selected = ensureAdjustmentBatchRoomSelectedSet();
+  if (checked) selected.add(idx);
+  else selected.delete(idx);
+  syncAdjustmentBatchRoomCheckAll();
+}
+
+function onAdjustmentBatchRoomSelectVisible(checked) {
+  const selected = ensureAdjustmentBatchRoomSelectedSet();
+  getAdjustmentBatchRoomVisibleIndexes().forEach(idx => {
+    if (checked) selected.add(idx);
+    else selected.delete(idx);
+  });
+  renderAdjustmentBatchPreview('room');
+}
+
+function resolveAdjustmentBatchRoomOriginRoom(row) {
+  const fromRow = String(row?.room || '').trim();
+  if (fromRow && fromRow !== '—') return fromRow;
+  return String(ADJUSTMENT_BATCH_STATE.room.sourceRoom || '').trim();
+}
+
+function getAdjustmentBatchRoomPickerOriginRoom() {
+  const fromCtx = String(adjustmentApproveRoomContext?.sourceRoom || '').trim();
+  if (fromCtx && fromCtx !== '—') return fromCtx;
+  return resolveAdjustmentBatchRoomOriginRoom(null);
+}
+
+function getAdjustmentBatchRoomOriginVenueTypes(roomName) {
+  const meta = typeof getScheduleRoomMetaByName === 'function'
+    ? getScheduleRoomMetaByName(roomName)
+    : null;
+  if (!meta) return [];
+  const matched = typeof getScheduleRoomMatchedVenueTypes === 'function'
+    ? getScheduleRoomMatchedVenueTypes(meta)
+    : [];
+  if (matched.length) return matched;
+  const fallback = (typeof mapScheduleVenueTypeValue === 'function' && mapScheduleVenueTypeValue(meta.roomType))
+    || (typeof getVenueCategoryForClassroomType === 'function' && getVenueCategoryForClassroomType(meta.roomType));
+  return fallback ? [fallback] : [];
+}
+
+function applyAdjustmentBatchRoomOriginVenueFilter(roomName) {
+  const types = getAdjustmentBatchRoomOriginVenueTypes(roomName);
+  if (types.length) setScheduleRoomTypeFilterSelected(types);
+}
+
+function setAdjustmentBatchRoomPickerContext(row) {
+  const origin = resolveAdjustmentBatchRoomOriginRoom(row);
+  if (!row) {
+    adjustmentApproveRoomContext = origin ? { sourceRoom: origin } : null;
+    return;
+  }
+  const weekday = Number(row.weekday || row.targetWeekday) || 0;
+  const period = Number(row.period || row.targetPeriod) || 0;
+  const dateStr = row.dateStr || row.targetDateStr || '';
+  const weekNo = Number(row.weekNo || row.targetWeekNo)
+    || (dateStr && typeof adjustmentTeachingWeekOf === 'function'
+      ? adjustmentTeachingWeekOf(new Date(`${dateStr}T00:00:00`))
+      : 0);
+  const task = row.task;
+  adjustmentApproveRoomContext = {
+    weekday,
+    period,
+    weeks: weekNo ? String(weekNo) : '',
+    date: dateStr,
+    group: row.groupLabel || task?.groupLabel || '',
+    studentCount: typeof getAdjustmentGroupStudentCount === 'function' ? getAdjustmentGroupStudentCount(task) : 0,
+    sourceRoom: origin
+  };
+}
+
+function closeAdjustmentBatchRoomPicker() {
+  adjustmentBatchRoomRowIndex = -1;
+  adjustmentApproveRoomContext = null;
+  scheduleRoomPickerMode = 'schedule';
+  const unspecBtn = document.getElementById('schedule-room-picker-unspecified-btn');
+  if (unspecBtn) unspecBtn.hidden = true;
+  closeModal('modal-schedule-room-picker');
+}
+
+function openAdjustmentBatchRoomPickerWithMode(mode, selected, title, row) {
+  if (typeof ensureScheduleGlobalDemo === 'function') ensureScheduleGlobalDemo();
+  if (typeof ensureScheduleTasksFromOffering === 'function') ensureScheduleTasksFromOffering();
+  scheduleRoomPickerMode = mode;
+  scheduleRoomPickerSelected = String(selected || '').trim();
+  setAdjustmentBatchRoomPickerContext(row || null);
+  const titleEl = document.getElementById('modal-schedule-room-picker-title');
+  if (titleEl) titleEl.textContent = title || '选择教室';
+  const unspecBtn = document.getElementById('schedule-room-picker-unspecified-btn');
+  if (unspecBtn) unspecBtn.hidden = true;
+  syncScheduleRoomPickerModalLayout();
+  syncScheduleRoomPickerOccBar();
+  buildScheduleRoomFilterOptions();
+  resetScheduleRoomFilterSelects();
+  applyAdjustmentBatchRoomOriginVenueFilter(getAdjustmentBatchRoomPickerOriginRoom());
+  syncScheduleRoomPickerHint();
+  renderScheduleRoomModalRows();
+  openModal('modal-schedule-room-picker');
+}
+
+function openAdjustmentBatchRoomRowPicker(rowIndex) {
+  const row = ADJUSTMENT_BATCH_STATE.room.preview?.[rowIndex];
+  if (!row) return;
+  adjustmentBatchRoomRowIndex = rowIndex;
+  openAdjustmentBatchRoomPickerWithMode(
+    'batchRoomRow',
+    row.targetRoom || row.room || '',
+    '选择目标教室',
+    row
+  );
+}
+
+function applyAdjustmentBatchRoomRowRoom(room) {
+  const idx = adjustmentBatchRoomRowIndex;
+  const rows = ADJUSTMENT_BATCH_STATE.room.preview || [];
+  if (idx < 0 || !rows[idx]) return;
+  rows[idx].targetRoom = String(room || '').trim();
+  annotateAdjustmentBatchRoomConflicts(rows);
+  renderAdjustmentBatchPreview('room');
+  refreshAdjustmentBatchRoomConflictTip(rows, 'updated');
+}
+
+function openAdjustmentBatchRoomRowsPicker() {
+  const rows = ADJUSTMENT_BATCH_STATE.room.preview || [];
+  if (!rows.length) {
+    setAdjustmentBatchRoomTip('请先生成调课明细，再勾选后调教室', true);
+    alert('请先生成调课明细');
+    return;
+  }
+  const selected = ensureAdjustmentBatchRoomSelectedSet();
+  const visible = getAdjustmentBatchRoomVisibleIndexes();
+  const picked = visible.filter(idx => selected.has(idx));
+  if (!picked.length) {
+    setAdjustmentBatchRoomTip('请先勾选要调教室的明细', true);
+    alert('请先勾选要调教室的明细');
+    return;
+  }
+  const first = rows[picked[0]];
+  openAdjustmentBatchRoomPickerWithMode(
+    'batchRoomRows',
+    first?.targetRoom || ADJUSTMENT_BATCH_STATE.room.targetRoom || '',
+    '批量调教室',
+    first
+  );
+}
+
+function applyAdjustmentBatchRoomRowsRoom(room) {
+  const next = String(room || '').trim();
+  if (!next) return;
+  const rows = ADJUSTMENT_BATCH_STATE.room.preview || [];
+  const selected = ensureAdjustmentBatchRoomSelectedSet();
+  const visible = getAdjustmentBatchRoomVisibleIndexes();
+  visible.filter(idx => selected.has(idx)).forEach(idx => {
+    if (rows[idx]) rows[idx].targetRoom = next;
+  });
+  annotateAdjustmentBatchRoomConflicts(rows);
+  renderAdjustmentBatchPreview('room');
+  refreshAdjustmentBatchRoomConflictTip(rows, 'updated');
+}
+
 function renderAdjustmentBatchPreview(kind) {
   const tbody = document.getElementById(`adjustment-batch-${kind}-preview-body`);
   if (!tbody) return;
   const rows = ADJUSTMENT_BATCH_STATE[kind].preview || [];
-  const emptyColspan = kind === 'time' ? 11 : 8;
+  const emptyColspan = kind === 'time' ? 14 : 11;
   const emptyHint = kind === 'time' ? '请设置条件后点击「确定生成调课明细」' : '请设置条件后点击「确定生成调课明细」';
   if (!rows.length) {
     tbody.innerHTML = `<tr><td colspan="${emptyColspan}" class="empty-cell">${emptyHint}</td></tr>`;
+    if (kind === 'time') syncAdjustmentBatchTimeCheckAll();
+    if (kind === 'room') syncAdjustmentBatchRoomCheckAll();
     return;
   }
   if (kind === 'time') {
-    tbody.innerHTML = rows.map((r, idx) => {
+    const selected = ensureAdjustmentBatchTimeSelectedSet();
+    const visibleIdx = getAdjustmentBatchTimeVisibleIndexes();
+    if (!visibleIdx.length) {
+      tbody.innerHTML = `<tr><td colspan="${emptyColspan}" class="empty-cell">${ADJUSTMENT_BATCH_STATE.time.conflictOnly ? '当前没有冲突明细' : emptyHint}</td></tr>`;
+      syncAdjustmentBatchTimeCheckAll();
+      return;
+    }
+    tbody.innerHTML = visibleIdx.map(idx => {
+      const r = rows[idx];
       const groupLabel = r.groupLabel || r.task?.groupLabel || formatScheduleGroupNames(r.task) || '—';
       const courseName = r.task?.name || '—';
       const code = r.task?.code || '';
       const hasConflict = !!r.conflict?.hasConflict;
+      const room = resolveAdjustmentBatchHitRoom(r.task, r.slot) || r.room;
+      const targetRoom = r.targetRoom || room;
       return `<tr class="${hasConflict ? 'is-conflict' : ''}">
+      <td class="col-check"><input type="checkbox"${selected.has(idx) ? ' checked' : ''} onchange="onAdjustmentBatchTimeRowCheck(${idx}, this.checked)" aria-label="选择第${idx + 1}条"></td>
       <td class="col-index">${idx + 1}</td>
       <td><code>${escapeHtml(formatScheduleCourseCode(code))}</code></td>
       <td>${escapeHtml(courseName)}</td>
@@ -63512,24 +67592,43 @@ function renderAdjustmentBatchPreview(kind) {
       <td>${escapeHtml(r.teachers || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDateParen(r.dateStr))}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(r.period, r.period) || '—')}</td>
-      <td>${escapeHtml(r.room || '—')}</td>
+      <td>${renderAdjustmentBatchRoomName(room)}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDateParen(r.targetDateStr))}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(r.targetPeriod, r.targetPeriod) || '—')}</td>
+      <td>${renderAdjustmentBatchRoomPickerBtn(targetRoom, `openAdjustmentBatchTimeRowRoomPicker(${idx})`)}</td>
       ${renderAdjustmentBatchTimeConflictCell(r.conflict)}
+      <td class="col-center col-ops"><button class="btn btn-ghost btn-sm" type="button" onclick="deleteAdjustmentBatchPreviewRow('time', ${idx})">删除</button></td>
     </tr>`;
     }).join('');
+    syncAdjustmentBatchTimeCheckAll();
     return;
   }
-  tbody.innerHTML = rows.map((r, idx) => `<tr>
+  const visibleIdx = getAdjustmentBatchRoomVisibleIndexes();
+  const selected = ensureAdjustmentBatchRoomSelectedSet();
+  if (!visibleIdx.length) {
+    tbody.innerHTML = `<tr><td colspan="${emptyColspan}" class="empty-cell">${ADJUSTMENT_BATCH_STATE.room.conflictOnly ? '当前没有冲突明细' : emptyHint}</td></tr>`;
+    syncAdjustmentBatchRoomCheckAll();
+    return;
+  }
+  tbody.innerHTML = visibleIdx.map(idx => {
+    const r = rows[idx];
+    const hasConflict = !!r.conflict?.hasConflict;
+    const targetRoom = r.targetRoom || '';
+    return `<tr class="${hasConflict ? 'is-conflict' : ''}">
+    <td class="col-check"><input type="checkbox"${selected.has(idx) ? ' checked' : ''} onchange="onAdjustmentBatchRoomRowCheck(${idx}, this.checked)" aria-label="选择第${idx + 1}条"></td>
     <td class="col-index">${idx + 1}</td>
-    <td><code>${escapeHtml(formatScheduleCourseCode(r.task.code))}</code></td>
+    <td><code>${escapeHtml(formatScheduleCourseCode(r.task?.code))}</code></td>
     <td>${escapeHtml(formatAdjustmentBatchCourseName(r.task, r.groupLabel))}</td>
-    <td>${escapeHtml(r.teachers)}</td>
+    <td>${escapeHtml(r.teachers || '—')}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentBatchDateParen(r.dateStr))}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(r.period, r.period) || '—')}</td>
-    <td>${escapeHtml(r.room)}</td>
-    <td>${escapeHtml(r.targetRoom || '—')}</td>
-  </tr>`).join('');
+    <td>${escapeHtml(r.room || '—')}</td>
+    <td><button type="button" class="input adj-pick-btn${targetRoom ? '' : ' is-empty'}" onclick="openAdjustmentBatchRoomRowPicker(${idx})">${escapeHtml(targetRoom || '选择教室')}</button></td>
+    ${renderAdjustmentBatchTimeConflictCell(r.conflict)}
+    <td class="col-center col-ops"><button class="btn btn-ghost btn-sm" type="button" onclick="deleteAdjustmentBatchPreviewRow('room', ${idx})">删除</button></td>
+  </tr>`;
+  }).join('');
+  syncAdjustmentBatchRoomCheckAll();
 }
 
 function onAdjustmentBatchFilesChange(kind, e) {
@@ -63564,29 +67663,13 @@ function renderAdjustmentBatchFileList(kind) {
 }
 
 function openAdjustmentBatchSourceRoomPicker() {
-  scheduleRoomPickerMode = 'batch';
   scheduleRoomPickerBatchField = 'source';
-  scheduleRoomPickerSelected = ADJUSTMENT_BATCH_STATE.room.sourceRoom || '';
-  const title = document.getElementById('modal-schedule-room-picker-title');
-  if (title) title.textContent = '选择教室';
-  syncScheduleRoomPickerModalLayout();
-  buildScheduleRoomFilterOptions();
-  resetScheduleRoomFilterSelects();
-  renderScheduleRoomModalRows();
-  openModal('modal-schedule-room-picker');
+  openAdjustmentBatchRoomPickerWithMode('batch', ADJUSTMENT_BATCH_STATE.room.sourceRoom, '选择教室', null);
 }
 
 function openAdjustmentBatchRoomPicker() {
-  scheduleRoomPickerMode = 'batch';
   scheduleRoomPickerBatchField = 'target';
-  scheduleRoomPickerSelected = ADJUSTMENT_BATCH_STATE.room.targetRoom || '';
-  const title = document.getElementById('modal-schedule-room-picker-title');
-  if (title) title.textContent = '选择教室';
-  syncScheduleRoomPickerModalLayout();
-  buildScheduleRoomFilterOptions();
-  resetScheduleRoomFilterSelects();
-  renderScheduleRoomModalRows();
-  openModal('modal-schedule-room-picker');
+  openAdjustmentBatchRoomPickerWithMode('batch', ADJUSTMENT_BATCH_STATE.room.targetRoom, '选择教室', null);
 }
 
 function syncAdjustmentBatchSourceRoomButton() {
@@ -63620,9 +67703,29 @@ function resetAdjustmentBatchForm(kind) {
   state.files = [];
   if (kind === 'time') {
     state.generatedKey = '';
+    state.dateMode = 'date';
+    state.courseCodes = [];
+    state.selectedIdx = new Set();
+    state.conflictOnly = false;
+    const conflictOnlyEl = document.getElementById('adjustment-batch-time-conflict-only');
+    if (conflictOnlyEl) conflictOnlyEl.checked = false;
+    emptyAdjustmentBatchWeekdayFields(state);
     ADJUSTMENT_BATCH_STATE.timeTarget.dates = [];
     ADJUSTMENT_BATCH_STATE.timeTarget.range = { start: '', end: '' };
+    ADJUSTMENT_BATCH_STATE.timeTarget.dateMode = 'date';
+    emptyAdjustmentBatchWeekdayFields(ADJUSTMENT_BATCH_STATE.timeTarget);
     setAdjustmentBatchTimeTip('');
+    const courseSel = document.getElementById('adjustment-batch-time-courses');
+    if (courseSel) [...courseSel.options].forEach(o => { o.selected = false; });
+    syncAdjustmentBatchDateModeUi('time');
+    syncAdjustmentBatchDateModeUi('timeTarget');
+    fillAdjustmentBatchWeekSelects('time');
+    fillAdjustmentBatchWeekSelects('timeTarget');
+    initAdjustmentBatchWeekdaySelect('time');
+    initAdjustmentBatchWeekdaySelect('timeTarget');
+    initAdjustmentBatchCourseSelect();
+    renderAdjustmentBatchDateSummary('time');
+    renderAdjustmentBatchDateSummary('timeTarget');
     const reasonEl = document.getElementById('adjustment-batch-time-reason');
     if (reasonEl) reasonEl.value = '';
     const fileInput = document.getElementById('adjustment-batch-time-files');
@@ -63631,11 +67734,21 @@ function resetAdjustmentBatchForm(kind) {
     state.sourceRoom = '';
     state.targetRoom = '';
     state.generatedKey = '';
+    state.dateMode = 'date';
+    state.conflictOnly = false;
+    state.selectedIdx = new Set();
+    emptyAdjustmentBatchWeekdayFields(state);
     setAdjustmentBatchRoomTip('');
     const reasonEl = document.getElementById('adjustment-batch-room-reason');
     if (reasonEl) reasonEl.value = '';
     const fileInput = document.getElementById('adjustment-batch-room-files');
     if (fileInput) fileInput.value = '';
+    const conflictOnlyEl = document.getElementById('adjustment-batch-room-conflict-only');
+    if (conflictOnlyEl) conflictOnlyEl.checked = false;
+    syncAdjustmentBatchDateModeUi('room');
+    fillAdjustmentBatchWeekSelects('room');
+    initAdjustmentBatchWeekdaySelect('room');
+    renderAdjustmentBatchDateSummary('room');
     syncAdjustmentBatchSourceRoomButton();
     syncAdjustmentBatchRoomButton();
   }
@@ -63668,6 +67781,16 @@ function confirmAdjustmentBatch(kind) {
       );
       return;
     }
+  } else {
+    const conflictCount = countAdjustmentBatchRoomConflicts(rows);
+    if (conflictCount) {
+      alert(`存在 ${conflictCount} 条调课明细存在冲突，无法提交。请调整目标教室后重试。`);
+      setAdjustmentBatchRoomTip(
+        `存在 ${conflictCount} 条冲突明细，无法提交`,
+        true
+      );
+      return;
+    }
   }
   const label = kind === 'time' ? '批量调时间' : '批量调教室';
   const fileCount = ADJUSTMENT_BATCH_STATE[kind].files.length;
@@ -63681,12 +67804,19 @@ function confirmAdjustmentBatch(kind) {
       r.slot.weekday = tw;
       r.slot.periodFrom = tp;
       r.slot.periodTo = tp;
-      if (r.task?.id) persistTaskSchedule(r.task);
+      if (r.targetRoom) {
+        r.slot.room = r.targetRoom;
+      }
+      if (r.task?.id) {
+        persistTaskSchedule(r.task);
+        if (r.targetRoom && typeof syncScheduleTaskRoom === 'function') syncScheduleTaskRoom(r.task);
+      }
     });
   } else {
-    const room = ADJUSTMENT_BATCH_STATE.room.targetRoom || '';
     rows.forEach(r => {
       if (r.demo || !r.slot) return;
+      const room = String(r.targetRoom || '').trim();
+      if (!room) return;
       r.slot.room = room;
       if (r.task?.id) {
         persistTaskSchedule(r.task);
@@ -63732,7 +67862,8 @@ function serializeAdjustmentBatchDetailRows(kind, rows) {
       ...base,
       targetDateStr: r.targetDateStr || '',
       targetWeekNo: resolveAdjustmentBatchDetailWeekNo(r.targetDateStr, r.targetWeekNo),
-      targetPeriod: r.targetPeriod || ''
+      targetPeriod: r.targetPeriod || '',
+      targetRoom: r.targetRoom || r.room || ''
     };
   });
 }
@@ -63905,7 +68036,7 @@ function renderAdjustmentBatchDetailTable(record) {
     <thead><tr>
       <th class="col-index">序号</th><th>课程编号</th><th>课程名称</th><th>上课小组</th><th>教师</th>
       <th class="col-center">源日期</th><th class="col-center">周次</th><th class="col-center">原节次</th><th>教室</th>
-      <th class="col-center">调整后日期</th><th class="col-center">调整后周次</th><th class="col-center">调整后节次</th>
+      <th class="col-center">调整后日期</th><th class="col-center">调整后周次</th><th class="col-center">调整后节次</th><th>调后教室</th>
     </tr></thead>
     <tbody>${details.map((d, i) => `<tr>
       <td class="col-index">${i + 1}</td>
@@ -63920,6 +68051,7 @@ function renderAdjustmentBatchDetailTable(record) {
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDetailDate(d.targetDateStr))}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDetailWeek(resolveAdjustmentBatchDetailWeekNo(d.targetDateStr, d.targetWeekNo)))}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(d.targetPeriod, d.targetPeriod, record.termCode) || '—')}</td>
+      <td>${escapeHtml(d.targetRoom || '—')}</td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
@@ -63982,6 +68114,18 @@ function renderAdjustmentBatchPage() {
     renderAdjustmentBatchFileList(kind);
   });
   renderAdjustmentBatchDateSummary('timeTarget');
+  fillAdjustmentBatchWeekSelects('time');
+  fillAdjustmentBatchWeekSelects('timeTarget');
+  fillAdjustmentBatchWeekSelects('room');
+  initAdjustmentBatchWeekdaySelect('time');
+  initAdjustmentBatchWeekdaySelect('timeTarget');
+  initAdjustmentBatchWeekdaySelect('room');
+  initAdjustmentBatchCourseSelect();
+  syncAdjustmentBatchDateModeUi('time');
+  syncAdjustmentBatchDateModeUi('timeTarget');
+  syncAdjustmentBatchDateModeUi('room');
+  const conflictOnlyEl = document.getElementById('adjustment-batch-room-conflict-only');
+  if (conflictOnlyEl) conflictOnlyEl.checked = !!ADJUSTMENT_BATCH_STATE.room.conflictOnly;
   syncAdjustmentBatchSourceRoomButton();
   syncAdjustmentBatchRoomButton();
   renderAdjustmentBatchRecords();
@@ -64014,17 +68158,19 @@ function renderAdjustmentRecordPage() {
       ? `<span class="legend-item">共 <strong>${rows.length}</strong> 条（来自我的调课申请 / 调课申请管理）</span>`
       : '<span class="legend-item text-muted">暂无记录：请在「我的调课申请」或「调课申请管理」中新增申请</span>';
   }
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 10, '暂无匹配记录，请先在「我的调课申请」或「调课申请管理」中新增'); return; }
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无匹配记录，请先在「我的调课申请」或「调课申请管理」中新增'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-index">${i + 1}</td>
+    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
+    <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
     <td><code>${escapeHtml(r.no)}</code></td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
     <td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
+    <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td>${escapeHtml(r.reason)}</td>
     <td class="col-center">${escapeHtml(r.submittedAt)}</td>
-    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
     <td class="col-center actions"><a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a></td>
   </tr>`).join('');
 }

@@ -1,0 +1,46 @@
+---
+description: 查询条件 + 列表上下布局的前端框架标准（一行最多 3 个条件，按钮固定第一行右侧）
+alwaysApply: true
+---
+
+# 查询条件 + 列表布局标准
+
+凡「上查询条件、下列表」的页面（排课管理列表、后续新列表、抽屉内同类结构），必须用本标准，不要再发明 4 列条件、按钮贴底、或按钮下方再堆字段。
+
+## 结构
+
+```html
+<div class="card schedule-query-card">
+  <div class="schedule-query-row"><!-- 或 query-filter-bar -->
+    <div class="schedule-query-fields">
+      <div class="schedule-query-field">
+        <label for="...">字段名</label>
+        <select/input class="input input-sm" id="...">
+      </div>
+      <!-- 每个条件一格，不要把两个无关字段塞进同一格 -->
+    </div>
+    <div class="schedule-query-actions">
+      <button class="btn btn-primary btn-sm" type="button">查询</button>
+      <button class="btn btn-outline btn-sm" type="button">重置</button>
+    </div>
+  </div>
+</div>
+<div class="card">列表</div>
+```
+
+无 `schedule-query-fields` 包装时，可用 `.schedule-room-filter-grid`：`.srf-item` + 紧跟前三个条件之后（或任意位置，样式会钉到第一行）的 `.srf-actions`。
+
+## 硬性约定
+
+1. **一行最多 3 个查询条件**。禁止 `schedule-query-fields-wide` 再排 4 个条件。
+2. **三列对仗**：条件等宽（`minmax(0, 1fr)`）；上标签、下控件；控件 `width: 100%`。
+3. **按钮组在第一行条件后面**（第 4 列），与第一行条件底对齐。
+4. **按钮组正下方留空**，第二行及以后条件只占前 3 列，不要排到按钮下面。
+5. 日期范围、座位数区间等「一组控件」算 **1 个条件**，占一格。
+6. 自动排课等执行按钮用 `.schedule-auto-run-actions`，占位与查询按钮组相同（第一行第 4 列）。
+7. 不要用 `flex` + `align-items: flex-end` 把按钮沉到最后一行。
+
+## 不要改的
+
+- 排时间 / 排教室详情页交互仍遵守 `schedule-time-room-independence`。
+- 调课申请抽屉左侧「选择上课节次」也按本标准（一行最多 3 条件，按钮在第一行右侧）。

@@ -288,6 +288,7 @@ const LIST_SORT_REFRESH = {
   courseSpecialOfferingTask: () => renderCourseSpecialOfferingTaskPage(),
   courseSpecialOfferingRoster: () => renderCourseSpecialOfferingRosterPage(),
   courseOfferingManifest: () => renderCourseOfferingManifestPage(),
+  schedulingPlan: () => renderSchedulingPlanPage(),
   courseSharedTeachingMaintenance: () => renderCourseSharedTeachingMaintenancePage(),
   courseOfferingRosterChangeLog: () => renderCourseOfferingRosterChangeLogPage(),
   courseSectionChangeLog: () => renderCourseSectionChangeLogPage(),
@@ -373,6 +374,7 @@ const LIST_PAGE_REFRESH = {
   courseSpecialOfferingTask: () => renderCourseSpecialOfferingTaskPage(),
   courseSpecialOfferingRoster: () => renderCourseSpecialOfferingRosterPage(),
   courseOfferingManifest: () => renderCourseOfferingManifestPage(),
+  schedulingPlan: () => renderSchedulingPlanPage(),
   courseSharedTeachingMaintenance: () => renderCourseSharedTeachingMaintenancePage(),
   courseOfferingRosterChangeLog: () => renderCourseOfferingRosterChangeLogPage(),
   courseSectionChangeLog: () => renderCourseSectionChangeLogPage(),
@@ -7258,9 +7260,26 @@ function getClassroomHourTypeLabel(value) {
   return raw;
 }
 
-/** 教室名单补全设备信息（演示；偏好选项展示专业软件） */
+/** 计算机教室已安装软件（参考文档/参考文件/计算机教室软件.xlsx） */
+function getClassroomSoftwareNames(roomOrCode) {
+  const code = String(typeof roomOrCode === 'string' ? roomOrCode : roomOrCode?.classroom || '').trim();
+  if (!code || typeof CLASSROOM_SOFTWARE_BY_ROOM === 'undefined') return [];
+  const list = CLASSROOM_SOFTWARE_BY_ROOM[code];
+  return Array.isArray(list) ? list : [];
+}
+
+/** 教室名单补全设备信息（计算机教室用真实软件清单；其余为演示数据） */
 function enrichClassroomListRoom(room) {
   if (!room) return room;
+  const softwareNames = getClassroomSoftwareNames(room);
+  if (softwareNames.length) {
+    return {
+      ...room,
+      equipment: softwareNames.join('、'),
+      software: '—',
+      softwareList: softwareNames
+    };
+  }
   if (room.equipment != null || room.software != null) return room;
   const name = String(room.classroomName || room.classroomType || '').toLowerCase();
   const cat = normalizeClassroomAttribute(room.category) || 'normal';
@@ -7300,6 +7319,106 @@ function formatClassroomListOptionMeta(room) {
   if (soft && soft !== '--' && soft !== '—') bits.push(soft);
   if (!bits.length) return '';
   return `设备：${bits.join('、')}`;
+}
+
+function classroomRefSearchMatchesRoom(room, query) {
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) return true;
+  const r = enrichClassroomListRoom(room);
+  if (!r) return false;
+  const roomHay = `${r.classroom || ''} ${r.classroomName || ''} ${r.block || ''}`.toLowerCase();
+  if (roomHay.includes(q)) return true;
+  const softwareNames = getClassroomSoftwareNames(r);
+  const equipBits = String(r.equipment || '')
+    .split(/[、,，/]/)
+    .map(s => s.trim())
+    .filter(s => s && s !== '--' && s !== '—');
+  const softHay = [...softwareNames, ...equipBits].join(' ').toLowerCase();
+  return softHay.includes(q);
+}
+
+function buildClassroomRefDropdownSearchHtml() {
+  return `<div class="clo-multiselect-search-wrap mos-edit-classroom-ref-search-wrap">
+    <input type="search" class="input input-sm clo-multiselect-search mos-edit-classroom-ref-search"
+      placeholder="搜教室号或软件名"
+      autocomplete="off"
+      aria-label="搜教室号或软件名"
+      onclick="event.stopPropagation()"
+      onkeydown="event.stopPropagation()"
+      oninput="filterClassroomRefDropdownOptions(this)">
+  </div>`;
+}
+
+function buildClassroomRefOptionHtml(room, options = {}) {
+  const {
+    checked = false,
+    disabled = false,
+    checkClass = 'mos-edit-classroom-ref-check',
+    onchange = 'onMajorOfferingClassroomRefToggle(this)'
+  } = options;
+  const meta = formatClassroomListOptionMeta(room);
+  const titleAttr = meta ? ` title="${escapeHtml(meta)}"` : '';
+  return `<label class="clo-multiselect-option mos-edit-classroom-ref-option"
+    data-classroom="${escapeHtml(room.classroom)}"${titleAttr}>
+    <input type="checkbox" class="${checkClass}" value="${escapeHtml(room.classroom)}"
+      ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}
+      onchange="${onchange}">
+    <span class="mos-edit-classroom-ref-option-text">
+      <span class="mos-edit-classroom-ref-option-main">${escapeHtml(formatClassroomListOptionLabel(room))}</span>
+    </span>
+  </label>`;
+}
+
+function buildClassroomRefOptionsHtml(rooms, options = {}) {
+  const list = rooms || [];
+  if (!list.length) {
+    return `<div class="clo-multiselect-empty">暂无该属性教室</div>`;
+  }
+  const selectedSet = options.selectedSet instanceof Set ? options.selectedSet : new Set(options.selectedSet || []);
+  return list.map(r => buildClassroomRefOptionHtml(r, {
+    checked: selectedSet.has(r.classroom),
+    disabled: !!options.disabled,
+    checkClass: options.checkClass || 'mos-edit-classroom-ref-check',
+    onchange: options.onchange || 'onMajorOfferingClassroomRefToggle(this)'
+  })).join('');
+}
+
+function buildClassroomRefDropdownInnerHtml(rooms, options = {}) {
+  return `${buildClassroomRefDropdownSearchHtml()}
+    <div class="clo-multiselect-options mos-edit-classroom-ref-options">${buildClassroomRefOptionsHtml(rooms, options)}</div>
+    <div class="clo-multiselect-empty clo-multiselect-filter-empty mos-edit-classroom-ref-filter-empty" hidden>无匹配教室</div>`;
+}
+
+function filterClassroomRefDropdownOptions(input) {
+  const dd = input?.closest?.('.clo-multiselect-dropdown');
+  if (!dd) return;
+  const q = String(input.value || '').trim();
+  const options = [...dd.querySelectorAll('.mos-edit-classroom-ref-option')];
+  const filterEmpty = dd.querySelector('.clo-multiselect-filter-empty');
+  let visible = 0;
+  options.forEach(opt => {
+    const code = opt.dataset.classroom || '';
+    const room = (typeof CLASSROOM_LIST_POOL !== 'undefined' ? CLASSROOM_LIST_POOL : [])
+      .find(c => c.classroom === code);
+    const match = !q || (room && classroomRefSearchMatchesRoom(room, q));
+    opt.hidden = !match;
+    if (match) visible += 1;
+  });
+  if (filterEmpty) filterEmpty.hidden = visible > 0 || !q;
+}
+
+function resetClassroomRefDropdownSearch(dd) {
+  const search = dd?.querySelector?.('.mos-edit-classroom-ref-search');
+  if (!search) return;
+  search.value = '';
+  filterClassroomRefDropdownOptions(search);
+}
+
+function focusClassroomRefDropdownSearch(dd) {
+  resetClassroomRefDropdownSearch(dd);
+  const search = dd?.querySelector?.('.mos-edit-classroom-ref-search');
+  if (!search) return;
+  setTimeout(() => search.focus(), 0);
 }
 
 function normalizeClassroomAttribute(value) {
@@ -7498,28 +7617,18 @@ function buildReferenceClassroomMultiselectHtml(attribute, selectedList, hourTyp
   const selectedSet = new Set(selected);
   const displayText = formatReferenceClassroomPreferenceDisplay(selected, attr);
   const isPlaceholder = !selected.length;
-  const options = rooms.length
-    ? rooms.map(r => {
-      const meta = formatClassroomListOptionMeta(r);
-      return `<label class="clo-multiselect-option mos-edit-classroom-ref-option">
-      <input type="checkbox" class="mos-edit-classroom-ref-check" value="${escapeHtml(r.classroom)}"
-        ${selectedSet.has(r.classroom) ? 'checked' : ''} ${locked ? 'disabled' : ''}
-        onchange="onMajorOfferingClassroomRefToggle(this)">
-      <span class="mos-edit-classroom-ref-option-text">
-        <span class="mos-edit-classroom-ref-option-main">${escapeHtml(formatClassroomListOptionLabel(r))}</span>
-        ${meta ? `<span class="mos-edit-classroom-ref-option-meta">${escapeHtml(meta)}</span>` : ''}
-      </span>
-    </label>`;
-    }).join('')
-    : `<div class="clo-multiselect-empty">暂无该属性教室</div>`;
+  const optionsInner = buildClassroomRefDropdownInnerHtml(rooms, {
+    selectedSet,
+    disabled: locked
+  });
   return `<div class="clo-multiselect mos-edit-classroom-ref-multiselect" data-hour-type="${escapeHtml(hourType)}">
     <button type="button" class="clo-multiselect-trigger input input-sm" ${locked ? 'disabled' : ''}
-      onclick="toggleMajorOfferingClassroomRefDropdown(event, '${escapeHtml(hourType)}')" title="参考教室（可多选，非必填偏好；选项含设备与软件）">
+      onclick="toggleMajorOfferingClassroomRefDropdown(event, '${escapeHtml(hourType)}')" title="参考教室（可多选，非必填偏好；下拉内可搜教室号或软件名）">
       <span class="clo-multiselect-display${isPlaceholder ? ' placeholder' : ''}">${escapeHtml(displayText)}</span>
       <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
     </button>
     <div class="clo-multiselect-dropdown mos-edit-classroom-ref-dropdown" hidden>
-      <div class="clo-multiselect-options">${options}</div>
+      ${optionsInner}
     </div>
   </div>`;
 }
@@ -8387,6 +8496,7 @@ function toggleMajorOfferingClassroomRefDropdown(event, hourType) {
   const willOpen = dd.hidden;
   closeAllMajorOfferingClassroomRefDropdowns(willOpen ? hourType : null, wrap || document);
   dd.hidden = !willOpen;
+  if (willOpen) focusClassroomRefDropdownSearch(dd);
 }
 
 function onMajorOfferingClassroomRefToggle(input) {
@@ -9461,7 +9571,7 @@ function closeSpecialCourseSettingsEdit() {
   if (histSel) {
     histSel.disabled = true;
     histSel.value = 'N';
-    histSel.title = '由下方默认 Support 学院自动带出：有勾选为 Y，未勾选为 N';
+    histSel.title = '由下方默认 Support 专业自动带出：有勾选为 Y，未勾选为 N';
   }
 }
 
@@ -10372,6 +10482,7 @@ function applyMajorOfferingStudentRosterStoreSnapshot(rosterStore, { replace = f
 }
 
 function hydrateMajorOfferingStudentRosterStoreFromStorage() {
+  if (prototypeRuntimeMockLoaded) return;
   try {
     const raw = localStorage.getItem(MAJOR_OFFERING_ROSTER_STORE_KEY);
     if (!raw) return false;
@@ -19181,19 +19292,133 @@ function sharedTeachingSlotLinkRowKey(sectionId, assignmentId) {
   return `${sectionId}::${assignmentId}`;
 }
 
-function toggleSharedTeachingSlotLinkRowSelect(sectionId, assignmentId, checked) {
-  const key = sharedTeachingSlotLinkRowKey(sectionId, assignmentId);
-  if (checked) sharedTeachingSlotLinkSelectedKeys.add(key);
-  else sharedTeachingSlotLinkSelectedKeys.delete(key);
+function getSharedTeachingSlotLinkSelectionAnchor() {
+  const items = [...sharedTeachingSlotLinkSelectedKeys].map(key => {
+    const [sectionId, assignmentId] = key.split('::');
+    return { sectionId, assignmentId };
+  });
+  if (!items.length) return null;
+  let week = '';
+  let weekly = NaN;
+  for (const it of items) {
+    const sec = findOfferingSectionByIdAnywhere(it.sectionId);
+    if (!sec) continue;
+    ensureGroupAssignmentStableIds(sec);
+    const row = (sec.groupAssignments || []).find(a => a.id === it.assignmentId);
+    if (!row) continue;
+    week = normalizeSharedTeachingSlotLinkWeekRange(row.weekRange, sec);
+    weekly = normalizeSharedTeachingSlotLinkWeeklyHours(row.weeklyHours);
+    break;
+  }
+  if (!week && !Number.isFinite(weekly)) return null;
+  return { week, weekly };
+}
+
+function getSharedTeachingSlotLinkRowSelectState(sec, row, termCode) {
+  if (!sec || !row?.id) {
+    return { selectable: false, reason: '安排无效' };
+  }
+  const linked = findSharedTeachingSlotLinkByAssignment(sec.id, row.id, termCode);
+  if (linked) {
+    return { selectable: false, reason: '已属于联动组，请先解除后再选' };
+  }
+  const week = normalizeSharedTeachingSlotLinkWeekRange(row.weekRange, sec);
+  const weekly = normalizeSharedTeachingSlotLinkWeeklyHours(row.weeklyHours);
+  if (!week) {
+    return { selectable: false, reason: '未设置周次，无法联动' };
+  }
+  if (!Number.isFinite(weekly)) {
+    return { selectable: false, reason: '未设置周学时，无法联动' };
+  }
+  const key = sharedTeachingSlotLinkRowKey(sec.id, row.id);
+  if (sharedTeachingSlotLinkSelectedKeys.has(key)) {
+    return { selectable: true, reason: '' };
+  }
+  const anchor = getSharedTeachingSlotLinkSelectionAnchor();
+  if (!anchor) return { selectable: true, reason: '' };
+  if (week !== anchor.week) {
+    return { selectable: false, reason: `周次须与已选一致（${anchor.week || '—'}）` };
+  }
+  if (weekly !== anchor.weekly) {
+    return { selectable: false, reason: `周学时须与已选一致（${anchor.weekly}）` };
+  }
+  return { selectable: true, reason: '' };
+}
+
+function sharedTeachingSlotLinkSelectionItemsFromKeys() {
+  return [...sharedTeachingSlotLinkSelectedKeys].map(key => {
+    const [sectionId, assignmentId] = key.split('::');
+    return { sectionId, assignmentId };
+  });
+}
+
+function syncSharedTeachingSlotLinkSelectionUi() {
   const hint = document.getElementById('shared-teaching-slot-link-selection-hint');
   const btn = document.getElementById('btn-shared-teaching-slot-link-create');
+  const n = sharedTeachingSlotLinkSelectedKeys.size;
+  const anchor = getSharedTeachingSlotLinkSelectionAnchor();
   if (hint) {
-    const n = sharedTeachingSlotLinkSelectedKeys.size;
-    hint.textContent = n
-      ? `已选 ${n} 条安排（须周次、周学时一致）`
-      : '请勾选至少 2 条安排行';
+    if (!n) {
+      hint.textContent = '请勾选至少 2 条安排行（须周次、周学时一致）';
+    } else if (n === 1 && anchor) {
+      hint.textContent = `已选 1 条（周次 ${anchor.week || '—'} · 周学时 ${anchor.weekly}）；请再选相同周次与周学时的安排`;
+    } else if (anchor) {
+      hint.textContent = `已选 ${n} 条（周次 ${anchor.week || '—'} · 周学时 ${anchor.weekly}）`;
+    } else {
+      hint.textContent = `已选 ${n} 条安排（须周次、周学时一致）`;
+    }
   }
-  if (btn) btn.disabled = sharedTeachingSlotLinkSelectedKeys.size < 2;
+  if (btn) {
+    const check = validateSharedTeachingSlotLinkItems(sharedTeachingSlotLinkSelectionItemsFromKeys());
+    btn.disabled = !check.ok;
+  }
+}
+
+function refreshSharedTeachingSlotLinkCheckboxStates() {
+  const termCode = sharedTeachingSlotLinkContextTermCode;
+  const panes = document.getElementById('shared-teaching-slot-link-panes');
+  if (!panes) {
+    syncSharedTeachingSlotLinkSelectionUi();
+    return;
+  }
+  panes.querySelectorAll('tr[data-slot-link-key]').forEach(tr => {
+    const key = tr.dataset.slotLinkKey || '';
+    const [sectionId, assignmentId] = key.split('::');
+    const sec = findOfferingSectionByIdAnywhere(sectionId);
+    ensureGroupAssignmentStableIds(sec);
+    const row = (sec?.groupAssignments || []).find(a => a.id === assignmentId);
+    const cb = tr.querySelector('input[type="checkbox"]');
+    if (!sec || !row || !cb) return;
+    const state = getSharedTeachingSlotLinkRowSelectState(sec, row, termCode);
+    const isSelected = sharedTeachingSlotLinkSelectedKeys.has(key);
+    cb.disabled = !state.selectable && !isSelected;
+    cb.checked = isSelected;
+    tr.classList.toggle('is-slot-link-row-disabled', cb.disabled && !isSelected);
+    if (cb.disabled && !isSelected && state.reason) {
+      tr.title = state.reason;
+    } else {
+      tr.removeAttribute('title');
+    }
+  });
+  syncSharedTeachingSlotLinkSelectionUi();
+}
+
+function toggleSharedTeachingSlotLinkRowSelect(sectionId, assignmentId, checked) {
+  const sec = findOfferingSectionByIdAnywhere(sectionId);
+  ensureGroupAssignmentStableIds(sec);
+  const row = (sec?.groupAssignments || []).find(a => a.id === assignmentId);
+  const key = sharedTeachingSlotLinkRowKey(sectionId, assignmentId);
+  if (checked) {
+    const state = getSharedTeachingSlotLinkRowSelectState(sec, row, sharedTeachingSlotLinkContextTermCode);
+    if (!state.selectable) {
+      refreshSharedTeachingSlotLinkCheckboxStates();
+      return;
+    }
+    sharedTeachingSlotLinkSelectedKeys.add(key);
+  } else {
+    sharedTeachingSlotLinkSelectedKeys.delete(key);
+  }
+  refreshSharedTeachingSlotLinkCheckboxStates();
 }
 
 function createSharedTeachingSlotLinkFromSelection() {
@@ -19212,6 +19437,7 @@ function createSharedTeachingSlotLinkFromSelection() {
     && document.getElementById('page-offering-grouping')?.classList.contains('active')) {
     renderOfferingGroupingGroupStatusPanel();
   }
+  refreshSchedulingPlanPageIfActive();
 }
 
 function removeSharedTeachingSlotLinkFromModal(linkId) {
@@ -19227,6 +19453,7 @@ function removeSharedTeachingSlotLinkFromModal(linkId) {
         && document.getElementById('page-offering-grouping')?.classList.contains('active')) {
         renderOfferingGroupingGroupStatusPanel();
       }
+      refreshSchedulingPlanPageIfActive();
     }
   });
 }
@@ -19251,8 +19478,12 @@ function renderSharedTeachingSlotLinkModal() {
       ? rows.map(row => {
           const key = sharedTeachingSlotLinkRowKey(sec.id, row.id);
           const linked = findSharedTeachingSlotLinkByAssignment(sec.id, row.id, termCode);
-          const checked = sharedTeachingSlotLinkSelectedKeys.has(key) ? ' checked' : '';
-          const disabled = linked ? ' disabled' : '';
+          const isSelected = sharedTeachingSlotLinkSelectedKeys.has(key);
+          const selectState = getSharedTeachingSlotLinkRowSelectState(sec, row, termCode);
+          const disabled = !selectState.selectable && !isSelected;
+          const rowTitle = disabled && selectState.reason
+            ? ` title="${escapeHtml(selectState.reason)}"`
+            : '';
           const week = normalizeSharedTeachingSlotLinkWeekRange(row.weekRange, sec) || '—';
           const weekly = Number.isFinite(Number(row.weeklyHours)) ? row.weeklyHours : '—';
           const hourType = getGroupAssignHourTypeDisplayLabel(sec, row.hourType) || row.hourType || '—';
@@ -19267,8 +19498,8 @@ function renderSharedTeachingSlotLinkModal() {
           const classroomPref = typeof formatAssignClassroomPreferenceCellHtml === 'function'
             ? formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)
             : '—';
-          return `<tr>
-            <td class="col-check"><input type="checkbox" ${checked}${disabled}
+          return `<tr data-slot-link-key="${escapeHtml(key)}" class="${disabled ? 'is-slot-link-row-disabled' : ''}"${rowTitle}>
+            <td class="col-check"><input type="checkbox"${isSelected ? ' checked' : ''}${disabled ? ' disabled' : ''}
               onchange="toggleSharedTeachingSlotLinkRowSelect('${escapeHtml(sec.id)}','${escapeHtml(row.id)}',this.checked)"></td>
             <td>${groups}</td>
             <td class="col-center">${escapeHtml(hourType)}</td>
@@ -19331,15 +19562,7 @@ function renderSharedTeachingSlotLinkModal() {
         </div>`;
       }).join('')
     : '<p class="text-muted" style="margin:0;padding:8px 0">尚未建立联动组。勾选各班周次与周学时一致的安排行后点击「建立联动」。</p>';
-  const n = sharedTeachingSlotLinkSelectedKeys.size;
-  const selHint = document.getElementById('shared-teaching-slot-link-selection-hint');
-  const btn = document.getElementById('btn-shared-teaching-slot-link-create');
-  if (selHint) {
-    selHint.textContent = n
-      ? `已选 ${n} 条安排（须周次、周学时一致）`
-      : '请勾选至少 2 条安排行';
-  }
-  if (btn) btn.disabled = n < 2;
+  refreshSharedTeachingSlotLinkCheckboxStates();
   bindCellFloatTips(panes, '.cell-ellipsis-tip[data-tip]', { alwaysShow: true });
   bindCellFloatTips(listEl, '.cell-ellipsis-tip[data-tip]', { alwaysShow: true });
 }
@@ -19373,16 +19596,15 @@ function resolveTeacherConfirmationHoursCombinedWithSlotLink(staffId, sec) {
   for (const row of rows) {
     const link = findSharedTeachingSlotLinkByAssignment(sec.id, row.id, sec.termCode);
     if (!link) continue;
-    const n = getSharedTeachingSlotLinkDisplayIndex(link, sec.termCode);
-    const peers = (link.items || [])
+    const peers = [...new Set((link.items || [])
       .filter(it => !(it.sectionId === sec.id && it.assignmentId === row.id))
       .map(it => {
         const s = findOfferingSectionByIdAnywhere(it.sectionId);
-        return s ? formatSharedTeachingSectionPeerLabel(s) : '';
+        return s ? String(s.code || '').trim() : '';
       })
-      .filter(Boolean);
+      .filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en'));
     if (!peers.length) continue;
-    return n ? `联动#${n} ${peers.join(' / ')}` : peers.join(' / ');
+    return peers.length === 1 ? peers[0] : peers.join(' / ');
   }
   return '';
 }
@@ -19433,6 +19655,16 @@ function rowSharesTeacherWithSeed(row, seedRow) {
   return getSharedTeachingCommonTeachers([seedRow, row]).length > 0;
 }
 
+function isSectionLockedForSharedTeachingSetupAdd(sec) {
+  if (!sec) return false;
+  if (typeof isOfferingTaskCancelled === 'function' && isOfferingTaskCancelled(sec)) return true;
+  const arrangementSubmitted = typeof isMajorOfferingTaskArrangementSubmitted === 'function'
+    && isMajorOfferingTaskArrangementSubmitted(sec);
+  const teacherConfirmed = typeof isSectionTeacherConfirmationComplete === 'function'
+    && isSectionTeacherConfirmationComplete(sec);
+  return arrangementSubmitted && teacherConfirmed;
+}
+
 function getFilteredSharedTeachingSetupModalRows() {
   const seedId = String(sharedTeachingSetupSeedSectionId || '').trim();
   const seedRow = seedId ? getSharedTeachingSetupSeedRow() : null;
@@ -19440,6 +19672,8 @@ function getFilteredSharedTeachingSetupModalRows() {
   return getSharedTeachingSetupManifestRows().filter(row => {
     // 本课在「课程信息」展示，不出现在右侧添加列表
     if (seedId && row.sectionId === seedId) return false;
+    const sec = getOfferingManifestSectionByRow(row);
+    if (isSectionLockedForSharedTeachingSetupAdd(sec)) return false;
     // 有课程信息时，只列出与本课至少有一名相同任课教师的课程
     if (seedRow && !rowSharesTeacherWithSeed(row, seedRow)) return false;
     // 已与本课同组共同授课的不重复出现在右侧（左侧「已设置」可见）
@@ -19530,6 +19764,11 @@ function addSharedTeachingSetupRow(sectionId) {
     alert('未找到课程记录。');
     return;
   }
+  const peerSec = getOfferingManifestSectionByRow(peer);
+  if (isSectionLockedForSharedTeachingSetupAdd(peerSec)) {
+    alert('该课程安排已生效且授课确认已完成，无法添加共同授课。');
+    return;
+  }
   const teacherCheck = validateSharedTeachingSetupTeacherRule([seed, peer]);
   if (!teacherCheck.ok) {
     alert(teacherCheck.message);
@@ -19607,7 +19846,7 @@ function parseSharedTeachingSetupProgrammeBatches(row) {
 }
 
 function formatSharedTeachingSetupProgrammeBatchHtml(row) {
-  return formatTccStackedCell(parseSharedTeachingSetupProgrammeBatches(row));
+  return formatTccStackedCell(parseSharedTeachingSetupProgrammeBatches(row), { maxVisible: 3 });
 }
 
 function formatSharedTeachingSetupStackedLines(items = []) {
@@ -19853,6 +20092,14 @@ function renderSharedTeachingSetupModalTable() {
   renderListPagination('shared-teaching-setup-pagination', sk, paged.total);
 }
 
+function formatSharedTeachingSetupTermHintHtml(termCode, seedSectionId) {
+  const term = escapeHtml(formatCourseTermDisplay(termCode));
+  const desc = seedSectionId
+    ? '请在右侧点击「添加」选择与本课有相同任课教师的其他课程；添加后系统自动打上共同授课标记。'
+    : '请从开课安排入口进入以添加共同授课课程。';
+  return `<span class="shared-teaching-setup-term-emphasis" title="当前开课学期">开课学期 <strong class="shared-teaching-setup-term-value">${term}</strong></span><span class="shared-teaching-setup-term-desc">${escapeHtml(desc)}</span>`;
+}
+
 function openSharedTeachingSetupModal(opts = {}) {
   const seedSectionId = String(opts.sectionId || '').trim();
   const seedSec = seedSectionId
@@ -19892,9 +20139,7 @@ function openSharedTeachingSetupModal(opts = {}) {
   // if (codeInput) { codeInput.value = ''; codeInput.dataset.userEdited = ''; }
   const termHint = document.getElementById('shared-teaching-setup-term-hint');
   if (termHint) {
-    termHint.textContent = seedSectionId
-      ? `开课学期 ${formatCourseTermDisplay(termCode)} · 请在右侧点击「添加」选择与本课有相同任课教师的其他课程；添加后系统自动打上共同授课标记。`
-      : `开课学期 ${formatCourseTermDisplay(termCode)} · 请从开课安排入口进入以添加共同授课课程。`;
+    termHint.innerHTML = formatSharedTeachingSetupTermHintHtml(termCode, seedSectionId);
   }
   // const teacherHint = document.getElementById('shared-teaching-setup-teacher-hint');
   // if (teacherHint) teacherHint.textContent = '';
@@ -20331,6 +20576,419 @@ function renderOfferingManifestTaskSubmitStatus(row) {
   if (key === 'submitted') return '<span class="offering-status-pill is-on">已生效</span>';
   if (key === 'reverted') return '<span class="offering-status-pill is-warn">回退</span>';
   return '<span class="offering-status-pill is-off">草稿</span>';
+}
+
+let schedulingPlanAppliedFilters = {
+  termCode: '',
+  offeringType: '',
+  codeQ: '',
+  nameQ: ''
+};
+
+function isSectionEligibleForSchedulingPlan(sec) {
+  if (!sec || (typeof isOfferingTaskCancelled === 'function' && isOfferingTaskCancelled(sec))) return false;
+  if (typeof isMajorOfferingTaskArrangementSubmitted === 'function'
+    && !isMajorOfferingTaskArrangementSubmitted(sec)) return false;
+  if (typeof isSectionTeacherConfirmationComplete === 'function'
+    && !isSectionTeacherConfirmationComplete(sec)) return false;
+  return true;
+}
+
+function getSharedTeachingCohortSectionsIncludingSelf(sec) {
+  if (!sec) return [];
+  const mark = (sec.sharedTeachingCode || '').trim();
+  if (!mark) return [sec];
+  return [sec, ...(typeof getSectionSharedTeachingPeerSections === 'function'
+    ? getSectionSharedTeachingPeerSections(sec)
+    : [])];
+}
+
+function isSharedTeachingCohortReadyForSchedulingPlan(sec, termCode) {
+  const mark = (sec?.sharedTeachingCode || '').trim();
+  if (!mark) return true;
+  const cohort = getSharedTeachingCohortSectionsIncludingSelf(sec);
+  if (!cohort.length) return false;
+  const effectiveTerm = termCode || sec.termCode || '';
+  if (!cohort.every(s => isSectionEligibleForSchedulingPlan(s))) return false;
+  const allHaveAssignments = cohort.every(s => {
+    if (typeof ensureGroupAssignmentStableIds === 'function') ensureGroupAssignmentStableIds(s);
+    if (typeof sanitizeSectionGroupAssignments === 'function') sanitizeSectionGroupAssignments(s);
+    return getOfferingGroupStatusAssignRows(s, '__course__').some(row =>
+      !(typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(row))
+    );
+  });
+  if (!allHaveAssignments) return false;
+  const links = typeof getSharedTeachingSlotLinksForMark === 'function'
+    ? getSharedTeachingSlotLinksForMark(mark, effectiveTerm)
+    : [];
+  return links.every(link => isSchedulingPlanSlotLinkFullyEligible(link, effectiveTerm));
+}
+
+function isSchedulingPlanSectionCollectible(sec, termCode, cohortReadyCache) {
+  if (!isSectionEligibleForSchedulingPlan(sec)) return false;
+  const mark = (sec.sharedTeachingCode || '').trim();
+  if (!mark) return true;
+  const cacheKey = `${termCode || sec.termCode || ''}::${mark}`;
+  if (!cohortReadyCache.has(cacheKey)) {
+    cohortReadyCache.set(cacheKey, isSharedTeachingCohortReadyForSchedulingPlan(sec, termCode));
+  }
+  return cohortReadyCache.get(cacheKey);
+}
+
+function isSchedulingPlanSlotLinkFullyEligible(link, termCode) {
+  if (!link?.linkId || !(link.items || []).length) return false;
+  return (link.items || []).every(it => {
+    const sec = findOfferingSectionByIdAnywhere(it.sectionId);
+    if (!isSectionEligibleForSchedulingPlan(sec)) return false;
+    if (typeof ensureGroupAssignmentStableIds === 'function') ensureGroupAssignmentStableIds(sec);
+    if (typeof sanitizeSectionGroupAssignments === 'function') sanitizeSectionGroupAssignments(sec);
+    const row = (sec?.groupAssignments || []).find(a => a.id === it.assignmentId);
+    if (!row || (typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(row))) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function buildSchedulingPlanItemFromAssignRow(sec, row, termCode) {
+  const link = findSharedTeachingSlotLinkByAssignment(sec.id, row.id, termCode);
+  const week = normalizeSharedTeachingSlotLinkWeekRange(row.weekRange, sec)
+    || (typeof clampGroupAssignWeekRangeToSection === 'function'
+      ? clampGroupAssignWeekRangeToSection(sec, row.weekRange)
+      : row.weekRange)
+    || '—';
+  const groupLabels = typeof getGroupAssignRowGroupLabels === 'function'
+    ? getGroupAssignRowGroupLabels(row, sec)
+    : (row.groupName ? [String(row.groupName)] : []);
+  const groups = groupLabels.length ? groupLabels.join('\n') : '—';
+  return {
+    termCode: termCode || sec.termCode || '',
+    termDisplay: sec.termDisplay || formatCourseTermDisplay(termCode || sec.termCode),
+    offeringModule: resolveOfferingManifestTypeLabel(sec),
+    offeringType: sec.offeringType || '',
+    electiveKind: sec.offeringType === 'ge'
+      ? ((typeof isMeOfferingGeSection === 'function' && isMeOfferingGeSection(sec)) ? 'me' : 'ge')
+      : '',
+    code: sec.code || '—',
+    className: getOfferingClassDisplayName(sec) || sec.name || '—',
+    groups,
+    groupLabels,
+    hourType: getGroupAssignHourTypeDisplayLabel(sec, row.hourType) || row.hourType || '—',
+    weekRange: week,
+    weeklyHours: formatGroupAssignWeeklyHoursDisplay(row),
+    totalHours: formatGroupAssignRowTotalHoursDisplay(row, sec),
+    teachers: formatGroupAssignTeacherNamesDisplay(row),
+    simultaneous: row.simultaneousGroups ? '是' : '否',
+    classroomAttribute: formatAssignClassroomAttributeDisplay(row.classroomAttribute),
+    classroomPreferences: formatAssignClassroomPreferenceDisplay(row.classroomPreferences, row.classroomAttribute),
+    sectionId: sec.id,
+    assignmentId: row.id,
+    linkId: link?.linkId || ''
+  };
+}
+
+function formatSchedulingPlanStackedCell(values) {
+  const list = (Array.isArray(values) ? values : [values])
+    .map(v => String(v == null ? '' : v).trim())
+    .filter(v => v && v !== '—');
+  if (!list.length) return '<span class="text-muted">—</span>';
+  if (list.length === 1) return escapeHtml(list[0]);
+  return `<div class="scheduling-plan-stacked">${list.map(v =>
+    `<div class="scheduling-plan-stacked-line">${escapeHtml(v)}</div>`
+  ).join('')}</div>`;
+}
+
+function buildSchedulingPlanLinkGroupDisplay(linkId) {
+  if (!linkId) {
+    return { linkGroup: '—', linkGroupHtml: '<span class="text-muted">—</span>' };
+  }
+  return {
+    linkGroup: '联动',
+    linkGroupHtml: '<span class="scheduling-plan-link-badge">联动</span>'
+  };
+}
+
+function annotateSchedulingPlanLinkGroupRowspans(rows) {
+  const list = (rows || []).map(row => ({ ...row, linkGroupRowspan: 1, linkGroupSkip: false }));
+  let i = 0;
+  while (i < list.length) {
+    const row = list[i];
+    if (row.kind !== 'linked' || !row.linkId) {
+      i += 1;
+      continue;
+    }
+    let j = i + 1;
+    while (j < list.length && list[j].kind === 'linked' && list[j].linkId === row.linkId) {
+      j += 1;
+    }
+    const span = j - i;
+    list[i].linkGroupRowspan = span;
+    for (let k = i + 1; k < j; k++) list[k].linkGroupSkip = true;
+    i = j;
+  }
+  return list;
+}
+
+function renderSchedulingPlanLinkGroupCell(row) {
+  if (row.linkGroupSkip) return '';
+  const spanAttr = row.linkGroupRowspan > 1 ? ` rowspan="${row.linkGroupRowspan}"` : '';
+  const isLinked = row.kind === 'linked' && row.linkId;
+  const cellCls = isLinked
+    ? 'col-center col-link-group scheduling-plan-link-group-cell is-linked'
+    : 'col-center col-link-group';
+  return `<td class="${cellCls}"${spanAttr}>${row.linkGroupHtml}</td>`;
+}
+
+function buildSchedulingPlanDisplayRowsFromGroup(group) {
+  const items = group?.items || [];
+  if (!items.length) return [];
+  const esc = (v) => escapeHtml(String(v == null || v === '' ? '—' : v));
+  const linkDisplay = buildSchedulingPlanLinkGroupDisplay(group.kind === 'linked' ? (group.linkId || '') : '');
+  const mapItem = (item, kind) => ({
+    kind,
+    linkId: group.linkId || '',
+    termCode: item.termCode || '',
+    offeringType: item.offeringType || '',
+    electiveKind: item.electiveKind || '',
+    termDisplay: item.termDisplay,
+    offeringModule: item.offeringModule,
+    code: item.code,
+    className: item.className,
+    groups: item.groups,
+    linkGroup: linkDisplay.linkGroup,
+    hourType: item.hourType,
+    weekRange: item.weekRange,
+    weeklyHours: item.weeklyHours,
+    totalHours: item.totalHours,
+    teachers: item.teachers,
+    simultaneous: item.simultaneous,
+    classroomAttribute: item.classroomAttribute,
+    classroomPreferences: item.classroomPreferences,
+    termDisplayHtml: esc(item.termDisplay),
+    offeringModuleHtml: esc(item.offeringModule),
+    codeHtml: esc(item.code),
+    classNameHtml: esc(item.className),
+    groupsHtml: formatSchedulingPlanStackedCell(item.groupLabels || []),
+    linkGroupHtml: linkDisplay.linkGroupHtml,
+    hourTypeHtml: esc(item.hourType),
+    weekRangeHtml: `<code>${esc(item.weekRange)}</code>`,
+    weeklyHoursHtml: esc(item.weeklyHours),
+    totalHoursHtml: esc(item.totalHours),
+    teachersHtml: esc(item.teachers),
+    simultaneousHtml: esc(item.simultaneous),
+    classroomAttributeHtml: esc(item.classroomAttribute),
+    classroomPreferencesHtml: esc(item.classroomPreferences)
+  });
+  if (group.kind !== 'linked') return [mapItem(items[0], 'single')];
+  return items.map(item => mapItem(item, 'linked'));
+}
+
+function collectSchedulingPlanRows() {
+  const processedLinkIds = new Set();
+  const cohortReadyCache = new Map();
+  const singles = [];
+  Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).forEach(store => {
+    const termCode = store?.termCode || '';
+    (store?.sections || []).forEach(sec => {
+      if (!isSchedulingPlanSectionCollectible(sec, termCode, cohortReadyCache)) return;
+      if (typeof ensureGroupAssignmentStableIds === 'function') ensureGroupAssignmentStableIds(sec);
+      if (typeof sanitizeSectionGroupAssignments === 'function') sanitizeSectionGroupAssignments(sec);
+      getOfferingGroupStatusAssignRows(sec, '__course__').forEach(row => {
+        if (typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(row)) return;
+        const link = findSharedTeachingSlotLinkByAssignment(sec.id, row.id, termCode);
+        if (link?.linkId) {
+          if (processedLinkIds.has(link.linkId)) return;
+          if (!isSchedulingPlanSlotLinkFullyEligible(link, termCode)) return;
+          processedLinkIds.add(link.linkId);
+          const items = (link.items || [])
+            .map(it => {
+              const peerSec = findOfferingSectionByIdAnywhere(it.sectionId);
+              if (!peerSec) return null;
+              if (typeof ensureGroupAssignmentStableIds === 'function') ensureGroupAssignmentStableIds(peerSec);
+              const peerRow = (peerSec.groupAssignments || []).find(a => a.id === it.assignmentId);
+              if (!peerRow || (typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(peerRow))) {
+                return null;
+              }
+              return buildSchedulingPlanItemFromAssignRow(peerSec, peerRow, termCode);
+            })
+            .filter(Boolean);
+          if (items.length !== (link.items || []).length) return;
+          items.sort((a, b) => String(a.code || '').localeCompare(String(b.code || ''), 'en')
+            || String(a.groups || '').localeCompare(String(b.groups || ''), 'zh-CN'));
+          singles.push({ kind: 'linked', linkId: link.linkId, items });
+          return;
+        }
+        singles.push({ kind: 'single', items: [buildSchedulingPlanItemFromAssignRow(sec, row, termCode)] });
+      });
+    });
+  });
+  return singles.flatMap(g => buildSchedulingPlanDisplayRowsFromGroup(g));
+}
+
+const SCHEDULING_PLAN_SORT_COLUMNS = {
+  termDisplay: { get: row => row.termCode || row.termDisplay || '' },
+  offeringModule: { get: row => row.offeringModule || '' },
+  code: { get: row => row.code || '' },
+  className: { get: row => row.className || '' },
+  groups: { get: row => row.groups || '' },
+  linkGroup: { get: row => row.linkGroup || '' },
+  hourType: { get: row => row.hourType || '' },
+  weekRange: { get: row => row.weekRange || '' },
+  weeklyHours: { get: row => String(row.weeklyHours || ''), type: 'number' },
+  totalHours: { get: row => String(row.totalHours || ''), type: 'number' },
+  teachers: { get: row => row.teachers || '' },
+  simultaneous: { get: row => row.simultaneous === '是' ? 1 : 0, type: 'number' },
+  classroomAttribute: { get: row => row.classroomAttribute || '' },
+  classroomPreferences: { get: row => row.classroomPreferences || '' }
+};
+
+function rebuildSchedulingPlanFilterOptions() {
+  const termSel = document.getElementById('scheduling-plan-filter-term');
+  if (!termSel) return;
+  const cur = termSel.value || '';
+  const termCodes = [...new Set(collectSchedulingPlanRows().map(r => r.termCode).filter(Boolean))].sort();
+  termSel.innerHTML = '<option value="">全部学期</option>' + termCodes.map(code => {
+    const label = formatCourseTermDisplay(code);
+    return `<option value="${escapeHtml(code)}">${escapeHtml(label)}</option>`;
+  }).join('');
+  if (cur && termCodes.includes(cur)) termSel.value = cur;
+}
+
+function getFilteredSchedulingPlanRows() {
+  const f = schedulingPlanAppliedFilters;
+  const codeQ = String(f.codeQ || '').trim().toLowerCase();
+  const nameQ = String(f.nameQ || '').trim().toLowerCase();
+  const allRows = collectSchedulingPlanRows();
+
+  const passesBaseFilters = (row) => {
+    if (f.termCode && row.termCode !== f.termCode) return false;
+    if (f.offeringType) {
+      if (f.offeringType === 'ge-ge') {
+        if (row.offeringType !== 'ge' || row.electiveKind === 'me') return false;
+      } else if (f.offeringType === 'ge-me') {
+        if (row.offeringType !== 'ge' || row.electiveKind !== 'me') return false;
+      } else if (f.offeringType === 'major' && row.offeringType !== 'major') return false;
+      else if (f.offeringType === 'other' && row.offeringType !== 'other') return false;
+    }
+    return true;
+  };
+
+  const linkIdsMatchingCode = new Set();
+  if (codeQ) {
+    const linkBuckets = new Map();
+    allRows.forEach(row => {
+      if (!row.linkId) return;
+      if (!linkBuckets.has(row.linkId)) linkBuckets.set(row.linkId, []);
+      linkBuckets.get(row.linkId).push(row);
+    });
+    linkBuckets.forEach((rows, linkId) => {
+      if (rows.some(r => String(r.code || '').toLowerCase().includes(codeQ))) {
+        linkIdsMatchingCode.add(linkId);
+      }
+    });
+  }
+
+  return allRows.filter(row => {
+    if (!passesBaseFilters(row)) return false;
+    if (codeQ) {
+      const codeMatch = String(row.code || '').toLowerCase().includes(codeQ);
+      const linkedPeerMatch = row.linkId && linkIdsMatchingCode.has(row.linkId);
+      if (!codeMatch && !linkedPeerMatch) return false;
+    }
+    if (nameQ && !String(row.className || '').toLowerCase().includes(nameQ)) return false;
+    return true;
+  });
+}
+
+function querySchedulingPlanList() {
+  schedulingPlanAppliedFilters = {
+    termCode: document.getElementById('scheduling-plan-filter-term')?.value || '',
+    offeringType: document.getElementById('scheduling-plan-filter-type')?.value || '',
+    codeQ: document.getElementById('scheduling-plan-filter-code')?.value || '',
+    nameQ: document.getElementById('scheduling-plan-filter-name')?.value || ''
+  };
+  resetListPage('schedulingPlan');
+  renderSchedulingPlanPage();
+}
+
+function resetSchedulingPlanFilters() {
+  schedulingPlanAppliedFilters = { termCode: '', offeringType: '', codeQ: '', nameQ: '' };
+  ['scheduling-plan-filter-term', 'scheduling-plan-filter-type', 'scheduling-plan-filter-code', 'scheduling-plan-filter-name']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  resetListPage('schedulingPlan');
+  renderSchedulingPlanPage();
+}
+
+function renderSchedulingPlanTableHeader() {
+  const head = document.getElementById('scheduling-plan-table-head');
+  if (!head) return;
+  const lk = 'schedulingPlan';
+  head.innerHTML = `
+    ${renderListSortTh(lk, '开课学期', 'termDisplay', { center: true, extraClass: 'col-term' })}
+    ${renderListSortTh(lk, '开课模块', 'offeringModule', { center: true, extraClass: 'col-module' })}
+    ${renderListSortTh(lk, '课号', 'code', { center: true, extraClass: 'col-code' })}
+    ${renderListSortTh(lk, '课程班名称', 'className', { extraClass: 'col-class-name' })}
+    ${renderListSortTh(lk, '课程组', 'groups', { extraClass: 'col-groups' })}
+    ${renderListSortTh(lk, '联动组', 'linkGroup', { center: true, extraClass: 'col-link-group' })}
+    ${renderListSortTh(lk, '学时类型', 'hourType', { center: true, extraClass: 'col-hour-type' })}
+    ${renderListSortTh(lk, '起止周', 'weekRange', { center: true, extraClass: 'col-week' })}
+    ${renderListSortTh(lk, '周学时', 'weeklyHours', { center: true, extraClass: 'col-weekly' })}
+    ${renderListSortTh(lk, '总学时', 'totalHours', { center: true, extraClass: 'col-total' })}
+    ${renderListSortTh(lk, '教师', 'teachers', { center: true, extraClass: 'col-teacher' })}
+    ${renderListSortTh(lk, '同时授课', 'simultaneous', { center: true, extraClass: 'col-simul' })}
+    ${renderListSortTh(lk, '场地类型', 'classroomAttribute', { center: true, extraClass: 'col-classroom-attr' })}
+    ${renderListSortTh(lk, '教室偏好', 'classroomPreferences', { center: true, extraClass: 'col-classroom-pref' })}
+  `;
+}
+
+function renderSchedulingPlanPage() {
+  const tbody = document.getElementById('scheduling-plan-body');
+  if (!tbody) return;
+  rebuildSchedulingPlanFilterOptions();
+  renderSchedulingPlanTableHeader();
+  const rows = sortListWithState(
+    getFilteredSchedulingPlanRows(),
+    'schedulingPlan',
+    SCHEDULING_PLAN_SORT_COLUMNS,
+    (a, b) => {
+      const linkCmp = String(a.linkId || '').localeCompare(String(b.linkId || ''), 'en');
+      if (linkCmp) return linkCmp;
+      return String(a.code || '').localeCompare(String(b.code || ''), 'en')
+        || String(a.groups || '').localeCompare(String(b.groups || ''), 'zh-CN');
+    }
+  );
+  const paged = paginateListItems(rows, 'schedulingPlan');
+  const pageRows = annotateSchedulingPlanLinkGroupRowspans(paged.items);
+  const colCount = 14;
+  tbody.innerHTML = pageRows.length
+    ? pageRows.map(row => `<tr>
+        <td class="col-center col-term">${row.termDisplayHtml}</td>
+        <td class="col-center col-module">${row.offeringModuleHtml}</td>
+        <td class="col-center col-code">${row.codeHtml}</td>
+        <td class="col-class-name">${row.classNameHtml}</td>
+        <td class="col-groups">${row.groupsHtml}</td>
+        ${renderSchedulingPlanLinkGroupCell(row)}
+        <td class="col-center col-hour-type">${row.hourTypeHtml}</td>
+        <td class="col-center col-week">${row.weekRangeHtml}</td>
+        <td class="col-center col-weekly">${row.weeklyHoursHtml}</td>
+        <td class="col-center col-total">${row.totalHoursHtml}</td>
+        <td class="col-center col-teacher">${row.teachersHtml}</td>
+        <td class="col-center col-simul">${row.simultaneousHtml}</td>
+        <td class="col-center col-classroom-attr">${row.classroomAttributeHtml}</td>
+        <td class="col-center col-classroom-pref">${row.classroomPreferencesHtml}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">暂无符合条件的排课计划数据（须授课确认完成且安排已生效）</td></tr>`;
+  renderListPagination('scheduling-plan-pagination', 'schedulingPlan', paged.total);
+  bindCellFloatTips(tbody, '.cell-ellipsis-tip[data-tip]', { alwaysShow: true });
+}
+
+function refreshSchedulingPlanPageIfActive() {
+  if (document.getElementById('page-course-scheduling-plan')?.classList.contains('active')) {
+    renderSchedulingPlanPage();
+  }
 }
 
 function collectCancellableOfferingManifestTasks(rows) {
@@ -21565,7 +22223,7 @@ function isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sectionId) {
     === getTeacherCourseConfirmationArrangementFingerprintFromSnapshot(st.snapshotHash);
 }
 
-/** 授课确认「安排是否变更」指纹：不含共同授课、协调人等展示字段 */
+/** 授课确认「安排是否变更」指纹：不含共同授课展示字段（Combined with / combinedClass 标记等） */
 function getTeacherCourseConfirmationArrangementFingerprint(row) {
   if (!row) return '';
   return JSON.stringify({
@@ -21577,10 +22235,8 @@ function getTeacherCourseConfirmationArrangementFingerprint(row) {
     teachingWeeks: row.teachingWeeks,
     weekRange: row.weekRange,
     teachingMethod: row.teachingMethod,
-    combinedClass: row.combinedClass,
     groupCount: row.groupCount,
     combinedGroupsCount: row.combinedGroupsCount,
-    hoursCombinedWithCode: row.hoursCombinedWithCode || '',
     totalStudentNo: row.totalStudentNo,
     weeklyHours: row.weeklyHours,
     totalTeachingHours: row.totalTeachingHours
@@ -21906,11 +22562,12 @@ function resolveTeacherConfirmationHoursCombinedWithCode(staffId, termCode, sec)
     : '';
   if (slotCombined) return slotCombined;
 
-  // 先取对端课号（与原先可展示 Combined with 的数据源一致）
-  const peerLabels = typeof getSectionSharedTeachingPeerSections === 'function'
-    ? getSectionSharedTeachingPeerSections(sec).map(formatSharedTeachingSectionPeerLabel).filter(Boolean)
-    : (typeof getSectionSharedTeachingPeerCourseCodes === 'function'
-      ? getSectionSharedTeachingPeerCourseCodes(sec)
+  // 先取对端课号（Combined with 仅展示课号，不含联动序号与专业批次）
+  const peerLabels = typeof getSectionSharedTeachingPeerCourseCodes === 'function'
+    ? getSectionSharedTeachingPeerCourseCodes(sec)
+    : (typeof getSectionSharedTeachingPeerSections === 'function'
+      ? [...new Set(getSectionSharedTeachingPeerSections(sec).map(s => String(s.code || '').trim()).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b, 'en'))
       : []);
   if (!peerLabels.length) return '';
 
@@ -21942,7 +22599,7 @@ function resolveTeacherConfirmationHoursCombinedWithCode(staffId, termCode, sec)
     if ((s.sharedTeachingCode || '').trim() !== mark) return;
     if (term && String(s.termCode || '').trim() && String(s.termCode || '').trim() !== term) return;
     if (!teacherBelongsToSharedTeachingSection(s, staffKey, teacherName)) return;
-    const label = formatSharedTeachingSectionPeerLabel(s);
+    const label = String(s.code || '').trim();
     if (!label || seen.has(label)) return;
     seen.add(label);
     matched.push(label);
@@ -22106,15 +22763,19 @@ function resolveTeacherConfirmationTeachingMethod(staffId, sec) {
   return methods.length ? methods.join(' & ') : '—';
 }
 
-function formatTccStackedCell(lines) {
+function formatTccStackedCell(lines, options = {}) {
+  const maxVisible = Number.isFinite(options.maxVisible) ? options.maxVisible : null;
   const list = (Array.isArray(lines) ? lines : [lines])
     .map(v => String(v == null ? '' : v).trim())
     .filter(v => v && v !== '—');
   if (!list.length) return '—';
   if (list.length === 1) return escapeHtml(list[0]);
-  return `<div class="tcc-stacked-lines">${list.map(line =>
+  const truncated = maxVisible != null && list.length > maxVisible;
+  const visibleList = truncated ? list.slice(0, maxVisible) : list;
+  const containerTitle = truncated ? ` title="${escapeHtml(list.join('\n'))}"` : '';
+  return `<div class="tcc-stacked-lines${truncated ? ' is-truncated' : ''}"${containerTitle}>${visibleList.map(line =>
     `<div class="tcc-stacked-line" title="${escapeHtml(line)}">${escapeHtml(line)}</div>`
-  ).join('')}</div>`;
+  ).join('')}${truncated ? '<div class="tcc-stacked-line tcc-stacked-line-ellipsis" aria-hidden="true">…</div>' : ''}</div>`;
 }
 
 function buildTeacherCourseConfirmationRows(teacherId, termCode) {
@@ -22196,8 +22857,17 @@ function syncTeacherCourseConfirmationPackageRows(teacherId, termCode) {
     }
     const st = states[sid];
     if (!st) return;
+    const live = rows.find(r => r.sectionId === sid);
     if ((st.status === 'confirmed' || st.status === 'admin-proxy')
       && !isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sid)) {
+      if (live) {
+        const liveFp = getTeacherCourseConfirmationArrangementFingerprint(live);
+        const snapFp = getTeacherCourseConfirmationArrangementFingerprintFromSnapshot(st.snapshotHash);
+        if (liveFp && liveFp === snapFp) {
+          st.snapshotHash = computeTeacherCourseConfirmationSnapshotHash([live]);
+          return;
+        }
+      }
       st.status = 'pending';
       st.confirmedBy = null;
       st.confirmedAt = null;
@@ -22210,6 +22880,13 @@ function syncTeacherCourseConfirmationPackageRows(teacherId, termCode) {
       });
     } else if (st.status === 'pending') {
       repairSpuriousTeacherCourseConfirmationInvalidation(pkg, sid, st);
+      if (st.status === 'pending' && live && st.snapshotHash) {
+        const liveFp = getTeacherCourseConfirmationArrangementFingerprint(live);
+        const snapFp = getTeacherCourseConfirmationArrangementFingerprintFromSnapshot(st.snapshotHash);
+        if (liveFp && liveFp === snapFp) {
+          st.snapshotHash = computeTeacherCourseConfirmationSnapshotHash([live]);
+        }
+      }
     }
   });
   recomputeTeacherCourseConfirmationPackageStatus(pkg);
@@ -22344,40 +23021,61 @@ function issueTeacherCourseConfirmation(teacherId, termCode, { reissue = false, 
   return true;
 }
 
+function listTeacherCourseConfirmationPendingSectionIds(pkg, sectionIds = null) {
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  const ids = sectionIds == null
+    ? Object.keys(states)
+    : (Array.isArray(sectionIds) ? sectionIds : [sectionIds]).map(String).filter(Boolean);
+  return ids.filter(sid => states[sid]?.status === 'pending');
+}
+
 function confirmTeacherCourseConfirmation(teacherId, termCode, {
   by = 'teacher',
   proxyBy = '',
   quiet = false,
   sectionIds = null
 } = {}) {
-  const pkg = getTeacherCourseConfirmationPackage(teacherId, termCode)
-    || syncTeacherCourseConfirmationPackageRows(teacherId, termCode);
+  const isAdminProxy = by === 'admin-proxy';
+  syncTeacherCourseConfirmationPackageRows(teacherId, termCode);
+  const pkg = getTeacherCourseConfirmationPackage(teacherId, termCode);
   if (!pkg) {
     if (!quiet) alert('当前无可确认的授课安排任务。');
     return false;
   }
   migrateTeacherCourseConfirmationPackageSectionStates(pkg);
   const states = ensureTeacherCourseConfirmationSectionStates(pkg);
-  const candidateIds = sectionIds == null
-    ? Object.keys(states).filter(id => states[id]?.status === 'pending')
-    : (Array.isArray(sectionIds) ? sectionIds : [sectionIds]).map(String).filter(Boolean);
-  const targets = candidateIds.filter(id => states[id]?.status === 'pending');
+  const targets = listTeacherCourseConfirmationPendingSectionIds(pkg, sectionIds);
   if (!targets.length) {
     if (!quiet) alert('当前无可确认的授课安排任务。');
     return false;
   }
-  for (const sid of targets) {
-    if (!isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sid)) {
-      if (!quiet) alert('授课安排已变更，请教务重新下发确认后再操作。');
-      return false;
+  const liveRows = buildTeacherCourseConfirmationRows(teacherId, termCode);
+  pkg.rows = liveRows;
+  if (!isAdminProxy) {
+    for (const sid of targets) {
+      if (!isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sid)) {
+        if (!quiet) alert('授课安排已变更，请教务重新下发确认后再操作。');
+        return false;
+      }
     }
+  } else {
+    // 管理端代确认：以当前现场安排为准刷新快照（共同授课/联动后展示字段变化不阻断）
+    targets.forEach(sid => {
+      const live = liveRows.find(r => r.sectionId === sid);
+      if (live) {
+        states[sid] = {
+          ...(states[sid] || {}),
+          snapshotHash: computeTeacherCourseConfirmationSnapshotHash([live])
+        };
+      }
+    });
   }
   const now = new Date().toISOString();
   const confirmedBy = by === 'admin-proxy' ? 'admin-proxy' : 'teacher';
-  const liveRows = buildTeacherCourseConfirmationRows(teacherId, termCode);
   targets.forEach(sid => {
-    const row = (pkg.rows || []).find(r => r.sectionId === sid)
-      || liveRows.find(r => r.sectionId === sid);
+    const row = liveRows.find(r => r.sectionId === sid)
+      || (pkg.rows || []).find(r => r.sectionId === sid);
     states[sid] = {
       status: confirmedBy === 'admin-proxy' ? 'admin-proxy' : 'confirmed',
       confirmedBy,
@@ -25959,8 +26657,7 @@ function sumTeacherOfferingTeachingLoadHoursForWeek(staffId, termCode, weekNum, 
   getTeacherTeachingLoadSectionsForTerm(termCode).forEach(sec => {
     if (!sectionMatchesTeacherTeachingLoadCourseTypeFilter(sec, typeFilter)) return;
     (sec.groupAssignments || []).forEach(row => {
-      if (typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(row)) return;
-      if (!getGroupAssignTeachers(row).some(t => String(t?.staffId || '') === String(staffId))) return;
+      if (!teacherAssignmentCountsTowardTeachingLoadHours(staffId, sec, row)) return;
       const weeks = parseWeekRangeToWeeks(row.weekRange, getSectionTermTeachingWeeks(sec));
       if (!weeks.includes(week)) return;
       sum += getGroupAssignRowTeacherShareWeeklyHours(row, sec);
@@ -26112,6 +26809,13 @@ function sectionMatchesTeacherTeachingLoadCourseTypeFilter(sec, typeFilter = get
 
 function getTeacherTeachingLoadHoursForTerm(row, termCode) {
   if (!termCode || !row?.staffId) return 0;
+  if (typeof getTeacherOfferingTermSectionDetailRows === 'function') {
+    return getTeacherOfferingTermSectionDetailRows(
+      row.staffId,
+      termCode,
+      getTeacherTeachingLoadActiveCourseTypeFilter()
+    ).reduce((sum, r) => sum + (Number(r.hours) || 0), 0);
+  }
   if (typeof sumTeacherOfferingTeachingLoadHours === 'function') {
     return sumTeacherOfferingTeachingLoadHours(
       row.staffId,
@@ -28255,9 +28959,9 @@ function getMeOfferingPlanGroupsTipText() {
 
 function getMeOfferingOpenedCountTipText() {
   return [
-    '只统计修读范围包含本行专业（PHY / MAT / CHS）的 ME 课程组。',
+    '按 ME 列表「开课专业」归属统计（PHY / MAT / CHS）。',
     '一门课没有分组时按 1 个课程组计；已分组则按组数计。',
-    '全开放视为包含这三个专业；一门课修读范围含多个专业时，可同时计入多行。'
+    '与「已开总 Quota」一致，仅计入开课专业对应行，不按修读范围多行重复。'
   ].join('\n');
 }
 
@@ -28804,21 +29508,12 @@ function getMeOfferingPlanActualStatsByProgramme(termCode) {
   }
   (COURSE_OFFERING_PLAN_STORE?.sections || []).forEach(sec => {
     if (!isMeOfferingGeSection(sec)) return;
+    const programmeKey = resolveMeOfferingPlanProgrammeKeyFromSection(sec);
+    if (!programmeKey || !map[programmeKey]) return;
     const cap = typeof getSectionCapacityLimit === 'function' ? Number(getSectionCapacityLimit(sec)) : 0;
     const capVal = Number.isFinite(cap) && cap > 0 ? cap : 0;
-    const openedCount = getMeOfferingOpenedClassOrGroupCount(sec);
-    ME_OFFERING_PLAN_PROGRAMMES.forEach(p => {
-      if (!meOfferingSectionScopeIncludesProgramme(sec, p.code)) return;
-      map[p.key].offeringCount += openedCount;
-    });
-    const line = getMeOfferingPlanLineForSection(sec);
-    const progCode = String(
-      typeof resolveGeOfferingOfferingProgrammeDisplay === 'function'
-        ? resolveGeOfferingOfferingProgrammeDisplay(line, sec)
-        : ''
-    ).trim().toUpperCase();
-    const offeringP = ME_OFFERING_PLAN_PROGRAMMES.find(x => x.code === progCode);
-    if (offeringP) map[offeringP.key].actualQuota += capVal;
+    map[programmeKey].offeringCount += getMeOfferingOpenedClassOrGroupCount(sec);
+    map[programmeKey].actualQuota += capVal;
   });
   if (prev?.termCode && prev.termCode !== termCode) {
     syncCourseOfferingPlanStoreFromTerm(prev.termCode);
@@ -41547,6 +42242,7 @@ function renderMajorOfferingTaskStyle2AssignSubtable(sec, opts = {}) {
     <td class="col-center col-plan-total">${escapeHtml(formatGroupAssignRowTotalHoursDisplay(row, sec))}</td>
     <td class="col-teacher">${formatGroupAssignTeachersSummaryCell(row)}</td>
     <td class="col-center col-simul">${row.simultaneousGroups ? '是' : '否'}</td>
+    <td class="col-center col-slot-link">${formatSharedTeachingSlotLinkCellHtml(sec, row)}</td>
     <td class="col-center col-classroom-attr">${escapeHtml(formatAssignClassroomAttributeDisplay(row.classroomAttribute))}</td>
     <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)}</td>
   </tr>`).join('');
@@ -41567,6 +42263,7 @@ function renderMajorOfferingTaskStyle2AssignSubtable(sec, opts = {}) {
             ${renderListSortTh(listKey, '总学时', 'totalHours', { center: true, extraClass: 'col-plan-total' })}
             ${renderListSortTh(listKey, '教师', 'teacher', { extraClass: 'col-teacher' })}
             ${renderOfferingGroupStatusAssignSimulSortTh(listKey)}
+            ${renderOfferingGroupStatusAssignSlotLinkTh()}
             ${renderListSortTh(listKey, '场地类型', 'classroomAttribute', { center: true, extraClass: 'col-classroom-attr' })}
             ${renderOfferingGroupStatusAssignClassroomPrefSortTh(listKey)}
           </tr>
@@ -43573,6 +44270,7 @@ const OFFERING_GROUPING_RETURN_LABELS = {
   'course-special-offering-task': '特殊开课安排',
   'course-special-offering-roster': '特殊开课名单',
   'course-offering-manifest': '课程班',
+  'course-scheduling-plan': '排课计划',
 };
 
 function syncOfferingGroupingBreadcrumb() {
@@ -44307,6 +45005,7 @@ function renderOfferingGroupingGlobalAssignSubtable(sec) {
     <td class="col-center col-total">${escapeHtml(formatGroupAssignRowTotalHoursDisplay(row, sec))}</td>
     <td class="col-teacher">${formatGroupAssignTeachersSummaryCell(row)}</td>
     <td class="col-center col-simul">${row.simultaneousGroups ? '是' : '否'}</td>
+    <td class="col-center col-slot-link">${formatSharedTeachingSlotLinkCellHtml(sec, row)}</td>
     <td class="col-center col-classroom-attr">${escapeHtml(formatAssignClassroomAttributeDisplay(row.classroomAttribute))}</td>
     <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)}</td>
   </tr>`).join('');
@@ -44327,6 +45026,7 @@ function renderOfferingGroupingGlobalAssignSubtable(sec) {
             ${renderListSortTh('offeringGroupingGlobalAssign', '总学时', 'totalHours', { center: true, extraClass: 'col-total' })}
             ${renderListSortTh('offeringGroupingGlobalAssign', '教师', 'teacher', { extraClass: 'col-teacher' })}
             ${renderOfferingGroupStatusAssignSimulSortTh('offeringGroupingGlobalAssign')}
+            ${renderOfferingGroupStatusAssignSlotLinkTh()}
             ${renderListSortTh('offeringGroupingGlobalAssign', '场地类型', 'classroomAttribute', { center: true, extraClass: 'col-classroom-attr' })}
             ${renderOfferingGroupStatusAssignClassroomPrefSortTh('offeringGroupingGlobalAssign')}
           </tr>
@@ -50473,31 +51173,22 @@ function renderOfferingGroupStatusDraftClassroomPreferenceCell(draft) {
   const rooms = getClassroomsByCategories([attr]);
   const selected = normalizeReferenceClassroomList(draft?.classroomPreferences || [], rooms);
   const selectedSet = new Set(selected);
-  const optionsHtml = rooms.length
-    ? rooms.map(r => {
-      const meta = formatClassroomListOptionMeta(r);
-      return `<label class="clo-multiselect-option mos-edit-classroom-ref-option">
-        <input type="checkbox" class="offering-group-status-pref-check" value="${escapeHtml(r.classroom)}"
-          ${selectedSet.has(r.classroom) ? 'checked' : ''}
-          onchange="onOfferingGroupStatusDraftClassroomPrefToggle(this)">
-        <span class="mos-edit-classroom-ref-option-text">
-          <span class="mos-edit-classroom-ref-option-main">${escapeHtml(formatClassroomListOptionLabel(r))}</span>
-          ${meta ? `<span class="mos-edit-classroom-ref-option-meta">${escapeHtml(meta)}</span>` : ''}
-        </span>
-      </label>`;
-    }).join('')
-    : `<div class="clo-multiselect-empty">暂无该属性教室</div>`;
+  const optionsInner = buildClassroomRefDropdownInnerHtml(rooms, {
+    selectedSet,
+    checkClass: 'offering-group-status-pref-check',
+    onchange: 'onOfferingGroupStatusDraftClassroomPrefToggle(this)'
+  });
   return `<div class="clo-multiselect offering-group-status-pref-multiselect">
     <div class="clo-multiselect-trigger input input-sm" role="button" tabindex="0"
       onclick="toggleOfferingGroupStatusDraftPrefDropdown(event)"
       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOfferingGroupStatusDraftPrefDropdown(event)}"
-      title="教室偏好（可多选，非必填；选项含容量与设备）" aria-label="教室偏好">
+      title="教室偏好（可多选，非必填；下拉内可搜教室号或软件名）" aria-label="教室偏好">
       ${formatOfferingGroupStatusDraftPrefChipsHtml(selected)}
       ${renderOfferingGroupStatusMultiselectClearBtn('clearOfferingGroupStatusDraftClassroomPrefs', selected.length > 0)}
       <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
     </div>
     <div class="clo-multiselect-dropdown offering-group-status-pref-dropdown" hidden>
-      <div class="clo-multiselect-options">${optionsHtml}</div>
+      ${optionsInner}
     </div>
   </div>`;
 }
@@ -50568,7 +51259,10 @@ function toggleOfferingGroupStatusDraftPrefDropdown(event) {
   closeOfferingGroupStatusDraftPrefDropdown();
   if (typeof closeOfferingGroupStatusDraftGroupDropdown === 'function') closeOfferingGroupStatusDraftGroupDropdown();
   if (typeof closeOfferingGroupStatusDraftPriorTeacherDropdown === 'function') closeOfferingGroupStatusDraftPriorTeacherDropdown();
-  if (willOpen) dd.hidden = false;
+  if (willOpen) {
+    dd.hidden = false;
+    focusClassroomRefDropdownSearch(dd);
+  }
 }
 
 function onOfferingGroupStatusDraftClassroomPrefToggle(input) {
@@ -50725,22 +51419,18 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
   const empty = !bodyHtml
     ? `<tr><td colspan="${colCount}" class="text-muted offering-group-status-assign-empty">暂无安排详情</td></tr>`
     : '';
+  const sharedTeachingBtn = String(sec.sharedTeachingCode || '').trim()
+    ? `<button type="button" class="btn btn-outline btn-sm" onclick="openSharedTeachingSlotLinkModalFromGrouping()" title="将共同授课组内各班学时安排行绑定，供后续同堂排课">配置共同授课</button>`
+    : `<button type="button" class="btn btn-outline btn-sm" disabled title="请先设置共同授课后再配置">配置共同授课</button>`;
   const headActions = showOps
     ? `<div class="offering-group-status-assign-head-actions">
         ${isOfferingGroupingHistoryCopyPendingConfirm(sec)
           ? `<button type="button" class="btn btn-primary btn-sm" id="ogg-btn-confirm-history-copy" onclick="confirmOfferingGroupingHistoryCopyArrange()" title="确认历史复制的安排；确认后状态按齐套情况变为橘勾/绿勾，方可发送授课确认">复制确认</button>`
           : ''}
-        ${String(sec.sharedTeachingCode || '').trim()
-          ? `<button type="button" class="btn btn-outline btn-sm" onclick="openSharedTeachingSlotLinkModalFromGrouping()" title="将共同授课组内各班学时安排行绑定，供后续同堂排课">配置共同授课</button>`
-          : `<button type="button" class="btn btn-outline btn-sm" disabled title="请先设置共同授课后再配置">配置共同授课</button>`}
         <button type="button" class="btn btn-outline btn-sm" onclick="addOfferingGroupStatusAssignDraft()" ${draft ? 'disabled' : ''}>新增</button>
         <button type="button" class="btn btn-outline btn-sm btn-danger-text" id="ogg-btn-status-assign-delete" onclick="removeOfferingGroupAssignSelected()" ${offeringGroupingAssignSelected.size ? '' : 'disabled'}>删除</button>
       </div>`
-    : (String(sec.sharedTeachingCode || '').trim()
-      ? `<div class="offering-group-status-assign-head-actions">
-          <button type="button" class="btn btn-outline btn-sm" onclick="openSharedTeachingSlotLinkModalFromGrouping()">配置共同授课</button>
-        </div>`
-      : '');
+    : '';
   const tableHtml = `<div class="table-scroll offering-group-status-assign-table-wrap">
       <table class="data-table compact offering-group-status-assign-table${draft && !forceReadOnly && !offeringGroupingReadOnly ? ' is-editing-draft' : ''}">
         <thead><tr>
@@ -50763,7 +51453,10 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
   if (embedOnly) return tableHtml;
   return `<section class="offering-group-status-assign-section${forceReadOnly ? ' is-readonly' : ''}">
     <div class="offering-group-status-assign-head">
-      <strong>${escapeHtml(heading)}</strong>
+      <div class="offering-group-status-assign-head-leading">
+        <strong>${escapeHtml(heading)}</strong>
+        ${sharedTeachingBtn}
+      </div>
       ${headActions}
     </div>
     ${tableHtml}
@@ -50899,15 +51592,21 @@ function getGroupAssignRowTeacherShareHours(row, sec) {
   return workload / n;
 }
 
+/** 该安排行是否计入该教师 Teaching Load（按本课安排学时计；联动去重暂不在此扣） */
+function teacherAssignmentCountsTowardTeachingLoadHours(staffId, sec, row) {
+  const staffKey = String(staffId || '').trim();
+  if (!staffKey || !sec || !row) return false;
+  if (typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(row)) return false;
+  return getGroupAssignTeachers(row).some(t => String(t?.staffId || '').trim() === staffKey);
+}
+
 function sumTeacherOfferingTeachingLoadHours(staffId, termCode, typeFilter = null) {
   if (!staffId || !termCode) return 0;
   let sum = 0;
   getTeacherTeachingLoadSectionsForTerm(termCode).forEach(sec => {
     if (!sectionMatchesTeacherTeachingLoadCourseTypeFilter(sec, typeFilter)) return;
     (sec.groupAssignments || []).forEach(row => {
-      if (typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(row)) return;
-      const teachers = getGroupAssignTeachers(row);
-      if (!teachers.some(t => t?.staffId === staffId)) return;
+      if (!teacherAssignmentCountsTowardTeachingLoadHours(staffId, sec, row)) return;
       sum += getGroupAssignRowTeacherShareHours(row, sec);
     });
   });
@@ -51364,16 +52063,9 @@ function getTeacherOfferingTermCourseRows(staffId, termCode) {
 
 function sumTeacherOfferingTeachingLoadHoursOnSection(staffId, sec) {
   if (!staffId || !sec) return 0;
-  const staffKey = String(staffId || '').trim();
   let sum = 0;
   (sec.groupAssignments || []).forEach(row => {
-    if (typeof isGroupAssignRowScopeUnset === 'function' && isGroupAssignRowScopeUnset(row)) return;
-    const teachers = getGroupAssignTeachers(row);
-    if (!teachers.some(t => String(t?.staffId || '').trim() === staffKey)) return;
-    if (typeof isTeacherSharedTeachingSlotLinkHoursPrimary === 'function'
-      && !isTeacherSharedTeachingSlotLinkHoursPrimary(staffKey, sec, row)) {
-      return;
-    }
+    if (!teacherAssignmentCountsTowardTeachingLoadHours(staffId, sec, row)) return;
     sum += getGroupAssignRowTeacherShareHours(row, sec);
   });
   return sum;
@@ -52614,12 +53306,11 @@ function resolveMeOfferingPlanProgrammeKeyFromSection(sec) {
     ? getMeOfferingPlanLineForSection(sec)
     : null;
   const code = String(
-    sec.meLibraryProgramme
-    || line?.meLibraryProgramme
-    || (typeof resolveGeOfferingOfferingProgrammeDisplay === 'function'
-      ? resolveGeOfferingOfferingProgrammeDisplay(line, sec)
-      : '')
+    typeof resolveGeOfferingOpeningProgrammeDisplay === 'function'
+      ? resolveGeOfferingOpeningProgrammeDisplay(line, sec)
+      : (sec.meLibraryProgramme || line?.meLibraryProgramme || '')
   ).trim().toUpperCase();
+  if (!code || code === '—') return '';
   return (ME_OFFERING_PLAN_PROGRAMMES || []).find(p => p.code === code)?.key || '';
 }
 
@@ -63928,6 +64619,7 @@ const COURSE_PAGE_IDS = new Set([
   'course-special-offering-task',
   'course-special-offering-roster',
   'course-offering-manifest',
+  'course-scheduling-plan',
   'course-offering-teacher-replace',
   'course-shared-teaching-maintenance',
   'course-offering-roster-change-log',
@@ -64574,6 +65266,7 @@ function goPage(id) {
   if (id === 'course-special-offering-task') renderCourseSpecialOfferingTaskPage();
   if (id === 'course-special-offering-roster') renderCourseSpecialOfferingRosterPage();
   if (id === 'course-offering-manifest') renderCourseOfferingManifestPage();
+  if (id === 'course-scheduling-plan') renderSchedulingPlanPage();
   if (id === 'course-offering-teacher-replace') renderOfferingTeacherReplacePage();
   if (id === 'course-shared-teaching-maintenance') renderCourseSharedTeachingMaintenancePage();
   if (id === 'course-offering-roster-change-log') renderCourseOfferingRosterChangeLogPage();
@@ -71154,6 +71847,67 @@ function renderProgrammeStructure(containerId, data) {
     </div>`;
 }
 
+// ── 原型运行时 Mock 快照（由 scripts/export-prototype-runtime-mock.mjs 导出） ──
+const PROTOTYPE_RUNTIME_MOCK_VERSION = '20260826v1';
+let prototypeRuntimeMockLoaded = false;
+
+function buildPrototypeRuntimeMockSnapshot() {
+  if (typeof ensureSpecialCourseSettingsStore === 'function') ensureSpecialCourseSettingsStore();
+  return cloneJson({
+    version: PROTOTYPE_RUNTIME_MOCK_VERSION,
+    exportedAt: new Date().toISOString(),
+    defaultTermCode: (typeof getDefaultOfferingTermCode === 'function' ? getDefaultOfferingTermCode() : '') || '',
+    planByTerm: COURSE_OFFERING_PLAN_BY_TERM,
+    teacherCourseConfirmationByTerm: TEACHER_COURSE_CONFIRMATION_BY_TERM,
+    geOfferingQuotaByTerm: GE_OFFERING_QUOTA_BY_TERM,
+    meOfferingPlanQuotaByTerm: ME_OFFERING_PLAN_QUOTA_BY_TERM,
+    majorOfferingStudentRosterStore: majorOfferingStudentRosterStore,
+    specialCourseSettings: SPECIAL_COURSE_SETTINGS
+  });
+}
+
+function applyPrototypeRuntimeMockSnapshot(data, { replace = true } = {}) {
+  if (!data || typeof data !== 'object' || !data.planByTerm) return false;
+  COURSE_OFFERING_PLAN_BY_TERM = cloneJson(data.planByTerm);
+  const term = String(data.defaultTermCode || '').trim()
+    || Object.keys(COURSE_OFFERING_PLAN_BY_TERM)[0]
+    || '';
+  if (term) syncCourseOfferingPlanStoreFromTerm(term);
+
+  if (data.teacherCourseConfirmationByTerm) {
+    Object.keys(TEACHER_COURSE_CONFIRMATION_BY_TERM).forEach(k => {
+      delete TEACHER_COURSE_CONFIRMATION_BY_TERM[k];
+    });
+    Object.assign(TEACHER_COURSE_CONFIRMATION_BY_TERM, cloneJson(data.teacherCourseConfirmationByTerm));
+  }
+  if (data.geOfferingQuotaByTerm) {
+    Object.keys(GE_OFFERING_QUOTA_BY_TERM).forEach(k => { delete GE_OFFERING_QUOTA_BY_TERM[k]; });
+    Object.assign(GE_OFFERING_QUOTA_BY_TERM, cloneJson(data.geOfferingQuotaByTerm));
+  }
+  if (data.meOfferingPlanQuotaByTerm) {
+    Object.keys(ME_OFFERING_PLAN_QUOTA_BY_TERM).forEach(k => { delete ME_OFFERING_PLAN_QUOTA_BY_TERM[k]; });
+    Object.assign(ME_OFFERING_PLAN_QUOTA_BY_TERM, cloneJson(data.meOfferingPlanQuotaByTerm));
+  }
+  if (data.majorOfferingStudentRosterStore) {
+    applyMajorOfferingStudentRosterStoreSnapshot(data.majorOfferingStudentRosterStore, { replace });
+  }
+  if (Array.isArray(data.specialCourseSettings)) {
+    SPECIAL_COURSE_SETTINGS = cloneJson(data.specialCourseSettings);
+  }
+  prototypeRuntimeMockLoaded = true;
+  return true;
+}
+
+function tryLoadPrototypeRuntimeMockFromGlobal() {
+  if (typeof PROTOTYPE_RUNTIME_MOCK === 'undefined' || !PROTOTYPE_RUNTIME_MOCK?.planByTerm) return false;
+  return applyPrototypeRuntimeMockSnapshot(PROTOTYPE_RUNTIME_MOCK);
+}
+
+if (typeof window !== 'undefined') {
+  window.buildPrototypeRuntimeMockSnapshot = buildPrototypeRuntimeMockSnapshot;
+  window.applyPrototypeRuntimeMockSnapshot = applyPrototypeRuntimeMockSnapshot;
+}
+
 // ── Init ──
 initVersionContentStore();
 initExecContentStore();
@@ -71161,12 +71915,17 @@ seedExecAdjustmentDemos();
 seedExecCourseOfferingFlags();
 seedMajorOfferingPickerExecDemos();
 EXEC_PLANS.forEach(syncExecPlanOfferingFlag);
-initCourseOfferingPlanStore();
-// generateCourseOfferingPlan({ silent: true }); // 原改由开课页按需生成；排课模块合并后需完整开课计划驱动入学批次列表，见下行
-generateCourseOfferingPlan({ silent: true }); // 合并 new 版：启动时从已提交执行计划生成开课计划，供入学批次排课汇总
-// 通识演示仅此处补一次；之后 ensureGeOfferingTaskPageDemos 只纠偏不加课
-seedGeOfferingTaskPageDemosAtBootstrap();
-ensureSpecialOfferingTaskPageDemos();
+const prototypeRuntimeMockLoadedAtBootstrap = tryLoadPrototypeRuntimeMockFromGlobal();
+if (!prototypeRuntimeMockLoadedAtBootstrap) {
+  initCourseOfferingPlanStore();
+  // generateCourseOfferingPlan({ silent: true }); // 原改由开课页按需生成；排课模块合并后需完整开课计划驱动入学批次列表，见下行
+  generateCourseOfferingPlan({ silent: true }); // 合并 new 版：启动时从已提交执行计划生成开课计划，供入学批次排课汇总
+  // 通识演示仅此处补一次；之后 ensureGeOfferingTaskPageDemos 只纠偏不加课
+  seedGeOfferingTaskPageDemosAtBootstrap();
+  ensureSpecialOfferingTaskPageDemos();
+} else {
+  syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
+}
 syncAllVersionEndIntakes();
 bindProgramCourseFilters();
 bindCategoryCreditsInputs();

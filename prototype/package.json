@@ -5,7 +5,8 @@
     "start": "serve . -l 3000",
     "start:py": "python3 -m http.server 3000",
     "start:npx": "npx --yes serve@14.2.4 . -l 3000",
-    "export:workflow-pdf": "node scripts/export-workflow-pdf.mjs"
+    "export:workflow-pdf": "node scripts/export-workflow-pdf.mjs",
+    "export:runtime-mock": "node scripts/export-prototype-runtime-mock.mjs"
   },
   "devDependencies": {
     "@fission-ai/openspec": "^1.4.1",

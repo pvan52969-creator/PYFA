@@ -100,6 +100,7 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-teacher-confirmation-admin">授课确认管理</a>
           <a href="#" class="nav-item nav-item-sub" data-page="teacher-course-confirmation">授课确认（教师端）</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-offering-teacher-replace">授课教师替换</a>
+          <a href="#" class="nav-item nav-item-sub" data-page="course-scheduling-plan">排课计划</a>
           <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-shared-teaching-maintenance">共同授课维护</a> -->
           <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-roster-change-log">开课名单变更日志</a> -->
         </div>
@@ -2695,6 +2696,62 @@
         </div>
         <div class="table-footer">
           <div class="pagination" id="course-section-change-log-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 开课管理 · 排课计划（授课确认完成且安排已生效的学时安排） ═══ -->
+    <section class="page" id="page-course-scheduling-plan">
+      <div class="page-header">
+        <div>
+          <h1>排课计划</h1>
+          <p class="subtitle">汇总授课确认完成且安排已生效的学时安排，供下游排课消费；联动组按课号逐行展示，课程组仅本行，联动组成员列于「联动组」</p>
+        </div>
+      </div>
+      <div class="card course-major-query-card">
+        <div class="course-major-query-grid">
+          <div class="course-time-query-field">
+            <label for="scheduling-plan-filter-term">开课学期</label>
+            <select class="input input-sm" id="scheduling-plan-filter-term">
+              <option value="">全部学期</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="scheduling-plan-filter-type">开课模块</label>
+            <select class="input input-sm" id="scheduling-plan-filter-type">
+              <option value="">全部模块</option>
+              <option value="major">专业开课</option>
+              <option value="ge-ge">选修开课(GE)</option>
+              <option value="ge-me">选修开课(ME)</option>
+              <option value="other">特殊开课</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="scheduling-plan-filter-code">课号</label>
+            <input class="input input-sm" id="scheduling-plan-filter-code" placeholder="课号">
+          </div>
+          <div class="course-time-query-field">
+            <label for="scheduling-plan-filter-name">课程班名称</label>
+            <input class="input input-sm" id="scheduling-plan-filter-name" placeholder="课程班名称">
+          </div>
+          <div class="course-time-query-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="querySchedulingPlanList()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetSchedulingPlanFilters()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card scheduling-plan-list-card">
+        <div class="panel-toolbar scheduling-plan-toolbar">
+          <span class="form-hint">数据来源：各开课模块中授课确认齐套且任务安排已生效的学时安排；共同授课须全部关联开课班均已确认、学时安排与联动组齐套后才展示</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table compact scheduling-plan-table">
+            <thead><tr id="scheduling-plan-table-head"></tr></thead>
+            <tbody id="scheduling-plan-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div class="pagination" id="scheduling-plan-pagination"></div>
         </div>
       </div>
     </section>
@@ -5320,22 +5377,22 @@
       <h4 class="offering-edit-section-title">教室偏好设置</h4>
       <div class="form-item mos-edit-classroom-attr-block">
         <label>教室属性与参考教室</label>
-        <p class="form-hint" id="scs-edit-classroom-hint">按上方学时类型设置逐项配置；偏好教室展示设备与软件，便于按教学需求选择</p>
+        <p class="form-hint" id="scs-edit-classroom-hint">按上方学时类型设置逐项配置；偏好教室下拉可搜教室号或软件名，悬停选项可查看完整软件清单</p>
         <div class="mos-edit-classroom-hour-attrs" id="scs-edit-classroom-hour-attrs" data-classroom-hour-attrs="scs-edit-classroom-hour-attrs"></div>
       </div>
     </section>
     <section class="offering-edit-section">
-      <h4 class="offering-edit-section-title">Support学院设置</h4>
+      <h4 class="offering-edit-section-title">Support设置</h4>
       <div class="form-item">
         <label class="req" for="scs-edit-support-history">Support历史</label>
         <select class="input input-sm" id="scs-edit-support-history">
           <option value="N">N</option>
           <option value="Y">Y</option>
         </select>
-        <p class="form-hint">由默认 Support 学院自动带出：未勾选为 N，勾选后为 Y（不可手改）。开课计划抽屉只读展示，未纳入本清单的课号视为 N</p>
+        <p class="form-hint">由默认 Support 专业自动带出：未勾选为 N，勾选后为 Y（不可手改）。开课计划抽屉只读展示，未纳入本清单的课号视为 N</p>
       </div>
       <div class="form-item">
-        <label>默认 Support 学院</label>
+        <label>默认 Support 专业</label>
         <p class="form-hint">一般不同于所属部门；开课安排中 Support 为空时自动带出，仍可按班管理</p>
         <div class="clo-multiselect-options scs-edit-support-options" id="scs-edit-support-options"></div>
       </div>
@@ -10274,6 +10331,8 @@
   <script src="mock-data.js"></script>
   <script src="ge-restrictions-list.js"></script>
   <script src="mat-phy-me-list.js"></script>
+  <script src="classroom-software-data.js"></script>
+  <script src="course-offering-runtime-mock.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

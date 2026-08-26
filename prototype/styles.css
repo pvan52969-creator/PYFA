@@ -1206,12 +1206,41 @@ body {
 }
 #modal-shared-teaching-setup #shared-teaching-setup-term-hint {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
   margin: 0;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   background: #f8fafc;
   border: 1px solid var(--border-light, #e2e8f0);
   line-height: 1.45;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-term-emphasis {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--blue-50, #eff6ff);
+  border: 1px solid var(--blue-200, #bfdbfe);
+  color: var(--text-1, #0f172a);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-term-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--blue-700, #1d4ed8);
+  letter-spacing: 0.02em;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-term-desc {
+  flex: 1;
+  min-width: 240px;
+  font-size: 12px;
+  color: var(--text-2, #475569);
 }
 #modal-shared-teaching-setup .shared-teaching-setup-split {
   flex: 1;
@@ -1368,6 +1397,12 @@ body {
   padding-left: 4px;
   padding-right: 4px;
 }
+#modal-shared-teaching-slot-link tr.is-slot-link-row-disabled {
+  opacity: 0.55;
+}
+#modal-shared-teaching-slot-link tr.is-slot-link-row-disabled td.col-check input[type="checkbox"] {
+  cursor: not-allowed;
+}
 #modal-shared-teaching-slot-link .shared-teaching-slot-link-pane-table .data-table td {
   word-break: break-word;
 }
@@ -1509,7 +1544,8 @@ body {
 .shared-teaching-slot-link-view-btn {
   white-space: nowrap;
 }
-.offering-group-status-assign-table .col-slot-link {
+.offering-group-status-assign-table .col-slot-link,
+.offering-grouping-global-assign-table .col-slot-link {
   width: 88px;
   min-width: 72px;
   max-width: 100px;
@@ -7291,6 +7327,8 @@ code {
 #page-course-major-offering-task-style2 .offering-grouping-global-assign-table td.col-total,
 #page-course-major-offering-task-style2 .offering-grouping-global-assign-table th.col-simul,
 #page-course-major-offering-task-style2 .offering-grouping-global-assign-table td.col-simul,
+#page-course-major-offering-task-style2 .offering-grouping-global-assign-table th.col-slot-link,
+#page-course-major-offering-task-style2 .offering-grouping-global-assign-table td.col-slot-link,
 #page-course-major-offering-task-style2 .offering-grouping-global-assign-table th.col-hour-type,
 #page-course-major-offering-task-style2 .offering-grouping-global-assign-table td.col-hour-type {
   white-space: nowrap;
@@ -9192,6 +9230,12 @@ code {
   line-height: 1.3;
   white-space: nowrap;
 }
+#modal-shared-teaching-setup .tcc-stacked-line-ellipsis {
+  color: var(--text-3, #64748b);
+}
+#modal-shared-teaching-setup .tcc-stacked-lines.is-truncated {
+  cursor: help;
+}
 .shared-teaching-setup-footer {
   flex-shrink: 0;
   padding-top: 4px;
@@ -9456,6 +9500,167 @@ code {
   border-top: 1px solid var(--border-light);
   background: #fafbfc;
 }
+
+/* 排课计划 */
+#page-course-scheduling-plan.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+}
+#page-course-scheduling-plan .course-major-query-card {
+  overflow: visible;
+}
+#page-course-scheduling-plan .scheduling-plan-list-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#page-course-scheduling-plan .scheduling-plan-toolbar {
+  padding: 10px 14px 0;
+}
+#page-course-scheduling-plan .scheduling-plan-toolbar .form-hint {
+  margin: 0;
+  line-height: 1.5;
+}
+#page-course-scheduling-plan .table-scroll {
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  padding-bottom: 4px;
+}
+#page-course-scheduling-plan .scheduling-plan-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+#page-course-scheduling-plan .scheduling-plan-table thead th {
+  white-space: nowrap;
+  font-size: var(--ui-list-th-font, 11px);
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 6px 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+#page-course-scheduling-plan .scheduling-plan-table th,
+#page-course-scheduling-plan .scheduling-plan-table td {
+  border-left: 1px solid var(--border-light, #e2e8f0);
+  border-right: 1px solid var(--border-light, #e2e8f0);
+}
+#page-course-scheduling-plan .scheduling-plan-table tbody td {
+  padding: 4px 8px;
+  vertical-align: middle;
+  font-size: var(--ui-list-font, 12px);
+  line-height: 1.3;
+  overflow: visible;
+}
+#page-course-scheduling-plan .scheduling-plan-table th:first-child,
+#page-course-scheduling-plan .scheduling-plan-table td:first-child {
+  border-left: none;
+}
+#page-course-scheduling-plan .scheduling-plan-table th:last-child,
+#page-course-scheduling-plan .scheduling-plan-table td:last-child {
+  border-right: none;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-term {
+  width: 72px;
+  min-width: 64px;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-module {
+  width: 96px;
+  min-width: 88px;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-code {
+  width: 72px;
+  min-width: 64px;
+  white-space: nowrap;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-class-name {
+  min-width: 140px;
+  max-width: 220px;
+  text-align: left;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-groups {
+  min-width: 160px;
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-groups .scheduling-plan-stacked {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  white-space: normal;
+  vertical-align: top;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-link-group {
+  min-width: 72px;
+  max-width: 88px;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+#page-course-scheduling-plan .scheduling-plan-table td.scheduling-plan-link-group-cell.is-linked {
+  background: rgba(37, 99, 235, 0.08);
+  vertical-align: middle;
+}
+.scheduling-plan-link-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--blue-700, #1d4ed8);
+  background: rgba(37, 99, 235, 0.14);
+  border: 1px solid rgba(37, 99, 235, 0.22);
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-teacher {
+  min-width: 120px;
+  max-width: 200px;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: middle;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-hour-type,
+#page-course-scheduling-plan .scheduling-plan-table .col-week,
+#page-course-scheduling-plan .scheduling-plan-table .col-weekly,
+#page-course-scheduling-plan .scheduling-plan-table .col-total,
+#page-course-scheduling-plan .scheduling-plan-table .col-simul,
+#page-course-scheduling-plan .scheduling-plan-table .col-classroom-attr {
+  white-space: nowrap;
+}
+#page-course-scheduling-plan .scheduling-plan-table .col-classroom-pref {
+  min-width: 120px;
+  max-width: 180px;
+  white-space: normal;
+  word-break: break-word;
+}
+#page-course-scheduling-plan .scheduling-plan-table td.col-week code {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.scheduling-plan-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.35;
+  text-align: inherit;
+}
+.scheduling-plan-stacked-line {
+  white-space: nowrap;
+}
+#page-course-scheduling-plan .table-footer {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border-light);
+  background: #fafbfc;
+}
+
 #page-course-teacher-teaching-load.active {
   display: flex;
   flex-direction: column;
@@ -16512,15 +16717,46 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   color: var(--text-3, #64748b);
   white-space: nowrap;
 }
+.mos-edit-classroom-ref-search-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 8px;
+  background: var(--surface-1, #fff);
+  border-bottom: 1px solid var(--border-light, #e2e8f0);
+}
+.mos-edit-classroom-ref-search {
+  width: 100%;
+  min-width: 0;
+}
+.mos-edit-classroom-ref-options .mos-edit-classroom-ref-option[hidden] {
+  display: none;
+}
+.mos-edit-classroom-ref-filter-empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-3, #64748b);
+  text-align: center;
+}
+.mos-edit-classroom-ref-multiselect .clo-multiselect-dropdown {
+  z-index: 40;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.mos-edit-classroom-ref-multiselect .clo-multiselect-dropdown[hidden] {
+  display: none !important;
+}
+.mos-edit-classroom-ref-multiselect .mos-edit-classroom-ref-options {
+  overflow-y: auto;
+  max-height: 220px;
+}
 .drawer-special-course-edit .scs-edit-hour-type-options {
   margin-top: 4px;
 }
 .drawer-special-course-edit #scs-edit-partial-merge-types-wrap {
   margin: 0 0 8px 28px;
-}
-.mos-edit-classroom-ref-multiselect .clo-multiselect-dropdown {
-  z-index: 40;
-  max-height: 240px;
 }
 @media (max-width: 900px) {
   .mos-edit-classroom-special-head {
@@ -18406,6 +18642,12 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   color: var(--text-1);
   font-size: 13px;
 }
+.offering-group-status-assign-head-leading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
 .offering-group-status-assign-head-actions {
   display: inline-flex;
   align-items: center;
@@ -18555,8 +18797,18 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-pref-multiselect .clo-multiselect-dropdown {
   z-index: 40;
-  max-height: 240px;
+  max-height: 280px;
   min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.offering-group-status-pref-multiselect .clo-multiselect-dropdown[hidden] {
+  display: none !important;
+}
+.offering-group-status-pref-multiselect .mos-edit-classroom-ref-options {
+  overflow-y: auto;
+  max-height: 220px;
 }
 .offering-group-status-pref-disabled {
   font-size: 12px;

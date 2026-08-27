@@ -4380,7 +4380,7 @@
     <!-- ═══ 调课管理 · 调课原因类型（管理端维护） ═══ -->
     <section class="page-list page adjustment-page" id="page-adjustment-reason-type">
       <div class="page-header">
-        <div><h1>调课原因类型</h1><p class="subtitle">维护调课原因类型、附件说明、适用调课类型与教师类型；教师申请时仅使用已启用项</p></div>
+        <div><h1>调课原因类型</h1><p class="subtitle">维护调课原因类型、是否需上传附件、适用调课类型与教师类型；教师申请时仅使用已启用项</p></div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -4405,6 +4405,9 @@
                 <option value="cancel">停课</option>
                 <option value="makeup">补课</option>
                 <option value="addclass">加课</option>
+                <option value="batch-course">批量调课程</option>
+                <option value="batch-room">批量调教室</option>
+                <option value="batch-time">批量调时间</option>
               </select>
             </div>
           </div>
@@ -4424,6 +4427,7 @@
           <th class="col-index">序号</th>
           <th>原因类型</th>
           <th>附件说明</th>
+          <th class="col-center">是否需上传附件</th>
           <th>适用调课类型</th>
           <th>适用教师</th>
           <th class="col-center">是否启用</th>
@@ -4580,7 +4584,7 @@
       <div class="page-header">
         <div>
           <h1>批量调课管理</h1>
-          <p class="subtitle">管理员按日期、节次批量统一换时间或换场地</p>
+          <p class="subtitle">按课程、教室或时间批量调整已排课节</p>
         </div>
       </div>
       <div class="card schedule-query-card">
@@ -4594,8 +4598,9 @@
               <label for="adjustment-batch-filter-kind">调课类型</label>
               <select class="input input-sm" id="adjustment-batch-filter-kind">
                 <option value="">全部</option>
-                <option value="time">调时间</option>
+                <option value="course">调课程</option>
                 <option value="room">调教室</option>
+                <option value="time">调时间</option>
               </select>
             </div>
           </div>
@@ -4608,8 +4613,9 @@
       <div class="card schedule-card">
         <div class="adjustment-batch-table-toolbar">
           <div class="adjustment-batch-record-btns">
-            <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('time')">批量调时间</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('course')">批量调课程</button>
             <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('room')">批量调教室</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('time')">批量调时间</button>
           </div>
           <div class="legend-bar" id="adjustment-batch-record-hint"></div>
         </div>
@@ -8657,7 +8663,7 @@
           <textarea class="input" id="adjustment-apply-reason" rows="3" placeholder="请填写申请事由"></textarea>
         </div>
         <div class="form-item full adj-apply-files-item">
-          <label>附件信息</label>
+          <label id="adjustment-apply-files-label">附件信息</label>
           <input type="file" id="adjustment-apply-files" multiple onchange="onAdjustmentFilesChange(event)" style="display:none">
           <div class="adj-file-bar">
             <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('adjustment-apply-files').click()">+ 添加附件</button>
@@ -8959,7 +8965,18 @@
         </div>
         <div class="form-item full">
           <label for="adjustment-reason-type-hint-text">附件说明</label>
-          <textarea class="input" id="adjustment-reason-type-hint-text" rows="2" placeholder="教师选择该原因后，显示在原因类型下方（仅提示，不强制上传）"></textarea>
+          <textarea class="input" id="adjustment-reason-type-hint-text" rows="2" placeholder="教师选择该原因后，显示在原因类型下方"></textarea>
+        </div>
+        <div class="form-item">
+          <label>是否需上传附件</label>
+          <label class="table-bool-switch">
+            <input type="checkbox" id="adjustment-reason-type-require-attachment">
+            <span class="table-bool-track is-off">
+              <span class="table-bool-thumb"></span>
+              <span class="table-bool-text">否</span>
+            </span>
+          </label>
+          <p class="form-hint">为是时，申请调课必须上传附件</p>
         </div>
         <div class="form-item full">
           <label>适用调课类型</label>
@@ -8972,7 +8989,7 @@
               <div class="clo-multiselect-options" id="adjustment-reason-type-apply-options"></div>
             </div>
           </div>
-          <p class="form-hint">不选表示全部调课类型适用</p>
+          <p class="form-hint">不选表示全部调课类型适用（含调课、停课、补课、加课及批量调课程/教室/时间）</p>
         </div>
         <div class="form-item full">
           <label>适用教师</label>
@@ -9126,6 +9143,142 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-adjustment-batch')">×</button>
     </div>
     <div class="modal-body">
+      <div class="tab-panel" id="adjustment-batch-tab-course">
+        <div class="card schedule-card adjustment-batch-card">
+          <div class="panel-toolbar">
+            <span class="hint">先按学期选择课程，再从已选课程的已排课节中选择原日期、节次，最后指定目标日期、节次并生成调课明细</span>
+          </div>
+          <div class="form-grid adjustment-batch-form">
+            <div class="form-item full">
+              <label class="req">课程</label>
+              <select id="adjustment-batch-course-courses" hidden></select>
+              <div id="adjustment-batch-course-courses-mount"></div>
+              <p class="form-hint">必选；仅显示当前学期已排课表的课程（课程号 课程名称），每次只能选择一门</p>
+            </div>
+            <div class="form-item full">
+              <label>日期选择方式</label>
+              <div class="adj-batch-date-mode" role="group" aria-label="日期选择方式">
+                <button type="button" class="adj-batch-date-mode-btn is-active" data-scope="course" data-mode="date" onclick="onAdjustmentBatchCourseDateModeChange('date')">按日期</button>
+                <button type="button" class="adj-batch-date-mode-btn" data-scope="course" data-mode="weekday" onclick="onAdjustmentBatchCourseDateModeChange('weekday')">按星期</button>
+              </div>
+            </div>
+            <div class="form-item full" id="adjustment-batch-course-source-date-wrap">
+              <label class="req">原日期</label>
+              <div class="adj-batch-date-pane" id="adjustment-batch-course-date-pane">
+                <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-course-date-btn" onclick="openAdjustmentBatchDatePicker('course', event)">选择起止日期</button>
+              </div>
+              <div class="adj-batch-weekday-pane" id="adjustment-batch-course-weekday-pane" hidden>
+                <div class="adj-batch-weekday-fields">
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-course-week-from">起始周</label>
+                    <select class="input input-sm" id="adjustment-batch-course-week-from" onchange="onAdjustmentBatchWeekdayFieldChange('course')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-course-week-to">截止周</label>
+                    <select class="input input-sm" id="adjustment-batch-course-week-to" onchange="onAdjustmentBatchWeekdayFieldChange('course')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field adj-batch-weekday-field-wide">
+                    <label>星期</label>
+                    <select id="adjustment-batch-course-weekdays" multiple hidden></select>
+                    <div id="adjustment-batch-course-weekdays-mount"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="adjustment-batch-date-summary" id="adjustment-batch-course-dates">请先选择课程</div>
+              <p class="form-hint" id="adjustment-batch-course-source-date-hint">可选项仅含已选课程的已排课日期</p>
+            </div>
+            <div class="form-item full" id="adjustment-batch-course-source-period-wrap">
+              <label class="req">原节次（可多选）</label>
+              <div class="schedule-multi-check-grid" id="adjustment-batch-course-source-periods"></div>
+              <p class="form-hint" id="adjustment-batch-course-source-period-hint">可选项仅含已选课程在已选原日期上出现过的节次</p>
+            </div>
+            <div class="form-item full">
+              <label class="req">目标日期</label>
+              <div class="adj-batch-date-pane" id="adjustment-batch-courseTarget-date-pane">
+                <button type="button" class="input adj-pick-btn adjustment-batch-date-btn" id="adjustment-batch-courseTarget-date-btn" onclick="openAdjustmentBatchDatePicker('courseTarget', event)">选择起止日期</button>
+              </div>
+              <div class="adj-batch-weekday-pane" id="adjustment-batch-courseTarget-weekday-pane" hidden>
+                <div class="adj-batch-weekday-fields">
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-courseTarget-week-from">起始周</label>
+                    <select class="input input-sm" id="adjustment-batch-courseTarget-week-from" onchange="onAdjustmentBatchWeekdayFieldChange('courseTarget')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field">
+                    <label for="adjustment-batch-courseTarget-week-to">截止周</label>
+                    <select class="input input-sm" id="adjustment-batch-courseTarget-week-to" onchange="onAdjustmentBatchWeekdayFieldChange('courseTarget')"></select>
+                  </div>
+                  <div class="adj-batch-weekday-field adj-batch-weekday-field-wide">
+                    <label>星期</label>
+                    <select id="adjustment-batch-courseTarget-weekdays" multiple hidden></select>
+                    <div id="adjustment-batch-courseTarget-weekdays-mount"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="adjustment-batch-date-summary" id="adjustment-batch-courseTarget-dates">尚未选择日期</div>
+            </div>
+            <div class="form-item full">
+              <label class="req">目标节次（可多选）</label>
+              <div class="schedule-multi-check-grid" id="adjustment-batch-course-target-periods"></div>
+            </div>
+          </div>
+          <div class="adjustment-batch-table-head">
+            <div class="adjustment-batch-table-actions">
+              <button class="btn btn-outline btn-sm" type="button" onclick="generateAdjustmentBatchCoursePreview()">确定生成调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="clearAdjustmentBatchCoursePreview()">清空调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="deleteAdjustmentBatchCoursePreview()">删除调课明细</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchCourseRowsPicker()">调教室</button>
+            </div>
+            <div class="adj-batch-order-hint">多选日期和节次时，按顺位对应调课（第 N 个原日期 → 第 N 个目标日期，第 N 个原节次 → 第 N 个目标节次）</div>
+            <label class="adj-batch-conflict-only">
+              <input type="checkbox" id="adjustment-batch-course-conflict-only" onchange="onAdjustmentBatchCourseConflictOnlyChange()">
+              仅查询冲突数据
+            </label>
+            <div class="adjustment-batch-preview-tip" id="adjustment-batch-course-tip" hidden></div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table adjustment-table adj-freeze-left-3 adj-batch-preview-table adj-batch-time-preview">
+              <thead>
+                <tr>
+                  <th class="col-check"><input type="checkbox" id="adjustment-batch-course-check-all" onclick="onAdjustmentBatchCourseSelectAll(this.checked)" aria-label="全选调课明细"></th>
+                  <th class="col-index">序号</th>
+                  <th>课程编号</th>
+                  <th>课程名称</th>
+                  <th>上课小组</th>
+                  <th>教师</th>
+                  <th class="col-center">源日期</th>
+                  <th class="col-center">原节次</th>
+                  <th>教室</th>
+                  <th class="col-center">调整后日期</th>
+                  <th class="col-center">调整后节次</th>
+                  <th>调后教室</th>
+                  <th class="adj-batch-conflict-col">冲突情况</th>
+                  <th class="col-center col-ops">操作</th>
+                </tr>
+              </thead>
+              <tbody id="adjustment-batch-course-preview-body"></tbody>
+            </table>
+          </div>
+          <div class="form-grid adjustment-batch-meta-form">
+            <div class="form-item">
+              <label for="adjustment-batch-course-reason-type">原因类型</label>
+              <select class="input" id="adjustment-batch-course-reason-type" onchange="onAdjustmentBatchReasonTypeChange('course')"></select>
+            </div>
+            <div class="form-item full">
+              <label class="req">调整原因</label>
+              <textarea class="input" id="adjustment-batch-course-reason" rows="3" placeholder="请填写批量调课程原因"></textarea>
+            </div>
+            <div class="form-item full">
+              <label id="adjustment-batch-course-files-label">附件</label>
+              <input type="file" id="adjustment-batch-course-files" multiple onchange="onAdjustmentBatchFilesChange('course', event)" style="display:none">
+              <div class="adj-file-bar">
+                <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('adjustment-batch-course-files').click()">+ 添加附件</button>
+                <span class="text-muted" style="font-size:12px">支持上传相关证明材料</span>
+              </div>
+              <div class="adj-file-list" id="adjustment-batch-course-file-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="tab-panel active" id="adjustment-batch-tab-time">
         <div class="card schedule-card adjustment-batch-card">
           <div class="panel-toolbar">
@@ -9242,14 +9395,14 @@
           <div class="form-grid adjustment-batch-meta-form">
             <div class="form-item">
               <label for="adjustment-batch-time-reason-type">原因类型</label>
-              <select class="input" id="adjustment-batch-time-reason-type"></select>
+              <select class="input" id="adjustment-batch-time-reason-type" onchange="onAdjustmentBatchReasonTypeChange('time')"></select>
             </div>
             <div class="form-item full">
               <label class="req">调整原因</label>
               <textarea class="input" id="adjustment-batch-time-reason" rows="3" placeholder="请填写批量调时间原因"></textarea>
             </div>
             <div class="form-item full">
-              <label>附件</label>
+              <label id="adjustment-batch-time-files-label">附件</label>
               <input type="file" id="adjustment-batch-time-files" multiple onchange="onAdjustmentBatchFilesChange('time', event)" style="display:none">
               <div class="adj-file-bar">
                 <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('adjustment-batch-time-files').click()">+ 添加附件</button>
@@ -9345,14 +9498,14 @@
           <div class="form-grid adjustment-batch-meta-form">
             <div class="form-item">
               <label for="adjustment-batch-room-reason-type">原因类型</label>
-              <select class="input" id="adjustment-batch-room-reason-type"></select>
+              <select class="input" id="adjustment-batch-room-reason-type" onchange="onAdjustmentBatchReasonTypeChange('room')"></select>
             </div>
             <div class="form-item full">
               <label class="req">调整原因</label>
               <textarea class="input" id="adjustment-batch-room-reason" rows="3" placeholder="请填写批量调教室原因"></textarea>
             </div>
             <div class="form-item full">
-              <label>附件</label>
+              <label id="adjustment-batch-room-files-label">附件</label>
               <input type="file" id="adjustment-batch-room-files" multiple onchange="onAdjustmentBatchFilesChange('room', event)" style="display:none">
               <div class="adj-file-bar">
                 <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('adjustment-batch-room-files').click()">+ 添加附件</button>

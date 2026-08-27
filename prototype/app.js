@@ -27904,6 +27904,7 @@ function registerScheduleChangeLogMetas() {
     fields: [
       { key: 'name', label: '原因类型' },
       { key: 'attachmentHint', label: '附件说明' },
+      { key: 'requireAttachment', label: '是否需上传附件', format: boolZh },
       { key: 'applyTypes', label: '适用调课类型', get: r => formatAdjustmentReasonApplyTypes(r?.applyTypes) },
       { key: 'teacherTypes', label: '适用教师', get: r => formatAdjustmentReasonTeacherTypes(r?.teacherTypes) },
       { key: 'enabled', label: '是否启用', format: boolZh }
@@ -32831,6 +32832,10 @@ function isAdjustmentBatchTimeRoomPicker() {
   return scheduleRoomPickerMode === 'batchTimeRow' || scheduleRoomPickerMode === 'batchTimeRows';
 }
 
+function isAdjustmentBatchCourseRoomPicker() {
+  return scheduleRoomPickerMode === 'batchCourseRow' || scheduleRoomPickerMode === 'batchCourseRows';
+}
+
 function isAdjustmentBatchRoomPicker() {
   return scheduleRoomPickerMode === 'batch'
     || scheduleRoomPickerMode === 'batchRoomRow'
@@ -32840,6 +32845,7 @@ function isAdjustmentBatchRoomPicker() {
 function isScheduleApproveRoomPicker() {
   return scheduleRoomPickerMode === 'adjustmentApprove'
     || isAdjustmentBatchTimeRoomPicker()
+    || isAdjustmentBatchCourseRoomPicker()
     || isAdjustmentBatchRoomPicker();
 }
 
@@ -33864,6 +33870,20 @@ function confirmScheduleRoomSelection() {
       applyAdjustmentBatchTimeRowsRoom(room);
     } else {
       applyAdjustmentBatchTimeRowRoom(room);
+    }
+    closeAdjustmentBatchTimeRoomPicker();
+    return;
+  }
+  if (isAdjustmentBatchCourseRoomPicker()) {
+    if (!String(scheduleRoomPickerSelected || '').trim()) {
+      alert('请选择教室');
+      return;
+    }
+    const room = String(scheduleRoomPickerSelected || '').trim();
+    if (scheduleRoomPickerMode === 'batchCourseRows') {
+      applyAdjustmentBatchCourseRowsRoom(room);
+    } else {
+      applyAdjustmentBatchCourseRowRoom(room);
     }
     closeAdjustmentBatchTimeRoomPicker();
     return;
@@ -57880,6 +57900,16 @@ const ADJUSTMENT_TYPE_META = {
   addclass: { label: '加课', cls: 'adj-addclass', needFrom: false, needTo: true, slotMode: 'course', multiSlot: true }
 };
 
+const ADJUSTMENT_REASON_APPLY_TYPE_ITEMS = [
+  { value: 'reschedule', label: '调课' },
+  { value: 'cancel', label: '停课' },
+  { value: 'makeup', label: '补课' },
+  { value: 'addclass', label: '加课' },
+  { value: 'batch-course', label: '批量调课程' },
+  { value: 'batch-room', label: '批量调教室' },
+  { value: 'batch-time', label: '批量调时间' }
+];
+
 const ADJUSTMENT_ACADEMIC_RELATED_CODE = 'academic-related';
 const ADJUSTMENT_LEAVE_FORM_HINT = '请先提交 Academic-Related Travel / Leave Application Form，再申请调课';
 const ADJUSTMENT_LEAVE_NO_OVERLAP_HINT = '无与本次调课时间重叠的请假记录';
@@ -59722,10 +59752,16 @@ function parseAdjustmentDateOnly(value) {
   return m ? m[1] : '';
 }
 
+function getAdjustmentReasonApplyTypeLabel(code) {
+  return ADJUSTMENT_REASON_APPLY_TYPE_ITEMS.find(x => x.value === code)?.label
+    || ADJUSTMENT_TYPE_META[code]?.label
+    || code;
+}
+
 function formatAdjustmentReasonApplyTypes(types) {
   const list = Array.isArray(types) ? types.filter(Boolean) : [];
   if (!list.length) return '全部';
-  return list.map(t => ADJUSTMENT_TYPE_META[t]?.label || t).join('、');
+  return list.map(t => getAdjustmentReasonApplyTypeLabel(t)).join('、');
 }
 
 function formatAdjustmentReasonTeacherTypes(types) {
@@ -59749,10 +59785,55 @@ function getAdjustmentReasonTypeDisplay(r) {
   return r.reasonType || inferAdjustmentReasonType(r.reason) || '—';
 }
 
+function getAdjustmentBatchReasonApplyType(kind) {
+  if (kind === 'course') return 'batch-course';
+  if (kind === 'room') return 'batch-room';
+  return 'batch-time';
+}
+
+function getAdjustmentBatchReasonTypeRow(kind) {
+  const name = (document.getElementById(`adjustment-batch-${kind}-reason-type`)?.value || '').trim();
+  if (!name) return null;
+  return findAdjustmentReasonTypeByCode(name);
+}
+
+function syncAdjustmentBatchAttachmentRequiredUI(kind) {
+  const label = document.getElementById(`adjustment-batch-${kind}-files-label`);
+  if (!label) return;
+  label.classList.toggle('req', isAdjustmentReasonRequireAttachment(getAdjustmentBatchReasonTypeRow(kind)));
+}
+
+function onAdjustmentBatchReasonTypeChange(kind) {
+  syncAdjustmentBatchAttachmentRequiredUI(kind);
+}
+
+function fillAdjustmentBatchReasonTypeSelects() {
+  ['course', 'room', 'time'].forEach(kind => {
+    const sel = document.getElementById(`adjustment-batch-${kind}-reason-type`);
+    fillAdjustmentReasonTypeNameSelect(sel, sel?.value || '', {
+      allowEmpty: true,
+      applyType: getAdjustmentBatchReasonApplyType(kind)
+    });
+    syncAdjustmentBatchAttachmentRequiredUI(kind);
+  });
+}
+
+function assertAdjustmentReasonAttachmentFiles(row, files) {
+  if (!isAdjustmentReasonRequireAttachment(row)) return true;
+  if (files && files.length) return true;
+  alert('该原因类型需上传附件，请添加附件后再提交');
+  return false;
+}
+
 function fillAdjustmentReasonTypeNameSelect(sel, selectedName, opts) {
   if (!sel) return;
   ensureAdjustmentReasonTypeStore();
-  const items = getAdjustmentReasonTypeItems().filter(x => x.enabled || x.name === selectedName);
+  const applyType = opts?.applyType || '';
+  const items = getAdjustmentReasonTypeItems().filter(x => {
+    if (!(x.enabled || x.name === selectedName)) return false;
+    if (applyType && x.applyTypes?.length && !x.applyTypes.includes(applyType)) return false;
+    return true;
+  });
   const fallback = opts?.defaultName || '';
   sel.innerHTML = (opts?.allowEmpty ? '<option value="">请选择</option>' : '')
     + items.map(t => `<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join('');
@@ -59762,19 +59843,33 @@ function fillAdjustmentReasonTypeNameSelect(sel, selectedName, opts) {
   else sel.value = '';
 }
 
+function isAdjustmentReasonRequireAttachment(row) {
+  return !!(row && row.requireAttachment);
+}
+
+function normalizeAdjustmentReasonTypeRow(row) {
+  if (!row) return row;
+  if (typeof row.requireAttachment !== 'boolean') row.requireAttachment = false;
+  return row;
+}
+
 function ensureAdjustmentReasonTypeStore() {
-  if (ADJUSTMENT_REASON_TYPE_STORE.seeded) return ADJUSTMENT_REASON_TYPE_STORE;
+  if (ADJUSTMENT_REASON_TYPE_STORE.seeded) {
+    ADJUSTMENT_REASON_TYPE_STORE.items.forEach(normalizeAdjustmentReasonTypeRow);
+    return ADJUSTMENT_REASON_TYPE_STORE;
+  }
   const seeds = [
-    { code: 'public-holiday', name: 'Public Holiday', attachmentHint: '不需要上传附件' },
+    { code: 'public-holiday', name: 'Public Holiday', attachmentHint: '不需要上传附件', requireAttachment: false },
     {
       code: ADJUSTMENT_ACADEMIC_RELATED_CODE,
       name: 'Academic-Related',
       attachmentHint: 'Please submit the Academic-Related Travel / Leave Application Form.',
+      requireAttachment: true,
       builtin: true
     },
-    { code: 'medical-condition', name: 'Medical Condition', attachmentHint: 'Please submit the Medical Certificate (MC).' },
-    { code: 'family-emergency', name: 'Family Emergency', attachmentHint: 'Please submit the relevant supporting document.' },
-    { code: 'other', name: 'Other', attachmentHint: 'Please submit the relevant supporting document.' }
+    { code: 'medical-condition', name: 'Medical Condition', attachmentHint: 'Please submit the Medical Certificate (MC).', requireAttachment: true },
+    { code: 'family-emergency', name: 'Family Emergency', attachmentHint: 'Please submit the relevant supporting document.', requireAttachment: true },
+    { code: 'other', name: 'Other', attachmentHint: 'Please submit the relevant supporting document.', requireAttachment: true }
   ];
   seeds.forEach(s => {
     ADJUSTMENT_REASON_TYPE_STORE.items.push({
@@ -59782,6 +59877,7 @@ function ensureAdjustmentReasonTypeStore() {
       code: s.code,
       name: s.name,
       attachmentHint: s.attachmentHint || '',
+      requireAttachment: !!s.requireAttachment,
       applyTypes: [],
       teacherTypes: [],
       enabled: true,
@@ -59959,6 +60055,8 @@ function syncAdjustmentApplyReasonTypeUI() {
     hint.hidden = !text;
     hint.textContent = text;
   }
+  const fileLabel = document.getElementById('adjustment-apply-files-label');
+  if (fileLabel) fileLabel.classList.toggle('req', isAdjustmentReasonRequireAttachment(row));
   const wrap = document.getElementById('adjustment-apply-leave-wrap');
   if (!wrap) return;
   const academic = !!(row && row.code === ADJUSTMENT_ACADEMIC_RELATED_CODE);
@@ -60087,7 +60185,7 @@ function renderAdjustmentReasonTypePage() {
   }
   if (!tbody) return;
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 7, '暂无原因类型，可点击上方按钮新增');
+    renderScheduleEmptyRow(tbody, 8, '暂无原因类型，可点击上方按钮新增');
     return;
   }
   tbody.innerHTML = rows.map((r, i) => {
@@ -60100,6 +60198,7 @@ function renderAdjustmentReasonTypePage() {
       <td class="col-index">${i + 1}</td>
       <td>${escapeHtml(r.name)}${r.builtin ? ' <span class="adj-reason-builtin">固定</span>' : ''}</td>
       <td title="${escapeHtml(hintText)}">${escapeHtml(hintShort)}</td>
+      <td class="col-center">${r.requireAttachment ? '是' : '否'}</td>
       <td>${escapeHtml(formatAdjustmentReasonApplyTypes(r.applyTypes))}</td>
       <td class="adj-reason-teacher-cell">${formatAdjustmentReasonTeacherTypesHtml(r.teacherTypes)}</td>
       <td class="col-center">${renderAdjustmentReasonTypeEnabledSwitch(r)}</td>
@@ -60108,8 +60207,8 @@ function renderAdjustmentReasonTypePage() {
   }).join('');
 }
 
-function syncAdjustmentReasonTypeEnabledSwitchUI() {
-  const input = document.getElementById('adjustment-reason-type-enabled-input');
+function syncAdjustmentReasonTypeBoolSwitchUI(inputId) {
+  const input = document.getElementById(inputId);
   const track = input?.closest('.table-bool-switch')?.querySelector('.table-bool-track');
   const text = track?.querySelector('.table-bool-text');
   if (!input || !track) return;
@@ -60119,11 +60218,19 @@ function syncAdjustmentReasonTypeEnabledSwitchUI() {
   if (text) text.textContent = on ? '是' : '否';
 }
 
+function syncAdjustmentReasonTypeEnabledSwitchUI() {
+  syncAdjustmentReasonTypeBoolSwitchUI('adjustment-reason-type-enabled-input');
+}
+
+function syncAdjustmentReasonTypeRequireAttachmentSwitchUI() {
+  syncAdjustmentReasonTypeBoolSwitchUI('adjustment-reason-type-require-attachment');
+}
+
 let adjustmentReasonTypeApplySelected = [];
 let adjustmentReasonTypeTeacherSelected = [];
 
 function getAdjustmentReasonTypeApplyItems() {
-  return Object.keys(ADJUSTMENT_TYPE_META).map(k => ({ value: k, label: ADJUSTMENT_TYPE_META[k].label }));
+  return ADJUSTMENT_REASON_APPLY_TYPE_ITEMS.slice();
 }
 
 function getAdjustmentReasonTypeTeacherItems() {
@@ -60230,6 +60337,7 @@ function openAdjustmentReasonTypeModal(id) {
   const idEl = document.getElementById('adjustment-reason-type-edit-id');
   const nameEl = document.getElementById('adjustment-reason-type-name');
   const hintEl = document.getElementById('adjustment-reason-type-hint-text');
+  const reqEl = document.getElementById('adjustment-reason-type-require-attachment');
   const enEl = document.getElementById('adjustment-reason-type-enabled-input');
   if (title) title.textContent = row ? '修改原因类型' : '新增原因类型';
   if (idEl) idEl.value = row?.id || '';
@@ -60238,15 +60346,21 @@ function openAdjustmentReasonTypeModal(id) {
     nameEl.readOnly = !!(row && row.builtin);
   }
   if (hintEl) hintEl.value = row?.attachmentHint || '';
+  if (reqEl) reqEl.checked = row ? !!row.requireAttachment : false;
   if (enEl) enEl.checked = row ? !!row.enabled : true;
   fillAdjustmentReasonTypeMultiSelect('apply', row?.applyTypes || []);
   fillAdjustmentReasonTypeMultiSelect('teacher', row?.teacherTypes || []);
   closeAdjustmentReasonTypeDropdowns();
   bindAdjustmentReasonTypeMultiSelectClose();
   syncAdjustmentReasonTypeEnabledSwitchUI();
+  syncAdjustmentReasonTypeRequireAttachmentSwitchUI();
   if (enEl && !enEl.dataset.bound) {
     enEl.dataset.bound = '1';
     enEl.addEventListener('change', syncAdjustmentReasonTypeEnabledSwitchUI);
+  }
+  if (reqEl && !reqEl.dataset.bound) {
+    reqEl.dataset.bound = '1';
+    reqEl.addEventListener('change', syncAdjustmentReasonTypeRequireAttachmentSwitchUI);
   }
   openModal('modal-adjustment-reason-type');
   if (typeof enhanceAllSelects === 'function') enhanceAllSelects(document.getElementById('modal-adjustment-reason-type'));
@@ -60257,6 +60371,7 @@ function saveAdjustmentReasonType() {
   const id = document.getElementById('adjustment-reason-type-edit-id')?.value || '';
   const name = (document.getElementById('adjustment-reason-type-name')?.value || '').trim();
   const attachmentHint = (document.getElementById('adjustment-reason-type-hint-text')?.value || '').trim();
+  const requireAttachment = !!document.getElementById('adjustment-reason-type-require-attachment')?.checked;
   const applyTypes = getAdjustmentReasonTypeMultiSelected('apply').slice();
   let teacherTypes = getAdjustmentReasonTypeMultiSelected('teacher').slice();
   const exist = id ? findAdjustmentReasonTypeById(id) : null;
@@ -60277,6 +60392,7 @@ function saveAdjustmentReasonType() {
     const before = typeof cloneEntitySnapshot === 'function' ? cloneEntitySnapshot(exist) : { ...exist };
     exist.name = exist.builtin ? exist.name : name;
     exist.attachmentHint = attachmentHint;
+    exist.requireAttachment = requireAttachment;
     exist.applyTypes = applyTypes;
     exist.teacherTypes = teacherTypes;
     exist.enabled = enabled;
@@ -60294,6 +60410,7 @@ function saveAdjustmentReasonType() {
       code: `rt-${Date.now()}`,
       name,
       attachmentHint,
+      requireAttachment,
       applyTypes,
       teacherTypes,
       enabled,
@@ -60307,6 +60424,7 @@ function saveAdjustmentReasonType() {
       action: 'create',
       changes: [
         { fieldKey: 'name', fieldLabel: '原因类型', before: '空', after: rec.name },
+        { fieldKey: 'requireAttachment', fieldLabel: '是否需上传附件', before: '空', after: rec.requireAttachment ? '是' : '否' },
         { fieldKey: 'enabled', fieldLabel: '是否启用', before: '空', after: rec.enabled ? '是' : '否' }
       ]
     });
@@ -62016,6 +62134,18 @@ function seedAdjustmentBatchRecords() {
   if (ADJUSTMENT_STORE.batchRecords.length) return;
   const currentTerm = getDefaultOfferingTermCode() || '202604';
   const demos = [
+    {
+      kind: 'course',
+      termCode: currentTerm,
+      sourceRange: { start: '2026-03-16', end: '2026-03-16' },
+      sourcePeriods: [1, 2],
+      targetRange: { start: '2026-03-23', end: '2026-03-23' },
+      targetPeriods: [3, 4],
+      slotCount: 8,
+      reason: '按课程统一调整上课时间',
+      reasonType: 'Other',
+      operator: '教务管理员'
+    },
     {
       kind: 'time',
       termCode: currentTerm,
@@ -65201,6 +65331,10 @@ function submitAdjustmentApplyCore() {
   }
   if (!reasonTypeCode) { alert('请选择原因类型'); return; }
   if (!reason) { alert('请填写申请事由'); return; }
+  if (isAdjustmentReasonRequireAttachment(reasonTypeRow) && !adjustmentApplyFiles.length) {
+    alert('该原因类型需上传附件，请添加附件后再提交');
+    return;
+  }
   const roomOpenMix = assertAdjustmentRoomOpenMix(items, getAdjustmentRequestTermCode());
   if (!roomOpenMix.ok) { alert(roomOpenMix.message); return; }
   const leaveCheck = validateAdjustmentAcademicLeaveSelection();
@@ -65977,6 +66111,7 @@ function submitAdjustmentHoliday() {
 /* ── 教务：批量调课管理 ── */
 let adjustmentBatchActiveTab = 'time';
 let adjustmentBatchDateKind = 'time';
+let adjustmentBatchDatePickerGuard = 0;
 let adjustmentBatchCalYear = 0;
 let adjustmentBatchCalMonth = 0;
 let adjustmentBatchDateDraft = { start: '', end: '' };
@@ -65990,6 +66125,16 @@ const ADJUSTMENT_BATCH_STATE = {
     preview: [], files: [], generatedKey: '', selectedIdx: new Set(), conflictOnly: false
   },
   timeTarget: {
+    dates: [], range: { start: '', end: '' },
+    dateMode: 'date', weekFrom: 0, weekTo: 0, weekdays: []
+  },
+  course: {
+    dates: [], range: { start: '', end: '' },
+    dateMode: 'date', weekFrom: 0, weekTo: 0, weekdays: [],
+    courseCodes: [],
+    preview: [], files: [], generatedKey: '', selectedIdx: new Set(), conflictOnly: false
+  },
+  courseTarget: {
     dates: [], range: { start: '', end: '' },
     dateMode: 'date', weekFrom: 0, weekTo: 0, weekdays: []
   },
@@ -66039,10 +66184,22 @@ function clearAdjustmentBatchRoomGenerated() {
   setAdjustmentBatchRoomTip('');
 }
 
+function resolveAdjustmentBatchPreviewKind(kind) {
+  if (kind === 'room') return 'room';
+  if (kind === 'course' || kind === 'courseTarget') return 'course';
+  return 'time';
+}
+
 function clearAdjustmentBatchGeneratedByKind(kind) {
-  if (kind === 'room') {
+  const previewKind = resolveAdjustmentBatchPreviewKind(kind);
+  if (previewKind === 'room') {
     clearAdjustmentBatchRoomGenerated();
     renderAdjustmentBatchPreview('room');
+    return;
+  }
+  if (previewKind === 'course') {
+    clearAdjustmentBatchCourseGenerated();
+    renderAdjustmentBatchPreview('course');
     return;
   }
   clearAdjustmentBatchTimeGenerated();
@@ -66053,15 +66210,25 @@ function fillAdjustmentBatchWeekSelects(kind) {
   const term = getAdjustmentBatchFormTermCode();
   const max = getOfferingTermTeachingWeeks(term) || 14;
   const state = ADJUSTMENT_BATCH_STATE[kind];
-  ['week-from', 'week-to'].forEach(suffix => {
-    const sel = document.getElementById(`adjustment-batch-${kind}-${suffix}`);
-    if (!sel) return;
-    const cur = suffix === 'week-from' ? state.weekFrom : state.weekTo;
-    sel.innerHTML = `<option value="">请选择</option>` + Array.from({ length: max }, (_, i) => {
-      const n = i + 1;
-      return `<option value="${n}"${Number(cur) === n ? ' selected' : ''}>第${n}周</option>`;
-    }).join('');
-  });
+  if (!state) return;
+  const weekFrom = Number(state.weekFrom) || 0;
+  let weekTo = Number(state.weekTo) || 0;
+  if (weekFrom && weekTo && weekTo < weekFrom) {
+    weekTo = weekFrom;
+    state.weekTo = weekTo;
+  }
+  const renderWeekOptions = (min, selected) => {
+    const start = Math.max(1, Number(min) || 1);
+    let html = '<option value="">请选择</option>';
+    for (let n = start; n <= max; n++) {
+      html += `<option value="${n}"${Number(selected) === n ? ' selected' : ''}>第${n}周</option>`;
+    }
+    return html;
+  };
+  const fromSel = document.getElementById(`adjustment-batch-${kind}-week-from`);
+  const toSel = document.getElementById(`adjustment-batch-${kind}-week-to`);
+  if (fromSel) fromSel.innerHTML = renderWeekOptions(1, weekFrom);
+  if (toSel) toSel.innerHTML = renderWeekOptions(weekFrom || 1, weekTo);
 }
 
 function expandAdjustmentBatchWeekdayDates(weekFrom, weekTo, weekdays, termCode) {
@@ -66084,6 +66251,10 @@ function syncAdjustmentBatchWeekdayDates(kind) {
   const state = ADJUSTMENT_BATCH_STATE[kind];
   if (!state || state.dateMode !== 'weekday') return;
   state.dates = expandAdjustmentBatchWeekdayDates(state.weekFrom, state.weekTo, state.weekdays, getAdjustmentBatchFormTermCode());
+  if (kind === 'course') {
+    const allowed = new Set(getAdjustmentBatchCourseSourceOptions().allowedDates || []);
+    state.dates = state.dates.filter(ds => allowed.has(ds));
+  }
   if (state.dates.length) {
     state.range = { start: state.dates[0], end: state.dates[state.dates.length - 1] };
   } else {
@@ -66110,11 +66281,17 @@ function renderAdjustmentBatchSsMulti(selectId, mountId, config = {}) {
   if (!select || !mount) return;
   const placeholder = config.placeholder || '请选择或搜索';
   const options = config.options || [];
-  const selected = new Set((config.selected || []).map(String));
-  select.innerHTML = options.map(o =>
+  const single = !!config.single;
+  let selectedVals = (config.selected || []).map(v => String(v || '').trim()).filter(Boolean);
+  if (single) selectedVals = selectedVals.slice(0, 1);
+  const selected = new Set(selectedVals);
+  if (single) select.removeAttribute('multiple');
+  const optionHtml = options.map(o =>
     `<option value="${escapeHtml(String(o.value))}"${selected.has(String(o.value)) ? ' selected' : ''}>${escapeHtml(o.label)}</option>`
   ).join('');
-  const syncFromSelect = () => [...select.selectedOptions].map(o => o.value);
+  select.innerHTML = single ? `<option value=""></option>${optionHtml}` : optionHtml;
+  if (single) select.value = selectedVals[0] || '';
+  const syncFromSelect = () => [...select.selectedOptions].map(o => o.value).filter(v => String(v || '').trim() !== '');
   const updateTrigger = () => {
     const vals = syncFromSelect();
     const labelEl = mount.querySelector('.adj-batch-ss-multi-label');
@@ -66125,7 +66302,7 @@ function renderAdjustmentBatchSsMulti(selectId, mountId, config = {}) {
       return;
     }
     mount.classList.remove('is-empty');
-    if (vals.length <= 2) {
+    if (single || vals.length <= 2) {
       labelEl.textContent = vals.map(v => options.find(o => String(o.value) === String(v))?.label || v).join('、');
     } else {
       labelEl.textContent = `已选 ${vals.length} 项`;
@@ -66140,9 +66317,11 @@ function renderAdjustmentBatchSsMulti(selectId, mountId, config = {}) {
       if (!needle) return true;
       return String(o.label).toLowerCase().includes(needle) || String(o.value).toLowerCase().includes(needle);
     });
+    const inputType = single ? 'radio' : 'checkbox';
+    const name = single ? `adj-batch-ss-${selectId}` : '';
     list.innerHTML = rows.length
       ? rows.map(o => `<label class="adj-batch-ss-multi-item">
-          <input type="checkbox" value="${escapeHtml(String(o.value))}"${chosen.has(String(o.value)) ? ' checked' : ''}>
+          <input type="${inputType}"${name ? ` name="${escapeHtml(name)}"` : ''} value="${escapeHtml(String(o.value))}"${chosen.has(String(o.value)) ? ' checked' : ''}>
           <span>${escapeHtml(o.label)}</span>
         </label>`).join('')
       : '<div class="text-muted" style="padding:8px">无匹配项</div>';
@@ -66176,12 +66355,17 @@ function renderAdjustmentBatchSsMulti(selectId, mountId, config = {}) {
   };
   search.oninput = () => renderList(search.value);
   list.onchange = ev => {
-    const cb = ev.target;
-    if (!cb || cb.type !== 'checkbox') return;
-    const opt = [...select.options].find(o => o.value === cb.value);
-    if (opt) opt.selected = cb.checked;
+    const input = ev.target;
+    if (!input || (input.type !== 'checkbox' && input.type !== 'radio')) return;
+    if (single) {
+      [...select.options].forEach(o => { o.selected = o.value === input.value && input.checked; });
+    } else {
+      const opt = [...select.options].find(o => o.value === input.value);
+      if (opt) opt.selected = input.checked;
+    }
     updateTrigger();
     if (typeof config.onChange === 'function') config.onChange(syncFromSelect());
+    if (single && input.checked) setAdjustmentBatchSsMultiOpen(dd, false);
   };
 }
 
@@ -66196,18 +66380,27 @@ if (!window.__adjBatchSsMultiBound) {
 function initAdjustmentBatchWeekdaySelect(kind) {
   const state = ADJUSTMENT_BATCH_STATE[kind];
   if (!state) return;
+  let options = SCHEDULE_WEEKDAYS.map(w => ({ value: String(w.value), label: w.label }));
+  if (kind === 'course') {
+    const allowed = new Set(getAdjustmentBatchCourseSourceOptions().allowedWeekdays || []);
+    options = options.filter(o => allowed.has(Number(o.value)));
+    state.weekdays = (state.weekdays || []).filter(n => allowed.has(Number(n)));
+  }
   renderAdjustmentBatchSsMulti(
     `adjustment-batch-${kind}-weekdays`,
     `adjustment-batch-${kind}-weekdays-mount`,
     {
-      placeholder: '请选择星期',
-      options: SCHEDULE_WEEKDAYS.map(w => ({ value: String(w.value), label: w.label })),
+      placeholder: kind === 'course' && !options.length ? '请先选择课程' : '请选择星期',
+      options,
       selected: state.weekdays || [],
       onChange: vals => {
         state.weekdays = vals.map(Number).filter(n => n >= 1 && n <= 7);
         syncAdjustmentBatchWeekdayDates(kind);
         renderAdjustmentBatchDateSummary(kind);
-        clearAdjustmentBatchGeneratedByKind(kind === 'room' ? 'room' : 'time');
+        if (kind === 'course') refreshAdjustmentBatchCourseSourcePeriods();
+        if (kind !== 'course' && kind !== 'courseTarget') {
+          clearAdjustmentBatchGeneratedByKind(kind);
+        }
       }
     }
   );
@@ -66251,6 +66444,683 @@ function initAdjustmentBatchCourseSelect() {
   });
 }
 
+function getAdjustmentBatchCourseCodes() {
+  const sel = document.getElementById('adjustment-batch-course-courses');
+  if (sel) {
+    const vals = [...sel.selectedOptions].map(o => String(o.value || '').trim()).filter(Boolean);
+    ADJUSTMENT_BATCH_STATE.course.courseCodes = vals;
+    return vals;
+  }
+  return (ADJUSTMENT_BATCH_STATE.course.courseCodes || []).filter(Boolean);
+}
+
+function getAdjustmentBatchTermTasks() {
+  const term = getAdjustmentBatchFormTermCode();
+  const rows = typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : [];
+  return (rows || []).filter(task => {
+    if (!term || !task?.termCode) return true;
+    return String(task.termCode) === String(term);
+  });
+}
+
+function adjustmentBatchTaskHasScheduledSlots(task) {
+  const slots = typeof normalizeTaskTimeSlots === 'function' ? normalizeTaskTimeSlots(task) : (task?.timeSlots || []);
+  return (slots || []).some(slot => Number(slot?.weekday) && Number(slot?.periodFrom));
+}
+
+function getAdjustmentBatchScheduledTermTasks() {
+  return getAdjustmentBatchTermTasks().filter(adjustmentBatchTaskHasScheduledSlots);
+}
+
+function adjustmentBatchSlotOccursOnDate(task, slot, dateStr) {
+  const weekday = getAdjustmentDateWeekday(dateStr);
+  if (!weekday || Number(slot?.weekday) !== weekday) return false;
+  const weeks = parseWeeksString(slot?.weeks || task?.weeks || '');
+  if (!weeks.length) return true;
+  const weekNo = adjustmentTeachingWeekOf(new Date(`${dateStr}T00:00:00`));
+  return weeks.includes(Number(weekNo));
+}
+
+function getAdjustmentBatchCourseSourceOptions(courseCodes, selectedDates) {
+  const codes = new Set((courseCodes || getAdjustmentBatchCourseCodes()).map(c => String(c).toUpperCase()).filter(Boolean));
+  const allowedDates = new Set();
+  const allowedWeekdays = new Set();
+  const periodsAll = new Set();
+  const periodsByDate = new Map();
+  const empty = { allowedDates: [], allowedWeekdays: [], allowedPeriods: [], hasSlots: false };
+  if (!codes.size) return empty;
+  const termCode = getAdjustmentBatchFormTermCode();
+  const termStart = typeof getScheduleTermStartDate === 'function' ? getScheduleTermStartDate(termCode) : null;
+  const maxWeeks = (typeof getOfferingTermTeachingWeeks === 'function' ? getOfferingTermTeachingWeeks(termCode) : 0) || 14;
+  getAdjustmentBatchTermTasks().forEach(task => {
+    if (!codes.has(String(task.code || '').toUpperCase())) return;
+    (typeof normalizeTaskTimeSlots === 'function' ? normalizeTaskTimeSlots(task) : []).forEach(slot => {
+      const weekday = Number(slot.weekday);
+      const pf = Number(slot.periodFrom);
+      const pt = Number(slot.periodTo || slot.periodFrom);
+      if (!weekday || !pf) return;
+      allowedWeekdays.add(weekday);
+      const weeks = parseWeeksString(slot.weeks || task.weeks || '');
+      const weekList = weeks.length ? weeks : Array.from({ length: maxWeeks }, (_, i) => i + 1);
+      weekList.forEach(w => {
+        const ds = termStart ? getScheduleDateByTeachingWeek(termStart, w, weekday) : '';
+        if (!ds) return;
+        allowedDates.add(ds);
+        if (!periodsByDate.has(ds)) periodsByDate.set(ds, new Set());
+        for (let p = Math.min(pf, pt); p <= Math.max(pf, pt); p++) {
+          periodsByDate.get(ds).add(p);
+          periodsAll.add(p);
+        }
+      });
+    });
+  });
+  let allowedPeriods = [...periodsAll].sort((a, b) => a - b);
+  const dateFilter = (selectedDates || ADJUSTMENT_BATCH_STATE.course.dates || []).filter(Boolean);
+  if (dateFilter.length) {
+    const narrowed = new Set();
+    dateFilter.forEach(ds => {
+      (periodsByDate.get(ds) || []).forEach(p => narrowed.add(p));
+    });
+    allowedPeriods = [...narrowed].sort((a, b) => a - b);
+  }
+  return {
+    allowedDates: [...allowedDates].sort(),
+    allowedWeekdays: [...allowedWeekdays].sort((a, b) => a - b),
+    allowedPeriods,
+    hasSlots: allowedDates.size > 0
+  };
+}
+
+function clearAdjustmentBatchCourseGenerated() {
+  const state = ADJUSTMENT_BATCH_STATE.course;
+  state.preview = [];
+  state.generatedKey = '';
+  state.selectedIdx = new Set();
+  setAdjustmentBatchCourseTip('');
+}
+
+function ensureAdjustmentBatchCourseSelectedSet() {
+  const state = ADJUSTMENT_BATCH_STATE.course;
+  if (!(state.selectedIdx instanceof Set)) state.selectedIdx = new Set();
+  return state.selectedIdx;
+}
+
+function setAdjustmentBatchCourseTip(msg, isError) {
+  const el = document.getElementById('adjustment-batch-course-tip');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('is-error', !!isError && !!msg);
+  el.hidden = !msg;
+}
+
+function failAdjustmentBatchCourse(msg) {
+  setAdjustmentBatchCourseTip(msg, true);
+  alert(msg);
+  return false;
+}
+
+function getAdjustmentBatchCourseTargetPeriods() {
+  return getAdjustmentBatchCheckedValues('#adjustment-batch-course-target-periods');
+}
+
+function getAdjustmentBatchCourseSourceDayCount() {
+  const src = ADJUSTMENT_BATCH_STATE.course;
+  if (src.dates?.length) return src.dates.length;
+  return expandAdjustmentHolidayRange(src.range || {}).length;
+}
+
+function validateAdjustmentBatchCourseTargetDayCount(targetDayCount) {
+  const srcCount = getAdjustmentBatchCourseSourceDayCount();
+  if (!srcCount) {
+    alert('请先选择原日期');
+    return false;
+  }
+  if (targetDayCount !== srcCount) {
+    alert(`原日期与目标日期数量须一致（原 ${srcCount} 天，当前 ${targetDayCount} 天）`);
+    return false;
+  }
+  return true;
+}
+
+function setAdjustmentBatchCourseSourceDisabled(disabled, emptyHint) {
+  ['adjustment-batch-course-source-date-wrap', 'adjustment-batch-course-source-period-wrap'].forEach(id => {
+    document.getElementById(id)?.classList.toggle('is-disabled-until-course', !!disabled);
+  });
+  const dateHint = document.getElementById('adjustment-batch-course-source-date-hint');
+  const periodHint = document.getElementById('adjustment-batch-course-source-period-hint');
+  if (dateHint) dateHint.textContent = emptyHint || '可选项仅含已选课程的已排课日期';
+  if (periodHint) periodHint.textContent = emptyHint || '可选项仅含已选课程在已选原日期上出现过的节次';
+}
+
+function refreshAdjustmentBatchCourseSourcePeriods(opts = {}) {
+  const term = getAdjustmentBatchFormTermCode()
+    || getActiveOfferingTermSetting()?.termCode
+    || getSelectedScheduleTimeSettingTerm();
+  const host = document.getElementById('adjustment-batch-course-source-periods');
+  if (!host) return;
+  const codes = getAdjustmentBatchCourseCodes();
+  const sourceOpts = getAdjustmentBatchCourseSourceOptions(codes, ADJUSTMENT_BATCH_STATE.course.dates);
+  const selected = new Set(
+    opts.keepSelected === false
+      ? []
+      : getAdjustmentBatchSelectedPeriods('course').filter(p => sourceOpts.allowedPeriods.includes(p))
+  );
+  if (!codes.length) {
+    host.innerHTML = '<span class="text-muted">请先选择课程</span>';
+    setAdjustmentBatchCourseSourceDisabled(true, '请先选择课程');
+    return;
+  }
+  if (!sourceOpts.hasSlots) {
+    host.innerHTML = '<span class="text-muted">所选课程暂无已排课节</span>';
+    setAdjustmentBatchCourseSourceDisabled(true, '所选课程暂无已排课节');
+    return;
+  }
+  setAdjustmentBatchCourseSourceDisabled(false);
+  if (!sourceOpts.allowedPeriods.length) {
+    host.innerHTML = '<span class="text-muted">已选原日期上暂无对应节次</span>';
+    return;
+  }
+  host.innerHTML = sourceOpts.allowedPeriods.map(p =>
+    `<label class="schedule-multi-check"><input type="checkbox" value="${p}"${selected.has(p) ? ' checked' : ''}>${escapeHtml(formatAdjustmentPeriodLabel(p, p, term))}</label>`
+  ).join('');
+  host.querySelectorAll('input[type="checkbox"]').forEach(el => {
+    el.addEventListener('change', () => renderAdjustmentBatchPreview('course'));
+  });
+}
+
+function initAdjustmentBatchCourseTargetPeriods(opts = {}) {
+  const term = getAdjustmentBatchFormTermCode()
+    || getActiveOfferingTermSetting()?.termCode
+    || getSelectedScheduleTimeSettingTerm();
+  const host = document.getElementById('adjustment-batch-course-target-periods');
+  if (!host) return;
+  const selected = new Set(opts.keepSelected === false ? [] : getAdjustmentBatchCourseTargetPeriods());
+  host.innerHTML = ensureSchedulePeriods(term).map(p =>
+    `<label class="schedule-multi-check"><input type="checkbox" value="${p.periodNo}"${selected.has(p.periodNo) ? ' checked' : ''}>${escapeHtml(formatAdjustmentPeriodLabel(p.periodNo, p.periodNo, term))}</label>`
+  ).join('') || '<span class="text-muted">请先维护课表节次</span>';
+  host.querySelectorAll('input[type="checkbox"]').forEach(el => {
+    el.addEventListener('change', () => renderAdjustmentBatchPreview('course'));
+  });
+}
+
+function initAdjustmentBatchCourseTabCourseSelect() {
+  const seen = new Set();
+  const options = [];
+  getAdjustmentBatchScheduledTermTasks().forEach(task => {
+    const code = String(task?.code || '').trim();
+    if (!code) return;
+    const key = code.toUpperCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    const name = String(task.name || '').trim();
+    options.push({
+      value: code,
+      label: `${typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(code) : code}${name ? ` ${name}` : ''}`
+    });
+  });
+  options.sort((a, b) => String(a.value).localeCompare(String(b.value)));
+  const allowed = new Set(options.map(o => String(o.value).toUpperCase()));
+  ADJUSTMENT_BATCH_STATE.course.courseCodes = (ADJUSTMENT_BATCH_STATE.course.courseCodes || [])
+    .map(code => String(code || '').trim())
+    .filter(code => allowed.has(String(code).toUpperCase()))
+    .slice(0, 1);
+  renderAdjustmentBatchSsMulti('adjustment-batch-course-courses', 'adjustment-batch-course-courses-mount', {
+    placeholder: options.length ? '请选择或搜索已排课课程' : '当前学期暂无已排课课程',
+    options,
+    selected: ADJUSTMENT_BATCH_STATE.course.courseCodes || [],
+    single: true,
+    onChange: vals => {
+      ADJUSTMENT_BATCH_STATE.course.courseCodes = vals;
+      resetAdjustmentBatchCourseDateAndPeriodFields();
+    }
+  });
+  if (!(ADJUSTMENT_BATCH_STATE.course.courseCodes || []).length) {
+    const sel = document.getElementById('adjustment-batch-course-courses');
+    if (sel) sel.value = '';
+    ADJUSTMENT_BATCH_STATE.course.courseCodes = [];
+  }
+}
+
+function resetAdjustmentBatchCourseDateAndPeriodFields() {
+  const src = ADJUSTMENT_BATCH_STATE.course;
+  const tgt = ADJUSTMENT_BATCH_STATE.courseTarget;
+  src.dates = [];
+  src.range = { start: '', end: '' };
+  emptyAdjustmentBatchWeekdayFields(src);
+  tgt.dates = [];
+  tgt.range = { start: '', end: '' };
+  emptyAdjustmentBatchWeekdayFields(tgt);
+  tgt.dateMode = src.dateMode === 'weekday' ? 'weekday' : 'date';
+  fillAdjustmentBatchWeekSelects('course');
+  fillAdjustmentBatchWeekSelects('courseTarget');
+  initAdjustmentBatchWeekdaySelect('course');
+  initAdjustmentBatchWeekdaySelect('courseTarget');
+  syncAdjustmentBatchDateModeUi('course');
+  syncAdjustmentBatchDateModeUi('courseTarget');
+  renderAdjustmentBatchDateSummary('course');
+  renderAdjustmentBatchDateSummary('courseTarget');
+  refreshAdjustmentBatchCourseSourcePeriods({ keepSelected: false });
+  initAdjustmentBatchCourseTargetPeriods({ keepSelected: false });
+}
+
+function initAdjustmentBatchCourseTab() {
+  if (typeof ensureScheduleTasksFromOffering === 'function') ensureScheduleTasksFromOffering();
+  initAdjustmentBatchCourseTabCourseSelect();
+  const sharedMode = ADJUSTMENT_BATCH_STATE.course.dateMode === 'weekday' ? 'weekday' : 'date';
+  ADJUSTMENT_BATCH_STATE.courseTarget.dateMode = sharedMode;
+  fillAdjustmentBatchWeekSelects('course');
+  fillAdjustmentBatchWeekSelects('courseTarget');
+  initAdjustmentBatchWeekdaySelect('course');
+  initAdjustmentBatchWeekdaySelect('courseTarget');
+  syncAdjustmentBatchDateModeUi('course');
+  syncAdjustmentBatchDateModeUi('courseTarget');
+  renderAdjustmentBatchDateSummary('course');
+  renderAdjustmentBatchDateSummary('courseTarget');
+  refreshAdjustmentBatchCourseSourcePeriods();
+  initAdjustmentBatchCourseTargetPeriods();
+  const conflictOnlyEl = document.getElementById('adjustment-batch-course-conflict-only');
+  if (conflictOnlyEl) conflictOnlyEl.checked = !!ADJUSTMENT_BATCH_STATE.course.conflictOnly;
+  renderAdjustmentBatchPreview('course');
+  renderAdjustmentBatchFileList('course');
+}
+
+function collectAdjustmentBatchCourseHits() {
+  const codes = new Set(getAdjustmentBatchCourseCodes().map(c => String(c).toUpperCase()));
+  if (!codes.size) return [];
+  const state = ADJUSTMENT_BATCH_STATE.course;
+  const periods = getAdjustmentBatchSelectedPeriods('course');
+  if (!state.dates.length || !periods.length) return [];
+  const periodSet = new Set(periods);
+  const hits = [];
+  state.dates.forEach(dateStr => {
+    const weekday = getAdjustmentDateWeekday(dateStr);
+    if (!weekday) return;
+    getAdjustmentBatchTermTasks().forEach(task => {
+      if (!codes.has(String(task.code || '').toUpperCase())) return;
+      (typeof normalizeTaskTimeSlots === 'function' ? normalizeTaskTimeSlots(task) : []).forEach(slot => {
+        if (!adjustmentBatchSlotOccursOnDate(task, slot, dateStr)) return;
+        const pf = Number(slot.periodFrom);
+        const pt = Number(slot.periodTo || slot.periodFrom);
+        for (let p = Math.min(pf, pt); p <= Math.max(pf, pt); p++) {
+          if (!periodSet.has(p)) continue;
+          hits.push({
+            dateStr,
+            weekday,
+            weekNo: adjustmentTeachingWeekOf(new Date(`${dateStr}T00:00:00`)),
+            period: p,
+            task,
+            slot,
+            teachers: formatScheduleTeacherNames(task) || task.teachers || '—',
+            room: resolveAdjustmentBatchHitRoom(task, slot),
+            groupLabel: formatScheduleGroupNames(task)
+          });
+        }
+      });
+    });
+  });
+  return hits;
+}
+
+function validateAdjustmentBatchCourseForm() {
+  setAdjustmentBatchCourseTip('');
+  const codes = getAdjustmentBatchCourseCodes();
+  if (!codes.length) return failAdjustmentBatchCourse('请先选择课程');
+  const opts = getAdjustmentBatchCourseSourceOptions(codes);
+  if (!opts.hasSlots) return failAdjustmentBatchCourse('所选课程暂无已排课节');
+  const srcErr = validateAdjustmentBatchWeekdaySide('course', '原日期');
+  if (srcErr) return failAdjustmentBatchCourse(srcErr);
+  const tgtErr = validateAdjustmentBatchWeekdaySide('courseTarget', '目标日期');
+  if (tgtErr) return failAdjustmentBatchCourse(tgtErr);
+  const srcDates = ADJUSTMENT_BATCH_STATE.course.dates || [];
+  const tgtDates = ADJUSTMENT_BATCH_STATE.courseTarget.dates || [];
+  const srcPeriods = getAdjustmentBatchSelectedPeriods('course');
+  const tgtPeriods = getAdjustmentBatchCourseTargetPeriods();
+  if (!srcDates.length) return failAdjustmentBatchCourse('请选择原日期');
+  if (!srcPeriods.length) return failAdjustmentBatchCourse('请选择原节次');
+  if (!tgtDates.length) return failAdjustmentBatchCourse('请选择目标日期');
+  if (!tgtPeriods.length) return failAdjustmentBatchCourse('请选择目标节次');
+  if (tgtDates.length !== srcDates.length) {
+    return failAdjustmentBatchCourse('原日期与目标日期数量须一致');
+  }
+  if (!validateAdjustmentBatchPeriodSelection(srcPeriods, tgtPeriods)) {
+    return failAdjustmentBatchCourse('原节次与目标节次数量须一致');
+  }
+  return true;
+}
+
+function getAdjustmentBatchCourseSelectionKey() {
+  const src = ADJUSTMENT_BATCH_STATE.course;
+  const tgt = ADJUSTMENT_BATCH_STATE.courseTarget;
+  return [
+    src.dateMode || 'date',
+    src.weekFrom || '', src.weekTo || '', [...(src.weekdays || [])].sort((a, b) => a - b).join('.'),
+    tgt.dateMode || 'date',
+    tgt.weekFrom || '', tgt.weekTo || '', [...(tgt.weekdays || [])].sort((a, b) => a - b).join('.'),
+    [...(src.dates || [])].sort().join(','),
+    getAdjustmentBatchSelectedPeriods('course').slice().sort((a, b) => a - b).join(','),
+    [...(tgt.dates || [])].sort().join(','),
+    getAdjustmentBatchCourseTargetPeriods().slice().sort((a, b) => a - b).join(','),
+    getAdjustmentBatchCourseCodes().slice().sort().join(',')
+  ].join('|');
+}
+
+function getAdjustmentBatchCoursePreviewRowKey(row) {
+  const task = row?.task || {};
+  return [
+    String(task.id || ''),
+    String(task.code || '').toUpperCase(),
+    String(row?.dateStr || ''),
+    String(Number(row?.period) || ''),
+    String(row?.groupLabel || task.groupLabel || '')
+  ].join('|');
+}
+
+function buildAdjustmentBatchCoursePreviewRows() {
+  const hits = collectAdjustmentBatchCourseHits();
+  const sourceDates = ADJUSTMENT_BATCH_STATE.course.dates || [];
+  const targetDates = ADJUSTMENT_BATCH_STATE.courseTarget.dates || [];
+  const sourcePeriods = getAdjustmentBatchSelectedPeriods('course');
+  const targetPeriods = getAdjustmentBatchCourseTargetPeriods();
+  return (hits || []).map(h => {
+    const targetDateStr = mapAdjustmentBatchTargetDate(h.dateStr, sourceDates, targetDates);
+    const targetPeriod = mapAdjustmentBatchTargetPeriod(h.period, sourcePeriods, targetPeriods);
+    const targetWeekday = getAdjustmentDateWeekday(targetDateStr);
+    const targetWeekNo = targetDateStr
+      ? adjustmentTeachingWeekOf(new Date(`${targetDateStr}T00:00:00`))
+      : 0;
+    return {
+      ...h,
+      targetDateStr,
+      targetPeriod,
+      targetDates,
+      targetWeekday,
+      targetWeekNo,
+      targetPeriods,
+      targetRoom: resolveAdjustmentBatchHitRoom(h.task, h.slot) || (h.room && h.room !== '—' ? h.room : '')
+    };
+  });
+}
+
+function previewAdjustmentBatchCourse() {
+  const incoming = buildAdjustmentBatchCoursePreviewRows();
+  const state = ADJUSTMENT_BATCH_STATE.course;
+  const existing = state.preview || [];
+  const seen = new Set(existing.map(getAdjustmentBatchCoursePreviewRowKey));
+  const added = incoming.filter(row => {
+    const key = getAdjustmentBatchCoursePreviewRowKey(row);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  state.preview = existing.concat(added);
+  annotateAdjustmentBatchTimeConflicts(state.preview);
+  renderAdjustmentBatchPreview('course');
+  return { incomingCount: incoming.length, addedCount: added.length, total: state.preview.length };
+}
+
+function generateAdjustmentBatchCoursePreview() {
+  if (!validateAdjustmentBatchCourseForm()) return;
+  const result = previewAdjustmentBatchCourse();
+  const state = ADJUSTMENT_BATCH_STATE.course;
+  const rows = state.preview || [];
+  if (!result.incomingCount) {
+    setAdjustmentBatchCourseTip(rows.length
+      ? '当前条件没有可追加的课节，已保留全部已生成调课明细'
+      : '当前条件没有可调整的课节', true);
+    return;
+  }
+  if (!result.addedCount) {
+    return failAdjustmentBatchCourse('所选课节已在调课明细中，未追加新记录');
+  }
+  state.generatedKey = getAdjustmentBatchCourseSelectionKey();
+  const conflictCount = countAdjustmentBatchTimeConflicts(rows);
+  if (conflictCount) {
+    setAdjustmentBatchCourseTip(
+      `已追加 ${result.addedCount} 条调课明细，当前共 ${rows.length} 条，其中 ${conflictCount} 条存在冲突（浅黄高亮），无法提交`,
+      true
+    );
+  } else {
+    setAdjustmentBatchCourseTip(
+      `已追加 ${result.addedCount} 条调课明细，当前共 ${rows.length} 条，未检测到冲突`,
+      false
+    );
+  }
+}
+
+function clearAdjustmentBatchCoursePreview() {
+  const state = ADJUSTMENT_BATCH_STATE.course;
+  if (!state.preview?.length && !state.generatedKey) {
+    setAdjustmentBatchCourseTip('当前没有可清空的调课明细', false);
+    return;
+  }
+  clearAdjustmentBatchCourseGenerated();
+  renderAdjustmentBatchPreview('course');
+  setAdjustmentBatchCourseTip('已清空调课明细，可修改条件后重新生成', false);
+}
+
+function deleteAdjustmentBatchCoursePreview() {
+  deleteAdjustmentBatchPreviewRows('course');
+}
+
+function getAdjustmentBatchCourseVisibleIndexes() {
+  const rows = ADJUSTMENT_BATCH_STATE.course.preview || [];
+  const conflictOnly = !!ADJUSTMENT_BATCH_STATE.course.conflictOnly;
+  const indexes = [];
+  rows.forEach((r, idx) => {
+    if (conflictOnly && !r?.conflict?.hasConflict) return;
+    indexes.push(idx);
+  });
+  return indexes;
+}
+
+function syncAdjustmentBatchCourseCheckAll() {
+  const el = document.getElementById('adjustment-batch-course-check-all');
+  if (!el) return;
+  const visible = getAdjustmentBatchCourseVisibleIndexes();
+  const selected = ensureAdjustmentBatchCourseSelectedSet();
+  el.checked = visible.length > 0 && visible.every(idx => selected.has(idx));
+}
+
+function onAdjustmentBatchCourseConflictOnlyChange() {
+  const el = document.getElementById('adjustment-batch-course-conflict-only');
+  ADJUSTMENT_BATCH_STATE.course.conflictOnly = !!el?.checked;
+  renderAdjustmentBatchPreview('course');
+}
+
+function onAdjustmentBatchCourseRowCheck(idx, checked) {
+  const selected = ensureAdjustmentBatchCourseSelectedSet();
+  if (checked) selected.add(idx);
+  else selected.delete(idx);
+  syncAdjustmentBatchCourseCheckAll();
+}
+
+function onAdjustmentBatchCourseSelectAll(checked) {
+  const selected = ensureAdjustmentBatchCourseSelectedSet();
+  getAdjustmentBatchCourseVisibleIndexes().forEach(idx => {
+    if (checked) selected.add(idx);
+    else selected.delete(idx);
+  });
+  renderAdjustmentBatchPreview('course');
+}
+
+function openAdjustmentBatchCourseRowRoomPicker(rowIndex) {
+  const row = ADJUSTMENT_BATCH_STATE.course.preview?.[rowIndex];
+  if (!row) return;
+  adjustmentBatchTimeRoomRowIndex = rowIndex;
+  openAdjustmentBatchTimeRoomPicker(
+    'batchCourseRow',
+    row,
+    row.targetRoom || row.room || '',
+    '选择调后教室'
+  );
+}
+
+function openAdjustmentBatchCourseRowsPicker() {
+  const rows = ADJUSTMENT_BATCH_STATE.course.preview || [];
+  if (!rows.length) {
+    setAdjustmentBatchCourseTip('请先生成调课明细，再勾选后调教室', true);
+    alert('请先生成调课明细');
+    return;
+  }
+  const selected = ensureAdjustmentBatchCourseSelectedSet();
+  const picked = getAdjustmentBatchCourseVisibleIndexes().filter(idx => selected.has(idx));
+  if (!picked.length) {
+    setAdjustmentBatchCourseTip('请先勾选要调教室的明细', true);
+    alert('请先勾选要调教室的明细');
+    return;
+  }
+  const first = rows[picked[0]];
+  openAdjustmentBatchTimeRoomPicker(
+    'batchCourseRows',
+    first,
+    first?.targetRoom || first?.room || '',
+    '批量调教室'
+  );
+}
+
+function applyAdjustmentBatchCourseRowRoom(room) {
+  const idx = adjustmentBatchTimeRoomRowIndex;
+  const rows = ADJUSTMENT_BATCH_STATE.course.preview || [];
+  if (idx < 0 || !rows[idx]) return;
+  rows[idx].targetRoom = String(room || '').trim();
+  annotateAdjustmentBatchTimeConflicts(rows);
+  renderAdjustmentBatchPreview('course');
+  const conflictCount = countAdjustmentBatchTimeConflicts(rows);
+  if (conflictCount) {
+    setAdjustmentBatchCourseTip(`已更新调后教室，仍有 ${conflictCount} 条冲突，无法提交`, true);
+  } else {
+    setAdjustmentBatchCourseTip('已更新调后教室，未检测到冲突', false);
+  }
+}
+
+function applyAdjustmentBatchCourseRowsRoom(room) {
+  const next = String(room || '').trim();
+  if (!next) return;
+  const rows = ADJUSTMENT_BATCH_STATE.course.preview || [];
+  const selected = ensureAdjustmentBatchCourseSelectedSet();
+  rows.forEach((row, idx) => {
+    if (selected.has(idx) && row) row.targetRoom = next;
+  });
+  annotateAdjustmentBatchTimeConflicts(rows);
+  renderAdjustmentBatchPreview('course');
+  const conflictCount = countAdjustmentBatchTimeConflicts(rows);
+  if (conflictCount) {
+    setAdjustmentBatchCourseTip(`已更新勾选行的调后教室，仍有 ${conflictCount} 条冲突，无法提交`, true);
+  } else {
+    setAdjustmentBatchCourseTip('已更新勾选行的调后教室，未检测到冲突', false);
+  }
+}
+
+function renderAdjustmentBatchCoursePreviewBody(tbody) {
+  const rows = ADJUSTMENT_BATCH_STATE.course.preview || [];
+  const emptyColspan = 14;
+  const emptyHint = '请设置条件后点击「确定生成调课明细」';
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="${emptyColspan}" class="empty-cell">${emptyHint}</td></tr>`;
+    syncAdjustmentBatchCourseCheckAll();
+    return;
+  }
+  const selected = ensureAdjustmentBatchCourseSelectedSet();
+  const visibleIdx = getAdjustmentBatchCourseVisibleIndexes();
+  if (!visibleIdx.length) {
+    tbody.innerHTML = `<tr><td colspan="${emptyColspan}" class="empty-cell">${ADJUSTMENT_BATCH_STATE.course.conflictOnly ? '当前没有冲突明细' : emptyHint}</td></tr>`;
+    syncAdjustmentBatchCourseCheckAll();
+    return;
+  }
+  tbody.innerHTML = visibleIdx.map(idx => {
+    const r = rows[idx];
+    const groupLabel = r.groupLabel || r.task?.groupLabel || formatScheduleGroupNames(r.task) || '—';
+    const courseName = r.task?.name || '—';
+    const code = r.task?.code || '';
+    const hasConflict = !!r.conflict?.hasConflict;
+    const room = resolveAdjustmentBatchHitRoom(r.task, r.slot) || r.room;
+    const targetRoom = r.targetRoom || room;
+    return `<tr class="${hasConflict ? 'is-conflict' : ''}">
+      <td class="col-check"><input type="checkbox"${selected.has(idx) ? ' checked' : ''} onchange="onAdjustmentBatchCourseRowCheck(${idx}, this.checked)" aria-label="选择第${idx + 1}条"></td>
+      <td class="col-index">${idx + 1}</td>
+      <td><code>${escapeHtml(formatScheduleCourseCode(code))}</code></td>
+      <td>${escapeHtml(courseName)}</td>
+      <td>${escapeHtml(groupLabel)}</td>
+      <td>${escapeHtml(r.teachers || '—')}</td>
+      <td class="col-center">${escapeHtml(formatAdjustmentBatchDateParen(r.dateStr))}</td>
+      <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(r.period, r.period) || '—')}</td>
+      <td>${renderAdjustmentBatchRoomName(room)}</td>
+      <td class="col-center">${escapeHtml(formatAdjustmentBatchDateParen(r.targetDateStr))}</td>
+      <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(r.targetPeriod, r.targetPeriod) || '—')}</td>
+      <td>${renderAdjustmentBatchRoomPickerBtn(targetRoom, `openAdjustmentBatchCourseRowRoomPicker(${idx})`)}</td>
+      ${renderAdjustmentBatchTimeConflictCell(r.conflict)}
+      <td class="col-center col-ops"><button class="btn btn-ghost btn-sm" type="button" onclick="deleteAdjustmentBatchPreviewRow('course', ${idx})">删除</button></td>
+    </tr>`;
+  }).join('');
+  syncAdjustmentBatchCourseCheckAll();
+}
+
+function resetAdjustmentBatchCourseForm() {
+  const state = ADJUSTMENT_BATCH_STATE.course;
+  state.dates = [];
+  state.range = { start: '', end: '' };
+  state.preview = [];
+  state.files = [];
+  state.generatedKey = '';
+  state.dateMode = 'date';
+  state.courseCodes = [];
+  state.selectedIdx = new Set();
+  state.conflictOnly = false;
+  emptyAdjustmentBatchWeekdayFields(state);
+  ADJUSTMENT_BATCH_STATE.courseTarget.dates = [];
+  ADJUSTMENT_BATCH_STATE.courseTarget.range = { start: '', end: '' };
+  ADJUSTMENT_BATCH_STATE.courseTarget.dateMode = 'date';
+  emptyAdjustmentBatchWeekdayFields(ADJUSTMENT_BATCH_STATE.courseTarget);
+  setAdjustmentBatchCourseTip('');
+  const conflictOnlyEl = document.getElementById('adjustment-batch-course-conflict-only');
+  if (conflictOnlyEl) conflictOnlyEl.checked = false;
+  const reasonEl = document.getElementById('adjustment-batch-course-reason');
+  if (reasonEl) reasonEl.value = '';
+  const fileInput = document.getElementById('adjustment-batch-course-files');
+  if (fileInput) fileInput.value = '';
+  const courseSel = document.getElementById('adjustment-batch-course-courses');
+  if (courseSel) [...courseSel.options].forEach(o => { o.selected = false; });
+  initAdjustmentBatchCourseTab();
+}
+
+function confirmAdjustmentBatchCourse() {
+  const reason = (document.getElementById('adjustment-batch-course-reason')?.value || '').trim();
+  if (!reason) { alert('请填写调整原因'); return; }
+  const rows = ADJUSTMENT_BATCH_STATE.course.preview || [];
+  if (!rows.length) {
+    alert('请先点击「确定生成调课明细」');
+    return;
+  }
+  const conflictCount = countAdjustmentBatchTimeConflicts(rows);
+  if (conflictCount) {
+    alert(`存在 ${conflictCount} 条冲突，无法提交`);
+    setAdjustmentBatchCourseTip(`存在 ${conflictCount} 条冲突明细，无法提交`, true);
+    return;
+  }
+  if (!assertAdjustmentReasonAttachmentFiles(getAdjustmentBatchReasonTypeRow('course'), ADJUSTMENT_BATCH_STATE.course.files)) return;
+  const fileCount = ADJUSTMENT_BATCH_STATE.course.files.length;
+  if (!confirm(`确认对 ${rows.length} 个课节执行「批量调课程」？\n原因：${reason}${fileCount ? `\n附件：${fileCount} 个` : ''}`)) return;
+  rows.forEach(r => {
+    if (r.demo || !r.slot) return;
+    const tw = getAdjustmentDateWeekday(r.targetDateStr);
+    const tp = r.targetPeriod || r.period;
+    if (!tw || !tp) return;
+    r.slot.weekday = tw;
+    r.slot.periodFrom = tp;
+    r.slot.periodTo = tp;
+    if (r.targetRoom) r.slot.room = r.targetRoom;
+    if (r.task?.id) {
+      persistTaskSchedule(r.task);
+      if (r.targetRoom && typeof syncScheduleTaskRoom === 'function') syncScheduleTaskRoom(r.task);
+    }
+  });
+  saveAdjustmentBatchRecord('course', rows, reason);
+  resetAdjustmentBatchCourseForm();
+  closeModal('modal-adjustment-batch');
+  renderAdjustmentBatchRecords();
+  alert(`已生成「批量调课程」调课记录，共处理 ${rows.length} 个课节。`);
+}
+
 function syncAdjustmentBatchDateModeUi(kind) {
   const state = ADJUSTMENT_BATCH_STATE[kind];
   if (!state) return;
@@ -66261,6 +67131,12 @@ function syncAdjustmentBatchDateModeUi(kind) {
   if (kind === 'time' || kind === 'timeTarget') {
     const shared = ADJUSTMENT_BATCH_STATE.time.dateMode === 'weekday' ? 'weekday' : 'date';
     document.querySelectorAll('.adj-batch-date-mode-btn[data-scope="time"]').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.mode === shared);
+    });
+  }
+  if (kind === 'course' || kind === 'courseTarget') {
+    const shared = ADJUSTMENT_BATCH_STATE.course.dateMode === 'weekday' ? 'weekday' : 'date';
+    document.querySelectorAll('.adj-batch-date-mode-btn[data-scope="course"]').forEach(btn => {
       btn.classList.toggle('is-active', btn.dataset.mode === shared);
     });
   }
@@ -66288,8 +67164,9 @@ function applyAdjustmentBatchDateMode(kind, mode, opts = {}) {
   }
   syncAdjustmentBatchDateModeUi(kind);
   renderAdjustmentBatchDateSummary(kind);
+  if (kind === 'course') refreshAdjustmentBatchCourseSourcePeriods();
   if (!opts.skipClear) {
-    clearAdjustmentBatchGeneratedByKind(kind === 'room' ? 'room' : 'time');
+    clearAdjustmentBatchGeneratedByKind(kind);
   }
 }
 
@@ -66300,9 +67177,20 @@ function onAdjustmentBatchTimeDateModeChange(mode) {
   clearAdjustmentBatchGeneratedByKind('time');
 }
 
+function onAdjustmentBatchCourseDateModeChange(mode) {
+  applyAdjustmentBatchDateMode('course', mode, { skipClear: true });
+  applyAdjustmentBatchDateMode('courseTarget', mode, { skipClear: true });
+  closeAdjustmentBatchSsMultiDropdowns();
+  refreshAdjustmentBatchCourseSourcePeriods();
+}
+
 function onAdjustmentBatchDateModeChange(kind, mode) {
   if (kind === 'time' || kind === 'timeTarget') {
     onAdjustmentBatchTimeDateModeChange(mode);
+    return;
+  }
+  if (kind === 'course' || kind === 'courseTarget') {
+    onAdjustmentBatchCourseDateModeChange(mode);
     return;
   }
   applyAdjustmentBatchDateMode(kind, mode);
@@ -66313,9 +67201,13 @@ function onAdjustmentBatchWeekdayFieldChange(kind) {
   if (!state) return;
   state.weekFrom = Number(document.getElementById(`adjustment-batch-${kind}-week-from`)?.value || 0);
   state.weekTo = Number(document.getElementById(`adjustment-batch-${kind}-week-to`)?.value || 0);
+  fillAdjustmentBatchWeekSelects(kind);
   syncAdjustmentBatchWeekdayDates(kind);
   renderAdjustmentBatchDateSummary(kind);
-  clearAdjustmentBatchGeneratedByKind(kind === 'room' ? 'room' : 'time');
+  if (kind === 'course') refreshAdjustmentBatchCourseSourcePeriods();
+  if (kind !== 'course' && kind !== 'courseTarget') {
+    clearAdjustmentBatchGeneratedByKind(kind);
+  }
 }
 
 function ensureAdjustmentBatchTimeSelectedSet() {
@@ -66527,11 +67419,19 @@ function validateAdjustmentBatchTargetDayCount(targetDayCount) {
 }
 
 function activateAdjustmentBatchTab(tab) {
-  adjustmentBatchActiveTab = tab === 'room' ? 'room' : 'time';
+  adjustmentBatchActiveTab = tab === 'course' || tab === 'room' || tab === 'time' ? tab : 'time';
+  document.getElementById('adjustment-batch-tab-course')?.classList.toggle('active', adjustmentBatchActiveTab === 'course');
   document.getElementById('adjustment-batch-tab-time')?.classList.toggle('active', adjustmentBatchActiveTab === 'time');
   document.getElementById('adjustment-batch-tab-room')?.classList.toggle('active', adjustmentBatchActiveTab === 'room');
   const title = document.getElementById('adjustment-batch-drawer-title');
-  if (title) title.textContent = adjustmentBatchActiveTab === 'room' ? '批量调教室' : '批量调时间';
+  if (title) {
+    title.textContent = adjustmentBatchActiveTab === 'course'
+      ? '批量调课程'
+      : adjustmentBatchActiveTab === 'room'
+        ? '批量调教室'
+        : '批量调时间';
+  }
+  if (adjustmentBatchActiveTab === 'course') initAdjustmentBatchCourseTab();
 }
 
 function getAdjustmentDateWeekday(dateStr) {
@@ -66587,6 +67487,12 @@ function renderAdjustmentBatchDateSummary(kind) {
   const host = document.getElementById(`adjustment-batch-${kind}-dates`);
   const btn = document.getElementById(`adjustment-batch-${kind}-date-btn`);
   if (!host || !state) return;
+  if (kind === 'course' && !getAdjustmentBatchCourseCodes().length) {
+    host.textContent = '请先选择课程';
+    host.classList.add('is-empty');
+    if (btn) btn.textContent = '选择起止日期';
+    return;
+  }
   if (state.dateMode === 'weekday') {
     const n = state.dates.length;
     if (!state.weekFrom || !state.weekTo || !state.weekdays?.length || !n) {
@@ -66616,6 +67522,18 @@ function renderAdjustmentBatchDateSummary(kind) {
 
 function openAdjustmentBatchDatePicker(kind, ev) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
+  if (Date.now() - adjustmentBatchDatePickerGuard < 400) return;
+  if (kind === 'course' && !getAdjustmentBatchCourseCodes().length) {
+    alert('请先选择课程');
+    return;
+  }
+  if (kind === 'course') {
+    const opts = getAdjustmentBatchCourseSourceOptions();
+    if (!opts.hasSlots) {
+      alert('所选课程暂无已排课节');
+      return;
+    }
+  }
   adjustmentBatchDateKind = kind;
   if (document.getElementById('adj-batch-cal-dd')) {
     closeAdjustmentBatchDatePicker();
@@ -66635,8 +67553,10 @@ function openAdjustmentBatchDatePicker(kind, ev) {
   const dd = document.createElement('div');
   dd.className = 'adj-cal-dropdown';
   dd.id = 'adj-batch-cal-dd';
-  dd.onclick = e => e.stopPropagation();
-  document.body.appendChild(dd);
+  dd.addEventListener('mousedown', e => e.stopPropagation());
+  dd.addEventListener('click', e => e.stopPropagation());
+  const overlay = document.getElementById('modal-adjustment-batch');
+  (overlay || document.body).appendChild(dd);
   renderAdjustmentBatchCalendar();
   if (btn) {
     const r = btn.getBoundingClientRect();
@@ -66654,12 +67574,13 @@ function openAdjustmentBatchDatePicker(kind, ev) {
 function closeAdjustmentBatchDatePicker() {
   document.getElementById('adj-batch-cal-dd')?.remove();
   document.removeEventListener('mousedown', closeAdjustmentBatchPickerOutside);
+  adjustmentBatchDatePickerGuard = Date.now();
 }
 
 function closeAdjustmentBatchPickerOutside(e) {
-  const dd = document.getElementById('adj-batch-cal-dd');
-  const btn = e.target.closest && e.target.closest('.adjustment-batch-date-btn');
-  if (dd && !dd.contains(e.target) && !btn) closeAdjustmentBatchDatePicker();
+  if (e.target.closest?.('#adj-batch-cal-dd')) return;
+  if (e.target.closest?.('.adjustment-batch-date-btn')) return;
+  closeAdjustmentBatchDatePicker();
 }
 
 function adjustmentBatchCalNav(delta) {
@@ -66679,7 +67600,13 @@ function renderAdjustmentBatchCalendar() {
   const last = new Date(y, m + 1, 0);
   const cursor = new Date(y, m, 1 - offset);
   const r = adjustmentBatchDateDraft;
+  const courseAllowed = adjustmentBatchDateKind === 'course'
+    ? new Set(getAdjustmentBatchCourseSourceOptions().allowedDates || [])
+    : null;
   const draftDates = expandAdjustmentHolidayRange(r);
+  const countedDates = courseAllowed
+    ? draftDates.filter(ds => courseAllowed.has(ds))
+    : draftDates;
   const rows = [];
   while (true) {
     const wk = adjustmentTeachingWeekOf(cursor);
@@ -66687,23 +67614,43 @@ function renderAdjustmentBatchCalendar() {
     for (let i = 0; i < 7; i++) {
       const ds = `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`;
       const other = cursor.getMonth() !== m ? ' adj-cal-other' : '';
+      const blocked = !!(courseAllowed && !courseAllowed.has(ds));
       let cls = '';
-      if (draftDates.includes(ds)) cls += ' is-sel';
-      if (ds === r.start) cls += ' is-range-start';
-      if (ds === (r.end || r.start) && r.start) cls += ' is-range-end';
-      cells += `<td class="adj-cal-day${other}${cls}" onclick="toggleAdjustmentBatchDate('${ds}')">${cursor.getDate()}</td>`;
+      if (blocked) cls += ' is-disabled';
+      if (!blocked && draftDates.includes(ds)) cls += ' is-sel';
+      if (!blocked && ds === r.start) cls += ' is-range-start';
+      if (!blocked && ds === (r.end || r.start) && r.start) cls += ' is-range-end';
+      const click = blocked ? '' : ` onclick="toggleAdjustmentBatchDate('${ds}')"`;
+      cells += `<td class="adj-cal-day${other}${cls}"${click}>${cursor.getDate()}</td>`;
       cursor.setDate(cursor.getDate() + 1);
     }
     rows.push(`<tr><td class="adj-cal-wk" title="${wk ? '第' + wk + '教学周' : ''}">${wk ? '第' + wk + '周' : '—'}</td>${cells}</tr>`);
     if (cursor > last) break;
   }
-  let tip = !r.start ? '点击选择起始日期' : (!r.end ? '再点击选择结束日期' : `已选 ${draftDates.length} 天`);
+  let tip = !r.start ? '点击选择起始日期' : (!r.end ? '再点击选择结束日期' : `已选 ${countedDates.length} 天`);
+  if ((adjustmentBatchDateKind === 'course' || adjustmentBatchDateKind === 'courseTarget') && r.start && !r.end) {
+    tip = '再点击选择结束日期，或直接点确定按单日确认';
+  }
   let tipCls = 'adj-cal-tip';
+  if (adjustmentBatchDateKind === 'course' && r.start && r.end) {
+    tip = countedDates.length
+      ? `已选 ${countedDates.length} 天（仅含已排课日期）`
+      : '所选范围内没有已排课日期';
+    if (!countedDates.length) tipCls += ' is-warn';
+  }
   if (adjustmentBatchDateKind === 'timeTarget' && r.start && r.end) {
     const srcCount = getAdjustmentBatchSourceDayCount();
     if (!srcCount) tip = '请先在表单中选择源日期';
     else if (draftDates.length !== srcCount) {
       tip = `已选 ${draftDates.length} 天，与源日期 ${srcCount} 天不一致，请重新选择`;
+      tipCls += ' is-warn';
+    }
+  }
+  if (adjustmentBatchDateKind === 'courseTarget' && r.start && r.end) {
+    const srcCount = getAdjustmentBatchCourseSourceDayCount();
+    if (!srcCount) tip = '请先选择原日期';
+    else if (draftDates.length !== srcCount) {
+      tip = `已选 ${draftDates.length} 天，与原日期 ${srcCount} 天不一致，请重新选择`;
       tipCls += ' is-warn';
     }
   }
@@ -66719,12 +67666,34 @@ function renderAdjustmentBatchCalendar() {
     </table>
     <div class="${tipCls}">${tip}</div>
     <div class="adj-cal-foot">
-      <button type="button" class="btn btn-ghost btn-sm" onclick="closeAdjustmentBatchDatePicker()">取消</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="confirmAdjustmentBatchDatePicker(event)">确定</button>
+      <button type="button" class="btn btn-ghost btn-sm" data-adj-batch-cal-cancel>取消</button>
+      <button type="button" class="btn btn-primary btn-sm" data-adj-batch-cal-confirm>确定</button>
     </div>`;
+  const cancelBtn = host.querySelector('[data-adj-batch-cal-cancel]');
+  const confirmBtn = host.querySelector('[data-adj-batch-cal-confirm]');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('mousedown', ev => ev.stopPropagation());
+    cancelBtn.addEventListener('click', ev => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      closeAdjustmentBatchDatePicker();
+    });
+  }
+  if (confirmBtn) {
+    confirmBtn.addEventListener('mousedown', ev => ev.stopPropagation());
+    confirmBtn.addEventListener('click', ev => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      confirmAdjustmentBatchDatePicker(ev);
+    });
+  }
 }
 
 function toggleAdjustmentBatchDate(ds) {
+  if (adjustmentBatchDateKind === 'course') {
+    const allowed = new Set(getAdjustmentBatchCourseSourceOptions().allowedDates || []);
+    if (!allowed.has(ds)) return;
+  }
   const r = adjustmentBatchDateDraft;
   if (!r.start || (r.start && r.end)) { r.start = ds; r.end = ''; }
   else if (ds < r.start) { r.end = r.start; r.start = ds; }
@@ -66735,16 +67704,30 @@ function toggleAdjustmentBatchDate(ds) {
 function confirmAdjustmentBatchDatePicker(ev) {
   if (ev?.preventDefault) ev.preventDefault();
   if (ev?.stopPropagation) ev.stopPropagation();
+  if (ev?.stopImmediatePropagation) ev.stopImmediatePropagation();
   const r = adjustmentBatchDateDraft;
-  if (!r.start) { alert('请选择起始日期'); return; }
-  if (!r.end) { alert('请选择结束日期'); return; }
   const kind = adjustmentBatchDateKind;
+  if (!r.start) { alert('请选择起始日期'); return; }
+  if (!r.end) {
+    if (kind === 'course' || kind === 'courseTarget') r.end = r.start;
+    else { alert('请选择结束日期'); return; }
+  }
   const draftDates = expandAdjustmentHolidayRange(r);
   if (kind === 'timeTarget' && !validateAdjustmentBatchTargetDayCount(draftDates.length)) return;
+  if (kind === 'courseTarget' && !validateAdjustmentBatchCourseTargetDayCount(draftDates.length)) return;
   const state = ADJUSTMENT_BATCH_STATE[kind];
   if (!state) return;
   state.range = { start: r.start, end: r.end };
   state.dates = draftDates;
+  if (kind === 'course') {
+    const allowed = new Set(getAdjustmentBatchCourseSourceOptions().allowedDates || []);
+    state.dates = draftDates.filter(ds => allowed.has(ds));
+    if (!state.dates.length) {
+      alert('所选范围内没有已排课日期');
+      return;
+    }
+    state.range = { start: state.dates[0], end: state.dates[state.dates.length - 1] };
+  }
   if (kind === 'time') state.preview = [];
   if (kind === 'time' || kind === 'timeTarget') {
     ADJUSTMENT_BATCH_STATE.time.preview = [];
@@ -66752,9 +67735,13 @@ function confirmAdjustmentBatchDatePicker(ev) {
     setAdjustmentBatchTimeTip('');
   }
   if (kind === 'room') clearAdjustmentBatchRoomGenerated();
+  if (kind === 'course' || kind === 'courseTarget') {
+    if (kind === 'course') refreshAdjustmentBatchCourseSourcePeriods();
+  }
   renderAdjustmentBatchDateSummary(kind);
   if (kind === 'time' || kind === 'room') renderAdjustmentBatchPreview(kind);
   else if (kind === 'timeTarget') renderAdjustmentBatchPreview('time');
+  else if (kind === 'course' || kind === 'courseTarget') renderAdjustmentBatchPreview('course');
   closeAdjustmentBatchDatePicker();
 }
 
@@ -66766,6 +67753,9 @@ function getAdjustmentBatchCheckedValues(selector) {
 }
 
 function getAdjustmentBatchSelectedPeriods(kind) {
+  if (kind === 'course') {
+    return getAdjustmentBatchCheckedValues('#adjustment-batch-course-source-periods');
+  }
   return getAdjustmentBatchCheckedValues(`#adjustment-batch-${kind}-periods`);
 }
 
@@ -66805,6 +67795,7 @@ function initAdjustmentBatchMultiChecks(kind) {
 }
 
 function collectAdjustmentBatchHits(kind) {
+  if (kind === 'course') return collectAdjustmentBatchCourseHits();
   const state = ADJUSTMENT_BATCH_STATE[kind];
   const periods = getAdjustmentBatchSelectedPeriods(kind);
   if (!state.dates.length) return null;
@@ -67007,6 +67998,26 @@ function clearAdjustmentBatchTimePreview() {
 }
 
 function deleteAdjustmentBatchPreviewRows(kind) {
+  if (kind === 'course') {
+    const state = ADJUSTMENT_BATCH_STATE.course;
+    const selected = ensureAdjustmentBatchCourseSelectedSet();
+    if (!state.preview?.length) {
+      setAdjustmentBatchCourseTip('当前没有可删除的调课明细', false);
+      return;
+    }
+    if (!selected.size) {
+      setAdjustmentBatchCourseTip('请先勾选要删除的调课明细', true);
+      return;
+    }
+    const remain = state.preview.filter((_, idx) => !selected.has(idx));
+    const removed = state.preview.length - remain.length;
+    state.preview = remain;
+    selected.clear();
+    if (!remain.length) state.generatedKey = '';
+    renderAdjustmentBatchPreview('course');
+    setAdjustmentBatchCourseTip(remain.length ? `已删除 ${removed} 条调课明细` : '已删除所选调课明细，列表已空', false);
+    return;
+  }
   const isRoom = kind === 'room';
   const state = isRoom ? ADJUSTMENT_BATCH_STATE.room : ADJUSTMENT_BATCH_STATE.time;
   const selected = isRoom ? ensureAdjustmentBatchRoomSelectedSet() : ensureAdjustmentBatchTimeSelectedSet();
@@ -67029,6 +68040,22 @@ function deleteAdjustmentBatchPreviewRows(kind) {
 }
 
 function deleteAdjustmentBatchPreviewRow(kind, idx) {
+  if (kind === 'course') {
+    const state = ADJUSTMENT_BATCH_STATE.course;
+    const selected = ensureAdjustmentBatchCourseSelectedSet();
+    if (!state.preview?.[idx]) return;
+    state.preview.splice(idx, 1);
+    const next = new Set();
+    selected.forEach(i => {
+      if (i === idx) return;
+      next.add(i > idx ? i - 1 : i);
+    });
+    state.selectedIdx = next;
+    if (!state.preview.length) state.generatedKey = '';
+    renderAdjustmentBatchPreview('course');
+    setAdjustmentBatchCourseTip(state.preview.length ? '已删除 1 条调课明细' : '已删除所选调课明细，列表已空', false);
+    return;
+  }
   const isRoom = kind === 'room';
   const state = isRoom ? ADJUSTMENT_BATCH_STATE.room : ADJUSTMENT_BATCH_STATE.time;
   const selected = isRoom ? ensureAdjustmentBatchRoomSelectedSet() : ensureAdjustmentBatchTimeSelectedSet();
@@ -67115,6 +68142,11 @@ function clearAdjustmentBatchRoomPreview() {
 }
 
 function previewAdjustmentBatch(kind, skipValidate) {
+  if (kind === 'course') {
+    if (!skipValidate && !validateAdjustmentBatchCourseForm()) return;
+    previewAdjustmentBatchCourse();
+    return;
+  }
   if (kind === 'time' && !skipValidate && !validateAdjustmentBatchTimeForm()) return;
   if (kind === 'room' && !skipValidate && !validateAdjustmentBatchRoomForm()) return;
   let hits;
@@ -67556,6 +68588,12 @@ function applyAdjustmentBatchRoomRowsRoom(room) {
 }
 
 function renderAdjustmentBatchPreview(kind) {
+  if (kind === 'course') {
+    const tbody = document.getElementById('adjustment-batch-course-preview-body');
+    if (!tbody) return;
+    renderAdjustmentBatchCoursePreviewBody(tbody);
+    return;
+  }
   const tbody = document.getElementById(`adjustment-batch-${kind}-preview-body`);
   if (!tbody) return;
   const rows = ADJUSTMENT_BATCH_STATE[kind].preview || [];
@@ -67695,6 +68733,10 @@ function syncAdjustmentBatchRoomButton() {
 }
 
 function resetAdjustmentBatchForm(kind) {
+  if (kind === 'course') {
+    resetAdjustmentBatchCourseForm();
+    return;
+  }
   const state = ADJUSTMENT_BATCH_STATE[kind];
   if (!state) return;
   state.dates = [];
@@ -67755,6 +68797,10 @@ function resetAdjustmentBatchForm(kind) {
 }
 
 function confirmAdjustmentBatch(kind) {
+  if (kind === 'course') {
+    confirmAdjustmentBatchCourse();
+    return;
+  }
   const reason = (document.getElementById(`adjustment-batch-${kind}-reason`)?.value || '').trim();
   if (!reason) { alert('请填写调整原因'); return; }
   if (kind === 'time') {
@@ -67792,6 +68838,7 @@ function confirmAdjustmentBatch(kind) {
       return;
     }
   }
+  if (!assertAdjustmentReasonAttachmentFiles(getAdjustmentBatchReasonTypeRow(kind), ADJUSTMENT_BATCH_STATE[kind].files)) return;
   const label = kind === 'time' ? '批量调时间' : '批量调教室';
   const fileCount = ADJUSTMENT_BATCH_STATE[kind].files.length;
   if (!confirm(`确认对 ${rows.length} 个课节执行「${label}」？\n原因：${reason}${fileCount ? `\n附件：${fileCount} 个` : ''}`)) return;
@@ -67894,6 +68941,11 @@ function saveAdjustmentBatchRecord(kind, rows, reason) {
     const target = ADJUSTMENT_BATCH_STATE.timeTarget;
     record.targetRange = { ...(target.range || {}) };
     record.targetPeriods = rows[0]?.targetPeriods || getAdjustmentBatchTargetPeriods();
+  } else if (kind === 'course') {
+    const target = ADJUSTMENT_BATCH_STATE.courseTarget;
+    record.targetRange = { ...(target.range || {}) };
+    record.targetPeriods = rows[0]?.targetPeriods || getAdjustmentBatchCourseTargetPeriods();
+    record.courseCodes = (state.courseCodes || []).slice();
   } else {
     record.targetRoom = ADJUSTMENT_BATCH_STATE.room.targetRoom || '';
     record.sourceRoom = ADJUSTMENT_BATCH_STATE.room.sourceRoom || '';
@@ -67922,13 +68974,20 @@ function formatAdjustmentBatchRecordTarget(record) {
   return `${rangeText} · ${pdText}`;
 }
 
+function getAdjustmentBatchKindBadge(kind) {
+  if (kind === 'course') return '<span class="badge badge-orange">调课程</span>';
+  if (kind === 'room') return '<span class="badge badge-blue">调教室</span>';
+  return '<span class="badge badge-green">调时间</span>';
+}
+
 function openAdjustmentBatchDrawer(kind) {
-  const tab = kind === 'room' ? 'room' : 'time';
+  const tab = kind === 'course' || kind === 'room' || kind === 'time' ? kind : 'time';
   activateAdjustmentBatchTab(tab);
   const title = document.getElementById('adjustment-batch-drawer-title');
-  if (title) title.textContent = tab === 'room' ? '批量调教室' : '批量调时间';
-  fillAdjustmentReasonTypeNameSelect(document.getElementById('adjustment-batch-time-reason-type'), '', { allowEmpty: true });
-  fillAdjustmentReasonTypeNameSelect(document.getElementById('adjustment-batch-room-reason-type'), '', { allowEmpty: true });
+  if (title) {
+    title.textContent = tab === 'course' ? '批量调课程' : tab === 'room' ? '批量调教室' : '批量调时间';
+  }
+  fillAdjustmentBatchReasonTypeSelects();
   renderAdjustmentBatchPage();
   openModal('modal-adjustment-batch');
 }
@@ -67970,8 +69029,9 @@ function renderAdjustmentBatchRecords() {
   if (kind) rows = rows.filter(r => r.kind === kind);
   const timeCount = rows.filter(r => r.kind === 'time').length;
   const roomCount = rows.filter(r => r.kind === 'room').length;
+  const courseCount = rows.filter(r => r.kind === 'course').length;
   if (hint) {
-    hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条（调时间 ${timeCount} · 调教室 ${roomCount}）</span>`;
+    hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条（调课程 ${courseCount} · 调教室 ${roomCount} · 调时间 ${timeCount}）</span>`;
   }
   if (!tbody) return;
   if (!rows.length) {
@@ -67981,9 +69041,7 @@ function renderAdjustmentBatchRecords() {
   tbody.innerHTML = rows.map((r, i) => {
     const srcRange = r.sourceRange?.start && r.sourceRange?.end
       ? `${r.sourceRange.start} ~ ${r.sourceRange.end}` : '—';
-    const typeBadge = r.kind === 'room'
-      ? '<span class="badge badge-blue">调教室</span>'
-      : '<span class="badge badge-green">调时间</span>';
+    const typeBadge = getAdjustmentBatchKindBadge(r.kind);
     return `<tr>
       <td class="col-index">${i + 1}</td>
       <td><code>${escapeHtml(r.no)}</code></td>
@@ -68066,9 +69124,7 @@ function openAdjustmentBatchDetail(id) {
   }
   const srcRange = r.sourceRange?.start && r.sourceRange?.end
     ? `${r.sourceRange.start} ~ ${r.sourceRange.end}` : '—';
-  const typeBadge = r.kind === 'room'
-    ? '<span class="badge badge-blue">调教室</span>'
-    : '<span class="badge badge-green">调时间</span>';
+  const typeBadge = getAdjustmentBatchKindBadge(r.kind);
   const attachHtml = (r.attachments && r.attachments.length)
     ? r.attachments.map(a => `<span class="adj-detail-file">📎 ${escapeHtml(a.name)}${a.size ? `（${escapeHtml(formatFileSize(a.size))}）` : ''}</span>`).join('')
     : '<span class="text-muted">无</span>';
@@ -68121,6 +69177,8 @@ function renderAdjustmentBatchPage() {
   initAdjustmentBatchWeekdaySelect('timeTarget');
   initAdjustmentBatchWeekdaySelect('room');
   initAdjustmentBatchCourseSelect();
+  initAdjustmentBatchCourseTab();
+  fillAdjustmentBatchReasonTypeSelects();
   syncAdjustmentBatchDateModeUi('time');
   syncAdjustmentBatchDateModeUi('timeTarget');
   syncAdjustmentBatchDateModeUi('room');

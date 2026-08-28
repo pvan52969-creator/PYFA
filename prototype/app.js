@@ -284,6 +284,9 @@ const LIST_SORT_REFRESH = {
   scheduleRoomTimetable: () => {
     if (typeof renderScheduleDetailPage === 'function') renderScheduleDetailPage();
   },
+  scheduleTimeRoomPreview: () => {
+    if (typeof renderScheduleTimeRoomPreviewGrid === 'function') renderScheduleTimeRoomPreviewGrid();
+  },
   scheduleRoomPicker: () => {
     if (typeof renderScheduleRoomModalRows === 'function') renderScheduleRoomModalRows();
   },
@@ -25392,6 +25395,12 @@ let scheduleRoomTimetableFilterDraft = {};
 let scheduleRoomTimetableFilterApplied = null;
 /** 排教室课表 · 是否展开显示全部教室（含已锁定） */
 let scheduleRoomTimetableExpanded = false;
+/** 排时间侧 · 查看教室安排情况（只读，不改排教室侧状态） */
+let scheduleTimeRoomPreviewOpen = false;
+let scheduleTimeRoomPreviewRender = false;
+let scheduleTimeRoomPreviewFilterDraft = {};
+let scheduleTimeRoomPreviewFilterApplied = null;
+let scheduleTimeRoomPreviewExpanded = false;
 /** 排教室 · 筛选模式：venueType=按场地类型；lockedRoom=按锁定教室并集 */
 let scheduleRoomFilterMode = 'venueType';
 let scheduleRoomFilterLockedRooms = [];
@@ -32479,12 +32488,13 @@ function getScheduleLockRoomDefaultTypeFilters() {
     .filter(v => v && v !== SCHEDULE_VENUE_TYPE_NONE && v !== SCHEDULE_VENUE_TYPE_DEFAULT);
 }
 
-/** 锁定教室抽屉：半页宽；其它选教室模式恢复默认宽 */
+/** 锁定教室抽屉：与调课申请选教室同款全宽；不再使用半页锁定布局 */
 function syncScheduleRoomPickerModalLayout() {
   const modal = document.getElementById('modal-schedule-room-picker');
   if (!modal) return;
-  modal.classList.toggle('is-lock-room', scheduleRoomPickerMode === 'lockRoom');
-  modal.classList.toggle('is-approve-room', isScheduleApproveRoomPicker());
+  const approveUi = typeof isScheduleApproveRoomPicker === 'function' && isScheduleApproveRoomPicker();
+  modal.classList.toggle('is-lock-room', scheduleRoomPickerMode === 'lockRoom' && !approveUi);
+  modal.classList.toggle('is-approve-room', approveUi);
   bindScheduleRoomModalFreezeShadow();
 }
 
@@ -32492,7 +32502,8 @@ function syncScheduleRoomPickerModalLayout() {
 function syncScheduleRoomModalFreezeShadow() {
   const scroller = document.getElementById('schedule-room-modal-scroll');
   if (!scroller) return;
-  if (scheduleRoomPickerMode !== 'lockRoom') {
+  if (scheduleRoomPickerMode !== 'lockRoom'
+    || (typeof isScheduleApproveRoomPicker === 'function' && isScheduleApproveRoomPicker())) {
     scroller.classList.remove('is-ping-left', 'is-ping-right');
     return;
   }
@@ -32513,7 +32524,33 @@ function bindScheduleRoomModalFreezeShadow() {
   requestAnimationFrame(() => syncScheduleRoomModalFreezeShadow());
 }
 
-/** 排时间侧设置场地：打开锁定教室抽屉（单选，排除普通教室） */
+/** 锁定教室：把当前选中节次写入占用上下文，复用调课申请选教室弹窗的占用列 */
+function syncScheduleLockRoomPickerOccupancyContext() {
+  const entries = getScheduleSelectedSlotEntries();
+  const first = entries[0];
+  if (!first?.slot) {
+    adjustmentApproveRoomContext = null;
+    return;
+  }
+  const slot = first.slot;
+  const task = first.task;
+  const demand = typeof getScheduleRoomAssignSeatDemand === 'function'
+    ? getScheduleRoomAssignSeatDemand(entries)
+    : { count: 0 };
+  const remark = scheduleVenueRemarkPickerDraft != null
+    ? String(scheduleVenueRemarkPickerDraft || '')
+    : scheduleVenueRemarkSource();
+  adjustmentApproveRoomContext = {
+    weekday: Number(slot.weekday) || 0,
+    period: Number(slot.periodFrom) || 0,
+    weeks: slot.weeks || scheduleWeekSource() || '',
+    group: task?.groupLabel || '上课小组',
+    studentCount: demand.count || 0,
+    roomPrefer: remark
+  };
+}
+
+/** 排时间侧设置场地：打开锁定教室抽屉（与调课申请选择教室弹窗同款） */
 function openScheduleLockRoomPicker() {
   if (scheduleDetailPhase === 'room' || isScheduleDetailReadonly()) return;
   if (!getScheduleSelectedSlotEntries().length || !scheduleVenueSettingsRequested) {
@@ -32524,9 +32561,13 @@ function openScheduleLockRoomPicker() {
   scheduleRoomPickerSelected = scheduleLockedRoomPickerDraft != null
     ? String(scheduleLockedRoomPickerDraft || '').trim()
     : scheduleLockedRoomSource();
+  syncScheduleLockRoomPickerOccupancyContext();
   const title = document.getElementById('modal-schedule-room-picker-title');
   if (title) title.textContent = '选择锁定教室';
+  const unspecBtn = document.getElementById('schedule-room-picker-unspecified-btn');
+  if (unspecBtn) unspecBtn.hidden = true;
   syncScheduleRoomPickerModalLayout();
+  syncScheduleRoomPickerOccBar();
   buildScheduleRoomFilterOptions();
   resetScheduleRoomFilterSelects();
   setScheduleRoomTypeFilterSelected(getScheduleLockRoomDefaultTypeFilters());
@@ -32844,6 +32885,7 @@ function isAdjustmentBatchRoomPicker() {
 
 function isScheduleApproveRoomPicker() {
   return scheduleRoomPickerMode === 'adjustmentApprove'
+    || scheduleRoomPickerMode === 'lockRoom'
     || isAdjustmentBatchTimeRoomPicker()
     || isAdjustmentBatchCourseRoomPicker()
     || isAdjustmentBatchRoomPicker();
@@ -34987,11 +35029,6 @@ function buildScheduleRoomPickerHintHtml(entries) {
 function syncScheduleRoomPickerHint() {
   const hint = document.getElementById('schedule-room-picker-hint');
   if (!hint) return;
-  if (scheduleRoomPickerMode === 'lockRoom') {
-    hint.hidden = true;
-    hint.innerHTML = '';
-    return;
-  }
   if (isAdjustmentBatchRoomPicker()) {
     const src = getAdjustmentBatchRoomPickerOriginRoom();
     const ctx = adjustmentApproveRoomContext;
@@ -35872,6 +35909,176 @@ function openScheduleRetakeDetectPanel() {
   clearScheduleRetakeDetectFormFields();
   syncScheduleRetakeDetectPanel();
   runScheduleRetakeDetect({ fromQueryButton: true });
+}
+
+function openScheduleTimeRoomPreview() {
+  if (scheduleDetailPhase === 'room') return;
+  scheduleTimeRoomPreviewOpen = true;
+  scheduleTimeRoomPreviewExpanded = false;
+  fillScheduleTimeRoomPreviewWeekdaySelect();
+  ensureScheduleTimeRoomPreviewFilterOptions();
+  resetScheduleTimeRoomPreviewFilterDom();
+  scheduleTimeRoomPreviewFilterDraft = {};
+  scheduleTimeRoomPreviewFilterApplied = null;
+  openModal('modal-schedule-time-room-preview');
+  renderScheduleTimeRoomPreviewGrid();
+}
+
+function closeScheduleTimeRoomPreview() {
+  scheduleTimeRoomPreviewOpen = false;
+  scheduleTimeRoomPreviewRender = false;
+  closeScheduleTimeRoomPreviewVenueTypeDropdown();
+  closeModal('modal-schedule-time-room-preview');
+}
+
+function fillScheduleTimeRoomPreviewWeekdaySelect() {
+  const sel = document.getElementById('srpv-weekday');
+  if (!sel) return;
+  const days = scheduleShowWeekend ? SCHEDULE_WEEKDAYS : SCHEDULE_WEEKDAYS.filter(w => w.value <= 5);
+  const current = Number(sel.value) || Number(getScheduleSelectedSlot()?.weekday) || days[0]?.value || 1;
+  sel.innerHTML = days.map(w => `<option value="${w.value}">${escapeHtml(w.label)}</option>`).join('');
+  sel.value = days.some(w => Number(w.value) === Number(current)) ? String(current) : String(days[0]?.value || 1);
+}
+
+function onScheduleTimeRoomPreviewWeekdayChange() {
+  if (scheduleTimeRoomPreviewOpen) renderScheduleTimeRoomPreviewGrid();
+}
+
+function renderScheduleTimeRoomPreviewGrid() {
+  if (!scheduleTimeRoomPreviewOpen) return;
+  const term = getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm() || '';
+  renderScheduleTimetableGrid(term, getScheduleDetailTasks(), null, getScheduleDetailTimetableWeekFilter(), { preview: true });
+}
+
+function ensureScheduleTimeRoomPreviewFilterOptions() {
+  const pool = getScheduleRoomTimetableBasePool();
+  const fill = (id, values) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value || '';
+    const vals = [...new Set(values.filter(v => v != null && String(v).trim() !== ''))];
+    vals.sort((a, b) => String(a).localeCompare(String(b), 'zh-CN'));
+    sel.innerHTML = '<option value="">全部</option>' + vals.map(v =>
+      `<option value="${escapeHtml(String(v))}">${escapeHtml(String(v))}</option>`
+    ).join('');
+    if (cur && vals.some(v => String(v) === cur)) sel.value = cur;
+  };
+  fill('srpv-building', pool.map(r => r.building));
+  fill('srpv-room-type', pool.map(r => r.roomType || r.classroomTypeZh || ''));
+  fill('srpv-equipment', pool.map(r => r.equipment));
+  fill('srpv-software', pool.map(r => r.software));
+  fill('srpv-remark', pool.map(r => getScheduleRoomInfoRemark(r)).filter(Boolean));
+  ensureScheduleTimeRoomPreviewVenueTypeMultiselect();
+}
+
+function ensureScheduleTimeRoomPreviewVenueTypeMultiselect() {
+  const options = document.getElementById('srpv-venue-type-options');
+  if (!options || options.dataset.ready === 'v1-l1') return;
+  options.innerHTML = getScheduleRoomTypeFilterValues().map(type =>
+    `<label class="clo-multiselect-option" onclick="event.stopPropagation()">
+      <input type="checkbox" class="srpv-venue-type-check" value="${escapeHtml(type)}" onchange="updateScheduleTimeRoomPreviewVenueTypeDisplay()">
+      <span>${escapeHtml(getScheduleVenueTypeLabel(type))}</span>
+    </label>`
+  ).join('');
+  options.dataset.ready = 'v1-l1';
+}
+
+function getScheduleTimeRoomPreviewVenueTypesSelected() {
+  ensureScheduleTimeRoomPreviewVenueTypeMultiselect();
+  return normalizeScheduleSearchVenueTypeList(
+    [...document.querySelectorAll('#srpv-venue-type-options .srpv-venue-type-check:checked')].map(el => el.value)
+  );
+}
+
+function setScheduleTimeRoomPreviewVenueTypesSelected(types) {
+  ensureScheduleTimeRoomPreviewVenueTypeMultiselect();
+  const set = new Set(normalizeScheduleSearchVenueTypeList(types));
+  document.querySelectorAll('#srpv-venue-type-options .srpv-venue-type-check').forEach(el => {
+    el.checked = set.has(el.value);
+  });
+  updateScheduleTimeRoomPreviewVenueTypeDisplay();
+}
+
+function updateScheduleTimeRoomPreviewVenueTypeDisplay() {
+  const display = document.getElementById('srpv-venue-type-display');
+  if (!display) return;
+  const label = getScheduleTimeRoomPreviewVenueTypesSelected().map(getScheduleVenueTypeLabel).filter(Boolean).join('、');
+  display.textContent = label || '全部';
+  display.classList.toggle('placeholder', !label);
+}
+
+function toggleScheduleTimeRoomPreviewVenueTypeDropdown(event) {
+  event?.stopPropagation?.();
+  const dd = document.getElementById('srpv-venue-type-dropdown');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeScheduleTimeRoomPreviewVenueTypeDropdown();
+  if (!willOpen) return;
+  ensureScheduleTimeRoomPreviewVenueTypeMultiselect();
+  dd.hidden = false;
+  positionScheduleFixedMultiselectDropdown(
+    document.getElementById('srpv-venue-type-btn'), dd, getScheduleRoomTypeFilterValues().length
+  );
+}
+
+function closeScheduleTimeRoomPreviewVenueTypeDropdown() {
+  const dd = document.getElementById('srpv-venue-type-dropdown');
+  if (dd) resetScheduleFixedMultiselectDropdown(dd);
+}
+
+function resetScheduleTimeRoomPreviewFilterDom() {
+  const room = document.getElementById('srpv-room');
+  if (room) room.value = '';
+  ['srpv-building', 'srpv-room-type', 'srpv-equipment', 'srpv-software', 'srpv-remark', 'srpv-seats-min', 'srpv-seats-max']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  setScheduleTimeRoomPreviewVenueTypesSelected([]);
+}
+
+function readScheduleTimeRoomPreviewFilterDraft() {
+  const draft = {};
+  const room = (document.getElementById('srpv-room')?.value || '').trim();
+  const building = document.getElementById('srpv-building')?.value || '';
+  const roomType = document.getElementById('srpv-room-type')?.value || '';
+  const venueTypes = getScheduleTimeRoomPreviewVenueTypesSelected();
+  const seatsMinRaw = document.getElementById('srpv-seats-min')?.value || '';
+  const seatsMaxRaw = document.getElementById('srpv-seats-max')?.value || '';
+  if (room) draft.room = room;
+  if (building) draft.building = building;
+  if (roomType) draft.roomType = roomType;
+  if (venueTypes.length) draft.venueTypes = venueTypes;
+  if (seatsMinRaw && !Number.isNaN(Number(seatsMinRaw))) draft.seatsMin = Number(seatsMinRaw);
+  if (seatsMaxRaw && !Number.isNaN(Number(seatsMaxRaw))) draft.seatsMax = Number(seatsMaxRaw);
+  const equipment = document.getElementById('srpv-equipment')?.value || '';
+  const software = document.getElementById('srpv-software')?.value || '';
+  const remark = document.getElementById('srpv-remark')?.value || '';
+  if (equipment) draft.equipment = equipment;
+  if (software) draft.software = software;
+  if (remark) draft.remark = remark;
+  return draft;
+}
+
+function queryScheduleTimeRoomPreviewFilter() {
+  if (scheduleDetailPhase === 'room') return;
+  closeScheduleTimeRoomPreviewVenueTypeDropdown();
+  scheduleTimeRoomPreviewFilterDraft = readScheduleTimeRoomPreviewFilterDraft();
+  scheduleTimeRoomPreviewFilterApplied = { ...scheduleTimeRoomPreviewFilterDraft };
+  scheduleTimeRoomPreviewExpanded = false;
+  renderScheduleTimeRoomPreviewGrid();
+}
+
+function resetScheduleTimeRoomPreviewFilter() {
+  if (scheduleDetailPhase === 'room') return;
+  scheduleTimeRoomPreviewExpanded = false;
+  scheduleTimeRoomPreviewFilterDraft = {};
+  scheduleTimeRoomPreviewFilterApplied = null;
+  resetScheduleTimeRoomPreviewFilterDom();
+  renderScheduleTimeRoomPreviewGrid();
+}
+
+function toggleScheduleTimeRoomPreviewExpand() {
+  if (!scheduleTimeRoomPreviewOpen) return;
+  scheduleTimeRoomPreviewExpanded = !scheduleTimeRoomPreviewExpanded;
+  renderScheduleTimeRoomPreviewGrid();
 }
 
 function onScheduleCtxRetakeDetect() {
@@ -41700,12 +41907,15 @@ function buildScheduleGridBlockLines(task, slot) {
   return lines.join('');
 }
 
-function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
-  if (isScheduleJointContext()) {
+function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, gridOpts) {
+  const preview = !!(gridOpts && gridOpts.preview);
+  if (!preview && isScheduleJointContext()) {
     renderScheduleJointTimetableGrid(term, tasks, activeTaskId, weekFilter);
     return;
   }
-  const mount = scheduleDetailEl('schedule-timetable-grid');
+  const mount = preview
+    ? document.getElementById('schedule-time-room-preview-grid')
+    : scheduleDetailEl('schedule-timetable-grid');
   if (!mount) return;
   const periods = ensureSchedulePeriods(term);
   if (!periods.length) {
@@ -41714,7 +41924,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
   }
   const filterWeeks = weekFilter !== undefined ? weekFilter : getScheduleDetailTimetableWeekFilter();
   const roomScopeCtx = scheduleBatchDetailContext;
-  const roomScopedMenu = scheduleDetailPhase === 'room'
+  const roomScopedMenu = !preview && scheduleDetailPhase === 'room'
     && roomScopeCtx
     && (roomScopeCtx.type === 'weekday' || roomScopeCtx.type === 'venueType');
   // 按时间/场地类型排教室详情固定显示七天，便于周末行落地
@@ -41722,19 +41932,22 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
     ? SCHEDULE_WEEKDAYS
     : SCHEDULE_WEEKDAYS.filter(w => w.value <= 5);
   // 排教室侧：仅左侧课程列表选中时按课程（及学时类型）过滤；仅点节次选中时仍显示周次内全部课程
-  const filterByCourseList = scheduleDetailPhase === 'room' && activeTaskId && scheduleActiveFromCourseList;
+  const filterByCourseList = !preview && scheduleDetailPhase === 'room' && activeTaskId && scheduleActiveFromCourseList;
   const displayTasks = filterByCourseList
     ? tasks.filter(t => t.id === activeTaskId)
     : tasks;
   const activeHourKeyForGrid = filterByCourseList
     ? normalizeScheduleHourKey(scheduleActiveHourType || getScheduleActiveHourKey() || '')
     : '';
-  const isRoomGrid = scheduleDetailPhase === 'room';
+  const isRoomGrid = preview || scheduleDetailPhase === 'room';
+  const previewWeekday = preview ? Number(document.getElementById('srpv-weekday')?.value) || 0 : 0;
+  if (preview) scheduleTimeRoomPreviewRender = true;
   const occupancy = new Map(); // time: weekday-period；room: room|period
   displayTasks.forEach(task => {
     const colorIdx = getTaskScheduleColorIndex(task.id);
     normalizeTaskTimeSlots(task).forEach(slot => {
       if (!slotMatchesWeekFilter(slot, task, filterWeeks)) return;
+      if (preview && previewWeekday && Number(slot.weekday) !== previewWeekday) return;
       if (
         activeHourKeyForGrid
         && activeHourKeyForGrid !== 'merged'
@@ -41767,7 +41980,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
     });
   });
   const activeTask = tasks.find(t => t.id === activeTaskId) || null;
-  const conflictKeys = getScheduleConflictCellKeys(tasks, activeTask);
+  const conflictKeys = preview ? new Map() : getScheduleConflictCellKeys(tasks, activeTask);
   const axisMaxCols = {};
   if (isRoomGrid) {
     periods.forEach(p => { axisMaxCols[p.periodNo] = 1; });
@@ -41884,7 +42097,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
     // 行=教室；横标题=节次；教室软件后=备注
     const roomRows = getScheduleRoomTimetableRows();
     const lockIndex = buildScheduleLockedRoomOwnerIndex();
-    const hasCourseCtx = hasScheduleRoomTimetableCourseContext();
+    const hasCourseCtx = preview ? false : hasScheduleRoomTimetableCourseContext();
     const periodNeed = getScheduleActiveRoomPeriodNeed();
     // 教室列表始终展示全部节次列；选中课程节次仅用于匹配排序与待定占用
     const gridPeriods = periods;
@@ -41898,16 +42111,18 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
       });
     });
     pendingRoomsFromHold(selectedRooms);
-    const defaultWd = (hasCourseCtx && periodNeed?.weekday)
-      ? Number(periodNeed.weekday)
-      : (roomScopeCtx?.type === 'weekday'
-        ? Number(roomScopeCtx.weekday)
-        : (periodNeed?.weekday || getScheduleSelectedSlot()?.weekday || weekdays[0]?.value || 1));
+    const defaultWd = preview
+      ? (previewWeekday || weekdays[0]?.value || 1)
+      : ((hasCourseCtx && periodNeed?.weekday)
+        ? Number(periodNeed.weekday)
+        : (roomScopeCtx?.type === 'weekday'
+          ? Number(roomScopeCtx.weekday)
+          : (periodNeed?.weekday || getScheduleSelectedSlot()?.weekday || weekdays[0]?.value || 1)));
     html = `<table class="schedule-grid-table schedule-detail-grid-table is-room-period-cols" style="--sch-day-count:${gridPeriods.length}"><thead><tr>`;
     // 冻结：序号 / 教室 / 有效座位数；其余 meta 随横向滚动
     html += '<th class="sch-room-meta sch-room-meta-freeze sch-room-meta-index">序号</th>';
     html += '<th class="sch-room-meta sch-room-meta-freeze sch-room-meta-room">教室</th>';
-    html += renderScheduleRoomSeatsSortTh('scheduleRoomTimetable', 'sch-room-meta sch-room-meta-freeze sch-room-meta-seats');
+    html += renderScheduleRoomSeatsSortTh(preview ? 'scheduleTimeRoomPreview' : 'scheduleRoomTimetable', 'sch-room-meta sch-room-meta-freeze sch-room-meta-seats');
     html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-rtype">教室类型</th>';
     html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-vtype">场地类型</th>';
     html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-building">楼栋</th>';
@@ -41920,7 +42135,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
     });
     html += '</tr></thead><tbody>';
     if (!roomRows.length) {
-      const f = scheduleRoomTimetableFilterApplied;
+      const f = preview ? scheduleTimeRoomPreviewFilterApplied : scheduleRoomTimetableFilterApplied;
       const lockedRooms = f?.lockedRoomUnion
         ? (scheduleRoomFilterLockedRooms.length ? scheduleRoomFilterLockedRooms : getScheduleActiveRoomLockedRooms())
         : [];
@@ -41997,19 +42212,19 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter) {
     html += '</tbody></table>';
   }
   mount.innerHTML = html;
-  bindScheduleTimetableContextMenu(mount);
+  if (!preview) bindScheduleTimetableContextMenu(mount);
   if (isRoomGrid) {
-    bindScheduleRoomGridCellClicks(mount);
+    if (!preview) bindScheduleRoomGridCellClicks(mount);
     requestAnimationFrame(() => {
       syncScheduleRoomMetaColumnLayout(mount);
-      // 第二帧再测一次，避免字体/滚动条出现后列宽变化留下缝隙
       requestAnimationFrame(() => {
         syncScheduleRoomMetaColumnLayout(mount);
-        scrollScheduleRoomGridToActivePeriod(mount);
+        if (!preview) scrollScheduleRoomGridToActivePeriod(mount);
       });
     });
   }
-  initScheduleGridDragSelect();
+  if (!preview) initScheduleGridDragSelect();
+  if (preview) scheduleTimeRoomPreviewRender = false;
 }
 
 /** 联合排课课表：每行=一个对象×一个星期，星期文案逐行重复，右侧冻结对象列 */
@@ -43812,9 +44027,9 @@ function isScheduleRoomLockedByOthers(room, lockIndex) {
   return !!getScheduleRoomLockInfo(room, lockIndex)?.locked;
 }
 
-function applyScheduleRoomTimetableUserFilters(rows) {
-  if (!scheduleRoomTimetableFilterApplied) return rows;
-  const f = scheduleRoomTimetableFilterApplied;
+function applyScheduleRoomTimetableUserFilters(rows, filterOverride) {
+  const f = arguments.length > 1 ? filterOverride : scheduleRoomTimetableFilterApplied;
+  if (!f) return rows;
   const lockedSet = f.lockedRoomUnion && scheduleRoomFilterLockedRooms.length
     ? new Set(scheduleRoomFilterLockedRooms.map(r => String(r).trim()).filter(Boolean))
     : null;
@@ -44045,19 +44260,22 @@ function toggleScheduleRoomTimetableExpand() {
 
 /** 排教室课表行：教室清单（场地类型 / 锁定教室并集 + 匹配度排序） */
 function getScheduleRoomTimetableRows() {
-  if (scheduleDetailPhase !== 'room') return [];
+  const preview = !!scheduleTimeRoomPreviewRender;
+  if (scheduleDetailPhase !== 'room' && !preview) return [];
   const lockIndex = buildScheduleLockedRoomOwnerIndex();
   const tasks = getScheduleDetailTasks();
   const weekFilter = getScheduleDetailTimetableWeekFilter();
-  const need = getScheduleActiveRoomPeriodNeed();
-  const hasCourseCtx = hasScheduleRoomTimetableCourseContext();
+  const need = preview ? null : getScheduleActiveRoomPeriodNeed();
+  const hasCourseCtx = preview ? false : hasScheduleRoomTimetableCourseContext();
+  const applied = preview ? scheduleTimeRoomPreviewFilterApplied : scheduleRoomTimetableFilterApplied;
+  const expanded = preview ? scheduleTimeRoomPreviewExpanded : scheduleRoomTimetableExpanded;
   // 先按筛选条件过滤，再按「未锁定优先」收窄，避免先收窄导致改条件后误判无数据
-  let rows = applyScheduleRoomTimetableUserFilters(getScheduleRoomTimetableBasePool());
+  let rows = applyScheduleRoomTimetableUserFilters(getScheduleRoomTimetableBasePool(), applied);
   // 未选课程：展示全部教室（含已锁定）；选中课程后默认仅未锁定，可展开更多
-  if (hasCourseCtx && !scheduleRoomTimetableExpanded) {
+  if (hasCourseCtx && !expanded) {
     rows = rows.filter(r => !isScheduleRoomLockedByOthers(r.room, lockIndex));
   }
-  const seatsSort = ensureScheduleRoomSeatsSortState('scheduleRoomTimetable');
+  const seatsSort = ensureScheduleRoomSeatsSortState(preview ? 'scheduleTimeRoomPreview' : 'scheduleRoomTimetable');
   const seatMul = seatsSort.dir === 'desc' ? -1 : 1;
   return rows.sort((a, b) => {
     const seatDiff = (getScheduleRoomAvailableSeats(a) - getScheduleRoomAvailableSeats(b)) * seatMul;
@@ -45694,22 +45912,23 @@ function renderScheduleRoomConflictPage() {
   const exportBtn = document.getElementById('btn-schedule-room-conflict-export');
   if (!ensureCourseOfferingPlan() || !ensureScheduleTasksFromOffering()) {
     scheduleRoomConflictFilteredRows = [];
-    renderScheduleEmptyRow(tbody, 17, '暂无课程数据，请先完成开课与排课');
+    renderScheduleEmptyRow(tbody, 18, '暂无课程数据，请先完成开课与排课');
     renderScheduleRoomConflictHint([]);
-    if (exportBtn) exportBtn.disabled = true;
+    resetListExportCheckAll('schedule-room-conflict-check-all');
     return;
   }
   const rows = filterScheduleRoomConflictRows(getScheduleRoomConflictQueryRows(true), readScheduleRoomConflictFilters());
   scheduleRoomConflictFilteredRows = rows;
   renderScheduleRoomConflictHint(rows);
-  if (exportBtn) exportBtn.disabled = !rows.length;
+  resetListExportCheckAll('schedule-room-conflict-check-all');
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 17, '暂无匹配冲突记录');
+    renderScheduleEmptyRow(tbody, 18, '暂无匹配冲突记录');
     return;
   }
   tbody.innerHTML = rows.map((row, idx) => {
     const jointCls = row.jointTeachingStatus === 'Y' ? 'is-joint-y' : 'is-joint-n';
     return `<tr>
+      <td class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
       <td class="col-index sch-conflict-freeze sch-conflict-freeze-index">${idx + 1}</td>
       <td>${escapeHtml(row.termLabel || '—')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(row.date || '—').replace(/\n/g, '<br>')}</td>
@@ -45754,10 +45973,81 @@ function resetScheduleRoomConflictFilters() {
   renderScheduleRoomConflictPage();
 }
 
-function exportScheduleRoomConflictRows() {
-  const rows = scheduleRoomConflictFilteredRows?.length
+function closeAllListExportMenus() {
+  document.querySelectorAll('.list-export-menu').forEach(el => { el.hidden = true; });
+}
+
+function toggleListExportMenu(ev, key) {
+  if (ev) ev.stopPropagation();
+  const menu = document.getElementById('list-export-menu-' + key);
+  if (!menu) return;
+  const willOpen = menu.hidden;
+  closeAllListExportMenus();
+  menu.hidden = !willOpen;
+}
+
+function toggleListExportCheckAll(tbodyId, checked) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.querySelectorAll('input.list-export-check').forEach(el => { el.checked = !!checked; });
+}
+
+function resetListExportCheckAll(headerId) {
+  const el = document.getElementById(headerId);
+  if (el) {
+    el.checked = false;
+    el.indeterminate = false;
+  }
+}
+
+function collectListExportCheckedValues(rootId) {
+  const root = document.getElementById(rootId);
+  if (!root) return [];
+  return [...root.querySelectorAll('input.list-export-check:checked')].map(el => el.value);
+}
+
+function resolveListExportRows(mode, allRows, tbodyId) {
+  const rows = Array.isArray(allRows) ? allRows : [];
+  if (mode === 'selected') {
+    const idxs = collectListExportCheckedValues(tbodyId)
+      .map(v => Number(v))
+      .filter(n => Number.isInteger(n) && n >= 0);
+    if (!idxs.length) {
+      alert('请先勾选要导出的记录');
+      return null;
+    }
+    return idxs.map(i => rows[i]).filter(Boolean);
+  }
+  return rows;
+}
+
+function downloadCsvFile(filename, headers, dataRows) {
+  if (!dataRows.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const csv = [headers, ...dataRows].map(cols =>
+    cols.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(',')
+  ).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.list-export-dropdown')) closeAllListExportMenus();
+});
+
+function exportScheduleRoomConflictRows(mode) {
+  closeAllListExportMenus();
+  const all = scheduleRoomConflictFilteredRows?.length
     ? scheduleRoomConflictFilteredRows
     : filterScheduleRoomConflictRows(getScheduleRoomConflictQueryRows(), readScheduleRoomConflictFilters());
+  const rows = resolveListExportRows(mode || 'query', all, 'schedule-room-conflict-body');
+  if (!rows) return;
   if (!rows.length) {
     alert('暂无符合条件的冲突数据可导出');
     return;
@@ -46183,20 +46473,21 @@ function renderScheduleTimeConflictPage() {
   const exportBtn = document.getElementById('btn-schedule-time-conflict-export');
   if (!ensureCourseOfferingPlan() || !ensureScheduleTasksFromOffering()) {
     scheduleTimeConflictFilteredRows = [];
-    renderScheduleEmptyRow(tbody, 15, '暂无课程数据，请先完成开课与排课');
+    renderScheduleEmptyRow(tbody, 16, '暂无课程数据，请先完成开课与排课');
     renderScheduleTimeConflictHint([]);
-    if (exportBtn) exportBtn.disabled = true;
+    resetListExportCheckAll('schedule-time-conflict-check-all');
     return;
   }
   const rows = filterScheduleTimeConflictRows(getScheduleTimeConflictQueryRows(true), readScheduleTimeConflictFilters());
   scheduleTimeConflictFilteredRows = rows;
   renderScheduleTimeConflictHint(rows);
-  if (exportBtn) exportBtn.disabled = !rows.length;
+  resetListExportCheckAll('schedule-time-conflict-check-all');
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 15, '暂无匹配冲突记录');
+    renderScheduleEmptyRow(tbody, 16, '暂无匹配冲突记录');
     return;
   }
   tbody.innerHTML = rows.map((row, idx) => `<tr>
+      <td class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
       <td class="col-index sch-conflict-freeze sch-conflict-freeze-index">${idx + 1}</td>
       <td>${escapeHtml(row.termLabel || '—')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(row.date || '—').replace(/\n/g, '<br>')}</td>
@@ -46241,10 +46532,13 @@ function resetScheduleTimeConflictFilters() {
   renderScheduleTimeConflictPage();
 }
 
-function exportScheduleTimeConflictRows() {
-  const rows = scheduleTimeConflictFilteredRows?.length
+function exportScheduleTimeConflictRows(mode) {
+  closeAllListExportMenus();
+  const all = scheduleTimeConflictFilteredRows?.length
     ? scheduleTimeConflictFilteredRows
     : filterScheduleTimeConflictRows(getScheduleTimeConflictQueryRows(), readScheduleTimeConflictFilters());
+  const rows = resolveListExportRows(mode || 'query', all, 'schedule-time-conflict-body');
+  if (!rows) return;
   if (!rows.length) {
     alert('暂无符合条件的冲突数据可导出');
     return;
@@ -46799,7 +47093,10 @@ function renderScheduleTimetableBlock(entry, opts = {}) {
   const title = `${task.code} ${task.name || ''} ${groupName !== '—' ? groupName : ''} · ${slot.weeks || task.weeks || ''}`;
   const tag = (isStart || opts.forceFull) ? renderScheduleTimetableBlockTag(slot, task) : '';
   const inner = tag + lines.map(renderScheduleTimetableBlockLine).join('');
-  return `<div class="${cls}" title="${escapeHtml(title.trim())}">${inner}</div>`;
+  const check = (isStart || opts.forceFull) && task && task.id
+    ? '<label class="schedule-tt-export-check" onclick="event.stopPropagation()"><input type="checkbox" class="list-export-check" value="' + escapeHtml(String(task.id)) + '" aria-label="选择课程"></label>'
+    : '';
+  return '<div class="' + cls + '" title="' + escapeHtml(title.trim()) + '">' + check + inner + '</div>';
 }
 
 function renderScheduleTimetableFieldBar(containerId) {
@@ -47554,6 +47851,7 @@ function rebuildScheduleTimeTimetableFilterOptions() {
 }
 
 let scheduleTimeTimetableQueried = false;
+let scheduleTimeTimetableFilteredRows = [];
 
 function queryScheduleTimeTimetable() {
   scheduleTimeTimetableQueried = true;
@@ -47567,20 +47865,25 @@ function renderScheduleTimeTimetableTable() {
   const term = getActiveOfferingTermSetting();
   const termLabel = term ? formatCourseTermDisplay(term.termCode) : '当前学期';
   if (!scheduleTimeTimetableQueried) {
-    tbody.innerHTML = '<tr><td colspan="17" class="text-muted" style="text-align:center;padding:24px">请设置查询条件后点击「查询」</td></tr>';
+    scheduleTimeTimetableFilteredRows = [];
+    resetListExportCheckAll('schedule-time-tt-check-all');
+    tbody.innerHTML = '<tr><td colspan="18" class="text-muted" style="text-align:center;padding:24px">请设置查询条件后点击「查询」</td></tr>';
     if (hint) hint.innerHTML = `<span class="legend-item text-muted">${escapeHtml(termLabel)} · 请点击查询查看全校排课明细</span>`;
     return;
   }
   const f = readScheduleTimeTimetableFilters();
   const rows = filterScheduleTimeTimetableRows(buildScheduleTimeTimetableRows(), f);
+  scheduleTimeTimetableFilteredRows = rows;
+  resetListExportCheckAll('schedule-time-tt-check-all');
   if (hint) {
     hint.innerHTML = `<span class="legend-item">${escapeHtml(termLabel)} · 全校排课明细 <strong>${rows.length}</strong> 条</span>`;
   }
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="17" class="text-muted" style="text-align:center;padding:24px">未查询到符合条件的排课记录</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="18" class="text-muted" style="text-align:center;padding:24px">未查询到符合条件的排课记录</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((r, idx) => `<tr>
+    <td class="col-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
     <td class="col-index">${idx + 1}</td>
     <td class="col-center">${escapeHtml(r.dateLabel || '—')}</td>
     <td>${escapeHtml(r.weeks || '—')}</td>
@@ -47613,7 +47916,8 @@ function renderScheduleTimeTimetablePage() {
   ensureScheduleGlobalDemo();
   if (!ensureScheduleTasksFromOffering()) {
     if (hint) hint.innerHTML = '<span class="legend-item text-muted">暂无课程数据，请先在开课管理中完成开课计划</span>';
-    if (tbody) tbody.innerHTML = '<tr><td colspan="17" class="text-muted" style="text-align:center;padding:24px">暂无课程数据</td></tr>';
+    scheduleTimeTimetableFilteredRows = [];
+    if (tbody) tbody.innerHTML = '<tr><td colspan="18" class="text-muted" style="text-align:center;padding:24px">暂无课程数据</td></tr>';
     return;
   }
   rebuildScheduleTimeTimetableFilterOptions();
@@ -47666,7 +47970,7 @@ function getScheduleTimetableKindWeek(kind) {
 
 function exportScheduleTimetableGraphic(kind) {
   if (kind === 'time') {
-    alert('时间课表为数据表格视图，请使用「导出数据课表」');
+    alert('时间课表为数据表格视图，请使用「按查询条件导出」');
     return;
   }
   const tasks = getScheduleTimetableTasksByKind(kind);
@@ -47695,9 +47999,17 @@ function downloadScheduleCsv(kind, headers, rows) {
   URL.revokeObjectURL(a.href);
 }
 
-function exportScheduleTimeTimetableData() {
+function exportScheduleTimeTimetableData(mode) {
+  if (!scheduleTimeTimetableQueried) {
+    alert('请先查询后再导出');
+    return;
+  }
   const f = readScheduleTimeTimetableFilters();
-  const rows = filterScheduleTimeTimetableRows(buildScheduleTimeTimetableRows(), f);
+  const all = scheduleTimeTimetableFilteredRows && scheduleTimeTimetableFilteredRows.length
+    ? scheduleTimeTimetableFilteredRows
+    : filterScheduleTimeTimetableRows(buildScheduleTimeTimetableRows(), f);
+  const rows = resolveListExportRows(mode || 'query', all, 'schedule-time-tt-body');
+  if (!rows) return;
   const headers = ['日期', '周次', '星期', '节次', '课程编号', '课程名称', '开课单位', '教师工号', '教师姓名', '所属单位', '上课小组', '人数', '入学批次', '专业名称', '上课单位', '教室'];
   const data = rows.map(r => [
     r.dateLabel, r.weeks || '', r.weekdayLabel, r.periodLabel, r.code, r.name, r.offerUnit,
@@ -47707,12 +48019,38 @@ function exportScheduleTimeTimetableData() {
   downloadScheduleCsv('time', headers, data);
 }
 
-function exportScheduleTimetableData(kind) {
+function exportScheduleTimetableByMode(kind, mode) {
+  closeAllListExportMenus();
   if (kind === 'time') {
-    exportScheduleTimeTimetableData();
+    exportScheduleTimeTimetableData(mode);
     return;
   }
-  const tasks = getScheduleTimetableTasksByKind(kind);
+  const allTasks = getScheduleTimetableTasksByKind(kind);
+  if (!allTasks.length) {
+    alert('请先查询课表后再导出');
+    return;
+  }
+  let tasks = allTasks;
+  if (mode === 'selected') {
+    const ids = new Set(collectListExportCheckedValues('schedule-' + kind + '-tt-grid'));
+    if (!ids.size) {
+      alert('请先勾选要导出的课程');
+      return;
+    }
+    tasks = allTasks.filter(t => ids.has(String(t.id)));
+    if (!tasks.length) {
+      alert('请先勾选要导出的课程');
+      return;
+    }
+  }
+  exportScheduleTimetableDataRows(kind, tasks);
+}
+
+function exportScheduleTimetableData(kind) {
+  exportScheduleTimetableByMode(kind, 'query');
+}
+
+function exportScheduleTimetableDataRows(kind, tasks) {
   if (!tasks.length) {
     alert('请先查询课表后再导出');
     return;
@@ -51266,6 +51604,11 @@ function closeModal(id) {
   if (id === 'modal-delete-version') pendingDeleteVersionId = null;
   if (id === 'modal-delete-confirm') deleteConfirmCallback = null;
   if (id === 'modal-major-task-revert-remark') pendingMajorTaskRevertConfirm = null;
+  if (id === 'modal-schedule-time-room-preview') {
+    scheduleTimeRoomPreviewOpen = false;
+    scheduleTimeRoomPreviewRender = false;
+    closeScheduleTimeRoomPreviewVenueTypeDropdown();
+  }
   if (id === 'modal-schedule-room-picker') {
     scheduleRoomPickerMode = 'schedule';
     adjustmentApproveRoomContext = null;
@@ -51413,6 +51756,7 @@ document.addEventListener('click', e => {
   if (scheduleVenueTypeWrap && !scheduleVenueTypeWrap.contains(e.target)) cancelScheduleVenueTypeDropdown();
   if (!e.target.closest('#schedule-course-search-venue-type-multiselect')) closeScheduleCourseSearchVenueTypeDropdown();
   if (!e.target.closest('#srtf-venue-type-multiselect')) closeScheduleRoomTimetableVenueTypeDropdown();
+  if (!e.target.closest('#srpv-venue-type-multiselect')) closeScheduleTimeRoomPreviewVenueTypeDropdown();
   const scheduleRoomTypeFilterWrap = document.getElementById('srf-type-multiselect');
   if (scheduleRoomTypeFilterWrap && !scheduleRoomTypeFilterWrap.contains(e.target)) closeScheduleRoomTypeFilterDropdown();
   const scheduleRoomClassroomTypeFilterWrap = document.getElementById('srf-classroom-type-multiselect');
@@ -58782,16 +59126,24 @@ function renderDensityMatrixTable(opts) {
   const selectable = !!opts.selectable;
   const sel = opts.selected || null;
   const { total, cells, weekdays, periods } = data;
-  thead.innerHTML = `<tr><th class="adj-density-period-col">时间节次</th>${weekdays.map(w =>
-    `<th class="col-center">${escapeHtml(w.label)}</th>`
-  ).join('')}</tr>`;
+  const exportChecks = !!opts.exportChecks;
+  const checkAllId = opts.checkAllId || '';
+  const colCount = weekdays.length + 1 + (exportChecks ? 1 : 0);
+  thead.innerHTML = '<tr>' + (exportChecks
+    ? '<th class="col-check"><input type="checkbox" id="' + escapeHtml(checkAllId) + '" aria-label="全选" onchange="toggleListExportCheckAll(\'' + opts.tbodyId + '\', this.checked)"></th>'
+    : '') + '<th class="adj-density-period-col">时间节次</th>' + weekdays.map(w =>
+    '<th class="col-center">' + escapeHtml(w.label) + '</th>'
+  ).join('') + '</tr>';
   if (!periods.length) {
-    tbody.innerHTML = '<tr><td class="text-muted" colspan="' + (weekdays.length + 1) + '">暂无节次设置</td></tr>';
+    tbody.innerHTML = '<tr><td class="text-muted" colspan="' + colCount + '">暂无节次设置</td></tr>';
     return;
   }
   tbody.innerHTML = periods.map(p => {
     const time = (p.startTime && p.endTime) ? `${p.startTime}-${p.endTime}` : '';
     const label = time ? `第${p.periodNo}节 ${time}` : `第${p.periodNo}节`;
+    const checkTd = exportChecks
+      ? '<td class="col-check"><input type="checkbox" class="list-export-check" value="' + String(p.periodNo) + '" aria-label="选择第' + p.periodNo + '节"></td>'
+      : '';
     const tds = weekdays.map(w => {
       const count = cells[`${w.value}-${p.periodNo}`] || 0;
       const pct = total > 0 ? Math.round((count / total) * 100) : 0;
@@ -58803,8 +59155,48 @@ function renderDensityMatrixTable(opts) {
       }
       return `<td class="col-center schedule-density-cell" title="${escapeHtml(title)}">${escapeHtml(text)}</td>`;
     }).join('');
-    return `<tr><th scope="row" class="adj-density-period-col">${escapeHtml(label)}</th>${tds}</tr>`;
+    return '<tr>' + checkTd + '<th scope="row" class="adj-density-period-col">' + escapeHtml(label) + '</th>' + tds + '</tr>';
   }).join('');
+}
+
+function exportScheduleDensityByMode(kind, mode) {
+  closeAllListExportMenus();
+  const data = kind === 'teacher' ? scheduleTeacherDensityData : scheduleStudentDensityData;
+  if (!data) {
+    alert('请先查询后再导出');
+    return;
+  }
+  const dimId = kind === 'teacher' ? 'tdf-dimension' : 'sdf-dimension';
+  const tbodyId = kind === 'teacher' ? 'schedule-teacher-density-tbody' : 'schedule-student-density-tbody';
+  const dim = document.getElementById(dimId)?.value || 'ratio';
+  let periods = data.periods || [];
+  if (mode === 'selected') {
+    const checked = new Set(collectListExportCheckedValues(tbodyId));
+    if (!checked.size) {
+      alert('请先勾选要导出的节次');
+      return;
+    }
+    periods = periods.filter(p => checked.has(String(p.periodNo)));
+  }
+  if (!periods.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const headers = ['时间节次'].concat((data.weekdays || []).map(w => w.label));
+  const total = data.total || 0;
+  const rows = periods.map(p => {
+    const time = (p.startTime && p.endTime) ? (p.startTime + '-' + p.endTime) : '';
+    const label = time ? ('第' + p.periodNo + '节 ' + time) : ('第' + p.periodNo + '节');
+    const cells = (data.weekdays || []).map(w => {
+      const count = data.cells[w.value + '-' + p.periodNo] || 0;
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      return dim === 'count' ? String(count) : (pct + '%');
+    });
+    return [label].concat(cells);
+  });
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const title = kind === 'teacher' ? '教师课表密度' : '学生课表密度';
+  downloadCsvFile(title + '_' + stamp + '.csv', headers, rows);
 }
 
 function renderAdjustmentDensityTable() {
@@ -59249,6 +59641,8 @@ function renderScheduleStudentDensityTable() {
     data: scheduleStudentDensityData,
     dimension: document.getElementById('sdf-dimension')?.value || 'ratio',
     selectable: false,
+    exportChecks: true,
+    checkAllId: 'schedule-student-density-check-all',
     subjectLabel: '学生'
   });
 }
@@ -59397,6 +59791,8 @@ function renderScheduleTeacherDensityTable() {
     data: scheduleTeacherDensityData,
     dimension: document.getElementById('tdf-dimension')?.value || 'ratio',
     selectable: false,
+    exportChecks: true,
+    checkAllId: 'schedule-teacher-density-check-all',
     subjectLabel: '教师'
   });
 }
@@ -69190,15 +69586,14 @@ function renderAdjustmentBatchPage() {
 }
 
 /* ── 教务：调课申请记录查询 ── */
-function renderAdjustmentRecordPage() {
+let adjustmentRecordFilteredRows = [];
+
+function getAdjustmentRecordFilteredRows() {
   ensureAdjustmentDemo();
-  const tbody = document.getElementById('adjustment-record-body');
   const type = document.getElementById('adjustment-record-type')?.value || '';
   const status = document.getElementById('adjustment-record-status')?.value || '';
   const source = document.getElementById('adjustment-record-source')?.value || '';
   const kw = (document.getElementById('adjustment-record-keyword')?.value || '').trim().toLowerCase();
-  const hint = document.getElementById('adjustment-record-hint');
-  // 记录页：汇总「我的调课申请」「调课申请管理」的申请（含初始化演示与用户新增；不含公假日停课）
   let rows = ADJUSTMENT_STORE.requests.filter(r =>
     r.source === 'teacher' || r.source === 'admin'
   );
@@ -69210,14 +69605,51 @@ function renderAdjustmentRecordPage() {
     (r.teacherName || '').toLowerCase().includes(kw) ||
     (r.code || '').toLowerCase().includes(kw) ||
     (r.courseName || '').toLowerCase().includes(kw));
-  rows = rows.slice().sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
+  return rows.slice().sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
+}
+
+function exportAdjustmentRecordRows(mode) {
+  closeAllListExportMenus();
+  const all = getAdjustmentRecordFilteredRows();
+  const rows = resolveListExportRows(mode || 'query', all, 'adjustment-record-body');
+  if (!rows) return;
+  if (!rows.length) {
+    alert('暂无符合条件的记录可导出');
+    return;
+  }
+  const headers = ['审批状态', '审批阶段', '申请单号', '调课类型', '申请人', '工号', '调课时间', '申请节数', '原因类型', '事由', '提交时间', '来源'];
+  const data = rows.map(r => [
+    (ADJUSTMENT_STATUS_META[r.status] && ADJUSTMENT_STATUS_META[r.status].label) || r.status || '',
+    getAdjustmentStageLabel(r),
+    r.no || '',
+    (ADJUSTMENT_TYPE_META[r.type] && ADJUSTMENT_TYPE_META[r.type].label) || r.type || '',
+    r.teacherName || '',
+    r.teacherId || '',
+    formatAdjustmentRequestApplyTime(r),
+    r.slotCount || 1,
+    getAdjustmentReasonTypeDisplay(r),
+    r.reason || '',
+    r.submittedAt || '',
+    r.source === 'admin' ? '调课申请管理' : '我的调课申请'
+  ]);
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  downloadCsvFile('调课申请记录_' + stamp + '.csv', headers, data);
+}
+
+function renderAdjustmentRecordPage() {
+  const tbody = document.getElementById('adjustment-record-body');
+  const hint = document.getElementById('adjustment-record-hint');
+  const rows = getAdjustmentRecordFilteredRows();
+  adjustmentRecordFilteredRows = rows;
+  resetListExportCheckAll('adjustment-record-check-all');
   if (hint) {
     hint.innerHTML = rows.length
       ? `<span class="legend-item">共 <strong>${rows.length}</strong> 条（来自我的调课申请 / 调课申请管理）</span>`
       : '<span class="legend-item text-muted">暂无记录：请在「我的调课申请」或「调课申请管理」中新增申请</span>';
   }
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无匹配记录，请先在「我的调课申请」或「调课申请管理」中新增'); return; }
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 13, '暂无匹配记录，请先在「我的调课申请」或「调课申请管理」中新增'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
+    <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
     <td class="col-index">${i + 1}</td>
     <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
@@ -69657,6 +70089,8 @@ function buildScheduleAutoTimeUnitMeta(unit) {
     name: unit.name || task.name || '',
     courseLabel: `${unit.code || task.code || ''} ${unit.name || task.name || ''}`.trim() || '—',
     nature: unit.nature || getScheduleAutoTaskNature(task),
+    programmeKey: unit.programmeKey || task.programmeKey || '',
+    intake: unit.intake || task.intake || '',
     weeks: getScheduleAutoTaskWeeksLabel(task),
     total: unit.total != null ? unit.total : getScheduleTaskTotalHoursNum(task),
     group: unit.group || formatScheduleGroupNames(task) || '—',
@@ -69995,6 +70429,8 @@ function getScheduleAutoTimeBoardRows() {
             code: it.code,
             name: it.name,
             nature: it.nature,
+            programmeKey: it.programmeKey || task?.programmeKey,
+            intake: it.intake || task?.intake,
             group: it.group,
             total: it.total,
             hourLabel: it.hourLabel
@@ -70066,6 +70502,79 @@ function getScheduleAutoTimeBoardRows() {
   return { leftRows, successRows };
 }
 
+function isScheduleAutoElectiveNature(nature) {
+  return /选修|elective/i.test(String(nature || ''));
+}
+
+function formatScheduleAutoProgrammeIntake(programmeKey, intake) {
+  const code = typeof getProgrammeCode === 'function' ? getProgrammeCode(programmeKey) : '';
+  const intakeLabel = intake && typeof formatIntakeDisplay === 'function'
+    ? formatIntakeDisplay(intake)
+    : String(intake || '').trim();
+  if (!code || !intakeLabel || intakeLabel === '—') return '';
+  return `${code}${intakeLabel}`;
+}
+
+/** 上课批次：必修显示专业代码+批次（如 AIT2025/09）；选修无上课批次 */
+function getScheduleAutoTimeIntakeLabel(row) {
+  if (isScheduleAutoElectiveNature(row?.nature)) return '—';
+  const taskId = row?.taskId || row?.id;
+  const task = row?.task
+    || (taskId && typeof getScheduleTaskRows === 'function'
+      ? getScheduleTaskRows().find(t => t.id === taskId)
+      : null);
+  const sec = COURSE_OFFERING_PLAN_STORE?.sections?.find(s => s.id === (taskId || task?.id));
+  if (sec && typeof getSectionLineMetas === 'function') {
+    const labels = getSectionLineMetas(sec).map(m => {
+      const code = m.programmeCode || '';
+      const intake = m.intakeDisplay || '';
+      if (!code || !intake || intake === '—') return '';
+      return `${code}${intake}`;
+    });
+    const merged = typeof joinUniqueLabelsFull === 'function'
+      ? joinUniqueLabelsFull(labels)
+      : ([...new Set(labels.filter(Boolean))].join('、') || '—');
+    if (merged && merged !== '—') return merged;
+  }
+  return formatScheduleAutoProgrammeIntake(
+    row?.programmeKey || task?.programmeKey || '',
+    row?.intake || task?.intake || ''
+  ) || '—';
+}
+
+/** 成功课程「跳转排课」：必修→按入学批次排详情，选修→按课程排详情 */
+function renderScheduleAutoTimeJumpAction(row) {
+  let nature = row?.nature || '';
+  let courseCode = row?.code || '';
+  let courseName = row?.name || '';
+  let programmeKey = row?.programmeKey || '';
+  let intake = row?.intake || '';
+  if ((!programmeKey || !intake || !courseCode || !nature) && row?.taskId && typeof getScheduleTaskRows === 'function') {
+    const task = getScheduleTaskRows().find(t => t.id === row.taskId);
+    if (task) {
+      nature = nature || getScheduleAutoTaskNature(task);
+      courseCode = courseCode || task.code || '';
+      courseName = courseName || task.name || '';
+      programmeKey = programmeKey || task.programmeKey || '';
+      intake = intake || task.intake || '';
+    }
+  }
+  const elective = isScheduleAutoElectiveNature(nature);
+  let ctx = null;
+  if (elective) {
+    if (courseCode) ctx = { type: 'course', courseCode, courseName };
+  } else if (programmeKey && intake) {
+    ctx = { type: 'batch', programmeKey, intake };
+  }
+  if (!ctx || typeof buildScheduleDetailLaunchUrl !== 'function') {
+    const tip = elective ? '缺少课程号，无法跳转按课程排课' : '缺少专业批次，无法跳转按入学批次排课';
+    return `<button class="btn btn-outline btn-sm schedule-auto-jump-btn" type="button" disabled title="${escapeHtml(tip)}">跳转排课</button>`;
+  }
+  const href = buildScheduleDetailLaunchUrl(ctx, 'time');
+  const title = elective ? '跳转按课程排课' : '跳转按入学批次排课';
+  return `<button class="btn btn-outline btn-sm schedule-auto-jump-btn" type="button" title="${escapeHtml(title)}" data-sch-href="${escapeHtml(href)}" onclick="return launchScheduleDetailTab(event)">跳转排课</button>`;
+}
+
 function renderScheduleAutoTimeBoardTables() {
   const { leftRows, successRows } = getScheduleAutoTimeBoardRows();
   const leftBody = document.getElementById('sat-left-body');
@@ -70087,12 +70596,13 @@ function renderScheduleAutoTimeBoardTables() {
           <td class="col-center schedule-auto-weeks">${escapeHtml(r.weeks || '—')}</td>
           <td class="col-center schedule-auto-hours">${escapeHtml(String(r.total ?? '—'))}</td>
           <td class="schedule-auto-group">${escapeHtml(r.group || '—')}</td>
+          <td class="schedule-auto-intake">${escapeHtml(getScheduleAutoTimeIntakeLabel(r))}</td>
           <td class="schedule-auto-teacher">${escapeHtml(r.teachers || '—')}</td>
         </tr>${showFail ? `<tr class="schedule-auto-board-fail-row">
-          <td colspan="7"><div class="schedule-auto-fail-reason-line">失败原因：${escapeHtml(failReason)}</div></td>
+          <td colspan="8"><div class="schedule-auto-fail-reason-line">失败原因：${escapeHtml(failReason)}</div></td>
         </tr>` : ''}`;
         }).join('')
-      : '<tr><td colspan="7" class="empty-cell">暂无待排/失败课程</td></tr>';
+      : '<tr><td colspan="8" class="empty-cell">暂无待排/失败课程</td></tr>';
   }
   if (rightBody) {
     const selectedCount = successRows.filter(r => scheduleAutoTimeSelectedIds.has(r.taskId)).length;
@@ -70116,11 +70626,13 @@ function renderScheduleAutoTimeBoardTables() {
           <td class="col-center schedule-auto-weeks">${escapeHtml(r.weeks || '—')}</td>
           <td class="col-center schedule-auto-hours">${escapeHtml(String(r.total ?? '—'))}</td>
           <td class="schedule-auto-group">${escapeHtml(r.group || '—')}</td>
+          <td class="schedule-auto-intake">${escapeHtml(getScheduleAutoTimeIntakeLabel(r))}</td>
           <td class="schedule-auto-teacher">${escapeHtml(r.teachers || '—')}</td>
           <td class="schedule-auto-class-time">${escapeHtml(r.classTime || '—')}</td>
+          <td class="col-center schedule-auto-ops-col" onclick="event.stopPropagation()">${renderScheduleAutoTimeJumpAction(r)}</td>
         </tr>`;
         }).join('')
-      : '<tr><td colspan="9" class="empty-cell">暂无成功课程</td></tr>';
+      : '<tr><td colspan="11" class="empty-cell">暂无成功课程</td></tr>';
   }
   syncScheduleAutoTimeLockButtons();
 }
@@ -70313,6 +70825,8 @@ function buildScheduleAutoTimeResultBase(unit, result, reason, reasonCode, rule)
     code: meta.code,
     name: meta.name,
     nature: meta.nature,
+    programmeKey: meta.programmeKey,
+    intake: meta.intake,
     weeks: meta.weeks,
     total: meta.total,
     group: meta.group,

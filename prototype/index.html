@@ -2879,8 +2879,10 @@
             </div>
             <div class="schedule-detail-field schedule-retake-detect-panel" id="schedule-retake-detect-panel">
               <label class="schedule-detail-field-label">预重修检测</label>
-              <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry">
-                <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">查询冲突</button>
+              <div class="schedule-retake-detect-tools">
+                <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry">
+                  <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">查询冲突</button>
+                </div>
               </div>
               <div class="schedule-retake-detect-form" id="schedule-retake-detect-form" hidden>
                 <div class="schedule-retake-detect-controls">
@@ -2913,6 +2915,9 @@
                   <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-retake-detect-exit" onclick="exitScheduleRetakeDetect()">退出检测</button>
                 </div>
                 <div class="schedule-retake-detect-hint" id="schedule-retake-detect-hint"></div>
+              </div>
+              <div class="schedule-time-room-preview-row">
+                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button>
               </div>
             </div>
             <div class="schedule-detail-op-hint is-warn schedule-detail-room-clear-hint" id="schedule-detail-room-clear-hint" hidden></div>
@@ -3043,9 +3048,6 @@
           <h1>课表冲突查询</h1>
           <p class="subtitle">查询已排课表中的时间侧冲突（含忽略冲突后仍存在的冲突）</p>
         </div>
-        <div class="page-header-actions">
-          <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-conflict-export" onclick="exportScheduleTimeConflictRows()" disabled>导出</button>
-        </div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -3133,10 +3135,20 @@
       </div>
       <div class="legend-bar" id="schedule-time-conflict-hint"></div>
       <div class="card schedule-card">
+        <div class="panel-toolbar list-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-conflict-export" onclick="toggleListExportMenu(event, 'schedule-time-conflict')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-schedule-time-conflict" hidden>
+              <button type="button" onclick="exportScheduleTimeConflictRows('selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleTimeConflictRows('query')">按查询条件导出</button>
+            </div>
+          </div>
+        </div>
         <div class="table-scroll schedule-time-conflict-table-wrap">
           <table class="data-table schedule-time-conflict-table sch-conflict-query-table">
             <thead>
               <tr>
+                <th class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" id="schedule-time-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-time-conflict-body', this.checked)"></th>
                 <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
                 <th>学期</th>
                 <th>日期</th>
@@ -3271,6 +3283,7 @@
                     <th class="col-center schedule-auto-weeks">起止周</th>
                     <th class="col-center schedule-auto-hours">总学时</th>
                     <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-intake">上课批次</th>
                     <th class="schedule-auto-teacher">授课老师</th>
                   </tr>
                 </thead>
@@ -3289,7 +3302,10 @@
                 <button class="btn btn-ghost btn-sm" type="button" id="btn-sat-unlock" onclick="unlockScheduleAutoTimeSelected()" disabled>解锁</button>
               </div>
             </div>
-            <p class="schedule-auto-lock-hint">底色高亮标记为已锁定，标「已锁定」的成功课程，撤回结果时不会撤回；可勾选后锁定或解锁。</p>
+            <div class="schedule-auto-lock-hint">
+              <p>1. 底色高亮标记为已锁定，标「已锁定」的成功课程，撤回结果时不会撤回；可勾选后锁定或解锁。</p>
+              <p>2. 必修课按上课批次跳转排课界面，选修课按课程跳转排课界面。</p>
+            </div>
             <div class="table-wrap schedule-auto-board-table-wrap">
               <table class="data-table schedule-auto-board-table">
                 <thead>
@@ -3303,8 +3319,10 @@
                     <th class="col-center schedule-auto-weeks">起止周</th>
                     <th class="col-center schedule-auto-hours">总学时</th>
                     <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-intake">上课批次</th>
                     <th class="schedule-auto-teacher">授课老师</th>
                     <th class="schedule-auto-class-time">上课时间</th>
+                    <th class="col-center schedule-auto-ops-col">操作</th>
                   </tr>
                 </thead>
                 <tbody id="sat-right-body"></tbody>
@@ -3424,9 +3442,6 @@
           <h1>场地冲突查询</h1>
           <p class="subtitle">查询排课教室阶段的教室时间、座位人数及场地类型冲突</p>
         </div>
-        <div class="page-header-actions">
-          <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-room-conflict-export" onclick="exportScheduleRoomConflictRows()" disabled>导出</button>
-        </div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -3492,10 +3507,20 @@
       </div>
       <div class="legend-bar" id="schedule-room-conflict-hint"></div>
       <div class="card schedule-card">
+        <div class="panel-toolbar list-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-room-conflict-export" onclick="toggleListExportMenu(event, 'schedule-room-conflict')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-schedule-room-conflict" hidden>
+              <button type="button" onclick="exportScheduleRoomConflictRows('selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleRoomConflictRows('query')">按查询条件导出</button>
+            </div>
+          </div>
+        </div>
         <div class="table-scroll schedule-room-conflict-table-wrap">
           <table class="data-table schedule-room-conflict-table sch-conflict-query-table">
             <thead>
               <tr>
+                <th class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" id="schedule-room-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-room-conflict-body', this.checked)"></th>
                 <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
                 <th>学期</th>
                 <th>日期</th>
@@ -3825,8 +3850,14 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-intake')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-tt-intake" hidden>
+              <button type="button" onclick="exportScheduleTimetableByMode('intake', 'selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleTimetableByMode('intake', 'query')">按查询条件导出</button>
+            </div>
+          </div>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('intake')">导出图形课表</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('intake')">导出数据课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-intake-tt-fields"></div>
         <div class="schedule-timetable-scroll">
@@ -3879,8 +3910,14 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-teacher')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-tt-teacher" hidden>
+              <button type="button" onclick="exportScheduleTimetableByMode('teacher', 'selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleTimetableByMode('teacher', 'query')">按查询条件导出</button>
+            </div>
+          </div>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('teacher')">导出图形课表</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('teacher')">导出数据课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-teacher-tt-fields"></div>
         <div class="schedule-timetable-scroll">
@@ -3917,8 +3954,14 @@
       <div class="legend-bar" id="schedule-student-tt-hint"></div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-student')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-tt-student" hidden>
+              <button type="button" onclick="exportScheduleTimetableByMode('student', 'selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleTimetableByMode('student', 'query')">按查询条件导出</button>
+            </div>
+          </div>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('student')">导出图形课表</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('student')">导出数据课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-student-tt-fields"></div>
         <div class="schedule-timetable-scroll">
@@ -3954,8 +3997,14 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-course')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-tt-course" hidden>
+              <button type="button" onclick="exportScheduleTimetableByMode('course', 'selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleTimetableByMode('course', 'query')">按查询条件导出</button>
+            </div>
+          </div>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('course')">导出图形课表</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('course')">导出数据课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-course-tt-fields"></div>
         <div class="schedule-timetable-scroll">
@@ -3991,8 +4040,14 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-room')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-tt-room" hidden>
+              <button type="button" onclick="exportScheduleTimetableByMode('room', 'selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleTimetableByMode('room', 'query')">按查询条件导出</button>
+            </div>
+          </div>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('room')">导出图形课表</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('room')">导出数据课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-room-tt-fields"></div>
         <div class="schedule-timetable-scroll">
@@ -4076,12 +4131,18 @@
       </div>
       <div class="card schedule-card">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('time')">导出图形课表</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableData('time')">导出数据课表</button>
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-time')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-tt-time" hidden>
+              <button type="button" onclick="exportScheduleTimetableByMode('time', 'selected')">按选择项导出</button>
+              <button type="button" onclick="exportScheduleTimetableByMode('time', 'query')">按查询条件导出</button>
+            </div>
+          </div>
         </div>
         <div class="table-scroll">
           <table class="data-table schedule-time-tt-table">
             <thead><tr>
+              <th class="col-check"><input type="checkbox" id="schedule-time-tt-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-time-tt-body', this.checked)"></th>
               <th class="col-index">序号</th><th class="col-center">日期</th><th>周次</th><th class="col-center">星期</th><th class="col-center">节次</th>
               <th>课程编号</th><th>课程名称</th><th>开课单位</th><th class="col-center">教师工号</th><th>教师姓名</th>
               <th>所属单位</th><th>上课小组</th><th class="col-center">人数</th><th class="col-center">入学批次</th><th>专业名称</th>
@@ -4114,6 +4175,15 @@
         </div>
         <div class="schedule-density-hint adj-density-hint" id="schedule-student-density-hint"></div>
         <div class="card schedule-timetable-wrap">
+          <div class="schedule-tt-export-actions schedule-tt-export-bar">
+            <div class="list-export-dropdown">
+              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'density-student')">导出</button>
+              <div class="list-export-menu" id="list-export-menu-density-student" hidden>
+                <button type="button" onclick="exportScheduleDensityByMode('student', 'selected')">按选择项导出</button>
+                <button type="button" onclick="exportScheduleDensityByMode('student', 'query')">按查询条件导出</button>
+              </div>
+            </div>
+          </div>
           <div class="table-scroll adj-density-table-wrap schedule-density-table-wrap">
             <table class="data-table compact adj-density-table" id="schedule-student-density-table">
               <thead id="schedule-student-density-thead"></thead>
@@ -4129,6 +4199,15 @@
         </div>
         <div class="schedule-density-hint adj-density-hint" id="schedule-teacher-density-hint"></div>
         <div class="card schedule-timetable-wrap">
+          <div class="schedule-tt-export-actions schedule-tt-export-bar">
+            <div class="list-export-dropdown">
+              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'density-teacher')">导出</button>
+              <div class="list-export-menu" id="list-export-menu-density-teacher" hidden>
+                <button type="button" onclick="exportScheduleDensityByMode('teacher', 'selected')">按选择项导出</button>
+                <button type="button" onclick="exportScheduleDensityByMode('teacher', 'query')">按查询条件导出</button>
+              </div>
+            </div>
+          </div>
           <div class="table-scroll adj-density-table-wrap schedule-density-table-wrap">
             <table class="data-table compact adj-density-table" id="schedule-teacher-density-table">
               <thead id="schedule-teacher-density-thead"></thead>
@@ -4692,8 +4771,19 @@
         </div>
       </div>
       <div class="legend-bar" id="adjustment-record-hint"></div>
-      <div class="card schedule-card"><div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status">
+      <div class="card schedule-card">
+        <div class="panel-toolbar list-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-record')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-adjustment-record" hidden>
+              <button type="button" onclick="exportAdjustmentRecordRows('selected')">按选择项导出</button>
+              <button type="button" onclick="exportAdjustmentRecordRows('query')">按查询条件导出</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status">
         <thead><tr>
+          <th class="col-check"><input type="checkbox" id="adjustment-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-record-body', this.checked)"></th>
           <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
           <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
         </tr></thead>
@@ -9577,6 +9667,61 @@
   </div>
 </div>
 
+<!-- ═══ 抽屉：排时间侧 · 查看教室安排情况（教室列表同排教室侧，只读） ═══ -->
+<div class="modal-overlay modal-drawer" id="modal-schedule-time-room-preview">
+  <div class="modal modal-lg adj-picker-drawer-modal">
+    <div class="modal-head">
+      <h3>教室安排情况</h3>
+      <button class="modal-close" type="button" onclick="closeScheduleTimeRoomPreview()">×</button>
+    </div>
+    <div class="modal-body schedule-detail-main schedule-time-room-preview-body">
+      <div class="schedule-time-room-preview-toolbar">
+        <label class="schedule-scope-label" for="srpv-weekday">星期</label>
+        <select class="input input-sm" id="srpv-weekday" onchange="onScheduleTimeRoomPreviewWeekdayChange()"></select>
+        <span class="form-hint">占用按当前排课周次显示</span>
+      </div>
+      <div class="schedule-detail-field schedule-detail-room-filter-panel" id="schedule-time-room-preview-filter-panel">
+        <label class="schedule-detail-field-label">教室筛选</label>
+        <div class="schedule-room-filter-grid schedule-room-timetable-filter-grid">
+          <div class="srf-item"><label for="srpv-room">教室</label><input class="input input-sm" id="srpv-room" type="text" placeholder="教室名称"></div>
+          <div class="srf-item"><label for="srpv-building">楼栋</label><select class="input input-sm" id="srpv-building"></select></div>
+          <div class="srf-item"><label for="srpv-room-type">教室类型</label><select class="input input-sm" id="srpv-room-type"></select></div>
+          <div class="srf-item">
+            <label>场地类型</label>
+            <div class="clo-multiselect" id="srpv-venue-type-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" id="srpv-venue-type-btn" onclick="toggleScheduleTimeRoomPreviewVenueTypeDropdown(event)">
+                <span class="clo-multiselect-display placeholder" id="srpv-venue-type-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" id="srpv-venue-type-dropdown" hidden>
+                <div class="clo-multiselect-options" id="srpv-venue-type-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="srf-item"><label for="srpv-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srpv-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srpv-seats-max" type="number" min="0" placeholder="最大"></div></div>
+          <div class="srf-item"><label for="srpv-equipment">教室设备</label><select class="input input-sm" id="srpv-equipment"></select></div>
+          <div class="srf-item"><label for="srpv-software">教室软件</label><select class="input input-sm" id="srpv-software"></select></div>
+          <div class="srf-item"><label for="srpv-remark">备注</label><select class="input input-sm" id="srpv-remark"></select></div>
+          <div class="srf-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeRoomPreviewFilter()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimeRoomPreviewFilter()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="schedule-room-grid-shell is-room-mode" id="schedule-time-room-preview-shell">
+        <div class="schedule-timetable-scroll">
+          <div id="schedule-time-room-preview-grid" class="schedule-timetable-grid"></div>
+        </div>
+        <div class="schedule-room-grid-footer" id="schedule-time-room-preview-footer" hidden>
+          <button type="button" class="btn btn-ghost btn-sm sch-room-expand-btn" id="btn-schedule-time-room-preview-expand" onclick="toggleScheduleTimeRoomPreviewExpand()">展开更多教室</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeScheduleTimeRoomPreview()">关闭</button>
+    </div>
+  </div>
+</div>
 <!-- ═══ 抽屉：选择教室（排教室 / 批量调教室共用） ═══ -->
 <div class="modal-overlay modal-drawer modal-nested" id="modal-schedule-room-picker">
   <div class="modal modal-lg adj-picker-drawer-modal">

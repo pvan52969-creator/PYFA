@@ -9235,16 +9235,20 @@
     <div class="modal-body">
       <div class="tab-panel" id="adjustment-batch-tab-course">
         <div class="card schedule-card adjustment-batch-card">
-          <div class="panel-toolbar">
-            <span class="hint">先按学期选择课程，再从已选课程的已排课节中选择原日期、节次，最后指定目标日期、节次并生成调课明细</span>
+          <div class="adjustment-batch-course-sticky">
+            <div class="form-grid adjustment-batch-course-sticky-fields">
+              <div class="form-item">
+                <label class="req" for="adjustment-batch-course-term">学年学期</label>
+                <select class="input" id="adjustment-batch-course-term" onchange="onAdjustmentBatchCourseTermChange()"></select>
+              </div>
+              <div class="form-item">
+                <label class="req">课程</label>
+                <select id="adjustment-batch-course-courses" hidden></select>
+                <div id="adjustment-batch-course-courses-mount"></div>
+              </div>
+            </div>
           </div>
           <div class="form-grid adjustment-batch-form">
-            <div class="form-item full">
-              <label class="req">课程</label>
-              <select id="adjustment-batch-course-courses" hidden></select>
-              <div id="adjustment-batch-course-courses-mount"></div>
-              <p class="form-hint">必选；仅显示当前学期已排课表的课程（课程号 课程名称），每次只能选择一门</p>
-            </div>
             <div class="form-item full">
               <label>日期选择方式</label>
               <div class="adj-batch-date-mode" role="group" aria-label="日期选择方式">
@@ -9317,6 +9321,8 @@
               <button class="btn btn-outline btn-sm" type="button" onclick="clearAdjustmentBatchCoursePreview()">清空调课明细</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="deleteAdjustmentBatchCoursePreview()">删除调课明细</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchCourseRowsPicker()">调教室</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchCourseRowsTeacherPicker()">调教师</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="exportAdjustmentBatchCourseConflicts()">导出冲突信息</button>
             </div>
             <div class="adj-batch-order-hint">多选日期和节次时，按顺位对应调课（第 N 个原日期 → 第 N 个目标日期，第 N 个原节次 → 第 N 个目标节次）</div>
             <label class="adj-batch-conflict-only">
@@ -9326,7 +9332,7 @@
             <div class="adjustment-batch-preview-tip" id="adjustment-batch-course-tip" hidden></div>
           </div>
           <div class="table-scroll">
-            <table class="data-table adjustment-table adj-freeze-left-3 adj-batch-preview-table adj-batch-time-preview">
+            <table class="data-table adjustment-table adj-freeze-left-3 adj-batch-preview-table adj-batch-time-preview adj-batch-course-preview">
               <thead>
                 <tr>
                   <th class="col-check"><input type="checkbox" id="adjustment-batch-course-check-all" onclick="onAdjustmentBatchCourseSelectAll(this.checked)" aria-label="全选调课明细"></th>
@@ -9338,6 +9344,7 @@
                   <th class="col-center">源日期</th>
                   <th class="col-center">原节次</th>
                   <th>教室</th>
+                  <th>调整后教师</th>
                   <th class="col-center">调整后日期</th>
                   <th class="col-center">调整后节次</th>
                   <th>调后教室</th>
@@ -9451,6 +9458,8 @@
               <button class="btn btn-outline btn-sm" type="button" onclick="clearAdjustmentBatchTimePreview()">清空调课明细</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="deleteAdjustmentBatchTimePreview()">删除调课明细</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchTimeRowsPicker()">调教室</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchRowsTeacherPicker('time')">调教师</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="exportAdjustmentBatchConflicts('time')">导出冲突信息</button>
             </div>
             <div class="adj-batch-order-hint">多选日期和节次时，按顺位对应调课（第 N 个源日期 → 第 N 个目标日期，第 N 个源节次 → 第 N 个目标节次）</div>
             <label class="adj-batch-conflict-only">
@@ -9472,6 +9481,7 @@
                   <th class="col-center">源日期</th>
                   <th class="col-center">原节次</th>
                   <th>教室</th>
+                  <th>调整后教师</th>
                   <th class="col-center">调整后日期</th>
                   <th class="col-center">调整后节次</th>
                   <th>调后教室</th>
@@ -9558,6 +9568,8 @@
               <button class="btn btn-outline btn-sm" type="button" onclick="clearAdjustmentBatchRoomPreview()">清空调课明细</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="deleteAdjustmentBatchRoomPreview()">删除调课明细</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchRoomRowsPicker()">调教室</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentBatchRowsTeacherPicker('room')">调教师</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="exportAdjustmentBatchConflicts('room')">导出冲突信息</button>
             </div>
             <label class="adj-batch-conflict-only">
               <input type="checkbox" id="adjustment-batch-room-conflict-only" onchange="onAdjustmentBatchRoomConflictOnlyChange()">
@@ -9577,6 +9589,7 @@
                   <th class="col-center">日期</th>
                   <th class="col-center">节次</th>
                   <th>原教室</th>
+                  <th>调整后教师</th>
                   <th>目标教室</th>
                   <th class="adj-batch-conflict-col">冲突情况</th>
                   <th class="col-center col-ops">操作</th>

@@ -13069,6 +13069,21 @@ code {
   min-height: 0;
   overflow: auto;
 }
+#modal-schedule-time-room-preview .schedule-grid-cell.is-srpv-occ {
+  background: #fef2f2;
+}
+#modal-schedule-time-room-preview .srpv-occ-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #991b1b;
+  background: #fee2e2;
+  border-radius: 4px;
+}
 .schedule-retake-detect-panel[hidden] {
   display: none !important;
 }
@@ -13837,6 +13852,19 @@ code {
 .schedule-room-picker-hint .srph-row { margin: 0; }
 .schedule-room-picker-hint .srph-k { color: #166534; font-weight: 600; margin-right: 4px; }
 .schedule-room-picker-hint .srph-meta { margin-top: 4px; color: #3f6212; }
+.schedule-room-picker-hint .srph-times {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 96px;
+  overflow: auto;
+}
+.schedule-room-picker-hint .srph-times li {
+  padding: 1px 0;
+}
+.schedule-room-picker-hint .srph-times li + li {
+  border-top: 1px dashed #bbf7d0;
+}
 .schedule-room-picker-occ-bar {
   display: flex;
   flex-wrap: wrap;
@@ -15203,16 +15231,69 @@ code {
   display: flex;
   flex-direction: column;
 }
-#modal-adjustment-batch .adjustment-batch-card {
+#modal-adjustment-batch .adjustment-batch-card.card {
   border: none;
   box-shadow: none;
   padding: 0;
+  overflow: visible;
 }
 #modal-adjustment-batch .tab-panel { display: none; }
 #modal-adjustment-batch .tab-panel.active { display: block; }
+#adjustment-batch-tab-course,
+#adjustment-batch-tab-course.tab-panel.active {
+  overflow: visible;
+}
 #adjustment-batch-tab-course .is-disabled-until-course {
   opacity: .55;
   pointer-events: none;
+}
+#adjustment-batch-tab-course .adjustment-batch-course-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background: #fff;
+  margin: -20px -20px 24px;
+  padding: 0 20px 12px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  box-shadow: 0 -32px 0 #fff, 0 6px 12px -8px rgba(15, 52, 96, 0.18);
+  overflow: visible;
+}
+#adjustment-batch-tab-course .adjustment-batch-course-sticky::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -32px;
+  height: 32px;
+  background: #fff;
+  pointer-events: none;
+}
+#adjustment-batch-tab-course .adjustment-batch-course-sticky-fields.form-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
+  gap: 10px 16px;
+  align-items: end;
+  margin: 0;
+}
+#adjustment-batch-tab-course .adjustment-batch-course-sticky-fields .form-item {
+  margin: 0;
+  min-width: 0;
+}
+#adjustment-batch-tab-course .adjustment-batch-form {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  padding-top: 0;
+}
+#modal-adjustment-batch .adj-batch-course-preview th:nth-child(10),
+#modal-adjustment-batch .adj-batch-course-preview td:nth-child(10) {
+  min-width: 140px;
+  white-space: nowrap;
+}
+#modal-adjustment-batch .adj-batch-course-preview .adj-pick-btn {
+  width: 100%;
+  min-width: 108px;
+  text-align: left;
 }
 #modal-adjustment-batch #adj-batch-cal-dd {
   z-index: 12000;
@@ -15479,6 +15560,13 @@ code {
 }
 #modal-adjustment-batch .adj-batch-ss-multi-item:hover {
   background: #f3f4f6;
+}
+#modal-adjustment-batch .adj-batch-time-preview th:nth-child(10),
+#modal-adjustment-batch .adj-batch-time-preview td:nth-child(10),
+#modal-adjustment-batch .adj-batch-room-preview th:nth-child(9),
+#modal-adjustment-batch .adj-batch-room-preview td:nth-child(9) {
+  min-width: 140px;
+  white-space: nowrap;
 }
 #modal-adjustment-batch .adj-batch-time-preview .adj-pick-btn,
 #modal-adjustment-batch .adj-batch-room-preview .adj-pick-btn {

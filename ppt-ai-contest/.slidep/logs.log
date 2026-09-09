@@ -1674,3 +1674,5 @@ Caused by:
 [2026-08-07 17:31:28.524] [INFO ] [pid=97705] [commit] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=53
 [2026-08-07 17:31:28.524] [INFO ] [pid=97705] [backend-ops] save ok file_path=/Users/peter/Desktop/ly/ly/pyfa/ppt-ai-contest/AI大赛-开课管理全流程AI提效.pptx ms=53
 [2026-08-07 17:31:28.525] [INFO ] [pid=97705] [sync] drain end round=14 reconciles=1 mergedSubmits=1 pendingDirtySize=0 ms=228
+[2026-08-28 09:16:32.749] [INFO ] [pid=97705] [worker] shutdown received sig=SIGTERM
+[2026-08-28 09:16:33.146] [INFO ] [pid=97705] [worker] shutdown ok sig=SIGTERM ms=399

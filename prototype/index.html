@@ -76,6 +76,7 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-ge-offering-roster">选修开课名单</a>
         </div>
       </div>
+      <!-- 特殊开课板块暂下线：改为专业开课计划页「特殊开课」按钮添加入口
       <div class="nav-section">
         <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
           <span class="nav-section-title-text">特殊开课</span>
@@ -85,9 +86,9 @@
           <a href="#" class="nav-item nav-item-sub" data-page="course-offering-other">特殊开课计划</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-task">特殊开课安排</a>
           <a href="#" class="nav-item nav-item-sub" data-page="course-special-offering-roster">特殊开课名单</a>
-          <!-- <a href="#" class="nav-item nav-item-sub" data-page="course-offering-manifest">开课清单</a> --> <!-- 原挂于特殊开课下，改独立一级菜单 -->
         </div>
       </div>
+      -->
       <div class="nav-section">
         <button type="button" class="nav-section-title" onclick="toggleSidebarNavSection(this)" aria-expanded="true">
           <span class="nav-section-title-text">课程班管理</span>
@@ -1067,6 +1068,7 @@
       <div class="card">
         <div class="panel-toolbar course-major-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openGenerateMajorOfferingTaskModal()">生成开课任务</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="openOtherOfferingAddModal()">特殊开课</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-teaching-confirm" onclick="confirmSelectedMajorOfferingTeaching()" disabled>授课确认</button> --> <!-- 改由任务安排页 -->
           <!-- 原顺序：一键合班 → ME开课；改 ME开课在一键合班左侧 -->
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-me-open" ...>ME开课</button> --> <!-- 原 outline；与「生成开课任务」统一为 primary -->
@@ -1090,7 +1092,9 @@
               <th class="col-center">生效状态</th>
               <!-- <th class="col-center">授课确认状态</th> 改由任务安排页 -->
               <!-- <th class="col-center">状态</th> 原开课状态列 -->
-              <th>课程代码</th><th>课程名称</th><th>课程类别</th><th class="col-center">选课类型</th>
+              <th>课程代码</th><th>课程名称</th>
+              <th class="col-center col-plan-kind">标记</th>
+              <th>课程类别</th><th class="col-center">选课类型</th>
               <!-- <th class="col-center">上课学院</th> -->
               <th class="col-center">上课专业</th><th class="col-center">上课批次</th>
               <th class="col-center">存在新生</th>
@@ -1192,8 +1196,8 @@
               <div class="offering-group-main">
                 <div class="offering-group-main-head">
                 <div class="offering-group-tabs">
-                  <span class="offering-group-tab is-active" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程班/小组学时详情</span>
-                  <!-- 原「安排总览」(data-tab=teacher) 已下线；细改改在「课程班/小组学时详情」安排详情表内完成 -->
+                  <span class="offering-group-tab is-active" data-tab="group-status" onclick="switchOfferingGroupingTab('group-status')">课程组学时详情</span>
+                  <!-- 原「安排总览」(data-tab=teacher) 已下线；细改改在「课程组学时详情」安排详情表内完成 -->
                   <!-- Teaching Load tab 暂隐
                   <span class="offering-group-tab is-muted" data-tab="summary" onclick="switchOfferingGroupingTab('summary')">Teaching Load</span>
                   -->
@@ -1262,7 +1266,7 @@
                         <!-- <th class="col-center">学院</th> -->
                         <th class="col-center">专业</th>
                         <th class="col-center">入学批次</th>
-                        <th>课程班/小组</th>
+                        <th>课程组</th>
                         <th class="col-center">学籍状态</th>
                         <th class="col-center">学籍类型</th>
                         <th>来源</th>
@@ -1528,17 +1532,19 @@
         </div>
       </div>
       -->
-      <nav class="mot-style2-step-bar" id="mot-style2-step-bar" aria-label="任务安排步骤">
-        <button type="button" class="mot-style2-step is-active" data-step="1" title="Course Setting：课程基础信息 · 合班 · Support" onclick="goMajorOfferingTaskStyle2Step(1)">
-          <span class="mot-style2-step-num">1</span>
-          <span class="mot-style2-step-label">Course Setting</span>
-        </button>
-        <span class="mot-style2-step-arrow" aria-hidden="true"></span>
-        <button type="button" class="mot-style2-step" data-step="2" title="安排老师 · 授课确认 · 共同授课" onclick="goMajorOfferingTaskStyle2Step(2)">
-          <span class="mot-style2-step-num">2</span>
-          <span class="mot-style2-step-label">师资安排</span>
-        </button>
-      </nav>
+      <div class="mot-style2-sticky-head">
+        <nav class="mot-style2-step-bar" id="mot-style2-step-bar" aria-label="任务安排步骤">
+          <button type="button" class="mot-style2-step is-active" data-step="1" title="Course Setting：课程基础信息 · 合班 · Support" onclick="goMajorOfferingTaskStyle2Step(1)">
+            <span class="mot-style2-step-num">1</span>
+            <span class="mot-style2-step-label">Course Setting</span>
+          </button>
+          <span class="mot-style2-step-arrow" aria-hidden="true"></span>
+          <button type="button" class="mot-style2-step" data-step="2" title="安排老师 · 授课确认 · 共同授课" onclick="goMajorOfferingTaskStyle2Step(2)">
+            <span class="mot-style2-step-num">2</span>
+            <span class="mot-style2-step-label">师资安排</span>
+          </button>
+        </nav>
+      </div>
       <!-- 步骤提示暂隐
       <div class="mot-style2-step-hint" id="mot-style2-step-hint" role="status"></div>
       -->
@@ -2361,38 +2367,18 @@
           <table class="data-table course-offering-table offering-manifest-table">
             <thead><tr id="offering-manifest-table-head">
               <th class="col-check"><input type="checkbox" id="offering-manifest-check-all" aria-label="全选"></th>
-              <!-- 序号 / 负责人已去掉；开课学期左侧为开课详情·开课状态·授课确认·生效状态 -->
-              <th class="col-center col-expand">开课详情</th>
-              <th class="col-center col-status">开课状态</th>
-              <th class="col-center col-tcc-progress">授课确认</th>
-              <th class="col-center col-task-submit">生效状态</th>
               <th class="col-center">开课学期</th>
               <th class="col-center">开课模块</th>
-              <!-- <th class="col-center">开课类型</th> -->
               <th>课程号</th>
-              <th class="col-center col-name">课程名称</th>
-              <!-- <th>课程班名称</th> --> <!-- 原列名 -->
+              <th class="col-center col-name">课程班名称</th>
+              <th class="col-center col-group-name">课程组名称</th>
+              <th class="col-center col-row-status">状态</th>
               <th class="col-center">所属专业</th>
-              <!-- <th>所属部门</th> --> <!-- 改所属专业 -->
               <th class="col-center">选课类型</th>
               <th class="col-center">学分</th>
-              <th class="col-center">小组数</th>
-              <!-- <th class="col-center">起止周</th> --> <!-- 已去掉 -->
-              <!-- <th class="col-center">教学周数</th> --> <!-- 原教学周数列，已移除 -->
               <th class="col-center">总学时</th>
-              <!-- <th class="col-center">计划学时</th> --> <!-- 原列名 -->
-              <!-- <th class="col-center">排课学时</th> --> <!-- 原排课学时列，已移除 -->
               <th class="col-center">课程人数上限</th>
-              <!-- <th class="col-center">容量</th> --> <!-- 原列名 -->
               <th class="col-center">当前学生名单人数</th>
-              <!-- <th class="col-center">人数</th> --> <!-- 原列名 -->
-              <!-- <th class="col-center">共同授课码</th> --> <!-- 原共同授课码列，已移除 -->
-              <!-- 生效状态已移至开课学期左侧 -->
-              <!-- <th>任课教师</th> --> <!-- 已去掉 -->
-              <!-- <th class="col-center">修改记录</th> --> <!-- 原修改记录列 -->
-              <th class="col-center col-sticky-scope th-v"><span class="th-v-label">修读范围</span></th>
-              <th class="col-center col-sticky-course-info">课程信息</th>
-              <th class="col-sticky-actions">操作</th>
             </tr></thead>
             <tbody id="course-offering-manifest-body"></tbody>
           </table>
@@ -2700,12 +2686,12 @@
       </div>
     </section>
 
-    <!-- ═══ 开课管理 · 排课计划（授课确认完成且安排已生效的学时安排） ═══ -->
+    <!-- ═══ 开课管理 · 排课计划（安排已生效的学时安排） ═══ -->
     <section class="page" id="page-course-scheduling-plan">
       <div class="page-header">
         <div>
           <h1>排课计划</h1>
-          <p class="subtitle">汇总授课确认完成且安排已生效的学时安排，供下游排课消费；联动组按课号逐行展示，课程组仅本行，联动组成员列于「联动组」</p>
+          <p class="subtitle">汇总任务安排已生效的学时安排，供下游排课消费；联动组按课号逐行展示，课程组仅本行，联动组成员列于「联动组」</p>
         </div>
       </div>
       <div class="card course-major-query-card">
@@ -2742,7 +2728,7 @@
       </div>
       <div class="card scheduling-plan-list-card">
         <div class="panel-toolbar scheduling-plan-toolbar">
-          <span class="form-hint">数据来源：各开课模块中授课确认齐套且任务安排已生效的学时安排；共同授课须全部关联开课班均已确认、学时安排与联动组齐套后才展示</span>
+          <span class="form-hint">数据来源：各开课模块中任务安排已生效的学时安排（不以授课确认齐套为入池门槛）；共同授课须全部关联开课班均已生效，且学时安排与联动组齐套后才展示</span>
         </div>
         <div class="table-scroll">
           <table class="data-table compact scheduling-plan-table">
@@ -4922,7 +4908,7 @@
     </div>
     <div class="modal-body">
       <div class="me-offering-batch-picker-hint-row">
-        <p class="form-hint" id="me-offering-batch-picker-hint">可点「初始化」按校选可选专业勾选，或点左侧专业手工追加。灰色项为不可选年级学期或无法折算。</p>
+        <p class="form-hint" id="me-offering-batch-picker-hint">可点「初始化」按校选可选专业勾选，或点左侧专业手工追加。灰色项为年级限制或无法折算。</p>
         <button class="btn btn-outline btn-sm" type="button" id="btn-me-offering-batch-init" onclick="initMeOfferingBatchPickerSelection()" title="按校选可选专业重新勾选默认批次">初始化</button>
       </div>
       <div class="ge-offering-batch-picker-axes me-offering-batch-axes">
@@ -5097,7 +5083,7 @@
         <div class="form-item">
           <label class="req" for="mos-edit-reserved-spots">预留名额</label>
           <input class="input input-sm" id="mos-edit-reserved-spots" type="number" step="1" placeholder="5" required oninput="updateMajorOfferingEditCapacityLimitDisplay()">
-          <p class="form-hint">默认 5，可修改（可为负）；计入课程名额上限。课程名额上限须大于 0。下调上限不减少预置人数，预置仍可分进课程班/小组；超出上限时分配情况会显示如 139/138。</p>
+          <p class="form-hint">默认 5，可修改（可为负）；计入课程名额上限。课程名额上限须大于 0。下调上限不减少预置人数，预置仍可分进课程组；超出上限时分配情况会显示如 139/138。</p>
         </div>
         <div class="form-item">
           <label for="mos-edit-capacity-limit">课程名额上限</label>
@@ -5283,7 +5269,7 @@
         <!-- <input class="input input-sm readonly" id="mos-edit-eligible-programme-batches" type="text" readonly tabindex="-1" hidden> -->
         <div class="input-with-btn" id="mos-edit-programme-batches-picker-wrap">
           <input class="input input-sm readonly" id="mos-edit-programme-batches-display" type="text" value="未选择可选专业批次" readonly tabindex="-1">
-          <button class="btn btn-outline btn-sm" type="button" id="btn-mos-edit-programme-batches" onclick="openMajorOfferingEditBatchPicker()" title="仅手动生成的选修可维护。若来自校选 ME，会按不可选专业 / 不可选年级学期约束。">选择</button>
+          <button class="btn btn-outline btn-sm" type="button" id="btn-mos-edit-programme-batches" onclick="openMajorOfferingEditBatchPicker()" title="仅手动生成的选修可维护。若来自校选 ME，会按不可选专业 / 年级限制约束。">选择</button>
         </div>
         <!-- <p class="form-hint" id="mos-edit-programme-batches-hint" hidden></p> --> <!-- 原第二行 hint / 空占位；提示已挂选择按钮 title，去掉避免多占一行 -->
       </div>
@@ -6184,7 +6170,7 @@
           <th class="col-center">学生类型</th>
           <th class="col-center">学籍状态</th>
           <th class="col-center">学籍类型</th>
-          <!-- <th>课程组</th> 原靠后展示，改为入学批次后展示课程班/小组 -->
+          <!-- <th>课程组</th> 原靠后展示，改为入学批次后展示课程组 -->
           <!-- <th>所在小组</th> 原列名 -->
           <th>名单来源</th>
         </tr></thead>
@@ -6208,7 +6194,7 @@
     <button class="modal-close" type="button" onclick="closeMajorOfferingStudentPickerDrawer()">×</button>
   </div>
   <div class="drawer-body student-picker-drawer-body">
-    <p class="form-hint student-picker-scope-hint">添加学生面向全校学生池；列表已过滤本课程预置名单学生、已在当前名单中的学生，以及不符合学籍条件的学生。请在下方选择所属课程班/小组后，勾选学生并点击「确定」加入名单。</p>
+    <p class="form-hint student-picker-scope-hint">添加学生面向全校学生池；列表已过滤本课程预置名单学生、已在当前名单中的学生，以及不符合学籍条件的学生。请在下方选择所属课程组后，勾选学生并点击「确定」加入名单。</p>
     <div class="picker-filter-grid">
       <div class="form-item">
         <label for="mspk-filter-student-no">学号</label>
@@ -6262,7 +6248,7 @@
       <div class="pagination" id="mspk-picker-pagination"></div>
     </div>
     <div class="form-item student-picker-group-field">
-      <label class="req" for="mspk-target-group">所属课程班/小组</label>
+      <label class="req" for="mspk-target-group">所属课程组</label>
       <!-- <label class="req" for="mspk-target-group">放入小组</label> --> <!-- 原字段名 -->
       <div class="preset-roster-grouping-target-grid">
         <select class="input input-sm" id="mspk-target-group" onchange="updateMajorOfferingStudentPickerTargetStats()">
@@ -6284,7 +6270,7 @@
           <p class="form-hint preset-roster-grouping-target-warning" id="mspk-target-warning" aria-live="polite"></p>
         </div>
       </div>
-      <p class="form-hint">新增学生须指定所属课程班/小组；若尚未分组，可选择课程班。</p>
+      <p class="form-hint">新增学生须指定所属课程组；若尚未分组，可选择课程班。</p>
     </div>
   </div>
   <div class="drawer-foot">
@@ -6302,7 +6288,7 @@
   </div>
   <div class="drawer-body student-picker-drawer-body">
     <div class="merge-split-info-grid preset-roster-grouping-course-info" id="prg-course-info"></div>
-    <p class="form-hint preset-roster-grouping-hint">仅展示预置名单中尚未分配的符合条件学生；请在下方选择所属课程班/小组，勾选后点击「确定分配」放入对应课程班/小组，不会覆盖来源为「手动添加」的学生。</p>
+    <p class="form-hint preset-roster-grouping-hint">仅展示预置名单中尚未分配的符合条件学生；请在下方选择所属课程组，勾选后点击「确定分配」放入对应课程组，不会覆盖来源为「手动添加」的学生。</p>
     <div class="picker-filter-grid preset-roster-grouping-filters">
       <div class="form-item">
         <label for="prg-filter-student-no">学号</label>
@@ -6361,7 +6347,7 @@
       <div class="pagination" id="prg-picker-pagination"></div>
     </div>
     <div class="form-item student-picker-group-field preset-roster-grouping-target">
-      <label class="req" for="prg-target-group">所属课程班/小组</label>
+      <label class="req" for="prg-target-group">所属课程组</label>
       <div class="preset-roster-grouping-target-grid">
         <select class="input input-sm" id="prg-target-group" onchange="updatePresetRosterGroupingTargetStats()">
           <option value="">请选择</option>
@@ -6382,7 +6368,7 @@
           <p class="form-hint preset-roster-grouping-target-warning" id="prg-target-warning" aria-live="polite"></p>
         </div>
       </div>
-      <p class="form-hint">勾选学生并选择所属课程班/小组后，点击「确定分配」统一放入对应课程班/小组。</p>
+      <p class="form-hint">勾选学生并选择所属课程组后，点击「确定分配」统一放入对应课程组。</p>
       <!-- <div class="preset-roster-grouping-target-row">...应用到选中...</div> --> <!-- 原批量应用到选中按钮，改由确定分配统一提交 -->
     </div>
   </div>
@@ -8770,12 +8756,7 @@
         <dt>所属专业</dt><dd id="ge-offering-scope-programme">—</dd>
       </dl>
     </div>
-    <p class="form-hint" id="ge-offering-scope-default-hint">默认从「校选课程管理」带入专业范围；可按本学期调整。先设不可选年级学期，再选专业 / 专业批次；灰色项为不可选年级学期或与专业范围不符。</p>
-    <div class="form-item">
-      <label>不可选年级学期</label>
-      <div class="school-elective-student-type-picks" id="ge-offering-scope-excluded-years"></div>
-      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。将约束下方专业与专业批次可选范围。</p>
-    </div>
+    <p class="form-hint" id="ge-offering-scope-default-hint">默认从「校选课程管理」带入专业范围；可按本学期调整。先设类型与年级，再选专业；可选批次单独设置，默认列出上方筛选后的全部可选批次。</p>
     <div class="form-item">
       <label class="req">可选学生类型</label>
       <div class="school-elective-student-type-picks" id="ge-offering-scope-student-types"></div>
@@ -8783,33 +8764,44 @@
     </div>
     <div class="form-item">
       <label class="req">修读范围</label>
-      <div class="ge-offering-scope-stack">
-        <div class="ge-offering-scope-stack-row">
-          <span class="ge-offering-scope-stack-label">类型</span>
-          <select class="input input-sm school-elective-programme-mode-select" id="ge-offering-scope-programme-mode" onchange="onGeOfferingScopeProgrammeModeChange()">
-            <option value="eligible">可选</option>
-            <option value="excluded">不可选</option>
-            <option value="unrestricted">不限</option>
-          </select>
-        </div>
-        <div class="ge-offering-scope-stack-row">
-          <span class="ge-offering-scope-stack-label">专业</span>
-          <div class="input-with-btn school-elective-excluded-programmes-field">
-            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-programmes">不限</div>
-            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
-            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-programmes-clear-btn" onclick="clearGeOfferingScopeProgrammes()">清空</button>
+      <div class="ge-offering-scope-stack-wrap">
+        <div class="ge-offering-scope-stack">
+          <div class="ge-offering-scope-stack-row">
+            <span class="ge-offering-scope-stack-label">类型</span>
+            <select class="input input-sm school-elective-programme-mode-select" id="ge-offering-scope-programme-mode" onchange="onGeOfferingScopeProgrammeModeChange()">
+              <option value="eligible">可选</option>
+              <option value="excluded">不可选</option>
+              <option value="unrestricted">不限</option>
+            </select>
+          </div>
+          <div class="ge-offering-scope-stack-row ge-offering-scope-stack-row--years">
+            <span class="ge-offering-scope-stack-label">年级</span>
+            <div class="ge-offering-scope-stack-years">
+              <div class="school-elective-student-type-picks" id="ge-offering-scope-excluded-years"></div>
+              <p class="form-hint" id="ge-offering-scope-year-hint">年级勾选语义跟随上方类型。</p>
+            </div>
+          </div>
+          <div class="ge-offering-scope-stack-row">
+            <span class="ge-offering-scope-stack-label">专业</span>
+            <div class="input-with-btn school-elective-excluded-programmes-field">
+              <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-programmes">不限</div>
+              <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-programmes-btn" onclick="openGeOfferingScopeProgrammePickerModal()">选择</button>
+              <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-programmes-clear-btn" onclick="clearGeOfferingScopeProgrammes()">清空</button>
+            </div>
           </div>
         </div>
-        <div class="ge-offering-scope-stack-row">
-          <span class="ge-offering-scope-stack-label">批次</span>
-          <div class="input-with-btn school-elective-excluded-programmes-field">
-            <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-batches">全部适用</div>
-            <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-batches-btn" onclick="openGeOfferingScopeBatchPickerModal()">选择</button>
-            <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-batches-clear-btn" onclick="clearGeOfferingScopeBatchRefinement()">清空</button>
+        <div class="ge-offering-scope-stack ge-offering-scope-stack--batches" aria-label="可选批次">
+          <div class="ge-offering-scope-stack-row">
+            <span class="ge-offering-scope-stack-label">可选批次</span>
+            <div class="input-with-btn school-elective-excluded-programmes-field">
+              <div class="input input-sm school-elective-excluded-display text-muted" id="ge-offering-scope-batches" title="">—</div>
+              <button class="btn btn-outline btn-sm" type="button" id="ge-offering-scope-batches-btn" onclick="openGeOfferingScopeBatchPickerModal()">选择</button>
+              <button class="btn btn-ghost btn-sm" type="button" id="ge-offering-scope-batches-clear-btn" onclick="clearGeOfferingScopeBatchRefinement()">清空</button>
+            </div>
           </div>
         </div>
       </div>
-      <p class="form-hint">先选择可选 / 不可选 / 不限，再选专业；不限时不可选专业。未选专业批次表示所选专业全部批次适用；灰色项不可选。</p>
+      <p class="form-hint">上组：先选类型与年级，再选专业；不限时专业不可选且年级禁用。下组「可选批次」列出当前适用批次（过多省略，悬停看全部）；默认范围内全选，可再缩小。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -8850,11 +8842,11 @@
       <dl class="detail-dl school-elective-scope-view-dl">
         <dt>课程代码</dt><dd id="ge-offering-scope-view-code">—</dd>
         <dt>课程名称</dt><dd id="ge-offering-scope-view-name">—</dd>
-        <dt>限制类型</dt><dd id="ge-offering-scope-view-limit-type">—</dd>
-        <dt>不可选年级学期</dt><dd id="ge-offering-scope-view-years">—</dd>
         <dt>可选学生类型</dt><dd id="ge-offering-scope-view-student-types">—</dd>
+        <dt>限制类型</dt><dd id="ge-offering-scope-view-limit-type">—</dd>
+        <dt>年级</dt><dd id="ge-offering-scope-view-years">—</dd>
         <dt>专业</dt><dd id="ge-offering-scope-view-programmes">—</dd>
-        <dt>专业批次</dt><dd id="ge-offering-scope-view-batches">—</dd>
+        <dt>可选批次</dt><dd id="ge-offering-scope-view-batches">—</dd>
         <dt>冲突课程</dt><dd id="ge-offering-scope-view-conflicts">—</dd>
         <dt>先修课程</dt><dd id="ge-offering-scope-view-prereqs">—</dd>
         <dt>备注信息</dt><dd id="ge-offering-scope-view-remark" class="school-elective-scope-view-remark">—</dd>
@@ -8888,15 +8880,18 @@
   </div>
 </div>
 
-<!-- ═══ 弹窗：通识选修开课 · 专业批次（按不可选年级学期 / 专业范围置灰） ═══ -->
+<!-- ═══ 弹窗：通识选修开课 · 批次（按类型/年级/专业置灰；默认范围内全选） ═══ -->
 <div class="modal-overlay modal-nested" id="modal-ge-offering-batch-picker">
   <div class="modal modal-xl ge-offering-batch-picker-modal">
     <div class="modal-head">
-      <h3 id="ge-offering-batch-picker-title">选择专业批次</h3>
+      <h3 id="ge-offering-batch-picker-title">选择可选批次</h3>
       <button class="modal-close" type="button" onclick="closeGeOfferingScopeBatchPickerModal()">×</button>
     </div>
     <div class="modal-body ge-offering-batch-picker-body">
-      <p class="form-hint" id="ge-offering-batch-picker-hint">灰色专业 / 批次不可选：不在当前修读范围，或当前学期折算为不可选年级学期 / 无法折算。</p>
+      <div class="ge-offering-batch-picker-meta" id="ge-offering-batch-picker-meta">
+        <span class="ge-offering-batch-picker-meta-label">开课学期</span>
+        <span class="ge-offering-batch-picker-meta-value" id="ge-offering-batch-picker-term">—</span>
+      </div>
       <div class="ge-offering-batch-picker-axes">
         <div class="ge-offering-batch-picker-axis">
           <div class="ge-offering-batch-picker-axis-head">
@@ -8911,10 +8906,11 @@
           </div>
           <div class="ge-offering-batch-picker-intake-head" id="ge-offering-batch-picker-intake-head" hidden>
             <div class="ge-offering-batch-picker-intake-head-cell">
-              <span></span><span>入学批次</span><span>所属学期</span>
-            </div>
-            <div class="ge-offering-batch-picker-intake-head-cell">
-              <span></span><span>入学批次</span><span>所属学期</span>
+              <label class="ge-offering-batch-picker-intake-select-all" title="全选 / 取消全选当前专业可选批次">
+                <input type="checkbox" id="ge-offering-batch-picker-intake-select-all" onchange="setGeOfferingScopeBatchPickerActiveProgrammeAll(this.checked)">
+              </label>
+              <span>入学批次</span>
+              <span>所属学期</span>
             </div>
           </div>
           <div class="ge-offering-batch-picker-axis-list" id="ge-offering-batch-picker-intakes"></div>
@@ -8922,7 +8918,7 @@
       </div>
       <div class="ge-offering-batch-picker-preview">
         <div class="ge-offering-batch-picker-preview-head">
-          <span class="text-muted">已选专业批次</span>
+          <span class="text-muted">已选批次</span>
           <button class="btn btn-outline btn-sm" type="button" onclick="clearGeOfferingScopeBatchPickerWorking()">取消全部已选</button>
         </div>
         <div class="ge-offering-batch-picker-preview-list" id="ge-offering-batch-picker-preview-list"></div>
@@ -9255,11 +9251,6 @@
     </div>
     <!-- 状态、备注信息已迁至「修改开课默认信息」抽屉 -->
     <div class="form-item">
-      <label>不可选年级学期</label>
-      <div class="school-elective-student-type-picks" id="school-elective-edit-excluded-years"></div>
-      <p class="form-hint">可先勾选年级一键选中该年全部学期，也可单独勾选 Semester 1/2/3；不勾选表示该年级各学期均可选。</p>
-    </div>
-    <div class="form-item">
       <label class="req">可选学生类型</label>
       <div class="school-elective-student-type-picks" id="school-elective-edit-student-types"></div>
       <p class="form-hint">勾选允许选课的学生类型（Local / Chinese / International）。</p>
@@ -9275,6 +9266,13 @@
             <option value="unrestricted">不限</option>
           </select>
         </div>
+        <div class="ge-offering-scope-stack-row ge-offering-scope-stack-row--years">
+          <span class="ge-offering-scope-stack-label">年级</span>
+          <div class="ge-offering-scope-stack-years">
+            <div class="school-elective-student-type-picks" id="school-elective-edit-excluded-years"></div>
+            <p class="form-hint" id="school-elective-edit-year-hint">年级勾选语义跟随上方类型。</p>
+          </div>
+        </div>
         <div class="ge-offering-scope-stack-row">
           <span class="ge-offering-scope-stack-label">专业</span>
           <div class="input-with-btn school-elective-excluded-programmes-field">
@@ -9284,7 +9282,7 @@
           </div>
         </div>
       </div>
-      <p class="form-hint">先选择类型（可选 / 不可选 / 不限），再选专业；不限时不可再选专业。不限表示全开放。</p>
+      <p class="form-hint">先选类型（可选 / 不可选 / 不限）与年级，再选专业；不限时不可再选专业且年级禁用。不限表示全开放。</p>
     </div>
     <div class="form-item">
       <label>冲突课程</label>
@@ -9443,7 +9441,7 @@
         <dt>课程名称</dt><dd id="school-elective-scope-view-name">—</dd>
         <dt>限制类型</dt><dd id="school-elective-scope-view-limit-type">—</dd>
         <dt>专业</dt><dd id="school-elective-scope-view-programmes">—</dd>
-        <dt>不可选年级学期</dt><dd id="school-elective-scope-view-years">—</dd>
+        <dt>年级</dt><dd id="school-elective-scope-view-years">—</dd>
         <dt>冲突课程</dt><dd id="school-elective-scope-view-conflicts">—</dd>
         <dt>先修课程</dt><dd id="school-elective-scope-view-prereqs">—</dd>
         <dt>可选学生类型</dt><dd id="school-elective-scope-view-student-types">—</dd>

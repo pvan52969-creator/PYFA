@@ -8,6 +8,7 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.section import WD_ORIENT
+from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -132,6 +133,7 @@ def add_grid_table(doc, headers, rows, col_widths=None):
     hdr = table.rows[0].cells
     for i, h in enumerate(headers):
         hdr[i].text = h
+        hdr[i].vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         for p in hdr[i].paragraphs:
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             for run in p.runs:
@@ -143,7 +145,9 @@ def add_grid_table(doc, headers, rows, col_widths=None):
         cells = table.rows[ri + 1].cells
         for ci, val in enumerate(row):
             cells[ci].text = str(val)
+            cells[ci].vertical_alignment = WD_ALIGN_VERTICAL.CENTER
             for p in cells[ci].paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 for run in p.runs:
                     run.font.size = Pt(9)
                     run.font.name = "宋体"
@@ -671,7 +675,8 @@ def build_one(spec: dict, *, version: str, date_ymd: str, allow_overwrite: bool 
         doc,
         "依据：可交互原型（prototype/index.html、app.js）；"
         "模板结构对齐《厦大马来分校本科教务系统产品需求文档模板（空白模板）0610》。"
-        "升版时不得覆盖旧版，并须按简版变更说明模板产出变更说明。",
+        "升版时不得覆盖旧版，并须产出变更说明："
+        "正文若按 PRD 模板 V3，用变更说明简版 V3；仍为旧 V2 结构可用简版 V2。",
     )
     doc.add_paragraph()
 
@@ -809,8 +814,8 @@ def main():
     print(f"Done: {len(written)} files")
     if args.bump or (args.version and args.version not in ("V1", "1")):
         print(
-            "提醒：升版后请运行 generate-submenu-prd-change-note.py 产出变更说明，"
-            "并对照简版模板补全「本次改了什么」。"
+            "提醒：升版后请运行 generate-submenu-prd-change-note.py 产出变更说明"
+            "（默认 V3；旧 PRD 结构加 --template-version v2），并补全「本次改了什么」。"
         )
 
 

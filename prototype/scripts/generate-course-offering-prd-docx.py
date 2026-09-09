@@ -3,6 +3,7 @@
 
 from docx import Document
 from docx.enum.section import WD_ORIENT
+from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -118,6 +119,7 @@ def add_grid_table(doc, headers, rows, col_widths=None):
     hdr = table.rows[0].cells
     for i, h in enumerate(headers):
         hdr[i].text = h
+        hdr[i].vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         for p in hdr[i].paragraphs:
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             for run in p.runs:
@@ -129,7 +131,9 @@ def add_grid_table(doc, headers, rows, col_widths=None):
         cells = table.rows[ri + 1].cells
         for ci, val in enumerate(row):
             cells[ci].text = str(val)
+            cells[ci].vertical_alignment = WD_ALIGN_VERTICAL.CENTER
             for p in cells[ci].paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 for run in p.runs:
                     run.font.size = Pt(9)
                     run.font.name = "宋体"

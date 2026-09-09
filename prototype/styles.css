@@ -3997,7 +3997,7 @@ code {
   min-width: var(--major-offering-actions-col-width);
   width: var(--major-offering-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 .course-offering-major-table th.col-sticky-course-info,
 .course-offering-major-table td.col-sticky-course-info {
@@ -4046,9 +4046,7 @@ code {
   padding-right: 8px;
   background: #fff;
   border-left: 1px solid var(--border, #cbd5e1);
-  box-shadow:
-    -1px 0 0 var(--border, #cbd5e1),
-    -8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
   white-space: nowrap;
 }
@@ -4095,6 +4093,11 @@ code {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.course-offering-major-table .col-plan-kind {
+  min-width: 72px;
+  white-space: nowrap;
+  text-align: center;
 }
 .course-offering-major-table td.col-course-name .cell-ellipsis-tip {
   display: inline-block;
@@ -4164,13 +4167,28 @@ code {
 .other-offering-list-toolbar,
 .other-offering-task-toolbar,
 .other-offering-roster-toolbar {
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   flex-wrap: wrap;
   margin-bottom: 0;
+  background: #fafbfc;
+}
+/* 压过文末重复的 .panel-toolbar { margin-bottom: 12px }，与开课安排 style2 一致：工具栏贴列表无留白 */
+#page-course-offering-major .panel-toolbar.course-major-list-toolbar,
+#page-course-major-offering-task .panel-toolbar.course-major-task-toolbar,
+#page-course-major-offering-roster .panel-toolbar.course-major-roster-toolbar,
+#page-course-offering-ge .panel-toolbar.course-ge-task-toolbar,
+#page-course-ge-offering-roster .panel-toolbar.course-ge-roster-toolbar,
+#page-course-offering-other .panel-toolbar.other-offering-list-toolbar,
+#page-course-special-offering-task .panel-toolbar.other-offering-task-toolbar,
+#page-course-special-offering-roster .panel-toolbar.other-offering-roster-toolbar {
+  margin-bottom: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  background: #fafbfc;
 }
 .course-major-list-toolbar .form-hint,
 .course-major-task-toolbar .form-hint,
@@ -4483,7 +4501,7 @@ code {
   font-size: var(--ui-list-font, 12px);
   text-align: center;
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 /* 左侧冻结：勾选 → 学期 → 负责人 → 生效状态 → 课程代码 */
 #page-course-offering-major .course-offering-major-table th.col-check,
@@ -4567,9 +4585,7 @@ code {
   min-width: var(--major-offering-sticky-code);
   max-width: var(--major-offering-sticky-code);
   border-right: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    1px 0 0 var(--border, #94a3b8),
-    8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
 }
 #page-course-offering-major .course-offering-major-table td.col-sticky-actions a,
@@ -4622,9 +4638,7 @@ code {
   width: var(--major-offering-count-col-width);
   max-width: var(--major-offering-count-col-width);
   border-left: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    -1px 0 0 var(--border, #94a3b8),
-    -10px 0 16px rgba(15, 23, 42, 0.12);
+  box-shadow: none;
   overflow: visible;
   background: #fff;
   padding-left: 4px;
@@ -4715,7 +4729,7 @@ code {
 }
 #page-course-major-offering-roster .table-scroll {
   flex: 1;
-  min-height: 360px;
+  min-height: 0;
   overflow: auto;
   padding-bottom: 4px;
 }
@@ -4992,6 +5006,11 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#page-course-major-offering-roster .course-major-offering-roster-table .col-plan-kind {
+  min-width: 72px;
+  white-space: nowrap;
+  text-align: center;
+}
 #page-course-major-offering-roster .course-major-offering-roster-table .col-enrollment-type {
   min-width: 64px;
   max-width: 80px;
@@ -5121,9 +5140,7 @@ code {
   padding-right: 4px;
   background: #fff;
   border-left: 1px solid var(--border, #cbd5e1);
-  box-shadow:
-    -1px 0 0 var(--border, #cbd5e1),
-    -8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   white-space: nowrap;
 }
 /* 左侧冻结：勾选 → 生效状态 → 名单状态 → 分配情况 → 开课学期 → 课程号 */
@@ -5213,9 +5230,7 @@ code {
   min-width: var(--roster-sticky-code);
   max-width: var(--roster-sticky-code);
   border-right: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    1px 0 0 var(--border, #94a3b8),
-    8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
 }
 #page-course-major-offering-roster .course-major-offering-roster-table thead th.col-sticky-count {
@@ -5321,7 +5336,7 @@ code {
   min-width: var(--major-offering-actions-col-width);
   width: var(--major-offering-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
   padding-left: 8px;
   padding-right: 8px;
@@ -5692,9 +5707,7 @@ code {
   background: #fff;
   /* 与专业开课计划「预置人数/操作」冻结列同款分隔：左边线 + 左侧阴影 */
   border-left: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    -1px 0 0 var(--border, #94a3b8),
-    -10px 0 16px rgba(15, 23, 42, 0.12);
+  box-shadow: none;
   white-space: nowrap;
   line-height: 1.35;
   font-size: 12px;
@@ -5742,6 +5755,19 @@ code {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 88px);
+}
+/* 步骤条纵向滚动冻结（对齐 .main padding，底色盖住下方内容） */
+#page-course-major-offering-task-style2 .mot-style2-sticky-head {
+  position: sticky;
+  top: -20px;
+  z-index: 40;
+  margin: -20px -24px 10px;
+  padding: 20px 24px 10px;
+  background: #f0f4f8;
+  box-sizing: border-box;
+}
+#page-course-major-offering-task-style2 .mot-style2-sticky-head #mot-style2-step-bar {
+  margin-bottom: 0;
 }
 .mot-style2-step-bar {
   display: inline-flex;
@@ -6254,7 +6280,7 @@ code {
 }
 .mot-style2-course-list {
   flex: 1;
-  min-height: 360px;
+  min-height: 0;
   overflow: auto;
 }
 .mot-style2-empty {
@@ -6298,6 +6324,7 @@ code {
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th {
   position: sticky;
+  /* 滚动容器是 .mot-style2-course-list，不是整页；勿再预留步骤条 56px，否则表头上方会空一截 */
   top: 0;
   z-index: 2;
   background: var(--blue-50, #eff6ff);
@@ -6307,7 +6334,7 @@ code {
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
-  padding: 6px 8px;
+  padding: 4px 8px;
   text-align: center;
   vertical-align: middle;
   border-bottom: 2px solid var(--border, #cbd5e1);
@@ -6318,7 +6345,7 @@ code {
   width: 2.8em;
   min-width: 2.8em;
   max-width: 3.2em;
-  padding: 6px 4px;
+  padding: 4px 3px;
   text-align: center;
   vertical-align: middle;
 }
@@ -6327,22 +6354,22 @@ code {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 100%;
+  gap: 1px;
+  min-height: 0;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.th-v .th-v-label {
   display: inline-block;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  letter-spacing: 0.06em;
-  line-height: 1.15;
-  max-height: none;
+  letter-spacing: 0;
+  line-height: 1.05;
+  max-height: 4.6em;
   height: auto;
-  overflow: visible;
+  overflow: hidden;
   white-space: nowrap;
   word-break: keep-all;
   margin: 0 auto;
-  font-size: var(--ui-list-th-font, 11px);
+  font-size: 10px;
   font-weight: 700;
 }
 #page-course-major-offering-task-style2 .mot-style2-table thead th.th-sortable {
@@ -6480,15 +6507,16 @@ code {
   display: inline-block;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  letter-spacing: 0.06em;
-  line-height: 1.15;
-  max-height: none;
+  letter-spacing: 0;
+  line-height: 1.05;
+  max-height: 4.6em;
   height: auto;
-  overflow: visible;
+  overflow: hidden;
   white-space: nowrap;
   word-break: keep-all;
   margin: 0 auto;
   text-align: center;
+  font-size: 10px;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-no {
   width: 40px;
@@ -6523,6 +6551,11 @@ code {
   max-width: 220px;
   white-space: normal;
   word-break: break-word;
+}
+#page-course-major-offering-task-style2 .mot-style2-table .col-plan-kind {
+  min-width: 72px;
+  white-space: nowrap;
+  text-align: center;
 }
 #page-course-major-offering-task-style2 .mot-style2-table .col-class {
   min-width: 96px;
@@ -6799,7 +6832,7 @@ code {
   min-width: var(--mot-style2-actions-col-width);
   max-width: var(--mot-style2-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 #page-course-major-offering-task-style2[data-workflow-step="1"] .mot-style2-table thead th.col-sticky-actions {
   z-index: 6;
@@ -6894,7 +6927,7 @@ code {
   background: #fff;
   background-clip: padding-box;
   border-left: 1px solid var(--border, #94a3b8);
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   padding-left: 2px;
   padding-right: 2px;
   text-align: center;
@@ -7013,7 +7046,7 @@ code {
   max-width: var(--mot-style2-actions-col-width);
   background: #fff;
   background-clip: padding-box;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
   line-height: 1.3;
   font-size: var(--ui-list-font, 12px);
@@ -7128,9 +7161,7 @@ code {
   min-width: var(--mot-style2-sticky-code);
   max-width: var(--mot-style2-sticky-code);
   border-right: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    1px 0 0 var(--border, #94a3b8),
-    8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
 }
 /* 步骤 2：操作列定宽（安排教师 · 共同授课），课程信息叠在其左侧 */
@@ -7192,7 +7223,7 @@ code {
   background: #fff;
   background-clip: padding-box;
   border-left: 1px solid var(--border, #94a3b8);
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   padding-left: 2px;
   padding-right: 2px;
   text-align: center;
@@ -8187,7 +8218,7 @@ code {
   min-width: var(--major-offering-actions-col-width);
   width: var(--major-offering-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
 }
 #page-course-offering-other .course-offering-table thead th.col-sticky-actions {
@@ -8572,26 +8603,15 @@ code {
   padding-bottom: 4px;
 }
 #page-course-offering-manifest .offering-manifest-table {
-  /* 对齐专业开课安排样式二：按内容撑开 + 横向滚动，不靠 fixed 强压列宽 */
-  width: max-content;
+  width: 100%;
   min-width: 100%;
-  table-layout: auto;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
-  /* min-width: 1320px; table-layout: fixed; */ /* 曾过度收紧导致字段截断 */
-  /* min-width: 1980px; */ /* 更早偏宽 */
-  --major-offering-actions-col-width: 88px;
-  --manifest-course-info-col-width: 44px;
-  --manifest-scope-col-width: 44px;
   --manifest-sticky-check: 32px;
-  --manifest-sticky-expand: 36px;
-  --manifest-sticky-status: 34px;
-  --manifest-sticky-task-submit: 56px;
-  --manifest-sticky-tcc-progress: 72px;
-  --manifest-sticky-term: 64px;
+  --manifest-sticky-term: 80px;
   --manifest-sticky-offering-type: 104px;
   --manifest-sticky-code: 80px;
-  --manifest-roster-count-col-width: 48px;
 }
 #page-course-offering-manifest .offering-manifest-table thead th {
   white-space: nowrap;
@@ -8669,6 +8689,10 @@ code {
   min-width: var(--manifest-sticky-term);
   max-width: var(--manifest-sticky-term);
   white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 #page-course-offering-manifest .offering-manifest-table .col-offering-type {
   width: var(--manifest-sticky-offering-type);
@@ -8683,28 +8707,46 @@ code {
   text-align: center;
   white-space: nowrap;
 }
-#page-course-offering-manifest .offering-manifest-table th.col-name {
-  min-width: 180px;
-  max-width: 280px;
-  white-space: normal;
-  word-break: break-word;
+#page-course-offering-manifest .offering-manifest-table th.col-name,
+#page-course-offering-manifest .offering-manifest-table td.col-name,
+#page-course-offering-manifest .offering-manifest-table .col-group-name,
+#page-course-offering-manifest .offering-manifest-table .col-row-status,
+#page-course-offering-manifest .offering-manifest-table .col-offering-programme,
+#page-course-offering-manifest .offering-manifest-table .col-enrollment-type,
+#page-course-offering-manifest .offering-manifest-table th.col-num,
+#page-course-offering-manifest .offering-manifest-table td.col-num {
+  width: auto;
+  min-width: 0;
+  max-width: none;
   text-align: center;
 }
+#page-course-offering-manifest .offering-manifest-table th.col-name,
 #page-course-offering-manifest .offering-manifest-table td.col-name {
-  min-width: 180px;
-  max-width: 280px;
+  width: 22%;
   white-space: normal;
   word-break: break-word;
+  overflow: visible;
+  text-overflow: unset;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-name {
   text-align: left;
 }
-#page-course-offering-manifest .offering-manifest-table .col-offering-programme {
-  min-width: 48px;
-  max-width: 72px;
-  width: 72px;
+#page-course-offering-manifest .offering-manifest-table .col-group-name,
+#page-course-offering-manifest .offering-manifest-table .col-row-status,
+#page-course-offering-manifest .offering-manifest-table .col-offering-programme,
+#page-course-offering-manifest .offering-manifest-table .col-enrollment-type,
+#page-course-offering-manifest .offering-manifest-table th.col-num,
+#page-course-offering-manifest .offering-manifest-table td.col-num {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: center;
+}
+#page-course-offering-manifest .offering-manifest-table td.col-row-status .offering-status-pill {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 0 4px;
+  white-space: nowrap;
 }
 #page-course-offering-manifest .offering-manifest-table td.col-offering-programme code {
   display: inline-block;
@@ -8713,49 +8755,16 @@ code {
   text-overflow: ellipsis;
   vertical-align: top;
 }
-#page-course-offering-manifest .offering-manifest-table .col-enrollment-type {
-  min-width: 2.8em;
-  max-width: 3.6em;
-  text-align: center;
-  white-space: nowrap;
-  padding-left: 4px;
-  padding-right: 4px;
-}
-#page-course-offering-manifest .offering-manifest-table thead th.col-enrollment-type.th-v {
-  width: 2.8em;
-  min-width: 2.8em;
-  max-width: 3.6em;
-  padding: 6px 4px;
-}
+#page-course-offering-manifest .offering-manifest-table thead th.col-enrollment-type.th-v,
 #page-course-offering-manifest .offering-manifest-table th.col-num.th-v,
 #page-course-offering-manifest .offering-manifest-table th.col-capacity-limit.th-v {
-  min-width: 2.8em;
-  width: 2.8em;
-  max-width: 3.6em;
-  padding-left: 4px;
-  padding-right: 4px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
 }
-#page-course-offering-manifest .offering-manifest-table th.col-num,
-#page-course-offering-manifest .offering-manifest-table td.col-num:not(.col-roster-count) {
-  min-width: 48px;
-  padding-left: 10px;
-  padding-right: 10px;
-  white-space: nowrap;
-  word-break: keep-all;
-  text-align: center;
-  overflow: visible;
-}
-/* 左侧冻结：勾选 → 开课详情 → … → 课程号 */
+/* 左侧冻结：勾选 → 开课学期 → 开课模块 → 课程号 */
 #page-course-offering-manifest .offering-manifest-table th.col-check,
 #page-course-offering-manifest .offering-manifest-table td.col-check,
-#page-course-offering-manifest .offering-manifest-table th.col-expand,
-#page-course-offering-manifest .offering-manifest-table td.col-expand,
-#page-course-offering-manifest .offering-manifest-table th.col-status,
-#page-course-offering-manifest .offering-manifest-table td.col-status,
-#page-course-offering-manifest .offering-manifest-table th.col-task-submit,
-#page-course-offering-manifest .offering-manifest-table td.col-task-submit,
-#page-course-offering-manifest .offering-manifest-table th.col-tcc-progress,
-#page-course-offering-manifest .offering-manifest-table td.col-tcc-progress,
 #page-course-offering-manifest .offering-manifest-table th.col-term,
 #page-course-offering-manifest .offering-manifest-table td.col-term,
 #page-course-offering-manifest .offering-manifest-table th.col-offering-type,
@@ -8767,10 +8776,6 @@ code {
   background: #fff;
 }
 #page-course-offering-manifest .offering-manifest-table thead th.col-check,
-#page-course-offering-manifest .offering-manifest-table thead th.col-expand,
-#page-course-offering-manifest .offering-manifest-table thead th.col-status,
-#page-course-offering-manifest .offering-manifest-table thead th.col-task-submit,
-#page-course-offering-manifest .offering-manifest-table thead th.col-tcc-progress,
 #page-course-offering-manifest .offering-manifest-table thead th.col-term,
 #page-course-offering-manifest .offering-manifest-table thead th.col-offering-type,
 #page-course-offering-manifest .offering-manifest-table thead th.col-code {
@@ -8778,10 +8783,6 @@ code {
   background: var(--blue-50);
 }
 #page-course-offering-manifest .offering-manifest-table tr:hover td.col-check,
-#page-course-offering-manifest .offering-manifest-table tr:hover td.col-expand,
-#page-course-offering-manifest .offering-manifest-table tr:hover td.col-status,
-#page-course-offering-manifest .offering-manifest-table tr:hover td.col-task-submit,
-#page-course-offering-manifest .offering-manifest-table tr:hover td.col-tcc-progress,
 #page-course-offering-manifest .offering-manifest-table tr:hover td.col-term,
 #page-course-offering-manifest .offering-manifest-table tr:hover td.col-offering-type,
 #page-course-offering-manifest .offering-manifest-table tr:hover td.col-code {
@@ -8791,63 +8792,23 @@ code {
 #page-course-offering-manifest .offering-manifest-table td.col-check {
   left: 0;
 }
-#page-course-offering-manifest .offering-manifest-table th.col-expand,
-#page-course-offering-manifest .offering-manifest-table td.col-expand {
-  left: var(--manifest-sticky-check);
-}
-#page-course-offering-manifest .offering-manifest-table th.col-status,
-#page-course-offering-manifest .offering-manifest-table td.col-status {
-  left: calc(var(--manifest-sticky-check) + var(--manifest-sticky-expand));
-}
-#page-course-offering-manifest .offering-manifest-table th.col-tcc-progress,
-#page-course-offering-manifest .offering-manifest-table td.col-tcc-progress {
-  left: calc(var(--manifest-sticky-check) + var(--manifest-sticky-expand) + var(--manifest-sticky-status));
-}
-#page-course-offering-manifest .offering-manifest-table th.col-task-submit,
-#page-course-offering-manifest .offering-manifest-table td.col-task-submit {
-  left: calc(
-    var(--manifest-sticky-check)
-    + var(--manifest-sticky-expand)
-    + var(--manifest-sticky-status)
-    + var(--manifest-sticky-tcc-progress)
-  );
-}
 #page-course-offering-manifest .offering-manifest-table th.col-term,
 #page-course-offering-manifest .offering-manifest-table td.col-term {
-  left: calc(
-    var(--manifest-sticky-check)
-    + var(--manifest-sticky-expand)
-    + var(--manifest-sticky-status)
-    + var(--manifest-sticky-tcc-progress)
-    + var(--manifest-sticky-task-submit)
-  );
+  left: var(--manifest-sticky-check);
 }
 #page-course-offering-manifest .offering-manifest-table th.col-offering-type,
 #page-course-offering-manifest .offering-manifest-table td.col-offering-type {
-  left: calc(
-    var(--manifest-sticky-check)
-    + var(--manifest-sticky-expand)
-    + var(--manifest-sticky-status)
-    + var(--manifest-sticky-tcc-progress)
-    + var(--manifest-sticky-task-submit)
-    + var(--manifest-sticky-term)
-  );
+  left: calc(var(--manifest-sticky-check) + var(--manifest-sticky-term));
 }
 #page-course-offering-manifest .offering-manifest-table th.col-code,
 #page-course-offering-manifest .offering-manifest-table td.col-code {
   left: calc(
     var(--manifest-sticky-check)
-    + var(--manifest-sticky-expand)
-    + var(--manifest-sticky-status)
-    + var(--manifest-sticky-tcc-progress)
-    + var(--manifest-sticky-task-submit)
     + var(--manifest-sticky-term)
     + var(--manifest-sticky-offering-type)
   );
   border-right: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    1px 0 0 var(--border, #94a3b8),
-    8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
 }
 #page-course-offering-manifest .offering-manifest-table td.col-num code {
@@ -8876,9 +8837,9 @@ code {
 /* 竖排表头：对齐专业开课安排样式二（开课详情 / 开课状态 / 人数上限等） */
 #page-course-offering-manifest .offering-manifest-table thead th.th-v {
   white-space: nowrap;
-  width: 2.8em;
-  min-width: 2.8em;
-  max-width: 3.2em;
+  width: auto;
+  min-width: 0;
+  max-width: none;
   padding: 6px 4px;
   text-align: center;
   vertical-align: middle;
@@ -9332,37 +9293,30 @@ code {
   color: var(--text-3, #94a3b8);
   cursor: not-allowed;
 }
-/* 右侧冻结（由右至左）：操作 → 课程信息 → 修读范围 → 当前学生名单人数 */
+/* 右侧冻结：当前学生名单人数（末列） */
 #page-course-offering-manifest .offering-manifest-table th.col-roster-count,
 #page-course-offering-manifest .offering-manifest-table td.col-roster-count {
   position: sticky;
-  right: calc(
-    var(--major-offering-actions-col-width)
-    + var(--manifest-course-info-col-width)
-    + var(--manifest-scope-col-width)
-  );
+  right: 0;
   z-index: 4;
-  width: var(--manifest-roster-count-col-width);
-  min-width: var(--manifest-roster-count-col-width);
-  max-width: var(--manifest-roster-count-col-width);
+  width: auto;
+  min-width: 0;
+  max-width: none;
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
   text-align: center;
   vertical-align: middle;
   box-sizing: border-box;
-  padding-left: 2px;
-  padding-right: 2px;
 }
 #page-course-offering-manifest .offering-manifest-table thead th.col-roster-count {
   z-index: 5;
   background: var(--blue-50);
 }
 #page-course-offering-manifest .offering-manifest-table thead th.col-roster-count.th-v {
-  width: var(--manifest-roster-count-col-width);
-  min-width: var(--manifest-roster-count-col-width);
-  max-width: var(--manifest-roster-count-col-width);
-  padding: 6px 2px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
 }
 #page-course-offering-manifest .offering-manifest-table tr:hover td.col-roster-count {
   background: #fafbfc;
@@ -9380,7 +9334,7 @@ code {
   min-width: var(--manifest-course-info-col-width);
   max-width: var(--manifest-course-info-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
   text-align: center;
   vertical-align: middle;
@@ -10055,7 +10009,7 @@ code {
   min-width: var(--major-offering-actions-col-width);
   width: var(--major-offering-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 #page-course-special-offering-task .other-offering-task-table thead th.col-sticky-actions,
 #page-course-special-offering-roster .other-offering-roster-table thead th.col-sticky-actions {
@@ -10716,7 +10670,7 @@ code {
   background: #fff;
   background-clip: padding-box;
   border-left: 1px solid var(--border, #94a3b8);
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   padding-left: 2px;
   padding-right: 2px;
   overflow: visible;
@@ -10866,7 +10820,7 @@ code {
   background: #fff;
   background-clip: padding-box;
   border-left: 1px solid var(--border, #94a3b8);
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   padding-left: 2px;
   padding-right: 2px;
   overflow: visible;
@@ -11009,9 +10963,7 @@ code {
   min-width: var(--ge-offering-sticky-code);
   max-width: var(--ge-offering-sticky-code);
   border-right: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    1px 0 0 var(--border, #94a3b8),
-    8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
 }
 #page-course-offering-ge .course-ge-offering-task-table.mot-style2-table td.col-sticky-actions a,
@@ -11474,9 +11426,7 @@ code {
   padding-right: 4px;
   background: #fff;
   border-left: 1px solid var(--border, #cbd5e1);
-  box-shadow:
-    -1px 0 0 var(--border, #cbd5e1),
-    -8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   white-space: nowrap;
 }
 #page-course-ge-offering-roster .course-ge-offering-roster-table thead th.col-sticky-count {
@@ -11499,7 +11449,7 @@ code {
   min-width: var(--major-offering-actions-col-width);
   width: var(--major-offering-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
   padding-left: 8px;
   padding-right: 8px;
@@ -12145,7 +12095,7 @@ code {
   min-width: var(--major-offering-actions-col-width);
   width: var(--major-offering-actions-col-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
 }
 #page-course-offering-ge .course-offering-table thead th.col-sticky-actions {
@@ -13036,7 +12986,7 @@ code {
   min-width: 88px;
   overflow: visible;
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 /* 左侧冻结：勾选 → Status → Lecturer → Course Code */
 .tcc-admin-course-table th.col-check,
@@ -13097,9 +13047,7 @@ code {
   min-width: var(--tcc-sticky-code);
   max-width: var(--tcc-sticky-code);
   border-right: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    1px 0 0 var(--border, #94a3b8),
-    8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
 }
 .tcc-admin-course-table thead th.col-sticky-actions {
@@ -13776,7 +13724,7 @@ code {
   min-width: 72px;
   width: 72px;
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   white-space: nowrap;
 }
 .tcc-letter-table thead th.col-sticky-actions {
@@ -13946,9 +13894,7 @@ code {
     + var(--tcc-section-sticky-teacher)
   );
   border-right: 1px solid var(--border, #94a3b8);
-  box-shadow:
-    1px 0 0 var(--border, #94a3b8),
-    8px 0 14px rgba(15, 23, 42, 0.1);
+  box-shadow: none;
   overflow: visible;
 }
 #modal-teacher-course-confirmation-section .tcc-section-manage-table .col-class {
@@ -18923,7 +18869,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   z-index: 4;
   background: #fff;
   border-left: 1px solid var(--border-light);
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   overflow: visible;
 }
 .offering-group-status-assign-table thead th.col-sticky-actions {
@@ -19687,6 +19633,13 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   white-space: pre-line;
   max-width: min(360px, 78vw);
 }
+.cell-float-tip.is-wide {
+  max-width: min(560px, 88vw);
+}
+#ge-offering-scope-batches.cell-ellipsis-tip,
+#ge-offering-scope-view-batches.cell-ellipsis-tip {
+  cursor: help;
+}
 #modal-offering-teacher-term-assign .offering-grouping-teacher-load-table .col-term-primary {
   font-weight: 600;
   color: var(--blue-900);
@@ -20288,7 +20241,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   min-width: var(--ohs-col-sticky-actions);
   width: var(--ohs-col-sticky-actions);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 .offering-hour-summary-table thead th.col-sticky-actions {
   z-index: 5;
@@ -20674,7 +20627,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   min-width: var(--offering-group-assign-actions-width);
   width: var(--offering-group-assign-actions-width);
   background: #fff;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 .offering-group-assign-table thead th.col-sticky-actions {
   z-index: 5;
@@ -20797,7 +20750,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   background: #fff;
   background-clip: padding-box;
   border-left: 1px solid var(--border);
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 .school-elective-course-table th.col-sticky-actions,
 .school-elective-course-table td.col-sticky-actions {
@@ -20872,6 +20825,11 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
     gap: 8px;
   }
 }
+.ge-offering-scope-stack-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .ge-offering-scope-stack {
   display: flex;
   flex-direction: column;
@@ -20880,6 +20838,17 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   border-radius: 6px;
   background: #fff;
   overflow: hidden;
+}
+.ge-offering-scope-stack--batches {
+  background: #f8fafc;
+}
+.ge-offering-scope-stack--batches .ge-offering-scope-stack-row {
+  background: transparent;
+}
+#ge-offering-scope-batches {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ge-offering-scope-stack-row {
   display: flex;
@@ -20895,7 +20864,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   display: none;
 }
 .ge-offering-scope-stack-label {
-  flex: 0 0 36px;
+  flex: 0 0 4.5em;
+  width: 4.5em;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   font-size: 12px;
@@ -20910,23 +20881,72 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .ge-offering-scope-stack-row .school-elective-excluded-display {
   background: #fff;
 }
+.ge-offering-scope-stack-row--years {
+  align-items: flex-start;
+}
+.ge-offering-scope-stack-row--years.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.ge-offering-scope-stack-row--years.is-disabled .ge-offering-scope-stack-years {
+  filter: grayscale(0.15);
+}
+.ge-offering-scope-stack-row--years .ge-offering-scope-stack-label {
+  padding-top: 10px;
+}
+.ge-offering-scope-stack-years {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ge-offering-scope-stack-years .school-elective-student-type-picks.school-elective-excluded-year-grid {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+.ge-offering-scope-stack-years .form-hint {
+  margin: 0;
+}
 .ge-offering-batch-picker-modal {
-  width: min(980px, 96vw);
-  max-width: 980px;
+  width: min(920px, 96vw);
+  max-width: 920px;
 }
 .ge-offering-batch-picker-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+.ge-offering-batch-picker-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ge-offering-batch-picker-meta-label {
+  color: var(--text-secondary, #64748b);
+  flex-shrink: 0;
+}
+.ge-offering-batch-picker-meta-label::after {
+  content: '：';
+}
+.ge-offering-batch-picker-meta-value {
+  color: var(--text, #0f172a);
+  font-weight: 500;
 }
 .ge-offering-batch-picker-axes {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 12px;
-  min-height: 280px;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 10px;
+  min-height: 220px;
+  max-height: min(40vh, 300px);
 }
 #modal-ge-offering-batch-picker .ge-offering-batch-picker-axes {
-  grid-template-columns: minmax(220px, 1fr) minmax(420px, 1.4fr);
+  grid-template-columns: minmax(180px, 0.95fr) minmax(320px, 1.25fr);
 }
 .ge-offering-batch-picker-axis {
   display: flex;
@@ -20955,16 +20975,24 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .ge-offering-batch-picker-axis-list {
   flex: 1;
   min-height: 0;
-  max-height: 280px;
+  max-height: 240px;
   overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
+#modal-ge-offering-batch-picker .ge-offering-batch-picker-preview {
+  max-height: none;
+  min-height: 140px;
+}
+#modal-ge-offering-batch-picker .ge-offering-batch-picker-preview-list {
+  max-height: min(30vh, 200px);
+  min-height: 96px;
+}
 .ge-offering-batch-picker-intake-head {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 0;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-3);
@@ -20980,10 +21008,23 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   gap: 8px;
   align-items: center;
 }
+.ge-offering-batch-picker-intake-select-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+}
+.ge-offering-batch-picker-intake-select-all input {
+  margin: 0;
+}
+.ge-offering-batch-picker-intake-head-cell > span:last-child {
+  text-align: center;
+}
 #ge-offering-batch-picker-intakes.ge-offering-batch-picker-intake-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   align-content: start;
 }
 .ge-offering-batch-picker-intake-col {
@@ -21007,6 +21048,7 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  text-align: center;
 }
 .ge-offering-batch-picker-check-item.is-active {
   background: var(--blue-50, #eff6ff);
@@ -22248,6 +22290,9 @@ input#group-assign-recorded-hours {
 .drawer-ge-offering-scope.is-readonly .school-elective-excluded-display {
   opacity: 0.85;
   cursor: default;
+}
+.drawer-ge-offering-scope {
+  width: min(1040px, 96vw);
 }
 .drawer-ge-offering-scope.is-readonly textarea.readonly,
 .drawer-ge-offering-scope.is-readonly textarea:disabled {
@@ -24829,12 +24874,14 @@ code {
   min-height: 28px;
 }
 .course-major-list-toolbar {
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   flex-wrap: wrap;
+  margin-bottom: 0;
+  background: #fafbfc;
 }
 .offering-status-pill {
   display: inline-block;

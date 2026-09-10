@@ -12028,8 +12028,10 @@ function ensureDemoMergedOfferingSections() {
  */
 function resetMajorOfferingTaskArrangementToDraft(sec) {
   if (!sec) return;
-  sec.teachingConfirmStatus = 'pending';
+  // teachingConfirmStatus 在此表示安排是否生效（历史字段名），撤回须打回草稿。
+  // 教师授课确认包不在此失效；仅已确认安排被改动保存后才变为未确认。
   delete sec.taskArrangementSubmittedAt;
+  sec.teachingConfirmStatus = 'pending';
   if (sec.taskRevertKind === 'arrangement') {
     clearMajorOfferingTaskRevertRemark(sec);
   }
@@ -12044,6 +12046,7 @@ function resetMajorOfferingPlanSubmitToDraft(sec) {
   delete sec.submittedAt;
   delete sec.planSubmittedByUser;
   resetMajorOfferingTaskArrangementToDraft(sec);
+  sec.teachingConfirmStatus = 'pending';
   // 清任务安排脏数据（分组/教师学时/排课名单状态）；计划行与教学班结构保留
   sec.groups = [];
   sec.isGrouped = false;
@@ -12159,11 +12162,29 @@ function markGeOfferingDemoSectionSubmitted(sec) {
 }
 
 /**
- * 纠偏：通识课演示路径可补齐确认；不再因「已生效但确认未齐套」打回草稿
- *（授课教师替换后允许该并存态；确认生效入口仍要求齐套）。
+ * 纠偏：已生效且确认未齐套、又不是授课教师替换造成的，补齐演示课确认。
+ * 生效入口仍要求齐套；替换教师后允许「已生效 + 未确认」。
  */
 function healGeOfferingSubmittedTeacherConfirmConsistency() {
-  // no-op：保留函数名以免调用方报错
+  const stores = [
+    ...Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}),
+    COURSE_OFFERING_PLAN_STORE
+  ].filter(Boolean);
+  const seen = new Set();
+  stores.forEach(store => {
+    (store.sections || []).forEach(sec => {
+      if (!sec || sec.offeringType !== 'ge' || seen.has(sec.id)) return;
+      seen.add(sec.id);
+      if (!isMajorOfferingTaskArrangementSubmitted(sec)) return;
+      if (typeof isSectionTeacherConfirmationComplete === 'function'
+        && isSectionTeacherConfirmationComplete(sec)) return;
+      if (typeof hasOfferingTeacherReplaceLogForSection === 'function'
+        && hasOfferingTeacherReplaceLogForSection(sec.id)) return;
+      if (typeof seedSectionTeacherCourseConfirmationsComplete === 'function') {
+        seedSectionTeacherCourseConfirmationsComplete(sec);
+      }
+    });
+  });
 }
 
 function isGeOfferingTaskDemoReady(sec) {
@@ -12279,17 +12300,14 @@ function seedGeOfferingTaskPageDemosIntoCurrentStore() {
   newSections.forEach((sec, idx) => {
     prepareGeOfferingTaskDemoSection(sec, { groupCount: idx === 0 ? 3 : 2 });
     applyGeOfferingDemoCreditBand(sec, idx);
-    // 前两门做成已生效安排（含齐套授课确认），便于直接看到教师与小组
+    if (Number(sec.reservedSpots) === DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS) {
+      sec.reservedSpots = DEFAULT_GE_OFFERING_RESERVED_SPOTS;
+    }
+    // 前两门做成已生效安排（含齐套授课确认），须在学分/名额写完后再确认，避免指纹变化把确认打成未确认
     if (idx <= 1) {
       markGeOfferingDemoSectionSubmitted(sec);
     }
     if (isGeOfferingTaskDemoReady(sec)) readyCount += 1;
-  });
-  getGeOfferingSections().forEach((sec, idx) => applyGeOfferingDemoCreditBand(sec, idx));
-  (COURSE_OFFERING_PLAN_STORE.sections || []).forEach(sec => {
-    if (sec.offeringType === 'ge' && Number(sec.reservedSpots) === DEFAULT_MAJOR_OFFERING_RESERVED_SPOTS) {
-      sec.reservedSpots = DEFAULT_GE_OFFERING_RESERVED_SPOTS;
-    }
   });
 }
 
@@ -17247,7 +17265,7 @@ function renderCoursePlanOfferingHint(targetId) {
     + ` · 计划行 ${lineCount} 条 · 教学班 ${sectionCount} 个</span>`
     + (isMajorPlanHint
       ? '<span class="legend-item text-muted"> · 候选行来自<strong>已提交</strong>执行计划中本学期<strong>未开课</strong>专业课程；已开课任务在重新生成时保留</span>'
-        + '<span class="legend-item text-muted"> · <strong>通识选修课</strong>不在本页展示，请至「通识选修开课」维护</span>'
+        + '<span class="legend-item text-muted"> · <strong>选修课（GE / ME）</strong>不在本页展示，请至「选修开课安排」维护</span>'
         // + '<span class="legend-item text-muted"> · <strong>特殊开课</strong>不在本页展示，请至「特殊开课计划」手动添加</span>' // 特殊开课模块暂下线
       : '<span class="legend-item text-muted"> · 候选行来自<strong>已提交</strong>执行计划中本学期<strong>未开课</strong>课程；已开课任务在重新生成时保留</span>');
   // hint.innerHTML = ... ` · 计划行 ${s.lines.length} 条 · 教学班 ${s.sections.length} 个</span>` ... // 原含通识选修计划行
@@ -23417,6 +23435,58 @@ function invalidateTeacherCourseConfirmationsForSection(sec) {
   if (!sec) return;
   const termCode = resolveSectionOfferingTermCode(sec);
   getSectionAssignedTeacherIds(sec).forEach(id => syncTeacherCourseConfirmationPackageRows(id, termCode));
+}
+
+const TEACHER_CONFIRM_EDIT_WARN =
+  '本课已完成授课确认。保存时如改动已确认的安排内容，授课确认将取消，相关教师需重新确认。';
+const TEACHER_CONFIRM_EDIT_SAVE_HINT =
+  '若本次保存改动了已确认的安排，授课确认将变为未确认，相关教师需重新确认。';
+const TEACHER_CONFIRM_EDIT_SAVED_HINT =
+  '因安排内容已变更，授课确认已取消，相关教师需重新确认。';
+
+function sectionHasCompletedTeacherConfirmation(sec) {
+  if (!sec) return false;
+  const progress = getSectionTeacherConfirmationProgress(sec);
+  return progress.total > 0 && progress.complete;
+}
+
+/** 安排内容相对已确认快照发生变化时，授课确认变为未确认；未改动则保持已确认。不改安排生效状态。 */
+function syncSectionTeachingConfirmStatusAfterArrangementChange(sec) {
+  if (!sec) return { invalidated: false };
+  const wasComplete = sectionHasCompletedTeacherConfirmation(sec);
+  invalidateTeacherCourseConfirmationsForSection(sec);
+  const progress = getSectionTeacherConfirmationProgress(sec);
+  if (wasComplete && !progress.complete) {
+    return { invalidated: true };
+  }
+  return { invalidated: false };
+}
+
+function notifyTeacherConfirmInvalidatedIfNeeded(result) {
+  if (result?.invalidated) alert(TEACHER_CONFIRM_EDIT_SAVED_HINT);
+}
+
+function updateOfferingEditTeacherConfirmHint(elId, sec, canEdit) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const show = !!(sec && canEdit && sectionHasCompletedTeacherConfirmation(sec));
+  el.hidden = !show;
+  el.textContent = show ? TEACHER_CONFIRM_EDIT_WARN : '';
+}
+
+function updateOfferingGroupingTeacherConfirmEditHint(sec) {
+  const el = document.getElementById('offering-grouping-teacher-confirm-hint');
+  if (!el) return;
+  const rosterMode = isOfferingGroupingStudentRosterMode(sec);
+  const show = !!(sec && !rosterMode && !offeringGroupingReadOnly && sectionHasCompletedTeacherConfirmation(sec));
+  el.hidden = !show;
+  el.textContent = show ? TEACHER_CONFIRM_EDIT_WARN : '';
+}
+
+function canMajorOfferingEditAffectTeacherConfirm(sec) {
+  if (!sec || majorOfferingEditViewOnly) return false;
+  if (isMajorOfferingEditDrawerFullyLocked(sec)) return !!majorOfferingEditFromRoster;
+  return true;
 }
 
 /** 演示/联调：为某教学班下发并管理端代确认全部授课教师（静默） */
@@ -30580,7 +30650,7 @@ function renderGeOfferingPlanToolbar() {
   const quotaReady = hasGeOfferingEnrollmentQuota(termCode);
   const addDisabled = quotaReady ? '' : ' disabled';
   const addTitle = quotaReady
-    ? '从校选课程库添加通识选修开课'
+    ? '从校选课程库添加 GE 开课'
     : '请先在「选修开课计划」中设定课程组quota 并保存生效';
   // 两步工具栏均提供：GE开课 / ME开课 / 一键复制 / 导入 / 删除 / 生效；师资步另有一键同步共同授课
   // Quota 计划总人数改在「需求与类型配额进度」卡片内显著展示
@@ -30821,7 +30891,7 @@ function renderGeOfferingPlanPage() {
         <td colspan="${colCount}">${renderMajorOfferingTaskStyle2AssignSubtable(sec, { returnPage: 'course-offering-ge' })}</td>
       </tr>`;
       }).join('')
-    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">${geOfferingResultKindTab === 'me' ? '暂无 ME 开课，请点击「ME开课」从校选课程中选择' : '暂无通识选修开课，请点击「GE开课」从校选课程中选择'}</td></tr>`;
+    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">${geOfferingResultKindTab === 'me' ? '暂无 ME 开课，请点击「ME开课」从校选课程中选择' : '暂无 GE 开课，请点击「GE开课」从校选课程中选择'}</td></tr>`;
   renderListPagination('course-ge-offering-task-pagination', 'courseGeOfferingTask', paged.total);
   updateGeOfferingTaskSelection();
   bindCellFloatTips(tbody, '.offering-grouping-course-status.cell-ellipsis-tip[data-tip]', { alwaysShow: true });
@@ -31137,7 +31207,7 @@ function confirmGeOfferingCourseAdd() {
   closeModal('modal-ge-offering-add');
   const courseCount = new Set(newLines.map(l => l.schoolElectiveId || l.catalogId || l.code)).size;
   // const courseCount = new Set(newLines.map(l => l.catalogId)).size; // 原仅按 catalogId 去重计数
-  alert(`已添加 ${newLines.length} 条通识选修开课（${courseCount} 门课 · ${termDisplay}）。`);
+    alert(`已添加 ${newLines.length} 条 GE 开课（${courseCount} 门课 · ${termDisplay}）。`);
   const pageTermSel = document.getElementById('ge-offering-filter-term');
   if (pageTermSel) pageTermSel.value = termDisplay;
   syncCourseOfferingPlanStoreFromTerm(termCode);
@@ -31248,6 +31318,19 @@ function findSchoolElectiveCourseForGeLine(line) {
 function resolveGeOfferingLineElectiveTypeDisplay(line) {
   const course = findSchoolElectiveCourseForGeLine(line);
   return getSchoolElectiveTypeLabel(resolveSchoolElectiveType(course || { code: line?.code }));
+}
+
+function resolveGeOfferingSectionElectiveTypeDisplay(sec) {
+  if (!sec) return '—';
+  const lineId = typeof getGeOfferingLineIdForSection === 'function'
+    ? getGeOfferingLineIdForSection(sec.id)
+    : '';
+  const line = (typeof getGeOfferingLineById === 'function' && lineId)
+    ? getGeOfferingLineById(lineId)
+    : (COURSE_OFFERING_PLAN_STORE?.lines || []).find(
+      l => l.offeringType === 'ge' && ((sec.lineIds || []).includes(l.id) || l.sectionId === sec.id)
+    );
+  return resolveGeOfferingLineElectiveTypeDisplay(line || { code: sec.code });
 }
 
 /** 选修开课安排列表：校选课类别（仅 GE / G 开头课号有值；否则 —） */
@@ -32568,6 +32651,11 @@ function populateGeOfferingEditDrawer(line, sec) {
   set('ge-edit-practice-hours', sec.practiceHours);
   set('ge-edit-other-hours', sec.otherHours);
   syncGeOfferingEditDrawerReadOnly(sec);
+  updateOfferingEditTeacherConfirmHint(
+    'ge-edit-teacher-confirm-hint',
+    sec,
+    !!(sec && !isMajorOfferingTaskArrangementSubmitted(sec))
+  );
 }
 
 function openGeOfferingEditDrawer(lineId) {
@@ -32649,13 +32737,14 @@ function confirmGeOfferingEditDrawer() {
   sec.isGradeEntry = document.getElementById('ge-edit-is-grade-entry')?.value || 'yes';
   sec.isExamScheduled = document.getElementById('ge-edit-is-exam-scheduled')?.value || 'yes';
   line.remark = document.getElementById('ge-edit-remark')?.value.trim() || '';
+  notifyTeacherConfirmInvalidatedIfNeeded(syncSectionTeachingConfirmStatusAfterArrangementChange(sec));
   closeGeOfferingEditDrawer();
   renderGeOfferingPlanPage();
 }
 
 function openGeOfferingIntakeModal(catalogId) {
   if (!ensureCourseOfferingPlan()) {
-    alert('请先维护通识选修开课。');
+    alert('请先维护选修开课安排。');
     return;
   }
   const lines = COURSE_OFFERING_PLAN_STORE.lines.filter(l => l.offeringType === 'ge' && l.catalogId === catalogId);
@@ -37869,8 +37958,8 @@ function revertMajorOfferingTaskArrangementFromRoster(sectionIds, remark) {
     const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === sectionId);
     if (!sec || sec.offeringType !== 'major') return;
     applyMajorOfferingTaskRevertRemark(sec, remark, 'arrangement');
-    sec.teachingConfirmStatus = 'pending';
     delete sec.taskArrangementSubmittedAt;
+    sec.teachingConfirmStatus = 'pending';
   });
   if (offeringGroupingSectionId && ids.includes(offeringGroupingSectionId) && isOfferingGroupingRosterContext()) {
     closeOfferingGroupingPage({ force: true });
@@ -37897,7 +37986,7 @@ function revertSelectedMajorOfferingRosterArrangements() {
   openMajorOfferingTaskRevertRemarkModal({
     title: '退回任务安排',
     message: `确定退回选中的 <strong>${secs.length}</strong> 条开课任务吗？`,
-    hint: '退回后该任务将回到「专业开课任务安排」，可重新修改合分班、分组与教师安排并再次提交；预置名单与手动添加的学生仍保留，选修课的选课应用名单不再保留（未再生效前无法推送）。',
+    hint: '退回后该任务将回到「开课安排」草稿，可重新修改合分班、分组与教师安排并再次生效；授课确认状态保持不变。预置名单与手动添加的学生仍保留。',
     confirmLabel: '退回',
     onConfirm: remark => {
       revertMajorOfferingTaskArrangementFromRoster(secs.map(s => s.id), remark);
@@ -38027,7 +38116,7 @@ function withdrawSelectedMajorOfferingTaskArrangements() {
   openDeleteConfirm({
     title: '撤回任务安排',
     message: `确定撤回选中的 <strong>${withdrawableSections.length}</strong> 条开课任务安排吗？`,
-    hint: '撤回后任务安排将回到未提交状态；已维护的合班、分组、教师安排将保留，可在原有基础上修改；学生名单中的课程组分配将撤销重置。',
+    hint: '撤回后开课安排回到草稿，可继续修改后再生效。合班、分组与教师安排保留；授课确认状态保持不变。学生名单中的课程组分配将重置。',
     hintWarn: true,
     confirmLabel: '撤回',
     onConfirm: () => {
@@ -39045,6 +39134,11 @@ function populateMajorOfferingEditDrawer(sec) {
   // set('mos-edit-programme-batches', getSectionProgrammeBatchDisplay(sec)); // 原只读；选修改选择器
   // set('mos-edit-teacher', formatTeacherAssignmentsSummary(sec.teacherAssignments)); // 教师安排模块已隐藏
   // set('mos-edit-remark', sec.teacherRemark); // 教师安排模块已隐藏
+  updateOfferingEditTeacherConfirmHint(
+    'mos-edit-teacher-confirm-hint',
+    sec,
+    canMajorOfferingEditAffectTeacherConfirm(sec)
+  );
 }
 
 function syncMajorOfferingEditDrawerReadOnly(sec) {
@@ -39140,6 +39234,11 @@ function syncMajorOfferingEditDrawerReadOnly(sec) {
     renderMajorOfferingClassroomAttrList(sec, fullyLocked);
   }
   syncMajorOfferingEditStudentTotalField(sec);
+  updateOfferingEditTeacherConfirmHint(
+    'mos-edit-teacher-confirm-hint',
+    sec,
+    canMajorOfferingEditAffectTeacherConfirm(sec)
+  );
 }
 
 function formatTeacherAssignmentsSummary(assignments) {
@@ -40349,6 +40448,7 @@ function confirmMajorOfferingEditDrawer() {
   // 开课名单入口：任务已生效时仅保存预留名额
   if (majorOfferingEditFromRoster && isMajorOfferingEditDrawerFullyLocked(sec)) {
     if (!saveMajorOfferingEditReservedSpotsOnly(sec)) return;
+    notifyTeacherConfirmInvalidatedIfNeeded(syncSectionTeachingConfirmStatusAfterArrangementChange(sec));
     closeMajorOfferingEditDrawer();
     if (document.getElementById('page-course-major-offering-roster')?.classList.contains('active')) {
       renderCourseMajorOfferingRosterPage();
@@ -40366,6 +40466,7 @@ function confirmMajorOfferingEditDrawer() {
     }
     if (!validateAndApplyMajorOfferingEditHoursMode(sec)) return;
     applyMajorOfferingEditClassroomSnapshotToSection(sec);
+    notifyTeacherConfirmInvalidatedIfNeeded(syncSectionTeachingConfirmStatusAfterArrangementChange(sec));
     closeMajorOfferingEditDrawer();
     renderCourseOfferingMajorPage();
     if (document.getElementById('page-course-major-offering-task')?.classList.contains('active')) {
@@ -40470,6 +40571,7 @@ function confirmMajorOfferingEditDrawer() {
   sec.teachers = formatTeacherAssignmentsSummary(sec.teacherAssignments);
   // sec.teacherRemark = document.getElementById('mos-edit-remark')?.value.trim() || ''; // 教师安排模块已隐藏
   // sec.teachers = document.getElementById('mos-edit-teacher')?.value.trim() || '';
+  notifyTeacherConfirmInvalidatedIfNeeded(syncSectionTeachingConfirmStatusAfterArrangementChange(sec));
   closeMajorOfferingEditDrawer();
   renderCourseOfferingMajorPage();
   if (document.getElementById('page-course-major-offering-task')?.classList.contains('active')) {
@@ -42931,7 +43033,7 @@ function openOfferingOneClickHistoryCopyModal(context = 'major') {
   offeringOneClickHistoryCopyContext = context === 'ge' ? 'ge' : 'major';
   if (!ensureCourseOfferingPlan()) {
     alert(offeringOneClickHistoryCopyContext === 'ge'
-      ? '请先维护通识选修开课计划。'
+      ? '请先维护选修开课计划。'
       : '请先在「专业开课计划」生成开课任务。');
     return;
   }
@@ -43843,7 +43945,7 @@ function submitSelectedGeOfferingTaskArrangements(selectedIds = null) {
   const { allOk, hint } = buildMajorOfferingTaskSubmitConfirm(pending);
   openDeleteConfirm({
     title: '确认提交',
-    message: `确定提交选中的 <strong>${pending.length}</strong> 条通识选修开课安排吗？`,
+    message: `确定提交选中的 <strong>${pending.length}</strong> 条选修开课安排吗？`,
     hint: allOk
       ? '提交后将锁定分组与教师安排。通识选修为开放选课，学生名单由选课应用生成。'
       : hint,
@@ -43889,8 +43991,8 @@ function revertSelectedGeOfferingTaskArrangements() {
   }
   openMajorOfferingTaskRevertRemarkModal({
     title: '退回开课安排',
-    message: `确定退回选中的 <strong>${revertableSections.length}</strong> 条通识选修开课安排吗？`,
-    hint: '退回后安排状态变为回退，分组与教师安排将保留，可修改后再次提交。',
+    message: `确定退回选中的 <strong>${revertableSections.length}</strong> 条选修开课安排吗？`,
+    hint: '退回后安排状态变为回退，分组与教师安排将保留，可修改后再次提交；授课确认状态保持不变。',
     // hint: '退回后「通识选修开课计划」提交状态显示为回退...' // 原退回计划文案
     confirmLabel: '退回',
     onConfirm: remark => {
@@ -43978,6 +44080,11 @@ function syncGeOfferingEditDrawerReadOnly(secOrFlag) {
     if (majorOfferingEditHoursMode === 'partial') renderGeOfferingEditPartialMergeGroups();
     renderGeOfferingClassroomAttrList(sec, fullyLocked);
   }
+  updateOfferingEditTeacherConfirmHint(
+    'ge-edit-teacher-confirm-hint',
+    sec,
+    !!(sec && !fullyLocked)
+  );
 }
 
 const COURSE_GE_OFFERING_TASK_SORT_COLUMNS = {
@@ -44317,7 +44424,7 @@ function canManageGeOfferingStudentRoster(sec) {
 }
 
 function getGeOfferingRosterManageLockedMessage() {
-  return '开课安排尚未生效，暂不可管理名单。请先在「通识选修开课」提交生效。';
+  return '开课安排尚未生效，暂不可管理名单。请先在「选修开课安排」提交生效。';
 }
 
 function openGeOfferingGroupRosterManage(sectionId) {
@@ -44372,6 +44479,7 @@ const COURSE_GE_OFFERING_ROSTER_SORT_COLUMNS = {
   offeringTerm: { get: sec => getSectionOfferingTermDisplay(sec) },
   code: { get: sec => sec.code || '' },
   name: { get: sec => getOfferingClassDisplayName(sec) },
+  electiveType: { get: sec => resolveGeOfferingSectionElectiveTypeDisplay(sec) },
   teachers: { get: sec => formatMajorOfferingSectionTeachersDisplay(sec) },
   groupCount: { get: sec => getMajorOfferingSectionGroupCount(sec), type: 'number' },
   offeringUnit: { get: sec => resolveGeOfferingSectionOfferingUnit(sec) },
@@ -44411,7 +44519,7 @@ function updateGeOfferingRosterSelection() {
       ? ''
       : (revertable.length
         ? ''
-        : '仅可退回开课安排已生效的任务；请先在「通识选修开课」提交生效，或勾选已生效项');
+        : '仅可退回开课安排已生效的任务；请先在「选修开课安排」提交生效，或勾选已生效项');
   }
   const checkAll = document.getElementById('course-ge-roster-check-all');
   const selectable = document.querySelectorAll('.course-ge-roster-row-check');
@@ -44437,8 +44545,8 @@ function revertGeOfferingTaskArrangementFromRoster(sectionIds, remark) {
     const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === sectionId);
     if (!sec || sec.offeringType !== 'ge') return;
     applyMajorOfferingTaskRevertRemark(sec, remark, 'arrangement');
-    sec.teachingConfirmStatus = 'pending';
     delete sec.taskArrangementSubmittedAt;
+    sec.teachingConfirmStatus = 'pending';
   });
   if (offeringGroupingSectionId && ids.includes(offeringGroupingSectionId)
     && typeof isOfferingGroupingRosterContext === 'function'
@@ -44468,11 +44576,11 @@ function revertSelectedGeOfferingRosterArrangements() {
   openMajorOfferingTaskRevertRemarkModal({
     title: '退回任务安排',
     message: `确定退回选中的 <strong>${secs.length}</strong> 条开课任务吗？`,
-    hint: '退回后该任务将回到「通识选修开课」，可重新修改分组与教师安排并再次提交；选课应用名单不再保留（未再生效前无法推送），手动添加的学生仍保留。',
+    hint: '退回后该任务将回到「选修开课安排」草稿，可重新修改分组与教师安排并再次生效；授课确认状态保持不变。选课应用名单不再保留（未再生效前无法推送），手动添加的学生仍保留。',
     confirmLabel: '退回',
     onConfirm: remark => {
       revertGeOfferingTaskArrangementFromRoster(secs.map(s => s.id), remark);
-      alert(`已退回 ${secs.length} 条任务安排，请前往「通识选修开课」继续修改。`);
+      alert(`已退回 ${secs.length} 条任务安排，请前往「选修开课安排」继续修改。`);
     }
   });
 }
@@ -44489,6 +44597,7 @@ function renderCourseGeOfferingRosterTableHeader() {
     '<th class="col-center col-term">开课学期</th>' +
     renderListSortTh('courseGeOfferingRoster', '课程号', 'code', { extraClass: 'col-code' }) +
     renderListSortTh('courseGeOfferingRoster', '课程班名称', 'name', { extraClass: 'col-name' }) +
+    renderListSortTh('courseGeOfferingRoster', '课程类型', 'electiveType', { center: true, extraClass: 'col-type' }) +
     renderListSortTh('courseGeOfferingRoster', '教师', 'teachers', { center: true, extraClass: 'col-teachers' }) +
     renderListSortTh('courseGeOfferingRoster', '小组数', 'groupCount', { center: true, vertical: true, extraClass: 'col-num' }) +
     renderListSortTh('courseGeOfferingRoster', '所属部门', 'offeringUnit', { center: true, extraClass: 'col-unit' }) +
@@ -44513,7 +44622,7 @@ function renderCourseGeOfferingRosterPage() {
   // const colCount = 13; // 原无教师列
   // const colCount = 14; // 原无所属专业
   // const colCount = 15; // 原无勾选列
-  const colCount = 16;
+  const colCount = 17;
   if (!termCode) {
     tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">请先在「开课时间设置」中维护学年学期</td></tr>`;
     renderGeOfferingRosterStats('');
@@ -44551,6 +44660,7 @@ function renderCourseGeOfferingRosterPage() {
           <td class="col-center col-term">${escapeHtml(getSectionOfferingTermDisplay(sec))}</td>
           <td class="col-code">${escapeHtml(sec.code || '—')}</td>
           <td class="col-name" title="${escapeHtml(getOfferingClassDisplayName(sec))}">${escapeHtml(getOfferingClassDisplayName(sec) || '—')}</td>
+          <td class="col-center col-type">${escapeHtml(resolveGeOfferingSectionElectiveTypeDisplay(sec))}</td>
           <td class="col-teachers">${formatOfferingGroupingGlobalLecturersCell(sec)}</td>
           <td class="col-center col-num">${escapeHtml(groupCountDisplay)}</td>
           <td class="col-center col-unit"><code>${escapeHtml(unitAbbr)}</code></td>
@@ -44562,7 +44672,7 @@ function renderCourseGeOfferingRosterPage() {
           <td class="actions col-sticky-actions">${renderGeOfferingRosterRowActions(sec)}</td>
         </tr>`;
       }).join('')
-    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">${geOfferingRosterStatsTab === 'me' ? '暂无 ME 开课，请先在「通识选修开课」添加课程' : '暂无通识选修开课，请先在「通识选修开课」添加课程'}</td></tr>`;
+    : `<tr><td colspan="${colCount}" class="text-muted" style="text-align:center;padding:24px">${geOfferingRosterStatsTab === 'me' ? '暂无 ME 开课，请先在「选修开课安排」添加课程' : '暂无 GE 开课，请先在「选修开课安排」添加课程'}</td></tr>`;
   // renderCourseOfferingRosterPlaceholder('course-ge-offering-roster-body', 'ge'); // 原占位列表
   renderListPagination('course-ge-offering-roster-pagination', 'courseGeOfferingRoster', paged.total);
   bindCellFloatTips(tbody, '.offering-grouping-course-status.cell-ellipsis-tip[data-tip]', { alwaysShow: true });
@@ -46131,27 +46241,30 @@ function applyOfferingGroupingPageSave({ hasIncomplete = false, closePage = true
   sec.isGrouped = (sec.groups?.length || 0) > 0;
   syncSectionCoordinatorsFromAssignments(sec);
   syncOfferingGroupStudentCounts(sec);
-  invalidateTeacherCourseConfirmationsForSection(sec);
+  const confirmResult = syncSectionTeachingConfirmStatusAfterArrangementChange(sec);
   refreshOfferingGroupingLeaveSnapshot();
   if (stamp) markOfferingGroupingLastSaved();
   if (!closePage) {
     if (notify) {
+      const confirmLine = confirmResult.invalidated ? `\n${TEACHER_CONFIRM_EDIT_SAVED_HINT}` : '';
       const msg = hasIncomplete
         ? '分组与教师安排已保存，请后续继续完善未排完的小组与学时。'
         : '分组与教师安排已保存。';
-      alert(msg);
+      alert(msg + confirmLine);
     }
+    updateOfferingGroupingTeacherConfirmEditHint(sec);
     return;
   }
   renderCourseMajorOfferingTaskPage();
   renderCourseOfferingMajorPage();
+  const confirmLine = confirmResult.invalidated ? `\n${TEACHER_CONFIRM_EDIT_SAVED_HINT}` : '';
   const msg = hasIncomplete
     ? '分组与教师安排已保存，请后续继续完善未排完的小组与学时。'
     : '分组与教师安排已保存。';
   // renderOfferingGroupingPanel(); // 原保存后停留分组页重绘
   // alert(hasIncomplete ? '分组与教师安排已保存，请后续继续完善未排完的小组与学时。' : '分组与教师安排已保存。'); // 原 alert 后仍停留分组页
   performCloseOfferingGroupingPage();
-  if (notify) alert(msg);
+  if (notify) alert(msg + confirmLine);
   // alert(hasIncomplete ? '分组与教师安排已暂存...' : ...); // 原未完成时提示「已暂存」
 }
 
@@ -46183,10 +46296,13 @@ function saveOfferingGroupingPage() {
   }
   const title = `${escapeHtml(sec.code || '')} ${escapeHtml(sec.name || '')}`.trim() || '当前课程';
   const incomplete = !!validation.hasIncomplete;
+  const confirmHint = sectionHasCompletedTeacherConfirmation(sec) ? TEACHER_CONFIRM_EDIT_SAVE_HINT : '';
+  const hintParts = [validation.hint || '', confirmHint].filter(Boolean);
   openDeleteConfirm({
     title: '确认保存',
     message: `确定保存<strong>${title}</strong>的分组与教师安排吗？`,
-    hint: validation.hint || '',
+    hint: hintParts.join('\n'),
+    hintWarn: !!confirmHint,
     confirmLabel: '保存',
     onConfirm: () => applyOfferingGroupingPageSave({
       hasIncomplete: incomplete,
@@ -46285,6 +46401,7 @@ function updateOfferingGroupingPageTitle(sec) {
       ? '管理名单'
       : '分组';
     updateOfferingGroupingGeQuotaHint(null);
+    updateOfferingGroupingTeacherConfirmEditHint(null);
     return;
   }
   const courseLabel = `${sec.code || '—'} ${sec.name || ''}`.trim();
@@ -46294,6 +46411,7 @@ function updateOfferingGroupingPageTitle(sec) {
     el.textContent = `分组 · ${courseLabel}`;
   }
   updateOfferingGroupingGeQuotaHint(sec);
+  updateOfferingGroupingTeacherConfirmEditHint(sec);
 }
 
 function updateOfferingGroupingGeQuotaHint(sec) {

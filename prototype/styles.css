@@ -225,7 +225,7 @@ body {
 #page-workflow.active {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   min-height: calc(100vh - 40px);
 }
 .workflow-page-header {
@@ -332,6 +332,34 @@ body {
   max-width: 960px;
   height: auto;
   margin: 0 auto;
+}
+#page-workflow .workflow-viewport,
+#page-workflow .workflow-doc,
+#page-course-workflow .workflow-viewport,
+#page-course-workflow .workflow-doc {
+  max-width: none;
+  width: 100%;
+}
+#page-workflow .workflow-doc .diagram-area svg,
+#page-course-workflow .workflow-doc .diagram-area svg {
+  max-width: none;
+}
+#page-workflow .workflow-doc .legend-item,
+#page-course-workflow .workflow-doc .legend-item {
+  font-size: 12px;
+  padding: 5px 12px;
+}
+#page-workflow .workflow-doc .workflow-phases,
+#page-workflow .workflow-doc .footer,
+#page-workflow .workflow-doc .workflow-modules,
+#page-course-workflow .workflow-doc .workflow-phases,
+#page-course-workflow .workflow-doc .footer {
+  font-size: 13px;
+}
+#page-workflow .workflow-doc .workflow-phases-title,
+#page-workflow .workflow-doc .workflow-modules-title,
+#page-course-workflow .workflow-doc .workflow-phases-title {
+  font-size: 14px;
 }
 .workflow-doc .tab-note {
   width: 100%;
@@ -11351,6 +11379,11 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#page-course-ge-offering-roster .course-ge-offering-roster-table .col-type {
+  min-width: 56px;
+  white-space: nowrap;
+  text-align: center;
+}
 #page-course-ge-offering-roster .course-ge-offering-roster-table thead th.col-teachers {
   vertical-align: middle;
   text-align: center;
@@ -12343,6 +12376,19 @@ code {
   color: var(--text-2);
 }
 #page-offering-grouping .offering-grouping-ge-quota-hint[hidden] {
+  display: none !important;
+}
+#page-offering-grouping .offering-grouping-teacher-confirm-hint {
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #92400e;
+}
+#page-offering-grouping .offering-grouping-teacher-confirm-hint[hidden] {
   display: none !important;
 }
 #page-offering-grouping .offering-grouping-ge-quota-hint.is-short {

@@ -1128,6 +1128,7 @@
             <span id="offering-grouping-page-title">分组</span>
           </div>
           <div class="offering-grouping-ge-quota-hint" id="offering-grouping-ge-quota-hint" hidden role="status"></div>
+          <div class="offering-grouping-teacher-confirm-hint" id="offering-grouping-teacher-confirm-hint" hidden role="status"></div>
           <div class="offering-grouping-view-tabs" role="tablist" aria-label="开课视角">
             <button type="button" class="offering-grouping-view-tab is-active" role="tab" aria-selected="true" data-view="course" onclick="switchOfferingGroupingSidebarView('course')">Course</button>
             <button type="button" class="offering-grouping-view-tab" role="tab" aria-selected="false" data-view="course-list" onclick="switchOfferingGroupingSidebarView('course-list')">Course List</button>
@@ -1876,7 +1877,7 @@
     <!-- ═══ 开课管理 · 通识选修开课（计划 + 安排合表） ═══ -->
     <section class="page" id="page-course-offering-ge">
       <div class="ge-offering-plan-sticky-head">
-      <nav class="mot-style2-step-bar" id="ge-offering-step-bar" aria-label="通识选修开课步骤">
+      <nav class="mot-style2-step-bar" id="ge-offering-step-bar" aria-label="选修开课安排步骤">
         <!-- 原三步：1 课程班 / 2 其他学院 Support / 3 师资安排；改对齐专业任务样式二：1 Course Setting 融合课程班+Support -->
         <button type="button" class="mot-style2-step is-active" data-step="1" title="Course Setting：添加课程 · 修读范围 · 其他学院 Support" onclick="goGeOfferingPlanStep(1)">
           <span class="mot-style2-step-num">1</span>
@@ -4602,7 +4603,7 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-mot-style2-one-click-history-copy')">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint" id="mot-style2-one-click-history-copy-hint">从所选学期复制同课号开课任务安排（分组、学时、学时类型、教师、教室等）到当前任务；复制后可再调整。下拉仅列出最近一个学年的学期；当前开课学期为 26/04 时默认选中 25/04。已生效，或授课确认已发出 / 部分确认 / 已确认的任务，以及所选学期无可用安排的课号，将提示不适用并跳过；其余可继续复制。专业开课与通识选修开课共用本能力。</p>
+      <p class="form-hint" id="mot-style2-one-click-history-copy-hint">从所选学期复制同课号开课任务安排（分组、学时、学时类型、教师、教室等）到当前任务；复制后可再调整。下拉仅列出最近一个学年的学期；当前开课学期为 26/04 时默认选中 25/04。已生效，或授课确认已发出 / 部分确认 / 已确认的任务，以及所选学期无可用安排的课号，将提示不适用并跳过；其余可继续复制。专业开课与选修开课共用本能力。</p>
       <div class="form-item">
         <label class="req" for="mot-style2-one-click-history-copy-term">复制来源学期</label>
         <select class="input" id="mot-style2-one-click-history-copy-term" aria-label="复制来源学期"></select>
@@ -5028,6 +5029,7 @@
   <div class="drawer-body offering-edit-drawer-body">
     <section class="offering-edit-section">
       <h4 class="offering-edit-section-title">课程信息</h4>
+      <p class="offering-readonly-hint" id="mos-edit-teacher-confirm-hint" hidden></p>
       <div class="form-grid-2">
         <!-- 授课码由系统生成，不可自定义，字段隐藏保留 id 供读写
         <div class="form-item">
@@ -5408,6 +5410,7 @@
   <div class="drawer-body offering-edit-drawer-body">
     <section class="offering-edit-section">
       <h4 class="offering-edit-section-title">课程信息</h4>
+      <p class="offering-readonly-hint" id="ge-edit-teacher-confirm-hint" hidden></p>
       <div class="form-grid-2">
         <div class="form-item">
           <label class="req" for="ge-edit-course-code">课程号</label>
@@ -8589,7 +8592,7 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-ge-enrollment-quota')">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint" style="margin-top:0">为本学期通识选修开课设定统一的课程组quota。设定并保存生效后，才可在「选修开课安排」中添加开课课程；无分组时新课计划人数自动带入该值，仍可在修改中调整。已有课程的计划人数不会被覆盖。</p>
+      <p class="form-hint" style="margin-top:0">为本学期 GE 开课设定统一的课程组quota。设定并保存生效后，才可在「选修开课安排」中添加开课课程；无分组时新课计划人数自动带入该值，仍可在修改中调整。已有课程的计划人数不会被覆盖。</p>
       <div class="form-grid">
         <div class="form-item">
           <label>开课学期</label>
@@ -8675,7 +8678,7 @@
 <div class="modal-overlay" id="modal-ge-offering-add">
   <div class="modal modal-xl">
     <div class="modal-head">
-      <h3>添加通识选修开课</h3>
+      <h3>添加 GE 开课</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-ge-offering-add')">×</button>
     </div>
     <div class="modal-body">
@@ -9317,7 +9320,7 @@
   <div class="drawer-body offering-edit-drawer-body">
     <section class="offering-edit-section">
       <h4 class="offering-edit-section-title">课程信息</h4>
-      <p class="form-hint" style="margin:0 0 12px">此处维护加入通识选修开课时的默认教学设置；计划总人数、预留名额与课程名额上限在开课计划中再填。</p>
+      <p class="form-hint" style="margin:0 0 12px">此处维护加入选修开课（GE / ME）时的默认教学设置；计划总人数、预留名额与课程名额上限在开课计划中再填。</p>
       <div class="form-grid-2">
         <div class="form-item">
           <label class="req" for="sec-offering-edit-course-code">课程号</label>

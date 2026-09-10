@@ -726,9 +726,32 @@
               <option value="no">否</option>
             </select>
           </div>
+          <div class="course-query-more" id="course-time-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="course-time-filter-status">状态</label>
+              <select class="input input-sm" id="course-time-filter-status">
+                <option value="">全部</option>
+                <option value="open">开放中</option>
+                <option value="closed">已截止</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-time-filter-weeks">教学周数</label>
+              <input class="input input-sm" id="course-time-filter-weeks" placeholder="教学周数">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-time-filter-range">开课时间范围</label>
+              <input class="input input-sm" id="course-time-filter-range" placeholder="开课时间范围">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-time-filter-deadline">授课确认截止日期</label>
+              <input class="input input-sm" id="course-time-filter-deadline" placeholder="截止日期">
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderCourseTimeSettingList()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetCourseTimeFilters()">重置</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="course-time-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
@@ -736,6 +759,7 @@
         <div class="panel-toolbar course-time-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openCourseTimeSettingAddModal()">新增</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-course-time-delete" onclick="deleteSelectedCourseTimeSettings()" disabled>删除</button>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportCourseTimeSettingList()">导出</button>
         </div>
         <div class="table-scroll">
           <table class="data-table course-time-table">
@@ -910,9 +934,28 @@
             <label for="school-elective-filter-name">课名</label>
             <input class="input input-sm" id="school-elective-filter-name" placeholder="课名">
           </div>
+          <div class="course-query-more" id="school-elective-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="school-elective-filter-offering-programme">所属专业</label>
+              <select class="input input-sm" id="school-elective-filter-offering-programme"><option value="">全部</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="school-elective-filter-credits">学分</label>
+              <input class="input input-sm" id="school-elective-filter-credits" placeholder="学分">
+            </div>
+            <div class="course-time-query-field">
+              <label for="school-elective-filter-hours">总学时</label>
+              <input class="input input-sm" id="school-elective-filter-hours" placeholder="总学时">
+            </div>
+            <div class="course-time-query-field">
+              <label for="school-elective-filter-remark">备注</label>
+              <input class="input input-sm" id="school-elective-filter-remark" placeholder="备注">
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderSchoolElectiveCoursePage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetSchoolElectiveCourseFilters()">清除过滤</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="school-elective-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
@@ -922,6 +965,7 @@
           <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-category" onclick="openSchoolElectiveBatchCategoryModal()" hidden disabled>分组</button>
           <button class="btn btn-outline btn-sm" type="button" id="btn-school-elective-batch-status" onclick="openSchoolElectiveBatchStatusModal()" disabled>修改状态</button>
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-school-elective-delete" onclick="deleteSelectedSchoolElectiveCourses()" disabled>删除</button>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportSchoolElectiveCourseList()">导出</button>
           <!-- <button class="btn btn-outline btn-sm" type="button" onclick="alert('导出 Excel（原型占位）')">导出 Excel</button> -->
         </div>
         <div class="table-scroll">
@@ -964,9 +1008,36 @@
             <label for="special-course-filter-name">课名</label>
             <input class="input input-sm" id="special-course-filter-name" placeholder="课名">
           </div>
+          <div class="course-query-more" id="special-course-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="special-course-filter-offering-programme">所属专业</label>
+              <select class="input input-sm" id="special-course-filter-offering-programme"><option value="">全部</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="special-course-filter-hours-mode">学时类型设置</label>
+              <input class="input input-sm" id="special-course-filter-hours-mode" placeholder="学时类型">
+            </div>
+            <div class="course-time-query-field">
+              <label for="special-course-filter-classroom">教室信息</label>
+              <input class="input input-sm" id="special-course-filter-classroom" placeholder="教室信息">
+            </div>
+            <div class="course-time-query-field">
+              <label for="special-course-filter-support-history">Support历史</label>
+              <input class="input input-sm" id="special-course-filter-support-history" placeholder="Support历史">
+            </div>
+            <div class="course-time-query-field">
+              <label for="special-course-filter-support">Support专业</label>
+              <input class="input input-sm" id="special-course-filter-support" placeholder="Support专业">
+            </div>
+            <div class="course-time-query-field">
+              <label for="special-course-filter-shared">共同授课课号</label>
+              <input class="input input-sm" id="special-course-filter-shared" placeholder="共同授课课号">
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderSpecialCourseSettingsPage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetSpecialCourseSettingsFilters()">清除过滤</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="special-course-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
@@ -974,6 +1045,7 @@
         <div class="panel-toolbar school-elective-list-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openSpecialCourseSettingsAddModal()">添加课程</button>
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-special-course-delete" onclick="deleteSelectedSpecialCourseSettings()" disabled>删除</button>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportSpecialCourseSettingsList()">导出</button>
         </div>
         <div class="table-scroll">
           <table class="data-table compact school-elective-course-table special-course-settings-table">
@@ -1012,20 +1084,16 @@
           </div>
           -->
           <div class="course-time-query-field">
-            <label for="course-major-filter-prog">专业</label>
-            <select class="input input-sm" id="course-major-filter-prog"><option value="">全部专业</option></select>
-          </div>
-          <div class="course-time-query-field">
             <label for="course-major-filter-offering-programme">所属专业</label>
             <select class="input input-sm" id="course-major-filter-offering-programme"><option value="">全部所属专业</option></select>
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-filter-name">课号</label>
-            <input class="input input-sm" id="course-major-filter-name" placeholder="课号">
+            <label for="course-major-filter-name">课程代码</label>
+            <input class="input input-sm" id="course-major-filter-name" placeholder="课程代码">
           </div>
           <div class="course-time-query-field">
-            <label for="course-major-filter-course-name">课名</label>
-            <input class="input input-sm" id="course-major-filter-course-name" placeholder="课名">
+            <label for="course-major-filter-course-name">课程班名称</label>
+            <input class="input input-sm" id="course-major-filter-course-name" placeholder="课程班名称">
           </div>
           <div class="course-time-query-field">
             <label for="course-major-filter-submit-status">生效状态</label>
@@ -1036,32 +1104,72 @@
               <option value="reverted">回退</option>
             </select>
           </div>
-          <!-- 授课确认状态筛选改由任务安排页
           <div class="course-time-query-field">
-            <label for="course-major-filter-teaching-confirm">授课确认状态</label>
-            <select class="input input-sm" id="course-major-filter-teaching-confirm">
-              <option value="">全部</option>
-              <option value="pending">待确认</option>
-              <option value="confirmed">已确认</option>
-            </select>
+            <label for="course-major-filter-owner">负责人</label>
+            <input class="input input-sm" id="course-major-filter-owner" placeholder="负责人">
           </div>
-          -->
-          <!-- 原「开课状态」筛选已改为提交状态 + 授课确认状态
-          <div class="course-time-query-field">
-            <label for="course-major-filter-status">开课状态</label>
-            <select class="input input-sm" id="course-major-filter-status">
-              <option value="">全部</option>
-              <option value="offered">已开课</option>
-              <option value="pending">未开课</option>
-            </select>
+          <div class="course-query-more" id="course-major-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-plan-kind">标记</label>
+              <select class="input input-sm" id="course-major-filter-plan-kind">
+                <option value="">全部</option>
+                <option value="专业开课">专业开课</option>
+                <option value="特殊开课">特殊开课</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-category">课程类别</label>
+              <select class="input input-sm" id="course-major-filter-category"><option value="">全部</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-enrollment">选课类型</label>
+              <select class="input input-sm" id="course-major-filter-enrollment">
+                <option value="">全部</option>
+                <option value="closed">必修</option>
+                <option value="open">选修</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-programme-batch">Prog. Batch</label>
+              <input class="input input-sm" id="course-major-filter-programme-batch" placeholder="Prog. Batch">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-new-intake">存在新生</label>
+              <select class="input input-sm" id="course-major-filter-new-intake">
+                <option value="">全部</option>
+                <option value="yes">是</option>
+                <option value="no">否</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-credits">学分</label>
+              <input class="input input-sm" id="course-major-filter-credits" placeholder="学分">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-total-hours">总学时</label>
+              <input class="input input-sm" id="course-major-filter-total-hours" placeholder="总学时">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-week-range">起止周</label>
+              <input class="input input-sm" id="course-major-filter-week-range" placeholder="起止周">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-filter-offering-unit">所属部门</label>
+              <select class="input input-sm" id="course-major-filter-offering-unit"><option value="">全部所属部门</option></select>
+            </div>
+            <div class="course-time-query-field course-query-range-field">
+              <label>预置人数</label>
+              <div class="course-query-range">
+                <input class="input input-sm" id="course-major-filter-preset-min" type="number" min="0" placeholder="从">
+                <span class="course-query-range-sep">—</span>
+                <input class="input input-sm" id="course-major-filter-preset-max" type="number" min="0" placeholder="到">
+              </div>
+            </div>
           </div>
-          -->
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingList()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingFilters()">重置</button>
-            <!-- 专业开课筛选栏已去掉「导出」按钮
-            <button class="btn btn-outline btn-sm" type="button" onclick="exportMajorOfferingList()">导出</button>
-            -->
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="course-major-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
@@ -1080,6 +1188,7 @@
           <!-- 原顺序：生效 → 一键合班，改一键合班在生效左侧 -->
           <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-major-offering-withdraw" onclick="withdrawSelectedMajorOfferingTasks()" disabled>撤回</button> -->
           <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-major-offering-delete" onclick="deleteSelectedMajorOfferingTasks()" disabled>删除</button>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportMajorOfferingList()">导出</button>
           <!-- <span class="form-hint">从已提交执行计划的专业批次学期课程中选择生成；通识选修课请至「通识选修开课」维护。「操作记录」可查看字段变更（支持按用户过滤）。</span> -->
         </div>
         <div class="table-scroll">
@@ -1088,7 +1197,7 @@
               <th class="col-check"><input type="checkbox" id="course-major-check-all" aria-label="全选" onchange="toggleMajorOfferingCheckAll(this.checked)"></th>
               <!-- <th class="col-index">序号</th> -->
               <th class="col-center">开课学期</th>
-              <th>负责人</th>
+              <th class="col-center">负责人</th>
               <th class="col-center">生效状态</th>
               <!-- <th class="col-center">授课确认状态</th> 改由任务安排页 -->
               <!-- <th class="col-center">状态</th> 原开课状态列 -->
@@ -1555,16 +1664,6 @@
             <label for="mot-style2-filter-term">学年学期</label>
             <select class="input input-sm" id="mot-style2-filter-term" onchange="onMajorOfferingTaskStyle2TermFilterChange()"></select>
           </div>
-          <!-- 上课学院 / 上课专业筛选项暂隐
-          <div class="course-time-query-field">
-            <label for="mot-style2-filter-dept">上课学院</label>
-            <select class="input input-sm" id="mot-style2-filter-dept" onchange="onMajorOfferingTaskStyle2SchoolFilterChange()"><option value="">全部上课学院</option></select>
-          </div>
-          <div class="course-time-query-field">
-            <label for="mot-style2-filter-prog">上课专业</label>
-            <select class="input input-sm" id="mot-style2-filter-prog"><option value="">全部上课专业</option></select>
-          </div>
-          -->
           <div class="course-time-query-field">
             <label for="mot-style2-filter-name">课号</label>
             <input class="input input-sm" id="mot-style2-filter-name" placeholder="课号" onkeydown="if(event.key==='Enter'){queryMajorOfferingTaskStyle2List()}">
@@ -1600,9 +1699,81 @@
               <option value="none">无教师</option>
             </select>
           </div>
+          <div class="course-query-more" id="mot-style2-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-dept">上课学院</label>
+              <select class="input input-sm" id="mot-style2-filter-dept" onchange="onMajorOfferingTaskStyle2SchoolFilterChange()"><option value="">全部上课学院</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-prog">上课专业</label>
+              <select class="input input-sm" id="mot-style2-filter-prog"><option value="">全部上课专业</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-plan-kind">标记</label>
+              <select class="input input-sm" id="mot-style2-filter-plan-kind">
+                <option value="">全部</option>
+                <option value="专业开课">专业开课</option>
+                <option value="特殊开课">特殊开课</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-classification">Classification</label>
+              <select class="input input-sm" id="mot-style2-filter-classification"><option value="">全部</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-offering-unit">所属部门</label>
+              <select class="input input-sm" id="mot-style2-filter-offering-unit"><option value="">全部所属部门</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-offering-programme">所属专业</label>
+              <select class="input input-sm" id="mot-style2-filter-offering-programme"><option value="">全部所属专业</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-enrollment">选课方式</label>
+              <select class="input input-sm" id="mot-style2-filter-enrollment">
+                <option value="">全部</option>
+                <option value="closed">必修</option>
+                <option value="open">选修</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-credits">Credits</label>
+              <input class="input input-sm" id="mot-style2-filter-credits" placeholder="Credits">
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-week-range">起止周</label>
+              <input class="input input-sm" id="mot-style2-filter-week-range" placeholder="起止周">
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-programme-batch">Prog. Batch</label>
+              <input class="input input-sm" id="mot-style2-filter-programme-batch" placeholder="Prog. Batch">
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-lecturer">Lecturer</label>
+              <input class="input input-sm" id="mot-style2-filter-lecturer" placeholder="Lecturer">
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-coordinator">Coordinator</label>
+              <input class="input input-sm" id="mot-style2-filter-coordinator" placeholder="Coordinator">
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-shared-courses">共同授课课号</label>
+              <input class="input input-sm" id="mot-style2-filter-shared-courses" placeholder="共同授课课号">
+            </div>
+            <div class="course-time-query-field">
+              <label for="mot-style2-filter-offering-status">开课状态</label>
+              <select class="input input-sm" id="mot-style2-filter-offering-status">
+                <option value="">全部</option>
+                <option value="ok">已齐套</option>
+                <option value="warn">待补齐</option>
+                <option value="missing">缺安排</option>
+              </select>
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingTaskStyle2List()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingTaskStyle2Filters()">重置</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="mot-style2-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
@@ -1659,23 +1830,98 @@
             <label for="course-major-roster-filter-course-name">课名</label>
             <input class="input input-sm" id="course-major-roster-filter-course-name" placeholder="课名">
           </div>
-          <!-- <div class="course-time-query-field">
-            <label for="course-major-roster-filter-teaching-confirm">授课确认状态</label>
-            <select class="input input-sm" id="course-major-roster-filter-teaching-confirm">
-              <option value="">全部</option>
-              <option value="pending">待确认</option>
-              <option value="confirmed">已确认</option>
-            </select>
-          </div> -->
+          <div class="course-query-more" id="course-major-roster-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-task-submit">生效状态</label>
+              <select class="input input-sm" id="course-major-roster-filter-task-submit">
+                <option value="">全部</option>
+                <option value="submitted">已生效</option>
+                <option value="draft">草稿</option>
+                <option value="reverted">回退</option>
+                <option value="cancelled">停课</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-assign-status">名单状态</label>
+              <select class="input input-sm" id="course-major-roster-filter-assign-status">
+                <option value="">全部</option>
+                <option value="ok">已分配</option>
+                <option value="warn">超限</option>
+                <option value="missing">未分配完</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-plan-kind">标记</label>
+              <select class="input input-sm" id="course-major-roster-filter-plan-kind">
+                <option value="">全部</option>
+                <option value="专业开课">专业开课</option>
+                <option value="特殊开课">特殊开课</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-enrollment">选课方式</label>
+              <select class="input input-sm" id="course-major-roster-filter-enrollment">
+                <option value="">全部</option>
+                <option value="closed">必修</option>
+                <option value="open">选修</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-teachers">教师</label>
+              <input class="input input-sm" id="course-major-roster-filter-teachers" placeholder="教师">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-programme-batch">Prog. Batch</label>
+              <input class="input input-sm" id="course-major-roster-filter-programme-batch" placeholder="Prog. Batch">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-offering-programme">所属专业</label>
+              <select class="input input-sm" id="course-major-roster-filter-offering-programme"><option value="">全部所属专业</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-credits">学分</label>
+              <input class="input input-sm" id="course-major-roster-filter-credits" placeholder="学分">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-total-hours">总学时</label>
+              <input class="input input-sm" id="course-major-roster-filter-total-hours" placeholder="总学时">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-week-range">起止周</label>
+              <input class="input input-sm" id="course-major-roster-filter-week-range" placeholder="起止周">
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-shared-teaching">共同授课状态</label>
+              <select class="input input-sm" id="course-major-roster-filter-shared-teaching">
+                <option value="">全部</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="course-major-roster-filter-shared-courses">共同授课课号</label>
+              <input class="input input-sm" id="course-major-roster-filter-shared-courses" placeholder="共同授课课号">
+            </div>
+            <div class="course-time-query-field course-query-range-field">
+              <label>人数</label>
+              <div class="course-query-range">
+                <input class="input input-sm" id="course-major-roster-filter-count-min" type="number" min="0" placeholder="从">
+                <span class="course-query-range-sep">—</span>
+                <input class="input input-sm" id="course-major-roster-filter-count-max" type="number" min="0" placeholder="到">
+              </div>
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryMajorOfferingRosterList()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetMajorOfferingRosterFilters()">重置</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="course-major-roster-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
       <div class="card course-major-roster-list-card">
         <div class="panel-toolbar course-major-roster-toolbar">
           <button class="btn btn-outline btn-sm" type="button" id="btn-major-roster-revert" onclick="revertSelectedMajorOfferingRosterArrangements()" disabled>退回</button>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportMajorOfferingRosterList()">导出</button>
         </div>
         <div class="table-scroll">
           <table class="data-table compact course-major-offering-roster-table">
@@ -1795,6 +2041,7 @@
           <span>GE开课配额</span>
           <div class="elective-quota-card-head-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="saveGeOfferingQuotaPage()">保存计划</button>
+            <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportGeOfferingQuotaList()">导出</button>
           </div>
         </div>
         <div class="table-scroll">
@@ -1846,6 +2093,7 @@
             <div class="elective-quota-card-head-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="saveMeOfferingPlanQuotaPage()">保存计划</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="resetMeOfferingPlanQuotaToFormula()">重置</button>
+              <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportGeOfferingQuotaList()">导出</button>
             </div>
           </div>
           <div class="table-scroll">
@@ -1995,12 +2243,82 @@
               <option value="cancelled">停课</option>
             </select>
           </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-filter-offering-status">开课状态</label>
+            <select class="input input-sm" id="ge-offering-filter-offering-status">
+              <option value="">全部</option>
+              <option value="ok">已齐套</option>
+              <option value="warn">待补齐</option>
+              <option value="missing">缺安排</option>
+              <option value="pending-copy">历史复制待确认</option>
+            </select>
+          </div>
           <!-- 兼容旧任务列表学期同步 -->
           <select id="ge-offering-task-filter-term" hidden aria-hidden="true"></select>
           <input id="ge-offering-task-filter-name" type="hidden" value="">
+          <div class="course-query-more" id="ge-offering-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-teacher-confirm">授课确认</label>
+              <select class="input input-sm" id="ge-offering-filter-teacher-confirm">
+                <option value="">全部</option>
+                <option value="confirmed">已确认</option>
+                <option value="unconfirmed">未确认</option>
+                <option value="none">无教师</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-elective-type">课程类型</label>
+              <input class="input input-sm" id="ge-offering-filter-elective-type" placeholder="课程类型">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-ge-category">校选课类别</label>
+              <input class="input input-sm" id="ge-offering-filter-ge-category" placeholder="校选课类别">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-opening-programme">开课专业</label>
+              <input class="input input-sm" id="ge-offering-filter-opening-programme" placeholder="开课专业">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-offering-unit">所属部门</label>
+              <select class="input input-sm" id="ge-offering-filter-offering-unit"><option value="">全部所属部门</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-lecturer">Lecturer</label>
+              <input class="input input-sm" id="ge-offering-filter-lecturer" placeholder="Lecturer">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-coordinator">Course Coordinator</label>
+              <input class="input input-sm" id="ge-offering-filter-coordinator" placeholder="Coordinator">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-credits">学分</label>
+              <input class="input input-sm" id="ge-offering-filter-credits" placeholder="学分">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-hours">计划总学时</label>
+              <input class="input input-sm" id="ge-offering-filter-hours" placeholder="学时">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-week-range">起止周</label>
+              <input class="input input-sm" id="ge-offering-filter-week-range" placeholder="起止周">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-shared-teaching">共同授课状态</label>
+              <select class="input input-sm" id="ge-offering-filter-shared-teaching">
+                <option value="">全部</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-filter-shared-courses">共同授课课号</label>
+              <input class="input input-sm" id="ge-offering-filter-shared-courses" placeholder="共同授课课号">
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderGeOfferingPlanPage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetGeOfferingUnifiedFilters()">重置</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="ge-offering-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
@@ -2104,15 +2422,84 @@
             <label for="ge-offering-roster-filter-course-name">课名</label>
             <input class="input input-sm" id="ge-offering-roster-filter-course-name" placeholder="课名">
           </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-roster-filter-offering-status">开课状态</label>
+            <select class="input input-sm" id="ge-offering-roster-filter-offering-status">
+              <option value="">全部</option>
+              <option value="ok">已齐套</option>
+              <option value="warn">待补齐</option>
+              <option value="missing">缺安排</option>
+              <option value="pending-copy">历史复制待确认</option>
+            </select>
+          </div>
+          <div class="course-time-query-field">
+            <label for="ge-offering-roster-filter-teacher-confirm">授课确认</label>
+            <select class="input input-sm" id="ge-offering-roster-filter-teacher-confirm">
+              <option value="">全部</option>
+              <option value="confirmed">已确认</option>
+              <option value="unconfirmed">未确认</option>
+              <option value="none">无教师</option>
+            </select>
+          </div>
+          <div class="course-query-more" id="ge-offering-roster-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-task-submit">生效状态</label>
+              <select class="input input-sm" id="ge-offering-roster-filter-task-submit">
+                <option value="">全部</option>
+                <option value="submitted">已提交</option>
+                <option value="draft">草稿</option>
+                <option value="reverted">回退</option>
+                <option value="cancelled">停课</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-elective-type">课程类型</label>
+              <input class="input input-sm" id="ge-offering-roster-filter-elective-type" placeholder="课程类型">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-offering-programme">所属专业</label>
+              <select class="input input-sm" id="ge-offering-roster-filter-offering-programme"><option value="">全部所属专业</option></select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-group-count">小组数</label>
+              <input class="input input-sm" id="ge-offering-roster-filter-group-count" placeholder="小组数">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-teachers">教师</label>
+              <input class="input input-sm" id="ge-offering-roster-filter-teachers" placeholder="教师">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-credits">学分</label>
+              <input class="input input-sm" id="ge-offering-roster-filter-credits" placeholder="学分">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-hours">总学时</label>
+              <input class="input input-sm" id="ge-offering-roster-filter-hours" placeholder="总学时">
+            </div>
+            <div class="course-time-query-field">
+              <label for="ge-offering-roster-filter-week-range">起止周</label>
+              <input class="input input-sm" id="ge-offering-roster-filter-week-range" placeholder="起止周">
+            </div>
+            <div class="course-time-query-field course-query-range-field">
+              <label>人数</label>
+              <div class="course-query-range">
+                <input class="input input-sm" id="ge-offering-roster-filter-count-min" type="number" min="0" placeholder="从">
+                <span class="course-query-range-sep">—</span>
+                <input class="input input-sm" id="ge-offering-roster-filter-count-max" type="number" min="0" placeholder="到">
+              </div>
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryGeOfferingRosterList()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetGeOfferingRosterFilters()">重置</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="ge-offering-roster-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
       <div class="card course-ge-roster-list-card">
         <div class="panel-toolbar course-ge-roster-toolbar">
           <button class="btn btn-outline btn-sm" type="button" id="btn-ge-roster-revert" onclick="revertSelectedGeOfferingRosterArrangements()" disabled>退回</button>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportGeOfferingRosterList()">导出</button>
         </div>
         <div class="table-scroll">
           <table class="data-table compact course-ge-offering-roster-table">
@@ -2347,9 +2734,56 @@
             <label for="offering-manifest-filter-course-name">课名</label>
             <input class="input input-sm" id="offering-manifest-filter-course-name" placeholder="课名">
           </div>
+          <div class="course-time-query-field">
+            <label for="offering-manifest-filter-group-name">课程组名称</label>
+            <input class="input input-sm" id="offering-manifest-filter-group-name" placeholder="课程组名称">
+          </div>
+          <div class="course-query-more" id="offering-manifest-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="offering-manifest-filter-status">状态</label>
+              <select class="input input-sm" id="offering-manifest-filter-status">
+                <option value="">全部</option>
+                <option value="正常">正常</option>
+                <option value="停课">停课</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="offering-manifest-filter-enrollment">选课类型</label>
+              <select class="input input-sm" id="offering-manifest-filter-enrollment">
+                <option value="">全部</option>
+                <option value="closed">必修</option>
+                <option value="open">选修</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="offering-manifest-filter-credits">学分</label>
+              <input class="input input-sm" id="offering-manifest-filter-credits" placeholder="学分">
+            </div>
+            <div class="course-time-query-field">
+              <label for="offering-manifest-filter-hours">总学时</label>
+              <input class="input input-sm" id="offering-manifest-filter-hours" placeholder="总学时">
+            </div>
+            <div class="course-time-query-field course-query-range-field">
+              <label>课程人数上限</label>
+              <div class="course-query-range">
+                <input class="input input-sm" id="offering-manifest-filter-cap-min" type="number" min="0" placeholder="从">
+                <span class="course-query-range-sep">—</span>
+                <input class="input input-sm" id="offering-manifest-filter-cap-max" type="number" min="0" placeholder="到">
+              </div>
+            </div>
+            <div class="course-time-query-field course-query-range-field">
+              <label>当前学生名单人数</label>
+              <div class="course-query-range">
+                <input class="input input-sm" id="offering-manifest-filter-count-min" type="number" min="0" placeholder="从">
+                <span class="course-query-range-sep">—</span>
+                <input class="input input-sm" id="offering-manifest-filter-count-max" type="number" min="0" placeholder="到">
+              </div>
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingManifestList()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingManifestFilters()">重置</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="offering-manifest-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
@@ -2360,6 +2794,7 @@
             <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-shared-code" onclick="openOfferingManifestSharedTeachingCodeModal()" disabled>设置共同授课码</button>
             <button class="btn btn-outline btn-sm" type="button" id="btn-offering-manifest-clear-shared-code" onclick="clearOfferingManifestSharedTeachingCode()" disabled>解除共同授课</button> --> <!-- 原共同授课码批量操作，已从工具栏移除 -->
           </div>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportOfferingManifestList()">导出</button>
           <!-- <span class="form-hint">一门课一条记录；已分组课程汇总展示课程人数上限与当前学生名单人数</span> -->
           <!-- <span class="form-hint">一门课一条记录；已分组课程汇总展示容量、人数与任课教师</span> --> <!-- 原文案 -->
           <!-- <span class="form-hint">按课程班展示；已分组课程按小组展开为多行</span> --> <!-- 原按小组展开 -->
@@ -2422,13 +2857,48 @@
               <label for="otr-filter-name">课名</label>
               <input class="input input-sm" id="otr-filter-name" placeholder="课名" onkeydown="if(event.key==='Enter'){queryOfferingTeacherReplacePage()}">
             </div>
+            <div class="course-time-query-field">
+              <label for="otr-filter-offering-type">开课类型</label>
+              <select class="input input-sm" id="otr-filter-offering-type">
+                <option value="">全部</option>
+                <option value="major">专业开课</option>
+                <option value="ge">选修开课</option>
+                <option value="other">特殊开课</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="otr-filter-programme-batch">上课专业</label>
+              <input class="input input-sm" id="otr-filter-programme-batch" placeholder="上课专业">
+            </div>
+            <div class="course-query-more" id="otr-query-more" hidden>
+              <div class="course-time-query-field">
+                <label for="otr-filter-intake">上课批次</label>
+                <input class="input input-sm" id="otr-filter-intake" placeholder="上课批次">
+              </div>
+              <div class="course-time-query-field">
+                <label for="otr-filter-enrollment">选课类型</label>
+                <select class="input input-sm" id="otr-filter-enrollment">
+                  <option value="">全部</option>
+                  <option value="closed">必修</option>
+                  <option value="open">选修</option>
+                </select>
+              </div>
+              <div class="course-time-query-field">
+                <label for="otr-filter-teachers">任课教师</label>
+                <input class="input input-sm" id="otr-filter-teachers" placeholder="任课教师">
+              </div>
+            </div>
             <div class="course-time-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="queryOfferingTeacherReplacePage()">查询</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="resetOfferingTeacherReplaceFilters()">重置</button>
+              <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="otr-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
             </div>
           </div>
         </div>
         <div class="card otr-list-card">
+          <div class="panel-toolbar">
+            <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportOfferingTeacherReplaceList()">导出</button>
+          </div>
           <div class="table-scroll">
             <table class="data-table compact otr-course-table">
               <thead>
@@ -2458,6 +2928,7 @@
           <div class="panel-toolbar">
             <strong>最近替换记录</strong>
             <span class="form-hint">本机原型日志，刷新后仍保留（localStorage）</span>
+            <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportOfferingTeacherReplaceLogList()">导出</button>
           </div>
           <div class="table-scroll">
             <table class="data-table compact otr-log-table">
@@ -2721,15 +3192,63 @@
             <label for="scheduling-plan-filter-name">课程班名称</label>
             <input class="input input-sm" id="scheduling-plan-filter-name" placeholder="课程班名称">
           </div>
+          <div class="course-time-query-field">
+            <label for="scheduling-plan-filter-groups">课程组</label>
+            <input class="input input-sm" id="scheduling-plan-filter-groups" placeholder="课程组">
+          </div>
+          <div class="course-time-query-field">
+            <label for="scheduling-plan-filter-hour-type">学时类型</label>
+            <input class="input input-sm" id="scheduling-plan-filter-hour-type" placeholder="学时类型">
+          </div>
+          <div class="course-query-more" id="scheduling-plan-query-more" hidden>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-week-range">起止周</label>
+              <input class="input input-sm" id="scheduling-plan-filter-week-range" placeholder="起止周">
+            </div>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-teachers">教师</label>
+              <input class="input input-sm" id="scheduling-plan-filter-teachers" placeholder="教师">
+            </div>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-classroom">场地类型</label>
+              <input class="input input-sm" id="scheduling-plan-filter-classroom" placeholder="场地类型">
+            </div>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-link-group">联动组</label>
+              <input class="input input-sm" id="scheduling-plan-filter-link-group" placeholder="联动组">
+            </div>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-weekly">周学时</label>
+              <input class="input input-sm" id="scheduling-plan-filter-weekly" placeholder="周学时">
+            </div>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-total">总学时</label>
+              <input class="input input-sm" id="scheduling-plan-filter-total" placeholder="总学时">
+            </div>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-simultaneous">同时授课</label>
+              <select class="input input-sm" id="scheduling-plan-filter-simultaneous">
+                <option value="">全部</option>
+                <option value="是">是</option>
+                <option value="否">否</option>
+              </select>
+            </div>
+            <div class="course-time-query-field">
+              <label for="scheduling-plan-filter-classroom-pref">教室偏好</label>
+              <input class="input input-sm" id="scheduling-plan-filter-classroom-pref" placeholder="教室偏好">
+            </div>
+          </div>
           <div class="course-time-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="querySchedulingPlanList()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetSchedulingPlanFilters()">重置</button>
+            <button class="btn btn-ghost btn-sm course-query-more-toggle" type="button" data-query-more="scheduling-plan-query-more" aria-expanded="false" onclick="toggleCourseQueryMore(this)">展开</button>
           </div>
         </div>
       </div>
       <div class="card scheduling-plan-list-card">
         <div class="panel-toolbar scheduling-plan-toolbar">
           <span class="form-hint">数据来源：各开课模块中任务安排已生效的学时安排（不以授课确认齐套为入池门槛）；共同授课须全部关联开课班均已生效，且学时安排与联动组齐套后才展示</span>
+          <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportSchedulingPlanList()">导出</button>
         </div>
         <div class="table-scroll">
           <table class="data-table compact scheduling-plan-table">
@@ -6981,6 +7500,7 @@
     </div>
     <div class="modal-body">
       <p class="form-hint section-coordinator-hint">请从本课程已安排的任课教师中选择一名课程 Coordinator。</p>
+      <p class="form-hint section-coordinator-confirm-warn is-empty" id="section-coordinator-confirm-warn" hidden></p>
       <div class="section-coordinator-picks" id="section-coordinator-picks"></div>
     </div>
     <div class="modal-foot">
@@ -7445,7 +7965,7 @@
         </div>
         <div class="shared-teaching-setup-pane shared-teaching-setup-pane-right">
           <div class="shared-teaching-setup-section-label-row">
-            <div class="shared-teaching-setup-section-label">开课安排清单</div>
+            <div class="shared-teaching-setup-section-label">课程班</div>
             <div class="slt-info-tip shared-teaching-setup-rules-tip">
               <button type="button" class="slt-info-btn shared-teaching-setup-rules-btn" aria-label="共同授课规则" onclick="toggleSharedTeachingSetupRulesTip(event)">!</button>
               <div class="slt-info-popover shared-teaching-setup-rules-popover">
@@ -7453,8 +7973,11 @@
                 <p class="slt-info-formula">1. 须选择至少 <strong>2 个不同教学班</strong>（可同课号）。</p>
                 <p class="slt-info-formula">2. 所选教学班须至少有一名<strong>相同任课教师</strong>。</p>
                 <p class="slt-info-formula">3. 右侧列表仅展示与当前教学班有相同任课教师、且尚未与本课共同授课的开课记录。</p>
-                <p class="slt-info-formula">4. 点击「添加」后系统自动打上共同授课标记；排课时该教师可为这些班忽略时间冲突。</p>
-                <p class="slt-info-formula">5. 已设置后可「管理联动安排」，将各班学时安排行按周次/周学时一致绑定，供后续同堂排课。</p>
+                <p class="slt-info-formula">4. 已属于其他共同授课组的课程仍可看见，但不可添加；须先在原组移出。</p>
+                <p class="slt-info-formula">5. 点击「添加」后系统自动打上共同授课标记；排课时该教师可为这些班忽略时间冲突。加入组不会自动建立联动安排。</p>
+                <p class="slt-info-formula">6. 若本课已有共同授课组，再添加时会先确认：新课将加入该组，组内课程将共同授课。</p>
+                <p class="slt-info-formula">7. 左侧「已设置」列出本组全部教学班（含本课）。移出某课后其余仍同组（仅剩 1 门时清除标记）。</p>
+                <p class="slt-info-formula">8. 已设置后可「管理联动安排」，将各班学时安排行按周次/周学时一致绑定，供后续同堂排课。</p>
               </div>
             </div>
           </div>
@@ -7479,7 +8002,6 @@
                   <th>课程号</th>
                   <th>课程班名称</th>
                   <th class="col-center">开课类型</th>
-                  <th class="col-center">课程类型</th>
                   <th class="col-center">所属专业</th>
                   <th>任课教师</th>
                   <th>专业批次</th>

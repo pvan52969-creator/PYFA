@@ -2550,6 +2550,9 @@ function cancelCourseTimeUnitOfferingExpandEdit(settingId, unitCode) {
 
 function renderCourseTimeUnitOfferingExpandPanel(settingId) {
   ensureCourseUnitOfferingTimes(settingId);
+  const row = getCourseTimeSettingById(settingId);
+  const termCode = row?.termCode || '';
+  const schoolDeadlineIso = getTeacherCourseConfirmationDeadlineIso(termCode);
   const units = getCourseUnitOfferingConfiguredUnitCodes(settingId);
   const canAdd = getCourseUnitOfferingAddableUnitCodes(settingId).length > 0;
   const addBtn = `<button type="button" class="btn btn-outline btn-sm" ${canAdd ? '' : 'disabled '}onclick="openCourseUnitOfferingTimeAddModal(${settingId})">新增</button>`;
@@ -2572,6 +2575,8 @@ function renderCourseTimeUnitOfferingExpandPanel(settingId) {
     const statusClass = closed ? 'is-closed' : 'is-open';
     const codeEsc = escapeHtml(unitCode);
     const editing = editingUnit === unitCode;
+    const confirmIso = getTeacherConfirmDeadlineCollegeOverride(termCode, unitCode) || schoolDeadlineIso;
+    const confirmDisplay = confirmIso ? formatDateDisplayDdMmYyyy(confirmIso) : '';
     const startCell = editing
       ? `<input class="input input-sm cuot-date-input course-datetime-input" type="text"
           id="cuot-start-${codeEsc}"
@@ -2598,6 +2603,19 @@ function renderCourseTimeUnitOfferingExpandPanel(settingId) {
           placeholder="dd/mm/yyyy HH:mm" autocomplete="off" readonly
           onclick="openCourseDatetimePicker(this, event)" onblur="normalizeCuotDatetimeInput(this)">`
       : escapeHtml(endDt.display || '—');
+    const confirmCell = editing
+      ? `<input class="input input-sm cuot-date-input course-datetime-input" type="text"
+          id="cuot-confirm-deadline-${codeEsc}"
+          value="${escapeHtml(confirmDisplay)}"
+          data-iso-value="${escapeHtml(confirmIso)}"
+          data-hm-value=""
+          data-picker-title="授课确认截止"
+          data-unbounded="1"
+          data-locked="0"
+          placeholder="dd/mm/yyyy"
+          autocomplete="off" readonly
+          onclick="openCuotDatePicker(this, event)">`
+      : (confirmDisplay ? `<code>${escapeHtml(confirmDisplay)}</code>` : '—');
     const actions = editing
       ? `<span class="cuot-row-actions">
           <button type="button" class="offering-group-status-inline-save" title="确认" aria-label="确认" onclick="saveCourseUnitOfferingTimeUnit('${codeEsc}', ${settingId})">✓</button>
@@ -2613,10 +2631,11 @@ function renderCourseTimeUnitOfferingExpandPanel(settingId) {
       <td class="col-center"><span class="offering-module-time-status ${statusClass}">${escapeHtml(statusLabel)}</span></td>
       <td>${startCell}</td>
       <td>${endCell}</td>
+      <td class="col-center col-confirm-deadline">${confirmCell}</td>
       <td class="actions col-center col-actions">${actions}</td>
     </tr>`;
   }).join('')
-    : `<tr><td colspan="6" class="text-muted course-time-unit-expand-empty-cell">暂无数据；未单独设置的单位默认按全校开课时间</td></tr>`;
+    : `<tr><td colspan="7" class="text-muted course-time-unit-expand-empty-cell">暂无数据；未单独设置的单位默认按全校开课时间</td></tr>`;
   // : `<p class="text-muted course-time-unit-expand-empty">暂未单独设置开课单位...</p>`; // 原无数据时隐藏表头，改固定表格结构
   return `<div class="course-time-unit-expand-panel">
     ${head}
@@ -2629,6 +2648,7 @@ function renderCourseTimeUnitOfferingExpandPanel(settingId) {
             <th class="col-center">状态</th>
             <th>开放开始</th>
             <th>开放截止</th>
+            <th class="col-center">授课确认截止</th>
             <th class="col-center col-actions">操作</th>
           </tr>
         </thead>
@@ -2772,6 +2792,781 @@ function getTeacherCourseConfirmationDeadlineIso(termCode) {
 
 function formatTeacherCourseConfirmationDeadlineDisplay(termCode) {
   return formatDateDisplayDMonthYyyy(getTeacherCourseConfirmationDeadlineIso(termCode)) || '—';
+}
+
+/**
+ * 授课确认截止覆盖（按学期）
+ * college: { [termCode]: { [unitCode]: 'YYYY-MM-DD' } }
+ * personal: { [termCode]: { [staffId]: { deadline: 'YYYY-MM-DD' } } }
+ * 演示：202604 全校 2026-01-15；SEM 学院延至 2026-01-22；肖云个人延至 2026-01-30
+ */
+const TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES = {
+  '202604': { SEM: '2026-01-22' }
+};
+const TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES = {
+  '202604': {
+    '2001210010': { deadline: '2026-01-30' }
+  }
+};
+let teacherConfirmDeadlineCollegeDrawerTermCode = '';
+let teacherConfirmDeadlineCollegeEditingUnit = null;
+/** 个人延期弹窗勾选的教师工号 */
+let teacherConfirmDeadlinePersonalSelectedIds = new Set();
+let teacherConfirmDeadlinePersonalFilters = {
+  name: '',
+  staffId: '',
+  department: '',
+  programme: '',
+  teacherTypes: []
+};
+
+const TEACHER_CONFIRM_DEADLINE_SOURCE_LABELS = {
+  personal: '个人',
+  college: '学院',
+  school: '全校'
+};
+
+function normalizeTeacherConfirmDeadlineIso(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return toDateInputValue(s) || parseDateDisplayDdMmYyyy(s) || '';
+}
+
+function isTeacherConfirmDeadlineOnOrAfterSchool(termCode, deadlineIso) {
+  const school = getTeacherCourseConfirmationDeadlineIso(termCode);
+  const d = normalizeTeacherConfirmDeadlineIso(deadlineIso);
+  if (!d) return false;
+  if (!school) return true;
+  return d >= school;
+}
+
+function getTeacherConfirmDeadlineCollegeOverride(termCode, unitCode) {
+  const term = String(termCode || '').trim();
+  const unit = String(unitCode || '').trim();
+  if (!term || !unit) return '';
+  return normalizeTeacherConfirmDeadlineIso(TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term]?.[unit]);
+}
+
+function getTeacherConfirmDeadlinePersonalOverride(termCode, staffId) {
+  const term = String(termCode || '').trim();
+  const id = String(staffId || '').trim();
+  if (!term || !id) return null;
+  const row = TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term]?.[id];
+  if (!row) return null;
+  const deadline = normalizeTeacherConfirmDeadlineIso(row.deadline);
+  if (!deadline) return null;
+  return { deadline };
+}
+
+/** 解析教师×学期生效授课确认截止日：个人 > 学院 > 全校（v1 无专业层） */
+function resolveTeacherConfirmDeadline(termCode, staffIdOrTeacher) {
+  const term = String(termCode || '').trim();
+  const staffId = typeof staffIdOrTeacher === 'object' && staffIdOrTeacher
+    ? String(staffIdOrTeacher.staffId || '').trim()
+    : String(staffIdOrTeacher || '').trim();
+  const school = getTeacherCourseConfirmationDeadlineIso(term);
+  if (!term) {
+    return { date: '', source: 'school', unitCode: '' };
+  }
+  const personal = getTeacherConfirmDeadlinePersonalOverride(term, staffId);
+  if (personal?.deadline) {
+    return {
+      date: personal.deadline,
+      source: 'personal',
+      unitCode: getTeacherDepartmentCode(staffId) || ''
+    };
+  }
+  const unitCode = getTeacherDepartmentCode(staffId);
+  const college = getTeacherConfirmDeadlineCollegeOverride(term, unitCode);
+  if (college) {
+    return { date: college, source: 'college', unitCode };
+  }
+  return { date: school, source: 'school', unitCode: unitCode || '' };
+}
+
+function formatTeacherConfirmDeadlineSourceLabel(source) {
+  return TEACHER_CONFIRM_DEADLINE_SOURCE_LABELS[source] || '全校';
+}
+
+function formatResolvedTeacherConfirmDeadlineDisplay(termCode, staffId) {
+  const resolved = resolveTeacherConfirmDeadline(termCode, staffId);
+  return formatDateDisplayDMonthYyyy(resolved.date) || '—';
+}
+
+function formatResolvedTeacherConfirmDeadlineMetaHtml(termCode, staffId) {
+  const resolved = resolveTeacherConfirmDeadline(termCode, staffId);
+  const dateLabel = formatDateDisplayDdMmYyyy(resolved.date) || '—';
+  const sourceLabel = formatTeacherConfirmDeadlineSourceLabel(resolved.source);
+  return `<span class="tcc-deadline-meta"><code>${escapeHtml(dateLabel)}</code><span class="tcc-deadline-source">·${escapeHtml(sourceLabel)}</span></span>`;
+}
+
+function setTeacherConfirmDeadlineCollegeOverride(termCode, unitCode, deadlineIso) {
+  const term = String(termCode || '').trim();
+  const unit = String(unitCode || '').trim();
+  const d = normalizeTeacherConfirmDeadlineIso(deadlineIso);
+  if (!term || !unit || !d) return { ok: false, message: '请填写所属部门与截止日期。' };
+  if (!isTeacherConfirmDeadlineOnOrAfterSchool(term, d)) {
+    const schoolLabel = formatDateDisplayDdMmYyyy(getTeacherCourseConfirmationDeadlineIso(term)) || '全校截止日';
+    return { ok: false, message: `学院截止日不得早于全校默认（${schoolLabel}）。` };
+  }
+  if (!TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term]) {
+    TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term] = {};
+  }
+  TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term][unit] = d;
+  return { ok: true };
+}
+
+function removeTeacherConfirmDeadlineCollegeOverride(termCode, unitCode) {
+  const term = String(termCode || '').trim();
+  const unit = String(unitCode || '').trim();
+  if (!TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term]) return;
+  delete TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term][unit];
+  if (!Object.keys(TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term]).length) {
+    delete TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[term];
+  }
+}
+
+function setTeacherConfirmDeadlinePersonalOverride(termCode, staffId, deadlineIso) {
+  const term = String(termCode || '').trim();
+  const id = String(staffId || '').trim();
+  const d = normalizeTeacherConfirmDeadlineIso(deadlineIso);
+  if (!term || !id || !d) return { ok: false, message: '请选择教师并填写截止日期。' };
+  if (!TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term]) {
+    TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term] = {};
+  }
+  TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term][id] = { deadline: d };
+  return { ok: true };
+}
+
+function removeTeacherConfirmDeadlinePersonalOverride(termCode, staffId) {
+  const term = String(termCode || '').trim();
+  const id = String(staffId || '').trim();
+  if (!TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term]) return;
+  delete TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term][id];
+  if (!Object.keys(TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term]).length) {
+    delete TEACHER_CONFIRM_DEADLINE_PERSONAL_OVERRIDES[term];
+  }
+}
+
+function openTeacherConfirmDeadlineCollegeDrawer(termCode) {
+  const term = String(termCode || '').trim();
+  if (!term || !getCourseTimeSettingByTermCode(term)) {
+    alert('请先配置该学期的开课时间。');
+    return;
+  }
+  teacherConfirmDeadlineCollegeDrawerTermCode = term;
+  teacherConfirmDeadlineCollegeEditingUnit = null;
+  renderTeacherConfirmDeadlineCollegeDrawer();
+  document.getElementById('drawer-teacher-confirm-deadline-college-backdrop')?.classList.add('open');
+  document.getElementById('drawer-teacher-confirm-deadline-college')?.classList.add('open');
+}
+
+function closeTeacherConfirmDeadlineCollegeDrawer() {
+  document.getElementById('drawer-teacher-confirm-deadline-college-backdrop')?.classList.remove('open');
+  document.getElementById('drawer-teacher-confirm-deadline-college')?.classList.remove('open');
+  teacherConfirmDeadlineCollegeDrawerTermCode = '';
+  teacherConfirmDeadlineCollegeEditingUnit = null;
+}
+
+function getTeacherConfirmDeadlineCollegeConfiguredUnits(termCode) {
+  const map = TEACHER_CONFIRM_DEADLINE_COLLEGE_OVERRIDES[String(termCode || '').trim()] || {};
+  return Object.keys(map).filter(code => SCHOOL_CODES.includes(code)).sort();
+}
+
+function renderTeacherConfirmDeadlineCollegeDrawer() {
+  const term = teacherConfirmDeadlineCollegeDrawerTermCode;
+  const titleEl = document.getElementById('teacher-confirm-deadline-college-title');
+  const defaultEl = document.getElementById('teacher-confirm-deadline-college-default');
+  const tbody = document.getElementById('teacher-confirm-deadline-college-body');
+  if (!term || !tbody) return;
+  if (titleEl) titleEl.textContent = `授课确认截止（按单位）· ${formatCourseTermDisplay(term)}`;
+  const schoolIso = getTeacherCourseConfirmationDeadlineIso(term);
+  const schoolLabel = formatDateDisplayDdMmYyyy(schoolIso) || '—';
+  if (defaultEl) {
+    defaultEl.innerHTML = `<strong>全校默认截止日</strong>：<code>${escapeHtml(schoolLabel)}</code>（未单独设置的单位沿用此日期；学院截止日不得早于全校）`;
+  }
+  const units = getTeacherConfirmDeadlineCollegeConfiguredUnits(term);
+  tbody.innerHTML = units.length
+    ? units.map((unitCode, idx) => {
+      const iso = getTeacherConfirmDeadlineCollegeOverride(term, unitCode);
+      const editing = teacherConfirmDeadlineCollegeEditingUnit === unitCode;
+      const codeEsc = escapeHtml(unitCode);
+      const name = SCHOOL_NAME_MAP[unitCode] || unitCode;
+      if (editing) {
+        return `<tr class="is-editing-row">
+          <td class="col-index col-center">${idx + 1}</td>
+          <td class="col-center"><code>${codeEsc}</code></td>
+          <td>${escapeHtml(name)}</td>
+          <td>
+            <input class="input input-sm cuot-date-input course-datetime-input" type="text"
+              id="tcdc-deadline-${codeEsc}"
+              value="${escapeHtml(formatDateDisplayDdMmYyyy(iso) || '')}"
+              data-iso-value="${escapeHtml(iso)}"
+              data-hm-value=""
+              data-picker-title="学院授课确认截止"
+              data-unbounded="1"
+              placeholder="dd/mm/yyyy" autocomplete="off" readonly
+              onclick="openCuotDatePicker(this, event)">
+          </td>
+          <td class="col-actions">
+            <button type="button" class="offering-group-status-inline-save" title="确认" aria-label="确认" onclick="saveTeacherConfirmDeadlineCollegeUnit('${codeEsc}')">✓</button>
+            <button type="button" class="offering-group-status-inline-cancel" title="取消" aria-label="取消" onclick="cancelTeacherConfirmDeadlineCollegeEdit()">取消</button>
+          </td>
+        </tr>`;
+      }
+      return `<tr>
+        <td class="col-index col-center">${idx + 1}</td>
+        <td class="col-center"><code>${codeEsc}</code></td>
+        <td>${escapeHtml(name)}</td>
+        <td class="col-center"><code>${escapeHtml(formatDateDisplayDdMmYyyy(iso) || '—')}</code></td>
+        <td class="col-actions">
+          <button type="button" class="offering-group-status-inline-edit" title="编辑" aria-label="编辑" onclick="editTeacherConfirmDeadlineCollegeUnit('${codeEsc}')">✎</button>
+          <button type="button" class="offering-group-status-inline-delete" title="删除" aria-label="删除" onclick="removeTeacherConfirmDeadlineCollegeUnit('${codeEsc}')">×</button>
+        </td>
+      </tr>`;
+    }).join('')
+    : `<tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px">尚未设置学院覆盖；未设置的单位按全校默认截止日。</td></tr>`;
+}
+
+function editTeacherConfirmDeadlineCollegeUnit(unitCode) {
+  teacherConfirmDeadlineCollegeEditingUnit = String(unitCode || '');
+  renderTeacherConfirmDeadlineCollegeDrawer();
+}
+
+function cancelTeacherConfirmDeadlineCollegeEdit() {
+  teacherConfirmDeadlineCollegeEditingUnit = null;
+  renderTeacherConfirmDeadlineCollegeDrawer();
+}
+
+function saveTeacherConfirmDeadlineCollegeUnit(unitCode) {
+  const term = teacherConfirmDeadlineCollegeDrawerTermCode;
+  const el = document.getElementById(`tcdc-deadline-${unitCode}`);
+  const iso = el?.dataset?.isoValue || parseDateDisplayDdMmYyyy(el?.value) || '';
+  const result = setTeacherConfirmDeadlineCollegeOverride(term, unitCode, iso);
+  if (!result.ok) {
+    alert(result.message);
+    return;
+  }
+  teacherConfirmDeadlineCollegeEditingUnit = null;
+  renderTeacherConfirmDeadlineCollegeDrawer();
+}
+
+function removeTeacherConfirmDeadlineCollegeUnit(unitCode) {
+  const term = teacherConfirmDeadlineCollegeDrawerTermCode;
+  if (!confirm(`确定删除 ${unitCode} 的学院授课确认截止覆盖？删除后该单位教师回退为全校默认日。`)) return;
+  removeTeacherConfirmDeadlineCollegeOverride(term, unitCode);
+  if (teacherConfirmDeadlineCollegeEditingUnit === unitCode) {
+    teacherConfirmDeadlineCollegeEditingUnit = null;
+  }
+  renderTeacherConfirmDeadlineCollegeDrawer();
+}
+
+function openTeacherConfirmDeadlineCollegeAddModal() {
+  const term = teacherConfirmDeadlineCollegeDrawerTermCode;
+  if (!term) return;
+  const configured = new Set(getTeacherConfirmDeadlineCollegeConfiguredUnits(term));
+  const sel = document.getElementById('tcdc-add-unit');
+  const deadlineEl = document.getElementById('tcdc-add-deadline');
+  if (sel) {
+    const addable = [...SCHOOL_CODES].filter(c => !configured.has(c)).sort();
+    sel.innerHTML = addable.length
+      ? addable.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)} · ${escapeHtml(SCHOOL_NAME_MAP[c] || c)}</option>`).join('')
+      : '<option value="">无可新增单位</option>';
+    sel.disabled = !addable.length;
+  }
+  if (deadlineEl) {
+    const school = getTeacherCourseConfirmationDeadlineIso(term);
+    deadlineEl.dataset.isoValue = school || '';
+    deadlineEl.dataset.hmValue = '';
+    deadlineEl.value = school ? formatDateDisplayDdMmYyyy(school) : '';
+  }
+  openModal('modal-teacher-confirm-deadline-college-add');
+}
+
+function saveTeacherConfirmDeadlineCollegeAddModal() {
+  const term = teacherConfirmDeadlineCollegeDrawerTermCode;
+  const unit = document.getElementById('tcdc-add-unit')?.value || '';
+  const deadlineEl = document.getElementById('tcdc-add-deadline');
+  const iso = deadlineEl?.dataset?.isoValue || parseDateDisplayDdMmYyyy(deadlineEl?.value) || '';
+  const result = setTeacherConfirmDeadlineCollegeOverride(term, unit, iso);
+  if (!result.ok) {
+    alert(result.message);
+    return;
+  }
+  closeModal('modal-teacher-confirm-deadline-college-add');
+  renderTeacherConfirmDeadlineCollegeDrawer();
+}
+
+function getTeacherConfirmDeadlinePersonalScopeDeptCodes() {
+  return typeof getTeacherCourseConfirmationAdminVisibleDeptCodes === 'function'
+    ? getTeacherCourseConfirmationAdminVisibleDeptCodes()
+    : [...(typeof OFFERING_UNIT_CODES !== 'undefined' ? OFFERING_UNIT_CODES : SCHOOL_CODES)].sort();
+}
+
+function getTeacherConfirmDeadlinePersonalProgrammeOptions(deptCode = '') {
+  return typeof getTeacherCourseConfirmationAdminVisibleProgrammeCodes === 'function'
+    ? getTeacherCourseConfirmationAdminVisibleProgrammeCodes(deptCode)
+    : [];
+}
+
+function syncTeacherConfirmDeadlinePersonalFilterInputsFromState() {
+  const f = teacherConfirmDeadlinePersonalFilters;
+  const nameEl = document.getElementById('tcdp-filter-name');
+  const staffEl = document.getElementById('tcdp-filter-staff-id');
+  const deptEl = document.getElementById('tcdp-filter-dept');
+  const progEl = document.getElementById('tcdp-filter-programme');
+  if (nameEl) nameEl.value = f.name || '';
+  if (staffEl) staffEl.value = f.staffId || '';
+  if (deptEl) deptEl.value = f.department || '';
+  if (progEl) progEl.value = f.programme || '';
+  syncTeacherConfirmDeadlinePersonalTypeMultiselectDisplay();
+}
+
+function normalizeTeacherConfirmDeadlinePersonalTypeSelection(raw) {
+  const types = (typeof TEACHER_TYPE_CODES !== 'undefined' ? TEACHER_TYPE_CODES : []).slice();
+  const typeSet = new Set(types);
+  const list = Array.isArray(raw)
+    ? raw
+    : (raw ? [raw] : []);
+  return [...new Set(list.map(v => String(v || '').trim()).filter(v => v && typeSet.has(v)))];
+}
+
+function formatTeacherConfirmDeadlinePersonalTypeDisplay(selected) {
+  const list = normalizeTeacherConfirmDeadlinePersonalTypeSelection(selected);
+  if (!list.length) return '全部教师类型';
+  if (list.length <= 2) return list.join('、');
+  return `已选 ${list.length} 项`;
+}
+
+function syncTeacherConfirmDeadlinePersonalTypeMultiselectDisplay() {
+  const display = document.getElementById('tcdp-filter-type-display');
+  if (!display) return;
+  const selected = normalizeTeacherConfirmDeadlinePersonalTypeSelection(
+    teacherConfirmDeadlinePersonalFilters.teacherTypes
+  );
+  teacherConfirmDeadlinePersonalFilters.teacherTypes = selected;
+  display.textContent = formatTeacherConfirmDeadlinePersonalTypeDisplay(selected);
+  display.classList.toggle('placeholder', !selected.length);
+  const optionsRoot = document.getElementById('tcdp-filter-type-options');
+  if (!optionsRoot) return;
+  optionsRoot.querySelectorAll('input[type="checkbox"][data-tcdp-type]').forEach(cb => {
+    cb.checked = selected.includes(cb.value);
+  });
+}
+
+function fillTeacherConfirmDeadlinePersonalTypeMultiselectOptions() {
+  const optionsRoot = document.getElementById('tcdp-filter-type-options');
+  if (!optionsRoot) return;
+  const types = (typeof TEACHER_TYPE_CODES !== 'undefined' ? TEACHER_TYPE_CODES : []).slice();
+  const selected = new Set(
+    normalizeTeacherConfirmDeadlinePersonalTypeSelection(teacherConfirmDeadlinePersonalFilters.teacherTypes)
+  );
+  teacherConfirmDeadlinePersonalFilters.teacherTypes = [...selected];
+  optionsRoot.innerHTML = types.length
+    ? types.map(code => `<label class="clo-multiselect-option">
+        <input type="checkbox" data-tcdp-type value="${escapeHtml(code)}"${selected.has(code) ? ' checked' : ''}
+          onchange="onTeacherConfirmDeadlinePersonalTypeToggle(event)">
+        <span>${escapeHtml(code)}</span>
+      </label>`).join('')
+    : '<div class="clo-multiselect-empty">暂无教师类型</div>';
+  syncTeacherConfirmDeadlinePersonalTypeMultiselectDisplay();
+}
+
+function toggleTeacherConfirmDeadlinePersonalTypeDropdown(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  const dd = document.getElementById('tcdp-filter-type-dropdown');
+  const trigger = document.getElementById('tcdp-filter-type-trigger');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeTeacherConfirmDeadlinePersonalTypeDropdown();
+  if (willOpen) {
+    fillTeacherConfirmDeadlinePersonalTypeMultiselectOptions();
+    dd.hidden = false;
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
+  }
+  ensureTeacherConfirmDeadlinePersonalTypeOutsideClose();
+}
+
+function closeTeacherConfirmDeadlinePersonalTypeDropdown() {
+  const dd = document.getElementById('tcdp-filter-type-dropdown');
+  const trigger = document.getElementById('tcdp-filter-type-trigger');
+  if (dd) dd.hidden = true;
+  if (trigger) trigger.setAttribute('aria-expanded', 'false');
+}
+
+function ensureTeacherConfirmDeadlinePersonalTypeOutsideClose() {
+  if (window._tcdpTypeMsOutsideBound) return;
+  window._tcdpTypeMsOutsideBound = true;
+  document.addEventListener('click', (e) => {
+    const modal = document.getElementById('modal-teacher-confirm-deadline-personal');
+    if (!modal?.classList.contains('open')) return;
+    if (e.target.closest?.('#tcdp-filter-type-ms')) return;
+    closeTeacherConfirmDeadlinePersonalTypeDropdown();
+  });
+}
+
+function onTeacherConfirmDeadlinePersonalTypeToggle(event) {
+  event?.stopPropagation?.();
+  const optionsRoot = document.getElementById('tcdp-filter-type-options');
+  if (!optionsRoot) return;
+  const selected = [...optionsRoot.querySelectorAll('input[type="checkbox"][data-tcdp-type]:checked')]
+    .map(cb => cb.value);
+  teacherConfirmDeadlinePersonalFilters.teacherTypes =
+    normalizeTeacherConfirmDeadlinePersonalTypeSelection(selected);
+  syncTeacherConfirmDeadlinePersonalTypeMultiselectDisplay();
+}
+
+function fillTeacherConfirmDeadlinePersonalFilterOptions() {
+  const deptEl = document.getElementById('tcdp-filter-dept');
+  const progEl = document.getElementById('tcdp-filter-programme');
+  const scopeDepts = getTeacherConfirmDeadlinePersonalScopeDeptCodes();
+  const curDept = teacherConfirmDeadlinePersonalFilters.department || '';
+  const curProg = teacherConfirmDeadlinePersonalFilters.programme || '';
+  if (deptEl) {
+    deptEl.innerHTML = `<option value="">全部所属部门</option>`
+      + scopeDepts.map(code =>
+        `<option value="${escapeHtml(code)}"${code === curDept ? ' selected' : ''}>${escapeHtml(code)}</option>`
+      ).join('');
+    if (curDept && !scopeDepts.includes(curDept)) {
+      teacherConfirmDeadlinePersonalFilters.department = '';
+      deptEl.value = '';
+    }
+  }
+  const programmes = getTeacherConfirmDeadlinePersonalProgrammeOptions(
+    teacherConfirmDeadlinePersonalFilters.department || ''
+  );
+  if (progEl) {
+    progEl.innerHTML = `<option value="">全部所属专业</option>`
+      + programmes.map(code =>
+        `<option value="${escapeHtml(code)}"${code === curProg ? ' selected' : ''}>${escapeHtml(code)}</option>`
+      ).join('');
+    if (curProg && !programmes.includes(curProg)) {
+      teacherConfirmDeadlinePersonalFilters.programme = '';
+      progEl.value = '';
+    }
+  }
+  fillTeacherConfirmDeadlinePersonalTypeMultiselectOptions();
+  syncTeacherConfirmDeadlinePersonalFilterInputsFromState();
+}
+
+function readTeacherConfirmDeadlinePersonalFiltersFromDom() {
+  const optionsRoot = document.getElementById('tcdp-filter-type-options');
+  const selectedFromDom = optionsRoot
+    ? [...optionsRoot.querySelectorAll('input[type="checkbox"][data-tcdp-type]:checked')].map(cb => cb.value)
+    : teacherConfirmDeadlinePersonalFilters.teacherTypes;
+  teacherConfirmDeadlinePersonalFilters = {
+    name: (document.getElementById('tcdp-filter-name')?.value || '').trim(),
+    staffId: (document.getElementById('tcdp-filter-staff-id')?.value || '').trim(),
+    department: document.getElementById('tcdp-filter-dept')?.value || '',
+    programme: document.getElementById('tcdp-filter-programme')?.value || '',
+    teacherTypes: normalizeTeacherConfirmDeadlinePersonalTypeSelection(selectedFromDom)
+  };
+}
+
+function onTeacherConfirmDeadlinePersonalDeptFilterChange() {
+  teacherConfirmDeadlinePersonalFilters.department = document.getElementById('tcdp-filter-dept')?.value || '';
+  teacherConfirmDeadlinePersonalFilters.programme = '';
+  fillTeacherConfirmDeadlinePersonalFilterOptions();
+}
+
+function queryTeacherConfirmDeadlinePersonalList() {
+  readTeacherConfirmDeadlinePersonalFiltersFromDom();
+  fillTeacherConfirmDeadlinePersonalFilterOptions();
+  renderTeacherConfirmDeadlinePersonalTeacherTable();
+}
+
+function resetTeacherConfirmDeadlinePersonalFilters() {
+  teacherConfirmDeadlinePersonalFilters = {
+    name: '',
+    staffId: '',
+    department: '',
+    programme: '',
+    teacherTypes: []
+  };
+  closeTeacherConfirmDeadlinePersonalTypeDropdown();
+  fillTeacherConfirmDeadlinePersonalFilterOptions();
+  renderTeacherConfirmDeadlinePersonalTeacherTable();
+}
+
+function getTeacherTypeCode(staffId) {
+  const id = String(staffId || '').trim();
+  if (!id) return '';
+  const fromPool = typeof buildMockTeacherPickerPool === 'function'
+    ? buildMockTeacherPickerPool().find(t => t.staffId === id)
+    : null;
+  return String(fromPool?.teacherType || '').trim();
+}
+
+/** 管辖范围内教师主数据（不限是否有本学期授课确认任务） */
+function listTeacherConfirmDeadlinePersonalScopedTeachers(_termCode) {
+  const college = typeof resolveTeacherCourseConfirmationAdminCollege === 'function'
+    ? resolveTeacherCourseConfirmationAdminCollege()
+    : '';
+  const f = teacherConfirmDeadlinePersonalFilters;
+  const nameQ = String(f.name || '').trim().toLowerCase();
+  const staffQ = String(f.staffId || '').trim().toLowerCase();
+  const deptQ = String(f.department || '').trim();
+  const progQ = String(f.programme || '').trim();
+  const typeQ = normalizeTeacherConfirmDeadlinePersonalTypeSelection(f.teacherTypes);
+  const pool = typeof buildMockTeacherPickerPool === 'function' ? buildMockTeacherPickerPool() : [];
+  return pool
+    .filter(t => {
+      const id = String(t?.staffId || '').trim();
+      if (!id) return false;
+      if (typeof isOfferingTbcTeacher === 'function' && isOfferingTbcTeacher(id)) return false;
+      if (typeof isTeacherVisibleToCourseConfirmationAdmin === 'function'
+        && !isTeacherVisibleToCourseConfirmationAdmin(id)) {
+        return false;
+      }
+      if (typeof isTeacherInCourseConfirmationAdminCollege === 'function'
+        && !isTeacherInCourseConfirmationAdminCollege(id, college)) {
+        return false;
+      }
+      if (nameQ && !String(t.name || '').toLowerCase().includes(nameQ)) return false;
+      if (staffQ && !id.toLowerCase().includes(staffQ)) return false;
+      if (deptQ && String(t.departmentCode || '') !== deptQ) return false;
+      if (progQ && String(t.programmeCode || '') !== progQ) return false;
+      if (typeQ.length && !typeQ.includes(String(t.teacherType || '').trim())) return false;
+      return true;
+    })
+    .map(t => ({
+      staffId: String(t.staffId),
+      name: t.name || '',
+      teacherType: t.teacherType || '',
+      departmentCode: t.departmentCode || '',
+      programmeCode: t.programmeCode || ''
+    }))
+    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN')
+      || String(a.staffId || '').localeCompare(String(b.staffId || '')));
+}
+
+function openTeacherConfirmDeadlinePersonalModal() {
+  const term = typeof resolveTeacherCourseConfirmationAdminTermCode === 'function'
+    ? resolveTeacherCourseConfirmationAdminTermCode()
+    : '';
+  if (!term) {
+    alert('请先选择开课学期。');
+    return;
+  }
+  teacherConfirmDeadlinePersonalSelectedIds = new Set();
+  teacherConfirmDeadlinePersonalFilters = {
+    name: '',
+    staffId: '',
+    department: '',
+    programme: '',
+    teacherTypes: []
+  };
+  const titleEl = document.getElementById('tcdp-modal-title');
+  if (titleEl) titleEl.textContent = `个人截止时间设置 · ${formatCourseTermDisplay(term)}`;
+  closeTeacherConfirmDeadlinePersonalTypeDropdown();
+  fillTeacherConfirmDeadlinePersonalFilterOptions();
+  renderTeacherConfirmDeadlinePersonalTeacherTable();
+  openModal('modal-teacher-confirm-deadline-personal');
+  const modal = document.getElementById('modal-teacher-confirm-deadline-personal');
+  if (modal && typeof bindCellFloatTips === 'function') {
+    bindCellFloatTips(modal, '.tcdp-init-tip[data-tip]', { alwaysShow: true });
+  }
+}
+
+function renderTeacherConfirmDeadlinePersonalTeacherTable() {
+  const term = typeof resolveTeacherCourseConfirmationAdminTermCode === 'function'
+    ? resolveTeacherCourseConfirmationAdminTermCode()
+    : '';
+  const tbody = document.getElementById('tcdp-teacher-body');
+  const checkAll = document.getElementById('tcdp-check-all');
+  if (!tbody) return;
+  const teachers = listTeacherConfirmDeadlinePersonalScopedTeachers(term);
+  const validIds = new Set(teachers.map(t => String(t.staffId)));
+  [...teacherConfirmDeadlinePersonalSelectedIds].forEach(id => {
+    if (!validIds.has(id)) teacherConfirmDeadlinePersonalSelectedIds.delete(id);
+  });
+  tbody.innerHTML = teachers.length
+    ? teachers.map(t => {
+      const id = String(t.staffId || '');
+      const idEsc = escapeHtml(id);
+      const teacherType = t.teacherType || getTeacherTypeCode(id) || '—';
+      const dept = t.departmentCode || getTeacherDepartmentCode(id) || '—';
+      const programmeLabel = t.programmeCode
+        || (typeof getTeacherProgrammeCode === 'function' ? getTeacherProgrammeCode(id) : '')
+        || '—';
+      const resolved = resolveTeacherConfirmDeadline(term, id);
+      const dateLabel = formatDateDisplayDdMmYyyy(resolved.date) || '—';
+      const checked = teacherConfirmDeadlinePersonalSelectedIds.has(id) ? ' checked' : '';
+      return `<tr>
+        <td class="col-center col-check">
+          <input type="checkbox" class="tcdp-row-check" value="${idEsc}"${checked}
+            aria-label="选择 ${escapeHtml(t.name || id)}"
+            onchange="onTeacherConfirmDeadlinePersonalRowCheck(this)">
+        </td>
+        <td class="col-center"><code>${idEsc}</code></td>
+        <td>${escapeHtml(t.name || '—')}</td>
+        <td class="col-center">${escapeHtml(teacherType)}</td>
+        <td class="col-center"><code>${escapeHtml(dept)}</code></td>
+        <td class="col-center"><code>${escapeHtml(programmeLabel)}</code></td>
+        <td class="col-center"><code>${escapeHtml(dateLabel)}</code></td>
+      </tr>`;
+    }).join('')
+    : `<tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">当前管辖范围内暂无教师</td></tr>`;
+  if (checkAll) {
+    const n = teachers.length;
+    const selected = teachers.filter(t => teacherConfirmDeadlinePersonalSelectedIds.has(String(t.staffId))).length;
+    checkAll.disabled = !n;
+    checkAll.checked = n > 0 && selected === n;
+    checkAll.indeterminate = selected > 0 && selected < n;
+  }
+  const modal = document.getElementById('modal-teacher-confirm-deadline-personal');
+  if (modal && typeof bindCellFloatTips === 'function') {
+    bindCellFloatTips(modal, '.tcdp-init-tip[data-tip]', { alwaysShow: true });
+  }
+}
+
+function openTeacherConfirmDeadlinePersonalSetModal() {
+  const ids = [...teacherConfirmDeadlinePersonalSelectedIds];
+  if (!ids.length) {
+    alert('请先勾选要设置的教师。');
+    return;
+  }
+  const hintEl = document.getElementById('tcdp-set-hint');
+  if (hintEl) {
+    hintEl.hidden = true;
+    hintEl.textContent = '';
+  }
+  const deadlineEl = document.getElementById('tcdp-set-deadline');
+  if (deadlineEl) {
+    deadlineEl.dataset.isoValue = '';
+    deadlineEl.dataset.hmValue = '';
+    deadlineEl.value = '';
+  }
+  openModal('modal-teacher-confirm-deadline-personal-set');
+}
+
+function applyTeacherConfirmDeadlinePersonalBatch() {
+  const term = typeof resolveTeacherCourseConfirmationAdminTermCode === 'function'
+    ? resolveTeacherCourseConfirmationAdminTermCode()
+    : '';
+  const ids = [...teacherConfirmDeadlinePersonalSelectedIds];
+  if (!ids.length) {
+    alert('请先勾选要设置的教师。');
+    return;
+  }
+  const deadlineEl = document.getElementById('tcdp-set-deadline');
+  const iso = deadlineEl?.dataset?.isoValue || parseDateDisplayDdMmYyyy(deadlineEl?.value) || '';
+  if (!iso) {
+    alert('请选择授课确认截止日。');
+    return;
+  }
+  let failMsg = '';
+  let okCount = 0;
+  ids.forEach(staffId => {
+    const result = setTeacherConfirmDeadlinePersonalOverride(term, staffId, iso);
+    if (!result.ok) {
+      if (!failMsg) failMsg = result.message;
+      return;
+    }
+    okCount += 1;
+  });
+  if (failMsg && !okCount) {
+    alert(failMsg);
+    return;
+  }
+  closeModal('modal-teacher-confirm-deadline-personal-set');
+  renderTeacherConfirmDeadlinePersonalTeacherTable();
+  if (typeof renderTeacherCourseConfirmationAdminPage === 'function') {
+    renderTeacherCourseConfirmationAdminPage();
+  }
+  if (document.getElementById('page-teacher-course-confirmation')?.classList.contains('active')
+    && typeof renderTeacherCourseConfirmationPortalPage === 'function') {
+    renderTeacherCourseConfirmationPortalPage();
+  }
+  alert(failMsg
+    ? `已为 ${okCount} 位教师设置个人截止日；部分失败：${failMsg}`
+    : `已为 ${okCount} 位教师设置个人授课确认截止日。`);
+}
+
+function describeTeacherConfirmDeadlinePersonalInitFallback(term, staffIds) {
+  const schoolIso = getTeacherCourseConfirmationDeadlineIso(term);
+  const schoolLabel = formatDateDisplayDdMmYyyy(schoolIso) || '—';
+  let collegeCount = 0;
+  let schoolCount = 0;
+  const collegeLabels = new Set();
+  (staffIds || []).forEach(staffId => {
+    const unitCode = getTeacherDepartmentCode(staffId);
+    const collegeIso = getTeacherConfirmDeadlineCollegeOverride(term, unitCode);
+    if (collegeIso) {
+      collegeCount += 1;
+      const unitLabel = unitCode || '学院';
+      collegeLabels.add(`${unitLabel} ${formatDateDisplayDdMmYyyy(collegeIso) || collegeIso}`);
+    } else {
+      schoolCount += 1;
+    }
+  });
+  const parts = [];
+  if (collegeCount) {
+    parts.push(`${collegeCount} 位按学院（${[...collegeLabels].join('；')}）`);
+  }
+  if (schoolCount) {
+    parts.push(`${schoolCount} 位按学校（${schoolLabel}）`);
+  }
+  return {
+    collegeCount,
+    schoolCount,
+    summary: parts.join('；') || `按学校截止日期（${schoolLabel}）`
+  };
+}
+
+function initTeacherConfirmDeadlinePersonalBatch() {
+  const term = typeof resolveTeacherCourseConfirmationAdminTermCode === 'function'
+    ? resolveTeacherCourseConfirmationAdminTermCode()
+    : '';
+  const ids = [...teacherConfirmDeadlinePersonalSelectedIds];
+  if (!ids.length) {
+    alert('请先勾选要初始化的教师。');
+    return;
+  }
+  const fallback = describeTeacherConfirmDeadlinePersonalInitFallback(term, ids);
+  if (!confirm(`确定初始化已勾选的 ${ids.length} 位教师？将清除其个人截止日。${fallback.summary}。`)) return;
+  ids.forEach(staffId => removeTeacherConfirmDeadlinePersonalOverride(term, staffId));
+  renderTeacherConfirmDeadlinePersonalTeacherTable();
+  if (typeof renderTeacherCourseConfirmationAdminPage === 'function') {
+    renderTeacherCourseConfirmationAdminPage();
+  }
+  if (document.getElementById('page-teacher-course-confirmation')?.classList.contains('active')
+    && typeof renderTeacherCourseConfirmationPortalPage === 'function') {
+    renderTeacherCourseConfirmationPortalPage();
+  }
+}
+
+function onTeacherConfirmDeadlinePersonalRowCheck(checkbox) {
+  const id = String(checkbox?.value || '').trim();
+  if (!id) return;
+  if (checkbox.checked) teacherConfirmDeadlinePersonalSelectedIds.add(id);
+  else teacherConfirmDeadlinePersonalSelectedIds.delete(id);
+  const term = typeof resolveTeacherCourseConfirmationAdminTermCode === 'function'
+    ? resolveTeacherCourseConfirmationAdminTermCode()
+    : '';
+  const teachers = listTeacherConfirmDeadlinePersonalScopedTeachers(term);
+  const checkAll = document.getElementById('tcdp-check-all');
+  if (checkAll) {
+    const n = teachers.length;
+    const selected = teachers.filter(t => teacherConfirmDeadlinePersonalSelectedIds.has(String(t.staffId))).length;
+    checkAll.checked = n > 0 && selected === n;
+    checkAll.indeterminate = selected > 0 && selected < n;
+  }
+}
+
+function toggleTeacherConfirmDeadlinePersonalSelectAll(checked) {
+  const term = typeof resolveTeacherCourseConfirmationAdminTermCode === 'function'
+    ? resolveTeacherCourseConfirmationAdminTermCode()
+    : '';
+  const teachers = listTeacherConfirmDeadlinePersonalScopedTeachers(term);
+  if (checked) {
+    teachers.forEach(t => teacherConfirmDeadlinePersonalSelectedIds.add(String(t.staffId)));
+  } else {
+    teacherConfirmDeadlinePersonalSelectedIds.clear();
+  }
+  renderTeacherConfirmDeadlinePersonalTeacherTable();
 }
 
 function parseDateDisplayDdMmYyyy(str) {
@@ -3454,12 +4249,21 @@ function formatCourseUnitOfferingSchoolWideRange(row) {
 
 function seedDemoCourseUnitOfferingTimes(settingId) {
   const row = getCourseTimeSettingById(settingId);
-  if (!row || row.termCode !== '202609') return;
+  if (!row) return;
   const store = COURSE_UNIT_OFFERING_TIMES[settingId];
   if (!store || store.__demoSeeded) return;
-  store.SEM = { startAt: '2026-08-25 08:00:00', endAt: '2026-09-24 18:00:00' };
-  store.SCDS = { startAt: '2026-08-25 08:00:00', endAt: '2026-09-05 18:00:00' };
-  store.__demoSeeded = true;
+  if (row.termCode === '202609') {
+    store.SEM = { startAt: '2026-08-25 08:00:00', endAt: '2026-09-24 18:00:00' };
+    store.SCDS = { startAt: '2026-08-25 08:00:00', endAt: '2026-09-05 18:00:00' };
+    store.__demoSeeded = true;
+    return;
+  }
+  // 演示学期：单位行内可直接改「授课确认截止」（SEM 预置学院覆盖 22/01/2026）
+  if (row.termCode === '202604') {
+    store.SEM = { startAt: '2026-03-02 08:00:00', endAt: '2026-04-02 18:00:00' };
+    store.SCDS = { startAt: '2026-03-02 08:00:00', endAt: '2026-03-20 18:00:00' };
+    store.__demoSeeded = true;
+  }
 }
 
 function isCourseUnitOfferingTimeEditable(settingId, unitCode) {
@@ -3620,9 +4424,11 @@ function removeCourseUnitOfferingTimeUnit(unitCode, settingId = courseUnitOfferi
   openDeleteConfirm({
     title: '移除单位设置',
     message: `确定移除 <strong>${escapeHtml(unitCode)}</strong> 的单独开放时间吗？`,
-    hint: '移除后该单位将按全校开课时间范围操作。',
+    hint: '移除后该单位将按全校开课时间范围操作，学院授课确认截止覆盖一并清除。',
     onConfirm: () => {
       delete store[unitCode];
+      const termCode = getCourseTimeSettingById(settingId)?.termCode || '';
+      if (termCode) removeTeacherConfirmDeadlineCollegeOverride(termCode, unitCode);
       if (courseUnitOfferingTimeEditingUnitCode === unitCode) {
         courseUnitOfferingTimeEditingUnitCode = null;
       }
@@ -3795,6 +4601,22 @@ function saveCourseUnitOfferingTimeUnit(unitCode, settingId = courseUnitOffering
     if (!ok) return;
   }
   store[unitCode] = { startAt: startVal, endAt: endVal };
+  const termCode = row?.termCode || '';
+  const confirmEl = document.getElementById(`cuot-confirm-deadline-${unitCode}`);
+  if (confirmEl && termCode) {
+    const confirmIso = confirmEl.dataset?.isoValue || parseDateDisplayDdMmYyyy(confirmEl.value) || '';
+    const schoolIso = getTeacherCourseConfirmationDeadlineIso(termCode);
+    // 空或与全校相同：不保留学院覆盖，按全校默认
+    if (!confirmIso || (schoolIso && confirmIso === schoolIso)) {
+      removeTeacherConfirmDeadlineCollegeOverride(termCode, unitCode);
+    } else {
+      const result = setTeacherConfirmDeadlineCollegeOverride(termCode, unitCode, confirmIso);
+      if (!result.ok) {
+        alert(result.message);
+        return;
+      }
+    }
+  }
   closeCuotDatePicker();
   if (courseUnitOfferingTimeEditingUnitCode === unitCode) {
     courseUnitOfferingTimeEditingUnitCode = null;
@@ -11446,7 +12268,7 @@ function validateOfferingGroupCapacityWithinSection(sec, groupId, capacityLimit)
     && canEditOfferingGroupBasicsInRosterMode(sec)) {
     return true;
   }
-  // 选修开课安排：允许超过，保存时提高课程计划人数
+  // 选修开课安排：允许超过；保存时课程计划人数随各组上限合计同步（升降都调）
   if (typeof isElectiveOfferingGroupingSection === 'function' && isElectiveOfferingGroupingSection(sec)) {
     return true;
   }
@@ -11505,18 +12327,20 @@ function ensureSectionReservedSpotsCoverGroupCapacities(sec) {
   return shortfall;
 }
 
+/** 选修：课程计划人数 = 各组人数上限合计（升高/降低都同步）；专业开课不调用 */
 function applyElectiveSectionPlannedToCoverGroupCapacities(sec) {
   if (!sec || typeof isElectiveOfferingGroupingSection !== 'function' || !isElectiveOfferingGroupingSection(sec)) {
     return 0;
   }
+  if (!(sec.groups || []).length) return 0;
   const allocated = getOfferingGroupCapacityAllocated(sec);
-  const courseLimit = getSectionCapacityLimit(sec);
   if (!Number.isFinite(allocated) || allocated < 0) return 0;
-  if (Number.isFinite(courseLimit) && allocated <= courseLimit) return 0;
   const prev = Number(getSectionPlannedStudentCount(sec));
+  const prevN = Number.isFinite(prev) ? prev : 0;
+  if (allocated === prevN) return 0;
   sec.estimatedStudents = allocated;
   sec.studentCount = allocated;
-  return allocated - (Number.isFinite(prev) ? prev : 0);
+  return allocated - prevN;
 }
 
 function syncOfferingGroupEditCapacityHint() {
@@ -11536,18 +12360,20 @@ function syncOfferingGroupEditCapacityHint() {
     return;
   }
   if (electiveMode && !rosterMode) {
+    const electiveDefaultHint = '课程计划人数随各组人数上限合计同步调整（升高或降低）。';
     if (capacityRaw === '' || capacityRaw == null || !Number.isInteger(capacityLimit) || capacityLimit < 0) {
-      hint.textContent = '可超过课程人数上限；超过时将自动提高课程计划人数。';
+      hint.textContent = electiveDefaultHint;
       hint.classList.remove('is-warn');
       return;
     }
     const meta = getOfferingGroupCapacityOverCourseMeta(sec, groupId, capacityLimit);
-    if (meta.over) {
+    const plannedN = Number.isFinite(Number(meta.planned)) ? Number(meta.planned) : 0;
+    if (meta.nextTotal !== plannedN) {
       const nextCap = meta.nextTotal + meta.reserved;
-      hint.textContent = `各组人数上限合计将为 ${meta.nextTotal}，超过当前课程人数上限 ${meta.courseLimit}。确定后课程计划人数将调整为 ${meta.nextTotal}，人数上限为 ${nextCap}（含预留 ${meta.reserved}）。`;
+      hint.textContent = `各组人数上限合计将为 ${meta.nextTotal}。确定后课程计划人数将调整为 ${meta.nextTotal}，人数上限为 ${nextCap}（含预留 ${meta.reserved}）。`;
       hint.classList.add('is-warn');
     } else {
-      hint.textContent = '可超过课程人数上限；超过时将自动提高课程计划人数。';
+      hint.textContent = electiveDefaultHint;
       hint.classList.remove('is-warn');
     }
     return;
@@ -22652,6 +23478,7 @@ let teacherCourseConfirmationAdminTermCode = '';
 let teacherCourseConfirmationAdminNameQuery = '';
 let teacherCourseConfirmationAdminStaffIdQuery = '';
 let teacherCourseConfirmationAdminCourseCodeQuery = '';
+let teacherCourseConfirmationAdminProgrammeQuery = '';
 let teacherCourseConfirmationAdminQueryMoreOpen = false;
 let teacherCourseConfirmationAdminExtraQuery = {
   courseName: '',
@@ -22660,16 +23487,10 @@ let teacherCourseConfirmationAdminExtraQuery = {
   credits: '',
   weeks: '',
   method: '',
-  groups: '',
-  combined: '',
   studentMin: '',
   studentMax: '',
   weekly: '',
-  totalHours: '',
-  coord: '',
-  coordEmail: '',
-  coteach: '',
-  coteachEmail: ''
+  coord: ''
 };
 /** 教师端决策弹窗：指定课程班（行内「授课确认」）；为空则按勾选/全部待确认 */
 let teacherCourseConfirmationDecisionSectionIds = null;
@@ -22678,8 +23499,70 @@ let teacherCourseConfirmationSectionManageSectionId = '';
 
 const TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL = '__all__';
 
+/** 当前原型角色可见所属部门（开课单位） */
+function getTeacherCourseConfirmationAdminVisibleDeptCodes() {
+  const role = typeof getPrototypeRolePreset === 'function' ? getPrototypeRolePreset() : null;
+  const allUnits = [...(typeof OFFERING_UNIT_CODES !== 'undefined' ? OFFERING_UNIT_CODES : SCHOOL_CODES || [])];
+  if (!role || role.kind === 'academic') return allUnits.sort();
+  if (role.kind === 'college' && role.schoolCode) {
+    return [String(role.schoolCode).trim()].filter(Boolean);
+  }
+  const managed = typeof getPrototypeRoleManagedProgrammeCodes === 'function'
+    ? getPrototypeRoleManagedProgrammeCodes()
+    : new Set();
+  const depts = new Set();
+  (Array.isArray(PROGRAMME_CATALOG) ? PROGRAMME_CATALOG : []).forEach(row => {
+    const code = String(row?.code || '').trim().toUpperCase();
+    const school = String(row?.schoolCode || '').trim();
+    if (code && school && managed.has(code)) depts.add(school);
+  });
+  return [...depts].sort();
+}
+
+/** 当前原型角色可见所属专业；可再按所属部门收窄 */
+function getTeacherCourseConfirmationAdminVisibleProgrammeCodes(deptCode = '') {
+  const managed = typeof getPrototypeRoleManagedProgrammeCodes === 'function'
+    ? getPrototypeRoleManagedProgrammeCodes()
+    : new Set();
+  const dept = String(deptCode || '').trim();
+  const scopeDepts = new Set(
+    dept ? [dept] : getTeacherCourseConfirmationAdminVisibleDeptCodes()
+  );
+  return (Array.isArray(PROGRAMME_CATALOG) ? PROGRAMME_CATALOG : [])
+    .filter(row => {
+      const code = String(row?.code || '').trim().toUpperCase();
+      const school = String(row?.schoolCode || '').trim();
+      if (!code || !managed.has(code)) return false;
+      if (!scopeDepts.has(school)) return false;
+      return true;
+    })
+    .map(row => String(row.code).trim().toUpperCase())
+    .sort((a, b) => a.localeCompare(b, 'en'));
+}
+
+function isTeacherVisibleToCourseConfirmationAdmin(staffId) {
+  const id = String(staffId || '').trim();
+  if (!id) return false;
+  const role = typeof getPrototypeRolePreset === 'function' ? getPrototypeRolePreset() : null;
+  if (!role || role.kind === 'academic') return true;
+  const dept = typeof getTeacherDepartmentCode === 'function' ? getTeacherDepartmentCode(id) : '';
+  const prog = String(
+    typeof getTeacherProgrammeCode === 'function' ? getTeacherProgrammeCode(id) : ''
+  ).trim().toUpperCase();
+  const managed = typeof getPrototypeRoleManagedProgrammeCodes === 'function'
+    ? getPrototypeRoleManagedProgrammeCodes()
+    : new Set();
+  if (role.kind === 'college') {
+    const school = String(role.schoolCode || '').trim();
+    if (dept && dept === school) return true;
+    if (prog && managed.has(prog)) return true;
+    return false;
+  }
+  return !!(prog && managed.has(prog));
+}
+
 function getTeacherCourseConfirmationCollegeCodes() {
-  return [...(typeof OFFERING_UNIT_CODES !== 'undefined' ? OFFERING_UNIT_CODES : SCHOOL_CODES || [])].sort();
+  return getTeacherCourseConfirmationAdminVisibleDeptCodes();
 }
 
 function getTeacherCourseConfirmationAdminTermCodes() {
@@ -22709,6 +23592,7 @@ function queryTeacherCourseConfirmationAdminList() {
   teacherCourseConfirmationAdminNameQuery = document.getElementById('tcc-admin-name-input')?.value || '';
   teacherCourseConfirmationAdminStaffIdQuery = document.getElementById('tcc-admin-staff-id-input')?.value || '';
   teacherCourseConfirmationAdminCourseCodeQuery = document.getElementById('tcc-admin-course-code-input')?.value || '';
+  teacherCourseConfirmationAdminProgrammeQuery = document.getElementById('tcc-admin-programme-select')?.value || '';
   teacherCourseConfirmationAdminExtraQuery = {
     courseName: queryFieldValue('tcc-admin-course-name-input'),
     status: queryFieldValue('tcc-admin-status-select'),
@@ -22716,16 +23600,10 @@ function queryTeacherCourseConfirmationAdminList() {
     credits: queryFieldValue('tcc-admin-credits-input'),
     weeks: queryFieldValue('tcc-admin-weeks-input'),
     method: queryFieldValue('tcc-admin-method-input'),
-    groups: queryFieldValue('tcc-admin-groups-input'),
-    combined: queryFieldValue('tcc-admin-combined-input'),
     studentMin: queryFieldValue('tcc-admin-student-min'),
     studentMax: queryFieldValue('tcc-admin-student-max'),
     weekly: queryFieldValue('tcc-admin-weekly-input'),
-    totalHours: queryFieldValue('tcc-admin-total-hours-input'),
-    coord: queryFieldValue('tcc-admin-coord-input'),
-    coordEmail: queryFieldValue('tcc-admin-coord-email-input'),
-    coteach: queryFieldValue('tcc-admin-coteach-input'),
-    coteachEmail: queryFieldValue('tcc-admin-coteach-email-input')
+    coord: queryFieldValue('tcc-admin-coord-input')
   };
   const termEl = document.getElementById('tcc-admin-term-select');
   const collegeEl = document.getElementById('tcc-admin-college-select');
@@ -22745,6 +23623,7 @@ function resetTeacherCourseConfirmationAdminFilters() {
   teacherCourseConfirmationAdminNameQuery = '';
   teacherCourseConfirmationAdminStaffIdQuery = '';
   teacherCourseConfirmationAdminCourseCodeQuery = '';
+  teacherCourseConfirmationAdminProgrammeQuery = '';
   teacherCourseConfirmationAdminExtraQuery = {
     courseName: '',
     status: '',
@@ -22752,18 +23631,16 @@ function resetTeacherCourseConfirmationAdminFilters() {
     credits: '',
     weeks: '',
     method: '',
-    groups: '',
-    combined: '',
     studentMin: '',
     studentMax: '',
     weekly: '',
-    totalHours: '',
-    coord: '',
-    coordEmail: '',
-    coteach: '',
-    coteachEmail: ''
+    coord: ''
   };
-  teacherCourseConfirmationAdminCollege = TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL;
+  const role = typeof getPrototypeRolePreset === 'function' ? getPrototypeRolePreset() : null;
+  const deptCodes = getTeacherCourseConfirmationCollegeCodes();
+  teacherCourseConfirmationAdminCollege = (!role || role.kind === 'academic')
+    ? TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
+    : (deptCodes[0] || TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL);
   teacherCourseConfirmationFocusStaffId = '';
   const codes = getTeacherCourseConfirmationAdminTermCodes();
   teacherCourseConfirmationAdminTermCode = getDefaultOfferingTermCode() || codes[codes.length - 1] || '';
@@ -22783,35 +23660,26 @@ function filterTeacherCourseConfirmationAdminRows(rows) {
   const nameQ = teacherCourseConfirmationAdminNameQuery.trim().toLowerCase();
   const idQ = teacherCourseConfirmationAdminStaffIdQuery.trim().toLowerCase();
   const codeQ = teacherCourseConfirmationAdminCourseCodeQuery.trim().toLowerCase();
+  const progQ = String(teacherCourseConfirmationAdminProgrammeQuery || '').trim().toUpperCase();
   const extra = teacherCourseConfirmationAdminExtraQuery || {};
   return (rows || []).filter(row => {
     const teacherName = String(row.teacherName || row.name || '').toLowerCase();
     const staffId = String(row.staffId || '').toLowerCase();
     const courseCode = String(row.code || '').toLowerCase();
+    const programmeCode = String(row.programmeCode || '').trim().toUpperCase();
     if (nameQ && !teacherName.includes(nameQ)) return false;
     if (idQ && !staffId.includes(idQ)) return false;
     if (codeQ && !courseCode.includes(codeQ)) return false;
+    if (progQ && programmeCode !== progQ) return false;
     if (!matchesFuzzyText(row.courseName || row.name || '', extra.courseName)) return false;
     if (extra.status && String(row.status || '') !== extra.status) return false;
     if (!matchesFuzzyText(row.classification || '', extra.classification)) return false;
     if (!matchesFuzzyText(String(row.credits ?? ''), extra.credits)) return false;
     if (!matchesFuzzyText(String(row.teachingWeeks ?? row.weekRange ?? ''), extra.weeks)) return false;
     if (!matchesFuzzyText(row.teachingMethod || '', extra.method)) return false;
-    if (!matchesFuzzyText(String(row.groupCount ?? ''), extra.groups)) return false;
-    if (!matchesFuzzyText(String(row.combinedGroupsCount ?? ''), extra.combined)) return false;
     if (!matchesNumberRange(row.totalStudentNo, extra.studentMin, extra.studentMax)) return false;
     if (!matchesFuzzyText(String(row.weeklyHours ?? ''), extra.weekly)) return false;
-    if (!matchesFuzzyText(String(row.totalTeachingHours ?? ''), extra.totalHours)) return false;
     if (!matchesFuzzyText(row.coordinatorName || '', extra.coord)) return false;
-    if (!matchesFuzzyText(row.coordinatorEmail || '', extra.coordEmail)) return false;
-    const coTeachNames = row.coTeachingStaffList?.length
-      ? row.coTeachingStaffList.map(t => t.name).join('、')
-      : (row.coTeachingStaff || '');
-    const coTeachEmails = row.coTeachingStaffList?.length
-      ? row.coTeachingStaffList.map(t => t.email).join('、')
-      : (row.coTeachingStaffEmails || '');
-    if (!matchesFuzzyText(coTeachNames, extra.coteach)) return false;
-    if (!matchesFuzzyText(coTeachEmails, extra.coteachEmail)) return false;
     return true;
   });
 }
@@ -22842,20 +23710,15 @@ function exportTeacherCourseConfirmationAdminList() {
     credits: queryFieldValue('tcc-admin-credits-input'),
     weeks: queryFieldValue('tcc-admin-weeks-input'),
     method: queryFieldValue('tcc-admin-method-input'),
-    groups: queryFieldValue('tcc-admin-groups-input'),
-    combined: queryFieldValue('tcc-admin-combined-input'),
     studentMin: queryFieldValue('tcc-admin-student-min'),
     studentMax: queryFieldValue('tcc-admin-student-max'),
     weekly: queryFieldValue('tcc-admin-weekly-input'),
-    totalHours: queryFieldValue('tcc-admin-total-hours-input'),
-    coord: queryFieldValue('tcc-admin-coord-input'),
-    coordEmail: queryFieldValue('tcc-admin-coord-email-input'),
-    coteach: queryFieldValue('tcc-admin-coteach-input'),
-    coteachEmail: queryFieldValue('tcc-admin-coteach-email-input')
+    coord: queryFieldValue('tcc-admin-coord-input')
   };
   teacherCourseConfirmationAdminNameQuery = document.getElementById('tcc-admin-name-input')?.value || '';
   teacherCourseConfirmationAdminStaffIdQuery = document.getElementById('tcc-admin-staff-id-input')?.value || '';
   teacherCourseConfirmationAdminCourseCodeQuery = document.getElementById('tcc-admin-course-code-input')?.value || '';
+  teacherCourseConfirmationAdminProgrammeQuery = document.getElementById('tcc-admin-programme-select')?.value || '';
   const rows = collectTeacherCourseConfirmationAdminExportRows().map(row => {
     const coTeachNames = row.coTeachingStaffList?.length
       ? row.coTeachingStaffList.map(t => t.name).join('、')
@@ -22881,12 +23744,13 @@ function exportTeacherCourseConfirmationAdminList() {
       row.coordinatorEmail || '',
       coTeachNames,
       coTeachEmails,
-      row.departmentCode || ''
+      row.departmentCode || '',
+      row.programmeCode || ''
     ];
   });
   const term = resolveTeacherCourseConfirmationAdminTermCode();
   exportFilteredListOrWarn(
-    ['Status', 'Lecturer', 'Course Code', 'Course Name', 'Classification', 'Credits', 'Teaching Weeks', 'Teaching Method', 'No. of Group', 'No. of Combined Groups', 'Total Student No.', 'Weekly Teaching Hours', 'Total Teaching Hours', 'Course Coordinator', 'Email Address', 'Co-teaching Staff', 'Co-teaching Staff Email Address', '所属部门'],
+    ['Status', 'Lecturer', 'Course Code', 'Course Name', 'Classification', 'Credits', 'Teaching Weeks', 'Teaching Method', 'No. of Group', 'No. of Combined Groups', 'Total Student No.', 'Weekly Teaching Hours', 'Total Teaching Hours', 'Course Coordinator', 'Email Address', 'Co-teaching Staff', 'Co-teaching Staff Email Address', '所属部门', '所属专业'],
     rows,
     courseListExportFileStem('授课确认管理', term)
   );
@@ -22982,9 +23846,19 @@ function getTeacherDepartmentCode(staffId) {
   return '';
 }
 
+/** 教师主数据唯一所属专业（不从授课任务汇总） */
+function getTeacherProgrammeCode(staffId) {
+  const id = String(staffId || '').trim();
+  if (!id) return '';
+  const fromPool = buildMockTeacherPickerPool().find(t => t.staffId === id);
+  return String(fromPool?.programmeCode || '').trim();
+}
+
 function resolveTeacherCourseConfirmationAdminCollege() {
   const codes = getTeacherCourseConfirmationCollegeCodes();
-  if (teacherCourseConfirmationAdminCollege === TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL) {
+  const role = typeof getPrototypeRolePreset === 'function' ? getPrototypeRolePreset() : null;
+  const allowAll = !role || role.kind === 'academic';
+  if (allowAll && teacherCourseConfirmationAdminCollege === TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL) {
     return TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL;
   }
   if (teacherCourseConfirmationAdminCollege && codes.includes(teacherCourseConfirmationAdminCollege)) {
@@ -23003,7 +23877,9 @@ function resolveTeacherCourseConfirmationAdminCollege() {
     teacherCourseConfirmationAdminCollege = focusDept;
     return focusDept;
   }
-  teacherCourseConfirmationAdminCollege = codes[0] || TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL;
+  teacherCourseConfirmationAdminCollege = allowAll
+    ? TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
+    : (codes[0] || TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL);
   return teacherCourseConfirmationAdminCollege;
 }
 
@@ -23029,6 +23905,7 @@ function onTeacherCourseConfirmationAdminCollegeChange(value) {
   teacherCourseConfirmationAdminCollege = next === TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
     ? TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL
     : next;
+  teacherCourseConfirmationAdminProgrammeQuery = '';
   teacherCourseConfirmationFocusStaffId = '';
   resetListPage('teacherCourseConfirmationAdmin');
   refreshTeacherCourseConfirmationViews();
@@ -23598,7 +24475,32 @@ function collectTeacherCourseConfirmationSourceSections(termCode) {
   return [...byId.values()];
 }
 
-/** 同学期同 course code 下授课教师，排除本人与 Course Coordinator */
+/** 同课程班（section）下各小组学时安排的其他授课教师，排除本人与 Course Coordinator */
+function collectCoTeachingStaffForSection(teacherId, sec, coordinatorStaffId = '') {
+  const id = String(teacherId || '').trim();
+  const coordId = String(coordinatorStaffId || '').trim();
+  if (!id || !sec) return [];
+  const out = [];
+  const seen = new Set();
+  collectSectionAssignTeachers(sec).forEach(t => {
+    const sid = String(t?.staffId || '').trim();
+    if (!sid || sid === id) return;
+    if (coordId && sid === coordId) return;
+    if (typeof isOfferingTbcTeacher === 'function' && isOfferingTbcTeacher(sid)) return;
+    if (seen.has(sid)) return;
+    seen.add(sid);
+    const name = t.name || sid;
+    out.push({
+      staffId: sid,
+      name,
+      email: resolveOfferingTeacherEmail(sid, name)
+    });
+  });
+  return out.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh')
+    || String(a.staffId || '').localeCompare(String(b.staffId || '')));
+}
+
+/** 同学期同 course code 下授课教师，排除本人与 Course Coordinator（兼容旧调用；优先同班 collectCoTeachingStaffForSection） */
 function collectCoTeachingStaffForCourseCode(teacherId, termCode, courseCode, coordinatorStaffId = '') {
   const id = String(teacherId || '').trim();
   const code = String(courseCode || '').trim();
@@ -23610,21 +24512,15 @@ function collectCoTeachingStaffForCourseCode(teacherId, termCode, courseCode, co
     .filter(sec => isSectionEligibleForTeacherCourseConfirmation(sec))
     .filter(sec => String(sec.code || '').trim() === code)
     .forEach(sec => {
-      collectSectionAssignTeachers(sec).forEach(t => {
+      collectCoTeachingStaffForSection(id, sec, coordId).forEach(t => {
         const sid = String(t?.staffId || '').trim();
-        if (!sid || sid === id) return;
-        if (coordId && sid === coordId) return;
-        if (seen.has(sid)) return;
+        if (!sid || seen.has(sid)) return;
         seen.add(sid);
-        const name = t.name || sid;
-        out.push({
-          staffId: sid,
-          name,
-          email: resolveOfferingTeacherEmail(sid, name)
-        });
+        out.push(t);
       });
     });
-  return out;
+  return out.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh')
+    || String(a.staffId || '').localeCompare(String(b.staffId || '')));
 }
 
 function resolveOfferingTeacherEmail(staffId, name = '') {
@@ -23682,10 +24578,9 @@ function formatTccStackedCell(lines, options = {}) {
     .map(v => String(v == null ? '' : v).trim())
     .filter(v => v && v !== '—');
   if (!list.length) return '—';
-  if (list.length === 1) return escapeHtml(list[0]);
   const truncated = maxVisible != null && list.length > maxVisible;
   const visibleList = truncated ? list.slice(0, maxVisible) : list;
-  const containerTitle = truncated ? ` title="${escapeHtml(list.join('\n'))}"` : '';
+  const containerTitle = list.length > 1 || truncated ? ` title="${escapeHtml(list.join('\n'))}"` : '';
   return `<div class="tcc-stacked-lines${truncated ? ' is-truncated' : ''}"${containerTitle}>${visibleList.map(line =>
     `<div class="tcc-stacked-line" title="${escapeHtml(line)}">${escapeHtml(line)}</div>`
   ).join('')}${truncated ? '<div class="tcc-stacked-line tcc-stacked-line-ellipsis" aria-hidden="true">…</div>' : ''}</div>`;
@@ -23712,7 +24607,8 @@ function buildTeacherCourseConfirmationRows(teacherId, termCode) {
       const coord = getSectionCoordinator(sec);
       const coordId = String(coord?.staffId || '').trim();
       const coordName = coord?.name || '—';
-      const coTeaching = collectCoTeachingStaffForCourseCode(id, term, sec.code, coordId);
+      // 同课程班各小组学时安排上的其他教师（一人一行展示）
+      const coTeaching = collectCoTeachingStaffForSection(id, sec, coordId);
       const hoursCombinedWithCode = resolveTeacherConfirmationHoursCombinedWithCode(id, term, sec);
       return {
         sectionId: sec.id,
@@ -25376,6 +26272,7 @@ function listTeacherCourseConfirmationAdminRows(termCode, collegeCode = resolveT
       collectSectionAssignTeachers(sec).forEach(t => {
         if (!t?.staffId || map.has(t.staffId)) return;
         if (isOfferingTbcTeacher(t)) return;
+        if (!isTeacherVisibleToCourseConfirmationAdmin(t.staffId)) return;
         const dept = t.departmentCode || getTeacherDepartmentCode(t.staffId);
         if (college && dept !== college) return;
         syncTeacherCourseConfirmationPackageRows(t.staffId, term);
@@ -25390,6 +26287,7 @@ function listTeacherCourseConfirmationAdminRows(termCode, collegeCode = resolveT
           staffId: t.staffId,
           name: t.name || resolveOfferingTeacherDisplayName(t.staffId),
           departmentCode: dept || '—',
+          programmeCode: getTeacherProgrammeCode(t.staffId) || '',
           pkg,
           courseCount: rows.length,
           groupCount,
@@ -25422,10 +26320,20 @@ function listTeacherCourseConfirmationAdminCourseRows(termCode, collegeCode = re
         t.pkg
       );
       const sectionState = getTeacherCourseConfirmationSectionState(t.pkg, course.sectionId);
+      const liveSec = typeof findOfferingSectionByIdAnywhere === 'function'
+        ? findOfferingSectionByIdAnywhere(course.sectionId)
+        : null;
+      const liveCoordId = liveSec
+        ? String(getSectionCoordinator(liveSec)?.staffId || '').trim()
+        : '';
+      const liveCoTeaching = liveSec
+        ? collectCoTeachingStaffForSection(t.staffId, liveSec, liveCoordId)
+        : (course.coTeachingStaffList || []);
       out.push({
         staffId: t.staffId,
         teacherName: t.name,
         departmentCode: t.departmentCode,
+        programmeCode: t.programmeCode || getTeacherProgrammeCode(t.staffId) || '',
         status: sectionStatus,
         confirmedBy: sectionState.confirmedBy || null,
         feedback: sectionState.feedback || '',
@@ -25446,9 +26354,9 @@ function listTeacherCourseConfirmationAdminCourseRows(termCode, collegeCode = re
         hoursCombinedWithCode: course.hoursCombinedWithCode || '',
         coordinatorName: course.coordinatorName,
         coordinatorEmail: course.coordinatorEmail || '—',
-        coTeachingStaff: course.coTeachingStaff,
-        coTeachingStaffEmails: course.coTeachingStaffEmails || '—',
-        coTeachingStaffList: course.coTeachingStaffList || []
+        coTeachingStaff: liveCoTeaching.length ? liveCoTeaching.map(x => x.name).join('、') : '—',
+        coTeachingStaffEmails: liveCoTeaching.length ? liveCoTeaching.map(x => x.email).join('、') : '—',
+        coTeachingStaffList: liveCoTeaching
       });
     });
   });
@@ -25496,6 +26404,7 @@ const TEACHER_COURSE_CONFIRMATION_ADMIN_SORT_COLUMNS = {
   coTeachingStaff: { get: row => row.coTeachingStaff || '' },
   coTeachingStaffEmails: { get: row => row.coTeachingStaffEmails || '' },
   departmentCode: { get: row => row.departmentCode || '' },
+  programmeCode: { get: row => row.programmeCode || '' },
   history: { get: row => row.status || '' },
   actions: {
     get: row => TEACHER_COURSE_CONFIRMATION_ADMIN_STATUS_SORT[row.status] ?? 99,
@@ -25807,8 +26716,10 @@ function renderTeacherCourseConfirmationLetterGreeting(termCode) {
   </div>`;
 }
 
-function renderTeacherCourseConfirmationLetterNotes(termCode) {
-  const deadline = formatTeacherCourseConfirmationDeadlineDisplay(termCode);
+function renderTeacherCourseConfirmationLetterNotes(termCode, staffId = '') {
+  const deadline = staffId
+    ? formatResolvedTeacherConfirmDeadlineDisplay(termCode, staffId)
+    : formatTeacherCourseConfirmationDeadlineDisplay(termCode);
   const deadlineHtml = `<code>${escapeHtml(deadline)}</code>`;
   return `<div class="tcc-letter-notes">
     <p class="tcc-letter-notes-heading"><strong>Notes:</strong></p>
@@ -25970,7 +26881,7 @@ function renderTeacherCourseConfirmationLetterTable(rows, termCode, {
     ? renderTeacherCourseConfirmationLetterGreeting(termCode)
     : '';
   const notes = showLetterNotes
-    ? renderTeacherCourseConfirmationLetterNotes(termCode)
+    ? renderTeacherCourseConfirmationLetterNotes(termCode, historyStaffId || '')
     : '';
   return `<div class="tcc-letter">
     ${showLetterHead ? `<div class="tcc-letter-head"><strong>Course Confirmation · ${escapeHtml(termLabel)}</strong></div>` : ''}
@@ -26017,6 +26928,16 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
   const college = resolveTeacherCourseConfirmationAdminCollege();
   const collegeCodes = getTeacherCourseConfirmationCollegeCodes();
   const termCodes = getTeacherCourseConfirmationAdminTermCodes();
+  const role = typeof getPrototypeRolePreset === 'function' ? getPrototypeRolePreset() : null;
+  const allowAllColleges = !role || role.kind === 'academic';
+  const deptFilterForProgramme = isTeacherCourseConfirmationAdminCollegeAll(college)
+    ? ''
+    : college;
+  const programmeCodes = getTeacherCourseConfirmationAdminVisibleProgrammeCodes(deptFilterForProgramme);
+  if (teacherCourseConfirmationAdminProgrammeQuery
+    && !programmeCodes.includes(String(teacherCourseConfirmationAdminProgrammeQuery).toUpperCase())) {
+    teacherCourseConfirmationAdminProgrammeQuery = '';
+  }
   const allRows = listTeacherCourseConfirmationAdminCourseRows(term, college);
   const filteredRows = filterTeacherCourseConfirmationAdminRows(allRows);
   const listKey = 'teacherCourseConfirmationAdmin';
@@ -26034,9 +26955,17 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
     `<option value="${escapeHtml(code)}"${code === term ? ' selected' : ''}>${escapeHtml(formatCourseTermDisplay(code))}</option>`
   ).join('');
   const collegeOptions = [
-    `<option value="${TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL}"${isTeacherCourseConfirmationAdminCollegeAll(college) ? ' selected' : ''}>全部</option>`,
+    ...(allowAllColleges
+      ? [`<option value="${TEACHER_COURSE_CONFIRMATION_ADMIN_COLLEGE_ALL}"${isTeacherCourseConfirmationAdminCollegeAll(college) ? ' selected' : ''}>全部</option>`]
+      : []),
     ...collegeCodes.map(code =>
       `<option value="${escapeHtml(code)}"${code === college ? ' selected' : ''}>${escapeHtml(code)}</option>`
+    )
+  ].join('');
+  const programmeOptions = [
+    `<option value="">全部所属专业</option>`,
+    ...programmeCodes.map(code =>
+      `<option value="${escapeHtml(code)}"${String(teacherCourseConfirmationAdminProgrammeQuery || '').toUpperCase() === code ? ' selected' : ''}>${escapeHtml(code)}</option>`
     )
   ].join('');
   const emptyMsg = allRows.length && !rows.length
@@ -26086,17 +27015,16 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
         <td class="col-center col-total-hours">${formatTeacherCourseConfirmationHoursCell(row, 'total')}</td>
         <td class="col-center col-coord tcc-letter-nowrap" title="${escapeHtml(row.coordinatorName || '—')}">${escapeHtml(row.coordinatorName || '—')}</td>
         <td class="col-email tcc-letter-nowrap" title="${escapeHtml(row.coordinatorEmail || '—')}">${escapeHtml(row.coordinatorEmail || '—')}</td>
-        <td class="col-coteach tcc-letter-nowrap">${formatTccStackedCell(coTeachNames)}</td>
-        <td class="col-coteach-email tcc-letter-nowrap">${formatTccStackedCell(coTeachEmails)}</td>
+        <td class="col-center col-coteach tcc-letter-nowrap">${formatTccStackedCell(coTeachNames)}</td>
+        <td class="col-center col-coteach-email tcc-letter-nowrap">${formatTccStackedCell(coTeachEmails)}</td>
         <td class="col-center col-dept tcc-letter-nowrap" title="${escapeHtml(row.departmentCode || '—')}">${escapeHtml(row.departmentCode || '—')}</td>
+        <td class="col-center col-programme tcc-letter-nowrap" title="${escapeHtml(row.programmeCode || '—')}"><code>${escapeHtml(row.programmeCode || '—')}</code></td>
         <td class="actions col-center col-history">${historyLink}</td>
         <td class="actions col-center col-sticky-actions"><span class="tcc-admin-row-actions">${sendLink}<span class="tcc-admin-action-sep" aria-hidden="true">·</span>${proxyLink}</span></td>
       </tr>`;
     }).join('')
-    : `<tr><td colspan="21" class="text-muted" style="text-align:center;padding:28px">${emptyMsg}</td></tr>`;
-  mount.innerHTML = `<div class="tcc-admin is-list">
-    <div class="tcc-admin-toolbar">
-      <div class="tcc-admin-filters">
+    : `<tr><td colspan="22" class="text-muted" style="text-align:center;padding:28px">${emptyMsg}</td></tr>`;
+  const filtersHtml = `<div class="tcc-admin-filters">
         <div class="tcc-admin-field">
           <label for="tcc-admin-term-select">开课学期</label>
           <select class="input input-sm" id="tcc-admin-term-select" onchange="onTeacherCourseConfirmationAdminTermChange(this.value)">${termOptions || `<option value="">—</option>`}</select>
@@ -26106,16 +27034,16 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
           <select class="input input-sm" id="tcc-admin-college-select" onchange="onTeacherCourseConfirmationAdminCollegeChange(this.value)">${collegeOptions}</select>
         </div>
         <div class="tcc-admin-field">
+          <label for="tcc-admin-programme-select">所属专业</label>
+          <select class="input input-sm" id="tcc-admin-programme-select">${programmeOptions}</select>
+        </div>
+        <div class="tcc-admin-field">
           <label for="tcc-admin-name-input">教师</label>
           <input type="search" class="input input-sm tcc-admin-search-input" id="tcc-admin-name-input" placeholder="姓名" value="${escapeHtml(teacherCourseConfirmationAdminNameQuery)}" onkeydown="if(event.key==='Enter'){queryTeacherCourseConfirmationAdminList()}">
         </div>
         <div class="tcc-admin-field">
           <label for="tcc-admin-staff-id-input">教师号</label>
           <input type="search" class="input input-sm tcc-admin-search-input" id="tcc-admin-staff-id-input" placeholder="工号" value="${escapeHtml(teacherCourseConfirmationAdminStaffIdQuery)}" onkeydown="if(event.key==='Enter'){queryTeacherCourseConfirmationAdminList()}">
-        </div>
-        <div class="tcc-admin-field">
-          <label for="tcc-admin-course-code-input">课程号</label>
-          <input type="search" class="input input-sm tcc-admin-search-input" id="tcc-admin-course-code-input" placeholder="课程号" value="${escapeHtml(teacherCourseConfirmationAdminCourseCodeQuery)}" onkeydown="if(event.key==='Enter'){queryTeacherCourseConfirmationAdminList()}">
         </div>
         <div class="tcc-admin-field">
           <label for="tcc-admin-status-select">Status</label>
@@ -26129,6 +27057,10 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
           </select>
         </div>
         <div class="course-query-more" id="tcc-admin-query-more"${teacherCourseConfirmationAdminQueryMoreOpen ? '' : ' hidden'}>
+          <div class="tcc-admin-field">
+            <label for="tcc-admin-course-code-input">课程号</label>
+            <input type="search" class="input input-sm tcc-admin-search-input" id="tcc-admin-course-code-input" placeholder="课程号" value="${escapeHtml(teacherCourseConfirmationAdminCourseCodeQuery)}" onkeydown="if(event.key==='Enter'){queryTeacherCourseConfirmationAdminList()}">
+          </div>
           <div class="tcc-admin-field">
             <label for="tcc-admin-course-name-input">Course Name</label>
             <input class="input input-sm" id="tcc-admin-course-name-input" placeholder="Course Name" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.courseName)}">
@@ -26149,14 +27081,6 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
             <label for="tcc-admin-method-input">Teaching Method</label>
             <input class="input input-sm" id="tcc-admin-method-input" placeholder="Teaching Method" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.method)}">
           </div>
-          <div class="tcc-admin-field">
-            <label for="tcc-admin-groups-input">No. of Group</label>
-            <input class="input input-sm" id="tcc-admin-groups-input" placeholder="小组数" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.groups)}">
-          </div>
-          <div class="tcc-admin-field">
-            <label for="tcc-admin-combined-input">Combined Groups</label>
-            <input class="input input-sm" id="tcc-admin-combined-input" placeholder="合并组" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.combined)}">
-          </div>
           <div class="tcc-admin-field course-query-range-field">
             <label>Total Student No.</label>
             <div class="course-query-range">
@@ -26170,24 +27094,8 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
             <input class="input input-sm" id="tcc-admin-weekly-input" placeholder="周学时" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.weekly)}">
           </div>
           <div class="tcc-admin-field">
-            <label for="tcc-admin-total-hours-input">Total Hours</label>
-            <input class="input input-sm" id="tcc-admin-total-hours-input" placeholder="总学时" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.totalHours)}">
-          </div>
-          <div class="tcc-admin-field">
             <label for="tcc-admin-coord-input">Coordinator</label>
             <input class="input input-sm" id="tcc-admin-coord-input" placeholder="Coordinator" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.coord)}">
-          </div>
-          <div class="tcc-admin-field">
-            <label for="tcc-admin-coord-email-input">Coordinator Email</label>
-            <input class="input input-sm" id="tcc-admin-coord-email-input" placeholder="Email" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.coordEmail)}">
-          </div>
-          <div class="tcc-admin-field">
-            <label for="tcc-admin-coteach-input">Co-teaching Staff</label>
-            <input class="input input-sm" id="tcc-admin-coteach-input" placeholder="共同授课教师" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.coteach)}">
-          </div>
-          <div class="tcc-admin-field">
-            <label for="tcc-admin-coteach-email-input">Co-teaching Email</label>
-            <input class="input input-sm" id="tcc-admin-coteach-email-input" placeholder="共同授课邮箱" value="${escapeHtml(teacherCourseConfirmationAdminExtraQuery.coteachEmail)}">
           </div>
         </div>
         <div class="tcc-admin-filter-actions">
@@ -26195,12 +27103,13 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
           <button type="button" class="btn btn-outline btn-sm" onclick="resetTeacherCourseConfirmationAdminFilters()">重置</button>
           <button type="button" class="btn btn-ghost btn-sm course-query-more-toggle" data-query-more="tcc-admin-query-more" aria-expanded="${teacherCourseConfirmationAdminQueryMoreOpen ? 'true' : 'false'}" onclick="toggleTeacherCourseConfirmationAdminQueryMore(this)">${teacherCourseConfirmationAdminQueryMoreOpen ? '收起' : '展开'}</button>
         </div>
-      </div>
-    </div>
+      </div>`;
+  const listInnerHtml = `
     <div class="tcc-admin-table-bar">
       <div class="tcc-admin-batch-actions">
         <button type="button" class="btn btn-primary btn-sm" onclick="batchIssueTeacherCourseConfirmation()">发送授课确认</button>
         <button type="button" class="btn btn-outline btn-sm" onclick="batchProxyConfirmTeacherCourseConfirmation()">批量代确认</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="openTeacherConfirmDeadlinePersonalModal()">个人截止时间设置</button>
       </div>
       <button type="button" class="btn btn-outline btn-sm course-list-toolbar-export" onclick="exportTeacherCourseConfirmationAdminList()">导出</button>
     </div>
@@ -26225,9 +27134,10 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
           ${renderListSortTh(listKey, 'Total\nTeaching\nHours', 'totalTeachingHours', { center: true, extraClass: 'col-total-hours' })}
           ${renderListSortTh(listKey, 'Course\nCoordinator', 'coordinatorName', { center: true, extraClass: 'col-coord' })}
           ${renderListSortTh(listKey, 'Email Address', 'coordinatorEmail', { extraClass: 'col-email' })}
-          ${renderListSortTh(listKey, 'Co-teaching\nStaff', 'coTeachingStaff', { extraClass: 'col-coteach' })}
-          ${renderListSortTh(listKey, 'Co-teaching Staff\nEmail Address', 'coTeachingStaffEmails', { extraClass: 'col-coteach-email' })}
+          ${renderListSortTh(listKey, 'Co-teaching\nStaff', 'coTeachingStaff', { center: true, extraClass: 'col-coteach' })}
+          ${renderListSortTh(listKey, 'Co-teaching Staff\nEmail Address', 'coTeachingStaffEmails', { center: true, extraClass: 'col-coteach-email' })}
           ${renderListSortTh(listKey, '所属部门', 'departmentCode', { center: true, extraClass: 'col-dept' })}
+          ${renderListSortTh(listKey, '所属专业', 'programmeCode', { center: true, extraClass: 'col-programme' })}
           ${renderListSortTh(listKey, 'History', 'history', { center: true, extraClass: 'col-history' })}
           ${renderListSortTh(listKey, 'Actions', 'actions', { center: true, extraClass: 'col-sticky-actions' })}
         </tr></thead>
@@ -26236,8 +27146,15 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
     </div>
     <div class="table-footer">
       <div class="pagination" id="${paginationId}"></div>
-    </div>
-  </div>`;
+    </div>`;
+  // 筛选与表格分卡（对齐 Teaching Load）；无独立 filters 挂载点时回退同一卡片
+  const filtersMount = document.getElementById(String(mountId || '').replace(/-body$/, '-filters'));
+  if (filtersMount) {
+    filtersMount.innerHTML = filtersHtml;
+    mount.innerHTML = `<div class="tcc-admin is-list">${listInnerHtml}</div>`;
+  } else {
+    mount.innerHTML = `<div class="tcc-admin is-list"><div class="tcc-admin-toolbar">${filtersHtml}</div>${listInnerHtml}</div>`;
+  }
   renderListPagination(paginationId, 'teacherCourseConfirmationAdmin', paged.total);
   bindCellFloatTips(mount, '.offering-teacher-term-group-rule-btn[data-tip]', { alwaysShow: true });
 }
@@ -27504,6 +28421,8 @@ let teacherTeachingLoadSelectedTerms = null;
 let teacherTeachingLoadSelectedYears = null;
 /** 课程类型多选：含 `__all__` 表示全部；否则为 GE / ME / 实习 / Thesis */
 let teacherTeachingLoadSelectedCourseTypes = ['__all__'];
+/** 教师类型多选：含 `__all__` 表示全部；否则为 TEACHER_TYPE_CODES / TBC */
+let teacherTeachingLoadSelectedTeacherTypes = ['__all__'];
 /** 学期维度：已展开开课安排详情的教师工号 */
 const teacherTeachingLoadExpandedStaffIds = new Set();
 /** 超限标红阈值：按维度各自独立；null/空 = 不标红 */
@@ -27870,16 +28789,116 @@ function ensureTeacherTeachingLoadUnitFilter(root = getTeacherTeachingLoadRoot()
   if (cur && unitCodes.includes(cur)) sel.value = cur;
 }
 
-function ensureTeacherTeachingLoadTypeFilter(root = getTeacherTeachingLoadRoot()) {
-  const sel = ttlEl('type-filter', root);
-  if (!sel) return;
-  const cur = sel.value || '';
+function getTeacherTeachingLoadTypeOptions() {
   const codes = (typeof TEACHER_TYPE_CODES !== 'undefined' ? TEACHER_TYPE_CODES : []).slice();
   if (!codes.includes('TBC')) codes.push('TBC');
-  sel.innerHTML = '<option value="">全部教师类型</option>' + codes.map(c =>
-    `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+  return [
+    { value: '__all__', label: '全部' },
+    ...codes.map(c => ({ value: c, label: c }))
+  ];
+}
+
+function ensureTeacherTeachingLoadSelectedTeacherTypes() {
+  const valid = new Set(getTeacherTeachingLoadTypeOptions().map(o => o.value));
+  let selected = (teacherTeachingLoadSelectedTeacherTypes || [])
+    .map(String)
+    .filter(v => valid.has(v));
+  if (!selected.length || selected.includes('__all__')) {
+    teacherTeachingLoadSelectedTeacherTypes = ['__all__'];
+  } else {
+    teacherTeachingLoadSelectedTeacherTypes = selected;
+  }
+  return teacherTeachingLoadSelectedTeacherTypes.slice();
+}
+
+/** @returns {Set<string>|null} null = 不限类型 */
+function getTeacherTeachingLoadActiveTeacherTypeFilter() {
+  const selected = ensureTeacherTeachingLoadSelectedTeacherTypes();
+  if (!selected.length || selected.includes('__all__')) return null;
+  return new Set(selected);
+}
+
+function ensureTeacherTeachingLoadTypeMultiselect(root = getTeacherTeachingLoadRoot()) {
+  const options = ttlEl('type-options', root);
+  if (!options) return;
+  const selected = new Set(ensureTeacherTeachingLoadSelectedTeacherTypes());
+  options.innerHTML = getTeacherTeachingLoadTypeOptions().map(opt =>
+    `<label class="clo-multiselect-option">
+      <input type="checkbox" class="teacher-load-type-check" value="${escapeHtml(opt.value)}" ${selected.has(opt.value) ? 'checked' : ''} onchange="onTeacherTeachingLoadTypeToggle(this)">
+      <span>${escapeHtml(opt.label)}</span>
+    </label>`
   ).join('');
-  if (cur && codes.includes(cur)) sel.value = cur;
+  updateTeacherTeachingLoadTypeDisplay(root);
+}
+
+function updateTeacherTeachingLoadTypeDisplay(root = getTeacherTeachingLoadRoot()) {
+  const display = ttlEl('type-display', root);
+  if (!display) return;
+  const selected = ensureTeacherTeachingLoadSelectedTeacherTypes();
+  if (!selected.length || selected.includes('__all__')) {
+    display.textContent = '全部';
+    display.classList.remove('placeholder');
+    return;
+  }
+  display.textContent = selected.join('、');
+  display.classList.remove('placeholder');
+}
+
+function onTeacherTeachingLoadTypeToggle(checkbox) {
+  if (!checkbox) return;
+  const root = checkbox.closest('[data-ttl-root]') || getTeacherTeachingLoadRoot();
+  const checks = [...(ttlEl('type-options', root)?.querySelectorAll('.teacher-load-type-check') || [])];
+  const value = checkbox.value;
+  if (value === '__all__') {
+    if (checkbox.checked) {
+      checks.forEach(el => { el.checked = el.value === '__all__'; });
+    } else {
+      checkbox.checked = true;
+    }
+  } else if (checkbox.checked) {
+    const allCheck = checks.find(el => el.value === '__all__');
+    if (allCheck) allCheck.checked = false;
+  } else {
+    const anySpecific = checks.some(el => el.value !== '__all__' && el.checked);
+    if (!anySpecific) {
+      const allCheck = checks.find(el => el.value === '__all__');
+      if (allCheck) allCheck.checked = true;
+    }
+  }
+  const next = checks.filter(el => el.checked).map(el => el.value);
+  teacherTeachingLoadSelectedTeacherTypes = next.includes('__all__') || !next.length
+    ? ['__all__']
+    : next.filter(v => v !== '__all__');
+  updateTeacherTeachingLoadTypeDisplay(root);
+  const dd = ttlEl('type-dropdown', root);
+  const keepOpen = dd && !dd.hidden;
+  renderCourseTeacherTeachingLoadPage({
+    preserveTermDropdown: !!(ttlEl('term-dropdown', root) && !ttlEl('term-dropdown', root).hidden),
+    preserveCourseTypeDropdown: !!(ttlEl('course-type-dropdown', root) && !ttlEl('course-type-dropdown', root).hidden),
+    preserveTeacherTypeDropdown: keepOpen
+  });
+}
+
+function toggleTeacherTeachingLoadTypeDropdown(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const root = event.currentTarget?.closest?.('[data-ttl-root]') || getTeacherTeachingLoadRoot();
+  const dd = ttlEl('type-dropdown', root);
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeTeacherTeachingLoadTypeDropdown();
+  closeTeacherTeachingLoadTermDropdown();
+  closeTeacherTeachingLoadCourseTypeDropdown();
+  if (willOpen) {
+    ensureTeacherTeachingLoadTypeMultiselect(root);
+    dd.hidden = false;
+  }
+}
+
+function closeTeacherTeachingLoadTypeDropdown() {
+  document.querySelectorAll('[data-ttl="type-dropdown"]').forEach(dd => {
+    dd.hidden = true;
+  });
 }
 
 function formatTeacherTeachingLoadDepartmentCell(row) {
@@ -28335,6 +29354,7 @@ function setTeacherTeachingLoadDimension(dimension) {
   }
   closeTeacherTeachingLoadTermDropdown();
   closeTeacherTeachingLoadCourseTypeDropdown();
+  closeTeacherTeachingLoadTypeDropdown();
   renderCourseTeacherTeachingLoadPage();
 }
 
@@ -28439,6 +29459,7 @@ function toggleTeacherTeachingLoadTermDropdown(event) {
   const willOpen = dd.hidden;
   closeTeacherTeachingLoadTermDropdown();
   closeTeacherTeachingLoadCourseTypeDropdown();
+  closeTeacherTeachingLoadTypeDropdown();
   if (willOpen) {
     ensureTeacherTeachingLoadTermMultiselect(root);
     dd.hidden = false;
@@ -28508,7 +29529,8 @@ function onTeacherTeachingLoadCourseTypeToggle(checkbox) {
   const keepOpen = dd && !dd.hidden;
   renderCourseTeacherTeachingLoadPage({
     preserveTermDropdown: !!(ttlEl('term-dropdown', root) && !ttlEl('term-dropdown', root).hidden),
-    preserveCourseTypeDropdown: keepOpen
+    preserveCourseTypeDropdown: keepOpen,
+    preserveTeacherTypeDropdown: !!(ttlEl('type-dropdown', root) && !ttlEl('type-dropdown', root).hidden)
   });
 }
 
@@ -28521,6 +29543,7 @@ function toggleTeacherTeachingLoadCourseTypeDropdown(event) {
   const willOpen = dd.hidden;
   closeTeacherTeachingLoadCourseTypeDropdown();
   closeTeacherTeachingLoadTermDropdown();
+  closeTeacherTeachingLoadTypeDropdown();
   if (willOpen) {
     ensureTeacherTeachingLoadCourseTypeMultiselect(root);
     dd.hidden = false;
@@ -28537,13 +29560,13 @@ function getFilteredTeacherTeachingLoadRows(root = getTeacherTeachingLoadRoot())
   const staffIdQ = (ttlEl('staff-id-filter', root)?.value || '').trim().toLowerCase();
   const nameQ = (ttlEl('name-filter', root)?.value || '').trim().toLowerCase();
   const unitQ = (ttlEl('unit-filter', root)?.value || '').trim();
-  const typeQ = (ttlEl('type-filter', root)?.value || '').trim();
+  const typeFilter = getTeacherTeachingLoadActiveTeacherTypeFilter();
   const scopeTerms = getTeacherTeachingLoadScopeTermCodes();
   return buildLiveTeacherTeachingLoadRows(scopeTerms).filter(row => {
     if (staffIdQ && !String(row.staffId || '').toLowerCase().includes(staffIdQ)) return false;
     if (nameQ && !String(row.name || '').toLowerCase().includes(nameQ)) return false;
     if (unitQ && String(row.departmentCode || '').trim() !== unitQ) return false;
-    if (typeQ && resolveTeacherTeachingLoadTeacherType(row) !== typeQ) return false;
+    if (typeFilter && !typeFilter.has(resolveTeacherTeachingLoadTeacherType(row))) return false;
     const hasLoad = scopeTerms.some(term => getTeacherTeachingLoadHoursForTerm(row, term) > 0)
       || scopeTerms.some(term => getTeacherOfferingTermSectionDetailRows(
         row.staffId,
@@ -28604,6 +29627,7 @@ function buildTeacherTeachingLoadWeekSortColumns(weekCols) {
 function queryTeacherTeachingLoadPage() {
   closeTeacherTeachingLoadTermDropdown();
   closeTeacherTeachingLoadCourseTypeDropdown();
+  closeTeacherTeachingLoadTypeDropdown();
   renderCourseTeacherTeachingLoadPage();
 }
 
@@ -28612,20 +29636,20 @@ function resetTeacherTeachingLoadFilters() {
   const staffIdInput = ttlEl('staff-id-filter', root);
   const nameInput = ttlEl('name-filter', root);
   const unitSel = ttlEl('unit-filter', root);
-  const typeSel = ttlEl('type-filter', root);
   if (staffIdInput) staffIdInput.value = '';
   if (nameInput) nameInput.value = '';
   if (unitSel) unitSel.value = '';
-  if (typeSel) typeSel.value = '';
   teacherTeachingLoadSelectedTerms = getDefaultTeacherTeachingLoadTerms();
   teacherTeachingLoadSelectedYears = getDefaultTeacherTeachingLoadYears();
   teacherTeachingLoadSelectedCourseTypes = ['__all__'];
+  teacherTeachingLoadSelectedTeacherTypes = ['__all__'];
   ensureTeacherTeachingLoadTermMultiselect(root);
   ensureTeacherTeachingLoadCourseTypeMultiselect(root);
+  ensureTeacherTeachingLoadTypeMultiselect(root);
   ensureTeacherTeachingLoadUnitFilter(root);
-  ensureTeacherTeachingLoadTypeFilter(root);
   closeTeacherTeachingLoadTermDropdown();
   closeTeacherTeachingLoadCourseTypeDropdown();
+  closeTeacherTeachingLoadTypeDropdown();
   renderCourseTeacherTeachingLoadPage();
 }
 
@@ -28639,14 +29663,17 @@ function renderCourseTeacherTeachingLoadPage(opts = {}) {
   syncTeacherTeachingLoadDimensionChrome(root);
   const dd = ttlEl('term-dropdown', root);
   const typeDd = ttlEl('course-type-dropdown', root);
+  const teacherTypeDd = ttlEl('type-dropdown', root);
   const keepOpen = !!(opts.preserveTermDropdown && dd && !dd.hidden);
   const keepTypeOpen = !!(opts.preserveCourseTypeDropdown && typeDd && !typeDd.hidden);
+  const keepTeacherTypeOpen = !!(opts.preserveTeacherTypeDropdown && teacherTypeDd && !teacherTypeDd.hidden);
   ensureTeacherTeachingLoadTermMultiselect(root);
   ensureTeacherTeachingLoadCourseTypeMultiselect(root);
   ensureTeacherTeachingLoadUnitFilter(root);
-  ensureTeacherTeachingLoadTypeFilter(root);
+  ensureTeacherTeachingLoadTypeMultiselect(root);
   if (keepOpen && dd) dd.hidden = false;
   if (keepTypeOpen && typeDd) typeDd.hidden = false;
+  if (keepTeacherTypeOpen && teacherTypeDd) teacherTypeDd.hidden = false;
   const filteredRows = getFilteredTeacherTeachingLoadRows(root);
   const isYear = teacherTeachingLoadDimension === 'academic-year';
   const isWeek = teacherTeachingLoadDimension === 'week';
@@ -40799,6 +41826,19 @@ function buildMockTeacherPickerPool() {
     return ensureOfferingTbcInTeacherPickerPool(MOCK_TEACHER_PICKER_POOL);
   }
   const deptCodes = [...(typeof OFFERING_UNIT_CODES !== 'undefined' ? OFFERING_UNIT_CODES : SCHOOL_CODES)].sort();
+  const programmesByDept = {};
+  (Array.isArray(PROGRAMME_CATALOG) ? PROGRAMME_CATALOG : []).forEach(row => {
+    const dept = String(row?.schoolCode || '').trim();
+    const code = String(row?.code || '').trim();
+    if (!dept || !code) return;
+    if (!programmesByDept[dept]) programmesByDept[dept] = [];
+    if (!programmesByDept[dept].includes(code)) programmesByDept[dept].push(code);
+  });
+  const pickProgrammeForDept = (deptCode, salt = 0) => {
+    const list = programmesByDept[deptCode] || [];
+    if (!list.length) return '';
+    return list[Math.abs(salt) % list.length];
+  };
   const teachers = [
     { staffId: '2001210010', name: '肖云', teacherType: 'AC (CS)', gender: 'Female', departmentCode: deptCodes[0] || 'SEM' },
     { staffId: '2001180023', name: 'Prof. Lim Wei Jie', teacherType: 'AC (F)', gender: 'Male', departmentCode: deptCodes[0] || 'SEM' },
@@ -40838,7 +41878,9 @@ function buildMockTeacherPickerPool() {
   // extraNames.forEach((name, i) => { ... departmentCode: deptCodes[i % deptCodes.length] }); // 原按名字数量取模分配学院，部分学院教师偏少
   MOCK_TEACHER_PICKER_POOL = teachers.map((t, idx) => ({
     key: `${t.staffId}|${idx}`,
-    ...t
+    ...t,
+    // 教师主数据唯一所属专业：按所属部门从专业目录轮询分配；MPU 等无本科专业则为空
+    programmeCode: t.programmeCode || pickProgrammeForDept(t.departmentCode, idx)
   }));
   return ensureOfferingTbcInTeacherPickerPool(MOCK_TEACHER_PICKER_POOL);
 }
@@ -55157,27 +56199,28 @@ function resetOfferingGroupingAll() {
   if (!assertOfferingGroupingEditable('重置分组')) return;
   const groupCount = sec.groups?.length || 0;
   const assignCount = filterActiveGroupAssignments(sec, sec.groupAssignments).length;
-  const hasLinkedAssign = (sec.groupAssignments || []).some(row =>
-    isGroupAssignRowActive(sec, row) && !isGroupAssignRowScopeUnset(row)
-  );
-  if (!groupCount && !hasLinkedAssign) {
-    alert('当前没有可重置的分组。');
+  if (!groupCount && !assignCount) {
+    alert('当前没有可重置的分组或学时安排。');
     return;
   }
-  const assignHint = assignCount
-    ? `将保留已有 ${assignCount} 条学时安排（教师/周次/学时等不变），但清空其课程组绑定；重新分组或按课程班安排后，需手动为学时安排重新选择课程组。未选组前可保存，不可提交生效。`
-    : '学时类型设置与已有学时安排（若有）将保留。';
+  const parts = [];
+  if (groupCount) parts.push(`删除全部 ${groupCount} 个分组`);
+  if (assignCount) parts.push(`清空右侧 ${assignCount} 条学时安排（教师/周次/学时等）`);
+  parts.push('清除学生课程组关联');
   openDeleteConfirm({
     title: '重置分组',
-    message: `确定要重置本教学班的全部分组吗？`,
-    hint: `将删除全部 ${groupCount} 个分组，并清除学生课程组关联。${assignHint}`,
+    message: '确定要重置本教学班的分组与学时安排吗？',
+    hint: `${parts.join('；')}。学时类型设置将一并恢复默认，需重新维护安排。`,
     hintWarn: true,
     confirmLabel: '确定重置',
     confirmDanger: true,
     onConfirm: () => {
       sec.groups = [];
-      unlinkSectionGroupAssignmentsGroupScope(sec);
-      // 保留 groupAssignments / 学时类型设置；仅断开小组绑定
+      sec.groupAssignments = [];
+      resetSectionGroupAssignHoursModeIfEmpty(sec);
+      reconcileSharedTeachingSlotLinksAfterAssignmentChange(sec, {
+        reason: '重置分组已清空学时安排'
+      });
       sec.isGrouped = false;
       offeringGroupingSelectedGroupId = null;
       offeringGroupingAssignSelected.clear();
@@ -56020,6 +57063,11 @@ function deleteOfferingGroup(groupId) {
       }
       offeringGroupingAssignSelected.clear();
       sec.isGrouped = sec.groups.length > 0;
+      if (typeof isElectiveOfferingGroupingSection === 'function'
+        && isElectiveOfferingGroupingSection(sec)
+        && typeof applyElectiveSectionPlannedToCoverGroupCapacities === 'function') {
+        applyElectiveSectionPlannedToCoverGroupCapacities(sec);
+      }
       syncOfferingGroupStudentCounts(sec);
       renderOfferingGroupingPanel();
       renderCourseOfferingMajorPage();
@@ -56162,8 +57210,8 @@ function saveOfferingGroupEditModal() {
   const coverageMsgs = validateSectionGroupCapacityTotals(sec);
   if (reservedBump > 0) {
     alert(`已保存分组人数上限。各组上限合计超过原课程人数上限，已自动增加预留名额 ${reservedBump} 人，课程人数上限现为 ${getSectionCapacityLimit(sec)}。`);
-  } else if (plannedBump > 0) {
-    alert(`已保存分组人数上限。各组上限合计超过原课程人数上限，已自动将课程计划人数调整为 ${getSectionPlannedStudentCount(sec)}，人数上限现为 ${getSectionCapacityLimit(sec)}。`);
+  } else if (plannedBump !== 0) {
+    alert(`已保存分组人数上限。课程计划人数已按各组上限合计调整为 ${getSectionPlannedStudentCount(sec)}，人数上限现为 ${getSectionCapacityLimit(sec)}。`);
   } else if (coverageMsgs.length) {
     alert(coverageMsgs.join('\n'));
   }
@@ -67649,6 +68697,8 @@ document.addEventListener('click', e => {
   if (!teacherLoadTermWrap) closeTeacherTeachingLoadTermDropdown();
   const teacherLoadCourseTypeWrap = e.target.closest?.('[data-ttl="course-type-multiselect"]');
   if (!teacherLoadCourseTypeWrap) closeTeacherTeachingLoadCourseTypeDropdown();
+  const teacherLoadTypeWrap = e.target.closest?.('[data-ttl="type-multiselect"]');
+  if (!teacherLoadTypeWrap) closeTeacherTeachingLoadTypeDropdown();
   if (!e.target.closest('.slt-info-tip')) closeSltInfoTip();
 });
 

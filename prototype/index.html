@@ -1430,10 +1430,16 @@
                 </select>
               </div>
               <div class="course-time-query-field">
-                <label for="ogg-teacher-load-filter-type">教师类型</label>
-                <select class="input input-sm" id="ogg-teacher-load-filter-type" data-ttl="type-filter">
-                  <option value="">全部教师类型</option>
-                </select>
+                <label>教师类型</label>
+                <div class="clo-multiselect" data-ttl="type-multiselect">
+                  <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadTypeDropdown(event)">
+                    <span class="clo-multiselect-display" data-ttl="type-display">全部</span>
+                    <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                  </button>
+                  <div class="clo-multiselect-dropdown" data-ttl="type-dropdown" hidden>
+                    <div class="clo-multiselect-options" data-ttl="type-options"></div>
+                  </div>
+                </div>
               </div>
               <div class="course-time-query-field">
                 <label>课程类型</label>
@@ -1489,6 +1495,9 @@
           </div>
         </div>
         <div class="offering-grouping-teacher-confirmation" id="offering-grouping-teacher-confirmation" hidden>
+          <div class="card course-major-query-card tcc-admin-query-card">
+            <div id="offering-grouping-teacher-confirmation-filters"></div>
+          </div>
           <div class="card tcc-admin-card">
             <div id="offering-grouping-teacher-confirmation-body"></div>
           </div>
@@ -3303,10 +3312,16 @@
             </select>
           </div>
           <div class="course-time-query-field">
-            <label for="teacher-load-filter-type">教师类型</label>
-            <select class="input input-sm" id="teacher-load-filter-type" data-ttl="type-filter">
-              <option value="">全部教师类型</option>
-            </select>
+            <label>教师类型</label>
+            <div class="clo-multiselect" data-ttl="type-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleTeacherTeachingLoadTypeDropdown(event)">
+                <span class="clo-multiselect-display" data-ttl="type-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" data-ttl="type-dropdown" hidden>
+                <div class="clo-multiselect-options" data-ttl="type-options"></div>
+              </div>
+            </div>
           </div>
           <div class="course-time-query-field">
             <label>课程类型</label>
@@ -3369,6 +3384,9 @@
           <h1>授课确认管理</h1>
           <p class="subtitle">按教师维度下发系统内授课确认；支持管理端代确认</p>
         </div>
+      </div>
+      <div class="card course-major-query-card tcc-admin-query-card">
+        <div id="course-teacher-confirmation-admin-filters"></div>
       </div>
       <div class="card tcc-admin-card">
         <div id="course-teacher-confirmation-admin-body"></div>
@@ -6965,6 +6983,170 @@
     <button class="btn btn-ghost" type="button" onclick="closeMajorOfferingRetakeRosterDrawer()">关闭</button>
   </div>
 </aside>
+
+<!-- ═══ 抽屉：开课管理 · 授课确认截止（按单位） ═══ -->
+<div class="drawer-backdrop" id="drawer-teacher-confirm-deadline-college-backdrop" onclick="closeTeacherConfirmDeadlineCollegeDrawer()"></div>
+<aside class="drawer-panel drawer-course-unit-offering-time" id="drawer-teacher-confirm-deadline-college">
+  <div class="drawer-head">
+    <h3 id="teacher-confirm-deadline-college-title">授课确认截止（按单位）</h3>
+    <button class="modal-close" type="button" onclick="closeTeacherConfirmDeadlineCollegeDrawer()">×</button>
+  </div>
+  <div class="drawer-body course-unit-offering-time-body">
+    <div class="alert-info">可为需要更晚截止日的所属部门单独设置。未设置的单位沿用全校默认；学院截止日不得早于全校。教师确认信 Notes 按教师所属部门解析生效日。</div>
+    <p class="course-unit-offering-time-default text-muted" id="teacher-confirm-deadline-college-default"></p>
+    <div class="course-unit-offering-time-toolbar">
+      <button class="btn btn-outline btn-sm" type="button" onclick="openTeacherConfirmDeadlineCollegeAddModal()">新增</button>
+    </div>
+    <div class="table-scroll course-unit-offering-time-table-wrap">
+      <table class="data-table compact course-unit-offering-time-table">
+        <thead>
+          <tr>
+            <th class="col-index col-center">序号</th>
+            <th class="col-center">所属部门</th>
+            <th>名称</th>
+            <th class="col-center">授课确认截止日</th>
+            <th class="col-actions">操作</th>
+          </tr>
+        </thead>
+        <tbody id="teacher-confirm-deadline-college-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn btn-ghost" type="button" onclick="closeTeacherConfirmDeadlineCollegeDrawer()">关闭</button>
+  </div>
+</aside>
+
+<div class="modal-overlay modal-nested" id="modal-teacher-confirm-deadline-college-add">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>新增学院授课确认截止</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-confirm-deadline-college-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="req" for="tcdc-add-unit">所属部门</label>
+        <select class="input" id="tcdc-add-unit"></select>
+      </div>
+      <div class="form-item">
+        <label class="req" for="tcdc-add-deadline">授课确认截止日</label>
+        <input class="input cuot-date-input course-datetime-input" type="text" id="tcdc-add-deadline"
+          placeholder="dd/mm/yyyy" autocomplete="off" readonly
+          data-picker-title="学院授课确认截止"
+          data-unbounded="1"
+          onclick="openCuotDatePicker(this, event)">
+        <p class="form-hint">不得早于本学期全校默认截止日</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-confirm-deadline-college-add')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveTeacherConfirmDeadlineCollegeAddModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-teacher-confirm-deadline-personal">
+  <div class="modal modal-xl tcdp-modal">
+    <div class="modal-head">
+      <h3 id="tcdp-modal-title">个人截止时间设置</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-confirm-deadline-personal')">×</button>
+    </div>
+    <div class="modal-body tcdp-modal-body">
+      <div class="tcdp-filters tcc-admin-filters">
+        <div class="tcc-admin-field">
+          <label for="tcdp-filter-name">教师姓名</label>
+          <input type="search" class="input input-sm" id="tcdp-filter-name" placeholder="姓名"
+            onkeydown="if(event.key==='Enter'){queryTeacherConfirmDeadlinePersonalList()}">
+        </div>
+        <div class="tcc-admin-field">
+          <label for="tcdp-filter-staff-id">工号</label>
+          <input type="search" class="input input-sm" id="tcdp-filter-staff-id" placeholder="工号"
+            onkeydown="if(event.key==='Enter'){queryTeacherConfirmDeadlinePersonalList()}">
+        </div>
+        <div class="tcc-admin-field">
+          <label for="tcdp-filter-dept">所属部门</label>
+          <select class="input input-sm" id="tcdp-filter-dept" onchange="onTeacherConfirmDeadlinePersonalDeptFilterChange()"></select>
+        </div>
+        <div class="tcc-admin-field">
+          <label for="tcdp-filter-programme">所属专业</label>
+          <select class="input input-sm" id="tcdp-filter-programme"></select>
+        </div>
+        <div class="tcc-admin-field">
+          <label id="tcdp-filter-type-label">教师类型</label>
+          <div class="clo-multiselect tcdp-type-multiselect" id="tcdp-filter-type-ms" aria-labelledby="tcdp-filter-type-label">
+            <button type="button" class="clo-multiselect-trigger input input-sm" id="tcdp-filter-type-trigger"
+              onclick="toggleTeacherConfirmDeadlinePersonalTypeDropdown(event)"
+              aria-haspopup="listbox" aria-expanded="false">
+              <span class="clo-multiselect-display placeholder" id="tcdp-filter-type-display">全部教师类型</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="tcdp-filter-type-dropdown" hidden onclick="event.stopPropagation()">
+              <div class="clo-multiselect-options" id="tcdp-filter-type-options"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tcc-admin-filter-actions">
+          <button type="button" class="btn btn-primary btn-sm" onclick="queryTeacherConfirmDeadlinePersonalList()">查询</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="resetTeacherConfirmDeadlinePersonalFilters()">重置</button>
+        </div>
+      </div>
+      <div class="tcdp-toolbar">
+        <button type="button" class="btn btn-primary btn-sm" onclick="openTeacherConfirmDeadlinePersonalSetModal()">设置</button>
+        <span class="tcdp-init-wrap">
+          <button type="button" class="btn btn-outline btn-sm" onclick="initTeacherConfirmDeadlinePersonalBatch()">初始化</button>
+          <button type="button" class="tcdp-init-tip"
+            data-tip="已设学院截止日期则按学院初始化；未设学院则按学校截止日期。将清除所选教师的个人截止日。"
+            aria-label="初始化说明">!</button>
+        </span>
+      </div>
+      <div class="table-scroll tcdp-table-wrap">
+        <table class="data-table compact tcdp-teacher-table">
+          <thead>
+            <tr>
+              <th class="col-center col-check">
+                <input type="checkbox" id="tcdp-check-all" aria-label="全选" onchange="toggleTeacherConfirmDeadlinePersonalSelectAll(this.checked)">
+              </th>
+              <th class="col-center">教师号</th>
+              <th>姓名</th>
+              <th class="col-center">教师类型</th>
+              <th class="col-center">所属部门</th>
+              <th class="col-center">所属专业</th>
+              <th class="col-center">授课确认截止日期</th>
+            </tr>
+          </thead>
+          <tbody id="tcdp-teacher-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-confirm-deadline-personal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay modal-nested" id="modal-teacher-confirm-deadline-personal-set">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>设置授课确认截止日</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-teacher-confirm-deadline-personal-set')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" id="tcdp-set-hint" hidden></p>
+      <div class="form-item">
+        <label class="req" for="tcdp-set-deadline">授课确认截止日</label>
+        <input class="input cuot-date-input course-datetime-input" type="text" id="tcdp-set-deadline"
+          placeholder="dd/mm/yyyy" autocomplete="off" readonly
+          data-picker-title="个人授课确认截止"
+          data-unbounded="1"
+          onclick="openCuotDatePicker(this, event)">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-teacher-confirm-deadline-personal-set')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="applyTeacherConfirmDeadlinePersonalBatch()">确定</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ 抽屉：开课管理 · 单位开课时间设置 ═══ -->
 <div class="drawer-backdrop" id="drawer-course-unit-offering-time-backdrop" onclick="closeCourseUnitOfferingTimeDrawer()"></div>

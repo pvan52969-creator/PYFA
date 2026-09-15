@@ -152,8 +152,10 @@ body {
 }
 .main .page.page-list.active > .schedule-query-card,
 .main .page.page-list.active > .query-card {
-  z-index: 5;
+  z-index: 20;
   background: #fff;
+  overflow: visible;
+  position: relative;
 }
 .main .page.page-list.active > .legend-bar {
   margin-bottom: 8px;
@@ -219,6 +221,13 @@ body {
 .main .page.page-list.active > .tab-panel.active > .legend-bar,
 .main .page.page-list.active > .tab-panel.active > .filter-bar {
   flex-shrink: 0;
+}
+.main .page.page-list.active > .tab-panel.active > .schedule-query-card,
+.main .page.page-list.active > .tab-panel.active > .query-card {
+  position: relative;
+  z-index: 20;
+  overflow: visible;
+  background: #fff;
 }
 .main .page.page-list.active > .tab-panel.active > .card:not(.schedule-query-card):not(.query-card),
 .main .page.page-list.active > .tab-panel.active > .schedule-card:not(.schedule-query-card),
@@ -8634,6 +8643,21 @@ input#group-assign-recorded-hours {
   width: 96px;
   min-width: 96px;
 }
+/* 调课列表：事由列收窄，省略 + 悬停全文（我的申请 / 申请审批等） */
+.adjustment-table th.adj-reason-cell,
+.adjustment-table td.adj-reason-cell {
+  width: 160px;
+  max-width: 160px;
+  min-width: 120px;
+}
+.adjustment-table td.adj-reason-cell .cell-ellipsis-tip {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
 /* 调课申请记录：勾选列 + 序号 + 审批状态 + 审批阶段 */
 #page-adjustment-record .adjustment-table th:nth-child(-n+4),
 #page-adjustment-record .adjustment-table td:nth-child(-n+4) {
@@ -9031,7 +9055,9 @@ input#group-assign-recorded-hours {
 .adj-apply-leave-item { margin-bottom: 10px; }
 /* .form-item 的 display:flex 会盖掉原生 [hidden] */
 #adjustment-apply-leave-wrap[hidden],
-.adj-apply-leave-item[hidden] {
+.adj-apply-leave-item[hidden],
+.adj-apply-reason-item[hidden],
+.adj-apply-files-item[hidden] {
   display: none !important;
 }
 .adj-apply-reason-hint[hidden] {
@@ -9050,6 +9076,12 @@ input#group-assign-recorded-hours {
 .adj-reason-teacher-cell {
   line-height: 1.45;
   white-space: normal;
+}
+.adj-reason-hint-cell {
+  max-width: 220px;
+}
+.adj-reason-hint-cell .cell-ellipsis-tip {
+  cursor: help;
 }
 #modal-adjustment-reason-type .clo-multiselect { width: 100%; }
 #modal-adjustment-reason-type .clo-multiselect-trigger {
@@ -9298,7 +9330,7 @@ input#group-assign-recorded-hours {
   max-height: min(70vh, 720px);
 }
 #page-schedule-density-query .schedule-density-hint {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
 }
 #page-schedule-density-query .schedule-density-filter-grid {
   margin-bottom: 0;
@@ -9325,12 +9357,85 @@ input#group-assign-recorded-hours {
 #page-schedule-density-query .density-ms {
   width: 100%;
 }
+#page-schedule-density-query .density-ms .clo-multiselect-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#page-schedule-density-query .density-ms .clo-multiselect-display {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+#page-schedule-density-query .density-ms-trigger-clear {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: var(--text-3);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+#page-schedule-density-query .density-ms-trigger-clear:hover {
+  color: var(--text-1);
+  background: rgba(15, 23, 42, 0.08);
+}
 #page-schedule-density-query .density-ms-search {
   padding: 8px 8px 4px;
   flex-shrink: 0;
 }
 #page-schedule-density-query .density-ms-search .input {
   width: 100%;
+}
+#page-schedule-density-query .density-ms-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  max-height: 88px;
+  overflow-y: auto;
+}
+#page-schedule-density-query .density-ms-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--bg-2, #f3f4f6);
+  color: var(--text-1);
+  font-size: 12px;
+  line-height: 1.3;
+}
+#page-schedule-density-query .density-ms-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#page-schedule-density-query .density-ms-chip-x {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  width: 14px;
+  height: 14px;
+}
+#page-schedule-density-query .density-ms-chip-x:hover {
+  color: var(--red, #b91c1c);
 }
 #page-schedule-density-query .density-ms .clo-multiselect-dropdown:not([hidden]) {
   z-index: 60;
@@ -9340,7 +9445,7 @@ input#group-assign-recorded-hours {
   flex-direction: column;
 }
 #page-schedule-density-query .density-ms .clo-multiselect-options {
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
 }
 .schedule-density-date-range-item .schedule-density-date-range {
@@ -9417,7 +9522,7 @@ input#group-assign-recorded-hours {
 .adj-room-picker-table tr.is-current-room .srf-col-pick,
 .adj-room-picker-table tr.is-current-room .srf-col-room { background: var(--bg-2); }
 
-/* ???? ? ???? */
+/* 调课详情 · Staff Details / Approval Log */
 .adj-detail-info {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px;
   padding: 14px 16px; background: var(--bg-2); border-radius: 8px; margin-bottom: 18px;
@@ -9426,7 +9531,7 @@ input#group-assign-recorded-hours {
 .adj-detail-field.full { grid-column: 1 / -1; }
 .adj-detail-field-break { grid-column: 1; }
 .adj-detail-k { color: var(--text-3); flex: 0 0 96px; }
-.adj-detail-v { color: var(--text-1); font-weight: 500; flex: 1; }
+.adj-detail-v { color: var(--text-1); font-weight: 500; flex: 1; min-width: 0; }
 .adj-detail-files { display: flex; flex-wrap: wrap; gap: 6px; font-weight: 400; }
 .adj-detail-file { font-size: 12px; color: var(--blue-700); background: #eef4ff; border-radius: 5px; padding: 2px 8px; }
 .adj-detail-section { margin-bottom: 18px; }
@@ -9443,6 +9548,37 @@ input#group-assign-recorded-hours {
 .adj-log-meta { font-size: 12px; color: var(--text-2); margin-top: 2px; }
 .adj-log-note { font-size: 12px; color: var(--text-2); margin-top: 3px; background: var(--bg-2); border-radius: 5px; padding: 4px 8px; }
 
+/* 调课申请详情抽屉：图2 Staff Details 紧凑双列 + 英文字段 */
+#modal-adjustment-detail .adj-detail-section-staff .adj-detail-info {
+  gap: 3px 28px; padding: 10px 14px; margin-bottom: 0;
+}
+#modal-adjustment-detail .adj-detail-section-staff .adj-detail-field,
+#modal-adjustment-detail .adj-detail-log-summary .adj-detail-field {
+  gap: 6px; line-height: 1.35;
+}
+#modal-adjustment-detail .adj-detail-section-staff .adj-detail-k,
+#modal-adjustment-detail .adj-detail-log-summary .adj-detail-k {
+  color: var(--text-1); font-weight: 700; flex: 0 0 auto; min-width: 132px; white-space: nowrap;
+}
+#modal-adjustment-detail .adj-detail-section-staff .adj-detail-k::after,
+#modal-adjustment-detail .adj-detail-log-summary .adj-detail-k::after {
+  content: ':'; margin-left: 1px;
+}
+#modal-adjustment-detail .adj-detail-section-staff .adj-detail-v,
+#modal-adjustment-detail .adj-detail-log-summary .adj-detail-v {
+  font-weight: 400;
+}
+#modal-adjustment-detail .adj-detail-h-note {
+  font-size: 12px; font-weight: 400; color: var(--text-3); margin-left: 4px;
+}
+#modal-adjustment-detail .adj-detail-log-summary {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 16px;
+  padding: 8px 12px; margin-bottom: 10px; background: var(--bg-2); border-radius: 6px;
+}
+#modal-adjustment-detail .adj-detail-file { color: var(--text-1); }
+#modal-adjustment-detail .adj-detail-file-link {
+  color: var(--blue-700); text-decoration: underline; margin-left: 2px;
+}
 /* ???? ? ?????? */
 .adj-conflict-panel { display: flex; flex-direction: column; gap: 6px; }
 .adj-conflict-line {
@@ -11613,6 +11749,15 @@ code {
 }
 .schedule-query-card {
   margin-bottom: 12px;
+  overflow: visible;
+}
+.schedule-query-field:has(.ss-wrap.is-open),
+.schedule-query-field:has(.clo-multiselect-dropdown:not([hidden])) {
+  position: relative;
+  z-index: 40;
+}
+.ss-wrap.is-open {
+  z-index: 40;
 }
 /* 框架标准：查询条件 + 列表（上条件、下列表）
    一行最多 3 个条件，列宽对仗；按钮组固定第一行第 4 列，下方留空 */
@@ -11719,11 +11864,21 @@ code {
   flex-direction: column;
   overflow: hidden;
   margin-bottom: 0;
+  /* 去掉与 .schedule-tt-export-bar 叠加的外层 padding，避免导出条上方留白过大 */
+  padding: 0;
 }
 .main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-export-bar,
 .main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-fieldbar,
 .main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-no-schedule {
   flex-shrink: 0;
+}
+.main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-export-bar {
+  padding: 8px 16px;
+}
+.main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-no-schedule {
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-bottom: 12px;
 }
 .main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-timetable-scroll,
 .main .page.schedule-tt-query-page.active > .tab-panel.active .table-scroll {
@@ -15147,19 +15302,6 @@ code {
 }
 .list-export-menu button:hover {
   background: #f1f5f9;
-}
-.schedule-tt-export-check {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 2;
-  display: inline-flex;
-  margin: 0;
-  cursor: pointer;
-}
-.schedule-tt-export-check input {
-  margin: 0;
-  cursor: pointer;
 }
 
 /* ?? ?????????? ?? */

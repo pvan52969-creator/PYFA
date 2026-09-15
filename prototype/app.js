@@ -27913,6 +27913,7 @@ function registerScheduleChangeLogMetas() {
     fields: [
       { key: 'name', label: '原因类型' },
       { key: 'attachmentHint', label: '附件说明' },
+      { key: 'requireReason', label: '是否需填写申请事由', format: boolZh },
       { key: 'requireAttachment', label: '是否需上传附件', format: boolZh },
       { key: 'applyTypes', label: '适用调课类型', get: r => formatAdjustmentReasonApplyTypes(r?.applyTypes) },
       { key: 'teacherTypes', label: '适用教师', get: r => formatAdjustmentReasonTeacherTypes(r?.teacherTypes) },
@@ -45268,6 +45269,133 @@ function resetScheduleTeacherQuery() {
 }
 
 /** 按课程聚合的排课行 */
+const SCHEDULE_COURSE_TYPE_OPTIONS = [
+  { value: 'GE', label: 'GE' },
+  { value: 'ME', label: 'ME' },
+  { value: 'MPU', label: 'MPU' },
+  { value: 'UC', label: 'University Course' },
+  { value: 'MC', label: 'Major Core' },
+  { value: 'CC', label: 'Common Core' }
+];
+
+function formatScheduleCourseTypeLabel(code) {
+  const key = String(code || '').trim();
+  if (!key) return '—';
+  return SCHEDULE_COURSE_TYPE_OPTIONS.find(o => o.value === key)?.label || key;
+}
+
+function ensureScheduleCourseTypeFilterMultiselect() {
+  const options = document.getElementById('schedule-course-filter-type-options');
+  if (!options) return;
+  if (options.dataset.ready === 'v1') return;
+  options.innerHTML = SCHEDULE_COURSE_TYPE_OPTIONS.map(o =>
+    `<label class="clo-multiselect-option" onclick="event.stopPropagation()">
+      <input type="checkbox" class="schedule-course-filter-type-check" value="${escapeHtml(o.value)}" onchange="updateScheduleCourseTypeFilterDisplay()">
+      <span>${escapeHtml(o.label)}</span>
+    </label>`
+  ).join('');
+  options.dataset.ready = 'v1';
+  const dd = document.getElementById('schedule-course-filter-type-dropdown');
+  if (dd && !dd.dataset.boundStop) {
+    dd.addEventListener('click', e => e.stopPropagation());
+    dd.addEventListener('mousedown', e => e.stopPropagation());
+    dd.dataset.boundStop = '1';
+  }
+  bindScheduleCourseTypeFilterDocClose();
+}
+
+function getScheduleCourseTypeFilterSelected() {
+  ensureScheduleCourseTypeFilterMultiselect();
+  return [...document.querySelectorAll('#schedule-course-filter-type-options .schedule-course-filter-type-check:checked')]
+    .map(el => el.value)
+    .filter(Boolean);
+}
+
+function setScheduleCourseTypeFilterSelected(types) {
+  ensureScheduleCourseTypeFilterMultiselect();
+  const set = new Set((types || []).map(v => String(v || '').trim()).filter(Boolean));
+  document.querySelectorAll('#schedule-course-filter-type-options .schedule-course-filter-type-check').forEach(el => {
+    el.checked = set.has(el.value);
+  });
+  updateScheduleCourseTypeFilterDisplay();
+}
+
+function updateScheduleCourseTypeFilterDisplay() {
+  const display = document.getElementById('schedule-course-filter-type-display');
+  if (!display) return;
+  const selected = getScheduleCourseTypeFilterSelected();
+  const label = selected.map(formatScheduleCourseTypeLabel).filter(v => v && v !== '—').join('、');
+  if (label) {
+    display.textContent = label;
+    display.classList.remove('placeholder');
+  } else {
+    display.textContent = '全部';
+    display.classList.add('placeholder');
+  }
+}
+
+function closeScheduleCourseTypeFilterDropdown() {
+  const dd = document.getElementById('schedule-course-filter-type-dropdown');
+  if (dd) resetScheduleFixedMultiselectDropdown(dd);
+}
+
+function toggleScheduleCourseTypeFilterDropdown(event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  ensureScheduleCourseTypeFilterMultiselect();
+  const dd = document.getElementById('schedule-course-filter-type-dropdown');
+  const btn = document.getElementById('schedule-course-filter-type-btn');
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeScheduleCourseTypeFilterDropdown();
+  if (!willOpen) return;
+  dd.hidden = false;
+  positionScheduleFixedMultiselectDropdown(btn, dd, SCHEDULE_COURSE_TYPE_OPTIONS.length);
+}
+
+function bindScheduleCourseTypeFilterDocClose() {
+  if (bindScheduleCourseTypeFilterDocClose.bound) return;
+  bindScheduleCourseTypeFilterDocClose.bound = true;
+  document.addEventListener('click', e => {
+    if (e.target.closest('#schedule-course-filter-type-ms')) return;
+    closeScheduleCourseTypeFilterDropdown();
+  });
+}
+
+function resolveScheduleCourseTypeCode(code, catalogId, task) {
+  const codeNorm = String(code || '').replace(/\*$/, '').trim();
+  if (/^MPU/i.test(codeNorm)) return 'MPU';
+  const cat = (typeof COURSE_CATALOG !== 'undefined' ? COURSE_CATALOG : [])
+    .find(c => (catalogId && c.id === catalogId)
+      || (codeNorm && String(c.code || '').replace(/\*$/, '') === codeNorm));
+  if (/^MPU/i.test(String(cat?.code || '').replace(/\*$/, ''))) return 'MPU';
+  const sec = task?.id
+    ? COURSE_OFFERING_PLAN_STORE?.sections?.find(s => s.id === task.id)
+    : COURSE_OFFERING_PLAN_STORE?.sections?.find(s =>
+      String(s.code || '').replace(/\*$/, '') === codeNorm);
+  const cls = String(
+    cat?.classification
+    || (typeof getOfferingSectionCategoryDisplay === 'function' ? getOfferingSectionCategoryDisplay(sec || task) : '')
+    || sec?.category
+    || ''
+  );
+  if (/Mata Pelajaran Umum|\bMPU\b/i.test(cls)) return 'MPU';
+  if (/University Course/i.test(cls)) return 'UC';
+  if (/General Elective/i.test(cls)) return 'GE';
+  if (/Major Elective/i.test(cls)) return 'ME';
+  if (/Major Core/i.test(cls)) return 'MC';
+  if (/Common Core/i.test(cls)) return 'CC';
+  if (sec?.offeringType === 'ge' || task?.offeringType === 'ge') return 'GE';
+  return '';
+}
+
+function getScheduleCourseGroupTypeCode(row) {
+  const task = row?.tasks?.[0] || row;
+  const catalogId = task?.catalogId
+    || (typeof getScheduleTaskCatalogId === 'function' ? getScheduleTaskCatalogId(task) : '');
+  return resolveScheduleCourseTypeCode(row?.code || task?.code, catalogId, task);
+}
+
 function getScheduleCourseGroupRows() {
   const map = new Map();
   consolidateScheduleTasksByCourse(getScheduleTaskRows()).forEach(t => {
@@ -45282,6 +45410,7 @@ function getScheduleCourseGroupRows() {
     const schoolCode = g.tasks[0]?.schoolCode || getProgrammeSchoolCode(g.tasks[0]?.programmeKey) || '';
     return {
       code: g.code, name: g.name, dept, schoolCode, tasks: g.tasks,
+      courseType: getScheduleCourseGroupTypeCode({ code: g.code, tasks: g.tasks }),
       groupCount: stats.groupCount,
       doneUnits: stats.doneUnits,
       totalUnits: stats.groupCount,
@@ -45293,27 +45422,30 @@ function getScheduleCourseGroupRows() {
 function renderScheduleCoursePage() {
   const tbody = document.getElementById('schedule-course-body');
   rebuildScheduleTermSelects();
+  ensureScheduleCourseTypeFilterMultiselect();
   const termEl = document.getElementById('schedule-course-filter-term');
   if (termEl) { const term = getActiveOfferingTermSetting(); termEl.value = term ? formatCourseTermDisplay(term.termCode) : ''; }
   renderScheduleOfferingHint('schedule-course-hint');
   ensureScheduleGlobalDemo();
   ensureScheduleChangeLogDemo();
   if (!ensureScheduleTasksFromOffering()) {
-    renderScheduleEmptyRow(tbody, 9, '暂无课程数据，请先在开课管理中完成开课计划');
+    renderScheduleEmptyRow(tbody, 10, '暂无课程数据，请先在开课管理中完成开课计划');
     return;
   }
   let rows = getScheduleCourseGroupRows();
   const codeQ = (document.getElementById('schedule-course-filter-code')?.value || '').trim().toLowerCase();
   const nameQ = (document.getElementById('schedule-course-filter-name')?.value || '').trim().toLowerCase();
   const deptQ = (document.getElementById('schedule-course-filter-dept')?.value || '').trim().toLowerCase();
+  const typeQ = getScheduleCourseTypeFilterSelected();
   const status = document.getElementById('schedule-course-filter-status')?.value || '';
   if (codeQ) rows = rows.filter(r =>
     r.code.toLowerCase().includes(codeQ) || formatScheduleCourseCode(r.code).toLowerCase().includes(codeQ));
   if (nameQ) rows = rows.filter(r => (r.name || '').toLowerCase().includes(nameQ));
   if (deptQ) rows = rows.filter(r => (r.dept || '').toLowerCase().includes(deptQ));
+  if (typeQ.length) rows = rows.filter(r => typeQ.includes(r.courseType));
   rows = filterScheduleArrangeRowsByStatus(rows, status);
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 9, status ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
+    renderScheduleEmptyRow(tbody, 10, status || typeQ.length || codeQ || nameQ || deptQ ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
     return;
   }
   tbody.innerHTML = rows.map((r, idx) => {
@@ -45322,6 +45454,7 @@ function renderScheduleCoursePage() {
     <td class="col-index">${idx + 1}</td>
     <td><strong>${escapeHtml(formatScheduleCourseCode(r.code))}</strong></td>
     <td>${escapeHtml(r.name)}</td>
+    <td class="col-center">${escapeHtml(formatScheduleCourseTypeLabel(r.courseType))}</td>
     <td>${escapeHtml(r.dept)}</td>
     <td class="col-center">${r.groupCount || 0}</td>
     <td class="col-center">${r.doneUnits}</td>
@@ -46980,6 +47113,8 @@ function resetScheduleCourseQuery() {
   ['schedule-course-filter-code', 'schedule-course-filter-name', 'schedule-course-filter-dept', 'schedule-course-filter-status'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  setScheduleCourseTypeFilterSelected([]);
+  closeScheduleCourseTypeFilterDropdown();
   renderScheduleCoursePage();
 }
 
@@ -47443,10 +47578,7 @@ function renderScheduleTimetableBlock(entry, opts = {}) {
   const title = `${task.code} ${task.name || ''} ${groupName !== '—' ? groupName : ''} · ${slot.weeks || task.weeks || ''}`;
   const tag = (isStart || opts.forceFull) ? renderScheduleTimetableBlockTag(slot, task) : '';
   const inner = tag + lines.map(renderScheduleTimetableBlockLine).join('');
-  const check = (isStart || opts.forceFull) && task && task.id
-    ? '<label class="schedule-tt-export-check" onclick="event.stopPropagation()"><input type="checkbox" class="list-export-check" value="' + escapeHtml(String(task.id)) + '" aria-label="选择课程"></label>'
-    : '';
-  return '<div class="' + cls + '" title="' + escapeHtml(title.trim()) + '">' + check + inner + '</div>';
+  return '<div class="' + cls + '" title="' + escapeHtml(title.trim()) + '">' + inner + '</div>';
 }
 
 function renderScheduleTimetableFieldBar(containerId) {
@@ -48382,16 +48514,8 @@ function exportScheduleTimetableByMode(kind, mode) {
   }
   let tasks = allTasks;
   if (mode === 'selected') {
-    const ids = new Set(collectListExportCheckedValues('schedule-' + kind + '-tt-grid'));
-    if (!ids.size) {
-      alert('请先勾选要导出的课程');
-      return;
-    }
-    tasks = allTasks.filter(t => ids.has(String(t.id)));
-    if (!tasks.length) {
-      alert('请先勾选要导出的课程');
-      return;
-    }
+    alert('图形课表不支持按选择项导出，请使用按查询条件导出');
+    return;
   }
   exportScheduleTimetableDataRows(kind, tasks);
 }
@@ -59170,15 +59294,37 @@ function adjustmentDensityStudentHasTeacher(stu, teacherIds) {
 function resolveAdjustmentDensityTeacherIds(filters) {
   const rows = typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : [];
   let list = rows;
-  if (filters.teacherId) {
-    const q = filters.teacherId.toLowerCase();
+  const teacherIds = Array.isArray(filters.teacherIds)
+    ? filters.teacherIds
+    : (Array.isArray(filters.teacherId) ? filters.teacherId : null);
+  const teacherNames = Array.isArray(filters.teacherNames)
+    ? filters.teacherNames
+    : (Array.isArray(filters.teacherName) ? filters.teacherName : null);
+  if (teacherIds) {
+    if (teacherIds.length) {
+      const set = new Set(teacherIds.map(v => String(v || '').trim()).filter(Boolean));
+      list = list.filter(t => set.has(String(t.teacherId || '').trim()));
+    }
+  } else if (filters.teacherId) {
+    const q = String(filters.teacherId).toLowerCase();
     list = list.filter(t => String(t.teacherId || '').toLowerCase().includes(q));
   }
-  if (filters.teacherName) {
-    const q = filters.teacherName.toLowerCase();
+  if (teacherNames) {
+    if (teacherNames.length) {
+      const set = new Set(teacherNames.map(v => String(v || '').trim()).filter(Boolean));
+      list = list.filter(t => set.has(String(t.name || '').trim()));
+    }
+  } else if (filters.teacherName) {
+    const q = String(filters.teacherName).toLowerCase();
     list = list.filter(t => String(t.name || '').toLowerCase().includes(q));
   }
   return list.map(t => t.teacherId);
+}
+
+function densitySelectedList(value) {
+  if (Array.isArray(value)) return value.map(v => String(v || '').trim()).filter(Boolean);
+  if (value == null || value === '') return [];
+  return [String(value).trim()].filter(Boolean);
 }
 
 function densityListIncludes(selected, value) {
@@ -59249,25 +59395,29 @@ function densityTeacherMatchesCourses(teacher, filters) {
  * （姓名命中时以其为主，不再叠加其余筛选）
  */
 function filterAdjustmentDensityStudents(all, filters) {
-  if (filters.studentName) {
-    const q = filters.studentName.toLowerCase();
-    return all.filter(s => String(s.name || '').toLowerCase().includes(q));
+  const studentNames = densitySelectedList(filters.studentNames ?? filters.studentName);
+  if (studentNames.length) {
+    const set = new Set(studentNames);
+    return all.filter(s => set.has(String(s.name || '').trim()));
   }
-  if (filters.teacherName) {
-    const teacherIds = resolveAdjustmentDensityTeacherIds({ teacherName: filters.teacherName });
+  const teacherNames = densitySelectedList(filters.teacherNames ?? filters.teacherName);
+  if (teacherNames.length) {
+    const teacherIds = resolveAdjustmentDensityTeacherIds({ teacherNames });
     if (!teacherIds.length) return [];
     return all.filter(s => adjustmentDensityStudentHasTeacher(s, teacherIds));
   }
+  const studentIds = densitySelectedList(filters.studentIds ?? filters.studentId);
+  const teacherIdsFilter = densitySelectedList(filters.teacherIds ?? filters.teacherId);
   return all.filter(s => {
-    if (filters.studentId && !String(s.id || '').toLowerCase().includes(filters.studentId.toLowerCase())) return false;
+    if (studentIds.length && !densityListIncludes(studentIds, s.id)) return false;
     if (!densityListIncludes(filters.programmeKeys || filters.programmeKey, s.programmeKey)) return false;
     if (!densityListIncludes(filters.batchKeys || filters.batchKey, s.batchKey)) return false;
     if (!densityListIncludes(filters.genders || filters.gender, s.gender)) return false;
     if (!densityListIncludes(filters.schoolCodes, s.schoolCode)) return false;
     if (!densityListIncludes(filters.nationalities, s.nationality)) return false;
     if (!densityStudentMatchesCourses(s, filters)) return false;
-    if (filters.teacherId) {
-      const teacherIds = resolveAdjustmentDensityTeacherIds({ teacherId: filters.teacherId });
+    if (teacherIdsFilter.length) {
+      const teacherIds = resolveAdjustmentDensityTeacherIds({ teacherIds: teacherIdsFilter });
       if (!teacherIds.length || !adjustmentDensityStudentHasTeacher(s, teacherIds)) return false;
     }
     return true;
@@ -59635,6 +59785,8 @@ function buildScheduleDensityMsHtml(key) {
   return `<div class="clo-multiselect density-ms" id="${key}-ms">
     <button type="button" class="clo-multiselect-trigger input input-sm" id="${key}-btn" onclick="toggleScheduleDensityMs('${key}', event)">
       <span class="clo-multiselect-display placeholder" id="${key}-display">全部</span>
+      <span class="density-ms-trigger-clear" id="${key}-clear" hidden title="清除已选"
+        onclick="onScheduleDensityMsClearSelected('${key}', event)" aria-label="清除已选">×</span>
       <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
     </button>
     <div class="clo-multiselect-dropdown" id="${key}-dropdown" hidden>
@@ -59675,30 +59827,79 @@ function onScheduleDensityMsSearch(key, value) {
   renderScheduleDensityMsOptions(key);
 }
 
+function afterScheduleDensityMsSelectionChange(key) {
+  if (key === 'sdf-course-no' || key === 'sdf-course-name') refreshScheduleDensityGroupOptions('student');
+  if (key === 'tdf-course-no' || key === 'tdf-course-name') refreshScheduleDensityGroupOptions('teacher');
+}
+
+function getScheduleDensityMsVisibleOptions(key) {
+  const state = getScheduleDensityMsState(key);
+  const kw = String(state.keyword || '').trim().toLowerCase();
+  const selected = new Set((state.selected || []).map(String));
+  return (state.options || []).filter(it => {
+    // 已选项始终展示，便于搜索后逐个取消
+    if (selected.has(String(it.value))) return true;
+    if (!kw) return true;
+    const label = String(it.label || '').toLowerCase();
+    const value = String(it.value || '').toLowerCase();
+    const search = String(it.search || '').toLowerCase();
+    return label.includes(kw) || value.includes(kw) || search.includes(kw);
+  });
+}
+
 function onScheduleDensityMsCheck(key, value, checked) {
   const next = new Set(getScheduleDensityMsSelected(key));
   if (checked) next.add(String(value));
   else next.delete(String(value));
   setScheduleDensityMsSelected(key, [...next]);
-  if (key === 'sdf-course-no' || key === 'sdf-course-name') refreshScheduleDensityGroupOptions('student');
-  if (key === 'tdf-course-no' || key === 'tdf-course-name') refreshScheduleDensityGroupOptions('teacher');
+  afterScheduleDensityMsSelectionChange(key);
+}
+
+function onScheduleDensityMsClearSelected(key, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  setScheduleDensityMsSelected(key, []);
+  afterScheduleDensityMsSelectionChange(key);
+}
+
+function onScheduleDensityMsChipRemove(btn, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!btn) return;
+  onScheduleDensityMsCheck(btn.dataset.msKey, btn.dataset.msValue, false);
 }
 
 function renderScheduleDensityMsOptions(key) {
   const box = document.getElementById(`${key}-options`);
   if (!box) return;
   const state = getScheduleDensityMsState(key);
-  const kw = String(state.keyword || '').trim().toLowerCase();
   const selected = new Set((state.selected || []).map(String));
-  const items = (state.options || []).filter(it => {
-    if (!kw) return true;
-    return String(it.label || '').toLowerCase().includes(kw) || String(it.value || '').toLowerCase().includes(kw);
-  });
-  if (!items.length) {
-    box.innerHTML = '<div class="clo-multiselect-empty">无匹配项</div>';
+  const allOptions = state.options || [];
+  if (!allOptions.length) {
+    box.innerHTML = '<div class="clo-multiselect-empty">暂无选项</div>';
     return;
   }
-  box.innerHTML = items.map(it => `
+  const selectedItems = allOptions.filter(it => selected.has(String(it.value)));
+  const selectedBlock = selectedItems.length
+    ? `<div class="density-ms-selected">
+        ${selectedItems.map(it => `
+          <span class="density-ms-chip" title="${escapeHtml(it.label)}">
+            <span class="density-ms-chip-text">${escapeHtml(it.label)}</span>
+            <button type="button" class="density-ms-chip-x" data-ms-key="${escapeHtml(key)}" data-ms-value="${escapeHtml(it.value)}"
+              onclick="onScheduleDensityMsChipRemove(this, event)" aria-label="取消选择">×</button>
+          </span>`).join('')}
+      </div>`
+    : '';
+  const items = getScheduleDensityMsVisibleOptions(key);
+  if (!items.length) {
+    box.innerHTML = `${selectedBlock}<div class="clo-multiselect-empty">无匹配项</div>`;
+    return;
+  }
+  box.innerHTML = selectedBlock + items.map(it => `
     <label class="clo-multiselect-option" onclick="event.stopPropagation()">
       <input type="checkbox" value="${escapeHtml(it.value)}" ${selected.has(String(it.value)) ? 'checked' : ''}
         onchange="onScheduleDensityMsCheck('${key}', this.value, this.checked)">
@@ -59713,13 +59914,16 @@ function syncScheduleDensityMsDisplay(key) {
   const labels = (state.selected || []).map(v =>
     (state.options || []).find(it => String(it.value) === String(v))?.label || v
   );
+  const clearBtn = document.getElementById(`${key}-clear`);
   if (!labels.length) {
     display.textContent = '全部';
     display.classList.add('placeholder');
+    if (clearBtn) clearBtn.hidden = true;
     return;
   }
   display.classList.remove('placeholder');
   display.textContent = labels.length <= 2 ? labels.join('、') : `已选 ${labels.length} 项`;
+  if (clearBtn) clearBtn.hidden = false;
 }
 
 function bindScheduleDensityMsDocClose() {
@@ -59852,6 +60056,50 @@ function getScheduleDensityStaffTypeOptions() {
   return [...set].filter(Boolean).sort().map(v => ({ value: v, label: v }));
 }
 
+function getScheduleDensityStudentIdOptions() {
+  const map = new Map();
+  getAdjustmentDensityStudentUniverse().forEach(s => {
+    const id = String(s.id || '').trim();
+    const name = String(s.name || '').trim();
+    if (!id) return;
+    map.set(id, { value: id, label: name ? `${id} · ${name}` : id, search: `${id} ${name}` });
+  });
+  return [...map.values()].sort((a, b) => String(a.value).localeCompare(String(b.value), 'zh'));
+}
+
+function getScheduleDensityStudentNameOptions() {
+  const map = new Map();
+  getAdjustmentDensityStudentUniverse().forEach(s => {
+    const id = String(s.id || '').trim();
+    const name = String(s.name || '').trim();
+    if (!name) return;
+    map.set(name, { value: name, label: id ? `${name}（${id}）` : name, search: `${name} ${id}` });
+  });
+  return [...map.values()].sort((a, b) => String(a.value).localeCompare(String(b.value), 'zh'));
+}
+
+function getScheduleDensityTeacherIdOptions() {
+  const map = new Map();
+  (typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : []).forEach(t => {
+    const id = String(t.teacherId || '').trim();
+    const name = String(t.name || '').trim();
+    if (!id) return;
+    map.set(id, { value: id, label: name ? `${id} · ${name}` : id, search: `${id} ${name}` });
+  });
+  return [...map.values()].sort((a, b) => String(a.value).localeCompare(String(b.value), 'zh'));
+}
+
+function getScheduleDensityTeacherNameOptions() {
+  const map = new Map();
+  (typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : []).forEach(t => {
+    const id = String(t.teacherId || '').trim();
+    const name = String(t.name || '').trim();
+    if (!name) return;
+    map.set(name, { value: name, label: id ? `${name}（${id}）` : name, search: `${name} ${id}` });
+  });
+  return [...map.values()].sort((a, b) => String(a.value).localeCompare(String(b.value), 'zh'));
+}
+
 function buildScheduleDensityDateRangeHtml(fromId, toId) {
   return `<div class="srf-item schedule-density-date-range-item">
     <label>日期范围</label>
@@ -59875,8 +60123,8 @@ function buildScheduleDensityDimensionHtml(id, onchange) {
 function buildScheduleStudentDensityFilterHtml() {
   return `
     <div class="srf-item"><label>学期</label>${buildScheduleDensityMsHtml('sdf-term')}</div>
-    <div class="srf-item"><label>学生学号</label><input class="input input-sm" id="sdf-student-id" type="text" placeholder="请输入学号"></div>
-    <div class="srf-item"><label>学生姓名</label><input class="input input-sm" id="sdf-student-name" type="text" placeholder="请输入姓名"></div>
+    <div class="srf-item"><label>学生学号</label>${buildScheduleDensityMsHtml('sdf-student-id')}</div>
+    <div class="srf-item"><label>学生姓名</label>${buildScheduleDensityMsHtml('sdf-student-name')}</div>
     <div class="srf-actions">
       <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleStudentDensity()">查询</button>
       <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleStudentDensityQuery()">重置</button>
@@ -59891,16 +60139,14 @@ function buildScheduleStudentDensityFilterHtml() {
     <div class="srf-item"><label>上课小组</label>${buildScheduleDensityMsHtml('sdf-group')}</div>
     <div class="srf-item"><label>周数</label>${buildScheduleDensityMsHtml('sdf-week')}</div>
     ${buildScheduleDensityDateRangeHtml('sdf-date-from', 'sdf-date-to')}
-    <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="sdf-teacher-id" type="text" placeholder="请输入工号"></div>
-    <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="sdf-teacher-name" type="text" placeholder="请输入姓名"></div>
     ${buildScheduleDensityDimensionHtml('sdf-dimension', 'renderScheduleStudentDensityTable()')}`;
 }
 
 function buildScheduleTeacherDensityFilterHtml() {
   return `
     <div class="srf-item"><label>学期</label>${buildScheduleDensityMsHtml('tdf-term')}</div>
-    <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="tdf-teacher-id" type="text" placeholder="请输入工号"></div>
-    <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="tdf-teacher-name" type="text" placeholder="请输入姓名"></div>
+    <div class="srf-item"><label>教师工号</label>${buildScheduleDensityMsHtml('tdf-teacher-id')}</div>
+    <div class="srf-item"><label>教师姓名</label>${buildScheduleDensityMsHtml('tdf-teacher-name')}</div>
     <div class="srf-actions">
       <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTeacherDensity()">查询</button>
       <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleTeacherDensityQuery()">重置</button>
@@ -59919,14 +60165,14 @@ function buildScheduleTeacherDensityFilterHtml() {
 function ensureScheduleDensityFilterGrids() {
   bindScheduleDensityMsDocClose();
   const studentHost = document.getElementById('schedule-student-density-filters');
-  if (studentHost && studentHost.dataset.densityReady !== 'v3-group') {
+  if (studentHost && studentHost.dataset.densityReady !== 'v7-student-no-teacher') {
     studentHost.innerHTML = buildScheduleStudentDensityFilterHtml();
-    studentHost.dataset.densityReady = 'v3-group';
+    studentHost.dataset.densityReady = 'v7-student-no-teacher';
   }
   const teacherHost = document.getElementById('schedule-teacher-density-filters');
-  if (teacherHost && teacherHost.dataset.densityReady !== 'v3-group') {
+  if (teacherHost && teacherHost.dataset.densityReady !== 'v7-student-no-teacher') {
     teacherHost.innerHTML = buildScheduleTeacherDensityFilterHtml();
-    teacherHost.dataset.densityReady = 'v3-group';
+    teacherHost.dataset.densityReady = 'v7-student-no-teacher';
   }
 }
 
@@ -59935,12 +60181,15 @@ function buildScheduleStudentDensityFilterOptions() {
   const termDefault = getDefaultDensityTermSelected();
   const weekDefault = getDefaultDensityWeekSelected();
   fillScheduleDensityMs('sdf-term', getScheduleDensityTermOptions(), termDefault);
+  fillScheduleDensityMs('sdf-student-id', getScheduleDensityStudentIdOptions());
+  fillScheduleDensityMs('sdf-student-name', getScheduleDensityStudentNameOptions());
   fillScheduleDensityMs('sdf-programme', getScheduleDensityProgrammeOptions());
   fillScheduleDensityMs('sdf-batch', getScheduleDensityBatchOptions());
   fillScheduleDensityMs('sdf-gender', getScheduleDensityGenderOptions());
   fillScheduleDensityMs('sdf-week', getScheduleDensityWeekOptions(), weekDefault);
   fillScheduleDensityMs('sdf-course-no', getScheduleDensityCourseNoOptions());
   fillScheduleDensityMs('sdf-course-name', getScheduleDensityCourseNameOptions());
+  refreshScheduleDensityGroupOptions('student');
   fillScheduleDensityMs('sdf-school', getScheduleDensitySchoolOptions());
   fillScheduleDensityMs('sdf-nationality', getScheduleDensityNationalityOptions());
   const dimSel = document.getElementById('sdf-dimension');
@@ -59950,16 +60199,14 @@ function buildScheduleStudentDensityFilterOptions() {
 function getScheduleStudentDensityFilters() {
   return {
     term: getScheduleDensityMsSelected('sdf-term'),
-    studentId: (document.getElementById('sdf-student-id')?.value || '').trim(),
-    studentName: (document.getElementById('sdf-student-name')?.value || '').trim(),
+    studentIds: getScheduleDensityMsSelected('sdf-student-id'),
+    studentNames: getScheduleDensityMsSelected('sdf-student-name'),
     programmeKeys: getScheduleDensityMsSelected('sdf-programme'),
     batchKeys: getScheduleDensityMsSelected('sdf-batch'),
     genders: getScheduleDensityMsSelected('sdf-gender'),
     week: getScheduleDensityMsSelected('sdf-week'),
     dateFrom: document.getElementById('sdf-date-from')?.value || '',
     dateTo: document.getElementById('sdf-date-to')?.value || '',
-    teacherId: (document.getElementById('sdf-teacher-id')?.value || '').trim(),
-    teacherName: (document.getElementById('sdf-teacher-name')?.value || '').trim(),
     dimension: document.getElementById('sdf-dimension')?.value || 'ratio',
     courseNos: getScheduleDensityMsSelected('sdf-course-no'),
     courseNames: getScheduleDensityMsSelected('sdf-course-name'),
@@ -60011,13 +60258,13 @@ function queryScheduleStudentDensity() {
 
 function resetScheduleStudentDensityQuery() {
   ensureScheduleDensityFilterGrids();
-  ['sdf-student-id', 'sdf-student-name', 'sdf-teacher-id', 'sdf-teacher-name', 'sdf-date-from', 'sdf-date-to'].forEach(id => {
+  ['sdf-date-from', 'sdf-date-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   setScheduleDensityMsSelected('sdf-term', getDefaultDensityTermSelected());
   setScheduleDensityMsSelected('sdf-week', getDefaultDensityWeekSelected());
-  ['sdf-programme', 'sdf-batch', 'sdf-gender', 'sdf-course-no', 'sdf-course-name', 'sdf-group', 'sdf-school', 'sdf-nationality'].forEach(key => {
+  ['sdf-student-id', 'sdf-student-name', 'sdf-programme', 'sdf-batch', 'sdf-gender', 'sdf-course-no', 'sdf-course-name', 'sdf-group', 'sdf-school', 'sdf-nationality'].forEach(key => {
     setScheduleDensityMsSelected(key, []);
   });
   refreshScheduleDensityGroupOptions('student');
@@ -60044,6 +60291,8 @@ function renderScheduleStudentDensityPage() {
 function buildScheduleTeacherDensityFilterOptions() {
   ensureScheduleDensityFilterGrids();
   fillScheduleDensityMs('tdf-term', getScheduleDensityTermOptions(), getDefaultDensityTermSelected());
+  fillScheduleDensityMs('tdf-teacher-id', getScheduleDensityTeacherIdOptions());
+  fillScheduleDensityMs('tdf-teacher-name', getScheduleDensityTeacherNameOptions());
   fillScheduleDensityMs('tdf-week', getScheduleDensityWeekOptions(), getDefaultDensityWeekSelected());
   fillScheduleDensityMs('tdf-course-no', getScheduleDensityCourseNoOptions());
   fillScheduleDensityMs('tdf-course-name', getScheduleDensityCourseNameOptions());
@@ -60058,8 +60307,8 @@ function buildScheduleTeacherDensityFilterOptions() {
 function getScheduleTeacherDensityFilters() {
   return {
     term: getScheduleDensityMsSelected('tdf-term'),
-    teacherId: (document.getElementById('tdf-teacher-id')?.value || '').trim(),
-    teacherName: (document.getElementById('tdf-teacher-name')?.value || '').trim(),
+    teacherIds: getScheduleDensityMsSelected('tdf-teacher-id'),
+    teacherNames: getScheduleDensityMsSelected('tdf-teacher-name'),
     week: getScheduleDensityMsSelected('tdf-week'),
     dateFrom: document.getElementById('tdf-date-from')?.value || '',
     dateTo: document.getElementById('tdf-date-to')?.value || '',
@@ -60075,12 +60324,14 @@ function getScheduleTeacherDensityFilters() {
 
 function filterTeacherDensityTeachers(all, filters) {
   const list = all || [];
-  if (filters.teacherName) {
-    const q = filters.teacherName.toLowerCase();
-    return list.filter(t => String(t.name || '').toLowerCase().includes(q));
+  const teacherNames = densitySelectedList(filters.teacherNames ?? filters.teacherName);
+  if (teacherNames.length) {
+    const set = new Set(teacherNames);
+    return list.filter(t => set.has(String(t.name || '').trim()));
   }
+  const teacherIds = densitySelectedList(filters.teacherIds ?? filters.teacherId);
   return list.filter(t => {
-    if (filters.teacherId && !String(t.teacherId || '').toLowerCase().includes(filters.teacherId.toLowerCase())) return false;
+    if (teacherIds.length && !densityListIncludes(teacherIds, t.teacherId)) return false;
     if (!densityListIncludes(filters.staffTypes, t.staffType || t.teacherType)) return false;
     if (!densityListIncludes(filters.genders || filters.gender, t.gender)) return false;
     if (!densityListIncludes(filters.schoolCodes, t.schoolCode)) return false;
@@ -60161,13 +60412,13 @@ function queryScheduleTeacherDensity() {
 
 function resetScheduleTeacherDensityQuery() {
   ensureScheduleDensityFilterGrids();
-  ['tdf-teacher-id', 'tdf-teacher-name', 'tdf-date-from', 'tdf-date-to'].forEach(id => {
+  ['tdf-date-from', 'tdf-date-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   setScheduleDensityMsSelected('tdf-term', getDefaultDensityTermSelected());
   setScheduleDensityMsSelected('tdf-week', getDefaultDensityWeekSelected());
-  ['tdf-course-no', 'tdf-course-name', 'tdf-group', 'tdf-staff-type', 'tdf-gender', 'tdf-school'].forEach(key => {
+  ['tdf-teacher-id', 'tdf-teacher-name', 'tdf-course-no', 'tdf-course-name', 'tdf-group', 'tdf-staff-type', 'tdf-gender', 'tdf-school'].forEach(key => {
     setScheduleDensityMsSelected(key, []);
   });
   refreshScheduleDensityGroupOptions('teacher');
@@ -60593,9 +60844,16 @@ function isAdjustmentReasonRequireAttachment(row) {
   return !!(row && row.requireAttachment);
 }
 
+function isAdjustmentReasonRequireReason(row) {
+  return !!(row && row.requireReason);
+}
+
 function normalizeAdjustmentReasonTypeRow(row) {
   if (!row) return row;
   if (typeof row.requireAttachment !== 'boolean') row.requireAttachment = false;
+  if (typeof row.requireReason !== 'boolean') {
+    row.requireReason = row.code !== 'public-holiday';
+  }
   return row;
 }
 
@@ -60605,17 +60863,18 @@ function ensureAdjustmentReasonTypeStore() {
     return ADJUSTMENT_REASON_TYPE_STORE;
   }
   const seeds = [
-    { code: 'public-holiday', name: 'Public Holiday', attachmentHint: '不需要上传附件', requireAttachment: false },
+    { code: 'public-holiday', name: 'Public Holiday', attachmentHint: '不需要上传附件', requireReason: false, requireAttachment: false },
     {
       code: ADJUSTMENT_ACADEMIC_RELATED_CODE,
       name: 'Academic-Related',
       attachmentHint: 'Please submit the Academic-Related Travel / Leave Application Form.',
+      requireReason: true,
       requireAttachment: true,
       builtin: true
     },
-    { code: 'medical-condition', name: 'Medical Condition', attachmentHint: 'Please submit the Medical Certificate (MC).', requireAttachment: true },
-    { code: 'family-emergency', name: 'Family Emergency', attachmentHint: 'Please submit the relevant supporting document.', requireAttachment: true },
-    { code: 'other', name: 'Other', attachmentHint: 'Please submit the relevant supporting document.', requireAttachment: true }
+    { code: 'medical-condition', name: 'Medical Condition', attachmentHint: 'Please submit the Medical Certificate (MC).', requireReason: true, requireAttachment: true },
+    { code: 'family-emergency', name: 'Family Emergency', attachmentHint: 'Please submit the relevant supporting document.', requireReason: true, requireAttachment: true },
+    { code: 'other', name: 'Other', attachmentHint: 'Please submit the relevant supporting document.', requireReason: true, requireAttachment: true }
   ];
   seeds.forEach(s => {
     ADJUSTMENT_REASON_TYPE_STORE.items.push({
@@ -60623,6 +60882,7 @@ function ensureAdjustmentReasonTypeStore() {
       code: s.code,
       name: s.name,
       attachmentHint: s.attachmentHint || '',
+      requireReason: s.requireReason !== false,
       requireAttachment: !!s.requireAttachment,
       applyTypes: [],
       teacherTypes: [],
@@ -60793,7 +61053,142 @@ function onAdjustmentAdminTeacherChange() {
   }
 }
 
+function setAdjustmentMakeupReasonControlsLocked(locked) {
+  const sel = document.getElementById('adjustment-apply-reason-type');
+  const reasonTa = document.getElementById('adjustment-apply-reason');
+  const leaveSel = document.getElementById('adjustment-apply-leave-record');
+  const fileBar = document.querySelector('#modal-adjustment-apply .adj-file-bar');
+  if (sel) sel.disabled = !!locked;
+  if (reasonTa) {
+    reasonTa.readOnly = !!locked;
+    if (!locked) reasonTa.placeholder = '请填写申请事由';
+  }
+  if (leaveSel) leaveSel.disabled = !!locked;
+  if (fileBar) fileBar.hidden = !!locked;
+}
+
+/** 补课：勾选停课记录后，把停课原因/附件同步到右侧（只读） */
+function syncAdjustmentMakeupReasonFromCancel() {
+  const reasonTypeItem = document.querySelector('#modal-adjustment-apply .adj-apply-reason-type-item');
+  const reasonItem = document.querySelector('#modal-adjustment-apply .adj-apply-reason-item');
+  const filesItem = document.querySelector('#modal-adjustment-apply .adj-apply-files-item');
+  const wrap = document.getElementById('adjustment-apply-leave-wrap');
+  const sel = document.getElementById('adjustment-apply-reason-type');
+  const reasonTa = document.getElementById('adjustment-apply-reason');
+  const hint = document.getElementById('adjustment-apply-reason-hint');
+  const leaveSel = document.getElementById('adjustment-apply-leave-record');
+  const leaveEmpty = document.getElementById('adjustment-apply-leave-empty');
+  const fileLabel = document.getElementById('adjustment-apply-files-label');
+  if (reasonTypeItem) reasonTypeItem.hidden = false;
+  setAdjustmentMakeupReasonControlsLocked(true);
+
+  const vals = getAdjustmentSelectedSlotVals();
+  if (!vals.length) {
+    if (sel) sel.value = '';
+    if (reasonTa) {
+      reasonTa.value = '';
+      reasonTa.placeholder = '请先选择停课记录，将自动同步停课原因';
+    }
+    if (hint) { hint.hidden = true; hint.textContent = ''; }
+    if (reasonItem) reasonItem.hidden = false;
+    if (filesItem) filesItem.hidden = true;
+    if (wrap) wrap.hidden = true;
+    if (leaveSel) leaveSel.value = '';
+    if (leaveEmpty) { leaveEmpty.hidden = true; leaveEmpty.textContent = ''; }
+    if (fileLabel) fileLabel.classList.remove('req');
+    adjustmentApplyFiles = [];
+    if (typeof renderAdjustmentFileList === 'function') renderAdjustmentFileList();
+    return;
+  }
+
+  const inherited = getAdjustmentMakeupInheritedReason(vals);
+  if (!inherited.ok) {
+    if (sel) sel.value = '';
+    if (reasonTa) {
+      reasonTa.value = '';
+      reasonTa.placeholder = inherited.message || '无法同步停课原因';
+    }
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = inherited.message || '';
+    }
+    if (reasonItem) reasonItem.hidden = false;
+    if (filesItem) filesItem.hidden = true;
+    if (wrap) wrap.hidden = true;
+    adjustmentApplyFiles = [];
+    if (typeof renderAdjustmentFileList === 'function') renderAdjustmentFileList();
+    return;
+  }
+
+  const code = inherited.reasonTypeCode || '';
+  if (sel) {
+    if (code && ![...sel.options].some(o => o.value === code)) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = inherited.reasonType || code;
+      sel.appendChild(opt);
+    }
+    sel.value = code;
+  }
+  const row = findAdjustmentReasonTypeByCode(code || inherited.reasonType);
+  if (hint) {
+    const text = (row?.attachmentHint || '').trim();
+    hint.hidden = !text;
+    hint.textContent = text;
+  }
+  const needReason = isAdjustmentReasonRequireReason(row);
+  const needAttach = isAdjustmentReasonRequireAttachment(row);
+  if (fileLabel) fileLabel.classList.toggle('req', needAttach);
+  if (reasonItem) {
+    reasonItem.hidden = !!(row && !needReason && !inherited.reason);
+  }
+  if (reasonTa) {
+    reasonTa.value = inherited.reason || '';
+    reasonTa.placeholder = needReason ? '已同步停课事由' : '该原因类型无需填写事由';
+  }
+
+  adjustmentApplyFiles = inherited.attachments.slice();
+  if (filesItem) filesItem.hidden = !adjustmentApplyFiles.length && !needAttach;
+  if (typeof renderAdjustmentFileList === 'function') renderAdjustmentFileList();
+
+  const academic = !!(row && row.code === ADJUSTMENT_ACADEMIC_RELATED_CODE);
+  if (wrap) wrap.hidden = !academic;
+  if (!academic) {
+    if (leaveSel) leaveSel.value = '';
+    if (leaveEmpty) { leaveEmpty.hidden = true; leaveEmpty.textContent = ''; }
+    return;
+  }
+  if (leaveSel) {
+    leaveSel.hidden = false;
+    const leaveId = inherited.leaveRecordId || '';
+    const leaveLabel = inherited.leaveRecordLabel || leaveId || '已关联请假记录';
+    if (leaveId && ![...leaveSel.options].some(o => o.value === leaveId)) {
+      const opt = document.createElement('option');
+      opt.value = leaveId;
+      opt.textContent = leaveLabel;
+      leaveSel.appendChild(opt);
+    }
+    leaveSel.value = leaveId;
+  }
+  if (leaveEmpty) {
+    leaveEmpty.hidden = !!inherited.leaveRecordId;
+    leaveEmpty.textContent = inherited.leaveRecordId ? '' : '停课申请未关联请假记录';
+  }
+}
+
 function syncAdjustmentApplyReasonTypeUI() {
+  const reasonTypeItem = document.querySelector('#modal-adjustment-apply .adj-apply-reason-type-item');
+  const reasonItem = document.querySelector('#modal-adjustment-apply .adj-apply-reason-item');
+  const filesItem = document.querySelector('#modal-adjustment-apply .adj-apply-files-item');
+  const wrap = document.getElementById('adjustment-apply-leave-wrap');
+  // 补课：勾选停课后同步原因/附件，控件只读不可改
+  if (adjustmentApplyType === 'makeup') {
+    syncAdjustmentMakeupReasonFromCancel();
+    return;
+  }
+  setAdjustmentMakeupReasonControlsLocked(false);
+  if (reasonTypeItem) reasonTypeItem.hidden = false;
+
   const row = getAdjustmentApplyReasonTypeRow();
   const hint = document.getElementById('adjustment-apply-reason-hint');
   if (hint) {
@@ -60801,9 +61196,29 @@ function syncAdjustmentApplyReasonTypeUI() {
     hint.hidden = !text;
     hint.textContent = text;
   }
+  const needAttach = isAdjustmentReasonRequireAttachment(row);
+  const needReason = isAdjustmentReasonRequireReason(row);
   const fileLabel = document.getElementById('adjustment-apply-files-label');
-  if (fileLabel) fileLabel.classList.toggle('req', isAdjustmentReasonRequireAttachment(row));
-  const wrap = document.getElementById('adjustment-apply-leave-wrap');
+  if (fileLabel) fileLabel.classList.toggle('req', needAttach);
+
+  if (reasonItem) {
+    const hideReason = !!(row && !needReason);
+    reasonItem.hidden = hideReason;
+    if (hideReason) {
+      const reasonTa = document.getElementById('adjustment-apply-reason');
+      if (reasonTa) reasonTa.value = '';
+    }
+  }
+
+  if (filesItem) {
+    const hideFiles = !!(row && !needAttach);
+    filesItem.hidden = hideFiles;
+    if (hideFiles && adjustmentApplyFiles.length) {
+      adjustmentApplyFiles = [];
+      if (typeof renderAdjustmentFileList === 'function') renderAdjustmentFileList();
+    }
+  }
+
   if (!wrap) return;
   const academic = !!(row && row.code === ADJUSTMENT_ACADEMIC_RELATED_CODE);
   wrap.hidden = !academic;
@@ -60815,6 +61230,45 @@ function syncAdjustmentApplyReasonTypeUI() {
     return;
   }
   syncAdjustmentApplyLeaveOptions();
+}
+
+/** 补课申请：从所选停课记录继承原因类型 / 事由 / 附件 / 请假记录 */
+function getAdjustmentMakeupInheritedReason(vals) {
+  const cancels = [];
+  const seen = new Set();
+  (vals || []).forEach(v => {
+    const members = typeof expandAdjustmentSlotVal === 'function'
+      ? expandAdjustmentSlotVal(v)
+      : [String(v || '').trim()].filter(Boolean);
+    members.forEach(member => {
+      const req = findAdjustmentCancelRequestByRef(member);
+      if (!req || seen.has(req.id)) return;
+      seen.add(req.id);
+      cancels.push(req);
+    });
+  });
+  if (!cancels.length) return { ok: false, message: '未找到对应的停课记录，无法继承原因' };
+  const typeKeys = new Set(cancels.map(c =>
+    String(c.reasonTypeCode || c.reasonType || '').trim()
+  ));
+  if (typeKeys.size > 1) {
+    return { ok: false, message: '所选停课记录原因类型不一致，请按相同原因分批申请补课' };
+  }
+  const src = cancels[0];
+  const reasonTypeCode = src.reasonTypeCode
+    || findAdjustmentReasonTypeByCode(src.reasonType)?.code
+    || '';
+  const reasonTypeRow = findAdjustmentReasonTypeByCode(reasonTypeCode || src.reasonType);
+  return {
+    ok: true,
+    reason: (src.reason || '').trim()
+      || (!isAdjustmentReasonRequireReason(reasonTypeRow) ? (reasonTypeRow?.name || src.reasonType || '') : ''),
+    reasonType: src.reasonType || reasonTypeRow?.name || reasonTypeCode,
+    reasonTypeCode,
+    attachments: Array.isArray(src.attachments) ? src.attachments.slice() : [],
+    leaveRecordId: src.leaveRecordId || '',
+    leaveRecordLabel: src.leaveRecordLabel || ''
+  };
 }
 
 function syncAdjustmentApplyLeaveOptions() {
@@ -60931,19 +61385,20 @@ function renderAdjustmentReasonTypePage() {
   }
   if (!tbody) return;
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 8, '暂无原因类型，可点击上方按钮新增');
+    renderScheduleEmptyRow(tbody, 9, '暂无原因类型，可点击上方按钮新增');
     return;
   }
   tbody.innerHTML = rows.map((r, i) => {
     const hintText = r.attachmentHint || '—';
     const hintShort = hintText.length > 28 ? `${hintText.slice(0, 28)}…` : hintText;
     const del = r.builtin
-      ? ''
+      ? ` · ${renderDisabledAction('删除', '固定原因不可删除')}`
       : ` · <a href="#" style="color:var(--red)" onclick="deleteAdjustmentReasonType('${r.id}');return false">删除</a>`;
     return `<tr class="${r.enabled ? '' : 'is-disabled'}">
       <td class="col-index">${i + 1}</td>
       <td>${escapeHtml(r.name)}${r.builtin ? ' <span class="adj-reason-builtin">固定</span>' : ''}</td>
-      <td title="${escapeHtml(hintText)}">${escapeHtml(hintShort)}</td>
+      <td class="adj-reason-hint-cell">${formatEllipsisTipCell(hintShort, hintText, 'span')}</td>
+      <td class="col-center">${r.requireReason ? '是' : '否'}</td>
       <td class="col-center">${r.requireAttachment ? '是' : '否'}</td>
       <td>${escapeHtml(formatAdjustmentReasonApplyTypes(r.applyTypes))}</td>
       <td class="adj-reason-teacher-cell">${formatAdjustmentReasonTeacherTypesHtml(r.teacherTypes)}</td>
@@ -60951,6 +61406,7 @@ function renderAdjustmentReasonTypePage() {
       <td class="col-center actions"><a href="#" onclick="openAdjustmentReasonTypeModal('${r.id}');return false">修改</a>${del} · ${entityChangeLogLink('adjustment-reason-type', r.id, r.name)}</td>
     </tr>`;
   }).join('');
+  bindCellFloatTips(tbody, '.adj-reason-hint-cell .cell-ellipsis-tip[data-tip]', { alwaysShow: true });
 }
 
 function syncAdjustmentReasonTypeBoolSwitchUI(inputId) {
@@ -60970,6 +61426,10 @@ function syncAdjustmentReasonTypeEnabledSwitchUI() {
 
 function syncAdjustmentReasonTypeRequireAttachmentSwitchUI() {
   syncAdjustmentReasonTypeBoolSwitchUI('adjustment-reason-type-require-attachment');
+}
+
+function syncAdjustmentReasonTypeRequireReasonSwitchUI() {
+  syncAdjustmentReasonTypeBoolSwitchUI('adjustment-reason-type-require-reason');
 }
 
 let adjustmentReasonTypeApplySelected = [];
@@ -61083,6 +61543,7 @@ function openAdjustmentReasonTypeModal(id) {
   const idEl = document.getElementById('adjustment-reason-type-edit-id');
   const nameEl = document.getElementById('adjustment-reason-type-name');
   const hintEl = document.getElementById('adjustment-reason-type-hint-text');
+  const reqReasonEl = document.getElementById('adjustment-reason-type-require-reason');
   const reqEl = document.getElementById('adjustment-reason-type-require-attachment');
   const enEl = document.getElementById('adjustment-reason-type-enabled-input');
   if (title) title.textContent = row ? '修改原因类型' : '新增原因类型';
@@ -61092,6 +61553,7 @@ function openAdjustmentReasonTypeModal(id) {
     nameEl.readOnly = !!(row && row.builtin);
   }
   if (hintEl) hintEl.value = row?.attachmentHint || '';
+  if (reqReasonEl) reqReasonEl.checked = row ? !!row.requireReason : true;
   if (reqEl) reqEl.checked = row ? !!row.requireAttachment : false;
   if (enEl) enEl.checked = row ? !!row.enabled : true;
   fillAdjustmentReasonTypeMultiSelect('apply', row?.applyTypes || []);
@@ -61099,10 +61561,15 @@ function openAdjustmentReasonTypeModal(id) {
   closeAdjustmentReasonTypeDropdowns();
   bindAdjustmentReasonTypeMultiSelectClose();
   syncAdjustmentReasonTypeEnabledSwitchUI();
+  syncAdjustmentReasonTypeRequireReasonSwitchUI();
   syncAdjustmentReasonTypeRequireAttachmentSwitchUI();
   if (enEl && !enEl.dataset.bound) {
     enEl.dataset.bound = '1';
     enEl.addEventListener('change', syncAdjustmentReasonTypeEnabledSwitchUI);
+  }
+  if (reqReasonEl && !reqReasonEl.dataset.bound) {
+    reqReasonEl.dataset.bound = '1';
+    reqReasonEl.addEventListener('change', syncAdjustmentReasonTypeRequireReasonSwitchUI);
   }
   if (reqEl && !reqEl.dataset.bound) {
     reqEl.dataset.bound = '1';
@@ -61117,6 +61584,7 @@ function saveAdjustmentReasonType() {
   const id = document.getElementById('adjustment-reason-type-edit-id')?.value || '';
   const name = (document.getElementById('adjustment-reason-type-name')?.value || '').trim();
   const attachmentHint = (document.getElementById('adjustment-reason-type-hint-text')?.value || '').trim();
+  const requireReason = !!document.getElementById('adjustment-reason-type-require-reason')?.checked;
   const requireAttachment = !!document.getElementById('adjustment-reason-type-require-attachment')?.checked;
   const applyTypes = getAdjustmentReasonTypeMultiSelected('apply').slice();
   let teacherTypes = getAdjustmentReasonTypeMultiSelected('teacher').slice();
@@ -61138,6 +61606,7 @@ function saveAdjustmentReasonType() {
     const before = typeof cloneEntitySnapshot === 'function' ? cloneEntitySnapshot(exist) : { ...exist };
     exist.name = exist.builtin ? exist.name : name;
     exist.attachmentHint = attachmentHint;
+    exist.requireReason = requireReason;
     exist.requireAttachment = requireAttachment;
     exist.applyTypes = applyTypes;
     exist.teacherTypes = teacherTypes;
@@ -61156,6 +61625,7 @@ function saveAdjustmentReasonType() {
       code: `rt-${Date.now()}`,
       name,
       attachmentHint,
+      requireReason,
       requireAttachment,
       applyTypes,
       teacherTypes,
@@ -61170,6 +61640,7 @@ function saveAdjustmentReasonType() {
       action: 'create',
       changes: [
         { fieldKey: 'name', fieldLabel: '原因类型', before: '空', after: rec.name },
+        { fieldKey: 'requireReason', fieldLabel: '是否需填写申请事由', before: '空', after: rec.requireReason ? '是' : '否' },
         { fieldKey: 'requireAttachment', fieldLabel: '是否需上传附件', before: '空', after: rec.requireAttachment ? '是' : '否' },
         { fieldKey: 'enabled', fieldLabel: '是否启用', before: '空', after: rec.enabled ? '是' : '否' }
       ]
@@ -63387,10 +63858,11 @@ function renderAdjustmentTeacherPage() {
     <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
-    <td>${escapeHtml(r.reason)}</td>
+    <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
     <td class="col-center">${escapeHtml(r.submittedAt)}</td>
     <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing') ? `<a href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');return false">撤销</a> · ` : ''}<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a> · ${entityChangeLogLink('adjustment-request', r.id, r.no || r.id)}</td>
   </tr>`).join('');
+  bindCellFloatTips(tbody, '.adj-reason-cell .cell-ellipsis-tip[data-tip]');
 }
 
 function cancelAdjustment(id) {
@@ -64043,8 +64515,8 @@ function openAdjustmentDetail(id, withApprove) {
   if (r.teacherName) profile.teacherName = r.teacherName;
   const span = getAdjustmentRequestTimeSpan(r);
   const attachHtml = (r.attachments && r.attachments.length)
-    ? r.attachments.map(a => `<span class="adj-detail-file">📎 ${escapeHtml(a.name)}${a.size ? `（${escapeHtml(formatFileSize(a.size))}）` : ''}</span>`).join('')
-    : '<span class="text-muted">无</span>';
+    ? r.attachments.map(a => `<span class="adj-detail-file">${escapeHtml(a.name)}${a.size ? `（${escapeHtml(formatFileSize(a.size))}）` : ''} <a href="#" class="adj-detail-file-link" onclick="return false">view</a>/<a href="#" class="adj-detail-file-link" onclick="return false">download</a></span>`).join('')
+    : '<span class="text-muted">—</span>';
   const logs = [];
   logs.push({ title: '提交申请', who: r.teacherName || '申请人', time: r.submittedAt, note: r.reason || '' });
   if (r.status === 'pending' || r.status === 'reviewing') {
@@ -64073,28 +64545,30 @@ function openAdjustmentDetail(id, withApprove) {
   const body = document.getElementById('adjustment-detail-body');
   if (body) body.innerHTML = `
     <div class="adj-detail-section adj-detail-section-log">
-      <h4 class="adj-detail-h">审批日志</h4>
+      <h4 class="adj-detail-h">Approval Log</h4>
+      <div class="adj-detail-log-summary">
+        <div class="adj-detail-field"><span class="adj-detail-k">Submitted At</span><span class="adj-detail-v">${escapeHtml(r.submittedAt || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Approval Status</span><span class="adj-detail-v">${adjustmentStatusBadge(r.status)}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Approval Stage</span><span class="adj-detail-v">${escapeHtml(getAdjustmentStageLabel(r))}</span></div>
+      </div>
       <div class="adj-log">${logHtml}</div>
     </div>
-    <div class="adj-detail-info">
-      <div class="adj-detail-field"><span class="adj-detail-k">调课类型</span><span class="adj-detail-v">${adjustmentTypeBadge(r.type)}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">申请单号</span><span class="adj-detail-v"><code>${escapeHtml(r.no)}</code></span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">申请人</span><span class="adj-detail-v">${escapeHtml(profile.teacherName)}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">工号</span><span class="adj-detail-v">${escapeHtml(profile.teacherId || '—')}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">头衔</span><span class="adj-detail-v">${escapeHtml(profile.title)}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">所属单位</span><span class="adj-detail-v">${escapeHtml(profile.department)}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">教师类型</span><span class="adj-detail-v">${escapeHtml(profile.teacherType)}</span></div>
-      <div class="adj-detail-field adj-detail-field-break"><span class="adj-detail-k">申请开始时间</span><span class="adj-detail-v">${escapeHtml(span.start || '—')}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">申请结束时间</span><span class="adj-detail-v">${escapeHtml(span.end || '—')}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">申请节数</span><span class="adj-detail-v">${r.slotCount || items.length || 1}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">共计几天</span><span class="adj-detail-v">${span.dayCount || 0}</span></div>
-      <div class="adj-detail-field full"><span class="adj-detail-k">原因类型</span><span class="adj-detail-v">${escapeHtml(r.reasonType || inferAdjustmentReasonType(r.reason))}</span></div>
-      ${r.leaveRecordLabel ? `<div class="adj-detail-field full"><span class="adj-detail-k">请假记录</span><span class="adj-detail-v">${escapeHtml(r.leaveRecordLabel)}</span></div>` : ''}
-      <div class="adj-detail-field full"><span class="adj-detail-k">申请事由</span><span class="adj-detail-v">${escapeHtml(r.reason || '—')}</span></div>
-      <div class="adj-detail-field full"><span class="adj-detail-k">附件</span><span class="adj-detail-v adj-detail-files">${attachHtml}</span></div>
-      <div class="adj-detail-field full"><span class="adj-detail-k">提交时间</span><span class="adj-detail-v">${escapeHtml(r.submittedAt || '')}</span></div>
-      <div class="adj-detail-field full"><span class="adj-detail-k">审批状态</span><span class="adj-detail-v">${adjustmentStatusBadge(r.status)}</span></div>
-      <div class="adj-detail-field full"><span class="adj-detail-k">审批阶段</span><span class="adj-detail-v">${escapeHtml(getAdjustmentStageLabel(r))}</span></div>
+    <div class="adj-detail-section adj-detail-section-staff">
+      <h4 class="adj-detail-h">Staff Details <span class="adj-detail-h-note">（基本信息从 HR 系统抓）</span></h4>
+      <div class="adj-detail-info">
+        <div class="adj-detail-field"><span class="adj-detail-k">Staff ID</span><span class="adj-detail-v">${escapeHtml(profile.teacherId || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Lecturer Name</span><span class="adj-detail-v">${escapeHtml(profile.teacherName)}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Leave From</span><span class="adj-detail-v">${escapeHtml(span.start || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Department</span><span class="adj-detail-v">${escapeHtml(profile.department)}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Leave To</span><span class="adj-detail-v">${escapeHtml(span.end || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Lecturer Type</span><span class="adj-detail-v">${escapeHtml(profile.teacherType)}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">申请节数</span><span class="adj-detail-v">${r.slotCount || items.length || 1}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Total Days</span><span class="adj-detail-v">${span.dayCount || 0}</span></div>
+        <div class="adj-detail-field full"><span class="adj-detail-k">Adjustment Type</span><span class="adj-detail-v">${adjustmentTypeBadge(r.type)}</span></div>
+        <div class="adj-detail-field full"><span class="adj-detail-k">Category</span><span class="adj-detail-v">${escapeHtml(r.reasonType || inferAdjustmentReasonType(r.reason))}</span></div>
+        <div class="adj-detail-field full"><span class="adj-detail-k">Reason</span><span class="adj-detail-v">${escapeHtml(r.reason || '—')}</span></div>
+        <div class="adj-detail-field full"><span class="adj-detail-k">Supporting Document</span><span class="adj-detail-v adj-detail-files">${attachHtml}</span></div>
+      </div>
     </div>
     <div class="adj-detail-section adj-detail-section-info">
       <h4 class="adj-detail-h">调课信息</h4>
@@ -65918,11 +66392,16 @@ function renderAdjustmentFileList() {
   const el = document.getElementById('adjustment-apply-file-list');
   if (!el) return;
   if (!adjustmentApplyFiles.length) {
-    el.innerHTML = '<div class="adj-file-empty text-muted">暂无附件</div>';
+    el.innerHTML = `<div class="adj-file-empty text-muted">${
+      adjustmentApplyType === 'makeup' ? '停课记录无附件' : '暂无附件'
+    }</div>`;
     return;
   }
+  const canRemove = adjustmentApplyType !== 'makeup';
   el.innerHTML = adjustmentApplyFiles.map((f, i) =>
-    `<div class="adj-file-item"><span class="adj-file-ico">📎</span><span class="adj-file-name">${escapeHtml(f.name)}</span><span class="adj-file-size">${escapeHtml(formatFileSize(f.size))}</span><a href="#" class="adj-file-del" onclick="removeAdjustmentFile(${i});return false">移除</a></div>`
+    `<div class="adj-file-item"><span class="adj-file-ico">📎</span><span class="adj-file-name">${escapeHtml(f.name)}</span><span class="adj-file-size">${escapeHtml(formatFileSize(f.size))}</span>${
+      canRemove ? `<a href="#" class="adj-file-del" onclick="removeAdjustmentFile(${i});return false">移除</a>` : ''
+    }</div>`
   ).join('');
 }
 
@@ -65974,10 +66453,12 @@ function submitAdjustmentApplyCore() {
   if (!meta) { alert('未识别的调课类型'); return; }
   const windowCheck = assertAdjustmentApplyWindow();
   if (!windowCheck.ok) { alert(windowCheck.message); return; }
-  const reason = (document.getElementById('adjustment-apply-reason')?.value || '').trim();
-  const reasonTypeCode = (document.getElementById('adjustment-apply-reason-type')?.value || '').trim();
-  const reasonTypeRow = findAdjustmentReasonTypeByCode(reasonTypeCode);
-  const reasonType = reasonTypeRow?.name || reasonTypeCode;
+  let reason = (document.getElementById('adjustment-apply-reason')?.value || '').trim();
+  let reasonTypeCode = (document.getElementById('adjustment-apply-reason-type')?.value || '').trim();
+  let reasonTypeRow = findAdjustmentReasonTypeByCode(reasonTypeCode);
+  let reasonType = reasonTypeRow?.name || reasonTypeCode;
+  let applyAttachments = adjustmentApplyFiles.slice();
+  let leaveCheck = { ok: true, leave: null, leaveRecordLabel: '' };
   let code = '', courseName = '', groupLabel = '', fromText = '—', toText = '—';
   let teacherId = '', teacherName = '';
   let items = [];
@@ -66085,16 +66566,40 @@ function submitAdjustmentApplyCore() {
     alert('请先选择课程或节次');
     return;
   }
-  if (!reasonTypeCode) { alert('请选择原因类型'); return; }
-  if (!reason) { alert('请填写申请事由'); return; }
-  if (isAdjustmentReasonRequireAttachment(reasonTypeRow) && !adjustmentApplyFiles.length) {
-    alert('该原因类型需上传附件，请添加附件后再提交');
-    return;
+  if (type === 'makeup') {
+    const inherited = getAdjustmentMakeupInheritedReason(getAdjustmentSelectedSlotVals());
+    if (!inherited.ok) { alert(inherited.message); return; }
+    reason = inherited.reason;
+    reasonType = inherited.reasonType;
+    reasonTypeCode = inherited.reasonTypeCode;
+    reasonTypeRow = findAdjustmentReasonTypeByCode(reasonTypeCode || reasonType);
+    applyAttachments = inherited.attachments;
+    leaveCheck = {
+      ok: true,
+      leave: inherited.leaveRecordId ? { id: inherited.leaveRecordId } : null,
+      leaveRecordLabel: inherited.leaveRecordLabel || ''
+    };
+  } else {
+    if (!reasonTypeCode) { alert('请选择原因类型'); return; }
+    if (isAdjustmentReasonRequireReason(reasonTypeRow) && !reason) {
+      alert('请填写申请事由');
+      return;
+    }
+    if (!isAdjustmentReasonRequireReason(reasonTypeRow) && !reason) {
+      reason = reasonType || reasonTypeRow?.name || '';
+    }
+    if (isAdjustmentReasonRequireAttachment(reasonTypeRow) && !applyAttachments.length) {
+      alert('该原因类型需上传附件，请添加附件后再提交');
+      return;
+    }
+    leaveCheck = validateAdjustmentAcademicLeaveSelection();
+    if (!leaveCheck.ok) { alert(leaveCheck.message); return; }
+    leaveCheck.leaveRecordLabel = leaveCheck.leave
+      ? formatAdjustmentLeaveRecordLabel(leaveCheck.leave)
+      : '';
   }
   const roomOpenMix = assertAdjustmentRoomOpenMix(items, getAdjustmentRequestTermCode());
   if (!roomOpenMix.ok) { alert(roomOpenMix.message); return; }
-  const leaveCheck = validateAdjustmentAcademicLeaveSelection();
-  if (!leaveCheck.ok) { alert(leaveCheck.message); return; }
   if (meta.needTo) {
     if (meta.perSlot) {
       const bad = placements.find(p => !p.weekday || !p.period);
@@ -66153,11 +66658,12 @@ function submitAdjustmentApplyCore() {
     fromText, toText, reason, reasonType,
     reasonTypeCode,
     leaveRecordId: leaveCheck.leave?.id || '',
-    leaveRecordLabel: leaveCheck.leave ? formatAdjustmentLeaveRecordLabel(leaveCheck.leave) : '',
+    leaveRecordLabel: leaveCheck.leaveRecordLabel
+      || (leaveCheck.leave ? formatAdjustmentLeaveRecordLabel(leaveCheck.leave) : ''),
     applyStart: span.start, applyEnd: span.end, dayCount: span.dayCount,
     status: 'pending', stage: isAdmin ? '学院审核' : '教务初审',
     term: termCode,
-    attachments: adjustmentApplyFiles.slice(),
+    attachments: applyAttachments,
     submittedAt: adjustmentNow(), reviewedAt: '', reviewer: '', reviewComment: '',
     proxyBy: isAdmin ? '教务管理员' : '',
     demoOps: false // 教师/管理端新增，同步进入调课申请记录
@@ -66236,12 +66742,13 @@ function renderAdjustmentApprovalPage() {
     <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
-    <td>${escapeHtml(r.reason)}</td>
+    <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
     <td class="col-center">${escapeHtml(r.submittedAt)}</td>
     <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing')
       ? `<a href="#" onclick="openAdjustmentApprove('${r.id}');return false">审批</a>`
       : `<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a>`}</td>
   </tr>`).join('');
+  bindCellFloatTips(tbody, '.adj-reason-cell .cell-ellipsis-tip[data-tip]');
 }
 
 /** 进入审批界面：展示申请详情，底部提供审批按钮 */

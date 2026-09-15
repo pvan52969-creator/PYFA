@@ -155,7 +155,7 @@
       <a href="#" class="nav-item" data-page="schedule-time">按入学批次排</a>
       <a href="#" class="nav-item" data-page="schedule-teacher">按教师排</a>
       <a href="#" class="nav-item" data-page="schedule-course">按课程排</a>
-      <a href="#" class="nav-item" data-page="schedule-joint">联合排课</a>
+      <a href="#" class="nav-item" data-page="schedule-joint">联合排课（不支持）</a>
       <a href="#" class="nav-item" data-page="schedule-time-conflict">课表冲突查询</a>
       <div class="nav-group">自动排课表时间</div>
       <a href="#" class="nav-item" data-page="schedule-auto-time-rule">自动排课规则</a>
@@ -3015,6 +3015,18 @@
               <input class="input input-sm" id="schedule-course-filter-dept" placeholder="开课单位">
             </div>
             <div class="schedule-query-field">
+              <label>课程类型</label>
+              <div class="clo-multiselect" id="schedule-course-filter-type-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-filter-type-btn" onclick="toggleScheduleCourseTypeFilterDropdown(event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-course-filter-type-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-course-filter-type-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-course-filter-type-options"></div>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-query-field">
               <label for="schedule-course-filter-status">排课状态</label>
               <select class="input input-sm" id="schedule-course-filter-status">
                 <option value="">全部</option>
@@ -3033,7 +3045,7 @@
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
-          <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th>开课单位</th>
+          <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th class="col-center">课程类型</th><th>开课单位</th>
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
           <th class="col-center">未排完</th><th class="col-center">排课状态</th><th class="col-center">操作</th>
         </tr></thead>
@@ -3850,13 +3862,7 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
-          <div class="list-export-dropdown">
-            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-intake')">导出</button>
-            <div class="list-export-menu" id="list-export-menu-tt-intake" hidden>
-              <button type="button" onclick="exportScheduleTimetableByMode('intake', 'selected')">按选择项导出</button>
-              <button type="button" onclick="exportScheduleTimetableByMode('intake', 'query')">按查询条件导出</button>
-            </div>
-          </div>
+          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableByMode('intake', 'query')">导出</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('intake')">导出图形课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-intake-tt-fields"></div>
@@ -3910,13 +3916,7 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
-          <div class="list-export-dropdown">
-            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-teacher')">导出</button>
-            <div class="list-export-menu" id="list-export-menu-tt-teacher" hidden>
-              <button type="button" onclick="exportScheduleTimetableByMode('teacher', 'selected')">按选择项导出</button>
-              <button type="button" onclick="exportScheduleTimetableByMode('teacher', 'query')">按查询条件导出</button>
-            </div>
-          </div>
+          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableByMode('teacher', 'query')">导出</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('teacher')">导出图形课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-teacher-tt-fields"></div>
@@ -3954,13 +3954,7 @@
       <div class="legend-bar" id="schedule-student-tt-hint"></div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
-          <div class="list-export-dropdown">
-            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-student')">导出</button>
-            <div class="list-export-menu" id="list-export-menu-tt-student" hidden>
-              <button type="button" onclick="exportScheduleTimetableByMode('student', 'selected')">按选择项导出</button>
-              <button type="button" onclick="exportScheduleTimetableByMode('student', 'query')">按查询条件导出</button>
-            </div>
-          </div>
+          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableByMode('student', 'query')">导出</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('student')">导出图形课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-student-tt-fields"></div>
@@ -3997,13 +3991,7 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
-          <div class="list-export-dropdown">
-            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-course')">导出</button>
-            <div class="list-export-menu" id="list-export-menu-tt-course" hidden>
-              <button type="button" onclick="exportScheduleTimetableByMode('course', 'selected')">按选择项导出</button>
-              <button type="button" onclick="exportScheduleTimetableByMode('course', 'query')">按查询条件导出</button>
-            </div>
-          </div>
+          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableByMode('course', 'query')">导出</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('course')">导出图形课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-course-tt-fields"></div>
@@ -4040,13 +4028,7 @@
       </div>
       <div class="card schedule-timetable-wrap">
         <div class="schedule-tt-export-actions schedule-tt-export-bar">
-          <div class="list-export-dropdown">
-            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'tt-room')">导出</button>
-            <div class="list-export-menu" id="list-export-menu-tt-room" hidden>
-              <button type="button" onclick="exportScheduleTimetableByMode('room', 'selected')">按选择项导出</button>
-              <button type="button" onclick="exportScheduleTimetableByMode('room', 'query')">按查询条件导出</button>
-            </div>
-          </div>
+          <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableByMode('room', 'query')">导出</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="exportScheduleTimetableGraphic('room')">导出图形课表</button>
         </div>
         <div class="schedule-tt-fieldbar" id="schedule-room-tt-fields"></div>
@@ -4387,7 +4369,7 @@
         <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
         <thead><tr>
           <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="adjustment-teacher-body"></tbody>
       </table></div></div>
@@ -4506,6 +4488,7 @@
           <th class="col-index">序号</th>
           <th>原因类型</th>
           <th>附件说明</th>
+          <th class="col-center">是否需填写申请事由</th>
           <th class="col-center">是否需上传附件</th>
           <th>适用调课类型</th>
           <th>适用教师</th>
@@ -4610,7 +4593,7 @@
       <div class="card schedule-card"><div class="table-scroll"><table class="data-table adjustment-table adj-freeze-2">
         <thead><tr>
           <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="adjustment-approval-body"></tbody>
       </table></div></div>
@@ -9056,6 +9039,17 @@
         <div class="form-item full">
           <label for="adjustment-reason-type-hint-text">附件说明</label>
           <textarea class="input" id="adjustment-reason-type-hint-text" rows="2" placeholder="教师选择该原因后，显示在原因类型下方"></textarea>
+        </div>
+        <div class="form-item">
+          <label>是否需填写申请事由</label>
+          <label class="table-bool-switch">
+            <input type="checkbox" id="adjustment-reason-type-require-reason" checked>
+            <span class="table-bool-track is-on">
+              <span class="table-bool-thumb"></span>
+              <span class="table-bool-text">是</span>
+            </span>
+          </label>
+          <p class="form-hint">为是时，申请调课必须填写申请事由</p>
         </div>
         <div class="form-item">
           <label>是否需上传附件</label>

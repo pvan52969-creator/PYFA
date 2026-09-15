@@ -90,6 +90,15 @@ def clear_cell(cell):
     cell.text = ""
 
 
+def set_run_highlight_yellow(run):
+    rPr = run._element.get_or_add_rPr()
+    for old in rPr.findall(qn("w:highlight")):
+        rPr.remove(old)
+    hl = OxmlElement("w:highlight")
+    hl.set(qn("w:val"), "yellow")
+    rPr.append(hl)
+
+
 def write_cell_text(cell, text: str, *, bold=False, center=False, header=False):
     clear_cell(cell)
     p = cell.paragraphs[0]
@@ -98,8 +107,13 @@ def write_cell_text(cell, text: str, *, bold=False, center=False, header=False):
     p.paragraph_format.line_spacing = 1.15
     if center:
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    raw = text or ""
+    # ==黄标==：单元格黄底 + 去掉标记（用于本次改动标注）
+    cell_yellow = "==" in raw
+    if cell_yellow:
+        raw = re.sub(r"==([^=]+)==", r"\1", raw)
     # 简单处理行内 **bold** 与 `code`
-    parts = re.split(r"(\*\*[^*]+\*\*|`[^`]+`)", text or "")
+    parts = re.split(r"(\*\*[^*]+\*\*|`[^`]+`)", raw)
     for part in parts:
         if not part:
             continue
@@ -112,8 +126,12 @@ def write_cell_text(cell, text: str, *, bold=False, center=False, header=False):
         else:
             run = p.add_run(part)
             set_run_font(run, size=SIZE_TABLE, bold=bold or header)
+        if cell_yellow and not header:
+            set_run_highlight_yellow(run)
     if header:
         set_cell_shading(cell, "E2E8F0")
+    elif cell_yellow:
+        set_cell_shading(cell, "FFFF00")
 
 
 def add_rich_paragraph(doc, text: str, *, style="body"):
@@ -137,11 +155,17 @@ def add_rich_paragraph(doc, text: str, *, style="body"):
     else:
         size = SIZE_BODY
 
-    parts = re.split(r"(\*\*[^*]+\*\*|`[^`]+`)", text or "")
+    raw = text or ""
+    # 段落内 ==黄标==：字符黄底
+    parts = re.split(r"(\*\*[^*]+\*\*|`[^`]+`|==[^=]+==)", raw)
     for part in parts:
         if not part:
             continue
-        if part.startswith("**") and part.endswith("**"):
+        if part.startswith("==") and part.endswith("==") and len(part) > 4:
+            run = p.add_run(part[2:-2])
+            set_run_font(run, size=size)
+            set_run_highlight_yellow(run)
+        elif part.startswith("**") and part.endswith("**"):
             run = p.add_run(part[2:-2])
             set_run_font(run, size=size, bold=True)
         elif part.startswith("`") and part.endswith("`"):

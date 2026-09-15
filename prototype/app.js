@@ -32521,7 +32521,7 @@ function renderGeOfferingRowActions(line, sec) {
     if (sec?.id) {
       parts.push(`<a href="#" onclick="openOfferingGroupingModal('${sec.id}', { returnPage: 'course-offering-ge' });return false">安排教师</a>`);
       if (isMajorOfferingTaskArrangementSubmitted(sec)) {
-        parts.push(renderDisabledAction('共同授课', '已生效，不支持设置共同授课。如需调整请先退回。'));
+        parts.push(renderDisabledAction('共同授课', '已生效，不支持设置共同授课。'));
       } else {
         parts.push(`<a href="#" onclick="event.preventDefault();openSharedTeachingSetupFromMajorTask('${sec.id}');return false">共同授课</a>`);
       }
@@ -32614,7 +32614,7 @@ function renderGeOfferingPlanToolbar() {
   const addTitle = quotaReady
     ? '从校选课程库添加 GE 开课'
     : '请先在「选修开课计划」中设定课程组quota 并保存生效';
-  // 两步工具栏均提供：GE开课 / ME开课 / 一键复制 / 导入 / 删除 / 生效；师资步另有一键同步共同授课
+  // 两步工具栏均提供：GE开课 / ME开课 / 一键复制 / 导入 / 生效 / 撤回 / 删除；师资步另有一键同步共同授课
   // Quota 计划总人数改在「需求与类型配额进度」卡片内显著展示
   const syncSharedTeachingBtn = step === 2
     ? `<button class="btn btn-outline btn-sm" type="button" id="btn-ge-task-sync-shared-teaching" onclick="openGeOfferingTaskSyncSharedTeachingConfirm()" title="按当前可见开课补上符合条件的共同授课；已有共同授课不会因换教师或同步而解开">一键同步共同授课</button>`
@@ -32628,6 +32628,7 @@ function renderGeOfferingPlanToolbar() {
       <button class="btn btn-outline btn-sm" type="button" id="btn-ge-task-import" onclick="startGeOfferingArrangeImport()" title="下载模板并导入分组与学时/教师安排；仅未生效任务可覆盖">导入</button>
       ${syncSharedTeachingBtn}
       <button class="btn btn-primary btn-sm" type="button" id="btn-ge-task-submit" onclick="submitSelectedGeOfferingTaskArrangements()" disabled>生效</button>
+      <button class="btn btn-outline btn-sm" type="button" id="btn-ge-task-withdraw" onclick="withdrawSelectedGeOfferingTaskArrangements()" disabled title="撤回已生效安排至草稿；已排课不可撤">撤回</button>
       <button class="btn btn-outline btn-sm btn-danger-outline" type="button" id="btn-ge-task-delete" onclick="deleteSelectedGeOfferingLines()" disabled>删除</button>
       <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportGeOfferingPlanList()">导出</button>
     </div>`;
@@ -44980,7 +44981,9 @@ function openSharedTeachingSetupFromMajorTask(sectionId) {
     return;
   }
   if (isMajorOfferingTaskArrangementSubmitted(sec)) {
-    alert('已生效，不支持设置共同授课。如需调整请先退回。');
+    alert(sec.offeringType === 'ge'
+      ? '已生效，不支持设置共同授课。'
+      : '已生效，不支持设置共同授课。如需调整请先退回。');
     return;
   }
   ensureSectionOfferingFields(sec);
@@ -46142,11 +46145,25 @@ function updateGeOfferingTaskSelection() {
   );
   const hasSelection = geOfferingTaskSelectedSectionIds.size > 0;
   const btnTaskSubmit = document.getElementById('btn-ge-task-submit');
+  const btnTaskWithdraw = document.getElementById('btn-ge-task-withdraw');
   const btnTaskDelete = document.getElementById('btn-ge-task-delete');
   const pending = getGeOfferingTaskPendingSelection();
   if (btnTaskSubmit) {
     btnTaskSubmit.disabled = !hasSelection || !pending.length;
     btnTaskSubmit.title = hasSelection && !pending.length ? '所选任务均已提交' : '';
+  }
+  if (btnTaskWithdraw) {
+    const canWithdraw = hasSelection && ensureCourseOfferingPlan() && [...geOfferingTaskSelectedSectionIds].some(id => {
+      const sec = COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id);
+      return sec
+        && sec.offeringType === 'ge'
+        && isMajorOfferingTaskArrangementMarkedSubmitted(sec)
+        && !isOfferingTaskCancelled(sec);
+    });
+    btnTaskWithdraw.disabled = !canWithdraw;
+    btnTaskWithdraw.title = !hasSelection
+      ? '撤回已生效安排至草稿；已排课不可撤'
+      : (canWithdraw ? '撤回已生效安排至草稿；已排课不可撤' : '请勾选已生效的开课安排后再撤回');
   }
   if (btnTaskDelete) {
     const canDelete = hasSelection && ensureCourseOfferingPlan() && [...geOfferingTaskSelectedSectionIds].some(id => {
@@ -46252,6 +46269,53 @@ function submitSelectedGeOfferingTaskArrangements(selectedIds = null) {
           alert(`已提交 ${pending.length} 条开课安排。开放选课课程的学生名单将由选课应用生成。`);
         }
       : null
+  });
+}
+
+/** 选修开课安排 · 撤回已生效安排（已排课不可撤） */
+function withdrawSelectedGeOfferingTaskArrangements() {
+  if (!ensureCourseOfferingPlan()) return;
+  const ids = [...geOfferingTaskSelectedSectionIds];
+  if (!ids.length) {
+    alert('请先勾选需要撤回的开课安排。');
+    return;
+  }
+  const secs = ids
+    .map(id => COURSE_OFFERING_PLAN_STORE.sections.find(s => s.id === id))
+    .filter(s => s && s.offeringType === 'ge');
+  const withdrawableSections = [...new Map(
+    secs
+      .filter(s => isMajorOfferingTaskArrangementMarkedSubmitted(s) && !isOfferingTaskCancelled(s))
+      .map(s => [s.id, s])
+  ).values()];
+  if (!withdrawableSections.length) {
+    alert('所选开课安排尚未生效，无需撤回。');
+    return;
+  }
+  const scheduledSections = withdrawableSections.filter(hasMajorOfferingSectionScheduleResult);
+  if (scheduledSections.length) {
+    const lines = scheduledSections
+      .map(sec => `· ${[sec.code, getOfferingClassDisplayName(sec, sec.name)].filter(Boolean).join(' ') || '当前任务'}`)
+      .join('\n');
+    alert(`已排课，无法撤回。\n\n以下开课已生成排课结果，请先撤销排课结果后再撤回：\n\n${lines}`);
+    return;
+  }
+  openDeleteConfirm({
+    title: '撤回开课安排',
+    message: `确定撤回选中的 <strong>${withdrawableSections.length}</strong> 条选修开课安排吗？`,
+    hint: '撤回后安排状态变为草稿，可继续修改后再生效。分组与教师安排保留；授课确认状态保持不变。学生名单中的课程组分配将重置。',
+    hintWarn: true,
+    confirmLabel: '撤回',
+    onConfirm: () => {
+      withdrawableSections.forEach(sec => withdrawMajorOfferingTaskArrangement(sec));
+      if (offeringGroupingSectionId && withdrawableSections.some(sec => sec.id === offeringGroupingSectionId)) {
+        closeOfferingGroupingPage({ force: true });
+      }
+      geOfferingTaskSelectedSectionIds.clear();
+      renderGeOfferingPlanPage();
+      updateGeOfferingTaskSelection();
+      if (typeof renderGeOfferingRosterPage === 'function') renderGeOfferingRosterPage();
+    }
   });
 }
 

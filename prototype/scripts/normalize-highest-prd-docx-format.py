@@ -192,8 +192,14 @@ def parse_blocks(md: str):
 
 
 def find_change_note(folder: Path) -> Path | None:
-    cands = sorted(folder.glob("*变更说明.md"))
-    return cands[0] if cands else None
+    """优先用「审计补丁」变更说明（覆盖升级黄标），否则取按名排序的最新一份。"""
+    cands = list(folder.glob("*变更说明.md"))
+    if not cands:
+        return None
+    audit = [p for p in cands if "审计补丁" in p.name]
+    if audit:
+        return sorted(audit)[-1]
+    return sorted(cands)[-1]
 
 
 def load_diff_meta(folder: Path, menu_name: str) -> dict:
@@ -232,8 +238,11 @@ def load_diff_meta(folder: Path, menu_name: str) -> dict:
                 if "完整重写" in content or "首版" in content:
                     full_rewrite = True
 
-    # 无0807基线：整份视为相对0807新增
-    if not has_baseline:
+    # 无0807基线：整份视为相对0807新增；但「审计补丁」变更说明只标本批对象ID，避免整份刷黄
+    audit_only = bool(note and "审计补丁" in note.name)
+    if audit_only:
+        full_rewrite = False
+    elif not has_baseline:
         full_rewrite = True
 
     return {

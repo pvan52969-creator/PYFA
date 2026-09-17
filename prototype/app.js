@@ -25253,6 +25253,8 @@ let scheduleJointPickerSnapshot = { programme: null, batch: null, dept: null, te
 let scheduleJointPickerDraft = { programme: null, batch: null, dept: null, teacher: null };
 let scheduleJointPickerQuery = { programme: '', batch: '', dept: '', teacher: '' };
 let scheduleJointPickerDocBound = false;
+let scheduleJointLiveBackup = null;
+let SCHEDULE_JOINT_DEMO_CATALOG = null;
 /** time：排课表时间；room：排课表教室 */
 let scheduleDetailPhase = 'time';
 /** 排课表教室列表勾选（batch: key / teacher: id / course: code） */
@@ -31455,7 +31457,7 @@ function toggleScheduleGridCell(task, weekday, periodNo, occupiedOther) {
 }
 
 function removeScheduleTaskSlot(taskId, slotId) {
-  const task = SCHEDULE_TASK_STORE.tasks.find(t => t.id === taskId);
+  const task = findScheduleTaskById(taskId);
   if (!task) return;
   task.timeSlots = normalizeTaskTimeSlots(task).filter(s => s.id !== slotId);
   persistTaskSchedule(task);
@@ -31465,7 +31467,7 @@ function removeScheduleTaskSlot(taskId, slotId) {
 }
 
 function resolveScheduleCourseUnitKey(taskId, hourType) {
-  const task = SCHEDULE_TASK_STORE.tasks.find(t => t.id === taskId) || null;
+  const task = findScheduleTaskById(taskId);
   const raw = hourType || '';
   if (!task) return normalizeScheduleHourKey(raw) || raw;
   const units = getScheduleTaskHourUnits(task);
@@ -31613,8 +31615,17 @@ function formatScheduleWeekList(arr) {
   return parts.join(',') + '周';
 }
 
+function findScheduleTaskById(taskId) {
+  if (!taskId) return null;
+  if (isScheduleJointDemoContext()) {
+    const demo = (ensureScheduleJointDemoCatalog().tasks || []).find(t => t.id === taskId);
+    if (demo) return demo;
+  }
+  return (SCHEDULE_TASK_STORE.tasks || []).find(t => t.id === taskId) || null;
+}
+
 function getScheduleActiveTask() {
-  return SCHEDULE_TASK_STORE.tasks.find(t => t.id === scheduleActiveTaskId) || null;
+  return findScheduleTaskById(scheduleActiveTaskId);
 }
 
 /** 当前选中的所有节次（可跨不同课程） -> [{ task, slot }] */
@@ -32281,7 +32292,7 @@ function bulkScheduleEmptyCells(minW, maxW, minP, maxP, jointKey) {
   }));
   const maxWeekday = scheduleShowWeekend ? 7 : 5;
   const term = getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm();
-  const maxPeriod = ensureSchedulePeriods(term).length;
+  const maxPeriod = getScheduleActiveGridMaxPeriod(term);
   const hourType = getScheduleActiveHourKey();
   const venueTypes = getScheduleDraftVenueTypesForPlace();
   const venueRemark = getScheduleDraftVenueRemarkForPlace();
@@ -37118,7 +37129,7 @@ function previewMoveSelectedScheduleBlock(tasks, targetWeekday, targetPeriod) {
   if (!entries.length) return { ok: false, silent: true };
   const slots = entries.map(e => e.slot);
   const term = getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm();
-  const maxPeriod = ensureSchedulePeriods(term).length;
+  const maxPeriod = getScheduleActiveGridMaxPeriod(term);
   const maxWeekday = scheduleShowWeekend ? 7 : 5;
   const minW = Math.min(...slots.map(s => s.weekday));
   const maxW = Math.max(...slots.map(s => s.weekday));
@@ -39231,12 +39242,16 @@ function getScheduleTaskTeacherEntries(task) {
 function taskHasScheduleTeacher(task, teacherId) {
   if (!teacherId || !task) return false;
   const q = String(teacherId).trim().toLowerCase();
+  if (task.jointDemo && Array.isArray(task.teacherIds) && task.teacherIds.length) {
+    return task.teacherIds.some(id => String(id).toLowerCase() === q);
+  }
   return getScheduleTaskTeacherEntries(task).some(e => e.staffId.toLowerCase() === q);
 }
 
 function getScheduleTaskHours(task) {
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === task.id);
   if (sec?.totalHours != null) return sec.totalHours;
+  if (task?.totalHours != null && task.totalHours !== '') return task.totalHours;
   const meta = getCatalogOfferingMeta(sec?.catalogId || task.catalogId);
   return meta.totalHours ?? '—';
 }
@@ -40571,7 +40586,7 @@ function getScheduleDetailScopeTasks() {
         )
       )
     );
-  } else if (ctx.type === 'joint') {
+  } else if (ctx.type === 'joint' || ctx.type === 'joint-demo') {
     tasks = getScheduleJointUnionTasks(ctx);
   } else {
     tasks = getScheduleTasksForBatch(ctx.programmeKey, ctx.intake);
@@ -40583,8 +40598,8 @@ function getScheduleDetailScopeTasks() {
 function getScheduleDetailTasks() {
   const tasks = getScheduleDetailScopeTasks().filter(isScheduleTaskSchedulable);
   const phase = scheduleBatchDetailContext?.phase || scheduleDetailPhase || 'time';
-  // 排时间侧与菜单页同口径：课程≤5
-  if (phase === 'time') return getScheduleTimeArrangeScopeTasks(tasks);
+  // 排时间侧与菜单页同口径：课程≤5；演示版按 Excel 原量展示全部可排课程
+  if (phase === 'time' && !isScheduleJointDemoContext()) return getScheduleTimeArrangeScopeTasks(tasks);
   return tasks;
 }
 
@@ -40599,6 +40614,7 @@ function getScheduleNoScheduleTasksForBatch(programmeKey, intake) {
 function getScheduleDetailTitle() {
   const ctx = scheduleBatchDetailContext;
   if (!ctx) return '排课';
+  if (ctx.type === 'joint-demo') return '联合排课（演示版本）';
   if (ctx.type === 'joint') return '联合排课';
   if (ctx.type === 'teacher') return `${ctx.teacherName || ''}（${ctx.teacherId}）`;
   if (ctx.type === 'room') return `${ctx.room}`;
@@ -40704,22 +40720,35 @@ function onScheduleScopeSwitch(value) {
   }
 }
 
+function isScheduleJointDemoContext() {
+  return scheduleBatchDetailContext?.type === 'joint-demo' && scheduleDetailPhase !== 'room';
+}
+
 function isScheduleJointContext() {
-  return scheduleBatchDetailContext?.type === 'joint' && scheduleDetailPhase !== 'room';
+  const t = scheduleBatchDetailContext?.type;
+  return (t === 'joint' || t === 'joint-demo') && scheduleDetailPhase !== 'room';
+}
+
+function getScheduleJointPageEl() {
+  if (isScheduleJointDemoContext() || document.getElementById('page-schedule-joint-demo')?.classList.contains('active')) {
+    return document.getElementById('page-schedule-joint-demo');
+  }
+  return document.getElementById('page-schedule-joint');
 }
 
 function getActiveScheduleDetailPageEl() {
   const active = document.querySelector('.schedule-detail-page.active');
   if (active) return active;
-  if (isScheduleJointContext()) return document.getElementById('page-schedule-joint');
+  if (isScheduleJointContext()) return getScheduleJointPageEl();
   if (scheduleDetailPhase === 'room') return document.getElementById('page-schedule-room-detail');
   return document.getElementById('page-schedule-time-detail');
 }
 
 function scheduleDetailEl(id) {
   // 排教室克隆页与排时间页存在重复 id：必须按当前阶段优先取对应页，避免读到隐藏页的空筛选值
-  if (isScheduleJointContext() || document.getElementById('page-schedule-joint')?.classList.contains('active')) {
-    const joint = document.getElementById('page-schedule-joint');
+  if (isScheduleJointContext() || document.getElementById('page-schedule-joint')?.classList.contains('active')
+    || document.getElementById('page-schedule-joint-demo')?.classList.contains('active')) {
+    const joint = getScheduleJointPageEl();
     const scoped = joint?.querySelector?.(`#${id}`);
     if (scoped) return scoped;
   }
@@ -40788,6 +40817,7 @@ function ensureScheduleRoomDetailPage() {
 
 function getScheduleDetailListPageId(phase, type) {
   const p = phase || scheduleDetailPhase || 'time';
+  if (type === 'joint-demo') return 'schedule-joint-demo';
   if (type === 'joint') return 'schedule-joint';
   if (p === 'room') {
     if (type === 'venueType' || type === 'teacher') return 'schedule-room-category';
@@ -40805,7 +40835,7 @@ function getScheduleDetailPageId(phase) {
 
 function getScheduleScopeType(ctx) {
   if (!ctx) return 'batch';
-  if (ctx.type === 'joint' || ctx.type === 'weekday' || ctx.type === 'venueType' || ctx.type === 'teacher' || ctx.type === 'course' || ctx.type === 'room') {
+  if (ctx.type === 'joint' || ctx.type === 'joint-demo' || ctx.type === 'weekday' || ctx.type === 'venueType' || ctx.type === 'teacher' || ctx.type === 'course' || ctx.type === 'room') {
     return ctx.type;
   }
   return 'batch';
@@ -41005,6 +41035,18 @@ function getScheduleTasksForScopeCtx(ctx) {
 
 function getScheduleJointUnionTasks(ctx) {
   const source = ctx || scheduleBatchDetailContext || {};
+  if (source.type === 'joint-demo' || isScheduleJointDemoContext()) {
+    const cat = ensureScheduleJointDemoCatalog();
+    const batchKeys = new Set(source.batches || scheduleJointAppliedBatches || []);
+    const teacherIds = new Set(source.teachers || scheduleJointAppliedTeachers || []);
+    const termCode = source.termCode || scheduleJointAppliedTerm || '';
+    return (cat.tasks || []).filter(task => {
+      if (termCode && String(task.termCode || '') !== termCode) return false;
+      if (batchKeys.size && getScheduleTaskBatchKeys(task).some(k => batchKeys.has(k))) return true;
+      if (teacherIds.size && (task.teacherIds || []).some(id => teacherIds.has(id))) return true;
+      return false;
+    });
+  }
   const batchKeys = source.batches || scheduleJointAppliedBatches || [];
   const teacherIds = source.teachers || scheduleJointAppliedTeachers || [];
   const termCode = source.termCode || scheduleJointAppliedTerm || '';
@@ -41035,6 +41077,15 @@ function getScheduleJointUnionTasks(ctx) {
 
 function getScheduleJointRowObjects() {
   const ctx = scheduleBatchDetailContext || {};
+  if (isScheduleJointDemoContext() || ctx.type === 'joint-demo') {
+    const cat = ensureScheduleJointDemoCatalog();
+    const batchAllow = new Set(ctx.batches || scheduleJointAppliedBatches || []);
+    const teacherAllow = new Set(ctx.teachers || scheduleJointAppliedTeachers || []);
+    return (cat.objects || []).filter(o => {
+      if (o.kind === 'batch') return batchAllow.has(`${o.programmeKey}|${o.intake}`);
+      return teacherAllow.has(o.teacherId);
+    });
+  }
   const batchKeys = ctx.batches || scheduleJointAppliedBatches || [];
   const teacherIds = ctx.teachers || scheduleJointAppliedTeachers || [];
   const objs = [];
@@ -41065,6 +41116,9 @@ function getScheduleJointRowObjects() {
 function filterScheduleTasksByJointRow(tasks, jointKey) {
   const obj = getScheduleJointRowObjects().find(o => o.key === jointKey);
   if (!obj) return [];
+  if (isScheduleJointDemoContext()) {
+    return (tasks || []).filter(t => scheduleJointTaskMatchesRow(t, obj));
+  }
   if (obj.kind === 'batch') {
     const ids = new Set(getScheduleTasksForBatch(obj.programmeKey, obj.intake).map(t => t.id));
     return (tasks || []).filter(t => ids.has(t.id));
@@ -41104,7 +41158,7 @@ function getScheduleJointTaskTargetRowKeys(task) {
 
 let scheduleJointPlaceToastTimer = null;
 function showScheduleJointPlaceToast(message, durationMs = 2800) {
-  const page = document.getElementById('page-schedule-joint');
+  const page = getScheduleJointPageEl();
   if (!page || !message) return;
   let el = page.querySelector('#schedule-joint-place-toast');
   if (!el) {
@@ -41149,6 +41203,7 @@ function getScheduleJointHitScopeTasks(tasks, ev) {
 }
 
 function openScheduleJointPage() {
+  if (scheduleBatchDetailContext?.type === 'joint-demo') restoreScheduleJointLiveSelection();
   if (ensureCourseOfferingPlan()) {
     ensureScheduleGlobalDemo();
     ensureScheduleTasksFromOffering();
@@ -41164,22 +41219,86 @@ function openScheduleJointPage() {
     teachers: scheduleJointAppliedTeachers.slice()
   };
   if (!wasJoint) resetScheduleDetailState();
-  ensureScheduleJointPage();
+  ensureScheduleJointPage('page-schedule-joint', '联合排课');
 }
 
-function ensureScheduleJointPage() {
-  const mount = document.getElementById('page-schedule-joint');
+function backupScheduleJointLiveSelection() {
+  if (scheduleBatchDetailContext?.type === 'joint-demo') return;
+  scheduleJointLiveBackup = {
+    draftTerm: scheduleJointDraftTerm,
+    selectedProgrammes: scheduleJointSelectedProgrammes.slice(),
+    selectedBatches: scheduleJointSelectedBatches.slice(),
+    selectedDepts: scheduleJointSelectedDepts.slice(),
+    selectedTeachers: scheduleJointSelectedTeachers.slice(),
+    appliedTerm: scheduleJointAppliedTerm,
+    appliedBatches: scheduleJointAppliedBatches.slice(),
+    appliedTeachers: scheduleJointAppliedTeachers.slice()
+  };
+}
+
+function restoreScheduleJointLiveSelection() {
+  const bak = scheduleJointLiveBackup;
+  if (!bak) {
+    scheduleJointDraftTerm = getDefaultScheduleJointTerm();
+    scheduleJointSelectedProgrammes = [];
+    scheduleJointSelectedBatches = [];
+    scheduleJointSelectedDepts = [];
+    scheduleJointSelectedTeachers = [];
+    scheduleJointAppliedTerm = '';
+    scheduleJointAppliedBatches = [];
+    scheduleJointAppliedTeachers = [];
+    return;
+  }
+  scheduleJointDraftTerm = bak.draftTerm;
+  scheduleJointSelectedProgrammes = bak.selectedProgrammes.slice();
+  scheduleJointSelectedBatches = bak.selectedBatches.slice();
+  scheduleJointSelectedDepts = bak.selectedDepts.slice();
+  scheduleJointSelectedTeachers = bak.selectedTeachers.slice();
+  scheduleJointAppliedTerm = bak.appliedTerm;
+  scheduleJointAppliedBatches = bak.appliedBatches.slice();
+  scheduleJointAppliedTeachers = bak.appliedTeachers.slice();
+}
+
+function openScheduleJointDemoPage() {
+  backupScheduleJointLiveSelection();
+  const cat = ensureScheduleJointDemoCatalog();
+  scheduleDetailPhase = 'time';
+  scheduleJointDraftTerm = '202604';
+  scheduleJointSelectedProgrammes = cat.picker.programme.map(o => o.value);
+  scheduleJointSelectedBatches = cat.picker.batch.map(o => o.value);
+  scheduleJointSelectedDepts = [];
+  scheduleJointSelectedTeachers = cat.picker.teacher.map(o => o.value);
+  scheduleJointAppliedTerm = '202604';
+  scheduleJointAppliedBatches = scheduleJointSelectedBatches.slice();
+  scheduleJointAppliedTeachers = scheduleJointSelectedTeachers.slice();
+  const wasDemo = scheduleBatchDetailContext?.type === 'joint-demo';
+  scheduleBatchDetailContext = {
+    type: 'joint-demo',
+    phase: 'time',
+    termCode: '202604',
+    batches: scheduleJointAppliedBatches.slice(),
+    teachers: scheduleJointAppliedTeachers.slice()
+  };
+  if (!wasDemo) resetScheduleDetailState();
+  ensureScheduleJointPage('page-schedule-joint-demo', '联合排课（演示版本）');
+}
+
+function ensureScheduleJointPage(pageId = 'page-schedule-joint', breadcrumb = '联合排课') {
+  const mount = document.getElementById(pageId);
   const src = document.getElementById('page-schedule-time-detail');
   if (!mount || !src) return;
   if (mount.dataset.cloned === '1' && mount.querySelector('#schedule-joint-picker-bar')) {
     ensureScheduleJointPickerBar(mount);
     bindScheduleJointPickerDocClose();
     bindScheduleJointPickerTriggers();
+    ensureScheduleJointChrome(mount);
+    ensureScheduleJointPerfNotice(mount);
     return;
   }
   const clone = src.cloneNode(true);
-  clone.id = 'page-schedule-joint';
+  clone.id = pageId;
   clone.classList.add('schedule-detail-page', 'is-schedule-joint');
+  if (pageId === 'page-schedule-joint-demo') clone.classList.add('is-schedule-joint-demo');
   clone.hidden = false;
   clone.removeAttribute('aria-hidden');
   clone.dataset.cloned = '1';
@@ -41191,7 +41310,7 @@ function ensureScheduleJointPage() {
     if (/返回/.test(btn.textContent || '')) btn.hidden = true;
   });
   const mid = clone.querySelector('#schedule-detail-breadcrumb-mid');
-  if (mid) mid.textContent = '联合排课';
+  if (mid) mid.textContent = breadcrumb;
   const titleEl = clone.querySelector('#schedule-time-detail-title');
   if (titleEl) {
     const slash = titleEl.previousElementSibling;
@@ -41216,6 +41335,145 @@ function ensureScheduleJointPage() {
   mount.replaceWith(clone);
   bindScheduleJointPickerDocClose();
   bindScheduleJointPickerTriggers();
+  ensureScheduleJointChrome(clone);
+  ensureScheduleJointPerfNotice(clone);
+}
+
+function markScheduleJointFoldTargets(page) {
+  if (!page) return;
+  [
+    'schedule-joint-picker-bar',
+    'schedule-detail-edit-hint',
+    'schedule-conflict-legend',
+    'schedule-detail-view-settings',
+    'schedule-retake-detect-panel'
+  ].forEach(id => {
+    const el = page.querySelector(`#${id}`);
+    if (!el) return;
+    el.setAttribute('data-joint-fold', '1');
+    el.setAttribute('data-joint-demo-fold', '1');
+  });
+  const weekField = page.querySelector('#schedule-detail-week-grid')?.closest('.schedule-detail-field');
+  if (weekField) {
+    weekField.setAttribute('data-joint-fold', '1');
+    weekField.setAttribute('data-joint-demo-fold', '1');
+  }
+}
+
+function getScheduleJointChromeBar(page) {
+  return page?.querySelector('#schedule-joint-chrome-bar')
+    || page?.querySelector('#schedule-joint-demo-chrome-bar')
+    || null;
+}
+
+function ensureScheduleJointChrome(page) {
+  if (!page?.classList?.contains('is-schedule-joint')) return;
+  markScheduleJointFoldTargets(page);
+  let bar = getScheduleJointChromeBar(page);
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = page.id === 'page-schedule-joint-demo'
+      ? 'schedule-joint-demo-chrome-bar'
+      : 'schedule-joint-chrome-bar';
+    bar.className = 'schedule-joint-chrome-bar';
+    bar.innerHTML = `
+      <button type="button" class="btn btn-outline btn-sm schedule-joint-chrome-toggle"
+        onclick="toggleScheduleJointChrome(event)" aria-expanded="false">
+        <span class="schedule-joint-chrome-chevron" aria-hidden="true">▾</span>
+        <span class="schedule-joint-chrome-toggle-text">展开筛选与设置</span>
+      </button>
+      <span class="schedule-joint-chrome-summary"></span>`;
+    const picker = page.querySelector('#schedule-joint-picker-bar');
+    if (picker) picker.insertAdjacentElement('beforebegin', bar);
+    else {
+      const header = page.querySelector('.page-header');
+      if (header) header.insertAdjacentElement('afterend', bar);
+      else page.insertBefore(bar, page.firstChild);
+    }
+  } else {
+    bar.classList.add('schedule-joint-chrome-bar');
+    const btn = bar.querySelector('button');
+    if (btn) {
+      btn.classList.add('schedule-joint-chrome-toggle');
+      btn.setAttribute('onclick', 'toggleScheduleJointChrome(event)');
+    }
+    bar.querySelector('.schedule-joint-demo-chrome-toggle-text')?.classList.add('schedule-joint-chrome-toggle-text');
+    bar.querySelector('.schedule-joint-demo-chrome-chevron')?.classList.add('schedule-joint-chrome-chevron');
+    bar.querySelector('.schedule-joint-demo-chrome-summary')?.classList.add('schedule-joint-chrome-summary');
+  }
+  if (page.dataset.jointChromeInit !== '1') {
+    page.dataset.jointChromeInit = '1';
+    page.classList.add('is-joint-chrome-collapsed');
+    if (page.id === 'page-schedule-joint-demo') page.classList.add('is-joint-demo-chrome-collapsed');
+  }
+  syncScheduleJointChromeToggle(page);
+}
+
+function ensureScheduleJointDemoChrome(page) {
+  ensureScheduleJointChrome(page);
+}
+
+function ensureScheduleJointPerfNotice(page) {
+  if (!page?.classList?.contains('is-schedule-joint')) return;
+  let el = page.querySelector(':scope > .schedule-joint-perf-notice');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'schedule-joint-perf-notice';
+    el.setAttribute('role', 'status');
+    el.innerHTML = '<strong>性能提示</strong>该功能对性能要求高，对象数量的增加可能会导致延迟卡顿。';
+  }
+  const chrome = getScheduleJointChromeBar(page);
+  const picker = page.querySelector('#schedule-joint-picker-bar');
+  const header = page.querySelector('.page-header');
+  const anchor = chrome || picker;
+  if (anchor) {
+    if (el.nextElementSibling !== anchor) anchor.insertAdjacentElement('beforebegin', el);
+  } else if (header) {
+    if (el.previousElementSibling !== header) header.insertAdjacentElement('afterend', el);
+  } else if (!el.parentNode) {
+    page.insertBefore(el, page.firstChild);
+  }
+}
+
+function toggleScheduleJointChrome(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  if (!isScheduleJointContext()) return;
+  const page = getScheduleJointPageEl();
+  if (!page) return;
+  const collapsed = page.classList.toggle('is-joint-chrome-collapsed');
+  page.classList.toggle('is-joint-demo-chrome-collapsed', page.id === 'page-schedule-joint-demo' && collapsed);
+  syncScheduleJointChromeToggle(page);
+}
+
+function toggleScheduleJointDemoChrome(event) {
+  toggleScheduleJointChrome(event);
+}
+
+function syncScheduleJointChromeToggle(page) {
+  const host = page || getScheduleJointPageEl();
+  if (!host) return;
+  const collapsed = host.classList.contains('is-joint-chrome-collapsed')
+    || host.classList.contains('is-joint-demo-chrome-collapsed');
+  const btn = host.querySelector('.schedule-joint-chrome-toggle, .schedule-joint-demo-chrome-toggle');
+  const text = host.querySelector('.schedule-joint-chrome-toggle-text, .schedule-joint-demo-chrome-toggle-text');
+  const chevron = host.querySelector('.schedule-joint-chrome-chevron, .schedule-joint-demo-chrome-chevron');
+  const sum = host.querySelector('.schedule-joint-chrome-summary, .schedule-joint-demo-chrome-summary');
+  if (btn) btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  if (text) text.textContent = collapsed ? '展开筛选与设置' : '收起筛选与设置';
+  if (chevron) chevron.textContent = collapsed ? '▾' : '▴';
+  if (sum) {
+    sum.hidden = !collapsed;
+    const term = scheduleJointAppliedTerm || scheduleJointDraftTerm || getDefaultScheduleJointTerm() || '';
+    const termLabel = term && typeof formatCourseTermDisplay === 'function' ? formatCourseTermDisplay(term) : (term || '—');
+    const nBatch = (scheduleJointAppliedBatches || []).length;
+    const nTeacher = (scheduleJointAppliedTeachers || []).length;
+    sum.textContent = `${termLabel} · 专业批次 ${nBatch} · 教师 ${nTeacher}`;
+  }
+}
+
+function syncScheduleJointDemoChromeToggle(page) {
+  syncScheduleJointChromeToggle(page);
 }
 
 function buildScheduleJointPickerFieldHtml(kind, label) {
@@ -41262,7 +41520,7 @@ function buildScheduleJointPickerBarHtml() {
 }
 
 function ensureScheduleJointPickerBar(page) {
-  const host = page || document.getElementById('page-schedule-joint');
+  const host = page || getScheduleJointPageEl();
   if (!host) return;
   let bar = host.querySelector('#schedule-joint-picker-bar');
   if (!bar) {
@@ -41348,15 +41606,19 @@ function getScheduleJointTermScopedTeacherRows() {
 function fillScheduleJointTermSelect() {
   const sel = scheduleDetailEl('schedule-joint-term');
   if (!sel) return;
-  const terms = getScheduleTermCodes();
-  if (!scheduleJointDraftTerm) scheduleJointDraftTerm = getDefaultScheduleJointTerm();
+  const terms = isScheduleJointDemoContext()
+    ? ['202604']
+    : getScheduleTermCodes();
+  if (!scheduleJointDraftTerm) {
+    scheduleJointDraftTerm = isScheduleJointDemoContext() ? '202604' : getDefaultScheduleJointTerm();
+  }
   const cur = scheduleJointDraftTerm;
   sel.innerHTML = terms.map(code =>
     `<option value="${escapeHtml(code)}">${escapeHtml(formatCourseTermDisplay(code))}</option>`
   ).join('');
   if (cur && terms.includes(cur)) sel.value = cur;
   else if (terms.length) {
-    sel.value = getDefaultScheduleJointTerm() || terms[0];
+    sel.value = (isScheduleJointDemoContext() ? '202604' : getDefaultScheduleJointTerm()) || terms[0];
     scheduleJointDraftTerm = sel.value;
   }
 }
@@ -41372,6 +41634,10 @@ function onScheduleJointTermChange() {
 }
 
 function getScheduleJointAllPickerOptions(kind) {
+  if (isScheduleJointDemoContext()) {
+    const cat = ensureScheduleJointDemoCatalog();
+    return (cat.picker && cat.picker[kind]) ? cat.picker[kind].slice() : [];
+  }
   if (kind === 'programme') {
     const seen = new Map();
     getScheduleJointTermScopedBatchSummaries().forEach(s => {
@@ -41517,9 +41783,13 @@ function updateScheduleJointPickerDisplay(kind) {
   const opts = getScheduleJointAllPickerOptions(kind);
   const labels = selected.map(v => opts.find(o => o.value === v)?.text || v).filter(Boolean);
   if (host) {
-    host.innerHTML = labels.map(text =>
-      `<span class="schedule-joint-picker-chip">${escapeHtml(text)}</span>`
-    ).join('');
+    if (isScheduleJointDemoContext() && labels.length > 6) {
+      host.innerHTML = `<span class="schedule-joint-picker-chip">已选 ${labels.length} 项</span>`;
+    } else {
+      host.innerHTML = labels.map(text =>
+        `<span class="schedule-joint-picker-chip">${escapeHtml(text)}</span>`
+      ).join('');
+    }
     host.hidden = !labels.length;
   }
   if (!input) return;
@@ -41666,7 +41936,7 @@ function confirmScheduleJointPicker(kind, event) {
 }
 
 function applyScheduleJointQueryContext() {
-  if (scheduleBatchDetailContext?.type !== 'joint') return;
+  if (scheduleBatchDetailContext?.type !== 'joint' && scheduleBatchDetailContext?.type !== 'joint-demo') return;
   scheduleBatchDetailContext.termCode = scheduleJointAppliedTerm;
   scheduleBatchDetailContext.batches = scheduleJointAppliedBatches.slice();
   scheduleBatchDetailContext.teachers = scheduleJointAppliedTeachers.slice();
@@ -41716,6 +41986,19 @@ function resetScheduleJointQuery(event) {
   event?.stopPropagation?.();
   event?.preventDefault?.();
   SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => closeScheduleJointPicker(kind));
+  if (isScheduleJointDemoContext()) {
+    scheduleJointDraftTerm = '202604';
+    scheduleJointSelectedProgrammes = [];
+    scheduleJointSelectedBatches = [];
+    scheduleJointSelectedDepts = [];
+    scheduleJointSelectedTeachers = [];
+    scheduleJointAppliedTerm = '';
+    scheduleJointAppliedBatches = [];
+    scheduleJointAppliedTeachers = [];
+    applyScheduleJointQueryContext();
+    renderScheduleDetailPage();
+    return;
+  }
   scheduleJointDraftTerm = getDefaultScheduleJointTerm();
   scheduleJointSelectedProgrammes = [];
   scheduleJointSelectedBatches = [];
@@ -41849,6 +42132,7 @@ function getScheduleDetailMidLabel() {
     if (type === 'course') return '按课程排';
     return '按时间排';
   }
+  if (type === 'joint-demo') return '联合排课（演示版本）';
   if (type === 'joint') return '联合排课';
   if (type === 'teacher') return '按教师排';
   if (type === 'course') return '按课程排';
@@ -42579,7 +42863,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
 function renderScheduleJointTimetableGrid(term, tasks, activeTaskId, weekFilter) {
   const mount = scheduleDetailEl('schedule-timetable-grid');
   if (!mount) return;
-  const periods = ensureSchedulePeriods(term);
+  const periods = getScheduleJointGridPeriods(term);
   if (!periods.length) {
     mount.innerHTML = '<p class="text-muted" style="padding:16px">请先在「课表节次维护」中配置节次</p>';
     return;
@@ -42685,6 +42969,181 @@ function renderScheduleJointTimetableGrid(term, tasks, activeTaskId, weekFilter)
   mount.innerHTML = html;
   bindScheduleTimetableContextMenu(mount);
   initScheduleGridDragSelect();
+}
+
+function parseJointDemoCourseText(text) {
+  const raw = String(text || '').trim();
+  const first = raw.split('\n')[0].trim();
+  const m = first.match(/[A-Z]{2,}\d{3}[A-Z]?/i);
+  const code = (m ? m[0] : first || 'COURSE').toUpperCase();
+  return { code, name: raw.replace(/\s+/g, ' '), groupLabel: raw };
+}
+
+function getScheduleJointGridPeriods(term) {
+  const base = (ensureSchedulePeriods(term) || []).map(p => ({ ...p }));
+  [
+    { periodNo: 11, startTime: '18:00', endTime: '19:00' },
+    { periodNo: 12, startTime: '19:00', endTime: '20:00' },
+    { periodNo: 13, startTime: '20:00', endTime: '21:00' }
+  ].forEach(e => {
+    if (!base.some(p => Number(p.periodNo) === e.periodNo)) {
+      base.push({
+        id: `jt-p-${e.periodNo}`,
+        periodNo: e.periodNo,
+        startTime: e.startTime,
+        endTime: e.endTime,
+        remark: 'evening'
+      });
+    }
+  });
+  return base.sort((a, b) => Number(a.periodNo) - Number(b.periodNo));
+}
+
+function getScheduleJointDemoPeriods(term) {
+  return getScheduleJointGridPeriods(term);
+}
+
+function getScheduleActiveGridMaxPeriod(term) {
+  const t = term || getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm();
+  if (isScheduleJointContext()) {
+    return getScheduleJointGridPeriods(t).reduce((m, p) => Math.max(m, Number(p.periodNo) || 0), 0);
+  }
+  return (ensureSchedulePeriods(t) || []).length;
+}
+
+function ensureScheduleJointDemoCatalog() {
+  if (SCHEDULE_JOINT_DEMO_CATALOG) return SCHEDULE_JOINT_DEMO_CATALOG;
+  const data = window.JOINT_DEMO_DATA;
+  if (!data?.objects) {
+    SCHEDULE_JOINT_DEMO_CATALOG = { objects: [], tasks: [], picker: { programme: [], batch: [], dept: [], teacher: [] } };
+    return SCHEDULE_JOINT_DEMO_CATALOG;
+  }
+  const objects = data.objects.map((o, i) => {
+    if (o.k === 'teacher') {
+      const dept = /PHY/i.test(o.g) ? 'PHY' : 'MAT';
+      const teacherId = `JDT${String(i + 1).padStart(3, '0')}`;
+      return {
+        kind: 'teacher',
+        key: `teacher:${teacherId}`,
+        label: o.n,
+        teacherId,
+        teacherName: o.n,
+        dept,
+        group: o.g
+      };
+    }
+    const prog = String(o.g || String(o.n || '').split(/\s+/)[0] || 'PROG');
+    const intake = String(o.n || '').replace(new RegExp(`^${prog}\\s*`), '').trim() || String(o.n || prog);
+    return {
+      kind: 'batch',
+      key: `batch:${prog}|${intake}`,
+      label: o.n,
+      programmeKey: prog,
+      intake,
+      group: o.g
+    };
+  });
+  const taskMap = new Map();
+  (data.slots || []).forEach(s => {
+    const [oi, di, col, span, text] = s;
+    const parsed = parseJointDemoCourseText(text);
+    const tkey = parsed.groupLabel;
+    if (!taskMap.has(tkey)) {
+      taskMap.set(tkey, {
+        id: `jtd-${taskMap.size + 1}`,
+        code: parsed.code,
+        name: parsed.name,
+        groupLabel: parsed.groupLabel,
+        teachers: '',
+        teacherId: '',
+        teacherIds: [],
+        batchKeys: [],
+        timeSlots: [],
+        weeks: '1-14周',
+        termCode: '202604',
+        totalHours: 0,
+        isScheduled: 'yes',
+        jointDemo: true
+      });
+    }
+    const task = taskMap.get(tkey);
+    const obj = objects[oi];
+    if (!obj) return;
+    if (obj.kind === 'teacher') {
+      if (!task.teacherIds.includes(obj.teacherId)) task.teacherIds.push(obj.teacherId);
+      if (!task.teacherId) {
+        task.teacherId = obj.teacherId;
+        task.teachers = obj.teacherName;
+      }
+    } else {
+      const bk = `${obj.programmeKey}|${obj.intake}`;
+      if (!task.batchKeys.includes(bk)) task.batchKeys.push(bk);
+      if (!task.programmeKey) {
+        task.programmeKey = obj.programmeKey;
+        task.intake = obj.intake;
+      }
+    }
+    const weekday = Number(di) + 1;
+    const periodFrom = Number(col) + 1;
+    const periodTo = periodFrom + Math.max(1, Number(span) || 1) - 1;
+    if (!task.timeSlots.some(sl => sl.weekday === weekday && sl.periodFrom === periodFrom && sl.periodTo === periodTo)) {
+      task.timeSlots.push({
+        id: nextScheduleSlotId(),
+        weekday,
+        periodFrom,
+        periodTo,
+        weeks: '1-14周'
+      });
+    }
+  });
+  const tasks = [...taskMap.values()].map(t => {
+    const periods = t.timeSlots.reduce((n, sl) => n + (Number(sl.periodTo) - Number(sl.periodFrom) + 1), 0);
+    const weekCount = parseWeeksString(t.weeks || '1-14周').length || 14;
+    t.totalHours = periods * weekCount + 6;
+    if (t.teacherIds.length > 1) {
+      t.teachers = t.teacherIds.map(id => objects.find(o => o.teacherId === id)?.teacherName || id).join('、');
+    }
+    if (typeof syncTaskLegacyTimeFields === 'function') syncTaskLegacyTimeFields(t);
+    return t;
+  });
+  const progSeen = new Map();
+  const batchOpts = [];
+  objects.filter(o => o.kind === 'batch').forEach(o => {
+    if (!progSeen.has(o.programmeKey)) {
+      progSeen.set(o.programmeKey, {
+        value: o.programmeKey,
+        text: o.programmeKey,
+        search: `${o.programmeKey} ${o.label}`
+      });
+    }
+    batchOpts.push({
+      value: `${o.programmeKey}|${o.intake}`,
+      text: o.label,
+      search: `${o.label} ${o.programmeKey} ${o.intake}`,
+      programmeKey: o.programmeKey
+    });
+  });
+  const deptOpts = [
+    { value: 'MAT', text: 'MAT', search: 'MAT 数学' },
+    { value: 'PHY', text: 'PHY', search: 'PHY 物理' }
+  ];
+  const teacherOpts = objects.filter(o => o.kind === 'teacher').map(o => ({
+    value: o.teacherId,
+    text: `${o.teacherName}（${o.teacherId}）`,
+    search: `${o.teacherName} ${o.teacherId} ${o.dept}`,
+    dept: o.dept
+  }));
+  SCHEDULE_JOINT_DEMO_CATALOG = {
+    objects,
+    tasks,
+    picker: {
+      programme: [...progSeen.values()],
+      batch: batchOpts,
+      dept: deptOpts,
+      teacher: teacherOpts
+    }
+  };
+  return SCHEDULE_JOINT_DEMO_CATALOG;
 }
 
 /** 排教室课表：固定冻结列宽/left，并设置整段冻结区宽度供序号列底衬遮罩使用 */
@@ -44771,9 +45230,11 @@ function renderScheduleDetailCourseList(tasks, activeTaskId) {
     return;
   }
 
-  // 排时间侧与菜单页同口径（课程已在 getScheduleDetailTasks 截断，学时单元≤10）
-  const rows = getScheduleTimeArrangeUnitRows(tasks)
-    .filter(row => scheduleTimeUnitRowMatchesSearch(row, searchFilters));
+  // 排时间侧与菜单页同口径（课程已在 getScheduleDetailTasks 截断，学时单元≤10）；演示版不截断
+  const rows = (isScheduleJointDemoContext()
+    ? getScheduleUnitRows(tasks)
+    : getScheduleTimeArrangeUnitRows(tasks)
+  ).filter(row => scheduleTimeUnitRowMatchesSearch(row, searchFilters));
   const activeHourKey = getScheduleActiveHourKey();
   const pending = rows.filter(r => !r.unit.complete);
   const done = rows.filter(r => r.unit.complete);
@@ -44931,6 +45392,7 @@ function renderScheduleDetailPage() {
   syncScheduleViewSettingControls();
   renderScheduleScopeSwitcher();
   syncScheduleJointPickers();
+  if (isScheduleJointContext()) syncScheduleJointChromeToggle(getScheduleJointPageEl());
   const tasks = getScheduleDetailTasks()
     .sort((a, b) => a.code.localeCompare(b.code));
   if (scheduleDetailPhase === 'room') syncScheduleRoomPendingMapFromTasks(tasks);
@@ -51229,6 +51691,7 @@ const SCHEDULE_PAGE_IDS = new Set([
   'schedule-teacher',
   'schedule-course',
   'schedule-joint',
+  'schedule-joint-demo',
   'schedule-time-conflict',
   'schedule-auto-time-rule',
   'schedule-auto-time',
@@ -51756,6 +52219,7 @@ if (!window.__ssDocBound) {
 function goPage(id) {
   id = resolveSchedulePageId(id);
   if (id === 'schedule-joint') openScheduleJointPage();
+  if (id === 'schedule-joint-demo') openScheduleJointDemoPage();
   if (id === 'portal') {
     goPortal();
     return;
@@ -51841,6 +52305,7 @@ function goPage(id) {
   if (id === 'schedule-time') renderScheduleTimePage();
   if (id === 'schedule-time-detail') renderScheduleDetailPage();
   if (id === 'schedule-joint') renderScheduleDetailPage();
+  if (id === 'schedule-joint-demo') renderScheduleDetailPage();
   if (id === 'schedule-room-detail') { ensureScheduleRoomDetailPage(); renderScheduleDetailPage(); }
   if (id === 'schedule-teacher') renderScheduleTeacherPage();
   if (id === 'schedule-course') renderScheduleCoursePage();

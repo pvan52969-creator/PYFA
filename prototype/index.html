@@ -155,7 +155,8 @@
       <a href="#" class="nav-item" data-page="schedule-time">按入学批次排</a>
       <a href="#" class="nav-item" data-page="schedule-teacher">按教师排</a>
       <a href="#" class="nav-item" data-page="schedule-course">按课程排</a>
-      <a href="#" class="nav-item" data-page="schedule-joint">联合排课（不支持）</a>
+      <a href="#" class="nav-item" data-page="schedule-joint">联合排课</a>
+      <a href="#" class="nav-item" data-page="schedule-joint-demo">联合排课（演示版本）</a>
       <a href="#" class="nav-item" data-page="schedule-time-conflict">课表冲突查询</a>
       <div class="nav-group">自动排课表时间</div>
       <a href="#" class="nav-item" data-page="schedule-auto-time-rule">自动排课规则</a>
@@ -2938,6 +2939,9 @@
 
     <!-- 排课表时间 · 联合排课（由脚本从时间侧详情页克隆后补丁，避免改时间模板被教室侧 clone） -->
     <section class="page schedule-page schedule-detail-page" id="page-schedule-joint" hidden aria-hidden="true"></section>
+
+    <!-- 排课表时间 · 联合排课演示（从时间侧 clone，数据量来自 Math/PHY 2026/04 课表） -->
+    <section class="page schedule-page schedule-detail-page" id="page-schedule-joint-demo" hidden aria-hidden="true"></section>
 
     <!-- ═══ 排课管理 · 排课表时间 · 按教师排 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-teacher">
@@ -9942,6 +9946,7 @@
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="roomRevoke" role="menuitem">撤回</button>
 </div>
 <script src="mock-data.js"></script>
+<script src="joint-demo-data.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

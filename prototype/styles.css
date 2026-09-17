@@ -12198,8 +12198,8 @@ code {
   margin-bottom: 12px;
 }
 /* 联合排课：顶部两行两列选择器（专业/专业批次、教师单位/教师），不进教室侧 clone */
-#page-schedule-joint .schedule-timetable-toolbar,
-#page-schedule-joint .schedule-scope-switch {
+.is-schedule-joint .schedule-timetable-toolbar,
+.is-schedule-joint .schedule-scope-switch {
   display: none !important;
 }
 .schedule-joint-picker-bar {
@@ -12241,7 +12241,7 @@ code {
   font-weight: 600;
   color: var(--text-2);
 }
-#page-schedule-joint .schedule-joint-picker-label.req::after {
+.is-schedule-joint .schedule-joint-picker-label.req::after {
   content: " *";
   color: var(--red);
 }
@@ -12257,7 +12257,7 @@ code {
   width: 100%;
   max-width: none;
 }
-#page-schedule-joint .schedule-joint-picker-trigger {
+.is-schedule-joint .schedule-joint-picker-trigger {
   width: 100%;
   height: auto;
   min-height: 32px;
@@ -12268,7 +12268,7 @@ code {
   row-gap: 6px;
   text-align: left;
 }
-#page-schedule-joint .schedule-joint-picker-selected {
+.is-schedule-joint .schedule-joint-picker-selected {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -12276,8 +12276,86 @@ code {
   min-width: 0;
   cursor: text;
 }
-#page-schedule-joint .schedule-joint-picker-selected[hidden] {
+.is-schedule-joint .schedule-joint-picker-selected[hidden] {
   display: none !important;
+}
+.is-schedule-joint-demo .schedule-joint-picker-trigger {
+  flex-wrap: nowrap;
+}
+.is-schedule-joint-demo .schedule-joint-picker-selected {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.schedule-joint-chrome-bar,
+.schedule-joint-demo-chrome-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  min-width: 0;
+}
+.schedule-joint-chrome-toggle,
+.schedule-joint-demo-chrome-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.schedule-joint-chrome-chevron,
+.schedule-joint-demo-chrome-chevron {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1;
+}
+.schedule-joint-chrome-summary,
+.schedule-joint-demo-chrome-summary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.is-schedule-joint.is-joint-chrome-collapsed [data-joint-fold],
+.is-schedule-joint.is-joint-chrome-collapsed [data-joint-demo-fold],
+#page-schedule-joint-demo.is-joint-demo-chrome-collapsed [data-joint-demo-fold] {
+  display: none !important;
+}
+.schedule-joint-perf-notice {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border: 1px solid #f59e0b;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(245, 158, 11, 0.12);
+}
+.schedule-joint-perf-notice::before {
+  content: "!";
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: #d97706;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+}
+.schedule-joint-perf-notice strong {
+  margin-right: 6px;
+  color: #b45309;
 }
 .schedule-joint-picker-chip {
   display: inline-flex;
@@ -12292,7 +12370,7 @@ code {
   line-height: 1.4;
   word-break: break-word;
 }
-#page-schedule-joint .schedule-joint-picker-search {
+.is-schedule-joint .schedule-joint-picker-search {
   flex: 1 1 auto;
   width: auto;
   min-width: 160px;
@@ -12306,13 +12384,13 @@ code {
   margin: 0;
   text-align: left;
 }
-#page-schedule-joint .schedule-joint-picker-search::placeholder {
+.is-schedule-joint .schedule-joint-picker-search::placeholder {
   color: var(--text-3);
   text-align: left;
   text-indent: 0;
   opacity: 1;
 }
-#page-schedule-joint .schedule-joint-picker-trigger.has-selected .schedule-joint-picker-search {
+.is-schedule-joint .schedule-joint-picker-trigger.has-selected .schedule-joint-picker-search {
   flex: 0 1 24px;
   min-width: 8px;
 }
@@ -12327,21 +12405,21 @@ code {
   line-height: 1;
   cursor: pointer;
 }
-#page-schedule-joint .schedule-joint-multiselect .clo-multiselect-dropdown {
+.is-schedule-joint .schedule-joint-multiselect .clo-multiselect-dropdown {
   z-index: 40;
   max-height: none;
   overflow: hidden;
   padding: 0;
 }
-#page-schedule-joint .schedule-joint-multiselect .clo-multiselect-dropdown:not([hidden]) {
+.is-schedule-joint .schedule-joint-multiselect .clo-multiselect-dropdown:not([hidden]) {
   display: flex;
   flex-direction: column;
 }
-#page-schedule-joint .schedule-joint-multiselect .clo-multiselect-options {
+.is-schedule-joint .schedule-joint-multiselect .clo-multiselect-options {
   max-height: 220px;
   overflow-y: auto;
 }
-#page-schedule-joint .schedule-joint-multiselect .clo-multiselect-foot {
+.is-schedule-joint .schedule-joint-multiselect .clo-multiselect-foot {
   display: none;
 }
 .schedule-joint-kind {
@@ -12359,11 +12437,11 @@ code {
   color: #1d4ed8;
   background: #dbeafe;
 }
-#page-schedule-joint .schedule-detail-grid-table.is-joint-object-cols {
+.is-schedule-joint .schedule-detail-grid-table.is-joint-object-cols {
   --sch-object-w: 150px;
   --sch-day-col-w: calc((100cqw - var(--sch-period-w) - var(--sch-object-w)) / var(--sch-day-count));
 }
-#page-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols .schedule-grid-object-col {
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols .schedule-grid-object-col {
   width: var(--sch-object-w);
   min-width: var(--sch-object-w);
   max-width: var(--sch-object-w);
@@ -12381,12 +12459,12 @@ code {
   word-break: break-word;
   line-height: 1.35;
 }
-#page-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols thead .schedule-grid-object-col {
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols thead .schedule-grid-object-col {
   z-index: 5;
   text-align: center;
   white-space: nowrap;
 }
-#page-schedule-joint .schedule-joint-place-toast {
+.is-schedule-joint .schedule-joint-place-toast {
   position: fixed;
   left: 50%;
   top: 72px;
@@ -12403,12 +12481,13 @@ code {
   pointer-events: none;
 }
 /* 联合排课：仅星期列按同一天斑马线（周一/三/五 与 周二/四/六 交替） */
-#page-schedule-joint .schedule-detail-main .schedule-detail-grid-table tbody td.schedule-grid-weekday-col.is-wd-zebra-odd {
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table tbody td.schedule-grid-weekday-col.is-wd-zebra-odd {
   background: #f8fafc;
 }
-#page-schedule-joint .schedule-detail-main .schedule-detail-grid-table tbody td.schedule-grid-weekday-col.is-wd-zebra-even {
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table tbody td.schedule-grid-weekday-col.is-wd-zebra-even {
   background: #e2e8f0;
 }
+
 .schedule-detail-layout {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);

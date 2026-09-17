@@ -30616,7 +30616,7 @@ function exportGeOfferingQuotaList() {
       ];
     });
     exportFilteredListOrWarn(
-      ['专业', '学生数', '合计组数', '计划总Quota', '计划课程组数', '计划课程组quota'],
+      ['专业', '预计学生数', '合计组数', '计划总Quota', '计划课程组数', '计划课程组quota'],
       rows,
       courseListExportFileStem('选修开课计划ME', termDisplay)
     );
@@ -31135,7 +31135,7 @@ function syncElectivePlanKindTabChrome() {
 
 function getMeOfferingPlanDemandTipText() {
   return [
-    'Quota＝学生数×组数（培养计划学分/课程学分）×1.05',
+    'Quota＝预计学生数×组数（培养计划学分/课程学分）×1.05',
     '课程学分：MAT、PHY 为 4 分；CHS 为 3 分。'
   ].join('\n');
 }
@@ -31817,7 +31817,7 @@ function openMeOfferingPlanQuotaModal(programmeKey) {
   if (input) input.value = planned;
   const formula = getMeOfferingPlanFormulaQuota(termCode, prog.key);
   const formulaHint = document.getElementById('me-enrollment-quota-formula-hint');
-  if (formulaHint) formulaHint.textContent = `公式预计 Quota：${formula}（学生数 × 组数 × 1.05，四舍五入）`;
+  if (formulaHint) formulaHint.textContent = `公式预计 Quota：${formula}（预计学生数 × 组数 × 1.05，四舍五入）`;
   const split = getMeOfferingPlanQuotaSplit(termCode, prog.key);
   const mode = split?.mode === 'bySize' ? 'bySize' : 'byCount';
   const byCount = document.querySelector('input[name="me-enrollment-quota-split-mode"][value="byCount"]');

@@ -41341,23 +41341,14 @@ function ensureScheduleJointPage(pageId = 'page-schedule-joint', breadcrumb = '�
 
 function markScheduleJointFoldTargets(page) {
   if (!page) return;
-  [
-    'schedule-joint-picker-bar',
-    'schedule-detail-edit-hint',
-    'schedule-conflict-legend',
-    'schedule-detail-view-settings',
-    'schedule-retake-detect-panel'
-  ].forEach(id => {
-    const el = page.querySelector(`#${id}`);
-    if (!el) return;
-    el.setAttribute('data-joint-fold', '1');
-    el.setAttribute('data-joint-demo-fold', '1');
+  page.querySelectorAll('[data-joint-fold], [data-joint-demo-fold]').forEach(el => {
+    el.removeAttribute('data-joint-fold');
+    el.removeAttribute('data-joint-demo-fold');
   });
-  const weekField = page.querySelector('#schedule-detail-week-grid')?.closest('.schedule-detail-field');
-  if (weekField) {
-    weekField.setAttribute('data-joint-fold', '1');
-    weekField.setAttribute('data-joint-demo-fold', '1');
-  }
+  const picker = page.querySelector('#schedule-joint-picker-bar');
+  if (!picker) return;
+  picker.setAttribute('data-joint-fold', '1');
+  picker.setAttribute('data-joint-demo-fold', '1');
 }
 
 function getScheduleJointChromeBar(page) {
@@ -41378,9 +41369,9 @@ function ensureScheduleJointChrome(page) {
     bar.className = 'schedule-joint-chrome-bar';
     bar.innerHTML = `
       <button type="button" class="btn btn-outline btn-sm schedule-joint-chrome-toggle"
-        onclick="toggleScheduleJointChrome(event)" aria-expanded="false">
-        <span class="schedule-joint-chrome-chevron" aria-hidden="true">▾</span>
-        <span class="schedule-joint-chrome-toggle-text">展开筛选与设置</span>
+        onclick="toggleScheduleJointChrome(event)" aria-expanded="true">
+        <span class="schedule-joint-chrome-chevron" aria-hidden="true">▴</span>
+        <span class="schedule-joint-chrome-toggle-text">收起筛选与设置</span>
       </button>
       <span class="schedule-joint-chrome-summary"></span>`;
     const picker = page.querySelector('#schedule-joint-picker-bar');
@@ -41400,11 +41391,6 @@ function ensureScheduleJointChrome(page) {
     bar.querySelector('.schedule-joint-demo-chrome-toggle-text')?.classList.add('schedule-joint-chrome-toggle-text');
     bar.querySelector('.schedule-joint-demo-chrome-chevron')?.classList.add('schedule-joint-chrome-chevron');
     bar.querySelector('.schedule-joint-demo-chrome-summary')?.classList.add('schedule-joint-chrome-summary');
-  }
-  if (page.dataset.jointChromeInit !== '1') {
-    page.dataset.jointChromeInit = '1';
-    page.classList.add('is-joint-chrome-collapsed');
-    if (page.id === 'page-schedule-joint-demo') page.classList.add('is-joint-demo-chrome-collapsed');
   }
   syncScheduleJointChromeToggle(page);
 }

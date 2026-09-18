@@ -22,6 +22,13 @@ alwaysApply: true
     <div class="schedule-query-actions">
       <button class="btn btn-primary btn-sm" type="button">查询</button>
       <button class="btn btn-outline btn-sm" type="button">重置</button>
+      <!-- 超过一行时：无边框半三角，默认收起第二行 -->
+      <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
+        <span class="schedule-query-fold-caret" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="schedule-query-more">
+      <!-- 第 4 个条件起 -->
     </div>
   </div>
 </div>
@@ -39,6 +46,7 @@ alwaysApply: true
 5. 日期范围、座位数区间等「一组控件」算 **1 个条件**，占一格。
 6. 自动排课等执行按钮用 `.schedule-auto-run-actions`，占位与查询按钮组相同（第一行第 4 列）。
 7. 不要用 `flex` + `align-items: flex-end` 把按钮沉到最后一行。
+8. **第二行及以下默认收起**。条件超过 3 个时，第 4 个起放进 `.schedule-query-more`（或 `.srf-item` 加 `data-query-more`）；查询/重置右侧用无边框半三角 `.schedule-query-fold-toggle` 展开/收起（无「展开/收起」文案；收起朝下、展开朝上）。不超过一行的筛选栏不加三角。
 
 ## 不要改的
 

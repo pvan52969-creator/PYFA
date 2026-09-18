@@ -156,7 +156,7 @@
       <a href="#" class="nav-item" data-page="schedule-teacher">按教师排</a>
       <a href="#" class="nav-item" data-page="schedule-course">按课程排</a>
       <a href="#" class="nav-item" data-page="schedule-joint">联合排课</a>
-      <a href="#" class="nav-item" data-page="schedule-joint-demo">联合排课（演示版本）</a>
+      <a href="#" class="nav-item" data-page="schedule-joint-demo" role="button" onclick="return launchScheduleJointDemoTab(event)" onauxclick="return launchScheduleJointDemoTab(event)">联合排课（演示版本）</a>
       <a href="#" class="nav-item" data-page="schedule-time-conflict">课表冲突查询</a>
       <div class="nav-group">自动排课表时间</div>
       <a href="#" class="nav-item" data-page="schedule-auto-time-rule">自动排课规则</a>
@@ -175,7 +175,8 @@
       <div class="nav-group">调课管理</div>
       <a href="#" class="nav-item" data-page="adjustment-room-open">教室开放时间设置</a>
       <a href="#" class="nav-item" data-page="adjustment-reason-type">调课原因类型</a>
-      <a href="#" class="nav-item" data-page="adjustment-teacher">我的调课申请</a>
+      <a href="#" class="nav-item" data-page="adjustment-teacher">New Replacement（教师端）</a>
+      <a href="#" class="nav-item" data-page="adjustment-teacher-makeup">Pending Replacement（教师端）</a>
       <a href="#" class="nav-item" data-page="adjustment-approval">调课申请审批</a>
       <a href="#" class="nav-item" data-page="adjustment-admin">调课申请管理</a>
       <a href="#" class="nav-item" data-page="adjustment-record">调课申请记录</a>
@@ -2474,7 +2475,8 @@
                 <label for="schedule-time-setting-teacher-name">姓名</label>
                 <input class="input input-sm" id="schedule-time-setting-teacher-name" type="text" placeholder="姓名">
               </div>
-              <div class="schedule-query-field">
+                <div class="schedule-query-more">
+            <div class="schedule-query-field">
                 <label for="schedule-time-setting-teacher-school">所属学院</label>
                 <select class="input input-sm" id="schedule-time-setting-teacher-school"></select>
               </div>
@@ -2494,11 +2496,13 @@
                 <label for="schedule-time-setting-teacher-period">节次</label>
                 <select class="input input-sm" id="schedule-time-setting-teacher-period"></select>
               </div>
+              </div>
             </div>
             <div class="schedule-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeSettingTab('teacher-slot')">查询</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimeSettingQuery('teacher-slot')">重置</button>
-            </div>
+              <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+          </div>
           </div>
         </div>
         <div class="card schedule-card">
@@ -2546,7 +2550,8 @@
                 <label for="schedule-time-setting-room-building">楼栋</label>
                 <select class="input input-sm" id="schedule-time-setting-room-building" onchange="onScheduleRoomSlotBuildingChange()"></select>
               </div>
-              <div class="schedule-query-field">
+                <div class="schedule-query-more">
+            <div class="schedule-query-field">
                 <label for="schedule-time-setting-room-floor">楼层</label>
                 <select class="input input-sm" id="schedule-time-setting-room-floor"></select>
               </div>
@@ -2566,11 +2571,13 @@
                 <label for="schedule-time-setting-room-period">节次</label>
                 <select class="input input-sm" id="schedule-time-setting-room-period"></select>
               </div>
+              </div>
             </div>
             <div class="schedule-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeSettingTab('room-slot')">查询</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimeSettingQuery('room-slot')">重置</button>
-            </div>
+              <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+          </div>
           </div>
         </div>
         <div class="card schedule-card">
@@ -2662,6 +2669,7 @@
                 <option value="">全部入学批次</option>
               </select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-time-filter-status">排课状态</label>
               <select class="input input-sm" id="schedule-time-filter-status">
@@ -2670,10 +2678,12 @@
                 <option value="pending">未排完</option>
               </select>
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleTimePage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleArrangeQuery('time')">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -2963,6 +2973,7 @@
               <label for="schedule-teacher-filter-name">教师姓名</label>
               <input class="input input-sm" id="schedule-teacher-filter-name" placeholder="教师姓名">
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-teacher-filter-dept">所在单位</label>
               <input class="input input-sm" id="schedule-teacher-filter-dept" placeholder="所在单位">
@@ -2975,10 +2986,12 @@
                 <option value="pending">未排完</option>
               </select>
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleTeacherPage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleArrangeQuery('teacher')">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -3014,6 +3027,7 @@
               <label for="schedule-course-filter-name">课程名称</label>
               <input class="input input-sm" id="schedule-course-filter-name" placeholder="课程名称">
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-course-filter-dept">开课单位</label>
               <input class="input input-sm" id="schedule-course-filter-dept" placeholder="开课单位">
@@ -3038,10 +3052,12 @@
                 <option value="pending">未排完</option>
               </select>
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleCoursePage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleCourseQuery()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -3095,6 +3111,7 @@
                 <option value="">全部学院</option>
               </select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-time-conflict-filter-prog">专业</label>
               <select class="input input-sm" id="schedule-time-conflict-filter-prog" onchange="onScheduleTimeConflictProgrammeChange()">
@@ -3142,10 +3159,12 @@
               <label for="schedule-time-conflict-filter-teacher">教师工号 / 姓名</label>
               <input class="input input-sm" id="schedule-time-conflict-filter-teacher" placeholder="教师工号 / 姓名">
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeConflicts()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimeConflictFilters()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -3243,6 +3262,7 @@
               <label for="sat-filter-prog">专业</label>
               <select class="input input-sm" id="sat-filter-prog" onchange="renderScheduleAutoTimePage()"></select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="sat-filter-intake">入学批次</label>
               <select class="input input-sm" id="sat-filter-intake" onchange="renderScheduleAutoTimePage()"></select>
@@ -3268,12 +3288,14 @@
               <label for="sat-filter-teacher">教师</label>
               <input class="input input-sm" id="sat-filter-teacher" placeholder="教师工号 / 姓名" oninput="renderScheduleAutoTimePage()">
             </div>
+            </div>
           </div>
           <div class="schedule-auto-run-actions">
             <button class="btn btn-primary" type="button" id="btn-sat-start" onclick="startScheduleAutoTimeJob()">自动排课</button>
             <button class="btn btn-outline btn-sm" type="button" id="btn-sat-stop" onclick="stopScheduleAutoTimeJob()" disabled>结束排课</button>
             <button class="btn btn-outline btn-sm" type="button" id="btn-sat-revoke" onclick="revokeScheduleAutoTimeJob()">撤回结果</button>
             <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleAutoTimeQuery()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
         <div class="schedule-auto-run-scope" id="schedule-auto-time-hint"></div>
@@ -3479,6 +3501,7 @@
               <label for="schedule-room-conflict-filter-date">日期</label>
               <input class="input input-sm" id="schedule-room-conflict-filter-date" type="date" onchange="onScheduleRoomConflictDateChange()">
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-room-conflict-filter-week">周次</label>
               <input class="input input-sm" id="schedule-room-conflict-filter-week" type="number" min="1" placeholder="如 5" onchange="onScheduleRoomConflictWeekWeekdayChange()">
@@ -3514,10 +3537,12 @@
               <label for="schedule-room-conflict-filter-room">教室</label>
               <input class="input input-sm" id="schedule-room-conflict-filter-room" placeholder="教室名称">
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleRoomConflicts()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomConflictFilters()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -3617,6 +3642,7 @@
               <label for="sar-filter-prog">专业</label>
               <select class="input input-sm" id="sar-filter-prog" onchange="renderScheduleAutoRoomPage()"></select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="sar-filter-intake">入学批次</label>
               <select class="input input-sm" id="sar-filter-intake" onchange="renderScheduleAutoRoomPage()"></select>
@@ -3642,12 +3668,14 @@
               <label for="sar-filter-teacher">教师</label>
               <input class="input input-sm" id="sar-filter-teacher" placeholder="教师工号 / 姓名" oninput="renderScheduleAutoRoomPage()">
             </div>
+            </div>
           </div>
           <div class="schedule-auto-run-actions">
             <button class="btn btn-primary" type="button" id="btn-sar-start" onclick="startScheduleAutoRoomJob()">自动排教室</button>
             <button class="btn btn-outline btn-sm" type="button" id="btn-sar-stop" onclick="stopScheduleAutoRoomJob()" disabled>结束排教室</button>
             <button class="btn btn-outline btn-sm" type="button" id="btn-sar-revoke" onclick="revokeScheduleAutoRoomJob()">撤回结果</button>
             <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleAutoRoomQuery()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
         <div class="schedule-auto-run-scope" id="schedule-auto-room-hint"></div>
@@ -3737,6 +3765,7 @@
               <label for="schedule-room-course-filter-name">课程名称</label>
               <input class="input input-sm" id="schedule-room-course-filter-name" placeholder="课程名称">
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-room-course-filter-dept">开课单位</label>
               <input class="input input-sm" id="schedule-room-course-filter-dept" placeholder="开课单位">
@@ -3757,10 +3786,12 @@
                 <option value="unpublished">未发布</option>
               </select>
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleRoomCoursePage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomArrangeQuery('course')">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -4060,6 +4091,7 @@
               <label for="schedule-time-tt-f-date">星期</label>
               <select class="input input-sm" id="schedule-time-tt-f-date"><option value="">全部</option></select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-time-tt-f-period">节次</label>
               <select class="input input-sm" id="schedule-time-tt-f-period"><option value="">全部</option></select>
@@ -4108,10 +4140,12 @@
               <label for="schedule-time-tt-f-room">教室</label>
               <select class="input input-sm" id="schedule-time-tt-f-room"><option value="">全部</option></select>
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeTimetable()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimetableQuery('time')">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -4322,61 +4356,184 @@
       </div>
     </section>
 
-    <!-- ═══ 调课管理 · 我的调课申请（教师端） ═══ -->
+    <!-- ═══ 调课管理 · 调课申请（教师端） ═══ -->
     <section class="page-list page adjustment-page" id="page-adjustment-teacher">
-      <div class="page-header">
-        <div><h1>我的调课申请</h1><p class="subtitle">教师发起调课、停课、补课、加课申请，并跟踪审批状态</p></div>
+      <div class="tab-bar" id="adjustment-teacher-tabs">
+        <button type="button" class="tab active" data-teacher-tab="replacement" onclick="setAdjustmentTeacherPageTab('replacement')">Class Replacement</button>
+        <button type="button" class="tab" data-teacher-tab="addition" onclick="setAdjustmentTeacherPageTab('addition')">Class Addition</button>
       </div>
-      <div class="card schedule-query-card">
-        <div class="schedule-query-row">
-          <div class="schedule-query-fields">
-            <div class="schedule-query-field">
-              <label for="adjustment-teacher-term">学年学期</label>
-              <select class="input input-sm" id="adjustment-teacher-term"></select>
+      <div class="tab-panel active" id="adjustment-teacher-tab-replacement">
+        <div class="card adj-teacher-intro">
+          <h3>Class Replacement</h3>
+          <p>Adjust the classes in the scheduled timetable.</p>
+          <p class="adj-teacher-intro-note">* Public Holiday does not require Management approval; other reasons require approval from School/Department Management or the Academic Affairs Office.</p>
+        </div>
+        <div class="card schedule-query-card">
+          <div class="schedule-query-row">
+            <div class="schedule-query-fields">
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-term">学年学期</label>
+                <select class="input input-sm" id="adjustment-teacher-term"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-type">调课类型</label>
+                <select class="input input-sm" id="adjustment-teacher-type">
+                  <option value="">全部</option>
+                  <option value="reschedule">调课</option>
+                  <option value="cancel">停课</option>
+                </select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-status">审批状态</label>
+                <select class="input input-sm" id="adjustment-teacher-status">
+                  <option value="">全部</option>
+                  <option value="in-progress">流程中</option>
+                  <option value="approved">通过</option>
+                  <option value="rejected">不通过</option>
+                  <option value="returned">驳回</option>
+                  <option value="cancelled">已撤销</option>
+                </select>
+              </div>
             </div>
-            <div class="schedule-query-field">
-              <label for="adjustment-teacher-type">调课类型</label>
-              <select class="input input-sm" id="adjustment-teacher-type">
-                <option value="">全部</option>
-                <option value="reschedule">调课</option>
-                <option value="cancel">停课</option>
-                <option value="makeup">补课</option>
-                <option value="addclass">加课</option>
-              </select>
-            </div>
-            <div class="schedule-query-field">
-              <label for="adjustment-teacher-status">审批状态</label>
-              <select class="input input-sm" id="adjustment-teacher-status">
-                <option value="">全部</option>
-                <option value="pending">待审批</option>
-                <option value="reviewing">审批中</option>
-                <option value="approved">已通过</option>
-                <option value="rejected">不通过</option>
-                <option value="cancelled">已取消</option>
-              </select>
+            <div class="schedule-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherReplacementPage()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherQuery()">重置</button>
             </div>
           </div>
-          <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherPage()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherQuery()">重置</button>
+        </div>
+        <div class="card schedule-card">
+          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+            <div class="adj-apply-title-item">
+              <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('reschedule')" aria-describedby="adj-apply-reschedule-tip">Reschedule Class</button>
+              <div class="slt-info-popover" id="adj-apply-reschedule-tip">
+                <p>Reschedule a previously cancelled class to another class session.</p>
+              </div>
+            </div>
+            <div class="adj-apply-title-item">
+              <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('cancel')" aria-describedby="adj-apply-cancel-tip">Cancel Class</button>
+              <div class="slt-info-popover" id="adj-apply-cancel-tip">
+                <p>Cancel the scheduled class first. The new class session will be rescheduled later.</p>
+              </div>
+            </div>
+          </div>
+          <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+          <thead><tr>
+            <th class="col-index col-center">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th class="col-center">申请人</th><th class="col-center">Staff ID</th><th class="col-center">Lecturer Name</th>
+            <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th class="col-center">原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          </tr></thead>
+          <tbody id="adjustment-teacher-body"></tbody>
+        </table></div></div>
+      </div>
+      <div class="tab-panel" id="adjustment-teacher-tab-addition">
+        <div class="card adj-teacher-intro">
+          <h3>Class Addition</h3>
+          <p>Add extra classes to the scheduled timetable.</p>
+          <p class="adj-teacher-intro-note">* Subject to approval by School/Department Management or the Academic Affairs Office.</p>
+        </div>
+        <div class="card schedule-query-card">
+          <div class="schedule-query-row">
+            <div class="schedule-query-fields">
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-addition-term">学年学期</label>
+                <select class="input input-sm" id="adjustment-teacher-addition-term"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-addition-status">审批状态</label>
+                <select class="input input-sm" id="adjustment-teacher-addition-status">
+                  <option value="">全部</option>
+                  <option value="in-progress">流程中</option>
+                  <option value="approved">通过</option>
+                  <option value="rejected">不通过</option>
+                  <option value="returned">驳回</option>
+                  <option value="cancelled">已撤销</option>
+                </select>
+              </div>
+            </div>
+            <div class="schedule-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherAdditionPage()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherAdditionQuery()">重置</button>
+            </div>
           </div>
         </div>
+        <div class="card schedule-card">
+          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('addclass')">Additional Class</button>
+          </div>
+          <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+          <thead><tr>
+            <th class="col-index col-center">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th class="col-center">申请人</th><th class="col-center">Staff ID</th><th class="col-center">Lecturer Name</th>
+            <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th class="col-center">原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          </tr></thead>
+          <tbody id="adjustment-teacher-addition-body"></tbody>
+        </table></div></div>
       </div>
-      <div class="legend-bar" id="adjustment-teacher-hint"></div>
-      <div class="card schedule-card">
-        <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
-          <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('reschedule')">发起调课</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyModal('cancel')">发起停课</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyModal('makeup')">发起补课</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyModal('addclass')">发起加课</button>
+    </section>
+
+    <!-- ═══ 调课管理 · Pending Replacement（教师端） ═══ -->
+    <section class="page-list page adjustment-page" id="page-adjustment-teacher-makeup">
+      <div class="adj-approval-tabs" id="adjustment-teacher-makeup-tabs">
+        <button type="button" class="adj-approval-tab is-active" data-makeup-tab="pending" onclick="setAdjustmentTeacherMakeupPageTab('pending')">Pending</button>
+        <button type="button" class="adj-approval-tab" data-makeup-tab="history" onclick="setAdjustmentTeacherMakeupPageTab('history')">History</button>
+      </div>
+      <div class="filter-bar adj-makeup-term-bar">
+        <label for="adjustment-teacher-makeup-cancel-term">学年学期</label>
+        <select class="input input-sm" id="adjustment-teacher-makeup-cancel-term" onchange="onAdjustmentTeacherMakeupTermChange()"></select>
+      </div>
+      <div class="tab-panel active" id="adjustment-teacher-makeup-tab-pending">
+        <div class="card schedule-card adj-makeup-cancel-card">
+          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="applyAdjustmentTeacherMakeupFromCancels()">Apply</button>
+          </div>
+          <div class="table-scroll"><table class="data-table adjustment-makeup-cancel-table">
+            <thead><tr>
+              <th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-teacher-makeup-cancel-check-all" aria-label="全选当前结果" onclick="event.stopPropagation();toggleAdjustmentTeacherMakeupCancelAll(this.checked)"></th>
+              <th class="col-index">序号</th>
+              <th>停课单号</th>
+              <th class="col-center">课号</th>
+              <th>课程</th>
+              <th>上课小组</th>
+              <th>Lecturer</th>
+              <th class="col-center">日期</th>
+              <th class="col-center">星期</th>
+              <th class="col-center">节次</th>
+              <th>周次</th>
+              <th>教室</th>
+            </tr></thead>
+            <tbody id="adjustment-teacher-makeup-cancel-body"></tbody>
+          </table></div>
         </div>
-        <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
-        <thead><tr>
-          <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
-        </tr></thead>
-        <tbody id="adjustment-teacher-body"></tbody>
-      </table></div></div>
+      </div>
+      <div class="tab-panel" id="adjustment-teacher-makeup-tab-history">
+        <div class="card schedule-query-card">
+          <div class="schedule-query-row">
+            <div class="schedule-query-fields">
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-makeup-status">补课申请状态</label>
+                <select class="input input-sm" id="adjustment-teacher-makeup-status">
+                  <option value="">全部</option>
+                  <option value="in-progress">流程中</option>
+                  <option value="approved">通过</option>
+                  <option value="rejected">不通过</option>
+                  <option value="returned">驳回</option>
+                  <option value="cancelled">已撤销</option>
+                </select>
+              </div>
+            </div>
+            <div class="schedule-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherMakeupRequestTable()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherMakeupRequestQuery()">重置</button>
+            </div>
+          </div>
+        </div>
+        <div class="card schedule-card">
+          <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+          <thead><tr>
+            <th class="col-index col-center">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th class="col-center">申请人</th><th class="col-center">Staff ID</th><th class="col-center">Lecturer Name</th>
+            <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th class="col-center">原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          </tr></thead>
+          <tbody id="adjustment-teacher-makeup-body"></tbody>
+        </table></div></div>
+      </div>
     </section>
 
     <!-- ═══ 调课管理 · 教室开放时间设置 ═══ -->
@@ -4401,6 +4558,7 @@
               <label for="adjustment-room-open-name">教室名称</label>
               <input class="input input-sm" id="adjustment-room-open-name" placeholder="教室名称关键字">
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="adjustment-room-open-building">楼栋</label>
               <select class="input input-sm" id="adjustment-room-open-building" onchange="onAdjustmentRoomOpenBuildingChange()">
@@ -4413,10 +4571,12 @@
                 <option value="">全部</option>
               </select>
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentRoomOpenPage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentRoomOpenQuery()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -4529,6 +4689,7 @@
                 <option value="addclass">加课</option>
               </select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="adjustment-admin-status">审批状态</label>
               <select class="input input-sm" id="adjustment-admin-status">
@@ -4540,10 +4701,12 @@
                 <option value="cancelled">已取消</option>
               </select>
             </div>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentAdminPage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentAdminQuery()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -4606,43 +4769,104 @@
     <!-- ═══ 调课管理 · 公假日停课 ═══ -->
     <section class="page-list page adjustment-page" id="page-adjustment-holiday">
       <div class="page-header">
-        <div><h1>公假日停课</h1><p class="subtitle">维护公共假日，按日期自动生成对应星期的停课记录</p></div>
-      </div>
-      <div class="card schedule-query-card">
-        <div class="schedule-query-row">
-          <div class="schedule-query-fields">
-            <div class="schedule-query-field">
-              <label for="adjustment-holiday-keyword">假日名称</label>
-              <input class="input input-sm" id="adjustment-holiday-keyword" placeholder="名称 / 事由关键字">
-            </div>
-            <div class="schedule-query-field">
-              <label for="adjustment-holiday-weekday">星期</label>
-              <select class="input input-sm" id="adjustment-holiday-weekday">
-                <option value="">全部</option>
-                <option value="1">周一</option><option value="2">周二</option><option value="3">周三</option>
-                <option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="7">周日</option>
-              </select>
-            </div>
-          </div>
-          <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentHolidayPage()">查询</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentHolidayQuery()">重置</button>
-          </div>
+        <div>
+          <h1>公假日停课</h1>
+          <p class="subtitle" id="adjustment-holiday-subtitle">维护公共假日并批量停课（无需审批）；确认后自动生成停课记录</p>
         </div>
       </div>
-      <div class="legend-bar" id="adjustment-holiday-hint"></div>
-      <div class="card schedule-card">
-        <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
-          <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentHolidayConfirmModal()">公假日停课确认</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentHolidayModal()">新增公假日停课</button>
+      <div class="tab-bar" id="adjustment-holiday-tabs">
+        <button type="button" class="tab active" data-holiday-tab="manage" onclick="setAdjustmentHolidayPageTab('manage')">公假日停课管理</button>
+        <button type="button" class="tab" data-holiday-tab="record" onclick="setAdjustmentHolidayPageTab('record')">公假日停课记录</button>
+      </div>
+      <div class="tab-panel active" id="adjustment-holiday-tab-manage">
+        <div class="card schedule-query-card">
+          <div class="schedule-query-row">
+            <div class="schedule-query-fields">
+              <div class="schedule-query-field">
+                <label for="adjustment-holiday-keyword">假日名称</label>
+                <input class="input input-sm" id="adjustment-holiday-keyword" placeholder="名称 / 事由关键字">
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-holiday-weekday">星期</label>
+                <select class="input input-sm" id="adjustment-holiday-weekday">
+                  <option value="">全部</option>
+                  <option value="1">周一</option><option value="2">周二</option><option value="3">周三</option>
+                  <option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="7">周日</option>
+                </select>
+              </div>
+            </div>
+            <div class="schedule-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentHolidayManagePage()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentHolidayQuery()">重置</button>
+            </div>
+          </div>
         </div>
-        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-1">
-        <thead><tr>
-          <th class="col-index">序号</th><th>停课单号</th><th>假日名称</th><th class="col-center">日期</th><th class="col-center">星期</th>
-          <th>原因类型</th><th>事由</th><th class="col-center">影响课节</th><th class="col-center">创建时间</th><th class="col-center">操作</th>
-        </tr></thead>
-        <tbody id="adjustment-holiday-body"></tbody>
-      </table></div></div>
+        <div class="legend-bar" id="adjustment-holiday-hint"></div>
+        <div class="card schedule-card">
+          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+            <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentHolidayConfirmModal()">公假日停课确认</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentHolidayModal()">新增公假日停课</button>
+          </div>
+          <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-1">
+          <thead><tr>
+            <th class="col-index">序号</th><th>停课单号</th><th>假日名称</th><th class="col-center">日期</th><th class="col-center">星期</th>
+            <th>原因类型</th><th>事由</th><th class="col-center">影响课节</th><th class="col-center">创建时间</th><th class="col-center">操作</th>
+          </tr></thead>
+          <tbody id="adjustment-holiday-body"></tbody>
+        </table></div></div>
+      </div>
+      <div class="tab-panel" id="adjustment-holiday-tab-record">
+        <div class="card schedule-query-card">
+          <div class="schedule-query-row">
+            <div class="schedule-query-fields">
+              <div class="schedule-query-field">
+                <label for="adjustment-holiday-record-term">学年学期</label>
+                <select class="input input-sm" id="adjustment-holiday-record-term"></select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-holiday-record-name">假日名称</label>
+                <select class="input input-sm" id="adjustment-holiday-record-name">
+                  <option value="">全部</option>
+                </select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-holiday-record-makeup">补课申请状态</label>
+                <select class="input input-sm" id="adjustment-holiday-record-makeup">
+                  <option value="">全部</option>
+                  <option value="none">未申请</option>
+                  <option value="pending">待审批</option>
+                  <option value="reviewing">审批中</option>
+                  <option value="approved">已通过</option>
+                  <option value="rejected">不通过</option>
+                </select>
+              </div>
+            </div>
+            <div class="schedule-query-actions">
+              <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentHolidayRecordPage()">查询</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentHolidayRecordQuery()">重置</button>
+            </div>
+          </div>
+        </div>
+        <div class="legend-bar" id="adjustment-holiday-record-hint"></div>
+        <div class="card schedule-card">
+          <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-1">
+          <thead><tr>
+            <th class="col-index">序号</th>
+            <th>学年学期</th>
+            <th>假日名称</th>
+            <th class="col-center">补课申请状态</th>
+            <th class="col-center">日期</th>
+            <th class="col-center">星期</th>
+            <th class="col-center">节次</th>
+            <th>课程</th>
+            <th>上课小组</th>
+            <th>任课教师</th>
+            <th>教室</th>
+            <th class="col-center">操作</th>
+          </tr></thead>
+          <tbody id="adjustment-holiday-record-body"></tbody>
+        </table></div></div>
+      </div>
     </section>
 
     <!-- ═══ 调课管理 · 批量调课管理 ═══ -->
@@ -4712,7 +4936,7 @@
     <!-- ═══ 调课管理 · 调课申请记录 ═══ -->
     <section class="page-list page adjustment-page" id="page-adjustment-record">
       <div class="page-header">
-        <div><h1>调课申请记录</h1><p class="subtitle">汇总「我的调课申请」「调课申请管理」中新增的调课、停课、补课、加课申请</p></div>
+        <div><h1>调课申请记录</h1><p class="subtitle">汇总「调课申请（教师端）」「调课申请管理」中新增的调课、停课、补课、加课申请</p></div>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
@@ -4742,18 +4966,21 @@
               <label for="adjustment-record-source">来源</label>
               <select class="input input-sm" id="adjustment-record-source">
                 <option value="">全部</option>
-                <option value="teacher">我的调课申请</option>
+                <option value="teacher">调课申请（教师端）</option>
                 <option value="admin">调课申请管理</option>
               </select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="adjustment-record-keyword">教师 / 课程</label>
               <input class="input input-sm" id="adjustment-record-keyword" placeholder="工号 / 姓名 / 课程">
+            </div>
             </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentRecordPage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentRecordQuery()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -8632,7 +8859,13 @@
 <!-- ═══ 调课管理 · 申请弹窗 ═══ -->
 <div class="modal-overlay modal-drawer" id="modal-adjustment-apply">
   <div class="modal modal-lg adj-apply-drawer-modal">
-    <div class="modal-head"><h3 id="adjustment-apply-title">发起调课</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-apply')">×</button></div>
+    <div class="modal-head adj-apply-modal-head">
+      <div class="adj-apply-modal-head-text">
+        <h3 id="adjustment-apply-title">发起调课</h3>
+        <p class="adj-apply-modal-note" id="adjustment-apply-title-note" hidden></p>
+      </div>
+      <button class="modal-close" type="button" onclick="closeModal('modal-adjustment-apply')">×</button>
+    </div>
     <div class="modal-body adj-apply-split">
       <div class="adj-apply-left" id="adjustment-apply-left">
         <div class="adj-apply-left-title" id="adjustment-apply-left-title">选择上课节次</div>
@@ -8643,8 +8876,9 @@
           <div class="srf-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentSlotPickerRows()">查询</button>
             <button class="btn btn-ghost btn-sm" type="button" onclick="resetAdjustmentSlotPicker()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
-          <div class="srf-item adj-apply-date-range">
+          <div class="srf-item adj-apply-date-range" data-query-more="1">
             <label>日期范围</label>
             <div class="adj-apply-date-range-inputs">
               <input type="date" class="input input-sm" id="asf-date-from" title="起始日期">
@@ -8652,13 +8886,13 @@
               <input type="date" class="input input-sm" id="asf-date-to" title="结束日期">
             </div>
           </div>
-          <div class="srf-item"><label>星期</label><select class="input input-sm" id="asf-weekday"></select></div>
-          <div class="srf-item"><label>教室</label><select class="input input-sm" id="asf-room"></select></div>
-          <div class="srf-item" data-adj-admin-filter hidden>
+          <div class="srf-item" data-query-more="1"><label>星期</label><select class="input input-sm" id="asf-weekday"></select></div>
+          <div class="srf-item" data-query-more="1"><label>教室</label><select class="input input-sm" id="asf-room"></select></div>
+          <div class="srf-item" data-adj-admin-filter hidden data-query-more="1">
             <label for="asf-teacher-name">教师姓名</label>
             <input class="input input-sm" id="asf-teacher-name" type="text" placeholder="请输入教师姓名">
           </div>
-          <div class="srf-item" data-adj-admin-filter hidden>
+          <div class="srf-item" data-adj-admin-filter hidden data-query-more="1">
             <label for="asf-teacher-id">教师工号</label>
             <input class="input input-sm" id="asf-teacher-id" type="text" placeholder="请输入教师工号">
           </div>
@@ -8672,6 +8906,7 @@
                 <th class="col-center adj-slot-col-weekday">星期</th>
                 <th class="col-center adj-slot-col-period">节次</th>
                 <th class="adj-slot-col-weeks">周次</th>
+                <th class="col-center adj-col-code">课号</th>
                 <th class="adj-col-course">课程</th>
                 <th>教师</th>
                 <th class="adj-col-group">上课小组</th>
@@ -8699,8 +8934,6 @@
           <div class="adj-detail-field"><span class="adj-detail-k">头衔</span><span class="adj-detail-v" id="adj-apply-meta-title">—</span></div>
           <div class="adj-detail-field"><span class="adj-detail-k">所属单位</span><span class="adj-detail-v" id="adj-apply-meta-dept">—</span></div>
           <div class="adj-detail-field"><span class="adj-detail-k">教师类型</span><span class="adj-detail-v" id="adj-apply-meta-type">—</span></div>
-          <div class="adj-detail-field"><span class="adj-detail-k">申请开始时间</span><span class="adj-detail-v" id="adj-apply-meta-start">—</span></div>
-          <div class="adj-detail-field"><span class="adj-detail-k">申请结束时间</span><span class="adj-detail-v" id="adj-apply-meta-end">—</span></div>
           <div class="adj-detail-field"><span class="adj-detail-k">申请节数</span><span class="adj-detail-v" id="adj-apply-meta-slots">0</span></div>
           <div class="adj-detail-field"><span class="adj-detail-k">共计几天</span><span class="adj-detail-v" id="adj-apply-meta-days">0</span></div>
         </div>
@@ -8737,7 +8970,7 @@
         </div>
         <div class="form-item full adj-apply-reason-item">
           <label class="req">申请事由</label>
-          <textarea class="input" id="adjustment-apply-reason" rows="3" placeholder="请填写申请事由"></textarea>
+          <textarea class="input" id="adjustment-apply-reason" rows="2" placeholder="请填写申请事由"></textarea>
         </div>
         <div class="form-item full adj-apply-files-item">
           <label id="adjustment-apply-files-label">附件信息</label>
@@ -8769,14 +9002,15 @@
         <div class="srf-actions">
           <button class="btn btn-primary btn-sm" type="button" onclick="queryAdjustmentDensity()">查询</button>
           <button class="btn btn-ghost btn-sm" type="button" onclick="resetAdjustmentDensityQuery()">重置</button>
-        </div>
-        <div class="srf-item"><label>专业</label><select class="input input-sm" id="adf-programme"></select></div>
-        <div class="srf-item"><label>批次</label><select class="input input-sm" id="adf-batch"></select></div>
-        <div class="srf-item"><label>性别</label><select class="input input-sm no-search" id="adf-gender"><option value="">全部</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
-        <div class="srf-item"><label>周数</label><select class="input input-sm no-search" id="adf-week" onchange="onAdjustmentDensityWeekChange()"></select></div>
-        <div class="srf-item"><label>教师工号</label><input class="input input-sm" id="adf-teacher-id" type="text" placeholder="请输入工号"></div>
-        <div class="srf-item"><label>教师姓名</label><input class="input input-sm" id="adf-teacher-name" type="text" placeholder="请输入姓名"></div>
-        <div class="srf-item"><label>密度维度</label><select class="input input-sm no-search" id="adf-dimension" onchange="renderAdjustmentDensityTable()"><option value="ratio" selected>比率</option><option value="count">人数</option></select></div>
+          <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+          </div>
+        <div class="srf-item" data-query-more="1"><label>专业</label><select class="input input-sm" id="adf-programme"></select></div>
+        <div class="srf-item" data-query-more="1"><label>批次</label><select class="input input-sm" id="adf-batch"></select></div>
+        <div class="srf-item" data-query-more="1"><label>性别</label><select class="input input-sm no-search" id="adf-gender"><option value="">全部</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+        <div class="srf-item" data-query-more="1"><label>周数</label><select class="input input-sm no-search" id="adf-week" onchange="onAdjustmentDensityWeekChange()"></select></div>
+        <div class="srf-item" data-query-more="1"><label>教师工号</label><input class="input input-sm" id="adf-teacher-id" type="text" placeholder="请输入工号"></div>
+        <div class="srf-item" data-query-more="1"><label>教师姓名</label><input class="input input-sm" id="adf-teacher-name" type="text" placeholder="请输入姓名"></div>
+        <div class="srf-item" data-query-more="1"><label>密度维度</label><select class="input input-sm no-search" id="adf-dimension" onchange="renderAdjustmentDensityTable()"><option value="ratio" selected>比率</option><option value="count">人数</option></select></div>
       </div>
       <div class="adj-density-hint">查询优先级：学生姓名条件、教师姓名条件、其他条件。<br>选中节次确定调课则默认为忽略冲突调课。</div>
       <div class="adj-density-selected" id="adjustment-density-selected">请点击表格单元格选择目标星期与节次</div>
@@ -8845,8 +9079,9 @@
         <div class="srf-actions">
           <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherPicker()">查询</button>
           <button class="btn btn-ghost btn-sm" type="button" onclick="resetAdjustmentTeacherPicker()">重置</button>
-        </div>
-        <div class="srf-item"><label>教职工类型</label><select class="input input-sm" id="atf-type"></select></div>
+          <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+          </div>
+        <div class="srf-item" data-query-more="1"><label>教职工类型</label><select class="input input-sm" id="atf-type"></select></div>
       </div>
       <div class="table-scroll">
         <table class="data-table compact adj-sub-picker-table">
@@ -8873,8 +9108,8 @@
     <div class="modal-head"><h3>设置教室偏好</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-apply-room-prefer')">×</button></div>
     <div class="modal-body">
       <div class="form-item full">
-        <label for="adjustment-apply-batch-room-prefer">教室偏好</label>
-        <input class="input" id="adjustment-apply-batch-room-prefer" type="text" placeholder="请输入教室偏好（可选）">
+        <label>教室偏好</label>
+        <div id="adjustment-apply-batch-room-prefer-ms"></div>
       </div>
     </div>
     <div class="modal-foot">
@@ -8952,17 +9187,20 @@
                   <option value="">全部</option>
                 </select>
               </div>
-              <div class="schedule-query-field">
+                <div class="schedule-query-more">
+            <div class="schedule-query-field">
                 <label for="adjustment-room-open-pick-floor">楼层</label>
                 <select class="input input-sm" id="adjustment-room-open-pick-floor">
                   <option value="">全部</option>
                 </select>
               </div>
+              </div>
             </div>
             <div class="schedule-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="queryAdjustmentRoomOpenPicker()">查询</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentRoomOpenPickerQuery()">重置</button>
-            </div>
+              <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+          </div>
           </div>
         </div>
         <div class="legend-bar" id="adjustment-room-open-pick-hint"></div>
@@ -9186,6 +9424,7 @@
               <th class="col-index">序号</th>
               <th class="col-center">日期</th><th class="col-center">星期</th><th class="col-center">节次</th><th class="col-center">周次</th>
               <th>课程</th><th>上课小组</th><th>任课教师</th><th>教室</th>
+              <th class="col-center">补课申请状态</th>
             </tr>
           </thead>
           <tbody id="adjustment-holiday-detail-body"></tbody>
@@ -9892,17 +10131,20 @@
             <label for="entity-change-log-operator">操作人</label>
             <input class="input input-sm" type="text" id="entity-change-log-operator" placeholder="姓名关键字">
           </div>
-          <div class="schedule-query-field">
+                    <div class="schedule-query-more">
+                    <div class="schedule-query-field">
             <label for="entity-change-log-field">修改字段</label>
             <select class="input input-sm" id="entity-change-log-field">
               <option value="">全部</option>
             </select>
           </div>
+          </div>
         </div>
         <div class="schedule-query-actions">
           <button class="btn btn-primary btn-sm" type="button" onclick="queryEntityChangeLogDrawer()">查询</button>
           <button class="btn btn-ghost btn-sm" type="button" onclick="resetEntityChangeLogDrawerQuery()">重置</button>
-        </div>
+          <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+          </div>
       </div>
     </div>
     <div class="table-scroll drawer-entity-change-log-table-wrap">

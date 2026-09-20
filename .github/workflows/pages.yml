@@ -29,25 +29,36 @@ jobs:
         with:
           fetch-depth: 0
 
+      # checkout 默认只拉触发分支；多分支站点必须显式 fetch
+      - name: Fetch publish branches
+        run: git fetch --no-tags origin main feature/pkgl feature/add-login preview
+
       - name: Build Pages
         run: |
+          set -euo pipefail
           rm -rf site
           mkdir -p site
 
+          # 只发布 prototype/ 内容到对应路径，并去掉 node_modules
+          publish_branch() {
+            local ref="$1"
+            local dest="$2"
+            mkdir -p "$dest"
+            git archive "$ref:prototype" | tar -x -C "$dest"
+            rm -rf "$dest/node_modules"
+          }
+
           # main → 网站根目录
-          git archive origin/main | tar -x -C site
+          publish_branch origin/main site
 
           # feature/pkgl → /feature/pkgl/
-          mkdir -p site/feature/pkgl
-          git archive origin/feature/pkgl | tar -x -C site/feature/pkgl
+          publish_branch origin/feature/pkgl site/feature/pkgl
 
           # feature/add-login → /feature/add-login/
-          mkdir -p site/feature/add-login
-          git archive origin/feature/add-login | tar -x -C site/feature/add-login
+          publish_branch origin/feature/add-login site/feature/add-login
 
           # preview → /preview/
-          mkdir -p site/preview
-          git archive origin/preview | tar -x -C site/preview
+          publish_branch origin/preview site/preview
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

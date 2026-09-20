@@ -68131,7 +68131,7 @@ function enterScheduleModule() {
   // setActiveModule('schedule');
   // goPage('schedule-workflow');
   // 改：跳转至外部排课原型 DEMO
-  const url = 'https://roundworm-scrawny-struggle.ngrok-free.dev/';
+  const url = 'https://pvan52969-creator.github.io/PYFA/feature/pkgl/';
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 

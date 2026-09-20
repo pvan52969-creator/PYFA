@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XMUM 培养方案管理 — 原型</title>
+  <title>XMUM教务管理系统—原型</title>
   <!-- 新页签深链进入排课：在 app.js 加载前先挡掉首页闪烁，展示排课加载态 -->
   <style id="sch-detail-boot-style">
     html.sch-detail-boot,
@@ -2272,7 +2272,9 @@
       </div>
       <div class="workflow-viewport" id="schedule-workflow-viewport">
         <div class="workflow-zoom-stage" id="schedule-workflow-zoom-stage">
-          <div class="card workflow-doc" id="schedule-workflow-doc-mount"></div>
+          <div class="card workflow-doc" id="schedule-workflow-doc-mount">
+            <p class="workflow-loading">加载流程图…</p>
+          </div>
         </div>
       </div>
     </section>
@@ -4492,12 +4494,12 @@
               <th class="col-center">课号</th>
               <th>课程</th>
               <th>上课小组</th>
-              <th>Lecturer</th>
+              <th class="col-center">Lecturer</th>
               <th class="col-center">日期</th>
               <th class="col-center">星期</th>
               <th class="col-center">节次</th>
-              <th>周次</th>
-              <th>教室</th>
+              <th class="col-center">周次</th>
+              <th class="col-center">教室</th>
             </tr></thead>
             <tbody id="adjustment-teacher-makeup-cancel-body"></tbody>
           </table></div>
@@ -8867,8 +8869,10 @@
       <button class="modal-close" type="button" onclick="closeModal('modal-adjustment-apply')">×</button>
     </div>
     <div class="modal-body adj-apply-split">
-      <div class="adj-apply-left" id="adjustment-apply-left">
-        <div class="adj-apply-left-title" id="adjustment-apply-left-title">选择上课节次</div>
+      <div class="adj-apply-left" id="adjustment-apply-left" onclick="onAdjustmentApplyLeftRailClick(event)">
+        <div class="adj-apply-left-head">
+          <div class="adj-apply-left-title" id="adjustment-apply-left-title">选择上课节次</div>
+        </div>
         <div class="schedule-room-filter-grid adj-apply-left-filters">
           <div class="srf-item"><label>课程号</label><input class="input input-sm" id="asf-course" type="text" placeholder="请输入课程号"></div>
           <div class="srf-item"><label>上课小组</label><input class="input input-sm" id="asf-group" type="text" placeholder="请输入上课小组"></div>
@@ -8910,7 +8914,7 @@
                 <th class="adj-col-course">课程</th>
                 <th>教师</th>
                 <th class="adj-col-group">上课小组</th>
-                <th>教室</th>
+                <th class="col-center">教室</th>
               </tr>
             </thead>
             <tbody id="adjustment-slot-picker-body"></tbody>
@@ -8926,6 +8930,9 @@
         <select class="input" id="adjustment-apply-to-period" hidden onchange="updateAdjustmentApplyPreview()"></select>
         <div id="adjustment-apply-to-period-dd" hidden></div>
         <input type="hidden" id="adjustment-apply-to-room" value="">
+        <button class="adj-apply-left-fold" type="button" aria-expanded="true" aria-label="收起选择列表" onclick="toggleAdjustmentApplyLeftPane()">
+          <span class="adj-apply-left-fold-icon" aria-hidden="true"></span>
+        </button>
       </div>
       <div class="adj-apply-right" id="adjustment-apply-right">
         <div class="adj-detail-info adj-apply-meta" id="adjustment-apply-meta">
@@ -8959,6 +8966,7 @@
           <select class="input" id="adjustment-apply-reason-type" onchange="onAdjustmentApplyReasonTypeChange()">
             <option value="">请选择原因类型</option>
           </select>
+          <input class="input" id="adjustment-apply-reason-type-display" readonly hidden>
           <div class="adj-apply-reason-hint text-muted" id="adjustment-apply-reason-hint" hidden></div>
         </div>
         <div class="form-item full adj-apply-leave-item" id="adjustment-apply-leave-wrap" hidden>

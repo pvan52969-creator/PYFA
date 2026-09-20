@@ -25563,6 +25563,47 @@ function formatAdjustmentDateYmd(date) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+const ADJUSTMENT_DATE_MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const ADJUSTMENT_DATE_WEEKDAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function formatScheduleDateDisplay(dateStr) {
+  return formatAdjustmentDateDisplay(dateStr);
+}
+
+function formatAdjustmentCalWeekdayHeads() {
+  return ADJUSTMENT_DATE_WEEKDAYS_EN.map(d => `<th>${d}</th>`).join('');
+}
+
+function formatOneScheduleDateToken(part) {
+  const s = String(part || '').trim();
+  if (!s || s === '—') return s;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2})(?::\d{2})?)?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/i);
+  if (m) {
+    const month = ADJUSTMENT_DATE_MONTHS_EN[Number(m[2]) - 1];
+    if (!month) return s;
+    const date = `${m[3]} ${month} ${m[1]}`;
+    if (m[4] == null) return date;
+    const hh = String(m[4]).padStart(2, '0');
+    return `${date} ${formatAdjustmentTime12(`${hh}:${m[5]}`)}`;
+  }
+  if (/\d{4}-\d{2}-\d{2}/.test(s)) {
+    return s.replace(/\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/g, tok => formatOneScheduleDateToken(tok));
+  }
+  return s;
+}
+
+/** 马来日期展示：04 Jan 2026；含时间则为 04 Jan 2026 2:30 PM。存储仍为 YYYY-MM-DD */
+function formatAdjustmentDateDisplay(dateStr) {
+  const raw = String(dateStr || '').trim();
+  if (!raw) return '';
+  return raw.split(/[、，]/).map(part => formatOneScheduleDateToken(part)).filter(part => part !== '').join('、');
+}
+
+function formatAdjustmentCalMonthTitle(year, monthIndex) {
+  const month = ADJUSTMENT_DATE_MONTHS_EN[monthIndex] || '';
+  return month ? `${month} ${year}` : `${year}-${monthIndex + 1}`;
+}
+
 /** 调课申请开放时限：启用时返回 { from, to, days }（含今天至未来 N 天），未启用返回 null */
 function getAdjustmentApplyWindowRange() {
   const days = Math.floor(Number(getScheduleRuleFlatValues().adjustmentApplyWindowDays) || 0);
@@ -25585,13 +25626,13 @@ function isDateInAdjustmentApplyWindow(dateStr) {
 function formatAdjustmentApplyWindowHint() {
   const range = getAdjustmentApplyWindowRange();
   if (!range) return '';
-  return `调后时间仅可选 ${range.from} 至 ${range.to}（今天起未来 ${range.days} 天）`;
+  return `调后时间仅可选 ${formatAdjustmentDateDisplay(range.from)} 至 ${formatAdjustmentDateDisplay(range.to)}（今天起未来 ${range.days} 天）`;
 }
 
 function formatScheduleRuleValue(rule) {
   if (!rule) return '—';
   if (rule.valueType === 'timeRange') {
-    return rule.lunchStart && rule.lunchEnd ? `${rule.lunchStart} – ${rule.lunchEnd}` : '—';
+    return rule.lunchStart && rule.lunchEnd ? formatAdjustmentTimeRange12(rule.lunchStart, rule.lunchEnd) : '—';
   }
   if (rule.valueType === 'periodRange') {
     if (!rule.periodFrom) return '—';
@@ -26136,11 +26177,11 @@ function renderScheduleSlotWeekCalendar() {
   host.innerHTML = `
     <div class="adj-cal-head">
       <button type="button" class="adj-cal-nav" onclick="onScheduleSlotWeekCalNav(-1,event)">‹</button>
-      <span class="adj-cal-title">${y}年${m + 1}月</span>
+      <span class="adj-cal-title">${formatAdjustmentCalMonthTitle(y, m)}</span>
       <button type="button" class="adj-cal-nav" onclick="onScheduleSlotWeekCalNav(1,event)">›</button>
     </div>
     <table class="adj-cal-table">
-      <thead><tr><th class="adj-cal-wk">教学周</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead>
+      <thead><tr><th class="adj-cal-wk">教学周</th>${formatAdjustmentCalWeekdayHeads()}</tr></thead>
       <tbody>${rows.join('')}</tbody>
     </table>
     <div class="adj-cal-tip">${escapeHtml(tip)}</div>
@@ -26179,7 +26220,7 @@ function renderScheduleSlotWeekdayDateLines(weekFrom, weekTo, weekdays, term) {
   return days.map(day => {
     const dates = getScheduleWeekdayDatesInRange(term, weekFrom, weekTo, day);
     const label = getScheduleWeekdayLabel(day);
-    const text = dates.length ? dates.join('、') : '暂无对应日期';
+    const text = dates.length ? formatAdjustmentDateDisplay(dates.join('、')) : '暂无对应日期';
     return `<div class="schedule-slot-entry-date-line">${escapeHtml(label)}：${escapeHtml(text)}</div>`;
   }).join('');
 }
@@ -30260,7 +30301,7 @@ function openScheduleRuleModal(ruleId) {
   } else if (rule.valueType === 'periodRange') {
     const periods = getScheduleRulePeriodList();
     const opts = (sel) => periods.map(p =>
-      `<option value="${p.periodNo}" ${Number(sel) === p.periodNo ? 'selected' : ''}>第${p.periodNo}节（${escapeHtml(p.startTime)}-${escapeHtml(p.endTime)}）</option>`
+      `<option value="${p.periodNo}" ${Number(sel) === p.periodNo ? 'selected' : ''}>第${p.periodNo}节（${escapeHtml(formatAdjustmentTimeRange12(p.startTime, p.endTime))}）</option>`
     ).join('');
     fieldsEl.innerHTML = `
       <div class="form-item"><label class="req">起始节次</label><select class="input" id="schedule-modal-rule-period-from">${opts(rule.periodFrom)}</select></div>
@@ -31153,39 +31194,25 @@ function scheduleWorkflowZoomReset() {
   applyScheduleWorkflowZoom();
 }
 
-function renderScheduleWorkflowPage() {
+async function renderScheduleWorkflowPage() {
   const mount = document.getElementById('schedule-workflow-doc-mount');
   if (!mount) return;
-  mount.innerHTML = `
-    <div class="workflow-phases" style="padding:24px 28px">
-      <div class="node"><div class="node-title">① 排课基础设置</div><div class="node-sub">课表节次维护 · 排课时间设置 · 排课规则设置</div></div>
-      <div class="node"><div class="node-title">② 排课表时间</div><div class="node-sub">按入学批次排 · 按教师排 · 按课程排 · 课表冲突查询（排课起止时间内可操作）</div></div>
-      <div class="node"><div class="node-title">③ 排课表教室</div><div class="node-sub">按时间排 · 按场地类型排（排教室起止时间内可操作）</div></div>
-      <div class="node"><div class="node-title">④ 课表查询</div><div class="node-sub">入学批次 / 教师 / 学生 / 课程 / 教室 / 时间课表</div></div>
-      <div class="node"><div class="node-title">⑤ 调课管理</div><div class="node-sub">调课申请（教师端） · 调课申请审批 · 调课申请管理 · 调课申请记录 · 公假日停课 · 批量调课管理</div></div>
-    </div>
-    <div class="workflow-modules" style="padding:0 28px 8px">
-      <div class="workflow-modules-title">系统模块（侧栏导航）</div>
-      <dl>
-        <dt>操作流程图</dt><dd>排课全流程概览与侧栏导航说明（本页）</dd><br>
-        <dt>排课基础设置</dt><dd>课表节次维护 · 排课时间设置 · 排课规则设置</dd><br>
-        <dt>排课表时间</dt><dd>按入学批次排 · 按教师排 · 按课程排 · 课表冲突查询（受排课起止时间控制）</dd><br>
-        <dt>排课表教室</dt><dd>按时间排 · 按场地类型排（受排教室起止时间控制）</dd><br>
-        <dt>课表查询</dt><dd>入学批次课表 · 教师课表 · 学生课表 · 课程课表 · 教室课表 · 时间课表</dd><br>
-        <dt>调课管理</dt><dd>调课申请（教师端） · 调课申请审批 · 调课申请管理 · 调课申请记录 · 公假日停课 · 批量调课管理</dd>
-      </dl>
-    </div>
-    <div class="workflow-phases" style="padding:8px 28px 24px">
-      <p><strong>① 排课基础设置</strong> 先维护课表节次；在排课时间设置中配置学期排课/排教室窗口、不排课时间、选修课预占位与教师排课时段；再设置午休、节次上限等排课规则。</p>
-      <p><strong>② 排课表时间</strong> 按入学批次 / 教师 / 课程安排上课时间。在「排课起止时间」窗口内列表显示「排课」并可编辑；窗外仅可「查看」。</p>
-      <p><strong>③ 排课表教室</strong> 在「排教室起止时间」窗口内按时间（星期）/ 场地类型安排上课教室；窗外仅可查看。布局与时间侧一致，时间只读、空格不可新增时间。</p>
-      <p><strong>④ 课表查询</strong> 排课完成后可按入学批次、教师、学生、课程、教室、时间查询课表。</p>
-      <p><strong>⑤ 调课管理</strong> 教师/管理员发起调停补加课并审批；支持公假日停课与按日期节次批量调时间/调场地；全程可查调课申请记录。</p>
-    </div>`;
-  requestAnimationFrame(() => {
+  try {
+    const res = await fetch('docs/schedule-workflow.html', { cache: 'no-store' });
+    if (!res.ok) throw new Error('fetch failed');
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const sheet = doc.querySelector('.sheet');
+    if (!sheet) throw new Error('no sheet');
+    mount.replaceChildren(...sheet.children);
+    requestAnimationFrame(() => {
+      scheduleWorkflowZoomReset();
+      applyScheduleWorkflowZoom();
+    });
+  } catch {
+    mount.innerHTML = '<p class="workflow-loading">无法加载流程图，请使用本地服务打开原型后刷新。</p>';
     scheduleWorkflowZoomReset();
-    applyScheduleWorkflowZoom();
-  });
+  }
 }
 
 function getScheduleTaskRows() {
@@ -33852,13 +33879,10 @@ function getAdjustmentApprovePeriodDisplayOccupancy(room, periodNo, weekday, wee
 function formatAdjustmentApproveTargetTimeLabel(slot) {
   if (!slot) return '';
   const wd = typeof getScheduleWeekdayLabel === 'function' ? getScheduleWeekdayLabel(slot.weekday) : '';
-  const time = typeof getAdjustmentPeriodTimeRange === 'function'
-    ? getAdjustmentPeriodTimeRange(slot.period, slot.period)
-    : '';
   const periodLabel = slot.period
-    ? (time ? `第${slot.period}节（${time}）` : `第${slot.period}节`)
+    ? formatAdjustmentPeriodLabel(slot.period, slot.period)
     : '';
-  return [slot.date, wd, periodLabel, slot.weeks].filter(Boolean).join(' · ');
+  return [slot.date ? formatAdjustmentDateDisplay(slot.date) : '', wd, periodLabel, slot.weeks].filter(Boolean).join(' · ');
 }
 
 function renderAdjustmentApproveTargetTimeHintHtml() {
@@ -42224,7 +42248,7 @@ const SCHEDULE_DETAIL_URL_KEYS = {
   venueType: 'schVenueType',
   title: 'schTitle'
 };
-const SCHEDULE_DETAIL_DEFAULT_DOC_TITLE = 'XMUM 培养方案管理 — 原型';
+const SCHEDULE_DETAIL_DEFAULT_DOC_TITLE = 'XMUM教务管理系统—原型';
 /** 是否由列表「排课/排教室」新页签深链进入（仅详情页隐藏左侧导航） */
 let scheduleDetailStandaloneTab = false;
 
@@ -43433,7 +43457,7 @@ function formatScheduleRoomSlotTimeLabel(slot, term) {
   const pFrom = periods.find(p => Number(p.periodNo) === from);
   const pTo = periods.find(p => Number(p.periodNo) === to) || pFrom;
   const clock = pFrom && pTo
-    ? `${pFrom.startTime || ''}-${pTo.endTime || ''}`.replace(/^-|-$/g, '')
+    ? formatAdjustmentTimeRange12(pFrom.startTime, pTo.endTime)
     : '';
   const tail = [periodText, clock].filter(Boolean).join(' ');
   return [day, tail].filter(Boolean).join(' ');
@@ -46188,7 +46212,7 @@ function formatScheduleConflictPeriodWithTime(slot, termCode) {
   const pTo = periods.find(p => Number(p.periodNo) === to) || pFrom;
   const label = from === to ? `第${from}节` : `第${from}-${to}节`;
   if (!pFrom?.startTime || !pTo?.endTime) return label;
-  return `${label} ${pFrom.startTime}-${pTo.endTime}`;
+  return `${label} ${formatAdjustmentTimeRange12(pFrom.startTime, pTo.endTime)}`;
 }
 
 function formatScheduleConflictTeacherLabel(task) {
@@ -46854,7 +46878,7 @@ function openScheduleRoomConflictDetail(idx) {
     body.innerHTML = `
       ${renderScheduleConflictDetailFields([
         { k: '学期', v: escapeHtml(row.termLabel || '—') },
-        { k: '日期', v: escapeHtml(row.date || '—').replace(/\n/g, '<br>') },
+        { k: '日期', v: escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>') },
         { k: '周次', v: escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>') },
         { k: '星期', v: escapeHtml(row.weekdayLabel || '—') },
         { k: '上课教室', v: escapeHtml(row.room || '—') },
@@ -46926,7 +46950,7 @@ function renderScheduleRoomConflictPage() {
       <td class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
       <td class="col-index sch-conflict-freeze sch-conflict-freeze-index">${idx + 1}</td>
       <td>${escapeHtml(row.termLabel || '—')}</td>
-      <td class="sch-conflict-multiline">${escapeHtml(row.date || '—').replace(/\n/g, '<br>')}</td>
+      <td class="sch-conflict-multiline">${escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>')}</td>
       <td>${escapeHtml(row.weekdayLabel || '—')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(row.periodLabel || '—').replace(/\n/g, '<br>')}</td>
@@ -47408,7 +47432,7 @@ function openScheduleTimeConflictDetail(idx) {
     body.innerHTML = `
       ${renderScheduleConflictDetailFields([
         { k: '学期', v: escapeHtml(row.termLabel || '—') },
-        { k: '日期', v: escapeHtml(row.date || '—').replace(/\n/g, '<br>') },
+        { k: '日期', v: escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>') },
         { k: '周次', v: escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>') },
         { k: '星期', v: escapeHtml(row.weekdayLabel || '—') },
         { k: '节次', v: escapeHtml(row.periodLabel || '—') },
@@ -47485,7 +47509,7 @@ function renderScheduleTimeConflictPage() {
       <td class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
       <td class="col-index sch-conflict-freeze sch-conflict-freeze-index">${idx + 1}</td>
       <td>${escapeHtml(row.termLabel || '—')}</td>
-      <td class="sch-conflict-multiline">${escapeHtml(row.date || '—').replace(/\n/g, '<br>')}</td>
+      <td class="sch-conflict-multiline">${escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>')}</td>
       <td>${escapeHtml(row.weekdayLabel || '—')}</td>
       <td>${escapeHtml(row.periodLabel || '—')}</td>
@@ -48879,7 +48903,7 @@ function renderScheduleTimeTimetableTable() {
   tbody.innerHTML = rows.map((r, idx) => `<tr>
     <td class="col-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
     <td class="col-index">${idx + 1}</td>
-    <td class="col-center">${escapeHtml(r.dateLabel || '—')}</td>
+    <td class="col-center">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
     <td>${escapeHtml(r.weeks || '—')}</td>
     <td class="col-center">${escapeHtml(r.weekdayLabel)}</td>
     <td class="col-center">${escapeHtml(r.periodLabel)}</td>
@@ -59341,7 +59365,7 @@ function getAdjustmentPeriodTimeRange(periodFrom, periodTo, termCode) {
   return end ? `${from.startTime}-${end}` : from.startTime;
 }
 
-/** 节次列文案：第3节（8:00-8:50 AM） / 第3-4节（8:00-9:50 AM） */
+/** 节次列文案：第3节（8:00 AM-8:50 AM） / 第3-4节（8:00 AM-9:50 AM） */
 function formatAdjustmentPeriodLabel(periodFrom, periodTo, termCode) {
   return formatAdjustmentPeriodLabel12(periodFrom, periodTo, termCode);
 }
@@ -59360,17 +59384,12 @@ function formatAdjustmentTime12(raw) {
   return `${h}:${min} ${suffix}`;
 }
 
-/** 09:00-10:00 → 9:00-10:00 AM；跨午 11:00-13:00 → 11:00 AM-1:00 PM */
+/** 09:00-10:00 → 9:00 AM-10:00 AM；跨午 11:00-13:00 → 11:00 AM-1:00 PM */
 function formatAdjustmentTimeRange12(start, end) {
   const a = formatAdjustmentTime12(start);
   const b = end ? formatAdjustmentTime12(end) : '';
   if (!a) return b;
   if (!b) return a;
-  const sufA = a.slice(-2);
-  const sufB = b.slice(-2);
-  if ((sufA === 'AM' || sufA === 'PM') && sufA === sufB) {
-    return `${a.slice(0, -3)}-${b}`;
-  }
   return `${a}-${b}`;
 }
 
@@ -60143,10 +60162,9 @@ function renderAdjustmentDensitySelectedHint() {
   }
   const week = Number(document.getElementById('adf-week')?.value) || getAdjustmentCurrentTeachingWeek();
   const dateStr = getAdjustmentDateByWeekAndWeekday(week, sel.weekday);
-  const time = getAdjustmentPeriodTimeRange(sel.period, sel.period);
-  const periodLabel = time ? `第${sel.period}节（${time}）` : `第${sel.period}节`;
+  const periodLabel = formatAdjustmentPeriodLabel(sel.period, sel.period);
   el.className = 'adj-density-selected is-on';
-  el.textContent = `已选目标：${dateStr} · ${getScheduleWeekdayLabel(sel.weekday)} · ${periodLabel} · 第${week}周`;
+  el.textContent = `已选目标：${formatAdjustmentDateDisplay(dateStr) || dateStr} · ${getScheduleWeekdayLabel(sel.weekday)} · ${periodLabel} · 第${week}周`;
 }
 
 function selectAdjustmentDensityCell(weekday, period) {
@@ -60211,7 +60229,7 @@ function applyAdjustmentDensitySelectionToTarget(weekday, period, week) {
     if (weeksEl) weeksEl.value = weeksLabel;
     if (wdEl) wdEl.value = String(weekday);
     if (wdText) wdText.value = getScheduleWeekdayLabel(weekday);
-    if (dateBtn) dateBtn.textContent = dateStr || '选择日期';
+    if (dateBtn) dateBtn.textContent = dateStr ? formatAdjustmentDateDisplay(dateStr) : '选择日期';
     if (periodEl) {
       if (![...periodEl.options].some(o => o.value === String(period))) {
         periodEl.insertAdjacentHTML('beforeend', `<option value="${period}">第${period}节</option>`);
@@ -61122,7 +61140,8 @@ function adjustmentSlotLabel(s) {
   const pt = Number(s.periodTo || s.periodFrom);
   const pl = pf === pt ? `第${pf}节` : `第${pf}-${pt}节`;
   const time = getAdjustmentPeriodTimeRange(pf, pt);
-  const timePart = time ? ` ${time}` : '';
+  const parts = splitAdjustmentPeriodRange(time);
+  const timePart = time ? ` ${formatAdjustmentTimeRange12(parts.start, parts.end)}` : '';
   const wk = s.weeks ? ` · ${s.weeks}` : '';
   const rm = s.room ? ` · ${s.room}` : '';
   return `${getScheduleWeekdayLabel(Number(s.weekday))} ${pl}${timePart}${wk}${rm}`;
@@ -61159,7 +61178,7 @@ function adjustmentTargetStruct(weekday, period, weeks, teacherName, room, date,
   const pMeta = periods.find(p => Number(p.periodNo) === Number(period));
   const start = periodStartTime || pMeta?.startTime || '';
   const end = pMeta?.endTime || '';
-  const timePart = start && end ? `${start}-${end}` : start;
+  const timePart = start && end ? formatAdjustmentTimeRange12(start, end) : formatAdjustmentTime12(start);
   return {
     date: d,
     weekday: Number(weekday),
@@ -61375,8 +61394,8 @@ function getAdjustmentRequestFromDates(r) {
 function formatAdjustmentRequestApplyTime(r) {
   const dates = getAdjustmentRequestFromDates(r);
   if (!dates.length) return '—';
-  if (dates.length === 1) return dates[0];
-  return `${dates[0]} ~ ${dates[dates.length - 1]}`;
+  if (dates.length === 1) return formatAdjustmentDateDisplay(dates[0]);
+  return `${formatAdjustmentDateDisplay(dates[0])} ~ ${formatAdjustmentDateDisplay(dates[dates.length - 1])}`;
 }
 
 function renderAdjustmentRequestTimeCell(r) {
@@ -61755,12 +61774,33 @@ function onAdjustmentAdminTeacherChange() {
   }
 }
 
+function syncAdjustmentApplyReasonTypeDisplay(text, placeholder) {
+  const display = document.getElementById('adjustment-apply-reason-type-display');
+  if (!display) return;
+  display.value = text || '';
+  display.placeholder = placeholder || '';
+}
+
+function getAdjustmentApplyReasonTypeDisplayText() {
+  const sel = document.getElementById('adjustment-apply-reason-type');
+  const opt = sel?.selectedOptions?.[0];
+  return (opt && opt.value) ? String(opt.textContent || '').trim() : '';
+}
+
 function setAdjustmentMakeupReasonControlsLocked(locked) {
   const sel = document.getElementById('adjustment-apply-reason-type');
+  const display = document.getElementById('adjustment-apply-reason-type-display');
   const reasonTa = document.getElementById('adjustment-apply-reason');
   const leaveSel = document.getElementById('adjustment-apply-leave-record');
   const fileBar = document.querySelector('#modal-adjustment-apply .adj-file-bar');
-  if (sel) sel.disabled = !!locked;
+  if (sel) {
+    sel.disabled = !!locked;
+    sel.hidden = !!locked;
+  }
+  if (display) {
+    display.hidden = !locked;
+    if (locked) syncAdjustmentApplyReasonTypeDisplay(getAdjustmentApplyReasonTypeDisplayText(), display.placeholder);
+  }
   if (reasonTa) {
     reasonTa.readOnly = !!locked;
     if (!locked) reasonTa.placeholder = '请填写申请事由';
@@ -61787,6 +61827,7 @@ function syncAdjustmentMakeupReasonFromCancel() {
   const vals = getAdjustmentSelectedSlotVals();
   if (!vals.length) {
     if (sel) sel.value = '';
+    syncAdjustmentApplyReasonTypeDisplay('', '请先选择停课记录，将自动同步停课原因');
     if (reasonTa) {
       reasonTa.value = '';
       reasonTa.placeholder = '请先选择停课记录，将自动同步停课原因';
@@ -61806,6 +61847,7 @@ function syncAdjustmentMakeupReasonFromCancel() {
   const inherited = getAdjustmentMakeupInheritedReason(vals);
   if (!inherited.ok) {
     if (sel) sel.value = '';
+    syncAdjustmentApplyReasonTypeDisplay('', inherited.message || '无法同步停课原因');
     if (reasonTa) {
       reasonTa.value = '';
       reasonTa.placeholder = inherited.message || '无法同步停课原因';
@@ -61832,6 +61874,10 @@ function syncAdjustmentMakeupReasonFromCancel() {
     }
     sel.value = code;
   }
+  syncAdjustmentApplyReasonTypeDisplay(
+    inherited.reasonType || getAdjustmentApplyReasonTypeDisplayText(),
+    ''
+  );
   const row = findAdjustmentReasonTypeByCode(code || inherited.reasonType);
   if (hint) {
     const text = (row?.attachmentHint || '').trim();
@@ -62474,13 +62520,13 @@ function formatAdjustmentRoomOpenDateBtn(date, term) {
   const wd = info.weekday ? getScheduleWeekdayLabel(info.weekday) : '';
   const week = info.week ? `第${info.week}周` : '';
   const extra = [week, wd].filter(Boolean).join('·');
-  return extra ? `${date}（${extra}）` : date;
+  return extra ? `${formatAdjustmentDateDisplay(date)}（${extra}）` : formatAdjustmentDateDisplay(date);
 }
 
 function formatAdjustmentRoomOpenSummary(p) {
   if (!p) return '未维护（不限制）';
   const datePart = (p.dateFrom || p.dateTo)
-    ? `${p.dateFrom || '—'} 至 ${p.dateTo || '—'}`
+    ? `${formatAdjustmentDateDisplay(p.dateFrom) || '—'} 至 ${formatAdjustmentDateDisplay(p.dateTo) || '—'}`
     : '';
   const weekPart = p.weeks ? `涉及${formatAdjustmentRoomOpenWeeksLabel(p.weeks)}` : '';
   const wdPart = formatAdjustmentRoomOpenWeekdays(p.weekdays);
@@ -63194,11 +63240,11 @@ function renderAdjustmentRoomOpenCalendar() {
   host.innerHTML = `
     <div class="adj-cal-head">
       <button type="button" class="adj-cal-nav" onclick="onAdjustmentRoomOpenCalNav(-1,event)">‹</button>
-      <span class="adj-cal-title">${y}年${m + 1}月</span>
+      <span class="adj-cal-title">${formatAdjustmentCalMonthTitle(y, m)}</span>
       <button type="button" class="adj-cal-nav" onclick="onAdjustmentRoomOpenCalNav(1,event)">›</button>
     </div>
     <table class="adj-cal-table">
-      <thead><tr><th class="adj-cal-wk">教学周</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead>
+      <thead><tr><th class="adj-cal-wk">教学周</th>${formatAdjustmentCalWeekdayHeads()}</tr></thead>
       <tbody>${rows.join('')}</tbody>
     </table>
     <div class="adj-cal-tip">${escapeHtml(tip)}</div>
@@ -64689,7 +64735,7 @@ function renderAdjustmentAdminPage() {
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td>${escapeHtml(r.reason)}</td>
-    <td class="col-center">${escapeHtml(r.submittedAt)}</td>
+    <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
     <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing') ? `<a href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');renderAdjustmentAdminPage();return false">撤销</a> · ` : ''}<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a> · ${entityChangeLogLink('adjustment-request', r.id, r.no || r.id)}</td>
   </tr>`).join('');
 }
@@ -64772,7 +64818,7 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
     <td class="col-center">${r.slotCount || 1}</td>
     <td class="col-center">${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
-    <td class="col-center">${escapeHtml(r.submittedAt)}</td>
+    <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
     <td class="col-center actions">${actionLinks.join('<span class="adj-act-sep">·</span>')}</td>
   </tr>`;
   }).join('');
@@ -64928,12 +64974,12 @@ function renderAdjustmentTeacherMakeupCancelTable() {
       <td class="col-center">${escapeHtml(codeText || '—')}</td>
       <td>${escapeHtml(r.courseName || '—')}</td>
       <td>${escapeHtml(r.group || '—')}</td>
-      <td>${escapeHtml(r.teacherName || '—')}</td>
-      <td class="col-center">${escapeHtml(r.dateLabel || '—')}</td>
+      <td class="col-center">${escapeHtml(r.teacherName || '—')}</td>
+      <td class="col-center">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
       <td class="col-center">${escapeHtml(r.weekdayLabel || '—')}</td>
       <td class="col-center">${escapeHtml(r.periodLabel || '—')}</td>
-      <td>${escapeHtml(r.weeks || '—')}</td>
-      <td>${escapeHtml(r.room || '—')}</td>
+      <td class="col-center">${escapeHtml(r.weeks || '—')}</td>
+      <td class="col-center">${escapeHtml(r.room || '—')}</td>
     </tr>`;
   }).join('');
 }
@@ -65216,7 +65262,7 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
     const fromCells = isAddclass
       ? ''
       : (f
-        ? `<td class="col-center">${escapeHtml(f.date || '—')}</td><td class="col-center">${escapeHtml(f.weekdayLabel || '—')}</td><td class="col-center">${escapeHtml(f.periodLabel || '—')}</td><td class="col-center">${escapeHtml(f.weeks || '—')}</td><td>${escapeHtml(f.room || '—')}</td>`
+        ? `<td class="col-center">${escapeHtml(f.date ? formatAdjustmentDateDisplay(f.date) : '—')}</td><td class="col-center">${escapeHtml(f.weekdayLabel || '—')}</td><td class="col-center">${escapeHtml(f.periodLabel || '—')}</td><td class="col-center">${escapeHtml(f.weeks || '—')}</td><td>${escapeHtml(f.room || '—')}</td>`
         : `<td class="col-center" colspan="5">${dash}</td>`);
     const origTeacher = it.teacherName || r.teacherName || '';
     const chg = (a, b) => (f && String(a || '') !== String(b || '')) ? ' adj-detail-changed' : '';
@@ -65243,7 +65289,7 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
     const toCells = isCancel
       ? `<td class="col-center adj-detail-cancel adj-detail-to-split" colspan="6">To Be Confirmed</td>${conflictCell}`
       : (t
-        ? `<td class="col-center adj-detail-to-split${chg(t.date, f && f.date)}">${escapeHtml(t.date || '—')}</td>`
+        ? `<td class="col-center adj-detail-to-split${chg(t.date, f && f.date)}">${escapeHtml(t.date ? formatAdjustmentDateDisplay(t.date) : '—')}</td>`
         + `<td class="col-center${chg(t.weekdayLabel, f && f.weekdayLabel)}">${escapeHtml(t.weekdayLabel || '—')}</td>`
         + `<td class="col-center adj-approve-period-cell${chg(t.periodLabel, f && f.periodLabel)}">${periodCell}</td>`
         + `<td class="col-center${chg(t.weeks, f && f.weeks)}">${escapeHtml(t.weeks || '—')}</td>`
@@ -65322,7 +65368,7 @@ function applyAdjustmentApprovePeriodToItem(it, rawValue) {
     const pMeta = periods.find(p => Number(p.periodNo) === Number(period));
     const start = startTime || pMeta?.startTime || '';
     const end = pMeta?.endTime || '';
-    const timePart = start && end ? `${start}-${end}` : start;
+    const timePart = start && end ? formatAdjustmentTimeRange12(start, end) : formatAdjustmentTime12(start);
     it.to.period = Number(period);
     it.to.periodStartTime = start;
     it.to.periodLabel = timePart ? `第${period}节（${timePart}）` : `第${period}节`;
@@ -65664,7 +65710,7 @@ function openAdjustmentDetail(id, withApprove) {
   const logHtml = logs.map(l => `<div class="adj-log-item ${l.cls || (l.pending ? 'pending' : '')}">
     <div class="adj-log-dot"></div>
     <div class="adj-log-body">
-      <div class="adj-log-title">${escapeHtml(l.title)}${l.time ? `<span class="adj-log-time">${escapeHtml(l.time)}</span>` : ''}</div>
+      <div class="adj-log-title">${escapeHtml(l.title)}${l.time ? `<span class="adj-log-time">${escapeHtml(formatAdjustmentDateDisplay(l.time) || l.time)}</span>` : ''}</div>
       <div class="adj-log-meta">${escapeHtml(l.who)}</div>
       ${l.note ? `<div class="adj-log-note">${escapeHtml(l.note)}</div>` : ''}
     </div>
@@ -65674,7 +65720,7 @@ function openAdjustmentDetail(id, withApprove) {
     <div class="adj-detail-section adj-detail-section-log">
       <h4 class="adj-detail-h">Approval Log</h4>
       <div class="adj-detail-log-summary">
-        <div class="adj-detail-field"><span class="adj-detail-k">Submitted At</span><span class="adj-detail-v">${escapeHtml(r.submittedAt || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Submitted At</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</span></div>
         <div class="adj-detail-field"><span class="adj-detail-k">Approval Status</span><span class="adj-detail-v">${teacherFacing ? adjustmentTeacherStatusBadge(r.status) : adjustmentStatusBadge(r.status)}</span></div>
         <div class="adj-detail-field"><span class="adj-detail-k">Approval Stage</span><span class="adj-detail-v">${escapeHtml(getAdjustmentStageLabel(r))}</span></div>
       </div>
@@ -65685,9 +65731,9 @@ function openAdjustmentDetail(id, withApprove) {
       <div class="adj-detail-info">
         <div class="adj-detail-field"><span class="adj-detail-k">Staff ID</span><span class="adj-detail-v">${escapeHtml(profile.teacherId || '—')}</span></div>
         <div class="adj-detail-field"><span class="adj-detail-k">Lecturer Name</span><span class="adj-detail-v">${escapeHtml(profile.teacherName)}</span></div>
-        <div class="adj-detail-field"><span class="adj-detail-k">Leave From</span><span class="adj-detail-v">${escapeHtml(span.start || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Leave From</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentDateDisplay(span.start) || '—')}</span></div>
         <div class="adj-detail-field"><span class="adj-detail-k">Department</span><span class="adj-detail-v">${escapeHtml(profile.department)}</span></div>
-        <div class="adj-detail-field"><span class="adj-detail-k">Leave To</span><span class="adj-detail-v">${escapeHtml(span.end || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">Leave To</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentDateDisplay(span.end) || '—')}</span></div>
         <div class="adj-detail-field"><span class="adj-detail-k">Lecturer Type</span><span class="adj-detail-v">${escapeHtml(profile.teacherType)}</span></div>
         <div class="adj-detail-field"><span class="adj-detail-k">申请节数</span><span class="adj-detail-v">${r.slotCount || items.length || 1}</span></div>
         <div class="adj-detail-field"><span class="adj-detail-k">Total Days</span><span class="adj-detail-v">${span.dayCount || 0}</span></div>
@@ -65817,7 +65863,43 @@ function openAdjustmentApplyModal(type, asAdmin, preset) {
     syncAdjustmentMakeupReasonFromCancel();
   }
   if (typeof enhanceAllSelects === 'function') enhanceAllSelects(document.getElementById('modal-adjustment-apply'));
+  resetAdjustmentApplyLeftPane();
   openModal('modal-adjustment-apply');
+}
+
+function getAdjustmentApplySplitEl() {
+  return document.querySelector('#modal-adjustment-apply .adj-apply-split');
+}
+
+function syncAdjustmentApplyLeftPaneToggle() {
+  const split = getAdjustmentApplySplitEl();
+  const btn = document.querySelector('#modal-adjustment-apply .adj-apply-left-fold');
+  const collapsed = !!split?.classList.contains('is-left-collapsed');
+  if (btn) {
+    btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    btn.setAttribute('aria-label', collapsed ? '展开选择列表' : '收起选择列表');
+  }
+}
+
+function resetAdjustmentApplyLeftPane() {
+  getAdjustmentApplySplitEl()?.classList.remove('is-left-collapsed');
+  syncAdjustmentApplyLeftPaneToggle();
+}
+
+function toggleAdjustmentApplyLeftPane(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  const split = getAdjustmentApplySplitEl();
+  if (!split) return;
+  split.classList.toggle('is-left-collapsed');
+  syncAdjustmentApplyLeftPaneToggle();
+}
+
+function onAdjustmentApplyLeftRailClick(event) {
+  const split = getAdjustmentApplySplitEl();
+  if (!split?.classList.contains('is-left-collapsed')) return;
+  if (event?.target?.closest?.('.adj-apply-left-fold')) return;
+  toggleAdjustmentApplyLeftPane(event);
 }
 
 function getAdjustmentSelectedSlotVals() {
@@ -66130,7 +66212,7 @@ function renderAdjustmentApplyLeftThead() {
         ${showCredits ? '<th class="col-center">学分</th>' : ''}
         ${teacherTh}
         <th class="adj-col-group">上课小组</th>
-        <th>教室</th>
+        <th class="col-center">教室</th>
       </tr>`;
 }
 
@@ -66246,7 +66328,7 @@ function renderAdjustmentSlotPickerRows() {
       let nameText = r.courseName || '—';
       if (isMakeup) nameText = formatAdjustmentCourseLabelWithCredits(nameText, r.credits);
       const extra = isAdd ? '' : `
-        <td class="col-center adj-slot-col-date">${escapeHtml(r.dateLabel || '—')}</td>
+        <td class="col-center adj-slot-col-date">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
         <td class="col-center adj-slot-col-weekday">${escapeHtml(r.weekdayLabel || '—')}</td>
         <td class="col-center adj-slot-col-period">${escapeHtml(r.periodLabel || '—')}</td>
         <td class="adj-slot-col-weeks">${escapeHtml(r.dateLabel ? (getAdjustmentDateInfo(r.dateLabel).weeksLabel || r.weeks || '—') : (r.weeks || '—'))}</td>`;
@@ -66258,7 +66340,7 @@ function renderAdjustmentSlotPickerRows() {
         ${creditsCell}
         ${showAdjustmentLeftTeacherCol() ? `<td>${escapeHtml(formatAdjustmentSlotTeacherLabel(r))}</td>` : ''}
         <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
-        ${isAdd ? '' : `<td>${escapeHtml(r.room || '未排')}</td>`}
+        ${isAdd ? '' : `<td class="col-center">${escapeHtml(r.room || '未排')}</td>`}
       </tr>`;
     }).join('');
   }
@@ -66954,7 +67036,7 @@ function renderAdjustmentPerSlotConfigs() {
       <td class="col-center adj-apply-col-merge adj-col-group" rowspan="${rowSpan}">${escapeHtml(group.groupWithCount || formatAdjustmentGroupWithCount(t.groupLabel || '上课小组', getAdjustmentGroupStudentCount(t)))}</td>
       <td class="col-center adj-apply-row-type">Previous</td>
       <td class="col-center">${escapeHtml(getAdjustmentTeacherName(teacherId))}</td>
-      <td class="col-center">${escapeHtml(origDate || '—')}</td>
+      <td class="col-center">${escapeHtml(origDate ? formatAdjustmentDateDisplay(origDate) : '—')}</td>
       <td class="col-center">${escapeHtml(getScheduleWeekdayLabel(Number(s.weekday)) || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel12(s.periodFrom, s.periodTo) || formatScheduleSlotPeriodLabel(s) || '—')}</td>
       <td class="col-center">${escapeHtml(origWeek)}</td>
@@ -66970,7 +67052,7 @@ function renderAdjustmentPerSlotConfigs() {
     const toRow = `<tr class="adj-apply-to-row" data-adj-val="${v}">
       <td class="col-center adj-apply-row-type">New</td>
       <td class="col-center adj-apply-col-merge"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentTeacherPicker('${v}')">${escapeHtml(formatAdjustmentTeacherNames(getAdjustmentRowTeacherIds(st)) || '请选择教师')}</button></td>
-      <td class="col-center"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date || '选择日期')}</button></td>
+      <td class="col-center"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date ? formatAdjustmentDateDisplay(st.date) : '选择日期')}</button></td>
       <td class="col-center">${escapeHtml(weekdayText)}</td>
       <td class="col-center">${periodDd}</td>
       <td class="col-center">${escapeHtml(weekText)}</td>
@@ -67031,7 +67113,7 @@ function renderAdjustmentAddclassDetailTable(wrap) {
       <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
       <td class="adj-col-course">${escapeHtml(nameText)}</td>
       <td class="col-center adj-col-group">${escapeHtml(groupName)}</td>
-      <td class="col-center"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date || '选择日期')}</button></td>
+      <td class="col-center"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date ? formatAdjustmentDateDisplay(st.date) : '选择日期')}</button></td>
       <td class="col-center">${escapeHtml(weekdayText)}</td>
       <td class="col-center">${periodDd}</td>
       <td class="col-center">${escapeHtml(weekText || '—')}</td>
@@ -67168,11 +67250,11 @@ function renderAdjustmentCalendar() {
   dd.innerHTML = `
     <div class="adj-cal-head">
       <button type="button" class="adj-cal-nav" onclick="adjustmentCalNav(-1)">‹</button>
-      <span class="adj-cal-title">${y}年${m + 1}月</span>
+      <span class="adj-cal-title">${formatAdjustmentCalMonthTitle(y, m)}</span>
       <button type="button" class="adj-cal-nav" onclick="adjustmentCalNav(1)">›</button>
     </div>
     <table class="adj-cal-table">
-      <thead><tr><th class="adj-cal-wk">教学周</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead>
+      <thead><tr><th class="adj-cal-wk">教学周</th>${formatAdjustmentCalWeekdayHeads()}</tr></thead>
       <tbody>${rows.join('')}</tbody>
     </table>
     ${formatAdjustmentApplyWindowHint() ? `<div class="adj-cal-tip">${escapeHtml(formatAdjustmentApplyWindowHint())}</div>` : ''}`;
@@ -68150,7 +68232,7 @@ function renderAdjustmentApprovalPage() {
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
-    <td class="col-center">${escapeHtml(r.submittedAt)}</td>
+    <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
     <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing')
       ? `<a href="#" onclick="openAdjustmentApprove('${r.id}');return false">审批</a>`
       : `<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a>`}</td>
@@ -68277,12 +68359,12 @@ function renderAdjustmentHolidayManagePage() {
     <td class="col-index">${i + 1}</td>
     <td><code>${escapeHtml(h.no)}</code></td>
     <td>${escapeHtml(h.name)}</td>
-    <td class="col-center">${escapeHtml(h.dateLabel || h.date)}</td>
+    <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(h.dateLabel || h.date) || '—')}</td>
     <td class="col-center">${escapeHtml(h.weekdayLabel || getScheduleWeekdayLabel(h.weekday))}</td>
     <td>${escapeHtml(h.reasonType || 'Public Holiday')}</td>
     <td>${escapeHtml(h.reason || '—')}</td>
     <td class="col-center">${h.affected}</td>
-    <td class="col-center">${escapeHtml(h.createdAt)}</td>
+    <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(h.createdAt) || '—')}</td>
     <td class="col-center actions"><a href="#" onclick="openAdjustmentHolidayDetail('${h.id}');return false">详情</a> · ${entityChangeLogLink('adjustment-holiday', h.id, h.name || h.no)}</td>
   </tr>`).join('');
 }
@@ -68374,7 +68456,7 @@ function renderAdjustmentHolidayRecordPage() {
       <td>${escapeHtml(termText)}</td>
       <td>${escapeHtml(row.holidayName || '—')}</td>
       <td class="col-center">${formatAdjustmentHolidayMakeupStatus(row.makeup)}</td>
-      <td class="col-center">${escapeHtml(row.date || '—')}</td>
+      <td class="col-center">${escapeHtml(row.date ? formatAdjustmentDateDisplay(row.date) : '—')}</td>
       <td class="col-center">${escapeHtml(row.weekdayLabel || '—')}</td>
       <td class="col-center">${formatAdjustmentHolidayPeriodCellHtml(row.period)}</td>
       <td>${escapeHtml(row.course || '—')}</td>
@@ -68426,7 +68508,7 @@ function openAdjustmentHolidayDetail(id) {
   if (metaEl) {
     metaEl.innerHTML = `
       <div class="adj-detail-field"><span class="adj-detail-k">公假日</span><span class="adj-detail-v">${escapeHtml(h.name)}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">停课日期</span><span class="adj-detail-v">${escapeHtml(h.dateLabel || h.date)}</span></div>
+      <div class="adj-detail-field"><span class="adj-detail-k">停课日期</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentDateDisplay(h.dateLabel || h.date) || '—')}</span></div>
       <div class="adj-detail-field"><span class="adj-detail-k">对应星期</span><span class="adj-detail-v">${escapeHtml(h.weekdayLabel || getScheduleWeekdayLabel(h.weekday))}</span></div>
       <div class="adj-detail-field"><span class="adj-detail-k">影响课节</span><span class="adj-detail-v">${h.affected || reqs.length} 节</span></div>
       <div class="adj-detail-field"><span class="adj-detail-k">原因类型</span><span class="adj-detail-v">${escapeHtml(h.reasonType || 'Public Holiday')}</span></div>
@@ -68446,7 +68528,7 @@ function openAdjustmentHolidayDetail(id) {
         const makeup = findAdjustmentMakeupForHolidayCancel(r);
         return `<tr>
           <td class="col-index">${i + 1}</td>
-          <td class="col-center">${escapeHtml(f.date || '—')}</td>
+          <td class="col-center">${escapeHtml(f.date ? formatAdjustmentDateDisplay(f.date) : '—')}</td>
           <td class="col-center">${escapeHtml(f.weekdayLabel || '—')}</td>
           <td class="col-center">${escapeHtml(formatAdjustmentHolidayListPeriod(f, live?.slot))}</td>
           <td class="col-center">${escapeHtml(f.weeks || '—')}</td>
@@ -68509,7 +68591,7 @@ function getHrHolidayOptions() {
       weeksLabel: info.weeksLabel || '',
       weekday: info.weekday,
       weekdayLabel: info.weekday ? getScheduleWeekdayLabel(info.weekday) : '',
-      label: `${h.date} · ${h.name}${info.weeksLabel ? ' · ' + info.weeksLabel : ''}${info.weekday ? ' · ' + getScheduleWeekdayLabel(info.weekday) : ''}`
+      label: `${formatAdjustmentDateDisplay(h.date)} · ${h.name}${info.weeksLabel ? ' · ' + info.weeksLabel : ''}${info.weekday ? ' · ' + getScheduleWeekdayLabel(info.weekday) : ''}`
     };
   });
 }
@@ -68624,11 +68706,11 @@ function renderAdjustmentHolidayCalendar() {
   host.innerHTML = `
     <div class="adj-cal-head">
       <button type="button" class="adj-cal-nav" onclick="adjustmentHolidayCalNav(-1)">‹</button>
-      <span class="adj-cal-title">${y}年${m + 1}月</span>
+      <span class="adj-cal-title">${formatAdjustmentCalMonthTitle(y, m)}</span>
       <button type="button" class="adj-cal-nav" onclick="adjustmentHolidayCalNav(1)">›</button>
     </div>
     <table class="adj-cal-table">
-      <thead><tr><th class="adj-cal-wk">教学周</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead>
+      <thead><tr><th class="adj-cal-wk">教学周</th>${formatAdjustmentCalWeekdayHeads()}</tr></thead>
       <tbody>${rows.join('')}</tbody>
     </table>
     <div class="adj-cal-tip">${tip}</div>
@@ -68689,7 +68771,7 @@ function renderAdjustmentHolidayPicked() {
   if (!el) return;
   const r = adjustmentHolidayRange;
   if (!r.start) { el.innerHTML = '<span class="text-muted">未选择日期</span>'; return; }
-  const fmt = ds => { const info = getAdjustmentDateInfo(ds); return `${ds}（${info.weeksLabel || ''}·${getScheduleWeekdayLabel(info.weekday)}）`; };
+  const fmt = ds => { const info = getAdjustmentDateInfo(ds); return `${formatAdjustmentDateDisplay(ds)}（${info.weeksLabel || ''}·${getScheduleWeekdayLabel(info.weekday)}）`; };
   if (!r.end) {
     el.innerHTML = `<span class="adj-holiday-chip">起始 ${escapeHtml(fmt(r.start))} <em>请选择结束日期</em><button type="button" onclick="clearAdjustmentHolidayRange()">×</button></span>`;
     return;
@@ -68756,7 +68838,7 @@ function queryAdjustmentHolidayConfirmSlots() {
   const dates = HR_HOLIDAY_DATES.filter(h => h.name === holidayName).map(h => h.date);
   const rows = getAdjustmentHolidayConfirmSlotsByName(holidayName);
   if (hint) {
-    hint.innerHTML = `<span class="legend-item">${escapeHtml(holidayName)} · ${escapeHtml(dates.join('、'))} · 共 <strong>${rows.length}</strong> 个课节可停课</span>`;
+    hint.innerHTML = `<span class="legend-item">${escapeHtml(holidayName)} · ${escapeHtml(formatAdjustmentDateDisplay(dates.join('、')) || dates.join('、'))} · 共 <strong>${rows.length}</strong> 个课节可停课</span>`;
   }
   if (!tbody) return;
   if (!rows.length) {
@@ -68765,7 +68847,7 @@ function queryAdjustmentHolidayConfirmSlots() {
   }
   tbody.innerHTML = rows.map(r => `<tr>
     <td class="col-center"><input type="checkbox" value="${escapeHtml(r.val)}" onchange="toggleAdjustmentHolidayConfirmSlot('${escapeHtml(r.val)}', this.checked)"></td>
-    <td class="col-center">${escapeHtml(r.date)}</td>
+    <td class="col-center">${escapeHtml(r.date ? formatAdjustmentDateDisplay(r.date) : '—')}</td>
     <td class="col-center">${escapeHtml(r.weekdayLabel)}</td>
     <td class="col-center">${escapeHtml(r.periodLabel)}</td>
     <td class="col-center">${escapeHtml(r.weeks || '—')}</td>
@@ -70576,7 +70658,7 @@ function formatAdjustmentBatchDateLabel(dateStr) {
   const weekday = getAdjustmentDateWeekday(dateStr);
   const weekNo = adjustmentTeachingWeekOf(new Date(`${dateStr}T00:00:00`));
   const weekText = weekNo ? `第${weekNo}周` : '—';
-  return `${dateStr} / ${weekText} / ${getScheduleWeekdayLabel(weekday)}`;
+  return `${formatAdjustmentDateDisplay(dateStr)} / ${weekText} / ${getScheduleWeekdayLabel(weekday)}`;
 }
 
 /** 源/目标日期展示：日期（周次星期） */
@@ -70586,7 +70668,7 @@ function formatAdjustmentBatchDateParen(dateStr) {
   const weekNo = adjustmentTeachingWeekOf(new Date(`${dateStr}T00:00:00`));
   const weekPart = weekNo ? `第${weekNo}周` : '';
   const wdPart = getScheduleWeekdayLabel(weekday) || '';
-  return `${dateStr}（${weekPart}${wdPart}）`;
+  return `${formatAdjustmentDateDisplay(dateStr)}（${weekPart}${wdPart}）`;
 }
 
 /** 按源日期在批次中的顺序，一对一映射目标日期 */
@@ -70647,7 +70729,7 @@ function renderAdjustmentBatchDateSummary(kind) {
   host.classList.remove('is-empty');
   if (btn) {
     const r = state.range || {};
-    btn.textContent = r.start && r.end ? `${r.start} ~ ${r.end}` : '选择起止日期';
+    btn.textContent = r.start && r.end ? `${formatAdjustmentDateDisplay(r.start)} ~ ${formatAdjustmentDateDisplay(r.end)}` : '选择起止日期';
   }
 }
 
@@ -70788,11 +70870,11 @@ function renderAdjustmentBatchCalendar() {
   host.innerHTML = `
     <div class="adj-cal-head">
       <button type="button" class="adj-cal-nav" onclick="adjustmentBatchCalNav(-1)">‹</button>
-      <span class="adj-cal-title">${y}年${m + 1}月</span>
+      <span class="adj-cal-title">${formatAdjustmentCalMonthTitle(y, m)}</span>
       <button type="button" class="adj-cal-nav" onclick="adjustmentBatchCalNav(1)">›</button>
     </div>
     <table class="adj-cal-table">
-      <thead><tr><th class="adj-cal-wk">教学周</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr></thead>
+      <thead><tr><th class="adj-cal-wk">教学周</th>${formatAdjustmentCalWeekdayHeads()}</tr></thead>
       <tbody>${rows.join('')}</tbody>
     </table>
     <div class="${tipCls}">${tip}</div>
@@ -72203,7 +72285,7 @@ function renderAdjustmentBatchRecords() {
       <td class="col-center">${r.slotCount || 0}</td>
       <td>${escapeHtml(r.reasonType || '—')}</td>
       <td>${escapeHtml(r.reason || '—')}</td>
-      <td class="col-center">${escapeHtml(r.submittedAt || '—')}</td>
+      <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
       <td class="col-center">${escapeHtml(r.operator || '—')}</td>
       <td class="col-center col-ops"><a href="#" onclick="openAdjustmentBatchDetail('${escapeHtml(r.id)}');return false">详情</a></td>
     </tr>`;
@@ -72214,7 +72296,7 @@ function formatAdjustmentBatchDetailDate(dateStr) {
   if (!dateStr) return '—';
   const weekday = getAdjustmentDateWeekday(dateStr);
   const wd = weekday ? getScheduleWeekdayLabel(weekday) : '';
-  return wd ? `${dateStr}（${wd}）` : dateStr;
+  return wd ? `${formatAdjustmentDateDisplay(dateStr)}（${wd}）` : formatAdjustmentDateDisplay(dateStr);
 }
 
 function renderAdjustmentBatchDetailTable(record) {
@@ -72299,7 +72381,7 @@ function openAdjustmentBatchDetail(id) {
         <div class="adj-detail-field"><span class="adj-detail-k">源节次</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentBatchRecordPeriods(r.sourcePeriods, r.termCode))}</span></div>
         ${targetFields}
         <div class="adj-detail-field"><span class="adj-detail-k">操作人</span><span class="adj-detail-v">${escapeHtml(r.operator || '—')}</span></div>
-        <div class="adj-detail-field"><span class="adj-detail-k">操作时间</span><span class="adj-detail-v">${escapeHtml(r.submittedAt || '—')}</span></div>
+        <div class="adj-detail-field"><span class="adj-detail-k">操作时间</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</span></div>
         <div class="adj-detail-field full"><span class="adj-detail-k">调整原因</span><span class="adj-detail-v">${escapeHtml(r.reason || '—')}</span></div>
         <div class="adj-detail-field full"><span class="adj-detail-k">附件</span><span class="adj-detail-v adj-detail-files">${attachHtml}</span></div>
       </div>
@@ -72418,7 +72500,7 @@ function renderAdjustmentRecordPage() {
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td>${escapeHtml(r.reason)}</td>
-    <td class="col-center">${escapeHtml(r.submittedAt)}</td>
+    <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
     <td class="col-center actions"><a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a></td>
   </tr>`).join('');
 }

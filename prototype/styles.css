@@ -9016,16 +9016,110 @@ input#group-assign-recorded-hours {
 }
 #modal-adjustment-apply .adj-apply-right {
   overflow-x: auto;
+  z-index: 1;
 }
 .adj-apply-left {
   border-right: 1px solid var(--border);
   background: var(--bg-2, #f8fafc);
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+}
+.adj-apply-left-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .adj-apply-left-title,
 .adj-apply-right-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-1);
+}
+.adj-apply-left-title {
+  min-width: 0;
+}
+.adj-apply-left-fold {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  z-index: 6;
+  width: 24px;
+  height: 56px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--border-light);
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.08);
+  color: var(--blue-600);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex-shrink: 0;
+}
+.adj-apply-left-fold:hover {
+  background: #eff6ff;
+  color: var(--blue-700);
+  box-shadow: 2px 0 14px rgba(37, 99, 235, 0.14);
+}
+.adj-apply-left-fold:focus-visible {
+  outline: 2px solid var(--blue-500, #3b82f6);
+  outline-offset: 2px;
+}
+.adj-apply-left-fold-icon {
+  width: 8px;
+  height: 8px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  margin-left: 3px;
+}
+#modal-adjustment-apply.modal-drawer .modal.adj-apply-drawer-modal .modal-body.adj-apply-split.is-left-collapsed {
+  grid-template-columns: 44px minmax(0, 1fr);
+}
+#modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left {
+  padding: 10px 6px;
+  overflow: visible;
+  align-items: center;
+  cursor: pointer;
+}
+#modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left > :not(.adj-apply-left-head):not(.adj-apply-left-fold) {
+  display: none;
+}
+#modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left-head {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  height: auto;
+}
+#modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+#modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left-fold {
+  top: 50%;
+  right: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+#modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left-fold:hover {
+  box-shadow: 0 2px 14px rgba(37, 99, 235, 0.14);
+}
+#modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left-fold-icon {
+  transform: rotate(-135deg);
+  margin-left: 0;
 }
 .adj-apply-right-head {
   display: flex;
@@ -9095,6 +9189,11 @@ input#group-assign-recorded-hours {
   padding: 6px;
   line-height: 1.45;
   vertical-align: middle;
+  border-right: 1px solid var(--border);
+}
+#adjustment-apply-left-table tr > :first-child,
+#adjustment-apply-left-table.is-addclass tr > :first-child {
+  border-left: 1px solid var(--border);
 }
 #adjustment-apply-left-table th:not(.adj-col-course):not(.adj-col-group),
 #adjustment-apply-left-table.is-addclass th:not(.adj-col-course):not(.adj-col-group) {
@@ -9374,6 +9473,15 @@ input#group-assign-recorded-hours {
   margin-bottom: 0;
 }
 .adj-apply-reason-type-item { margin-bottom: 10px; }
+#adjustment-apply-reason-type[hidden],
+#adjustment-apply-reason-type-display[hidden] {
+  display: none !important;
+}
+#adjustment-apply-reason-type-display[readonly] {
+  background: #f8fafc;
+  color: var(--text-3);
+  cursor: default;
+}
 .adj-apply-reason-hint {
   margin-top: 6px;
   font-size: 12px;
@@ -9488,11 +9596,17 @@ input#group-assign-recorded-hours {
     overflow: auto;
   }
   .adj-apply-left { border-right: none; border-bottom: 1px solid var(--border); }
+  #modal-adjustment-apply.modal-drawer .modal.adj-apply-drawer-modal .modal-body.adj-apply-split.is-left-collapsed {
+    grid-template-columns: 1fr;
+  }
 }
 @container adj-apply-drawer (max-width: 1040px) {
   #modal-adjustment-apply.modal-drawer .modal.adj-apply-drawer-modal .modal-body.adj-apply-split {
     grid-template-columns: 1fr;
     overflow: auto;
+  }
+  #modal-adjustment-apply.modal-drawer .modal.adj-apply-drawer-modal .modal-body.adj-apply-split.is-left-collapsed {
+    grid-template-columns: 1fr;
   }
   #modal-adjustment-apply .adj-apply-left,
   #modal-adjustment-apply .adj-apply-right {
@@ -9502,6 +9616,20 @@ input#group-assign-recorded-hours {
   #modal-adjustment-apply .adj-apply-left {
     border-right: none;
     border-bottom: 1px solid var(--border);
+  }
+  #modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left {
+    padding: 8px 12px;
+    min-height: 0;
+    cursor: pointer;
+  }
+  #modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left-head {
+    flex-direction: row;
+    height: auto;
+    width: 100%;
+  }
+  #modal-adjustment-apply .adj-apply-split.is-left-collapsed .adj-apply-left-title {
+    writing-mode: horizontal-tb;
+    letter-spacing: 0;
   }
   #modal-adjustment-apply .adj-apply-left-table-wrap {
     max-height: min(40vh, 360px);
@@ -9857,6 +9985,11 @@ input#group-assign-recorded-hours {
   overflow-wrap: anywhere;
   line-height: 1.45;
   vertical-align: middle;
+}
+.adj-slot-picker-table .adj-slot-col-date,
+.adjustment-makeup-cancel-table td.col-center,
+.adj-detail-info-table td.col-center {
+  white-space: nowrap;
 }
 .adj-slot-picker-table tbody tr, .adj-sub-picker-table tbody tr { cursor: pointer; }
 .adj-slot-picker-table tr.is-current-room, .adj-sub-picker-table tr.is-current-room { background: var(--bg-2); }
@@ -12094,6 +12227,26 @@ code {
 }
 .schedule-page .card.workflow-doc {
   padding: 16px;
+}
+#page-schedule-workflow .workflow-page-header,
+#page-schedule-workflow .workflow-viewport,
+#page-schedule-workflow .workflow-doc {
+  max-width: none;
+  width: 100%;
+}
+#page-schedule-workflow .diagram-area {
+  padding: 16px 8px;
+}
+#page-schedule-workflow .diagram-area svg {
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+#page-schedule-workflow .diagram-area .node-title {
+  font-size: 12px;
+}
+#page-schedule-workflow .diagram-area .node-sub {
+  font-size: 10px;
 }
 .schedule-page .card > .panel-toolbar {
   margin-bottom: 12px;

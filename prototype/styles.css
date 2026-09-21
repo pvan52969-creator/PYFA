@@ -896,11 +896,11 @@ body {
   display: inline-block; padding: 2px 10px; border-radius: 12px;
   font-size: 11px; font-weight: 600;
 }
-.status.draft    { background: #f1f5f9; color: #64748b; }
-.status.pending  { background: #fef3c7; color: #b45309; }
+.status.draft    { background: #64748b; color: #fff; }
+.status.pending  { background: #eab308; color: #fff; }
 .status.reviewing { background: var(--blue-700); color: #fff; }
-.status.approved { background: var(--green-bg); color: #15803d; }
-.status.rejected { background: var(--red-bg); color: #b91c1c; }
+.status.approved { background: #15803d; color: #fff; }
+.status.rejected { background: #b91c1c; color: #fff; }
 .status.draft-solid { background: #94a3b8; color: #fff; }
 .status.in-progress { background: var(--blue-700); color: #fff; }
 .status.approved-solid { background: #15803d; color: #fff; }
@@ -908,7 +908,7 @@ body {
 .status.adj-status-pass { background: #15803d; color: #fff; }
 .status.adj-status-fail { background: #b91c1c; color: #fff; }
 .status.adj-status-return { background: #7c3aed; color: #fff; }
-.status.adj-status-cancel { background: #94a3b8; color: #fff; }
+.status.adj-status-cancel { background: #475569; color: #fff; }
 
 .approval-table .status.approved,
 .change-review-table .status.approved,
@@ -8458,6 +8458,11 @@ input#group-assign-recorded-hours {
   padding: 0 0 8px;
   margin-bottom: 0;
   border-bottom: 0;
+  justify-content: space-between;
+}
+#page-adjustment-teacher-makeup .adj-makeup-cancel-card .list-export-menu {
+  left: auto;
+  right: 0;
 }
 .adjustment-makeup-cancel-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .adjustment-makeup-cancel-table th {
@@ -8472,6 +8477,24 @@ input#group-assign-recorded-hours {
 .adjustment-makeup-cancel-table th.col-center,
 .adjustment-makeup-cancel-table td.col-center { text-align: center; }
 .adjustment-makeup-cancel-table .srf-col-pick { width: 40px; min-width: 40px; }
+.adjustment-makeup-cancel-table .adj-makeup-status-col { width: 88px; min-width: 88px; }
+.adjustment-makeup-cancel-table th.adj-makeup-course-col,
+.adjustment-makeup-cancel-table td.adj-makeup-course-col,
+.adjustment-makeup-cancel-table th.adj-makeup-group-col,
+.adjustment-makeup-cancel-table td.adj-makeup-group-col {
+  width: 180px;
+  max-width: 180px;
+  min-width: 120px;
+}
+.adjustment-makeup-cancel-table td.adj-makeup-course-col .cell-ellipsis-tip,
+.adjustment-makeup-cancel-table td.adj-makeup-group-col .cell-ellipsis-tip {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
 .adjustment-teacher-table th.col-index,
 .adjustment-teacher-table td.col-index { text-align: center; }
 .adjustment-teacher-table td.actions {
@@ -9135,6 +9158,9 @@ input#group-assign-recorded-hours {
   align-items: center;
   gap: 8px;
 }
+.adj-apply-batch-actions[hidden] {
+  display: none !important;
+}
 .adj-apply-batch-period-host {
   position: relative;
 }
@@ -9481,6 +9507,10 @@ input#group-assign-recorded-hours {
   background: #f8fafc;
   color: var(--text-3);
   cursor: default;
+}
+#adjustment-apply-reason[readonly] {
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
 .adj-apply-reason-hint {
   margin-top: 6px;

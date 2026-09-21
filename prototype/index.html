@@ -2726,8 +2726,8 @@
           <div class="schedule-room-course-search" id="schedule-room-course-search">
             <div class="schedule-detail-course-search-rows">
               <div class="schedule-detail-course-search-row">
-                <label for="schedule-course-search-course-code">课程编号</label>
-                <input class="input input-sm" id="schedule-course-search-course-code" type="text" placeholder="请输入课程编号"
+                <label for="schedule-course-search-course-code">Course Code</label>
+                <input class="input input-sm" id="schedule-course-search-course-code" type="text" placeholder="请输入 Course Code"
                   onkeydown="onScheduleDetailCourseSearchKeydown(event)">
               </div>
               <div class="schedule-detail-course-search-row">
@@ -2806,12 +2806,12 @@
             <div class="schedule-detail-view-settings" id="schedule-detail-view-settings">
               <label class="schedule-view-opt"><input type="checkbox" id="sch-show-weekend" onchange="onScheduleViewSettingChange()"> 显示周末</label>
               <span class="schedule-view-sep">课表卡片显示：</span>
-              <label class="schedule-view-opt is-required"><input type="checkbox" id="sch-card-code" checked disabled> 课程号</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-name" onchange="onScheduleViewSettingChange()"> 课程名称</label>
+              <label class="schedule-view-opt is-required"><input type="checkbox" id="sch-card-code" checked disabled> Course Code</label>
+              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-name" onchange="onScheduleViewSettingChange()"> 课程班名称</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" onchange="onScheduleViewSettingChange()"> 上课小组</label>
+              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" onchange="onScheduleViewSettingChange()"> 课程组</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
             </div>
             <div class="schedule-detail-field">
@@ -2915,7 +2915,7 @@
                   <label class="schedule-retake-detect-item">
                     <span>课程</span>
                     <div class="schedule-retake-combo" data-retake-combo="course">
-                      <input class="input input-sm" id="schedule-retake-detect-course" type="text" placeholder="课程号或课程名称" autocomplete="off"
+                      <input class="input input-sm" id="schedule-retake-detect-course" type="text" placeholder="Course Code或课程班名称" autocomplete="off"
                         oninput="syncScheduleRetakeDetectClearBtn('course')"
                         onkeydown="onScheduleRetakeDetectCourseKeydown(event)">
                       <button type="button" class="schedule-retake-combo-clear" id="schedule-retake-detect-course-clear" title="清空" hidden
@@ -3022,12 +3022,12 @@
               <input class="input input-sm" id="schedule-course-filter-term" readonly placeholder="—">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-course-filter-code">课程号</label>
-              <input class="input input-sm" id="schedule-course-filter-code" placeholder="课程号">
+              <label for="schedule-course-filter-code">Course Code</label>
+              <input class="input input-sm" id="schedule-course-filter-code" placeholder="Course Code">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-course-filter-name">课程名称</label>
-              <input class="input input-sm" id="schedule-course-filter-name" placeholder="课程名称">
+              <label for="schedule-course-filter-name">课程班名称</label>
+              <input class="input input-sm" id="schedule-course-filter-name" placeholder="课程班名称">
             </div>
             <div class="schedule-query-more">
             <div class="schedule-query-field">
@@ -3067,7 +3067,7 @@
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
-          <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th class="col-center">课程类型</th><th>开课单位</th>
+          <th class="col-index">序号</th><th>Course Code</th><th>课程班名称</th><th class="col-center">课程类型</th><th>开课单位</th>
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
           <th class="col-center">未排完</th><th class="col-center">排课状态</th><th class="col-center">操作</th>
         </tr></thead>
@@ -3154,8 +3154,8 @@
               </select>
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-time-conflict-filter-course">课程号 / 名称</label>
-              <input class="input input-sm" id="schedule-time-conflict-filter-course" placeholder="课程号 / 课程名称">
+              <label for="schedule-time-conflict-filter-course">Course Code / 课程班名称</label>
+              <input class="input input-sm" id="schedule-time-conflict-filter-course" placeholder="Course Code / 课程班名称">
             </div>
             <div class="schedule-query-field">
               <label for="schedule-time-conflict-filter-teacher">教师工号 / 姓名</label>
@@ -3192,10 +3192,10 @@
                 <th>周次</th>
                 <th>星期</th>
                 <th>节次</th>
-                <th>课程号</th>
-                <th>课程名称</th>
+                <th>Course Code</th>
+                <th>课程班名称</th>
                 <th>上课教师</th>
-                <th>上课小组（人数）</th>
+                <th>课程组（人数）</th>
                 <th>学院</th>
                 <th>专业</th>
                 <th>入学批次</th>
@@ -3318,11 +3318,11 @@
                 <thead>
                   <tr>
                     <th class="col-status schedule-auto-status-col">排课状态</th>
-                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-code">Course Code</th>
                     <th class="schedule-auto-nature">课程性质</th>
                     <th class="col-center schedule-auto-weeks">起止周</th>
                     <th class="col-center schedule-auto-hours">总学时</th>
-                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-group">课程组</th>
                     <th class="schedule-auto-intake">上课批次</th>
                     <th class="schedule-auto-teacher">授课老师</th>
                   </tr>
@@ -3354,11 +3354,11 @@
                       <input type="checkbox" id="sat-success-check-all" title="全选成功课程" onchange="toggleScheduleAutoTimeSuccessCheckAll(this.checked)">
                     </th>
                     <th class="col-status schedule-auto-status-col">排课状态</th>
-                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-code">Course Code</th>
                     <th class="schedule-auto-nature">课程性质</th>
                     <th class="col-center schedule-auto-weeks">起止周</th>
                     <th class="col-center schedule-auto-hours">总学时</th>
-                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-group">课程组</th>
                     <th class="schedule-auto-intake">上课批次</th>
                     <th class="schedule-auto-teacher">授课老师</th>
                     <th class="schedule-auto-class-time">上课时间</th>
@@ -3528,8 +3528,8 @@
               </select>
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-room-conflict-filter-course">课程号 / 名称</label>
-              <input class="input input-sm" id="schedule-room-conflict-filter-course" placeholder="课程号 / 课程名称">
+              <label for="schedule-room-conflict-filter-course">Course Code / 课程班名称</label>
+              <input class="input input-sm" id="schedule-room-conflict-filter-course" placeholder="Course Code / 课程班名称">
             </div>
             <div class="schedule-query-field">
               <label for="schedule-room-conflict-filter-teacher">教师工号 / 姓名</label>
@@ -3570,10 +3570,10 @@
                 <th>周次</th>
                 <th>星期</th>
                 <th>节次</th>
-                <th>课程号</th>
-                <th>课程名称</th>
+                <th>Course Code</th>
+                <th>课程班名称</th>
                 <th>上课教师</th>
-                <th>上课小组（人数）</th>
+                <th>课程组（人数）</th>
                 <th>学院</th>
                 <th>专业</th>
                 <th>入学批次</th>
@@ -3698,10 +3698,10 @@
                 <thead>
                   <tr>
                     <th class="col-status schedule-auto-status-col">排教室状态</th>
-                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-code">Course Code</th>
                     <th class="schedule-auto-nature">课程性质</th>
                     <th class="col-center schedule-auto-weeks">起止周</th>
-                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-group">课程组</th>
                     <th class="schedule-auto-teacher">授课老师</th>
                     <th class="schedule-auto-class-time">上课时间</th>
                   </tr>
@@ -3730,10 +3730,10 @@
                       <input type="checkbox" id="sar-success-check-all" title="全选成功课程" onchange="toggleScheduleAutoRoomSuccessCheckAll(this.checked)">
                     </th>
                     <th class="col-status schedule-auto-status-col">排教室状态</th>
-                    <th class="schedule-auto-code">课程号</th>
+                    <th class="schedule-auto-code">Course Code</th>
                     <th class="schedule-auto-nature">课程性质</th>
                     <th class="col-center schedule-auto-weeks">起止周</th>
-                    <th class="schedule-auto-group">上课小组</th>
+                    <th class="schedule-auto-group">课程组</th>
                     <th class="schedule-auto-teacher">授课老师</th>
                     <th class="schedule-auto-class-time">上课时间</th>
                     <th class="schedule-auto-room">教室</th>
@@ -3760,12 +3760,12 @@
               <input class="input input-sm" id="schedule-room-course-filter-term" readonly placeholder="—">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-room-course-filter-code">课程号</label>
-              <input class="input input-sm" id="schedule-room-course-filter-code" placeholder="课程号">
+              <label for="schedule-room-course-filter-code">Course Code</label>
+              <input class="input input-sm" id="schedule-room-course-filter-code" placeholder="Course Code">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-room-course-filter-name">课程名称</label>
-              <input class="input input-sm" id="schedule-room-course-filter-name" placeholder="课程名称">
+              <label for="schedule-room-course-filter-name">课程班名称</label>
+              <input class="input input-sm" id="schedule-room-course-filter-name" placeholder="课程班名称">
             </div>
             <div class="schedule-query-more">
             <div class="schedule-query-field">
@@ -3806,7 +3806,7 @@
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
           <th class="col-center srf-col-pick"><input type="checkbox" id="schedule-room-course-check-all" onchange="toggleScheduleRoomListCheckAll('course', this.checked)"></th>
-          <th class="col-index">序号</th><th>课程号</th><th>课程名称</th><th>开课单位</th>
+          <th class="col-index">序号</th><th>Course Code</th><th>课程班名称</th><th>开课单位</th>
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
           <th class="col-center">未排完</th><th class="col-center">排教室状态</th><th class="col-center">发布状态</th><th class="col-center">操作</th>
         </tr></thead>
@@ -3912,10 +3912,10 @@
             <table class="data-table schedule-tt-no-schedule-table">
               <thead>
                 <tr>
-                  <th>课程号</th>
-                  <th>课程名称</th>
+                  <th>Course Code</th>
+                  <th>课程班名称</th>
                   <th>任课教师工号/姓名</th>
-                  <th>上课小组</th>
+                  <th>课程组</th>
                   <th>起止周</th>
                 </tr>
               </thead>
@@ -4111,8 +4111,8 @@
               <select class="input input-sm" id="schedule-time-tt-f-affil"><option value="">全部</option></select>
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-time-tt-f-group">上课小组</label>
-              <input class="input input-sm" id="schedule-time-tt-f-group" placeholder="上课小组">
+              <label for="schedule-time-tt-f-group">课程组</label>
+              <input class="input input-sm" id="schedule-time-tt-f-group" placeholder="课程组">
             </div>
             <div class="schedule-query-field">
               <label for="schedule-time-tt-f-intake">入学批次</label>
@@ -4127,12 +4127,12 @@
               <select class="input input-sm" id="schedule-time-tt-f-teachunit"><option value="">全部</option></select>
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-time-tt-f-code">课程编号</label>
-              <input class="input input-sm" id="schedule-time-tt-f-code" placeholder="课程编号">
+              <label for="schedule-time-tt-f-code">Course Code</label>
+              <input class="input input-sm" id="schedule-time-tt-f-code" placeholder="Course Code">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-time-tt-f-name">课程名称</label>
-              <input class="input input-sm" id="schedule-time-tt-f-name" placeholder="课程名称">
+              <label for="schedule-time-tt-f-name">课程班名称</label>
+              <input class="input input-sm" id="schedule-time-tt-f-name" placeholder="课程班名称">
             </div>
             <div class="schedule-query-field">
               <label for="schedule-time-tt-f-offerunit">开课单位</label>
@@ -4166,8 +4166,8 @@
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="schedule-time-tt-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-time-tt-body', this.checked)"></th>
               <th class="col-index">序号</th><th class="col-center">日期</th><th>周次</th><th class="col-center">星期</th><th class="col-center">节次</th>
-              <th>课程编号</th><th>课程名称</th><th>开课单位</th><th class="col-center">教师工号</th><th>教师姓名</th>
-              <th>所属单位</th><th>上课小组</th><th class="col-center">人数</th><th class="col-center">入学批次</th><th>专业名称</th>
+              <th>Course Code</th><th>课程班名称</th><th>开课单位</th><th class="col-center">教师工号</th><th>教师姓名</th>
+              <th>所属单位</th><th>课程组</th><th class="col-center">人数</th><th class="col-center">入学批次</th><th>专业名称</th>
               <th>上课单位</th><th class="col-center">教室</th>
             </tr></thead>
             <tbody id="schedule-time-tt-body"></tbody>
@@ -4483,17 +4483,24 @@
       </div>
       <div class="tab-panel active" id="adjustment-teacher-makeup-tab-pending">
         <div class="card schedule-card adj-makeup-cancel-card">
-          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions adj-makeup-cancel-toolbar">
             <button class="btn btn-primary btn-sm" type="button" onclick="applyAdjustmentTeacherMakeupFromCancels()">Apply</button>
+            <div class="list-export-dropdown">
+              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-makeup-cancel')">导出</button>
+              <div class="list-export-menu" id="list-export-menu-adjustment-makeup-cancel" hidden>
+                <button type="button" onclick="exportAdjustmentTeacherMakeupCancelRows('selected')">按选择项导出</button>
+                <button type="button" onclick="exportAdjustmentTeacherMakeupCancelRows('query')">按查询条件导出</button>
+              </div>
+            </div>
           </div>
           <div class="table-scroll"><table class="data-table adjustment-makeup-cancel-table">
             <thead><tr>
               <th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-teacher-makeup-cancel-check-all" aria-label="全选当前结果" onclick="event.stopPropagation();toggleAdjustmentTeacherMakeupCancelAll(this.checked)"></th>
-              <th class="col-index">序号</th>
+              <th class="col-center adj-makeup-status-col">补课状态</th>
               <th>停课单号</th>
-              <th class="col-center">课号</th>
-              <th>课程</th>
-              <th>上课小组</th>
+              <th class="col-center">Course Code</th>
+              <th class="adj-makeup-course-col">课程班名称</th>
+              <th class="adj-makeup-group-col">课程组</th>
               <th class="col-center">Lecturer</th>
               <th class="col-center">日期</th>
               <th class="col-center">星期</th>
@@ -4515,7 +4522,6 @@
                   <option value="">全部</option>
                   <option value="in-progress">流程中</option>
                   <option value="approved">通过</option>
-                  <option value="rejected">不通过</option>
                   <option value="returned">驳回</option>
                   <option value="cancelled">已撤销</option>
                 </select>
@@ -4860,8 +4866,8 @@
             <th class="col-center">日期</th>
             <th class="col-center">星期</th>
             <th class="col-center">节次</th>
-            <th>课程</th>
-            <th>上课小组</th>
+            <th>课程班名称</th>
+            <th>课程组</th>
             <th>任课教师</th>
             <th>教室</th>
             <th class="col-center">操作</th>
@@ -8874,8 +8880,8 @@
           <div class="adj-apply-left-title" id="adjustment-apply-left-title">选择上课节次</div>
         </div>
         <div class="schedule-room-filter-grid adj-apply-left-filters">
-          <div class="srf-item"><label>课程号</label><input class="input input-sm" id="asf-course" type="text" placeholder="请输入课程号"></div>
-          <div class="srf-item"><label>上课小组</label><input class="input input-sm" id="asf-group" type="text" placeholder="请输入上课小组"></div>
+          <div class="srf-item"><label>Course Code</label><input class="input input-sm" id="asf-course" type="text" placeholder="请输入 Course Code"></div>
+          <div class="srf-item"><label>课程组</label><input class="input input-sm" id="asf-group" type="text" placeholder="请输入课程组"></div>
           <div class="srf-item"><label>周次</label><select class="input input-sm" id="asf-week"></select></div>
           <div class="srf-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentSlotPickerRows()">查询</button>
@@ -8910,10 +8916,10 @@
                 <th class="col-center adj-slot-col-weekday">星期</th>
                 <th class="col-center adj-slot-col-period">节次</th>
                 <th class="adj-slot-col-weeks">周次</th>
-                <th class="col-center adj-col-code">课号</th>
-                <th class="adj-col-course">课程</th>
+                <th class="col-center adj-col-code">Course Code</th>
+                <th class="adj-col-course">课程班名称</th>
                 <th>教师</th>
-                <th class="adj-col-group">上课小组</th>
+                <th class="adj-col-group">课程组</th>
                 <th class="col-center">教室</th>
               </tr>
             </thead>
@@ -8945,7 +8951,7 @@
           <div class="adj-detail-field"><span class="adj-detail-k">共计几天</span><span class="adj-detail-v" id="adj-apply-meta-days">0</span></div>
         </div>
         <div class="adj-apply-right-head">
-          <div class="adj-apply-right-title" id="adjustment-apply-slot-list-label">调课设置</div>
+          <div class="adj-apply-right-title" id="adjustment-apply-slot-list-label">调课清单</div>
           <div class="adj-apply-batch-actions" id="adjustment-apply-batch-actions" hidden>
             <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyBatchDatePicker(event)">选择日期</button>
             <div class="adj-apply-batch-period-host" id="adjustment-apply-batch-period-host">
@@ -9373,7 +9379,7 @@
         </div>
         <div class="form-item full"><label>停课事由</label><textarea class="input" id="adjustment-holiday-reason" rows="2" placeholder="如 法定节假日放假"></textarea></div>
       </div>
-      <p class="form-hint">在月历中先点击起始日期、再点击结束日期，即可选定停课的起止范围（左侧显示对应教学周）；系统将按范围内每一天对应的星期，为当日已排课的上课小组自动生成停课记录。</p>
+      <p class="form-hint">在月历中先点击起始日期、再点击结束日期，即可选定停课的起止范围（左侧显示对应教学周）；系统将按范围内每一天对应的星期，为当日已排课的课程组自动生成停课记录。</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-holiday')">取消</button>
@@ -9405,7 +9411,7 @@
             <tr>
               <th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-holiday-confirm-checkall" onchange="toggleAdjustmentHolidayConfirmAll(this.checked)"></th>
               <th class="col-center">日期</th><th class="col-center">星期</th><th class="col-center">节次</th><th class="col-center">周次</th>
-              <th>课程号</th><th>课程名称</th><th>教师</th><th>上课小组</th><th>教室</th>
+              <th>Course Code</th><th>课程班名称</th><th>教师</th><th>课程组</th><th>教室</th>
             </tr>
           </thead>
           <tbody id="adjustment-holiday-confirm-body"></tbody>
@@ -9431,7 +9437,7 @@
             <tr>
               <th class="col-index">序号</th>
               <th class="col-center">日期</th><th class="col-center">星期</th><th class="col-center">节次</th><th class="col-center">周次</th>
-              <th>课程</th><th>上课小组</th><th>任课教师</th><th>教室</th>
+              <th>课程班名称</th><th>课程组</th><th>任课教师</th><th>教室</th>
               <th class="col-center">补课申请状态</th>
             </tr>
           </thead>
@@ -9582,9 +9588,9 @@
                 <tr>
                   <th class="col-check"><input type="checkbox" id="adjustment-batch-course-check-all" onclick="onAdjustmentBatchCourseSelectAll(this.checked)" aria-label="全选调课明细"></th>
                   <th class="col-index">序号</th>
-                  <th>课程编号</th>
-                  <th>课程名称</th>
-                  <th>上课小组</th>
+                  <th>Course Code</th>
+                  <th>课程班名称</th>
+                  <th>课程组</th>
                   <th>教师</th>
                   <th class="col-center">源日期</th>
                   <th class="col-center">原节次</th>
@@ -9719,9 +9725,9 @@
                 <tr>
                   <th class="col-check"><input type="checkbox" id="adjustment-batch-time-check-all" onclick="onAdjustmentBatchTimeSelectAll(this.checked)" aria-label="全选调课明细"></th>
                   <th class="col-index">序号</th>
-                  <th>课程编号</th>
-                  <th>课程名称</th>
-                  <th>上课小组</th>
+                  <th>Course Code</th>
+                  <th>课程班名称</th>
+                  <th>课程组</th>
                   <th>教师</th>
                   <th class="col-center">源日期</th>
                   <th class="col-center">原节次</th>
@@ -9828,8 +9834,8 @@
                 <tr>
                   <th class="col-check"><input type="checkbox" id="adjustment-batch-room-check-all" onclick="onAdjustmentBatchRoomSelectVisible(this.checked)" aria-label="全选可见明细"></th>
                   <th class="col-index">序号</th>
-                  <th>课程编号</th>
-                  <th>课程名称</th>
+                  <th>Course Code</th>
+                  <th>课程班名称</th>
                   <th>教师</th>
                   <th class="col-center">日期</th>
                   <th class="col-center">节次</th>
@@ -9882,13 +9888,13 @@
     <div class="modal-body">
       <div class="schedule-room-filter-grid">
         <div class="srf-item">
-          <label for="satcp-filter-code">课程号</label>
-          <input class="input input-sm" id="satcp-filter-code" placeholder="课程号"
+          <label for="satcp-filter-code">Course Code</label>
+          <input class="input input-sm" id="satcp-filter-code" placeholder="Course Code"
             onkeydown="if(event.key==='Enter'){event.preventDefault();queryScheduleAutoTimeCoursePicker();}">
         </div>
         <div class="srf-item">
-          <label for="satcp-filter-name">课程名称</label>
-          <input class="input input-sm" id="satcp-filter-name" placeholder="课程名称"
+          <label for="satcp-filter-name">课程班名称</label>
+          <input class="input input-sm" id="satcp-filter-name" placeholder="课程班名称"
             onkeydown="if(event.key==='Enter'){event.preventDefault();queryScheduleAutoTimeCoursePicker();}">
         </div>
         <div class="srf-actions">
@@ -9905,8 +9911,8 @@
                   onchange="toggleScheduleAutoTimeCoursePickerCheckAll(this.checked)">
               </th>
               <th class="col-index">序号</th>
-              <th>课程号</th>
-              <th>课程名称</th>
+              <th>Course Code</th>
+              <th>课程班名称</th>
               <th>课程类别</th>
               <th>课程性质</th>
             </tr>

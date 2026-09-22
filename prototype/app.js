@@ -67659,10 +67659,10 @@ function renderAdjustmentApplyDetailHead(showCredits) {
     <th class="col-center adj-apply-col-merge adj-col-group">课程组</th>
     ${renderAdjustmentApplyRowTypeHead()}
     <th class="col-center">教师</th>
+    <th class="col-center">Week</th>
     <th class="col-center">Date</th>
     <th class="col-center">Day</th>
     <th class="col-center">节次</th>
-    <th class="col-center">Week</th>
     <th class="col-center">Venue</th>
     <th class="col-center adj-apply-col-action">操作</th>
   </tr></thead>`;
@@ -67682,10 +67682,14 @@ function renderAdjustmentPerSlotConfigs() {
   const vals = getAdjustmentSelectedSlotVals();
   Object.keys(adjustmentPerSlotState).forEach(k => { if (!vals.includes(k)) delete adjustmentPerSlotState[k]; });
   if (!vals.length) {
-    const verb = adjustmentApplyType === 'cancel' ? '停课' : adjustmentApplyType === 'makeup' ? '补课' : '调课';
-    const src = adjustmentApplyType === 'makeup' ? '停课记录' : '课表';
-    wrap.innerHTML = `<div class="adj-apply-empty">请在左侧勾选要${verb}的${src}</div>`;
+    const showCredits = false;
+    const colSpan = getAdjustmentApplyDetailColSpan(showCredits);
+    wrap.innerHTML = `<table class="data-table compact adj-apply-detail-table adj-apply-detail-stack">
+      ${renderAdjustmentApplyDetailHead(showCredits)}
+      <tbody><tr><td colspan="${colSpan}" class="empty-cell">No data</td></tr></tbody>
+    </table>`;
     syncAdjustmentApplyBatchBar();
+    syncAdjustmentApplyBatchHeaderCheck();
     return;
   }
   const termStart = getScheduleTermStartDate();
@@ -67713,7 +67717,8 @@ function renderAdjustmentPerSlotConfigs() {
     const origDate = (meta.fromCancel && group.dateLabel)
       || getScheduleSlotDateLabel(termStart, s.weeks || t.weeks || '', Number(s.weekday))
       || '';
-    const origWeek = origDate ? (getAdjustmentDateInfo(origDate).weeksLabel || '—') : '—';
+    const origWeekNo = origDate ? (Number(getAdjustmentDateInfo(origDate).week) || 0) : 0;
+    const origWeek = origWeekNo ? String(origWeekNo) : '—';
     const codeText = group.code || formatScheduleCourseCode(t.code) || t.code || '—';
     const nameText = isMakeup
       ? formatAdjustmentCourseLabelWithCredits(group.courseName || t.name || '—', group.credits ?? getAdjustmentTaskCredits(t))
@@ -67726,26 +67731,26 @@ function renderAdjustmentPerSlotConfigs() {
       <td class="col-center adj-apply-col-merge adj-col-group" rowspan="${rowSpan}">${escapeHtml(group.groupWithCount || formatAdjustmentGroupWithCount(t.groupLabel || '上课小组', getAdjustmentGroupStudentCount(t), group.courseName || t.name))}</td>
       ${renderAdjustmentApplyRowTypeCell('Previous')}
       <td class="col-center">${escapeHtml(getAdjustmentTeacherName(teacherId))}</td>
+      <td class="col-center">${escapeHtml(origWeek)}</td>
       <td class="col-center">${escapeHtml(origDate ? formatAdjustmentDateDisplay(origDate) : '—')}</td>
       <td class="col-center">${escapeHtml(getScheduleWeekdayEnShort(Number(s.weekday)) || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel12(s.periodFrom, s.periodTo) || formatScheduleSlotPeriodLabel(s) || '—')}</td>
-      <td class="col-center">${escapeHtml(origWeek)}</td>
       <td class="col-center">${escapeHtml(group.room || s.room || t.location || '—')}</td>
       <td class="col-center adj-apply-col-action" rowspan="${rowSpan}"><a href="#" class="adj-apply-remove-link" onclick="removeAdjustmentSlot('${v}');return false">移除</a></td>
     </tr>`;
     if (!meta.perSlot) return origRow + confRow;
     const dinfo = getAdjustmentDateInfo(st.date || '');
-    const weekText = st.date ? (dinfo.weeksLabel || '—') : '—';
+    const weekText = st.date && dinfo.week ? String(dinfo.week) : '—';
     const weekdayText = st.date ? getScheduleWeekdayEnShort(dinfo.weekday) : '—';
     if (st.date && dinfo.weeksLabel) st.weeks = dinfo.weeksLabel;
     const periodDd = buildAdjustmentPeriodDropdownHtml(val, st.period, st.periodStartTime);
     const toRow = `<tr class="adj-apply-to-row" data-adj-val="${v}">
       ${renderAdjustmentApplyRowTypeCell('New')}
       <td class="col-center adj-apply-col-merge"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentTeacherPicker('${v}')">${escapeHtml(formatAdjustmentTeacherNames(getAdjustmentRowTeacherIds(st)) || '请选择教师')}</button></td>
+      <td class="col-center">${escapeHtml(weekText)}</td>
       <td class="col-center"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date ? formatAdjustmentDateDisplay(st.date) : '选择日期')}</button></td>
       <td class="col-center">${escapeHtml(weekdayText)}</td>
       <td class="col-center">${periodDd}</td>
-      <td class="col-center">${escapeHtml(weekText)}</td>
       <td>${buildAdjustmentRoomPreferMsHtml(val)}</td>
     </tr>`;
     return origRow + toRow + confRow;

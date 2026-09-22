@@ -9998,7 +9998,42 @@ input#group-assign-recorded-hours {
 
 /* ?? ???? ? ????????? / ?? / ??? ?? */
 .adj-slot-picker-filter { margin-bottom: 10px; }
-.adj-slot-picker-count { margin-right: auto; font-size: 12px; color: var(--text-2); }
+.adj-slot-picker-count { margin-right: auto; font-size: 12px; color: var(--text-2); flex-shrink: 0; }
+.adj-slot-picker-reason-hint {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 10px;
+  max-width: 100%;
+  border: 1px solid #f59e0b;
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(245, 158, 11, 0.1);
+}
+.adj-slot-picker-reason-hint::before {
+  content: "!";
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: #d97706;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+.adj-slot-picker-reason-hint[hidden] {
+  display: none !important;
+}
 .adj-slot-picker-table {
   width: max-content;
   max-width: none;
@@ -10030,6 +10065,22 @@ input#group-assign-recorded-hours {
 }
 .adj-slot-picker-table tbody tr, .adj-sub-picker-table tbody tr { cursor: pointer; }
 .adj-slot-picker-table tr.is-current-room, .adj-sub-picker-table tr.is-current-room { background: var(--bg-2); }
+.adj-slot-picker-table tbody tr.is-disabled,
+.adj-sub-picker-table tbody tr.is-disabled {
+  opacity: 0.5;
+  color: var(--text-3);
+  cursor: not-allowed;
+  background: var(--bg-1, #f7f8fa);
+}
+.adj-slot-picker-table tbody tr.is-disabled:hover .srf-col-pick,
+.adj-slot-picker-table tbody tr.is-disabled:hover .adj-slot-col-date,
+.adj-slot-picker-table tbody tr.is-disabled:hover .adj-slot-col-weekday,
+.adj-slot-picker-table tbody tr.is-disabled:hover .adj-slot-col-period {
+  background: var(--bg-1, #f7f8fa);
+}
+.adj-slot-picker-table tbody tr.is-disabled input[type="checkbox"] {
+  cursor: not-allowed;
+}
 .adj-slot-picker-table .srf-col-pick { width: 28px; }
 .adj-slot-picker-table tbody tr:hover .srf-col-pick,
 .adj-slot-picker-table tbody tr:hover .adj-slot-col-date,

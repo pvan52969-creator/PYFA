@@ -25956,13 +25956,13 @@ function buildDefaultScheduleTimeConfig(termCode) {
 }
 
 const SCHEDULE_WEEKDAYS = [
-  { value: 1, label: '周一', en: 'MON' },
-  { value: 2, label: '周二', en: 'TUE' },
-  { value: 3, label: '周三', en: 'WED' },
-  { value: 4, label: '周四', en: 'THU' },
-  { value: 5, label: '周五', en: 'FRI' },
-  { value: 6, label: '周六', en: 'SAT' },
-  { value: 7, label: '周日', en: 'SUN' }
+  { value: 1, label: '周一', en: 'Mon' },
+  { value: 2, label: '周二', en: 'Tue' },
+  { value: 3, label: '周三', en: 'Wed' },
+  { value: 4, label: '周四', en: 'Thu' },
+  { value: 5, label: '周五', en: 'Fri' },
+  { value: 6, label: '周六', en: 'Sat' },
+  { value: 7, label: '周日', en: 'Sun' }
 ];
 
 function getScheduleWeekdayLabel(value) {
@@ -25970,8 +25970,11 @@ function getScheduleWeekdayLabel(value) {
 }
 
 function getScheduleWeekdayEnShort(value) {
-  const w = SCHEDULE_WEEKDAYS.find(d => d.value === value);
-  return w?.en || String(w?.label || '—').slice(0, 3).toUpperCase();
+  const w = SCHEDULE_WEEKDAYS.find(d => d.value === Number(value));
+  if (w?.en) return w.en;
+  const raw = String(w?.label || '').trim();
+  if (!raw) return '—';
+  return raw.slice(0, 1).toUpperCase() + raw.slice(1, 3).toLowerCase();
 }
 
 function getScheduleWeekdayOptions(selected) {
@@ -27947,7 +27950,7 @@ function registerScheduleChangeLogMetas() {
   registerEntityChangeLogMeta('schedule-blackout', {
     titlePrefix: '不排课时间修改记录',
     fields: [
-      { key: 'weekday', label: '星期', format: wd },
+      { key: 'weekday', label: 'Day', format: wd },
       { key: 'periods', label: '节次', format: periods },
       { key: 'remark', label: '备注' }
     ]
@@ -27955,7 +27958,7 @@ function registerScheduleChangeLogMetas() {
   registerEntityChangeLogMeta('schedule-elective-slot', {
     titlePrefix: '选修课占位修改记录',
     fields: [
-      { key: 'weekday', label: '星期', format: wd },
+      { key: 'weekday', label: 'Day', format: wd },
       { key: 'periods', label: '节次', format: periods },
       { key: 'remark', label: '备注' }
     ]
@@ -27973,10 +27976,10 @@ function registerScheduleChangeLogMetas() {
   registerEntityChangeLogMeta('schedule-room-slot', {
     titlePrefix: '教室排课时间修改记录',
     fields: [
-      { key: 'room', label: '教室' },
+      { key: 'room', label: 'Venue' },
       { key: 'building', label: '楼栋' },
       { key: 'floor', label: '楼层', format: v => formatScheduleRoomFloorLabel(v) },
-      { key: 'roomType', label: '教室类型' },
+      { key: 'roomType', label: 'Venue Type' },
       { key: 'blockSlots', label: '不排课时段', format: v => (Array.isArray(v) && v.length ? `${v.length} 条` : '空') },
       { key: 'remark', label: '备注' }
     ]
@@ -28018,12 +28021,12 @@ function registerScheduleChangeLogMetas() {
     titlePrefix: '教室开放时间修改记录',
     fields: [
       { key: 'term', label: '学年学期', format: v => (typeof formatCourseTermDisplay === 'function' ? formatCourseTermDisplay(v) : v) || v },
-      { key: 'room', label: '教室' },
+      { key: 'room', label: 'Venue' },
       { key: 'venueType', label: '场地类型', format: v => getScheduleVenueTypeLabel(v) || v },
       { key: 'dateFrom', label: '开始日期' },
       { key: 'dateTo', label: '结束日期' },
-      { key: 'weeks', label: '周次' },
-      { key: 'weekdays', label: '星期', format: v => formatAdjustmentRoomOpenWeekdays(v) },
+      { key: 'weeks', label: 'Week' },
+      { key: 'weekdays', label: 'Day', format: v => formatAdjustmentRoomOpenWeekdays(v) },
       { key: 'periodFrom', label: '起始节次' },
       { key: 'periodTo', label: '结束节次' },
       { key: 'remark', label: '备注' }
@@ -28042,7 +28045,7 @@ function registerScheduleChangeLogMetas() {
   });
   const arrangeFields = [
     { key: 'summary', label: '上课安排' },
-    { key: 'room', label: '教室' },
+    { key: 'room', label: 'Venue' },
     { key: 'status', label: '状态' }
   ];
   [
@@ -28177,14 +28180,14 @@ function seedScheduleChangeLogs() {
       const bo = (cfg.blackouts || [])[0];
       if (bo) {
         push('schedule-blackout', bo.id, `${getScheduleWeekdayLabel(bo.weekday)} ${formatScheduleBlackoutPeriods(bo)}`, 'create', [
-          { fieldKey: 'weekday', fieldLabel: '星期', before: '空', after: getScheduleWeekdayLabel(bo.weekday) },
+          { fieldKey: 'weekday', fieldLabel: 'Day', before: '空', after: getScheduleWeekdayLabel(bo.weekday) },
           { fieldKey: 'periods', fieldLabel: '节次', before: '空', after: formatScheduleBlackoutPeriods(bo) }
         ], 50);
       }
       const el = (cfg.electiveSlots || [])[0];
       if (el) {
         push('schedule-elective-slot', el.id, `${getScheduleWeekdayLabel(el.weekday)}占位`, 'create', [
-          { fieldKey: 'weekday', fieldLabel: '星期', before: '空', after: getScheduleWeekdayLabel(el.weekday) },
+          { fieldKey: 'weekday', fieldLabel: 'Day', before: '空', after: getScheduleWeekdayLabel(el.weekday) },
           { fieldKey: 'remark', fieldLabel: '备注', before: '空', after: el.remark || SCHEDULE_ELECTIVE_DEFAULT_REMARK }
         ], 46);
       }
@@ -28234,7 +28237,7 @@ function seedScheduleChangeLogs() {
       ], 26);
     }
     push('schedule-room-arrange-weekday', '3', getScheduleWeekdayLabel(3), 'update', [
-      { fieldKey: 'room', fieldLabel: '教室', before: '空', after: '教学楼A-101（待定）' }
+      { fieldKey: 'room', fieldLabel: 'Venue', before: '空', after: '教学楼A-101（待定）' }
     ], 18);
     push('schedule-room-arrange-weekday', '3', getScheduleWeekdayLabel(3), 'update', [
       { fieldKey: 'status', fieldLabel: '状态', before: '待定', after: '已锁定' }
@@ -28243,7 +28246,7 @@ function seedScheduleChangeLogs() {
     const v0 = venues[0];
     if (v0) {
       push('schedule-room-arrange-venue', v0, getScheduleVenueTypeLabel(v0) || v0, 'update', [
-        { fieldKey: 'room', fieldLabel: '教室', before: '空', after: '实验楼-206（待定）' }
+        { fieldKey: 'room', fieldLabel: 'Venue', before: '空', after: '实验楼-206（待定）' }
       ], 16);
     }
   } catch (_) { /* arrange seed best-effort */ }
@@ -28268,7 +28271,7 @@ function seedScheduleChangeLogs() {
     const aro = (ADJUSTMENT_ROOM_OPEN_STORE.profiles || [])[0];
     if (aro) {
       push('adjustment-room-open', aro.id, aro.room || aro.id, 'create', [
-        { fieldKey: 'room', fieldLabel: '教室', before: '空', after: aro.room },
+        { fieldKey: 'room', fieldLabel: 'Venue', before: '空', after: aro.room },
         { fieldKey: 'dateFrom', fieldLabel: '开始日期', before: '空', after: aro.dateFrom || '—' },
         { fieldKey: 'dateTo', fieldLabel: '结束日期', before: '空', after: aro.dateTo || '—' }
       ], 12);
@@ -29099,7 +29102,7 @@ function deleteScheduleBlackoutRow(id, termCode) {
       after: null,
       changes: [{
         fieldKey: 'weekday',
-        fieldLabel: '星期',
+        fieldLabel: 'Day',
         before: getScheduleWeekdayLabel(before.weekday),
         after: '空'
       }]
@@ -29872,7 +29875,7 @@ function deleteScheduleRoomSlotRow(id, termCode) {
       after: null,
       changes: [{
         fieldKey: 'room',
-        fieldLabel: '教室',
+        fieldLabel: 'Venue',
         from: before.room || '—',
         to: ''
       }]
@@ -30906,7 +30909,7 @@ function deleteScheduleElectiveSlotRow(id, termCode) {
       after: null,
       changes: [{
         fieldKey: 'weekday',
-        fieldLabel: '星期',
+        fieldLabel: 'Day',
         before: getScheduleWeekdayLabel(before.weekday),
         after: '空'
       }]
@@ -33732,7 +33735,7 @@ function syncScheduleRoomModalTableHead() {
     <th class="col-center">楼层</th>
     ${renderScheduleRoomSeatsSortTh('scheduleRoomPicker')}
     <th>场地类型</th>
-    ${isApprove ? `<th>教室设备</th>${periodHeads}<th class="srf-col-open-time">开放时间</th>` : `<th>教室类型</th>
+    ${isApprove ? `<th>教室设备</th>${periodHeads}<th class="srf-col-open-time">开放时间</th>` : `<th>Venue Type</th>
     <th>教室设备</th>
     ${isLock || (!isApprove && scheduleDetailPhase === 'room') ? '' : '<th>教室软件</th>'}
     ${isLock ? '<th class="srf-col-lock-status">锁定状态</th><th class="srf-col-lock-owner">锁定对象</th>' + periodHeads : ''}`}`;
@@ -35452,8 +35455,8 @@ function syncScheduleRoomPickerHint() {
       const seats = typeof getScheduleRoomAvailableSeats === 'function'
         ? getScheduleRoomAvailableSeats(src)
         : 0;
-      parts.push(`<p class="srph-row"><span class="srph-k">原教室：</span>${escapeHtml(src)}</p>`);
-      parts.push(`<p class="srph-row"><span class="srph-k">原教室座位数：</span>${seats > 0 ? seats : '—'}</p>`);
+      parts.push(`<p class="srph-row"><span class="srph-k">Original Venue: </span>${escapeHtml(src)}</p>`);
+      parts.push(`<p class="srph-row"><span class="srph-k">Original Venue seats: </span>${seats > 0 ? seats : '—'}</p>`);
     }
     const timeHtml = renderAdjustmentApproveTargetTimeHintHtml();
     if (timeHtml) parts.unshift(timeHtml);
@@ -43036,7 +43039,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
     html += '<th class="sch-room-meta sch-room-meta-freeze sch-room-meta-index">序号</th>';
     html += '<th class="sch-room-meta sch-room-meta-freeze sch-room-meta-room">教室</th>';
     html += renderScheduleRoomSeatsSortTh(preview ? 'scheduleTimeRoomPreview' : 'scheduleRoomTimetable', 'sch-room-meta sch-room-meta-freeze sch-room-meta-seats');
-    html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-rtype">教室类型</th>';
+    html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-rtype">Venue Type</th>';
     html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-vtype">场地类型</th>';
     html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-building">楼栋</th>';
     html += '<th class="sch-room-meta sch-room-meta-scroll sch-room-meta-equip">教室设备</th>';
@@ -43112,7 +43115,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
     html += '</tbody></table>';
   } else {
     // 排时间：横标题=节次，纵标题=星期；--sch-day-count 表示节次列数（均分列宽）
-    html = `<table class="schedule-grid-table schedule-detail-grid-table is-time-period-cols" style="--sch-day-count:${periods.length}"><thead><tr><th class="schedule-grid-weekday-col">星期</th>`;
+    html = `<table class="schedule-grid-table schedule-detail-grid-table is-time-period-cols" style="--sch-day-count:${periods.length}"><thead><tr><th class="schedule-grid-weekday-col">Day</th>`;
     periods.forEach(p => {
       html += `<th style="--sch-cols:${axisMaxCols[p.periodNo]}"><span>${p.periodNo}</span><small>${formatSchedulePeriodAxisClockHtml(p)}</small></th>`;
     });
@@ -44863,7 +44866,7 @@ function commitScheduleRoomCellPending(room, weekday, periodNo) {
       action: 'update',
       changes: [{
         fieldKey: 'room',
-        fieldLabel: '教室',
+        fieldLabel: 'Venue',
         before: '空',
         after: summaries.join('；') || `${roomKey}（待定）`
       }]
@@ -45031,7 +45034,7 @@ function revokeScheduleRoomEntries(entries) {
     action: 'update',
     changes: [{
       fieldKey: 'room',
-      fieldLabel: '教室',
+      fieldLabel: 'Venue',
       before: revokedSummaries.join('；') || '已排/待定',
       after: '空'
     }]
@@ -47098,10 +47101,10 @@ function openScheduleRoomConflictDetail(idx) {
     body.innerHTML = `
       ${renderScheduleConflictDetailFields([
         { k: '学期', v: escapeHtml(row.termLabel || '—') },
-        { k: '日期', v: escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>') },
-        { k: '周次', v: escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>') },
-        { k: '星期', v: escapeHtml(row.weekdayLabel || '—') },
-        { k: '上课教室', v: escapeHtml(row.room || '—') },
+        { k: 'Date', v: escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>') },
+        { k: 'Week', v: escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>') },
+        { k: 'Day', v: escapeHtml(row.weekdayLabel || '—') },
+        { k: 'Venue', v: escapeHtml(row.room || '—') },
         { k: '共同授课', v: escapeHtml(row.jointTeachingStatus || 'N') },
         { k: '冲突类型', v: renderScheduleRoomConflictTypeTag(row), full: true }
       ])}
@@ -47292,9 +47295,9 @@ function exportScheduleRoomConflictRows(mode) {
     return;
   }
   const headers = [
-    '冲突组编号', '学期', '日期', '周次', '星期', '节次', '重叠节次',
+    '冲突组编号', '学期', 'Date', 'Week', 'Day', '节次', '重叠节次',
     'Course Code', '课程班名称', '上课教师', '课程组（人数）', '学院', '专业', '入学批次',
-    '上课教室', '共同授课状态', '共同授课组编号', '冲突类型', '冲突内容'
+    'Venue', '共同授课状态', '共同授课组编号', '冲突类型', '冲突内容'
   ];
   const data = [];
   rows.forEach(row => {
@@ -47650,9 +47653,9 @@ function openScheduleTimeConflictDetail(idx) {
     body.innerHTML = `
       ${renderScheduleConflictDetailFields([
         { k: '学期', v: escapeHtml(row.termLabel || '—') },
-        { k: '日期', v: escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>') },
-        { k: '周次', v: escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>') },
-        { k: '星期', v: escapeHtml(row.weekdayLabel || '—') },
+        { k: 'Date', v: escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>') },
+        { k: 'Week', v: escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>') },
+        { k: 'Day', v: escapeHtml(row.weekdayLabel || '—') },
         { k: '节次', v: escapeHtml(row.periodLabel || '—') },
         { k: 'Course Code', v: `<code>${escapeHtml(row.courseCode || '—')}</code>` },
         { k: '课程班名称', v: escapeHtml(row.courseName || '—') },
@@ -47781,7 +47784,7 @@ function exportScheduleTimeConflictRows(mode) {
     return;
   }
   const headers = [
-    '学期', '日期', '周次', '星期', '节次',
+    '学期', 'Date', 'Week', 'Day', '节次',
     'Course Code', '课程班名称', '上课教师', '课程组（人数）', '学院', '专业', '入学批次',
     '冲突类型', '冲突内容'
   ];
@@ -48080,7 +48083,7 @@ const SCHEDULE_TT_FIELD_DEFS = [
   { key: 'teacherId', label: '教师工号' },
   { key: 'teacherName', label: '教师姓名' },
   { key: 'hourType', label: '学时类型' },
-  { key: 'room', label: '上课教室' },
+  { key: 'room', label: 'Venue' },
   { key: 'weeks', label: '起止周' }
 ];
 
@@ -49246,7 +49249,7 @@ function exportScheduleTimeTimetableData(mode) {
     : filterScheduleTimeTimetableRows(buildScheduleTimeTimetableRows(), f);
   const rows = resolveListExportRows(mode || 'query', all, 'schedule-time-tt-body');
   if (!rows) return;
-  const headers = ['日期', '周次', '星期', '节次', 'Course Code', '课程班名称', '开课单位', '教师工号', '教师姓名', '所属单位', '课程组', '人数', '入学批次', '专业名称', '上课单位', '教室'];
+  const headers = ['Date', 'Week', 'Day', '节次', 'Course Code', '课程班名称', '开课单位', '教师工号', '教师姓名', '所属单位', '课程组', '人数', '入学批次', '专业名称', '上课单位', 'Venue'];
   const data = rows.map(r => [
     r.dateLabel, r.weeks || '', r.weekdayLabel, r.periodLabel, r.code, r.name, r.offerUnit,
     r.teacherId, r.teacherName, r.affilUnit, r.group, r.headcount, r.intakeLabel, r.programmeName,
@@ -49286,7 +49289,7 @@ function exportScheduleTimetableDataRows(kind, tasks) {
   const week = getScheduleTimetableKindWeek(kind);
   const term = getActiveOfferingTermSetting();
   const termLabel = term ? formatCourseTermDisplay(term.termCode) : '当前学期';
-  const headers = ['学年学期', 'Course Code', '课程班名称', '起止周', '教师工号', '教师姓名', '课程组', '小组人数', '学时类型', '上课教室', '星期', '节次'];
+  const headers = ['学年学期', 'Course Code', '课程班名称', '起止周', '教师工号', '教师姓名', '课程组', '小组人数', '学时类型', 'Venue', 'Day', '节次'];
   const rows = [];
   tasks.forEach(task => {
     normalizeTaskTimeSlots(task).forEach(slot => {
@@ -61558,9 +61561,10 @@ function renderAdjustmentTeacherListThead(tbody, listKey, staffCols) {
   const staffTh = staffCols
     ? th('Staff ID', 'staffId', true) + th('Lecturer Name', 'lecturer', true)
     : '';
+  const statusLabel = listKey === 'adjustmentTeacherMakeup' ? 'Status' : '审批状态';
   tr.innerHTML = [
     '<th class="col-index col-center">序号</th>',
-    th('审批状态', 'status', true),
+    th(statusLabel, 'status', true),
     th('审批阶段', 'stage', true),
     th('申请单号', 'no'),
     th('调课类型', 'type', true),
@@ -62252,6 +62256,52 @@ function syncAdjustmentApplyReasonTypeUI() {
     return;
   }
   syncAdjustmentApplyLeaveOptions();
+}
+
+/** 停课记录原因类型键（用于同单可同时申请判定） */
+function getAdjustmentCancelReasonTypeKey(val) {
+  const req = typeof findAdjustmentCancelRequestByRef === 'function'
+    ? findAdjustmentCancelRequestByRef(val)
+    : null;
+  if (!req) return '';
+  return String(req.reasonTypeCode || req.reasonType || '').trim();
+}
+
+function getAdjustmentPickerRowReasonTypeKeys(row) {
+  const members = row?.vals || (typeof expandAdjustmentSlotVal === 'function'
+    ? expandAdjustmentSlotVal(row?.val)
+    : [String(row?.val || '').trim()].filter(Boolean));
+  const keys = new Set();
+  (members || []).forEach(m => {
+    const k = getAdjustmentCancelReasonTypeKey(m);
+    if (k) keys.add(k);
+  });
+  return keys;
+}
+
+/** 当前已选停课锚点原因类型；未选时为空 */
+function getAdjustmentMakeupAnchorReasonTypeKey() {
+  if (adjustmentApplyType !== 'makeup') return '';
+  for (const v of (adjustmentSelectedSlotVals || [])) {
+    const k = getAdjustmentCancelReasonTypeKey(v);
+    if (k) return k;
+  }
+  return '';
+}
+
+/**
+ * 补课左侧选择器：已选一条后仅允许同原因类型继续勾选；
+ * 行内合并了多种原因类型的也不可选。已勾选行始终可取消勾选。
+ */
+function isAdjustmentMakeupPickerRowSelectable(row, checked) {
+  if (adjustmentApplyType !== 'makeup') return true;
+  if (checked) return true;
+  const keys = getAdjustmentPickerRowReasonTypeKeys(row);
+  if (keys.size > 1) return false;
+  const anchor = getAdjustmentMakeupAnchorReasonTypeKey();
+  if (!anchor) return true;
+  if (!keys.size) return false;
+  return keys.has(anchor);
 }
 
 /** 补课申请：从所选停课记录继承原因类型 / 事由 / 附件 / 请假记录 */
@@ -63705,10 +63755,10 @@ function saveAdjustmentRoomOpenModal() {
         entityLabel: rec.room,
         action: 'create',
         changes: [
-          { fieldKey: 'room', fieldLabel: '教室', before: '空', after: rec.room },
+          { fieldKey: 'room', fieldLabel: 'Venue', before: '空', after: rec.room },
           { fieldKey: 'dateFrom', fieldLabel: '开始日期', before: '空', after: rec.dateFrom },
           { fieldKey: 'dateTo', fieldLabel: '结束日期', before: '空', after: rec.dateTo },
-          { fieldKey: 'weekdays', fieldLabel: '星期', before: '空', after: formatAdjustmentRoomOpenWeekdays(rec.weekdays) },
+          { fieldKey: 'weekdays', fieldLabel: 'Day', before: '空', after: formatAdjustmentRoomOpenWeekdays(rec.weekdays) },
           { fieldKey: 'periodFrom', fieldLabel: '起始节次', before: '空', after: String(rec.periodFrom) },
           { fieldKey: 'periodTo', fieldLabel: '结束节次', before: '空', after: String(rec.periodTo) }
         ]
@@ -63732,7 +63782,7 @@ function deleteAdjustmentRoomOpenProfile(id) {
     action: 'delete',
     before,
     after: null,
-    changes: [{ fieldKey: 'room', fieldLabel: '教室', before: row.room, after: '已删除' }]
+    changes: [{ fieldKey: 'room', fieldLabel: 'Venue', before: row.room, after: '已删除' }]
   });
   renderAdjustmentRoomOpenPage();
 }
@@ -65419,6 +65469,12 @@ function renderAdjustmentTeacherMakeupCancelTable() {
       ? formatScheduleCourseGroupLabel(r.courseName, r.group)
       : (r.group || '—');
     const makeupStatus = getAdjustmentCancelMakeupStatus(r.val);
+    const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
+      ? (Number(getAdjustmentDateInfo(r.dateLabel).week) || 0)
+      : 0;
+    const weekText = weekNo
+      ? String(weekNo)
+      : (String(r.weeks || '').match(/(\d+)/)?.[1] || r.weeks || '—');
     return `<tr>
       <td class="col-center srf-col-pick" onclick="event.stopPropagation()">
         <input type="checkbox" class="adj-makeup-cancel-check" value="${escapeHtml(r.val)}" data-makeup-blocked="${makeupStatus.blocked ? '1' : '0'}" aria-label="选择停课课节">
@@ -65429,10 +65485,14 @@ function renderAdjustmentTeacherMakeupCancelTable() {
       <td class="adj-makeup-course-col">${typeof formatOfferingGroupingEllipsisCell === 'function' ? formatOfferingGroupingEllipsisCell(courseName) : escapeHtml(courseName)}</td>
       <td class="adj-makeup-group-col">${escapeHtml(groupLabel || '—')}</td>
       <td class="col-center">${escapeHtml(r.teacherName || '—')}</td>
+      <td class="col-center">${escapeHtml(weekText)}</td>
       <td class="col-center">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
-      <td class="col-center">${escapeHtml(r.weekdayLabel || '—')}</td>
+      <td class="col-center">${escapeHtml(
+        (typeof getScheduleWeekdayEnShort === 'function' && r.weekday)
+          ? getScheduleWeekdayEnShort(r.weekday)
+          : (r.weekdayLabel || '—')
+      )}</td>
       <td class="col-center">${escapeHtml(r.periodLabel || '—')}</td>
-      <td class="col-center">${escapeHtml(r.weeks || '—')}</td>
       <td class="col-center">${escapeHtml(r.room || '—')}</td>
     </tr>`;
   }).join('');
@@ -65463,7 +65523,7 @@ function applyAdjustmentTeacherMakeupFromCancels() {
     tr.querySelector('.adj-makeup-cancel-check:checked')
   );
   if (!checkedRows.length) {
-    alert('请先勾选停课记录');
+    openAdjustmentApplyModal('makeup', false, {});
     return;
   }
   const blockedRows = checkedRows.filter(tr =>
@@ -65475,6 +65535,11 @@ function applyAdjustmentTeacherMakeupFromCancels() {
     return;
   }
   const selectedVals = checkedRows.map(tr => tr.querySelector('.adj-makeup-cancel-check')?.value).filter(Boolean);
+  const typeKeys = new Set(selectedVals.map(v => getAdjustmentCancelReasonTypeKey(v)).filter(Boolean));
+  if (typeKeys.size > 1) {
+    alert('所选停课记录原因类型不一致，请按相同原因分批申请补课');
+    return;
+  }
   const cancelNos = checkedRows.map(tr => tr.querySelector('code')?.textContent?.trim()).filter(Boolean);
   openAdjustmentApplyModal('makeup', false, { selectedVals, cancelNos });
 }
@@ -65495,7 +65560,7 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
     alert('暂无符合条件的数据可导出');
     return;
   }
-  const headers = ['补课状态', '停课单号', 'Course Code', '课程班名称', '课程组', 'Lecturer', '日期', '星期', '节次', '周次', '教室'];
+  const headers = ['补课状态', '停课单号', 'Course Code', '课程班名称', '课程组', 'Lecturer', 'Week', 'Date', 'Day', '节次', 'Venue'];
   const data = rows.map(r => {
     const status = typeof getAdjustmentCancelMakeupStatus === 'function'
       ? getAdjustmentCancelMakeupStatus(r.val).label
@@ -65504,6 +65569,12 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
     const groupText = typeof formatScheduleCourseGroupLabel === 'function'
       ? formatScheduleCourseGroupLabel(r.courseName, r.group)
       : (r.group || '');
+    const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
+      ? (Number(getAdjustmentDateInfo(r.dateLabel).week) || 0)
+      : 0;
+    const weekText = weekNo
+      ? String(weekNo)
+      : (String(r.weeks || '').match(/(\d+)/)?.[1] || r.weeks || '');
     return [
       status,
       r.no || '',
@@ -65511,10 +65582,10 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
       r.courseName || '',
       groupText === '—' ? '' : groupText,
       r.teacherName || '',
+      weekText,
       r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '',
       r.weekdayLabel || '',
       r.periodLabel || '',
-      r.weeks || '',
       r.room || ''
     ];
   });
@@ -65831,7 +65902,7 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
     : `<th class="col-center adj-detail-group" colspan="5">原上课时间</th>`;
   const fromSub = r.type === 'addclass'
     ? ''
-    : `<th class="col-center">日期</th><th class="col-center">星期</th><th class="col-center">节次</th><th class="col-center">周次</th><th>教室</th>`;
+    : `<th class="col-center">Date</th><th class="col-center">Day</th><th class="col-center">节次</th><th class="col-center">Week</th><th>Venue</th>`;
   return `${changedNote}<div class="table-scroll adj-detail-info-scroll"><table class="data-table compact adj-detail-info-table">
     <thead>
       <tr>
@@ -65845,7 +65916,7 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
       </tr>
       <tr>
         ${fromSub}
-        <th class="col-center adj-detail-to-split">日期</th><th class="col-center">星期</th><th class="col-center">节次</th><th class="col-center">周次</th><th>教师</th><th>教室</th>
+        <th class="col-center adj-detail-to-split">日期</th><th class="col-center">Day</th><th class="col-center">节次</th><th class="col-center">Week</th><th>教师</th><th>Venue</th>
         ${r.type === 'addclass' ? '<th class="col-center">compulsory</th>' : ''}
       </tr>
     </thead>
@@ -66645,13 +66716,17 @@ function getAdjustmentCancelledSlots(opts = {}) {
         const { task: t, slot: s, teacherId } = info;
         const pf = Number(s.periodFrom), pt = Number(s.periodTo || s.periodFrom);
         const from = (r.items && r.items[0] && r.items[0].from) || {};
-        const weeks = from.weeks || s.weeks || t.weeks || '';
+        const weekRange = from.weeks || s.weeks || t.weeks || '';
+        const dateLabel = from.date || getScheduleSlotDateLabel(termStart, weekRange, Number(s.weekday));
+        const weeks = (dateLabel && typeof getAdjustmentDateInfo === 'function'
+          ? getAdjustmentDateInfo(dateLabel).weeksLabel
+          : '') || weekRange;
         rows.push(enrichAdjustmentSlotRow({
           val: member, no: r.no, taskId: t.id,
           code: t.code || r.code, courseName: t.name || r.courseName,
           teacherId, teacherName: getAdjustmentTeacherName(teacherId) || r.teacherName,
           group: t.groupLabel || r.groupLabel || '上课小组',
-          dateLabel: from.date || getScheduleSlotDateLabel(termStart, weeks, Number(s.weekday)),
+          dateLabel,
           weekday: Number(s.weekday), weekdayLabel: from.weekdayLabel || getScheduleWeekdayLabel(Number(s.weekday)),
           period: pf, periodLabel: from.periodLabel || formatAdjustmentPeriodLabel(pf, pt),
           weeks, room: from.room || s.room || t.location || ''
@@ -66730,6 +66805,8 @@ function syncAdjustmentApplyLeftFilterVisibility() {
   document.querySelectorAll('#modal-adjustment-apply [data-adj-admin-filter]').forEach(el => {
     el.hidden = !adjustmentAdminMode;
   });
+  const reasonHint = document.getElementById('adjustment-slot-picker-reason-hint');
+  if (reasonHint) reasonHint.hidden = adjustmentApplyType !== 'makeup';
 }
 
 function syncAdjustmentApplyLeftTableMode() {
@@ -66766,16 +66843,15 @@ function renderAdjustmentApplyLeftThead() {
       </tr>`
     : `<tr>
         <th class="col-center srf-col-pick" aria-label="选择"></th>
-        <th class="col-center adj-slot-col-date">日期</th>
-        <th class="col-center adj-slot-col-weekday">星期</th>
-        <th class="col-center adj-slot-col-period">节次</th>
-        <th class="adj-slot-col-weeks">周次</th>
         <th class="col-center adj-col-code">Course Code</th>
         <th class="adj-col-course">课程班名称</th>
-        ${showCredits ? '<th class="col-center">学分</th>' : ''}
-        ${teacherTh}
         <th class="adj-col-group">课程组</th>
-        <th class="col-center">教室</th>
+        ${teacherTh}
+        <th class="col-center adj-slot-col-weeks">Week</th>
+        <th class="col-center adj-slot-col-date">Date</th>
+        <th class="col-center adj-slot-col-weekday">Day</th>
+        <th class="col-center adj-slot-col-period">节次</th>
+        <th class="col-center">Venue</th>
       </tr>`;
 }
 
@@ -66886,24 +66962,54 @@ function renderAdjustmentSlotPickerRows() {
       const v = escapeHtml(r.val);
       const members = r.vals || expandAdjustmentSlotVal(r.val);
       const checked = members.length ? members.every(m => selected.has(m)) : selected.has(r.val);
+      const pickDisabled = isMakeup && !isAdjustmentMakeupPickerRowSelectable(r, checked);
+      const pickTitle = pickDisabled
+        ? (getAdjustmentPickerRowReasonTypeKeys(r).size > 1
+          ? '该行含多种原因类型，无法同时申请'
+          : '原因类型不一致，不可与已选记录同时申请')
+        : '';
+      const rowCls = [
+        checked ? 'is-current-room' : '',
+        pickDisabled ? 'is-disabled' : ''
+      ].filter(Boolean).join(' ');
+      const rowClick = pickDisabled ? '' : ` onclick="toggleAdjustmentSlotPick('${v}')"`;
       const creditsCell = showCredits ? `<td class="col-center">${escapeHtml(String(r.credits ?? '—'))}</td>` : '';
       const codeText = (typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(r.code) : r.code) || r.code || '—';
       let nameText = r.courseName || '—';
       if (isMakeup) nameText = formatAdjustmentCourseLabelWithCredits(nameText, r.credits);
-      const extra = isAdd ? '' : `
-        <td class="col-center adj-slot-col-date">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
-        <td class="col-center adj-slot-col-weekday">${escapeHtml(r.weekdayLabel || '—')}</td>
-        <td class="col-center adj-slot-col-period">${escapeHtml(r.periodLabel || '—')}</td>
-        <td class="adj-slot-col-weeks">${escapeHtml(r.dateLabel ? (getAdjustmentDateInfo(r.dateLabel).weeksLabel || r.weeks || '—') : (r.weeks || '—'))}</td>`;
-      return `<tr class="${checked ? 'is-current-room' : ''}" onclick="toggleAdjustmentSlotPick('${v}')">
-        <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
-        ${extra}
+      const teacherCell = showAdjustmentLeftTeacherCol()
+        ? `<td>${escapeHtml(formatAdjustmentSlotTeacherLabel(r))}</td>`
+        : '';
+      if (isAdd) {
+        return `<tr class="${rowCls}"${rowClick}${pickTitle ? ` title="${escapeHtml(pickTitle)}"` : ''}>
+          <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''}${pickDisabled ? ' disabled' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
+          <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
+          <td class="adj-col-course">${escapeHtml(nameText)}</td>
+          ${creditsCell}
+          ${teacherCell}
+          <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
+        </tr>`;
+      }
+      const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
+        ? (Number(getAdjustmentDateInfo(r.dateLabel).week) || 0)
+        : 0;
+      const weekText = weekNo
+        ? String(weekNo)
+        : (String(r.weeks || '').match(/(\d+)/)?.[1] || r.weeks || '—');
+      const weekdayText = (typeof getScheduleWeekdayEnShort === 'function' && r.weekday)
+        ? getScheduleWeekdayEnShort(r.weekday)
+        : (r.weekdayLabel || '—');
+      return `<tr class="${rowCls}"${rowClick}${pickTitle ? ` title="${escapeHtml(pickTitle)}"` : ''}>
+        <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''}${pickDisabled ? ' disabled' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
         <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
         <td class="adj-col-course">${escapeHtml(nameText)}</td>
-        ${creditsCell}
-        ${showAdjustmentLeftTeacherCol() ? `<td>${escapeHtml(formatAdjustmentSlotTeacherLabel(r))}</td>` : ''}
         <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
-        ${isAdd ? '' : `<td class="col-center">${escapeHtml(r.room || '未排')}</td>`}
+        ${teacherCell}
+        <td class="col-center adj-slot-col-weeks">${escapeHtml(weekText)}</td>
+        <td class="col-center adj-slot-col-date">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
+        <td class="col-center adj-slot-col-weekday">${escapeHtml(weekdayText)}</td>
+        <td class="col-center adj-slot-col-period">${escapeHtml(r.periodLabel || '—')}</td>
+        <td class="col-center">${escapeHtml(r.room || '未排')}</td>
       </tr>`;
     }).join('');
   }
@@ -66975,6 +67081,10 @@ function toggleAdjustmentSlotPick(val) {
         delete adjustmentPerSlotState[m];
       });
     } else {
+      const row = findAdjustmentPickerRowByVal(val);
+      if (adjustmentApplyType === 'makeup' && row && !isAdjustmentMakeupPickerRowSelectable(row, false)) {
+        return;
+      }
       members.forEach(m => set.add(m));
     }
     adjustmentSelectedSlotVals = orderAdjustmentSelectedSlotVals(set);
@@ -67549,11 +67659,11 @@ function renderAdjustmentApplyDetailHead(showCredits) {
     <th class="col-center adj-apply-col-merge adj-col-group">课程组</th>
     ${renderAdjustmentApplyRowTypeHead()}
     <th class="col-center">教师</th>
-    <th class="col-center">日期</th>
-    <th class="col-center">星期</th>
+    <th class="col-center">Date</th>
+    <th class="col-center">Day</th>
     <th class="col-center">节次</th>
-    <th class="col-center">周次</th>
-    <th class="col-center">教室</th>
+    <th class="col-center">Week</th>
+    <th class="col-center">Venue</th>
     <th class="col-center adj-apply-col-action">操作</th>
   </tr></thead>`;
 }
@@ -67617,7 +67727,7 @@ function renderAdjustmentPerSlotConfigs() {
       ${renderAdjustmentApplyRowTypeCell('Previous')}
       <td class="col-center">${escapeHtml(getAdjustmentTeacherName(teacherId))}</td>
       <td class="col-center">${escapeHtml(origDate ? formatAdjustmentDateDisplay(origDate) : '—')}</td>
-      <td class="col-center">${escapeHtml(getScheduleWeekdayLabel(Number(s.weekday)) || '—')}</td>
+      <td class="col-center">${escapeHtml(getScheduleWeekdayEnShort(Number(s.weekday)) || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel12(s.periodFrom, s.periodTo) || formatScheduleSlotPeriodLabel(s) || '—')}</td>
       <td class="col-center">${escapeHtml(origWeek)}</td>
       <td class="col-center">${escapeHtml(group.room || s.room || t.location || '—')}</td>
@@ -67626,7 +67736,7 @@ function renderAdjustmentPerSlotConfigs() {
     if (!meta.perSlot) return origRow + confRow;
     const dinfo = getAdjustmentDateInfo(st.date || '');
     const weekText = st.date ? (dinfo.weeksLabel || '—') : '—';
-    const weekdayText = st.date ? getScheduleWeekdayLabel(dinfo.weekday) : '—';
+    const weekdayText = st.date ? getScheduleWeekdayEnShort(dinfo.weekday) : '—';
     if (st.date && dinfo.weeksLabel) st.weeks = dinfo.weeksLabel;
     const periodDd = buildAdjustmentPeriodDropdownHtml(val, st.period, st.periodStartTime);
     const toRow = `<tr class="adj-apply-to-row" data-adj-val="${v}">
@@ -67716,10 +67826,10 @@ function renderAdjustmentAddclassDetailTable(wrap) {
       <th class="adj-col-course">课程班名称</th>
       <th class="col-center adj-col-group">课程组（人数）</th>
       <th class="col-center">上课日期</th>
-      <th class="col-center">星期</th>
+      <th class="col-center">Day</th>
       <th class="col-center">节次</th>
-      <th class="col-center">周次</th>
-      <th class="col-center">教室</th>
+      <th class="col-center">Week</th>
+      <th class="col-center">Venue</th>
       <th class="col-center">compulsory</th>
       <th class="col-center adj-apply-col-action">操作</th>
     </tr></thead>
@@ -69104,7 +69214,7 @@ function openAdjustmentHolidayDetail(id) {
     metaEl.innerHTML = `
       <div class="adj-detail-field"><span class="adj-detail-k">公假日</span><span class="adj-detail-v">${escapeHtml(h.name)}</span></div>
       <div class="adj-detail-field"><span class="adj-detail-k">停课日期</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentDateDisplay(h.dateLabel || h.date) || '—')}</span></div>
-      <div class="adj-detail-field"><span class="adj-detail-k">对应星期</span><span class="adj-detail-v">${escapeHtml(h.weekdayLabel || getScheduleWeekdayLabel(h.weekday))}</span></div>
+      <div class="adj-detail-field"><span class="adj-detail-k">Day</span><span class="adj-detail-v">${escapeHtml(h.weekdayLabel || getScheduleWeekdayLabel(h.weekday))}</span></div>
       <div class="adj-detail-field"><span class="adj-detail-k">影响课节</span><span class="adj-detail-v">${h.affected || reqs.length} 节</span></div>
       <div class="adj-detail-field"><span class="adj-detail-k">原因类型</span><span class="adj-detail-v">${escapeHtml(h.reasonType || 'Public Holiday')}</span></div>
       <div class="adj-detail-field full"><span class="adj-detail-k">停课事由</span><span class="adj-detail-v">${escapeHtml(h.reason || '—')}</span></div>`;
@@ -70718,8 +70828,8 @@ function exportAdjustmentBatchConflicts(kind) {
   }
   const isRoom = previewKind === 'room';
   const headers = isRoom
-    ? ['Course Code', '课程班名称', '原教师', '调整后教师', '日期', '节次', '原教室', '目标教室', '冲突类型', '冲突详情']
-    : ['Course Code', '课程班名称', '课程组', '原教师', '调整后教师', '源日期', '原节次', '教室', '调整后日期', '调整后节次', '调后教室', '冲突类型', '冲突详情'];
+    ? ['Course Code', '课程班名称', '原教师', '调整后教师', 'Date', '节次', 'Original Venue', 'Target Venue', '冲突类型', '冲突详情']
+    : ['Course Code', '课程班名称', '课程组', '原教师', '调整后教师', 'Source Date', '原节次', 'Venue', 'New Date', '调整后节次', 'New Venue', '冲突类型', '冲突详情'];
   const dataRows = conflictRows.map(r => {
     const types = [];
     if (r.conflict.teacher?.length) types.push('教师冲突');
@@ -70773,7 +70883,7 @@ function exportAdjustmentBatchCourseConflicts() {
   }
   const headers = [
     'Course Code', '课程班名称', '课程组', '原教师', '调整后教师',
-    '源日期', '原节次', '教室', '调整后日期', '调整后节次', '调后教室',
+    'Source Date', '原节次', 'Venue', 'New Date', '调整后节次', 'New Venue',
     '冲突类型', '冲突详情'
   ];
   const dataRows = conflictRows.map(r => {
@@ -71722,7 +71832,7 @@ function validateAdjustmentBatchWeekdaySide(kind, label) {
 
 function validateAdjustmentBatchTimeForm() {
   setAdjustmentBatchTimeTip('');
-  const srcErr = validateAdjustmentBatchWeekdaySide('time', '源日期');
+  const srcErr = validateAdjustmentBatchWeekdaySide('time', 'Source Date');
   if (srcErr) return failAdjustmentBatchTime(srcErr);
   const tgtErr = validateAdjustmentBatchWeekdaySide('timeTarget', '目标日期');
   if (tgtErr) return failAdjustmentBatchTime(tgtErr);
@@ -71891,7 +72001,7 @@ function deleteAdjustmentBatchRoomPreview() {
 
 function validateAdjustmentBatchRoomForm() {
   setAdjustmentBatchRoomTip('');
-  const srcErr = validateAdjustmentBatchWeekdaySide('room', '源日期');
+  const srcErr = validateAdjustmentBatchWeekdaySide('room', 'Source Date');
   if (srcErr) return failAdjustmentBatchRoom(srcErr);
   const srcDates = ADJUSTMENT_BATCH_STATE.room.dates || [];
   const srcPeriods = getAdjustmentBatchSelectedPeriods('room');
@@ -72903,7 +73013,7 @@ function renderAdjustmentBatchDetailTable(record) {
     return `<div class="adj-detail-info-scroll"><table class="data-table compact adj-detail-info-table">
       <thead><tr>
         <th class="col-index">序号</th><th>Course Code</th><th>课程班名称</th><th>教师</th>
-        <th class="col-center">日期</th><th class="col-center">周次</th><th class="col-center">节次</th><th>原教室</th><th>调整后教师</th><th>目标教室</th>
+        <th class="col-center">Date</th><th class="col-center">Week</th><th class="col-center">节次</th><th>原教室</th><th>调整后教师</th><th>目标教室</th>
       </tr></thead>
       <tbody>${details.map((d, i) => `<tr>
         <td class="col-index">${i + 1}</td>
@@ -72922,7 +73032,7 @@ function renderAdjustmentBatchDetailTable(record) {
   return `<div class="adj-detail-info-scroll"><table class="data-table compact adj-detail-info-table">
     <thead><tr>
       <th class="col-index">序号</th><th>Course Code</th><th>课程班名称</th><th>课程组</th><th>教师</th>
-      <th class="col-center">源日期</th><th class="col-center">周次</th><th class="col-center">原节次</th><th>教室</th>
+      <th class="col-center">源日期</th><th class="col-center">Week</th><th class="col-center">原节次</th><th>Venue</th>
       <th>调整后教师</th>
       <th class="col-center">调整后日期</th><th class="col-center">调整后周次</th><th class="col-center">调整后节次</th><th>调后教室</th>
     </tr></thead>
@@ -72961,7 +73071,7 @@ function openAdjustmentBatchDetail(id) {
     : '<span class="text-muted">无</span>';
   const targetFields = r.kind === 'room'
     ? `<div class="adj-detail-field"><span class="adj-detail-k">源教室</span><span class="adj-detail-v">${escapeHtml(r.sourceRoom || (r.details?.[0]?.room) || '—')}</span></div>
-       <div class="adj-detail-field"><span class="adj-detail-k">目标教室</span><span class="adj-detail-v">${escapeHtml(r.targetRoom || '—')}</span></div>`
+       <div class="adj-detail-field"><span class="adj-detail-k">Target Venue</span><span class="adj-detail-v">${escapeHtml(r.targetRoom || '—')}</span></div>`
     : `<div class="adj-detail-field"><span class="adj-detail-k">目标日期</span><span class="adj-detail-v">${escapeHtml(r.targetRange?.start && r.targetRange?.end ? `${r.targetRange.start} ~ ${r.targetRange.end}` : '—')}</span></div>
        <div class="adj-detail-field"><span class="adj-detail-k">目标节次</span><span class="adj-detail-v">${escapeHtml(formatAdjustmentBatchRecordPeriods(r.targetPeriods, r.termCode))}</span></div>`;
   const body = document.getElementById('adjustment-batch-detail-body');

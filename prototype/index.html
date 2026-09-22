@@ -175,8 +175,7 @@
       <div class="nav-group">调课管理</div>
       <a href="#" class="nav-item" data-page="adjustment-room-open">教室开放时间设置</a>
       <a href="#" class="nav-item" data-page="adjustment-reason-type">调课原因类型</a>
-      <a href="#" class="nav-item" data-page="adjustment-teacher">New Replacement（教师端）</a>
-      <a href="#" class="nav-item" data-page="adjustment-teacher-makeup">Pending Replacement（教师端）</a>
+      <a href="#" class="nav-item" data-page="adjustment-teacher">Class Adjustment</a>
       <a href="#" class="nav-item" data-page="adjustment-approval">调课申请审批</a>
       <a href="#" class="nav-item" data-page="adjustment-admin">调课申请管理</a>
       <a href="#" class="nav-item" data-page="adjustment-record">调课申请记录</a>
@@ -3128,7 +3127,8 @@
             </div>
             <div class="schedule-query-field">
               <label for="schedule-time-conflict-filter-date">Date</label>
-              <input class="input input-sm" id="schedule-time-conflict-filter-date" type="date" onchange="onScheduleTimeConflictDateChange()">
+              <input type="hidden" id="schedule-time-conflict-filter-date" value="">
+              <button type="button" class="input input-sm adj-pick-btn is-empty" id="schedule-time-conflict-filter-date-btn" onclick="openAdjFilterDatePicker('schedule-time-conflict-filter-date', event, 'onScheduleTimeConflictDateChange')">选择日期</button>
             </div>
             <div class="schedule-query-field">
               <label for="schedule-time-conflict-filter-week">Week</label>
@@ -3501,7 +3501,8 @@
             </div>
             <div class="schedule-query-field">
               <label for="schedule-room-conflict-filter-date">Date</label>
-              <input class="input input-sm" id="schedule-room-conflict-filter-date" type="date" onchange="onScheduleRoomConflictDateChange()">
+              <input type="hidden" id="schedule-room-conflict-filter-date" value="">
+              <button type="button" class="input input-sm adj-pick-btn is-empty" id="schedule-room-conflict-filter-date-btn" onclick="openAdjFilterDatePicker('schedule-room-conflict-filter-date', event, 'onScheduleRoomConflictDateChange')">选择日期</button>
             </div>
             <div class="schedule-query-more">
             <div class="schedule-query-field">
@@ -4370,61 +4371,224 @@
           <p>Adjust the classes in the scheduled timetable.</p>
           <p class="adj-teacher-intro-note">* Public Holiday does not require Management approval; other reasons require approval from School/Department Management or the Academic Affairs Office.</p>
         </div>
-        <div class="card schedule-query-card">
-          <div class="schedule-query-row">
-            <div class="schedule-query-fields">
-              <div class="schedule-query-field">
-                <label for="adjustment-teacher-term">学年学期</label>
-                <select class="input input-sm" id="adjustment-teacher-term"></select>
+        <div class="adj-approval-tabs" id="adjustment-teacher-replacement-subtabs">
+          <button type="button" class="adj-approval-tab is-active" data-replacement-subtab="pending" onclick="setAdjustmentTeacherReplacementSubTab('pending')">Pending Replacement</button>
+          <button type="button" class="adj-approval-tab" data-replacement-subtab="new" onclick="setAdjustmentTeacherReplacementSubTab('new')">New Replacement</button>
+          <button type="button" class="adj-approval-tab" data-replacement-subtab="history" onclick="setAdjustmentTeacherReplacementSubTab('history')">All History</button>
+        </div>
+        <div class="tab-panel active" id="adjustment-teacher-sub-pending">
+          <div class="card schedule-query-card">
+            <div class="schedule-query-row">
+              <div class="schedule-query-fields">
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-cancel-term">Academic Session</label>
+                  <select class="input input-sm" id="adjustment-teacher-makeup-cancel-term"></select>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-category">Category</label>
+                  <select class="input input-sm" id="adjustment-teacher-makeup-category">
+                    <option value="">全部</option>
+                  </select>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-course-code">Course Code</label>
+                  <input class="input input-sm" id="adjustment-teacher-makeup-course-code" type="text" placeholder="Course Code">
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-course-name">Course Name</label>
+                  <input class="input input-sm" id="adjustment-teacher-makeup-course-name" type="text" placeholder="Course Name">
+                </div>
               </div>
-              <div class="schedule-query-field">
-                <label for="adjustment-teacher-type">调课类型</label>
-                <select class="input input-sm" id="adjustment-teacher-type">
-                  <option value="">全部</option>
-                  <option value="reschedule">调课</option>
-                  <option value="cancel">停课</option>
-                </select>
+              <div class="schedule-query-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherMakeupCancelTable()">查询</button>
+                <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherMakeupCancelQuery()">重置</button>
+                <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
+                  <span class="schedule-query-fold-caret" aria-hidden="true"></span>
+                </button>
               </div>
-              <div class="schedule-query-field">
-                <label for="adjustment-teacher-status">审批状态</label>
-                <select class="input input-sm" id="adjustment-teacher-status">
-                  <option value="">全部</option>
-                  <option value="in-progress">流程中</option>
-                  <option value="approved">通过</option>
-                  <option value="rejected">不通过</option>
-                  <option value="returned">驳回</option>
-                  <option value="cancelled">已撤销</option>
-                </select>
+              <div class="schedule-query-more">
+                <div class="schedule-query-field">
+                  <label>Class Date</label>
+                  <div class="adj-apply-date-range-inputs">
+                    <input type="hidden" id="adjustment-teacher-makeup-date-from" value="">
+                    <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-makeup-date-from-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-makeup-date-from', event)">选择日期</button>
+                    <span class="adj-apply-date-sep">~</span>
+                    <input type="hidden" id="adjustment-teacher-makeup-date-to" value="">
+                    <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-makeup-date-to-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-makeup-date-to', event)">选择日期</button>
+                  </div>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-week">Week</label>
+                  <input class="input input-sm" id="adjustment-teacher-makeup-week" type="number" min="1" placeholder="Week">
+                </div>
               </div>
             </div>
-            <div class="schedule-query-actions">
-              <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherReplacementPage()">查询</button>
-              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherQuery()">重置</button>
+          </div>
+          <div class="card schedule-card adj-makeup-cancel-card">
+            <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions adj-makeup-cancel-toolbar">
+              <div class="adj-apply-title-item">
+                <button class="btn btn-primary btn-sm" type="button" onclick="applyAdjustmentTeacherMakeupFromCancels()" aria-describedby="adj-apply-makeup-tip">Apply</button>
+                <div class="slt-info-popover" id="adj-apply-makeup-tip">
+                  <p>Reschedule the approved cancelled class to another session.</p>
+                </div>
+              </div>
+              <div class="list-export-dropdown">
+                <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-makeup-cancel')">导出</button>
+                <div class="list-export-menu" id="list-export-menu-adjustment-makeup-cancel" hidden>
+                  <button type="button" onclick="exportAdjustmentTeacherMakeupCancelRows('selected')">按选择项导出</button>
+                  <button type="button" onclick="exportAdjustmentTeacherMakeupCancelRows('query')">按查询条件导出</button>
+                </div>
+              </div>
             </div>
+            <div class="table-scroll"><table class="data-table adjustment-makeup-cancel-table">
+              <thead><tr>
+                <th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-teacher-makeup-cancel-check-all" aria-label="全选当前结果" onclick="event.stopPropagation();toggleAdjustmentTeacherMakeupCancelAll(this.checked)"></th>
+                <th class="col-center adj-makeup-status-col">Status</th>
+                <th>Ref. ID</th>
+                <th class="col-center">Lecturer</th>
+                <th class="col-center">Category</th>
+                <th class="col-center">Course Code</th>
+                <th class="adj-makeup-group-col">Group Name</th>
+                <th class="col-center">Week</th>
+                <th class="col-center">Date</th>
+                <th class="col-center">Day</th>
+                <th class="col-center">Time</th>
+                <th class="col-center">Venue</th>
+              </tr></thead>
+              <tbody id="adjustment-teacher-makeup-cancel-body"></tbody>
+            </table></div>
           </div>
         </div>
-        <div class="card schedule-card">
-          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
-            <div class="adj-apply-title-item">
-              <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('reschedule')" aria-describedby="adj-apply-reschedule-tip">Reschedule Class</button>
-              <div class="slt-info-popover" id="adj-apply-reschedule-tip">
-                <p>Reschedule a previously cancelled class to another class session.</p>
+        <div class="tab-panel" id="adjustment-teacher-sub-new">
+          <div class="card schedule-query-card">
+            <div class="schedule-query-row">
+              <div class="schedule-query-fields">
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-term">Academic Session</label>
+                  <select class="input input-sm" id="adjustment-teacher-term"></select>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-category">Category</label>
+                  <select class="input input-sm" id="adjustment-teacher-category">
+                    <option value="">全部</option>
+                  </select>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-course-code">Course Code</label>
+                  <input class="input input-sm" id="adjustment-teacher-course-code" type="text" placeholder="Course Code">
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-course-name">Course Name</label>
+                  <input class="input input-sm" id="adjustment-teacher-course-name" type="text" placeholder="Course Name">
+                </div>
               </div>
-            </div>
-            <div class="adj-apply-title-item">
-              <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('cancel')" aria-describedby="adj-apply-cancel-tip">Cancel Class</button>
-              <div class="slt-info-popover" id="adj-apply-cancel-tip">
-                <p>Cancel the scheduled class first. The new class session will be rescheduled later.</p>
+              <div class="schedule-query-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherReplacementPage()">查询</button>
+                <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherQuery()">重置</button>
+                <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
+                  <span class="schedule-query-fold-caret" aria-hidden="true"></span>
+                </button>
+              </div>
+              <div class="schedule-query-more">
+                <div class="schedule-query-field">
+                  <label>Class Date</label>
+                  <div class="adj-apply-date-range-inputs">
+                    <input type="hidden" id="adjustment-teacher-date-from" value="">
+                    <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-date-from-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-date-from', event)">选择日期</button>
+                    <span class="adj-apply-date-sep">~</span>
+                    <input type="hidden" id="adjustment-teacher-date-to" value="">
+                    <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-date-to-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-date-to', event)">选择日期</button>
+                  </div>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-week">Week</label>
+                  <input class="input input-sm" id="adjustment-teacher-week" type="number" min="1" placeholder="Week">
+                </div>
               </div>
             </div>
           </div>
-          <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
-          <thead><tr>
-            <th class="col-index col-center">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th class="col-center">申请人</th><th class="col-center">Staff ID</th><th class="col-center">Lecturer Name</th>
-            <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th class="col-center">原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
-          </tr></thead>
-          <tbody id="adjustment-teacher-body"></tbody>
-        </table></div></div>
+          <div class="card schedule-card">
+            <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+              <div class="adj-apply-title-item">
+                <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('reschedule')" aria-describedby="adj-apply-reschedule-tip">Replace Class</button>
+                <div class="slt-info-popover" id="adj-apply-reschedule-tip">
+                  <p>Directly replace the scheduled class with another class session.</p>
+                  <p>* Approval is required from the School/Department Management or the Academic Affairs Office.</p>
+                </div>
+              </div>
+              <div class="adj-apply-title-item">
+                <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('cancel')" aria-describedby="adj-apply-cancel-tip">Cancel Class</button>
+                <div class="slt-info-popover" id="adj-apply-cancel-tip">
+                  <p>Cancel the scheduled class. Reschedule it later.</p>
+                  <p>* Approval is required from the School/Department Management or the Academic Affairs Office.</p>
+                </div>
+              </div>
+            </div>
+            <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+            <thead><tr>
+              <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th>
+              <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th><th class="col-center">Total Days</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
+            </tr></thead>
+            <tbody id="adjustment-teacher-body"></tbody>
+          </table></div></div>
+        </div>
+        <div class="tab-panel" id="adjustment-teacher-sub-history">
+          <div class="card schedule-query-card">
+            <div class="schedule-query-row">
+              <div class="schedule-query-fields">
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-hist-term">Academic Session</label>
+                  <select class="input input-sm" id="adjustment-teacher-makeup-hist-term"></select>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-category-hist">Category</label>
+                  <select class="input input-sm" id="adjustment-teacher-makeup-category-hist">
+                    <option value="">全部</option>
+                  </select>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-course-code-hist">Course Code</label>
+                  <input class="input input-sm" id="adjustment-teacher-makeup-course-code-hist" type="text" placeholder="Course Code">
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-course-name-hist">Course Name</label>
+                  <input class="input input-sm" id="adjustment-teacher-makeup-course-name-hist" type="text" placeholder="Course Name">
+                </div>
+              </div>
+              <div class="schedule-query-actions">
+                <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherMakeupRequestTable()">查询</button>
+                <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherMakeupRequestQuery()">重置</button>
+                <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
+                  <span class="schedule-query-fold-caret" aria-hidden="true"></span>
+                </button>
+              </div>
+              <div class="schedule-query-more">
+                <div class="schedule-query-field">
+                  <label>Class Date</label>
+                  <div class="adj-apply-date-range-inputs">
+                    <input type="hidden" id="adjustment-teacher-makeup-date-from-hist" value="">
+                    <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-makeup-date-from-hist-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-makeup-date-from-hist', event)">选择日期</button>
+                    <span class="adj-apply-date-sep">~</span>
+                    <input type="hidden" id="adjustment-teacher-makeup-date-to-hist" value="">
+                    <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-makeup-date-to-hist-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-makeup-date-to-hist', event)">选择日期</button>
+                  </div>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-makeup-week-hist">Week</label>
+                  <input class="input input-sm" id="adjustment-teacher-makeup-week-hist" type="number" min="1" placeholder="Week">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card schedule-card">
+            <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+            <thead><tr>
+              <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th>
+              <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th><th class="col-center">Total Days</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
+            </tr></thead>
+            <tbody id="adjustment-teacher-makeup-body"></tbody>
+          </table></div></div>
+        </div>
       </div>
       <div class="tab-panel" id="adjustment-teacher-tab-addition">
         <div class="card adj-teacher-intro">
@@ -4471,78 +4635,8 @@
       </div>
     </section>
 
-    <!-- ═══ 调课管理 · Pending Replacement（教师端） ═══ -->
-    <section class="page-list page adjustment-page" id="page-adjustment-teacher-makeup">
-      <div class="adj-approval-tabs" id="adjustment-teacher-makeup-tabs">
-        <button type="button" class="adj-approval-tab is-active" data-makeup-tab="pending" onclick="setAdjustmentTeacherMakeupPageTab('pending')">Pending</button>
-        <button type="button" class="adj-approval-tab" data-makeup-tab="history" onclick="setAdjustmentTeacherMakeupPageTab('history')">History</button>
-      </div>
-      <div class="filter-bar adj-makeup-term-bar">
-        <label for="adjustment-teacher-makeup-cancel-term">学年学期</label>
-        <select class="input input-sm" id="adjustment-teacher-makeup-cancel-term" onchange="onAdjustmentTeacherMakeupTermChange()"></select>
-      </div>
-      <div class="tab-panel active" id="adjustment-teacher-makeup-tab-pending">
-        <div class="card schedule-card adj-makeup-cancel-card">
-          <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions adj-makeup-cancel-toolbar">
-            <button class="btn btn-primary btn-sm" type="button" onclick="applyAdjustmentTeacherMakeupFromCancels()">Apply</button>
-            <div class="list-export-dropdown">
-              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-makeup-cancel')">导出</button>
-              <div class="list-export-menu" id="list-export-menu-adjustment-makeup-cancel" hidden>
-                <button type="button" onclick="exportAdjustmentTeacherMakeupCancelRows('selected')">按选择项导出</button>
-                <button type="button" onclick="exportAdjustmentTeacherMakeupCancelRows('query')">按查询条件导出</button>
-              </div>
-            </div>
-          </div>
-          <div class="table-scroll"><table class="data-table adjustment-makeup-cancel-table">
-            <thead><tr>
-              <th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-teacher-makeup-cancel-check-all" aria-label="全选当前结果" onclick="event.stopPropagation();toggleAdjustmentTeacherMakeupCancelAll(this.checked)"></th>
-              <th class="col-center adj-makeup-status-col">Status</th>
-              <th>停课单号</th>
-              <th class="col-center">Course Code</th>
-              <th class="adj-makeup-course-col">课程班名称</th>
-              <th class="adj-makeup-group-col">课程组</th>
-              <th class="col-center">Lecturer</th>
-              <th class="col-center">Week</th>
-              <th class="col-center">Date</th>
-              <th class="col-center">Day</th>
-              <th class="col-center">节次</th>
-              <th class="col-center">Venue</th>
-            </tr></thead>
-            <tbody id="adjustment-teacher-makeup-cancel-body"></tbody>
-          </table></div>
-        </div>
-      </div>
-      <div class="tab-panel" id="adjustment-teacher-makeup-tab-history">
-        <div class="card schedule-query-card">
-          <div class="schedule-query-row">
-            <div class="schedule-query-fields">
-              <div class="schedule-query-field">
-                <label for="adjustment-teacher-makeup-status">补课申请状态</label>
-                <select class="input input-sm" id="adjustment-teacher-makeup-status">
-                  <option value="">全部</option>
-                  <option value="in-progress">流程中</option>
-                  <option value="approved">通过</option>
-                  <option value="returned">驳回</option>
-                  <option value="cancelled">已撤销</option>
-                </select>
-              </div>
-            </div>
-            <div class="schedule-query-actions">
-              <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherMakeupRequestTable()">查询</button>
-              <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherMakeupRequestQuery()">重置</button>
-            </div>
-          </div>
-        </div>
-        <div class="card schedule-card">
-          <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
-          <thead><tr>
-            <th class="col-index col-center">序号</th><th class="col-center">Status</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th class="col-center">申请人</th><th class="col-center">Staff ID</th><th class="col-center">Lecturer Name</th>
-            <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th class="col-center">原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
-          </tr></thead>
-          <tbody id="adjustment-teacher-makeup-body"></tbody>
-        </table></div></div>
-      </div>
-    </section>
+    <!-- 旧 Pending Replacement 独立页已并入 Class Adjustment；保留空壳避免旧链接报错 -->
+    <section class="page-list page adjustment-page" id="page-adjustment-teacher-makeup" hidden aria-hidden="true"></section>
 
     <!-- ═══ 调课管理 · 教室开放时间设置 ═══ -->
     <section class="page-list page adjustment-page" id="page-adjustment-room-open">
@@ -8891,9 +8985,11 @@
           <div class="srf-item adj-apply-date-range" data-query-more="1">
             <label>Date Range</label>
             <div class="adj-apply-date-range-inputs">
-              <input type="date" class="input input-sm" id="asf-date-from" title="起始日期">
+              <input type="hidden" id="asf-date-from" value="">
+              <button type="button" class="input input-sm adj-pick-btn is-empty" id="asf-date-from-btn" onclick="openAdjFilterDatePicker('asf-date-from', event)">选择日期</button>
               <span class="adj-apply-date-sep">至</span>
-              <input type="date" class="input input-sm" id="asf-date-to" title="结束日期">
+              <input type="hidden" id="asf-date-to" value="">
+              <button type="button" class="input input-sm adj-pick-btn is-empty" id="asf-date-to-btn" onclick="openAdjFilterDatePicker('asf-date-to', event)">选择日期</button>
             </div>
           </div>
           <div class="srf-item" data-query-more="1"><label>Day</label><select class="input input-sm" id="asf-weekday"></select></div>
@@ -8913,8 +9009,7 @@
               <tr>
                 <th class="col-center srf-col-pick" aria-label="选择"></th>
                 <th class="col-center adj-col-code">Course Code</th>
-                <th class="adj-col-course">课程班名称</th>
-                <th class="adj-col-group">课程组</th>
+                <th class="adj-col-group">Group Name</th>
                 <th class="col-center adj-slot-col-weeks">Week</th>
                 <th class="col-center adj-slot-col-date">Date</th>
                 <th class="col-center adj-slot-col-weekday">Day</th>
@@ -9124,8 +9219,8 @@
     <div class="modal-head"><h3>设置教室偏好</h3><button class="modal-close" type="button" onclick="closeModal('modal-adjustment-apply-room-prefer')">×</button></div>
     <div class="modal-body">
       <div class="form-item full">
-        <label>教室偏好</label>
-        <div id="adjustment-apply-batch-room-prefer-ms"></div>
+        <label for="adjustment-apply-batch-room-prefer-input">教室偏好</label>
+        <input class="input" id="adjustment-apply-batch-room-prefer-input" type="text" placeholder="请输入教室偏好（非必填）">
       </div>
     </div>
     <div class="modal-foot">

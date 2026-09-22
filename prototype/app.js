@@ -31293,6 +31293,11 @@ function persistTaskSchedule(task) {
     sec.periodFrom = '';
     sec.periodTo = '';
   }
+  // 演示课排课结果写入 session，供「返回后再点排课」新页签恢复（刷新首页会清空）
+  if (typeof persistScheduleDemoArrangeToSession === 'function'
+    && (isOfferingPlanDemoArtifact(sec) || isScheduleDemoOfferingSection(sec))) {
+    persistScheduleDemoArrangeToSession();
+  }
 }
 
 function getTaskScheduleColorIndex(taskId) {
@@ -36875,6 +36880,30 @@ function getScheduleConflictPaintWeeks() {
   return slot ? (slot.weeks || scheduleDraftWeeks || '') : (scheduleDraftWeeks || '');
 }
 
+/** 时间侧冲突着色用教室：新排用草稿；已选节次重排用该节次教室 */
+function getScheduleConflictPaintRoom() {
+  if (scheduleActiveFromCourseList) return scheduleDraftRoom || '';
+  const entries = getScheduleSelectedSlotEntries();
+  if (entries.length) {
+    const s = entries[0].slot;
+    const t = entries[0].task;
+    return (s?.room || t?.location || '') || '';
+  }
+  return scheduleDraftRoom || '';
+}
+
+/**
+ * 时间侧冲突着色课程：
+ * - 左侧已选课程 → 该课程（新排预览）
+ * - 否则已选已排节次 → 节次所属课程（重排时仍展示该课冲突格局，不依赖左侧列表）
+ */
+function getScheduleConflictPaintTask(activeTask) {
+  if (activeTask) return activeTask;
+  if (scheduleDetailPhase !== 'time' || !scheduleSelectedSlotIds.size) return null;
+  const entries = getScheduleSelectedSlotEntries();
+  return entries[0]?.task || null;
+}
+
 function emptySchedulePlaceConflicts() {
   return {
     teacher: [], teacherShared: [], student: [], room: [], roomTime: [], roomSeats: [], roomType: [],
@@ -36958,15 +36987,16 @@ function detectScheduleActiveCourseCellConflicts(tasks, activeTask, weekday, per
     weekday,
     periodNo,
     weeks,
-    scheduleDraftRoom || '',
+    getScheduleConflictPaintRoom(),
     opts
   );
 }
 
-/** 课表冲突着色：有选中课程时按草稿周次；未选中时按已排节次自身检测 */
+/** 课表冲突着色：有选中课程/已选节次时按落点周次；否则按已排节次自身检测 */
 function getScheduleConflictCellKeys(tasks, activeTask) {
   if (scheduleDetailPhase === 'room') return getScheduleRoomTimetableConflictCellKeys(tasks, activeTask);
-  if (!activeTask) return getScheduleOccupiedTimeConflictCellKeys(tasks);
+  const paintTask = getScheduleConflictPaintTask(activeTask);
+  if (!paintTask) return getScheduleOccupiedTimeConflictCellKeys(tasks);
   const map = new Map();
   const weeks = getScheduleConflictPaintWeeks();
   if (!parseWeeksString(weeks).length) {
@@ -36979,7 +37009,7 @@ function getScheduleConflictCellKeys(tasks, activeTask) {
   weekdays.forEach(w => {
     periods.forEach(p => {
       const hits = findAllSlotsAtCell(tasks, w.value, p.periodNo);
-      const conf = detectScheduleActiveCourseCellConflicts(tasks, activeTask, w.value, p.periodNo);
+      const conf = detectScheduleActiveCourseCellConflicts(tasks, paintTask, w.value, p.periodNo);
       // 午休规则不参与课表格冲突效果，仅在落点时走排课弹窗提醒
       if (!scheduleConflictAffectsGrid(conf)) return;
       const overlapHit = hits.some(h => scheduleWeeksOverlap(h.slot.weeks || h.task.weeks || '', weeks));
@@ -40067,6 +40097,7 @@ function reseedScheduleDemoData() {
   }
   scheduleRetakeDemoSeeded = false;
   SCHEDULE_RETAKE_STUDENTS.length = 0;
+  clearScheduleDemoArrangeSession();
   Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).forEach(store => {
     purgeOfferingPlanDemoArtifacts(store);
     if (store) delete store._scheduleRoomDemoPendingVersion;
@@ -40824,16 +40855,98 @@ function seedScheduleRoomSideDemoSubmissions() {
 /**
  * 同步排课任务并注入 mec/202409 排时间冲突演示数据。
  * 先清理旧 gdemo 残留，再按课程号幂等补齐冲突锚点/探测课。
+ * 清理前快照演示课已排节次（内存 + sessionStorage），补种后写回：
+ * - 同页签返回再进：内存即可
+ * - 列表「排课」新开页签：靠 session 跨页签恢复
+ * - 刷新进首页：启动时清空 session，回到种子态
  */
+const SCHEDULE_DEMO_ARRANGE_SESSION_KEY = 'pyfa-schedule-demo-arrange-v1';
+
+function snapshotScheduleDemoArrangeState(store) {
+  const map = new Map();
+  (store?.sections || []).forEach(sec => {
+    if (!isOfferingPlanDemoArtifact(sec) && !isScheduleDemoOfferingSection(sec)) return;
+    const key = `${sec.programmeKey || ''}|${sec.intake || ''}|${String(sec.code || '').toUpperCase()}`;
+    map.set(key, {
+      timeSlots: Array.isArray(sec.timeSlots) ? sec.timeSlots.map(s => ({ ...s })) : [],
+      location: sec.location || '',
+      weeks: sec.weeks || ''
+    });
+  });
+  return map;
+}
+
+function restoreScheduleDemoArrangeState(store, map) {
+  if (!map?.size || !store?.sections?.length) return;
+  store.sections.forEach(sec => {
+    if (!isOfferingPlanDemoArtifact(sec) && !isScheduleDemoOfferingSection(sec)) return;
+    const key = `${sec.programmeKey || ''}|${sec.intake || ''}|${String(sec.code || '').toUpperCase()}`;
+    const snap = map.get(key);
+    if (!snap) return;
+    sec.timeSlots = (snap.timeSlots || []).map(s => ({ ...s }));
+    sec.location = snap.location || '';
+    if (snap.weeks) sec.weeks = snap.weeks;
+    if (sec.timeSlots[0]) {
+      sec.weekday = sec.timeSlots[0].weekday;
+      sec.periodFrom = sec.timeSlots[0].periodFrom;
+      sec.periodTo = sec.timeSlots[0].periodTo || sec.timeSlots[0].periodFrom;
+    } else {
+      sec.weekday = '';
+      sec.periodFrom = '';
+      sec.periodTo = '';
+    }
+  });
+}
+
+function persistScheduleDemoArrangeToSession() {
+  try {
+    if (!COURSE_OFFERING_PLAN_STORE) return;
+    const map = snapshotScheduleDemoArrangeState(COURSE_OFFERING_PLAN_STORE);
+    const obj = {};
+    map.forEach((v, k) => { obj[k] = v; });
+    sessionStorage.setItem(SCHEDULE_DEMO_ARRANGE_SESSION_KEY, JSON.stringify(obj));
+  } catch (_) { /* private mode / quota */ }
+}
+
+function loadScheduleDemoArrangeFromSession() {
+  try {
+    const raw = sessionStorage.getItem(SCHEDULE_DEMO_ARRANGE_SESSION_KEY);
+    if (!raw) return new Map();
+    const obj = JSON.parse(raw);
+    return new Map(Object.entries(obj || {}));
+  } catch (_) {
+    return new Map();
+  }
+}
+
+function clearScheduleDemoArrangeSession() {
+  try { sessionStorage.removeItem(SCHEDULE_DEMO_ARRANGE_SESSION_KEY); } catch (_) { /* ignore */ }
+}
+
+function mergeScheduleDemoArrangeMaps(primary, secondary) {
+  const out = new Map(secondary || []);
+  (primary || new Map()).forEach((v, k) => out.set(k, v));
+  return out;
+}
+
 function ensureScheduleGlobalDemo() {
   if (!ensureCourseOfferingPlan()) return false;
-  purgeOfferingPlanDemoArtifacts(COURSE_OFFERING_PLAN_STORE);
+  const arrangeSnap = mergeScheduleDemoArrangeMaps(
+    snapshotScheduleDemoArrangeState(COURSE_OFFERING_PLAN_STORE),
+    loadScheduleDemoArrangeFromSession()
+  );
+  // 同会话内已注入过则不再整表 purge，避免反复清掉用户刚排的演示课节次
+  if (!scheduleGlobalDemoSeeded) {
+    purgeOfferingPlanDemoArtifacts(COURSE_OFFERING_PLAN_STORE);
+  }
   ensureScheduleTimeConflictDemoCourses();
   ensureScheduleRoomPendingDemoCourses();
   patchScheduleRoomPendingDemoSections(COURSE_OFFERING_PLAN_STORE);
   patchScheduleSharedTeachingDemoCodes(COURSE_OFFERING_PLAN_STORE);
   patchScheduleDemoCourseDisplayNames(COURSE_OFFERING_PLAN_STORE);
   ensureScheduleRoomDemoPendingState();
+  restoreScheduleDemoArrangeState(COURSE_OFFERING_PLAN_STORE, arrangeSnap);
+  persistScheduleDemoArrangeToSession();
   ensureScheduleTasksFromOffering();
   ensureScheduleRetakeDemoStudents();
   scheduleGlobalDemoSeeded = true;
@@ -42362,15 +42475,22 @@ function clearScheduleDetailUrlParams() {
  * 排课/排教室详情「返回」：
  * 统一回到对应列表页并恢复左侧导航（原始页内效果）。
  * 新页签进入时不再 window.close()，避免关页失败残留「加载中」空页签。
+ * 返回后若再次点「排课」，优先本页签进入，避免新页签丢内存态。
  */
+let scheduleDetailReenterSameTab = false;
+
 function backFromScheduleDetailPage() {
   const backPage = getScheduleDetailBackPage();
+  const wasStandalone = !!scheduleDetailStandaloneTab;
   if (scheduleDetailStandaloneTab) {
     scheduleDetailStandaloneTab = false;
     clearScheduleDetailUrlParams();
     clearScheduleDetailBootLoading();
     document.title = SCHEDULE_DETAIL_DEFAULT_DOC_TITLE;
   }
+  // 落点结果先写入 session，供稍后新开页签或本页签再进详情时恢复
+  if (typeof persistScheduleDemoArrangeToSession === 'function') persistScheduleDemoArrangeToSession();
+  if (wasStandalone) scheduleDetailReenterSameTab = true;
   syncScheduleDetailImmersiveMode(backPage);
   goPage(backPage);
 }
@@ -42549,6 +42669,7 @@ function buildScheduleDetailLaunchUrl(ctx, phase) {
  * 不用 window.open：内嵌浏览器里它虽然开了页签却返回 null，
  * 依赖返回值做「弹窗被拦」回退会把当前列表页也导航成排课页。
  * 链接 href 必须为 #（深链放 data-sch-href），避免列表页跟随导航。
+ * 若刚从详情「返回」，则本页签直接进入，保留已排结果。
  */
 function launchScheduleDetailTab(event, href) {
   if (event) {
@@ -42560,6 +42681,10 @@ function launchScheduleDetailTab(event, href) {
     || event?.currentTarget?.getAttribute?.('data-sch-href')
     || '';
   if (!url || url === '#') return false;
+  if (scheduleDetailReenterSameTab) {
+    scheduleDetailReenterSameTab = false;
+    if (openScheduleDetailFromLaunchHref(url, { standalone: true })) return false;
+  }
   const a = document.createElement('a');
   a.href = url;
   a.target = '_blank';
@@ -42568,6 +42693,73 @@ function launchScheduleDetailTab(event, href) {
   document.body.appendChild(a);
   a.click();
   a.remove();
+  return false;
+}
+
+/** 按列表深链 href 在当前页签打开排课/排教室详情 */
+function openScheduleDetailFromLaunchHref(href, opts = {}) {
+  let u;
+  try {
+    u = new URL(href, location.origin);
+  } catch (_) {
+    return false;
+  }
+  const params = u.searchParams;
+  if (params.get(SCHEDULE_DETAIL_URL_KEYS.flag) !== '1') return false;
+  const phase = params.get(SCHEDULE_DETAIL_URL_KEYS.phase) || 'time';
+  const type = params.get(SCHEDULE_DETAIL_URL_KEYS.type) || 'batch';
+  const run = (openFn) => {
+    if (opts.standalone) scheduleDetailStandaloneTab = true;
+    openFn();
+    if (opts.standalone) {
+      clearScheduleDetailBootLoading();
+      syncScheduleDetailImmersiveMode();
+    }
+    return true;
+  };
+  if (type === 'batch') {
+    const programmeKey = params.get(SCHEDULE_DETAIL_URL_KEYS.pk) || '';
+    const intake = params.get(SCHEDULE_DETAIL_URL_KEYS.intake) || '';
+    if (!(programmeKey && intake)) return false;
+    return run(() => {
+      if (phase === 'room') openScheduleRoomBatchDetail(programmeKey, intake);
+      else openScheduleBatchDetail(programmeKey, intake);
+    });
+  }
+  if (type === 'teacher') {
+    const teacherId = params.get(SCHEDULE_DETAIL_URL_KEYS.tid) || '';
+    if (!teacherId) return false;
+    return run(() => {
+      if (phase === 'room') openScheduleRoomTeacherDetail(teacherId);
+      else openScheduleTeacherDetail(teacherId);
+    });
+  }
+  if (type === 'course') {
+    const courseCode = params.get(SCHEDULE_DETAIL_URL_KEYS.code) || '';
+    if (!courseCode) return false;
+    return run(() => {
+      if (phase === 'room') openScheduleRoomCourseDetail(courseCode);
+      else openScheduleCourseDetail(courseCode);
+    });
+  }
+  if (type === 'room') {
+    const room = params.get(SCHEDULE_DETAIL_URL_KEYS.room) || '';
+    if (!room) return false;
+    return run(() => openScheduleRoomDetail(room));
+  }
+  if (type === 'weekday') {
+    const weekday = Number(params.get(SCHEDULE_DETAIL_URL_KEYS.weekday) || '');
+    if (!weekday) return false;
+    return run(() => openScheduleRoomWeekdayDetail(weekday));
+  }
+  if (type === 'venueType') {
+    const venueType = params.get(SCHEDULE_DETAIL_URL_KEYS.venueType) || '';
+    if (!venueType) return false;
+    return run(() => openScheduleRoomVenueTypeDetail(venueType));
+  }
+  if (type === 'joint-demo') {
+    return run(() => goPage('schedule-joint-demo'));
+  }
   return false;
 }
 
@@ -47212,6 +47404,7 @@ function resetScheduleRoomConflictFilters() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn('schedule-room-conflict-filter-date');
   renderScheduleRoomConflictPage();
 }
 
@@ -47768,6 +47961,7 @@ function resetScheduleTimeConflictFilters() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn('schedule-time-conflict-filter-date');
   rebuildScheduleTimeConflictBatchFilters();
   renderScheduleTimeConflictPage();
 }
@@ -52034,7 +52228,8 @@ const SCHEDULE_PAGE_ALIASES = {
   'schedule-time-timetable': 'schedule-timetable-query',
   'schedule-student-density': 'schedule-density-query',
   'schedule-teacher-density': 'schedule-density-query',
-  'adjustment-teacher-addclass': 'adjustment-teacher-makeup'
+  'adjustment-teacher-makeup': 'adjustment-teacher',
+  'adjustment-teacher-addclass': 'adjustment-teacher'
 };
 
 /** 旧课表查询子页 → Tab key */
@@ -52515,6 +52710,7 @@ if (!window.__ssDocBound) {
 }
 
 function goPage(id) {
+  const rawPageId = id;
   id = resolveSchedulePageId(id);
   if (id === 'schedule-joint') openScheduleJointPage();
   if (id === 'schedule-joint-demo') openScheduleJointDemoPage();
@@ -52621,9 +52817,10 @@ function goPage(id) {
   if (id === 'schedule-density-query') renderScheduleDensityQueryPage();
   if (id === 'adjustment-teacher') {
     adjustmentTeacherPageTab = 'replacement';
+    if (rawPageId === 'adjustment-teacher-addclass') adjustmentTeacherReplacementSubTab = 'new';
+    else adjustmentTeacherReplacementSubTab = 'pending';
     renderAdjustmentTeacherPage();
   }
-  if (id === 'adjustment-teacher-makeup' || id === 'adjustment-teacher-addclass') renderAdjustmentTeacherMakeupPage();
   if (id === 'adjustment-admin') renderAdjustmentAdminPage();
   if (id === 'adjustment-approval') renderAdjustmentApprovalPage();
   if (id === 'adjustment-reason-type') renderAdjustmentReasonTypePage();
@@ -61015,10 +61212,12 @@ function getScheduleDensityTeacherNameOptions() {
 function buildScheduleDensityDateRangeHtml(fromId, toId, more) {
   return `<div class="srf-item schedule-density-date-range-item"${more ? ' data-query-more="1" data-density-more="1"' : ''}>
     <label>日期范围</label>
-    <div class="schedule-density-date-range">
-      <input class="input input-sm" id="${fromId}" type="date" title="开始日期">
-      <span class="schedule-density-date-sep">至</span>
-      <input class="input input-sm" id="${toId}" type="date" title="结束日期">
+    <div class="schedule-density-date-range adj-apply-date-range-inputs">
+      <input type="hidden" id="${fromId}" value="">
+      <button type="button" class="input input-sm adj-pick-btn is-empty" id="${fromId}-btn" onclick="openAdjFilterDatePicker('${fromId}', event)">选择日期</button>
+      <span class="schedule-density-date-sep adj-apply-date-sep">至</span>
+      <input type="hidden" id="${toId}" value="">
+      <button type="button" class="input input-sm adj-pick-btn is-empty" id="${toId}-btn" onclick="openAdjFilterDatePicker('${toId}', event)">选择日期</button>
     </div>
   </div>`;
 }
@@ -61193,6 +61392,7 @@ function resetScheduleStudentDensityQuery() {
   ['sdf-date-from', 'sdf-date-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
+    if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn(id);
   });
   setScheduleDensityMsSelected('sdf-term', getDefaultDensityTermSelected());
   setScheduleDensityMsSelected('sdf-week', getDefaultDensityWeekSelected());
@@ -61347,6 +61547,7 @@ function resetScheduleTeacherDensityQuery() {
   ['tdf-date-from', 'tdf-date-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
+    if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn(id);
   });
   setScheduleDensityMsSelected('tdf-term', getDefaultDensityTermSelected());
   setScheduleDensityMsSelected('tdf-week', getDefaultDensityWeekSelected());
@@ -61543,7 +61744,9 @@ const ADJUSTMENT_TEACHER_SORT_COLUMNS = {
       : (r.teacherName || ''))
   },
   applyTime: { get: r => formatAdjustmentRequestApplyTime(r) || '' },
+  leavePeriod: { get: r => formatAdjustmentLeavePeriod(r) || '' },
   slotCount: { get: r => Number(r.slotCount) || 1, type: 'number' },
+  totalDays: { get: r => getAdjustmentLeaveTotalDays(r), type: 'number' },
   reasonType: { get: r => getAdjustmentReasonTypeDisplay(r) },
   reason: { get: r => r.reason || '' },
   submittedAt: { get: r => r.submittedAt || '' }
@@ -61553,18 +61756,38 @@ function defaultAdjustmentTeacherListCompare(a, b) {
   return String(b.submittedAt || '').localeCompare(String(a.submittedAt || ''));
 }
 
+function isAdjustmentTeacherUnifiedListLayout(listKey) {
+  return listKey === 'adjustmentTeacherReplacement' || listKey === 'adjustmentTeacherMakeup';
+}
+
 function renderAdjustmentTeacherListThead(tbody, listKey, staffCols) {
   const tr = tbody?.closest('table')?.querySelector('thead tr');
   if (!tr || !listKey) return;
   const th = (label, key, center, extraClass) =>
     renderListSortTh(listKey, label, key, { center, extraClass });
+  if (isAdjustmentTeacherUnifiedListLayout(listKey)) {
+    tr.innerHTML = [
+      '<th class="col-index col-center">No.</th>',
+      th('Status', 'status', true),
+      th('Stage', 'stage', true),
+      th('Ref. ID', 'no'),
+      th('Adjustment Type', 'type', true),
+      th('Applicant', 'lecturer', true),
+      th('Category', 'reasonType', true),
+      th('Reason', 'reason', false, 'adj-reason-cell'),
+      th('Leave Period', 'leavePeriod', true),
+      th('Total Days', 'totalDays', true),
+      th('Application Time', 'submittedAt', true),
+      '<th class="col-center">Action</th>'
+    ].join('');
+    return;
+  }
   const staffTh = staffCols
     ? th('Staff ID', 'staffId', true) + th('Lecturer Name', 'lecturer', true)
     : '';
-  const statusLabel = listKey === 'adjustmentTeacherMakeup' ? 'Status' : '审批状态';
   tr.innerHTML = [
     '<th class="col-index col-center">序号</th>',
-    th(statusLabel, 'status', true),
+    th('审批状态', 'status', true),
     th('审批阶段', 'stage', true),
     th('申请单号', 'no'),
     th('调课类型', 'type', true),
@@ -61667,6 +61890,28 @@ function formatAdjustmentRequestApplyTime(r) {
   if (!dates.length) return '—';
   if (dates.length === 1) return formatAdjustmentDateDisplay(dates[0]);
   return `${formatAdjustmentDateDisplay(dates[0])} ~ ${formatAdjustmentDateDisplay(dates[dates.length - 1])}`;
+}
+
+/** Leave Period：涉及日期去重后以 M.D & M.D 展示（如 9.1 & 9.25） */
+function formatAdjustmentLeavePeriodDateToken(dateStr) {
+  const s = String(dateStr || '').trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return formatAdjustmentDateDisplay(s) || s;
+  return `${Number(m[2])}.${Number(m[3])}`;
+}
+
+function formatAdjustmentLeavePeriod(r) {
+  const dates = getAdjustmentRequestFromDates(r);
+  if (!dates.length) return '—';
+  return dates.map(formatAdjustmentLeavePeriodDateToken).filter(Boolean).join(' & ');
+}
+
+/** Total Days：调前涉及日期去重计数（同一天多条算 1 天） */
+function getAdjustmentLeaveTotalDays(r) {
+  const dates = getAdjustmentRequestFromDates(r);
+  if (dates.length) return dates.length;
+  const span = getAdjustmentRequestTimeSpan(r);
+  return Number(span.dayCount) || 0;
 }
 
 function renderAdjustmentRequestTimeCell(r) {
@@ -64506,7 +64751,6 @@ function refreshAdjustmentListPages(opts = {}) {
   const fromAdmin = !!opts.fromAdmin;
   if (fromAdmin) renderAdjustmentAdminPage();
   else renderAdjustmentTeacherPage();
-  if (typeof renderAdjustmentTeacherMakeupPage === 'function') renderAdjustmentTeacherMakeupPage();
   if (fromAdmin && document.getElementById('page-adjustment-teacher')?.classList.contains('active')) {
     renderAdjustmentTeacherPage();
   }
@@ -65134,17 +65378,256 @@ function fillAdjustmentTermSelect(selId, opts = {}) {
 
 function ensureAdjustmentTeacherTermSelect() {
   fillAdjustmentTermSelect('adjustment-teacher-term', { includeAll: false });
+  fillAdjustmentCategoryFilterSelect('adjustment-teacher-category');
 }
 
 function ensureAdjustmentTeacherAdditionTermSelect() {
   fillAdjustmentTermSelect('adjustment-teacher-addition-term', { includeAll: false });
 }
 
+function fillAdjustmentCategoryFilterSelect(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  ensureAdjustmentReasonTypeStore();
+  const cur = sel.value;
+  const items = ensureAdjustmentReasonTypeStore().items.slice().sort((a, b) =>
+    String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN')
+  );
+  sel.innerHTML = '<option value="">全部</option>'
+    + items.map(t => `<option value="${escapeHtml(t.code)}">${escapeHtml(t.name)}</option>`).join('');
+  if (cur && items.some(t => t.code === cur)) sel.value = cur;
+}
+
+/* ── 筛选栏日期：统一用教学周日历（adj-cal-dropdown） ── */
+let adjFilterCalState = null;
+
+function syncAdjFilterDateBtn(inputId, emptyText) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(`${inputId}-btn`);
+  if (!btn) return;
+  const v = input?.value || '';
+  const label = emptyText || '选择日期';
+  if (v) {
+    btn.textContent = typeof formatAdjustmentDateDisplay === 'function'
+      ? formatAdjustmentDateDisplay(v)
+      : v;
+    btn.classList.remove('is-empty');
+  } else {
+    btn.textContent = label;
+    btn.classList.add('is-empty');
+  }
+}
+
+function closeAdjFilterDatePicker() {
+  const dd = document.getElementById('adj-filter-cal-dd');
+  if (dd) dd.remove();
+  adjFilterCalState = null;
+  document.removeEventListener('mousedown', closeAdjFilterDatePickerOutside);
+}
+
+function closeAdjFilterDatePickerOutside(e) {
+  const dd = document.getElementById('adj-filter-cal-dd');
+  const btn = e.target.closest && e.target.closest('.adj-pick-btn');
+  if (dd && !dd.contains(e.target) && !btn) closeAdjFilterDatePicker();
+}
+
+function openAdjFilterDatePicker(inputId, ev, onChangeName) {
+  ev?.stopPropagation?.();
+  ev?.preventDefault?.();
+  const same = adjFilterCalState?.inputId === inputId && document.getElementById('adj-filter-cal-dd');
+  if (same) {
+    closeAdjFilterDatePicker();
+    return;
+  }
+  closeAdjFilterDatePicker();
+  const term = getActiveOfferingTermSetting()?.termCode
+    || document.getElementById('adjustment-teacher-makeup-cancel-term')?.value
+    || document.getElementById('adjustment-teacher-term')?.value
+    || '';
+  const current = document.getElementById(inputId)?.value || '';
+  const base = current
+    ? new Date(`${current}T00:00:00`)
+    : new Date(typeof getScheduleTermStartDate === 'function' ? getScheduleTermStartDate(term) : Date.now());
+  adjFilterCalState = {
+    inputId,
+    term,
+    onChangeName: onChangeName || '',
+    year: base.getFullYear(),
+    month: base.getMonth()
+  };
+  const dd = document.createElement('div');
+  dd.className = 'adj-cal-dropdown';
+  dd.id = 'adj-filter-cal-dd';
+  dd.onclick = e => e.stopPropagation();
+  document.body.appendChild(dd);
+  renderAdjFilterCalendar();
+  const btn = ev?.currentTarget || document.getElementById(`${inputId}-btn`);
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    const ddH = dd.offsetHeight;
+    const ddW = dd.offsetWidth;
+    let top = r.bottom + 4;
+    if (top + ddH > window.innerHeight - 8) top = Math.max(8, r.top - 4 - ddH);
+    let left = r.left;
+    if (left + ddW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - ddW);
+    dd.style.top = `${top}px`;
+    dd.style.left = `${left}px`;
+  }
+  setTimeout(() => document.addEventListener('mousedown', closeAdjFilterDatePickerOutside), 0);
+}
+
+function adjFilterCalNav(delta) {
+  if (!adjFilterCalState) return;
+  adjFilterCalState.month += Number(delta) || 0;
+  if (adjFilterCalState.month < 0) {
+    adjFilterCalState.month = 11;
+    adjFilterCalState.year -= 1;
+  } else if (adjFilterCalState.month > 11) {
+    adjFilterCalState.month = 0;
+    adjFilterCalState.year += 1;
+  }
+  renderAdjFilterCalendar();
+}
+
+function onAdjFilterDatePick(ds) {
+  const st = adjFilterCalState;
+  if (!st) return;
+  const input = document.getElementById(st.inputId);
+  if (input) input.value = ds;
+  syncAdjFilterDateBtn(st.inputId);
+  // 区间起止自动纠偏
+  const id = st.inputId;
+  let pairId = '';
+  if (/date-from(-hist)?$/.test(id) || id.endsWith('-from')) {
+    pairId = id.replace(/-from(-hist)?$/, '-to$1');
+  } else if (/date-to(-hist)?$/.test(id) || id.endsWith('-to')) {
+    pairId = id.replace(/-to(-hist)?$/, '-from$1');
+  }
+  if (pairId && pairId !== id) {
+    const fromEl = document.getElementById(/-from/.test(id) ? id : pairId);
+    const toEl = document.getElementById(/-to/.test(id) ? id : pairId);
+    if (fromEl?.value && toEl?.value && fromEl.value > toEl.value) {
+      const t = fromEl.value;
+      fromEl.value = toEl.value;
+      toEl.value = t;
+      syncAdjFilterDateBtn(fromEl.id);
+      syncAdjFilterDateBtn(toEl.id);
+    }
+  }
+  const onChange = st.onChangeName;
+  closeAdjFilterDatePicker();
+  if (onChange && typeof window[onChange] === 'function') window[onChange]();
+}
+
+function renderAdjFilterCalendar() {
+  const dd = document.getElementById('adj-filter-cal-dd');
+  const st = adjFilterCalState;
+  if (!dd || !st) return;
+  const cur = document.getElementById(st.inputId)?.value || '';
+  const term = st.term;
+  const termStart = typeof getScheduleTermStartDate === 'function' ? getScheduleTermStartDate(term) : '';
+  const maxWeek = typeof getOfferingTermTeachingWeeks === 'function' ? (getOfferingTermTeachingWeeks(term) || 14) : 14;
+  const y = st.year;
+  const m = st.month;
+  const pad = n => String(n).padStart(2, '0');
+  const first = new Date(y, m, 1);
+  const offset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+  const last = new Date(y, m + 1, 0);
+  const cursor = new Date(y, m, 1 - offset);
+  const rows = [];
+  while (true) {
+    let weekNo = 0;
+    if (termStart && typeof getScheduleWeekAndWeekdayFromDate === 'function') {
+      const weekInfo = getScheduleWeekAndWeekdayFromDate(
+        termStart,
+        `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`,
+        term
+      );
+      weekNo = weekInfo?.weekNo && weekInfo.weekNo <= maxWeek ? weekInfo.weekNo : 0;
+    } else if (typeof adjustmentTeachingWeekOf === 'function') {
+      weekNo = adjustmentTeachingWeekOf(cursor) || 0;
+    }
+    let cells = '';
+    for (let i = 0; i < 7; i++) {
+      const ds = `${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}-${pad(cursor.getDate())}`;
+      const other = cursor.getMonth() !== m ? ' adj-cal-other' : '';
+      const sel = ds === cur ? ' is-sel' : '';
+      cells += `<td class="adj-cal-day${other}${sel}" onclick="onAdjFilterDatePick('${ds}')">${cursor.getDate()}</td>`;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    rows.push(`<tr><td class="adj-cal-wk">${weekNo ? '第' + weekNo + '周' : '—'}</td>${cells}</tr>`);
+    if (cursor > last) break;
+  }
+  dd.innerHTML = `
+    <div class="adj-cal-head">
+      <button type="button" class="adj-cal-nav" onclick="adjFilterCalNav(-1)">‹</button>
+      <span class="adj-cal-title">${formatAdjustmentCalMonthTitle(y, m)}</span>
+      <button type="button" class="adj-cal-nav" onclick="adjFilterCalNav(1)">›</button>
+    </div>
+    <table class="adj-cal-table">
+      <thead><tr><th class="adj-cal-wk">教学周</th>${formatAdjustmentCalWeekdayHeads()}</tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
+}
+
+function getAdjustmentRequestClassDates(r) {
+  const dates = [];
+  getAdjustmentItems(r).forEach(it => {
+    const d = it?.from?.date || it?.to?.date || '';
+    if (d) dates.push(String(d).slice(0, 10));
+  });
+  if (!dates.length && r.submittedAt) dates.push(String(r.submittedAt).slice(0, 10));
+  return dates;
+}
+
+function matchAdjustmentTeacherExtraFilters(r, prefix, idSuffix = '') {
+  const suf = idSuffix || '';
+  const cat = document.getElementById(`${prefix}category${suf}`)?.value || '';
+  const codeQ = (document.getElementById(`${prefix}course-code${suf}`)?.value || '').trim().toLowerCase();
+  const nameQ = (document.getElementById(`${prefix}course-name${suf}`)?.value || '').trim().toLowerCase();
+  const dateFrom = document.getElementById(`${prefix}date-from${suf}`)?.value || '';
+  const dateTo = document.getElementById(`${prefix}date-to${suf}`)?.value || '';
+  const weekQ = Number(document.getElementById(`${prefix}week${suf}`)?.value) || 0;
+  if (cat) {
+    const code = String(r.reasonTypeCode || '').trim();
+    const name = String(r.reasonType || getAdjustmentReasonTypeDisplay(r) || '').trim();
+    const row = findAdjustmentReasonTypeByCode(cat);
+    if (code !== cat && name !== (row?.name || cat) && name !== cat) return false;
+  }
+  if (codeQ) {
+    const code = String(typeof formatScheduleCourseCode === 'function'
+      ? formatScheduleCourseCode(r.code) : (r.code || '')).toLowerCase();
+    if (!code.includes(codeQ)) return false;
+  }
+  if (nameQ) {
+    const name = String(r.courseName || '').toLowerCase();
+    if (!name.includes(nameQ)) return false;
+  }
+  const dates = getAdjustmentRequestClassDates(r);
+  if (dateFrom || dateTo) {
+    if (!dates.length) return false;
+    const hit = dates.some(d => {
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
+      return true;
+    });
+    if (!hit) return false;
+  }
+  if (weekQ) {
+    const weeks = dates.map(d => Number(getAdjustmentDateInfo(d).week) || 0).filter(Boolean);
+    if (!weeks.includes(weekQ)) return false;
+  }
+  return true;
+}
+
 function resetAdjustmentTeacherQuery() {
-  const typeSel = document.getElementById('adjustment-teacher-type');
-  if (typeSel) typeSel.value = '';
-  const statusSel = document.getElementById('adjustment-teacher-status');
-  if (statusSel) statusSel.value = '';
+  ['adjustment-teacher-category', 'adjustment-teacher-course-code', 'adjustment-teacher-course-name',
+    'adjustment-teacher-date-from', 'adjustment-teacher-date-to', 'adjustment-teacher-week'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  syncAdjFilterDateBtn('adjustment-teacher-date-from');
+  syncAdjFilterDateBtn('adjustment-teacher-date-to');
   const termSel = document.getElementById('adjustment-teacher-term');
   if (termSel) termSel.value = getActiveOfferingTermSetting()?.termCode || '';
   renderAdjustmentTeacherReplacementPage();
@@ -65266,6 +65749,9 @@ function collectAdjustmentTeacherListRows(opts = {}) {
   if (term) rows = rows.filter(r => !r.term || r.term === term);
   if (type && !opts.onlyType) rows = rows.filter(r => r.type === type);
   if (status) rows = rows.filter(r => matchAdjustmentTeacherStatusFilter(r.status, status));
+  if (opts.filterPrefix) {
+    rows = rows.filter(r => matchAdjustmentTeacherExtraFilters(r, opts.filterPrefix, opts.filterSuffix || ''));
+  }
   const defaultCompare = defaultAdjustmentTeacherListCompare;
   if (opts.sortListKey) {
     rows = sortListWithState(rows, opts.sortListKey, ADJUSTMENT_TEACHER_SORT_COLUMNS, defaultCompare);
@@ -65284,12 +65770,31 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
   }
   if (!tbody) return;
   const staffCols = !!opts.staffCols;
-  const colSpan = staffCols ? 14 : 12;
+  const isUnifiedLayout = isAdjustmentTeacherUnifiedListLayout(opts.listKey);
+  const colSpan = isUnifiedLayout ? 12 : (staffCols ? 14 : 12);
   if (opts.listKey) renderAdjustmentTeacherListThead(tbody, opts.listKey, staffCols);
   if (!rows.length) { renderScheduleEmptyRow(tbody, colSpan, emptyText); return; }
   tbody.innerHTML = rows.map((r, i) => {
-    const canCancel = (r.status === 'pending' || r.status === 'reviewing')
-      && (!r.source || r.source === 'teacher');
+    const actionsHtml = renderAdjustmentTeacherActionCell(r);
+    if (isUnifiedLayout) {
+      const profile = getAdjustmentApplicantProfile(r.teacherId);
+      const lecturerName = profile?.teacherName || r.teacherName || '—';
+      const staffId = profile?.teacherId || r.teacherId || '—';
+      return `<tr>
+    <td class="col-index col-center">${i + 1}</td>
+    <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
+    <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
+    <td><code>${escapeHtml(r.no)}</code></td>
+    <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
+    <td class="col-center">${escapeHtml(lecturerName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(staffId)}</span></td>
+    <td class="col-center">${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
+    <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
+    <td class="col-center adj-col-times">${escapeHtml(formatAdjustmentLeavePeriod(r))}</td>
+    <td class="col-center">${getAdjustmentLeaveTotalDays(r)}</td>
+    <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
+    ${actionsHtml}
+  </tr>`;
+    }
     const profile = staffCols ? getAdjustmentApplicantProfile(r.teacherId) : null;
     const applicantCell = staffCols
       ? `<td class="col-center">${escapeHtml(getAdjustmentListApplicantName(r))}</td>`
@@ -65297,13 +65802,6 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
     const staffCells = staffCols
       ? `<td class="col-center">${escapeHtml(profile?.teacherId || '—')}</td><td class="col-center">${escapeHtml(profile?.teacherName || '—')}</td>`
       : '';
-    const actionLinks = [
-      `<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a>`,
-      entityChangeLogLink('adjustment-request', r.id, r.no || r.id)
-    ];
-    if (canCancel) {
-      actionLinks.push(`<a href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');return false">撤销</a>`);
-    }
     return `<tr>
     <td class="col-index col-center">${i + 1}</td>
     <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
@@ -65316,18 +65814,47 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
     <td class="col-center">${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
-    <td class="col-center actions">${actionLinks.join('<span class="adj-act-sep">·</span>')}</td>
+    ${actionsHtml}
   </tr>`;
   }).join('');
   bindCellFloatTips(tbody, '.adj-reason-cell .cell-ellipsis-tip[data-tip]');
+}
+
+/** 操作列：详情 / 修改记录固定对齐；无撤销时隐藏该项（不占位） */
+function renderAdjustmentTeacherActionCell(r) {
+  const canCancel = (r.status === 'pending' || r.status === 'reviewing')
+    && (!r.source || r.source === 'teacher');
+  const cancelHtml = canCancel
+    ? `<span class="adj-act-sep" aria-hidden="true">·</span><a class="adj-act-cancel" href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');return false">撤销</a>`
+    : '';
+  return `<td class="col-center actions">
+    <span class="adj-teacher-actions">
+      <a class="adj-act-detail" href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a>
+      <span class="adj-act-sep" aria-hidden="true">·</span>
+      <span class="adj-act-log">${entityChangeLogLink('adjustment-request', r.id, r.no || r.id)}</span>
+      ${cancelHtml}
+    </span>
+  </td>`;
 }
 
 function renderAdjustmentTeacherPage() {
   ensureAdjustmentDemo();
   ensureScheduleChangeLogDemo();
   setAdjustmentTeacherPageTab(adjustmentTeacherPageTab, { skipRender: true });
-  if (adjustmentTeacherPageTab === 'addition') renderAdjustmentTeacherAdditionPage();
-  else renderAdjustmentTeacherReplacementPage();
+  if (adjustmentTeacherPageTab === 'addition') {
+    renderAdjustmentTeacherAdditionPage();
+    return;
+  }
+  setAdjustmentTeacherReplacementSubTab(adjustmentTeacherReplacementSubTab, { skipRender: true });
+  if (adjustmentTeacherReplacementSubTab === 'pending') {
+    ensureAdjustmentTeacherMakeupTermSelects();
+    renderAdjustmentTeacherMakeupCancelTable();
+  } else if (adjustmentTeacherReplacementSubTab === 'history') {
+    ensureAdjustmentTeacherMakeupTermSelects();
+    renderAdjustmentTeacherMakeupRequestTable();
+  } else {
+    renderAdjustmentTeacherReplacementPage();
+  }
 }
 
 function renderAdjustmentTeacherReplacementPage() {
@@ -65336,10 +65863,9 @@ function renderAdjustmentTeacherReplacementPage() {
   ensureAdjustmentTeacherTermSelect();
   const { rows, pool } = collectAdjustmentTeacherListRows({
     termId: 'adjustment-teacher-term',
-    typeId: 'adjustment-teacher-type',
-    statusId: 'adjustment-teacher-status',
     includeTypes: ['reschedule', 'cancel'],
     includeSources: ['teacher', 'admin', 'holiday'],
+    filterPrefix: 'adjustment-teacher-',
     sortListKey: 'adjustmentTeacherReplacement'
   });
   fillAdjustmentTeacherListTable(
@@ -65375,6 +65901,25 @@ function renderAdjustmentTeacherAdditionPage() {
 }
 
 let adjustmentTeacherPageTab = 'replacement';
+let adjustmentTeacherReplacementSubTab = 'pending';
+
+function setAdjustmentTeacherReplacementSubTab(tab, opts = {}) {
+  const allowed = { pending: 1, new: 1, history: 1 };
+  adjustmentTeacherReplacementSubTab = allowed[tab] ? tab : 'pending';
+  document.querySelectorAll('#adjustment-teacher-replacement-subtabs .adj-approval-tab').forEach(btn => {
+    btn.classList.toggle('is-active', btn.getAttribute('data-replacement-subtab') === adjustmentTeacherReplacementSubTab);
+  });
+  const pending = document.getElementById('adjustment-teacher-sub-pending');
+  const neu = document.getElementById('adjustment-teacher-sub-new');
+  const history = document.getElementById('adjustment-teacher-sub-history');
+  if (pending) pending.classList.toggle('active', adjustmentTeacherReplacementSubTab === 'pending');
+  if (neu) neu.classList.toggle('active', adjustmentTeacherReplacementSubTab === 'new');
+  if (history) history.classList.toggle('active', adjustmentTeacherReplacementSubTab === 'history');
+  if (opts.skipRender) return;
+  if (adjustmentTeacherReplacementSubTab === 'pending') renderAdjustmentTeacherMakeupCancelTable();
+  else if (adjustmentTeacherReplacementSubTab === 'history') renderAdjustmentTeacherMakeupRequestTable();
+  else renderAdjustmentTeacherReplacementPage();
+}
 
 function setAdjustmentTeacherPageTab(tab, opts = {}) {
   adjustmentTeacherPageTab = tab === 'addition' ? 'addition' : 'replacement';
@@ -65387,7 +65932,12 @@ function setAdjustmentTeacherPageTab(tab, opts = {}) {
   if (addition) addition.classList.toggle('active', adjustmentTeacherPageTab === 'addition');
   if (opts.skipRender) return;
   if (adjustmentTeacherPageTab === 'addition') renderAdjustmentTeacherAdditionPage();
-  else renderAdjustmentTeacherReplacementPage();
+  else {
+    setAdjustmentTeacherReplacementSubTab(adjustmentTeacherReplacementSubTab, { skipRender: true });
+    if (adjustmentTeacherReplacementSubTab === 'pending') renderAdjustmentTeacherMakeupCancelTable();
+    else if (adjustmentTeacherReplacementSubTab === 'history') renderAdjustmentTeacherMakeupRequestTable();
+    else renderAdjustmentTeacherReplacementPage();
+  }
 }
 
 function renderAdjustmentTeacherAddclassPage() {
@@ -65397,54 +65947,104 @@ function renderAdjustmentTeacherAddclassPage() {
 let adjustmentTeacherMakeupPageTab = 'pending';
 
 function setAdjustmentTeacherMakeupPageTab(tab, opts = {}) {
-  adjustmentTeacherMakeupPageTab = tab === 'history' ? 'history' : 'pending';
-  document.querySelectorAll('#adjustment-teacher-makeup-tabs .adj-approval-tab').forEach(btn => {
-    btn.classList.toggle('is-active', btn.getAttribute('data-makeup-tab') === adjustmentTeacherMakeupPageTab);
-  });
-  const pending = document.getElementById('adjustment-teacher-makeup-tab-pending');
-  const history = document.getElementById('adjustment-teacher-makeup-tab-history');
-  if (pending) pending.classList.toggle('active', adjustmentTeacherMakeupPageTab === 'pending');
-  if (history) history.classList.toggle('active', adjustmentTeacherMakeupPageTab === 'history');
-  if (opts.skipRender) return;
-  if (adjustmentTeacherMakeupPageTab === 'history') renderAdjustmentTeacherMakeupRequestTable();
-  else renderAdjustmentTeacherMakeupCancelTable();
+  // 兼容旧入口：Pending / History → Class Replacement 三级 Tab
+  const sub = tab === 'history' ? 'history' : 'pending';
+  adjustmentTeacherPageTab = 'replacement';
+  setAdjustmentTeacherReplacementSubTab(sub, opts);
+}
+
+function renderAdjustmentTeacherMakeupPage() {
+  adjustmentTeacherPageTab = 'replacement';
+  if (!adjustmentTeacherReplacementSubTab || adjustmentTeacherReplacementSubTab === 'new') {
+    adjustmentTeacherReplacementSubTab = 'pending';
+  }
+  renderAdjustmentTeacherPage();
 }
 
 function ensureAdjustmentTeacherMakeupTermSelects() {
   fillAdjustmentTermSelect('adjustment-teacher-makeup-cancel-term', { includeAll: false });
+  fillAdjustmentTermSelect('adjustment-teacher-makeup-hist-term', { includeAll: false });
+  fillAdjustmentCategoryFilterSelect('adjustment-teacher-makeup-category');
+  fillAdjustmentCategoryFilterSelect('adjustment-teacher-makeup-category-hist');
 }
 
 function onAdjustmentTeacherMakeupTermChange() {
   renderAdjustmentTeacherMakeupCancelTable();
-  renderAdjustmentTeacherMakeupRequestTable();
+  if (adjustmentTeacherReplacementSubTab === 'history') renderAdjustmentTeacherMakeupRequestTable();
 }
 
-function renderAdjustmentTeacherMakeupPage() {
-  ensureAdjustmentDemo();
-  ensureScheduleChangeLogDemo();
-  if (!adjustmentAdminMode) adjustmentActiveTeacherId = resolveAdjustmentActiveTeacherId();
-  ensureAdjustmentTeacherMakeupTermSelects();
-  setAdjustmentTeacherMakeupPageTab(adjustmentTeacherMakeupPageTab, { skipRender: true });
+function resetAdjustmentTeacherMakeupCancelQuery() {
+  ['adjustment-teacher-makeup-category', 'adjustment-teacher-makeup-course-code',
+    'adjustment-teacher-makeup-course-name', 'adjustment-teacher-makeup-date-from',
+    'adjustment-teacher-makeup-date-to', 'adjustment-teacher-makeup-week'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  syncAdjFilterDateBtn('adjustment-teacher-makeup-date-from');
+  syncAdjFilterDateBtn('adjustment-teacher-makeup-date-to');
+  const termSel = document.getElementById('adjustment-teacher-makeup-cancel-term');
+  if (termSel) termSel.value = getActiveOfferingTermSetting()?.termCode || '';
   renderAdjustmentTeacherMakeupCancelTable();
-  renderAdjustmentTeacherMakeupRequestTable();
 }
 
 function resetAdjustmentTeacherMakeupRequestQuery() {
-  const statusSel = document.getElementById('adjustment-teacher-makeup-status');
-  if (statusSel) statusSel.value = '';
+  ['adjustment-teacher-makeup-category-hist', 'adjustment-teacher-makeup-course-code-hist',
+    'adjustment-teacher-makeup-course-name-hist', 'adjustment-teacher-makeup-date-from-hist',
+    'adjustment-teacher-makeup-date-to-hist', 'adjustment-teacher-makeup-week-hist'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  syncAdjFilterDateBtn('adjustment-teacher-makeup-date-from-hist');
+  syncAdjFilterDateBtn('adjustment-teacher-makeup-date-to-hist');
+  const termSel = document.getElementById('adjustment-teacher-makeup-hist-term');
+  if (termSel) termSel.value = getActiveOfferingTermSetting()?.termCode || '';
   renderAdjustmentTeacherMakeupRequestTable();
 }
 
 function getAdjustmentTeacherMakeupCancelTableRows() {
   if (!adjustmentAdminMode) adjustmentActiveTeacherId = resolveAdjustmentActiveTeacherId();
   const term = document.getElementById('adjustment-teacher-makeup-cancel-term')?.value || '';
+  const cat = document.getElementById('adjustment-teacher-makeup-category')?.value || '';
+  const codeQ = (document.getElementById('adjustment-teacher-makeup-course-code')?.value || '').trim().toLowerCase();
+  const nameQ = (document.getElementById('adjustment-teacher-makeup-course-name')?.value || '').trim().toLowerCase();
+  const dateFrom = document.getElementById('adjustment-teacher-makeup-date-from')?.value || '';
+  const dateTo = document.getElementById('adjustment-teacher-makeup-date-to')?.value || '';
+  const weekQ = Number(document.getElementById('adjustment-teacher-makeup-week')?.value) || 0;
   let rows = typeof getAdjustmentCancelledSlots === 'function' ? getAdjustmentCancelledSlots() : [];
   rows = rows.filter(r => !getAdjustmentCancelMakeupStatus(r.val).blocked);
-  if (!term) return rows;
   return rows.filter(r => {
     const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
-    const t = cancel?.term || '';
-    return !t || t === term;
+    if (term) {
+      const t = cancel?.term || '';
+      if (t && t !== term) return false;
+    }
+    if (cat) {
+      if (!cancel) return false;
+      const code = String(cancel.reasonTypeCode || '').trim();
+      const name = String(cancel.reasonType || getAdjustmentReasonTypeDisplay(cancel) || '').trim();
+      const row = findAdjustmentReasonTypeByCode(cat);
+      if (code !== cat && name !== (row?.name || cat) && name !== cat) return false;
+    }
+    if (codeQ) {
+      const code = String(typeof formatScheduleCourseCode === 'function'
+        ? formatScheduleCourseCode(r.code) : (r.code || '')).toLowerCase();
+      if (!code.includes(codeQ)) return false;
+    }
+    if (nameQ) {
+      const name = String(r.courseName || '').toLowerCase();
+      if (!name.includes(nameQ)) return false;
+    }
+    const d = String(r.dateLabel || '').slice(0, 10);
+    if (dateFrom || dateTo) {
+      if (!d) return false;
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo && d > dateTo) return false;
+    }
+    if (weekQ) {
+      const w = d ? (Number(getAdjustmentDateInfo(d).week) || 0) : (Number(String(r.weeks || '').match(/\d+/)?.[0]) || 0);
+      if (w !== weekQ) return false;
+    }
+    return true;
   });
 }
 
@@ -65464,10 +66064,13 @@ function renderAdjustmentTeacherMakeupCancelTable() {
   }
   tbody.innerHTML = rows.map((r) => {
     const codeText = typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(r.code) : (r.code || '—');
-    const courseName = typeof formatScheduleCourseName === 'function' ? formatScheduleCourseName(r.courseName) : (r.courseName || '—');
     const groupLabel = typeof formatScheduleCourseGroupLabel === 'function'
       ? formatScheduleCourseGroupLabel(r.courseName, r.group)
       : (r.group || '—');
+    const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
+    const categoryText = cancel
+      ? (getAdjustmentReasonTypeDisplay(cancel) || '—')
+      : '—';
     const makeupStatus = getAdjustmentCancelMakeupStatus(r.val);
     const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
       ? (Number(getAdjustmentDateInfo(r.dateLabel).week) || 0)
@@ -65481,10 +66084,10 @@ function renderAdjustmentTeacherMakeupCancelTable() {
       </td>
       <td class="col-center adj-makeup-status-col">${formatAdjustmentCancelMakeupStatus(makeupStatus)}</td>
       <td><code>${escapeHtml(r.no || '—')}</code></td>
-      <td class="col-center">${escapeHtml(codeText || '—')}</td>
-      <td class="adj-makeup-course-col">${typeof formatOfferingGroupingEllipsisCell === 'function' ? formatOfferingGroupingEllipsisCell(courseName) : escapeHtml(courseName)}</td>
-      <td class="adj-makeup-group-col">${escapeHtml(groupLabel || '—')}</td>
       <td class="col-center">${escapeHtml(r.teacherName || '—')}</td>
+      <td class="col-center">${escapeHtml(categoryText)}</td>
+      <td class="col-center">${escapeHtml(codeText || '—')}</td>
+      <td class="adj-makeup-group-col">${escapeHtml(groupLabel || '—')}</td>
       <td class="col-center">${escapeHtml(weekText)}</td>
       <td class="col-center">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
       <td class="col-center">${escapeHtml(
@@ -65500,9 +66103,6 @@ function renderAdjustmentTeacherMakeupCancelTable() {
     headChk.disabled = false;
     headChk.checked = false;
     headChk.indeterminate = false;
-  }
-  if (typeof bindCellFloatTips === 'function') {
-    bindCellFloatTips(tbody, '.adj-makeup-course-col .cell-ellipsis-tip[data-tip]');
   }
 }
 
@@ -65560,7 +66160,7 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
     alert('暂无符合条件的数据可导出');
     return;
   }
-  const headers = ['补课状态', '停课单号', 'Course Code', '课程班名称', '课程组', 'Lecturer', 'Week', 'Date', 'Day', '节次', 'Venue'];
+  const headers = ['Status', 'Ref. ID', 'Lecturer', 'Category', 'Course Code', 'Group Name', 'Week', 'Date', 'Day', 'Time', 'Venue'];
   const data = rows.map(r => {
     const status = typeof getAdjustmentCancelMakeupStatus === 'function'
       ? getAdjustmentCancelMakeupStatus(r.val).label
@@ -65569,6 +66169,8 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
     const groupText = typeof formatScheduleCourseGroupLabel === 'function'
       ? formatScheduleCourseGroupLabel(r.courseName, r.group)
       : (r.group || '');
+    const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
+    const categoryText = cancel ? (getAdjustmentReasonTypeDisplay(cancel) || '') : '';
     const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
       ? (Number(getAdjustmentDateInfo(r.dateLabel).week) || 0)
       : 0;
@@ -65578,10 +66180,10 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
     return [
       status,
       r.no || '',
-      codeText || '',
-      r.courseName || '',
-      groupText === '—' ? '' : groupText,
       r.teacherName || '',
+      categoryText,
+      codeText || '',
+      groupText === '—' ? '' : groupText,
       weekText,
       r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '',
       r.weekdayLabel || '',
@@ -65598,10 +66200,11 @@ function renderAdjustmentTeacherMakeupRequestTable() {
   if (!tbody) return;
   ensureAdjustmentTeacherMakeupTermSelects();
   const { rows, pool } = collectAdjustmentTeacherListRows({
-    termId: 'adjustment-teacher-makeup-cancel-term',
-    statusId: 'adjustment-teacher-makeup-status',
+    termId: 'adjustment-teacher-makeup-hist-term',
     onlyType: 'makeup',
     excludeStatuses: ['rejected'],
+    filterPrefix: 'adjustment-teacher-makeup-',
+    filterSuffix: '-hist',
     sortListKey: 'adjustmentTeacherMakeup'
   });
   fillAdjustmentTeacherListTable(
@@ -65631,7 +66234,7 @@ function cancelAdjustment(id) {
     before,
     after: cloneEntitySnapshot(r)
   });
-  if (r.type === 'makeup') adjustmentTeacherMakeupPageTab = 'pending';
+  if (r.type === 'makeup') adjustmentTeacherReplacementSubTab = 'history';
   refreshAdjustmentListPages({ fromAdmin: r.source === 'admin' });
   persistAdjustmentUserRequests();
 }
@@ -66822,7 +67425,7 @@ function showAdjustmentLeftTeacherCol() {
 function getAdjustmentLeftTableColSpan() {
   const isAdd = adjustmentApplyType === 'addclass';
   const teacherCol = showAdjustmentLeftTeacherCol() ? 1 : 0;
-  return isAdd ? 5 + teacherCol : 9 + teacherCol;
+  return isAdd ? 4 + teacherCol : 8 + teacherCol;
 }
 
 function renderAdjustmentApplyLeftThead() {
@@ -66836,16 +67439,14 @@ function renderAdjustmentApplyLeftThead() {
     ? `<tr>
         <th class="col-center srf-col-pick" aria-label="选择"></th>
         <th class="col-center adj-col-code">Course Code</th>
-        <th class="adj-col-course">课程班名称</th>
         <th class="col-center">学分</th>
         ${teacherTh}
-        <th class="adj-col-group">课程组</th>
+        <th class="adj-col-group">Group Name</th>
       </tr>`
     : `<tr>
         <th class="col-center srf-col-pick" aria-label="选择"></th>
         <th class="col-center adj-col-code">Course Code</th>
-        <th class="adj-col-course">课程班名称</th>
-        <th class="adj-col-group">课程组</th>
+        <th class="adj-col-group">Group Name</th>
         ${teacherTh}
         <th class="col-center adj-slot-col-weeks">Week</th>
         <th class="col-center adj-slot-col-date">Date</th>
@@ -66896,6 +67497,10 @@ function resetAdjustmentSlotPicker() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  if (typeof syncAdjFilterDateBtn === 'function') {
+    syncAdjFilterDateBtn('asf-date-from');
+    syncAdjFilterDateBtn('asf-date-to');
+  }
   renderAdjustmentSlotPickerRows();
 }
 
@@ -66975,8 +67580,6 @@ function renderAdjustmentSlotPickerRows() {
       const rowClick = pickDisabled ? '' : ` onclick="toggleAdjustmentSlotPick('${v}')"`;
       const creditsCell = showCredits ? `<td class="col-center">${escapeHtml(String(r.credits ?? '—'))}</td>` : '';
       const codeText = (typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(r.code) : r.code) || r.code || '—';
-      let nameText = r.courseName || '—';
-      if (isMakeup) nameText = formatAdjustmentCourseLabelWithCredits(nameText, r.credits);
       const teacherCell = showAdjustmentLeftTeacherCol()
         ? `<td>${escapeHtml(formatAdjustmentSlotTeacherLabel(r))}</td>`
         : '';
@@ -66984,7 +67587,6 @@ function renderAdjustmentSlotPickerRows() {
         return `<tr class="${rowCls}"${rowClick}${pickTitle ? ` title="${escapeHtml(pickTitle)}"` : ''}>
           <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''}${pickDisabled ? ' disabled' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
           <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
-          <td class="adj-col-course">${escapeHtml(nameText)}</td>
           ${creditsCell}
           ${teacherCell}
           <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
@@ -67002,7 +67604,6 @@ function renderAdjustmentSlotPickerRows() {
       return `<tr class="${rowCls}"${rowClick}${pickTitle ? ` title="${escapeHtml(pickTitle)}"` : ''}>
         <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''}${pickDisabled ? ' disabled' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
         <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
-        <td class="adj-col-course">${escapeHtml(nameText)}</td>
         <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
         ${teacherCell}
         <td class="col-center adj-slot-col-weeks">${escapeHtml(weekText)}</td>
@@ -67166,7 +67767,7 @@ function adjustmentApplyShowsRowTypeCol() {
 function getAdjustmentApplyDetailColSpan(showCredits) {
   const extra = (adjustmentApplySupportsBatchEdit() ? 1 : 0)
     + (adjustmentApplyShowsRowTypeCol() ? 0 : -1);
-  return (showCredits ? 12 : 11) + extra;
+  return (showCredits ? 11 : 10) + extra;
 }
 
 function renderAdjustmentApplyRowTypeHead() {
@@ -67456,44 +68057,56 @@ function getAdjustmentRoomPreferWrap(val) {
 
 function buildAdjustmentRoomPreferMsHtml(val) {
   const safeVal = escapeHtml(val);
-  return `<div class="clo-multiselect adj-room-prefer-ms" data-adj-room-prefer-val="${safeVal}">
-    <div class="clo-multiselect-trigger input input-sm" role="button" tabindex="0"
-      onclick="toggleAdjustmentRoomPreferDropdown(event)"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAdjustmentRoomPreferDropdown(event)}"
-      title="教室偏好（可多选，非必填；下拉内可搜教室号或软件名）"
-      aria-label="教室偏好">
-      <span class="clo-multiselect-display placeholder">请选择</span>
-      <span class="adj-room-prefer-clear" hidden title="清除已选" aria-label="清除已选" onclick="clearAdjustmentRoomPrefer(event)">×</span>
-      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-    </div>
-    <div class="clo-multiselect-dropdown adj-room-prefer-dropdown" hidden>
-      <div class="clo-multiselect-search-wrap mos-edit-classroom-ref-search-wrap">
-        <input class="input input-sm adj-room-prefer-search" type="text" placeholder="搜索教室号或软件名" autocomplete="off"
-          onclick="event.stopPropagation()" oninput="onAdjustmentRoomPreferSearch(event)">
-      </div>
-      <div class="clo-multiselect-options"></div>
-    </div>
-  </div>`;
+  const st = typeof ensureAdjustmentRowState === 'function' ? ensureAdjustmentRowState(val) : null;
+  const cur = String(st?.roomPrefer || '').trim();
+  return `<input class="input input-sm adj-room-prefer-input" type="text"
+    data-adj-room-prefer-val="${safeVal}"
+    placeholder="请输入教室偏好（非必填）"
+    value="${escapeHtml(cur)}"
+    title="填写教室偏好备注，非必填"
+    oninput="onAdjustmentPerSlotChange('${safeVal}','roomPrefer',this.value)">`;
 }
 
 function syncAdjustmentRoomPreferDisplay(val) {
-  const wrap = getAdjustmentRoomPreferWrap(val);
-  if (!wrap) return;
-  const display = wrap.querySelector('.clo-multiselect-display');
-  const clearBtn = wrap.querySelector('.adj-room-prefer-clear');
-  const selected = getAdjustmentRoomPreferLabels(val);
-  if (!display) return;
-  if (!selected.length) {
-    display.textContent = '请选择';
-    display.classList.add('placeholder');
-    if (clearBtn) clearBtn.hidden = true;
+  // 教室偏好已改为纯文本，无需同步多选展示
+  void val;
+}
+
+function bindAdjustmentRoomPreferMs(scope) {
+  void scope;
+}
+
+function openAdjustmentApplyBatchRoomPreferModal() {
+  const vals = requireAdjustmentApplyBatchSelection();
+  if (!vals) return;
+  const texts = vals.map(val => {
+    const st = ensureAdjustmentRowState(val);
+    return String(st?.roomPrefer || '').trim();
+  });
+  const same = texts.length && texts.every(t => t === texts[0]) ? texts[0] : '';
+  const input = document.getElementById('adjustment-apply-batch-room-prefer-input');
+  if (input) input.value = same;
+  openModal('modal-adjustment-apply-room-prefer');
+}
+
+function confirmAdjustmentApplyBatchRoomPrefer() {
+  const vals = getAdjustmentApplyBatchSelectedVals();
+  if (!vals.length) {
+    alert('请先勾选要批量设置的节次');
+    closeModal('modal-adjustment-apply-room-prefer');
     return;
   }
-  display.classList.remove('placeholder');
-  display.innerHTML = selected.map(label =>
-    `<span class="srf-ms-chip adj-room-prefer-chip">${escapeHtml(label)}<button type="button" class="srf-ms-chip-x" aria-label="移除" data-room="${escapeHtml(label)}" onclick="removeAdjustmentRoomPreferChip(event)">×</button></span>`
-  ).join('');
-  if (clearBtn) clearBtn.hidden = false;
+  const prefer = String(document.getElementById('adjustment-apply-batch-room-prefer-input')?.value || '').trim();
+  vals.forEach(val => {
+    const st = ensureAdjustmentRowState(val);
+    if (!st) return;
+    st.roomPreferIds = prefer ? [prefer] : [];
+    st.roomPrefer = prefer;
+    syncAdjustmentMergedSlotState(val);
+  });
+  closeModal('modal-adjustment-apply-room-prefer');
+  renderAdjustmentPerSlotConfigs();
+  refreshAdjustmentRowConflicts();
 }
 
 function renderAdjustmentRoomPreferOptions(val) {
@@ -67608,55 +68221,12 @@ function clearAdjustmentRoomPrefer(event) {
   renderAdjustmentRoomPreferOptions(val);
 }
 
-function bindAdjustmentRoomPreferMs(scope) {
-  (scope || document).querySelectorAll('.adj-room-prefer-ms').forEach(wrap => {
-    syncAdjustmentRoomPreferDisplay(wrap.getAttribute('data-adj-room-prefer-val') || '');
-  });
-}
-
-function openAdjustmentApplyBatchRoomPreferModal() {
-  const vals = requireAdjustmentApplyBatchSelection();
-  if (!vals) return;
-  const lists = vals.map(val => getAdjustmentRoomPreferLabels(val));
-  const same = lists.length && lists.every(l => l.join('\t') === lists[0].join('\t')) ? lists[0] : [];
-  adjustmentBatchRoomPreferSelected = same.slice();
-  const host = document.getElementById('adjustment-apply-batch-room-prefer-ms');
-  if (host) {
-    host.innerHTML = buildAdjustmentRoomPreferMsHtml('__batch__');
-    bindAdjustmentRoomPreferMs(host);
-  }
-  openModal('modal-adjustment-apply-room-prefer');
-}
-
-function confirmAdjustmentApplyBatchRoomPrefer() {
-  const vals = getAdjustmentApplyBatchSelectedVals();
-  if (!vals.length) {
-    alert('请先勾选要批量设置的节次');
-    closeModal('modal-adjustment-apply-room-prefer');
-    return;
-  }
-  const preferIds = adjustmentBatchRoomPreferSelected.slice();
-  const prefer = preferIds.join('、');
-  vals.forEach(val => {
-    const st = ensureAdjustmentRowState(val);
-    if (!st) return;
-    st.roomPreferIds = preferIds.slice();
-    st.roomPrefer = prefer;
-    st.room = prefer;
-    syncAdjustmentMergedSlotState(val);
-  });
-  closeModal('modal-adjustment-apply-room-prefer');
-  renderAdjustmentPerSlotConfigs();
-  refreshAdjustmentRowConflicts();
-}
-
 function renderAdjustmentApplyDetailHead(showCredits) {
   return `<thead><tr>
     ${renderAdjustmentApplyBatchCheckHead()}
     <th class="col-center adj-apply-col-merge adj-col-code">Course Code</th>
-    <th class="adj-apply-col-merge adj-col-course">课程班名称</th>
     ${showCredits ? '<th class="col-center">学分</th>' : ''}
-    <th class="col-center adj-apply-col-merge adj-col-group">课程组</th>
+    <th class="col-center adj-apply-col-merge adj-col-group">Group Name</th>
     ${renderAdjustmentApplyRowTypeHead()}
     <th class="col-center">教师</th>
     <th class="col-center">Week</th>
@@ -67694,7 +68264,6 @@ function renderAdjustmentPerSlotConfigs() {
   }
   const termStart = getScheduleTermStartDate();
   const showCredits = false;
-  const isMakeup = adjustmentApplyType === 'makeup';
   const colSpan = getAdjustmentApplyDetailColSpan(showCredits);
   const groups = getAdjustmentApplyDetailGroups();
   const rows = groups.map(group => {
@@ -67720,13 +68289,9 @@ function renderAdjustmentPerSlotConfigs() {
     const origWeekNo = origDate ? (Number(getAdjustmentDateInfo(origDate).week) || 0) : 0;
     const origWeek = origWeekNo ? String(origWeekNo) : '—';
     const codeText = group.code || formatScheduleCourseCode(t.code) || t.code || '—';
-    const nameText = isMakeup
-      ? formatAdjustmentCourseLabelWithCredits(group.courseName || t.name || '—', group.credits ?? getAdjustmentTaskCredits(t))
-      : (group.courseName || t.name || '—');
     const origRow = `<tr class="adj-apply-orig-row" data-adj-val="${v}">
       ${renderAdjustmentApplyBatchCheckCell(val, rowSpan)}
       <td class="col-center adj-apply-col-merge adj-col-code" rowspan="${rowSpan}">${escapeHtml(codeText)}</td>
-      <td class="adj-apply-col-merge adj-col-course" rowspan="${rowSpan}">${escapeHtml(nameText)}</td>
       ${showCredits ? `<td class="col-center" rowspan="${rowSpan}">${escapeHtml(String(group.credits ?? getAdjustmentTaskCredits(t)))}</td>` : ''}
       <td class="col-center adj-apply-col-merge adj-col-group" rowspan="${rowSpan}">${escapeHtml(group.groupWithCount || formatAdjustmentGroupWithCount(t.groupLabel || '上课小组', getAdjustmentGroupStudentCount(t), group.courseName || t.name))}</td>
       ${renderAdjustmentApplyRowTypeCell('Previous')}
@@ -67791,29 +68356,23 @@ function renderAdjustmentAddclassDetailTable(wrap) {
     const showConf = conf && ((conf.teacher && conf.teacher.length) || (conf.student && conf.student.length));
     const confHtml = showConf
       ? `<div class="adj-resch-conf-full">${renderAdjustmentConflictLines(conf, null)}</div>` : '';
-    const credits = task ? getAdjustmentTaskCredits(task) : '';
     const codeText = task ? (formatScheduleCourseCode(task.code) || task.code || '—') : '—';
-    const courseName = task?.name || '—';
-    const nameText = credits !== '' && credits != null && credits !== '—'
-      ? `${courseName}（学分 ${credits}）`
-      : courseName;
     const groupName = formatAdjustmentGroupWithCount(
       task?.groupLabel || '上课小组',
       getAdjustmentGroupStudentCount(task),
       task?.name
     );
     const compulsory = isAdjustmentCompulsoryYes(st.compulsory) ? 'Y' : 'N';
-    const addColSpan = (adjustmentApplySupportsBatchEdit() ? 1 : 0) + 11;
+    const addColSpan = (adjustmentApplySupportsBatchEdit() ? 1 : 0) + 10;
     return `<tr class="adj-apply-to-row" data-adj-val="${v}">
       ${renderAdjustmentApplyBatchCheckCell(val, 1)}
       <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
-      <td class="adj-col-course">${escapeHtml(nameText)}</td>
       <td class="col-center adj-col-group">${escapeHtml(groupName)}</td>
       <td class="col-center"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date ? formatAdjustmentDateDisplay(st.date) : '选择日期')}</button></td>
       <td class="col-center">${escapeHtml(weekdayText)}</td>
       <td class="col-center">${periodDd}</td>
       <td class="col-center">${escapeHtml(weekText || '—')}</td>
-      <td class="col-center"><input class="input input-sm" placeholder="请输入教室偏好" value="${escapeHtml(st.room || st.roomPrefer || '')}" oninput="onAdjustmentPerSlotChange('${v}','room',this.value)"></td>
+      <td class="col-center"><input class="input input-sm adj-room-prefer-input" placeholder="请输入教室偏好（非必填）" value="${escapeHtml(st.roomPrefer || '')}" oninput="onAdjustmentPerSlotChange('${v}','roomPrefer',this.value)"></td>
       <td class="col-center">
         <select class="input input-sm no-search" aria-label="compulsory" onchange="onAdjustmentPerSlotChange('${v}','compulsory',this.value)">
           <option value="N"${compulsory !== 'Y' ? ' selected' : ''}>N</option>
@@ -67828,8 +68387,7 @@ function renderAdjustmentAddclassDetailTable(wrap) {
     <thead><tr>
       ${renderAdjustmentApplyBatchCheckHead()}
       <th class="col-center adj-col-code">Course Code</th>
-      <th class="adj-col-course">课程班名称</th>
-      <th class="col-center adj-col-group">课程组（人数）</th>
+      <th class="col-center adj-col-group">Group Name</th>
       <th class="col-center">上课日期</th>
       <th class="col-center">Day</th>
       <th class="col-center">节次</th>
@@ -68011,6 +68569,12 @@ function onAdjustmentPerSlotChange(val, field, value) {
   const st = ensureAdjustmentRowState(val);
   if (!st) return;
   if (field === 'period' || field === 'teacherId' || field === 'roomPrefer' || field === 'room') st.ignoreStudentConflict = false;
+  if (field === 'roomPrefer') {
+    st.roomPrefer = value;
+    st.roomPreferIds = value ? [String(value).trim()].filter(Boolean) : [];
+    syncAdjustmentMergedSlotState(val);
+    return;
+  }
   if (field === 'room') {
     st.room = value;
     st.roomPrefer = value;
@@ -68875,15 +69439,9 @@ function submitAdjustmentApplyCore() {
   } else if (type === 'makeup') {
     const termEl = document.getElementById('adjustment-teacher-makeup-cancel-term');
     if (termEl && termCode) termEl.value = termCode;
-    const statusEl = document.getElementById('adjustment-teacher-makeup-status');
-    if (statusEl) statusEl.value = '';
   } else {
     const termEl = document.getElementById('adjustment-teacher-term');
     if (termEl && termCode) termEl.value = termCode;
-    const typeEl = document.getElementById('adjustment-teacher-type');
-    if (typeEl) typeEl.value = '';
-    const statusEl = document.getElementById('adjustment-teacher-status');
-    if (statusEl) statusEl.value = '';
     adjustmentTeacherPageTab = 'replacement';
   }
   refreshAdjustmentListPages({ fromAdmin: isAdmin });
@@ -69010,8 +69568,9 @@ function submitAdjustmentReviewCore() {
   if (document.getElementById('page-adjustment-record')?.classList.contains('active')) {
     renderAdjustmentRecordPage();
   }
-  if (r.type === 'makeup' && typeof renderAdjustmentTeacherMakeupPage === 'function') {
-    renderAdjustmentTeacherMakeupPage();
+  if (r.type === 'makeup') {
+    adjustmentTeacherReplacementSubTab = 'history';
+    renderAdjustmentTeacherPage();
   }
 }
 
@@ -75174,8 +75733,9 @@ function markScheduleSlotManualAdjustedIfNeeded(slot) {
 
 // renderPortalApps(); // 原初始化后直接展示培养方案侧栏，改由 goPortal 默认进入主菜单
 // setActiveModule('curriculum');
-// 列表「排课/排教室」新页签深链优先；否则进入主门户
+// 列表「排课/排教室」新页签深链优先；否则进入主门户并清空演示排课 session（刷新首页=重置）
 if (!tryOpenScheduleDetailFromUrl()) {
+  clearScheduleDemoArrangeSession();
   clearScheduleDetailBootLoading();
   goPortal();
 }

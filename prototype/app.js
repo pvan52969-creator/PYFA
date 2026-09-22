@@ -38817,7 +38817,7 @@ function getSectionGroupLabel(sec) {
   if (!sec) return '';
   ensureSectionOfferingFields(sec);
   if (sec.groups?.length) return sec.groups.map(g => g.name).join('、');
-  return sec.name ? `${sec.name}小组1` : '—';
+  return 'A组';
 }
 
 /** 上课教师名称列表（多教师拼接） */
@@ -39620,13 +39620,13 @@ function getScheduleTimeConflictDemoSamples() {
   const weeks = '1-14周';
   return [
     {
-      code: 'CDF201', name: 'Student Conflict Anchor', dept: '教务演示',
+      code: 'CDF201', name: 'Marine Environmental Chemistry', dept: '教务演示',
       teacherId: 'T3201', teachers: '锚点甲', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [[2, 5, '', weeks]], remark: '示例数据·学生冲突锚点（仅 1 个节次）'
     },
     {
-      code: 'CDF203', name: 'Student Conflict Probe', dept: '教务演示',
+      code: 'CDF203', name: 'Introduction to Oceanography', dept: '教务演示',
       teacherId: 'T3203', teachers: '锚点丙', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [], remark: '示例数据·学生冲突探测（点周二第5节）'
@@ -39638,7 +39638,7 @@ function getScheduleTimeConflictDemoSamples() {
       slots: [[4, 1, '', weeks]], remark: '示例数据·先修冲突锚点'
     },
     {
-      code: 'CDF202', name: 'Teacher Conflict Probe', dept: '教务演示',
+      code: 'CDF202', name: 'Coastal Engineering', dept: '教务演示',
       teacherId: 'T3202', teachers: '锚点乙', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [], remark: '示例数据·教师冲突探测（点周二第2节空格）'
@@ -39650,20 +39650,20 @@ function getScheduleTimeConflictDemoSamples() {
       slots: [], remark: '示例数据·先修冲突探测（点周四第1节）'
     },
     {
-      code: 'CDF208', name: 'Retake Conflict Probe', dept: '教务演示',
+      code: 'CDF208', name: 'Aquatic Ecology', dept: '教务演示',
       teacherId: 'T3099', teachers: '冲突演示', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [], remark: '示例数据·预重修冲突探测（点周四第3节空格）'
     },
     {
-      code: 'CST201', name: 'Shared Teaching Anchor', dept: '教务演示',
+      code: 'CST201', name: 'Marine Biotechnology', dept: '教务演示',
       teacherId: 'T3210', teachers: '共同授课甲', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       sharedTeachingCode: 'CST202',
       slots: [], remark: '示例数据·共同授课列表伙伴（占用在跨批 CST201，周三第4节）'
     },
     {
-      code: 'CST202', name: 'Shared Teaching Probe', dept: '教务演示',
+      code: 'CST202', name: 'Applied Marine Chemistry', dept: '教务演示',
       teacherId: 'T3210', teachers: '共同授课甲', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       sharedTeachingCode: 'CST201',
@@ -39677,70 +39677,70 @@ function getScheduleTimeConflictQueryDemoSamples() {
   const weeks = '1-14周';
   return [
     {
-      code: 'CQS102', name: 'Student Conflict Studio', dept: '教务演示',
+      code: 'CQS102', name: 'Quantitative Methods', dept: '教务演示',
       teacherId: 'T3221', teachers: '查询演示甲', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [[2, 5, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·学生冲突'
     },
     {
-      code: 'CQT102', name: 'Teacher Conflict Studio', dept: '教务演示',
+      code: 'CQT102', name: 'Business Statistics', dept: '教务演示',
       teacherId: 'T3202', teachers: '锚点乙', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [[2, 2, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·教师冲突'
     },
     {
-      code: 'CQP102', name: 'Prerequisite Conflict Studio', catalogId: 'fin201', dept: '经济管理学院',
+      code: 'CQP102', name: 'Investment Analysis', catalogId: 'fin301', dept: '经济管理学院',
       teacherId: 'T3102', teachers: '陈财管', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [[4, 1, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·先修冲突'
     },
     {
-      code: 'CQB101', name: 'Blackout Period Studio', dept: '教务演示',
+      code: 'CQB101', name: 'Marketing Principles', dept: '教务演示',
       teacherId: 'T3222', teachers: '查询演示乙', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [[5, 7, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·不排课时间'
     },
     {
-      code: 'CQE101', name: 'Elective Occupancy Studio', dept: '教务演示',
+      code: 'CQE101', name: 'Organisational Behaviour', dept: '教务演示',
       teacherId: 'T3223', teachers: '查询演示丙', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [[3, 9, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·选修课占位'
     },
     {
-      code: 'CTS101', name: 'Teacher Timetable Studio', dept: '经济管理学院',
+      code: 'CTS101', name: 'Principles of Accounting', dept: '经济管理学院',
       teacherId: 'T0001', teachers: '李明', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       slots: [[5, 1, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·教师排课时间'
     },
     {
-      code: 'CQL101', name: 'Lunch Break Studio', dept: '教务演示',
+      code: 'CQL101', name: 'Linear Algebra', dept: '教务演示',
       teacherId: 'T3224', teachers: '查询演示丁', groupName: 'A组',
       theory: 42, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 3,
       slots: [[1, 4, '', weeks], [1, 5, '', weeks], [1, 6, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·午休规则'
     },
     {
-      code: 'CQH101', name: 'Credit Hour Studio', dept: '教务演示',
+      code: 'CQH101', name: 'Calculus I', dept: '教务演示',
       teacherId: 'T3225', teachers: '查询演示戊', groupName: 'A组',
       theory: 14, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 1,
       slots: [[3, 1, '', weeks], [3, 2, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·学时超排'
     },
     {
-      code: 'CQO101', name: 'Cross Term Studio A', dept: '教务演示',
+      code: 'CQO101', name: 'Microeconomics', dept: '教务演示',
       teacherId: 'T3226', teachers: '跨学期甲', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       termCode: '202509', slots: [[1, 2, '', weeks]], queryConflictDemo: true,
       remark: '示例数据·课表冲突查询·其他学期教师冲突'
     },
     {
-      code: 'CQO102', name: 'Cross Term Studio B', dept: '教务演示',
+      code: 'CQO102', name: 'Macroeconomics', dept: '教务演示',
       teacherId: 'T3226', teachers: '跨学期甲', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
       termCode: '202509', slots: [[1, 2, '', weeks]], queryConflictDemo: true,
@@ -39764,7 +39764,7 @@ function getScheduleTimeConflictCrossOccupants(mainProgrammeKey, intake) {
       programmeKey: crossProgramme,
       intake,
       code: 'CDX101',
-      name: 'Teacher Conflict Cross',
+      name: 'Financial Modelling',
       teacherId: 'T3202',
       teachers: '锚点乙',
       groupName: 'A组',
@@ -39780,7 +39780,7 @@ function getScheduleTimeConflictCrossOccupants(mainProgrammeKey, intake) {
       programmeKey: crossProgramme,
       intake,
       code: 'CDF105',
-      name: 'Retake Conflict Anchor',
+      name: 'Risk Management',
       teacherId: 'T3206',
       teachers: '锚点己',
       groupName: 'A组',
@@ -39796,7 +39796,7 @@ function getScheduleTimeConflictCrossOccupants(mainProgrammeKey, intake) {
       programmeKey: crossProgramme,
       intake,
       code: 'CST201',
-      name: 'Shared Teaching Anchor',
+      name: 'Marine Biotechnology',
       teacherId: 'T3210',
       teachers: '共同授课甲',
       groupName: 'A组',
@@ -39817,7 +39817,7 @@ function buildScheduleDemoGroupAssignments(sec, overrides = {}) {
   ensureSectionWeekRangeFromTerm(sec);
   const group = sec.groups?.[0] || {
     id: `gg-${sec.id || sec.code}-0`,
-    name: overrides.groupName || `${sec.name || sec.code}小组1`
+    name: overrides.groupName || 'A组'
   };
   const teacher = overrides.teacher
     || String(sec.teachers || '').split(/[、,，]/).map(s => s.trim()).filter(Boolean)[0]
@@ -39876,7 +39876,7 @@ function enrichScheduleBatchCourseListFields(programmeKey, intake) {
     if (!sec.teachingWeeks) sec.teachingWeeks = parseWeeksString(sec.weeks).length || 14;
     if (!sec.estimatedStudents) sec.estimatedStudents = sec.studentCount || 40;
     if (!sec.studentCount) sec.studentCount = sec.estimatedStudents;
-    const groupName = sec.groups?.[0]?.name || `${sec.name || sec.code}小组1`;
+    const groupName = sec.groups?.[0]?.name || 'A组';
     if (!sec.groups?.length) {
       sec.groups = [{
         id: `gg-${sec.id}-0`,
@@ -40135,45 +40135,43 @@ function getScheduleRoomPendingDemoSamples() {
       weeks: '1-12周',
       slots: [[1, 7, '', '1-12周', ['computer']]] },
     // 周一第3节：两门不同课程、同时段、同教师、同共同授课码（排教室左侧列表各一行）
-    { code: 'RM201', name: 'Room Demo · Same Slot A', dept: '海洋科学学院', teacherId: 'T3001', teachers: '陈晓', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
+    { code: 'RM201', name: 'Marine Ecology', dept: '海洋科学学院', teacherId: 'T3001', teachers: '陈晓', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, sharedTeachingCode: 'ST-ROOM-01',
       weeks: '1-14周',
       slots: [[1, 3, '', '1-14周']] },
-    { code: 'RM202', name: 'Room Demo · Same Slot B', dept: '海洋科学学院', teacherId: 'T3001', teachers: '陈晓', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
+    { code: 'RM202', name: 'Seawater Chemistry', dept: '海洋科学学院', teacherId: 'T3001', teachers: '陈晓', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, sharedTeachingCode: 'ST-ROOM-01',
       weeks: '1-14周',
       slots: [[1, 3, '', '1-14周']] },
-    // 联排 2 节 / 3 节（左侧节次时间显示第 x-y 节）
-    { code: 'RCL201', name: 'Room Demo · Linked 2P', dept: '海洋科学学院', teacherId: 'T3031', teachers: '联排演示甲', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
+    { code: 'RCL201', name: 'Marine Geology', dept: '海洋科学学院', teacherId: 'T3031', teachers: '联排演示甲', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, weeklyHours: 2,
       weeks: '1-14周',
       slots: [[1, [5, 6], '', '1-14周']] },
-    { code: 'RCL202', name: 'Room Demo · Linked 2P B', dept: '海洋技术学院', teacherId: 'T3032', teachers: '联排演示乙', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
+    { code: 'RCL202', name: 'Ocean Engineering', dept: '海洋技术学院', teacherId: 'T3032', teachers: '联排演示乙', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, weeklyHours: 2,
       weeks: '1-14周',
       slots: [[3, [2, 3], '', '1-14周', ['computer']]] },
-    { code: 'RCL301', name: 'Room Demo · Linked 3P', dept: '海洋科学学院', teacherId: 'T3033', teachers: '联排演示丙', groups: 1, theory: 42, practice: 0, tutor: 0, other: 0,
+    { code: 'RCL301', name: 'Fisheries Science', dept: '海洋科学学院', teacherId: 'T3033', teachers: '联排演示丙', groups: 1, theory: 42, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, weeklyHours: 3,
       weeks: '1-14周',
       slots: [[2, [1, 3], '', '1-14周']] },
-    { code: 'RCL302', name: 'Room Demo · Linked 3P B', dept: '海洋技术学院', teacherId: 'T3034', teachers: '联排演示丁', groups: 1, theory: 42, practice: 0, tutor: 0, other: 0,
+    { code: 'RCL302', name: 'Aquaculture Systems', dept: '海洋技术学院', teacherId: 'T3034', teachers: '联排演示丁', groups: 1, theory: 42, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, weeklyHours: 3,
       weeks: '1-14周',
       slots: [[4, [6, 8], '', '1-14周', ['specialty'], '联排实验']] },
-    { code: 'RCL303', name: 'Room Demo · Linked 3P C', dept: '海洋科学学院', teacherId: 'T3035', teachers: '联排演示戊', groups: 1, theory: 42, practice: 0, tutor: 0, other: 0,
+    { code: 'RCL303', name: 'Marine Conservation', dept: '海洋科学学院', teacherId: 'T3035', teachers: '联排演示戊', groups: 1, theory: 42, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, weeklyHours: 3,
       weeks: '1-14周',
       slots: [[5, [2, 4], '', '1-14周']] },
-    // 已排教室演示（列表 roomDone / 左侧绿勾）
-    { code: 'RM301', name: 'Room Demo · Assigned A', dept: '海洋科学学院', teacherId: 'T3021', teachers: '教室演示甲', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
+    { code: 'RM301', name: 'Physical Oceanography', dept: '海洋科学学院', teacherId: 'T3021', teachers: '教室演示甲', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, roomAssignedDemo: true,
       weeks: '1-14周',
       slots: [[1, 4, '教学楼A-101', '1-14周']] },
-    { code: 'RM302', name: 'Room Demo · Assigned B', dept: '海洋科学学院', teacherId: 'T3022', teachers: '教室演示乙', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
+    { code: 'RM302', name: 'Biological Oceanography', dept: '海洋科学学院', teacherId: 'T3022', teachers: '教室演示乙', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, roomAssignedDemo: true,
       weeks: '1-14周',
       slots: [[3, 4, '教学楼A-203', '1-14周']] },
-    { code: 'RM303', name: 'Room Demo · Assigned C', dept: '海洋技术学院', teacherId: 'T3023', teachers: '教室演示丙', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
+    { code: 'RM303', name: 'Chemical Oceanography', dept: '海洋技术学院', teacherId: 'T3023', teachers: '教室演示丙', groups: 1, theory: 28, practice: 0, tutor: 0, other: 0,
       roomPendingDemo: true, roomAssignedDemo: true,
       weeks: '1-14周',
       slots: [[5, 4, '实验楼-301', '1-14周']] }
@@ -40231,10 +40229,10 @@ function pushScheduleGlobalDemoSample(s, programmeKey, intake, grade) {
     : (s.groupName
       ? [String(s.groupName)]
       : (groupCount > 1
-        ? Array.from({ length: groupCount }, (_, i) => `${s.name}小组${i + 1}`)
-        : [`${s.name}小组1`]));
+        ? Array.from({ length: groupCount }, (_, i) => `Group${i + 1}`)
+        : ['A组']));
   while (groupNames.length < groupCount) {
-    groupNames.push(`${s.name}小组${groupNames.length + 1}`);
+    groupNames.push(`Group${groupNames.length + 1}`);
   }
   const sec = {
     id: nextOfferingSectionId(), catalogId: line.catalogId, code: s.code, name: s.name,
@@ -40342,6 +40340,7 @@ function ensureScheduleRoomPendingDemoCourses() {
   ensureScheduleRoomWeekdayPadDemo();
   patchScheduleRoomPendingDemoSections(COURSE_OFFERING_PLAN_STORE);
   patchScheduleRoomWeekdayPadLinkedPeriods(COURSE_OFFERING_PLAN_STORE);
+  patchScheduleDemoCourseDisplayNames(COURSE_OFFERING_PLAN_STORE);
   ensureScheduleTasksFromOffering();
 }
 
@@ -40405,6 +40404,177 @@ function countScheduleRoomWeekdayUnitRows(weekday) {
   return count;
 }
 
+/** 星期补齐演示课名：目录风格英文，按星期+序号轮换，避免 Room Weekday Pad 标签 */
+const SCHEDULE_ROOM_WEEKDAY_PAD_NAMES = [
+  'Introduction to Marine Science',
+  'Marine Biology',
+  'Oceanography',
+  'Marine Geology',
+  'Fisheries Science',
+  'Aquaculture Technology',
+  'Coastal Management',
+  'Marine Pollution',
+  'Underwater Acoustics',
+  'Satellite Oceanography',
+  'Marine Meteorology',
+  'Sediment Dynamics',
+  'Estuarine Ecology',
+  'Coral Reef Ecology',
+  'Marine Mammals',
+  'Seafood Safety',
+  'Port Engineering',
+  'Ship Hydrodynamics',
+  'Marine GIS',
+  'Climate and Oceans'
+];
+
+function getScheduleRoomWeekdayPadCourseName(weekday, seq) {
+  const list = SCHEDULE_ROOM_WEEKDAY_PAD_NAMES;
+  const idx = (Number(weekday) * 17 + Number(seq)) % list.length;
+  return list[idx < 0 ? 0 : idx];
+}
+
+function isScheduleDemoFakeGroupShortName(name, courseName) {
+  const g = String(name || '').trim();
+  if (!g || g === '上课小组' || g === '—') return true;
+  if (/小组\d*$/.test(g)) return true;
+  if (/\b(Studio|Demo|Conflict|Pad|Anchor|Probe)\b/i.test(g)) return true;
+  const course = String(courseName || '').trim();
+  if (course && (g === course || g.startsWith(`${course}小组`) || g.startsWith(`${course} Group`))) return true;
+  return false;
+}
+
+/** 是否排课演示注入课（禁止用课号误伤正式开课班） */
+function isScheduleDemoOfferingSection(sec) {
+  if (!sec) return false;
+  if (sec.conflictDemo || sec.queryConflictDemo || sec.roomPendingDemo
+    || sec.roomAssignedDemo || sec.roomWeekdayPad) return true;
+  const cat = String(sec.catalogId || '');
+  if (cat.startsWith('gdemo-') || cat.startsWith('gdemo-cross-') || cat.startsWith('demo-')) return true;
+  const teaching = String(sec.teachingClassNo || sec.teachingCode || '');
+  if (/^GDEMO/i.test(teaching)) return true;
+  return false;
+}
+
+/** 从演示样本汇总课号 → 真实课名 / 短名（用于矫正已落库种子） */
+function collectScheduleDemoCourseDisplaySamples() {
+  const map = new Map();
+  const add = (s) => {
+    const code = String(s?.code || '').toUpperCase();
+    if (!code || !s?.name) return;
+    const groupName = s.groupName
+      || (Array.isArray(s.groupNames) && s.groupNames[0])
+      || 'A组';
+    map.set(code, { name: String(s.name).trim(), groupName: String(groupName).trim() || 'A组' });
+  };
+  if (typeof getScheduleTimeConflictDemoSamples === 'function') {
+    getScheduleTimeConflictDemoSamples().forEach(add);
+  }
+  if (typeof getScheduleTimeConflictQueryDemoSamples === 'function') {
+    getScheduleTimeConflictQueryDemoSamples().forEach(add);
+  }
+  if (typeof getScheduleRoomPendingDemoSamples === 'function') {
+    getScheduleRoomPendingDemoSamples().forEach(add);
+  }
+  return map;
+}
+
+/** 矫正已注入演示课的课程班名称与课组短名（幂等；仅动演示课，不动正式开课） */
+function patchScheduleDemoCourseDisplayNames(store) {
+  if (!store?.sections?.length) return;
+  const sampleMap = collectScheduleDemoCourseDisplaySamples();
+  let changed = false;
+  const patchedSectionIds = new Set();
+  (store.sections || []).forEach(sec => {
+    if (!isScheduleDemoOfferingSection(sec)) return;
+    const code = String(sec.code || '').toUpperCase();
+    let nextName = sec.name;
+    let nextGroup = null;
+    if (sec.roomWeekdayPad) {
+      const m = /^RWP(\d)(\d{2})$/i.exec(String(sec.code || ''));
+      if (m) {
+        nextName = getScheduleRoomWeekdayPadCourseName(Number(m[1]), Number(m[2]));
+        nextGroup = 'A组';
+      }
+    } else {
+      const sample = sampleMap.get(code);
+      if (sample) {
+        nextName = sample.name;
+        nextGroup = sample.groupName || 'A组';
+      } else {
+        return;
+      }
+    }
+    if (nextName && String(sec.name || '') !== nextName) {
+      sec.name = nextName;
+      changed = true;
+    }
+    if (Array.isArray(sec.groups) && sec.groups.length) {
+      sec.groups.forEach((g, i) => {
+        const desired = nextGroup
+          || (sec.groups.length > 1 ? `Group${i + 1}` : 'A组');
+        if (isScheduleDemoFakeGroupShortName(g?.name, sec.name)
+          || (nextGroup && String(g?.name || '') !== desired)) {
+          if (String(g.name || '') !== desired) {
+            g.name = desired;
+            changed = true;
+          }
+        }
+      });
+      if (sec.groups.length === 1) sec.className = sec.groups[0].name;
+      else sec.className = sec.groups.map(g => g.name).join('、');
+    }
+    patchedSectionIds.add(sec.id);
+  });
+  (store.lines || []).forEach(line => {
+    if (!line.sectionId || !patchedSectionIds.has(line.sectionId)) return;
+    const sec = (store.sections || []).find(s => s.id === line.sectionId);
+    if (sec?.name && String(line.name || '') !== sec.name) {
+      line.name = sec.name;
+      changed = true;
+    }
+  });
+  if (changed) store.generatedAt = new Date().toISOString();
+}
+
+/** 调课演示申请上的课名/课组跟随当前演示任务刷新（不改正式开课） */
+function patchAdjustmentDemoCourseDisplayNames() {
+  if (typeof ADJUSTMENT_STORE === 'undefined' || !ADJUSTMENT_STORE?.requests?.length) return;
+  if (typeof getScheduleTaskRows !== 'function') return;
+  const byCode = new Map();
+  getScheduleTaskRows().forEach(t => {
+    const code = String(t.code || '').toUpperCase();
+    if (!code) return;
+    const sec = COURSE_OFFERING_PLAN_STORE?.sections?.find(s => s.id === t.id)
+      || COURSE_OFFERING_PLAN_STORE?.sections?.find(s => String(s.code || '').toUpperCase() === code);
+    if (sec && !isScheduleDemoOfferingSection(sec)) return;
+    if (!sec && !(t.conflictDemo || t.roomPendingDemo || t.queryConflictDemo)) return;
+    byCode.set(code, t);
+  });
+  const shortGroup = (task) => {
+    const names = typeof getScheduleTaskGroupNames === 'function' ? getScheduleTaskGroupNames(task) : [];
+    if (names.length) return names[0];
+    const label = String(task?.groupLabel || '').trim();
+    if (label && !isScheduleDemoFakeGroupShortName(label, task?.name)) return label.split(/[、,，]/)[0].trim();
+    return 'A组';
+  };
+  ADJUSTMENT_STORE.requests.forEach(r => {
+    if (!(r.demoOps || r.makeupSeed || r.holidayMakeupDemo || r.listDemo)) return;
+    const task = byCode.get(String(r.code || '').toUpperCase());
+    if (!task) return;
+    r.courseName = task.name || r.courseName;
+    r.groupLabel = shortGroup(task);
+    (r.items || []).forEach(it => {
+      const itCode = String(it.code || r.code || '').toUpperCase();
+      const itTask = byCode.get(itCode) || task;
+      it.courseName = itTask.name || it.courseName;
+      if (isScheduleDemoFakeGroupShortName(it.group, it.courseName) || !it.group) {
+        it.group = shortGroup(itTask);
+      }
+    });
+  });
+}
+
 /** 补齐各星期小组数至 SCHEDULE_ROOM_WEEKDAY_TARGET_GROUP_COUNT（理论课；部分为联排 2/3 节，一行一课） */
 function ensureScheduleRoomWeekdayPadDemo() {
   if (!COURSE_OFFERING_PLAN_STORE) return;
@@ -40433,11 +40603,12 @@ function ensureScheduleRoomWeekdayPadDemo() {
       const teacherNo = 40 + ((Number(w.value) * 7 + seq) % 50);
       pushScheduleGlobalDemoSample({
         code,
-        name: `Room Weekday Pad · ${w.label} ${seq}`,
+        name: getScheduleRoomWeekdayPadCourseName(w.value, seq),
         dept: '海洋科学学院',
         teacherId: `T30${String(teacherNo).padStart(2, '0')}`,
         teachers: `演示教师${teacherNo}`,
         groups: 1,
+        groupName: 'A组',
         theory: 14 * linkLen,
         practice: 0,
         tutor: 0,
@@ -40603,6 +40774,7 @@ function ensureScheduleTimeConflictDemoCourses() {
     pushScheduleTimeConflictCrossOccupant(c, grade);
   });
   patchScheduleSharedTeachingDemoCodes(COURSE_OFFERING_PLAN_STORE);
+  patchScheduleDemoCourseDisplayNames(COURSE_OFFERING_PLAN_STORE);
 }
 
 /** 确保李明教师时段冲突演示档案（只排课）存在 */
@@ -40657,6 +40829,7 @@ function ensureScheduleGlobalDemo() {
   ensureScheduleRoomPendingDemoCourses();
   patchScheduleRoomPendingDemoSections(COURSE_OFFERING_PLAN_STORE);
   patchScheduleSharedTeachingDemoCodes(COURSE_OFFERING_PLAN_STORE);
+  patchScheduleDemoCourseDisplayNames(COURSE_OFFERING_PLAN_STORE);
   ensureScheduleRoomDemoPendingState();
   ensureScheduleTasksFromOffering();
   ensureScheduleRetakeDemoStudents();
@@ -43058,7 +43231,7 @@ function renderScheduleJointTimetableGrid(term, tasks, activeTaskId, weekFilter)
     cellHtml += '</td>';
     return cellHtml;
   };
-  let html = `<table class="schedule-grid-table schedule-detail-grid-table is-time-period-cols is-joint-object-cols" style="--sch-day-count:${periods.length}"><thead><tr><th class="schedule-grid-weekday-col">星期</th>`;
+  let html = `<table class="schedule-grid-table schedule-detail-grid-table is-time-period-cols is-joint-object-cols" style="--sch-day-count:${periods.length}"><thead><tr><th class="schedule-grid-weekday-col"></th>`;
   periods.forEach(p => {
     html += `<th style="--sch-cols:${axisMaxCols[p.periodNo]}"><span>${p.periodNo}</span><small>${formatSchedulePeriodAxisClockHtml(p)}</small></th>`;
   });
@@ -64177,6 +64350,7 @@ function ensureAdjustmentDemo() {
   seedAdjustmentMakeupStatusDemos();
   seedAdjustmentCompulsoryDemoSlot();
   syncApprovedAdjustmentsToSchedule();
+  patchAdjustmentDemoCourseDisplayNames();
   restoreAdjustmentUserRequests();
 }
 
@@ -71480,7 +71654,7 @@ function collectAdjustmentBatchHits(kind) {
           weekday,
           weekNo,
           period,
-          task: { code: `DEMO${100 + idx}`, name: '演示课程', teachers: '张老师', groupLabel: 'Group1' },
+          task: { code: `DEMO${100 + idx}`, name: 'Principles of Management', teachers: '张老师', groupLabel: 'Group1' },
           slot: { id: `demo-${dateStr}-${period}`, weekday, periodFrom: period, periodTo: period, room: demoRoom },
           teachers: '张老师',
           room: demoRoom,

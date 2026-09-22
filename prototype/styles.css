@@ -8479,15 +8479,22 @@ input#group-assign-recorded-hours {
 .adjustment-makeup-cancel-table .srf-col-pick { width: 40px; min-width: 40px; }
 .adjustment-makeup-cancel-table .adj-makeup-status-col { width: 88px; min-width: 88px; }
 .adjustment-makeup-cancel-table th.adj-makeup-course-col,
-.adjustment-makeup-cancel-table td.adj-makeup-course-col,
-.adjustment-makeup-cancel-table th.adj-makeup-group-col,
-.adjustment-makeup-cancel-table td.adj-makeup-group-col {
+.adjustment-makeup-cancel-table td.adj-makeup-course-col {
   width: 180px;
   max-width: 180px;
   min-width: 120px;
 }
-.adjustment-makeup-cancel-table td.adj-makeup-course-col .cell-ellipsis-tip,
-.adjustment-makeup-cancel-table td.adj-makeup-group-col .cell-ellipsis-tip {
+.adjustment-makeup-cancel-table th.adj-makeup-group-col,
+.adjustment-makeup-cancel-table td.adj-makeup-group-col {
+  width: auto;
+  max-width: none;
+  min-width: 140px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: middle;
+}
+.adjustment-makeup-cancel-table td.adj-makeup-course-col .cell-ellipsis-tip {
   display: block;
   max-width: 100%;
   white-space: nowrap;

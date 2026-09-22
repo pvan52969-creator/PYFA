@@ -65427,7 +65427,7 @@ function renderAdjustmentTeacherMakeupCancelTable() {
       <td><code>${escapeHtml(r.no || '—')}</code></td>
       <td class="col-center">${escapeHtml(codeText || '—')}</td>
       <td class="adj-makeup-course-col">${typeof formatOfferingGroupingEllipsisCell === 'function' ? formatOfferingGroupingEllipsisCell(courseName) : escapeHtml(courseName)}</td>
-      <td class="adj-makeup-group-col">${typeof formatOfferingGroupingEllipsisCell === 'function' ? formatOfferingGroupingEllipsisCell(groupLabel) : escapeHtml(groupLabel)}</td>
+      <td class="adj-makeup-group-col">${escapeHtml(groupLabel || '—')}</td>
       <td class="col-center">${escapeHtml(r.teacherName || '—')}</td>
       <td class="col-center">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
       <td class="col-center">${escapeHtml(r.weekdayLabel || '—')}</td>
@@ -65442,7 +65442,7 @@ function renderAdjustmentTeacherMakeupCancelTable() {
     headChk.indeterminate = false;
   }
   if (typeof bindCellFloatTips === 'function') {
-    bindCellFloatTips(tbody, '.adj-makeup-course-col .cell-ellipsis-tip[data-tip], .adj-makeup-group-col .cell-ellipsis-tip[data-tip]');
+    bindCellFloatTips(tbody, '.adj-makeup-course-col .cell-ellipsis-tip[data-tip]');
   }
 }
 

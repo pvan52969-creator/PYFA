@@ -2668,10 +2668,21 @@ code {
 }
 
 .portal-content {
+  position: relative;
   flex: 1;
   padding: 28px 32px 40px;
   display: flex;
   justify-content: center;
+}
+.portal-build-version {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  font-size: 11px;
+  line-height: 1;
+  color: #c5ced8;
+  pointer-events: none;
+  user-select: none;
 }
 .portal-card {
   width: 100%;
@@ -12015,10 +12026,21 @@ code {
 }
 
 .portal-content {
+  position: relative;
   flex: 1;
   padding: 28px 32px 40px;
   display: flex;
   justify-content: center;
+}
+.portal-build-version {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  font-size: 11px;
+  line-height: 1;
+  color: #c5ced8;
+  pointer-events: none;
+  user-select: none;
 }
 .portal-card {
   width: 100%;

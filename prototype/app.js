@@ -301,6 +301,27 @@ const LIST_SORT_REFRESH = {
   },
   adjustmentTeacherMakeup: () => {
     if (typeof renderAdjustmentTeacherMakeupRequestTable === 'function') renderAdjustmentTeacherMakeupRequestTable();
+  },
+  adjustmentTeacherMakeupCancel: () => {
+    if (typeof renderAdjustmentTeacherMakeupCancelTable === 'function') renderAdjustmentTeacherMakeupCancelTable();
+  },
+  adjustmentAdmin: () => {
+    if (typeof renderAdjustmentAdminPage === 'function') renderAdjustmentAdminPage();
+  },
+  adjustmentApproval: () => {
+    if (typeof renderAdjustmentApprovalPage === 'function') renderAdjustmentApprovalPage();
+  },
+  adjustmentRecord: () => {
+    if (typeof renderAdjustmentRecordPage === 'function') renderAdjustmentRecordPage();
+  },
+  adjustmentBatchRecord: () => {
+    if (typeof renderAdjustmentBatchRecords === 'function') renderAdjustmentBatchRecords();
+  },
+  adjustmentHolidayManage: () => {
+    if (typeof renderAdjustmentHolidayManagePage === 'function') renderAdjustmentHolidayManagePage();
+  },
+  adjustmentHolidayRecord: () => {
+    if (typeof renderAdjustmentHolidayRecordPage === 'function') renderAdjustmentHolidayRecordPage();
   }
 };
 
@@ -61701,8 +61722,54 @@ const ADJUSTMENT_TEACHER_SORT_COLUMNS = {
   submittedAt: { get: r => r.submittedAt || '' }
 };
 
+/** 管理端申请列表（审批 / 代申请 / 申请记录）：状态文案用 ADJUSTMENT_STATUS_META，申请人按教师姓名 */
+const ADJUSTMENT_REQUEST_SORT_COLUMNS = {
+  status: {
+    get: r => (ADJUSTMENT_STATUS_META[r.status] && ADJUSTMENT_STATUS_META[r.status].label) || r.status || ''
+  },
+  stage: { get: r => getAdjustmentStageLabel(r) },
+  no: { get: r => r.no || '' },
+  type: { get: r => (ADJUSTMENT_TYPE_META[r.type] && ADJUSTMENT_TYPE_META[r.type].label) || r.type || '' },
+  applicant: { get: r => r.teacherName || '' },
+  applyTime: { get: r => formatAdjustmentRequestApplyTime(r) || '' },
+  slotCount: { get: r => Number(r.slotCount) || 1, type: 'number' },
+  reasonType: { get: r => getAdjustmentReasonTypeDisplay(r) },
+  reason: { get: r => r.reason || '' },
+  submittedAt: { get: r => r.submittedAt || '' }
+};
+
 function defaultAdjustmentTeacherListCompare(a, b) {
   return String(b.submittedAt || '').localeCompare(String(a.submittedAt || ''));
+}
+
+function defaultAdjustmentRequestListCompare(a, b) {
+  return String(b.submittedAt || '').localeCompare(String(a.submittedAt || ''));
+}
+
+/** 管理端申请主列表 thead（审批 / 代申请 / 申请记录） */
+function renderAdjustmentRequestListThead(tbody, listKey, { withCheck = false } = {}) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr || !listKey) return;
+  const th = (label, key, center, extraClass) =>
+    renderListSortTh(listKey, label, key, { center, extraClass });
+  const checkTh = withCheck
+    ? `<th class="col-check"><input type="checkbox" id="adjustment-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-record-body', this.checked)"></th>`
+    : '';
+  tr.innerHTML = [
+    checkTh,
+    '<th class="col-index">序号</th>',
+    th('审批状态', 'status', true),
+    th('审批阶段', 'stage', true),
+    th('申请单号', 'no'),
+    th('调课类型', 'type', true),
+    th('申请人', 'applicant'),
+    th('调课时间', 'applyTime', true),
+    th('申请节数', 'slotCount', true),
+    th('原因类型', 'reasonType'),
+    th('事由', 'reason', false, 'adj-reason-cell'),
+    th('提交时间', 'submittedAt', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
 }
 
 function isAdjustmentTeacherUnifiedListLayout(listKey) {
@@ -65834,12 +65901,14 @@ function renderAdjustmentAdminPage() {
   if (teacherId) rows = rows.filter(r => r.teacherId === teacherId);
   if (type) rows = rows.filter(r => r.type === type);
   if (status) rows = rows.filter(r => r.status === status);
+  rows = sortListWithState(rows, 'adjustmentAdmin', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
   if (hint) {
     const adminCount = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin').length;
     const userCount = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin' && !r.demoOps).length;
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条 · 代申请库 <strong>${adminCount}</strong> 条 · 用户新增 <strong>${userCount}</strong> 条</span>`;
   }
   if (!tbody) return;
+  renderAdjustmentRequestListThead(tbody, 'adjustmentAdmin');
   if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录，可点击上方按钮代教师发起申请'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-index">${i + 1}</td>
@@ -66155,7 +66224,7 @@ function getAdjustmentTeacherMakeupCancelTableRows() {
   const weekQ = Number(document.getElementById('adjustment-teacher-makeup-week')?.value) || 0;
   let rows = typeof getAdjustmentCancelledSlots === 'function' ? getAdjustmentCancelledSlots() : [];
   rows = rows.filter(r => !getAdjustmentCancelMakeupStatus(r.val).blocked);
-  return rows.filter(r => {
+  rows = rows.filter(r => {
     const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
     if (term) {
       const t = cancel?.term || '';
@@ -66189,12 +66258,89 @@ function getAdjustmentTeacherMakeupCancelTableRows() {
     }
     return true;
   });
+  return sortListWithState(rows, 'adjustmentTeacherMakeupCancel', ADJUSTMENT_MAKEUP_CANCEL_SORT_COLUMNS);
+}
+
+const ADJUSTMENT_MAKEUP_CANCEL_SORT_COLUMNS = {
+  status: {
+    get: r => {
+      const st = typeof getAdjustmentCancelMakeupStatus === 'function'
+        ? getAdjustmentCancelMakeupStatus(r.val)
+        : null;
+      return st?.label || st?.key || '';
+    }
+  },
+  no: { get: r => r.no || '' },
+  lecturer: { get: r => r.teacherName || '' },
+  category: {
+    get: r => {
+      const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
+      return cancel ? (getAdjustmentReasonTypeDisplay(cancel) || '') : '';
+    }
+  },
+  courseCode: {
+    get: r => (typeof formatScheduleCourseCode === 'function'
+      ? formatScheduleCourseCode(r.code)
+      : (r.code || ''))
+  },
+  group: {
+    get: r => (typeof formatScheduleCourseGroupLabel === 'function'
+      ? formatScheduleCourseGroupLabel(r.courseName, r.group)
+      : (r.group || ''))
+  },
+  week: {
+    get: r => {
+      const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
+        ? (Number(getAdjustmentDateInfo(r.dateLabel).week) || 0)
+        : 0;
+      if (weekNo) return weekNo;
+      return Number(String(r.weeks || '').match(/(\d+)/)?.[1]) || 0;
+    },
+    type: 'number'
+  },
+  date: { get: r => String(r.dateLabel || '').slice(0, 10) },
+  day: {
+    get: r => {
+      if (typeof getScheduleWeekdayEnShort === 'function' && r.weekday) {
+        return getScheduleWeekdayEnShort(r.weekday);
+      }
+      return r.weekdayLabel || '';
+    }
+  },
+  time: {
+    get: r => Number(r.period) || parseAdjustmentPeriodNo(r.periodLabel) || 0,
+    type: 'number'
+  },
+  venue: { get: r => r.room || '' }
+};
+
+function syncAdjustmentTeacherMakeupCancelSortThead() {
+  const tr = document.querySelector('#adjustment-teacher-sub-pending .adjustment-makeup-cancel-table thead tr');
+  if (!tr) return;
+  const listKey = 'adjustmentTeacherMakeupCancel';
+  const th = (label, key, center, extraClass) =>
+    renderListSortTh(listKey, label, key, { center, extraClass });
+  tr.innerHTML = [
+    `<th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-teacher-makeup-cancel-check-all" aria-label="全选当前结果" onclick="event.stopPropagation();toggleAdjustmentTeacherMakeupCancelAll(this.checked)"></th>`,
+    th('Status', 'status', true, 'adj-makeup-status-col'),
+    th('Ref. ID', 'no'),
+    th('Lecturer', 'lecturer', true),
+    th('Category', 'category', true),
+    th('Course Code', 'courseCode', true),
+    th('Group Name', 'group', false, 'adj-makeup-group-col'),
+    th('Week', 'week', true),
+    th('Date', 'date', true),
+    th('Day', 'day', true),
+    th('Time', 'time', true),
+    th('Venue', 'venue', true)
+  ].join('');
 }
 
 function renderAdjustmentTeacherMakeupCancelTable() {
   const tbody = document.getElementById('adjustment-teacher-makeup-cancel-body');
-  const headChk = document.getElementById('adjustment-teacher-makeup-cancel-check-all');
   if (!tbody) return;
+  syncAdjustmentTeacherMakeupCancelSortThead();
+  const headChk = document.getElementById('adjustment-teacher-makeup-cancel-check-all');
   const rows = getAdjustmentTeacherMakeupCancelTableRows();
   if (headChk) {
     headChk.checked = false;
@@ -69708,6 +69854,7 @@ function renderAdjustmentApprovalPage() {
     rows = rows.filter(r => r.status === 'pending' || r.status === 'reviewing');
   }
   if (type) rows = rows.filter(r => r.type === type);
+  rows = sortListWithState(rows, 'adjustmentApproval', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
   if (hint) {
     // 三个页签顶部统计口径固定：待审批 / 过程中 / 全部（不受当前页签切换影响）
     const base = ADJUSTMENT_STORE.requests.filter(r => r.source === 'teacher' && (!type || r.type === type));
@@ -69717,6 +69864,8 @@ function renderAdjustmentApprovalPage() {
     hint.innerHTML = `<span class="legend-item">待审批 <strong>${pend}</strong> 条 · 过程中 <strong>${inFlight}</strong> 条 · 全部 <strong>${all}</strong> 条</span>`;
     appendAdjustmentRoomOpenListHint(hint);
   }
+  if (!tbody) return;
+  renderAdjustmentRequestListThead(tbody, 'adjustmentApproval');
   if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-index">${i + 1}</td>
@@ -69854,7 +70003,9 @@ function renderAdjustmentHolidayManagePage() {
   let rows = all;
   if (kw) rows = rows.filter(h => `${h.name} ${h.reason || ''}`.toLowerCase().includes(kw));
   if (wd) rows = rows.filter(h => (h.weekdays || [h.weekday]).some(x => Number(x) === Number(wd)));
+  rows = sortListWithState(rows, 'adjustmentHolidayManage', ADJUSTMENT_HOLIDAY_MANAGE_SORT_COLUMNS);
   if (hint) hint.innerHTML = `<span class="legend-item">共 <strong>${all.length}</strong> 个公假日 · 当前筛选 <strong>${rows.length}</strong> 个 · 累计影响 <strong>${rows.reduce((s, h) => s + (h.affected || 0), 0)}</strong> 课节 · 批量停课无需审批</span>`;
+  renderAdjustmentHolidayManageThead(tbody);
   if (!rows.length) { renderScheduleEmptyRow(tbody, 10, '暂无公假日停课记录，可点击表格左上角新增'); return; }
   tbody.innerHTML = rows.map((h, i) => `<tr>
     <td class="col-index">${i + 1}</td>
@@ -69924,6 +70075,81 @@ function getAdjustmentHolidayRecordRows() {
     });
 }
 
+const ADJUSTMENT_HOLIDAY_MANAGE_SORT_COLUMNS = {
+  no: { get: h => h.no || '' },
+  name: { get: h => h.name || '' },
+  date: { get: h => String(h.dateLabel || h.date || '') },
+  day: { get: h => h.weekdayLabel || getScheduleWeekdayLabel(h.weekday) || '' },
+  reasonType: { get: h => h.reasonType || 'Public Holiday' },
+  reason: { get: h => h.reason || '' },
+  affected: { get: h => Number(h.affected) || 0, type: 'number' },
+  createdAt: { get: h => h.createdAt || '' }
+};
+
+function renderAdjustmentHolidayManageThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'adjustmentHolidayManage';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('停课单号', 'no'),
+    th('假日名称', 'name'),
+    th('Date', 'date', true),
+    th('Day', 'day', true),
+    th('原因类型', 'reasonType'),
+    th('事由', 'reason'),
+    th('影响课节', 'affected', true),
+    th('创建时间', 'createdAt', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
+const ADJUSTMENT_HOLIDAY_RECORD_SORT_COLUMNS = {
+  term: {
+    get: r => (r.term && typeof formatCourseTermDisplay === 'function'
+      ? formatCourseTermDisplay(r.term)
+      : (r.term || ''))
+  },
+  holidayName: { get: r => r.holidayName || '' },
+  makeupStatus: {
+    get: r => {
+      if (!r.makeup || r.makeupKey === 'none') return '未申请';
+      return (ADJUSTMENT_STATUS_META[r.makeup.status] && ADJUSTMENT_STATUS_META[r.makeup.status].label)
+        || r.makeup.status
+        || '';
+    }
+  },
+  date: { get: r => r.date || '' },
+  day: { get: r => r.weekdayLabel || '' },
+  period: { get: r => r.period || '' },
+  course: { get: r => r.course || '' },
+  group: { get: r => r.group || '' },
+  teacher: { get: r => r.teacher || '' },
+  room: { get: r => r.room || '' }
+};
+
+function renderAdjustmentHolidayRecordThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'adjustmentHolidayRecord';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('学年学期', 'term'),
+    th('假日名称', 'holidayName'),
+    th('补课申请状态', 'makeupStatus', true),
+    th('Date', 'date', true),
+    th('Day', 'day', true),
+    th('节次', 'period', true),
+    th('课程班名称', 'course'),
+    th('课程组', 'group'),
+    th('任课教师', 'teacher'),
+    th('Venue', 'room'),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
 function renderAdjustmentHolidayRecordPage() {
   ensureAdjustmentDemo();
   fillAdjustmentHolidayRecordFilters();
@@ -69937,10 +70163,12 @@ function renderAdjustmentHolidayRecordPage() {
   if (term) rows = rows.filter(r => r.term === term);
   if (name) rows = rows.filter(r => r.holidayName === name);
   if (makeupKey) rows = rows.filter(r => r.makeupKey === makeupKey);
+  rows = sortListWithState(rows, 'adjustmentHolidayRecord', ADJUSTMENT_HOLIDAY_RECORD_SORT_COLUMNS);
   const applied = rows.filter(r => r.makeupKey !== 'none').length;
   if (hint) {
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 个停课课节 · 已申请补课 <strong>${applied}</strong> 个 · 未申请 <strong>${rows.length - applied}</strong> 个</span>`;
   }
+  renderAdjustmentHolidayRecordThead(tbody);
   if (!rows.length) {
     renderScheduleEmptyRow(tbody, 12, '暂无公假日停课课节');
     return;
@@ -73712,6 +73940,57 @@ function getAdjustmentBatchKindBadge(kind) {
   return '<span class="badge badge-green">调时间</span>';
 }
 
+function getAdjustmentBatchKindLabel(kind) {
+  if (kind === 'course') return '调课程';
+  if (kind === 'room') return '调教室';
+  return '调时间';
+}
+
+const ADJUSTMENT_BATCH_RECORD_SORT_COLUMNS = {
+  no: { get: r => r.no || '' },
+  kind: { get: r => getAdjustmentBatchKindLabel(r.kind) },
+  sourceRange: {
+    get: r => (r.sourceRange?.start && r.sourceRange?.end
+      ? `${r.sourceRange.start} ~ ${r.sourceRange.end}`
+      : '')
+  },
+  sourcePeriods: {
+    get: r => formatAdjustmentBatchRecordPeriods(r.sourcePeriods, r.termCode) || ''
+  },
+  target: { get: r => formatAdjustmentBatchRecordTarget(r) || '' },
+  slotCount: { get: r => Number(r.slotCount) || 0, type: 'number' },
+  reasonType: { get: r => r.reasonType || '' },
+  reason: { get: r => r.reason || '' },
+  submittedAt: { get: r => r.submittedAt || '' },
+  operator: { get: r => r.operator || '' }
+};
+
+function defaultAdjustmentBatchRecordCompare(a, b) {
+  return String(b.submittedAt || '').localeCompare(String(a.submittedAt || ''));
+}
+
+function renderAdjustmentBatchRecordThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'adjustmentBatchRecord';
+  const th = (label, key, center, extraClass) =>
+    renderListSortTh(listKey, label, key, { center, extraClass });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('记录编号', 'no'),
+    th('调课类型', 'kind', true),
+    th('源日期范围', 'sourceRange'),
+    th('源节次', 'sourcePeriods', true),
+    th('调整目标', 'target'),
+    th('影响节数', 'slotCount', true),
+    th('原因类型', 'reasonType'),
+    th('调整原因', 'reason'),
+    th('操作时间', 'submittedAt', true),
+    th('操作人', 'operator', true),
+    '<th class="col-center col-ops">操作</th>'
+  ].join('');
+}
+
 function openAdjustmentBatchDrawer(kind) {
   const tab = kind === 'course' || kind === 'room' || kind === 'time' ? kind : 'time';
   activateAdjustmentBatchTab(tab);
@@ -73759,6 +74038,12 @@ function renderAdjustmentBatchRecords() {
   let rows = ADJUSTMENT_STORE.batchRecords || [];
   if (termCode) rows = rows.filter(r => (r.termCode || getDefaultOfferingTermCode()) === termCode);
   if (kind) rows = rows.filter(r => r.kind === kind);
+  rows = sortListWithState(
+    rows,
+    'adjustmentBatchRecord',
+    ADJUSTMENT_BATCH_RECORD_SORT_COLUMNS,
+    defaultAdjustmentBatchRecordCompare
+  );
   const timeCount = rows.filter(r => r.kind === 'time').length;
   const roomCount = rows.filter(r => r.kind === 'room').length;
   const courseCount = rows.filter(r => r.kind === 'course').length;
@@ -73766,6 +74051,7 @@ function renderAdjustmentBatchRecords() {
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条（调课程 ${courseCount} · 调教室 ${roomCount} · 调时间 ${timeCount}）</span>`;
   }
   if (!tbody) return;
+  renderAdjustmentBatchRecordThead(tbody);
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="12" class="empty-cell">暂无匹配的调课申请记录</td></tr>';
     return;
@@ -73944,7 +74230,12 @@ function getAdjustmentRecordFilteredRows() {
     (r.teacherName || '').toLowerCase().includes(kw) ||
     (r.code || '').toLowerCase().includes(kw) ||
     (r.courseName || '').toLowerCase().includes(kw));
-  return rows.slice().sort((a, b) => String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')));
+  return sortListWithState(
+    rows,
+    'adjustmentRecord',
+    ADJUSTMENT_REQUEST_SORT_COLUMNS,
+    defaultAdjustmentRequestListCompare
+  );
 }
 
 function exportAdjustmentRecordRows(mode) {
@@ -73980,12 +74271,14 @@ function renderAdjustmentRecordPage() {
   const hint = document.getElementById('adjustment-record-hint');
   const rows = getAdjustmentRecordFilteredRows();
   adjustmentRecordFilteredRows = rows;
-  resetListExportCheckAll('adjustment-record-check-all');
   if (hint) {
     hint.innerHTML = rows.length
       ? `<span class="legend-item">共 <strong>${rows.length}</strong> 条（来自调课申请（教师端） / 调课申请管理）</span>`
       : '<span class="legend-item text-muted">暂无记录：请在「调课申请（教师端）」或「调课申请管理」中新增申请</span>';
   }
+  if (!tbody) return;
+  renderAdjustmentRequestListThead(tbody, 'adjustmentRecord', { withCheck: true });
+  resetListExportCheckAll('adjustment-record-check-all');
   if (!rows.length) { renderScheduleEmptyRow(tbody, 13, '暂无匹配记录，请先在「调课申请（教师端）」或「调课申请管理」中新增'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>

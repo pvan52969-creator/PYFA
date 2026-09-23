@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 提交后：用本次 commit 标题更新 Portal 角标，并同步 docs/（供 GitHub Pages）
+# 提交后：用本次 commit 标题 + 短 SHA 更新 Portal 角标，并同步 docs/
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -13,7 +13,10 @@ case "$MSG" in
   Merge\ *|Revert\ *|sync:\ portal\ version*|chore:\ portal\ version*) exit 0 ;;
 esac
 
-"$ROOT/scripts/sync-portal-build-version.sh" "$MSG"
+"$ROOT/scripts/sync-portal-build-version.sh" "$MSG" || {
+  echo "portal-version: sync failed" >&2
+  exit 0
+}
 
 if [[ -z "$(git -C "$ROOT" status --porcelain -- prototype/index.html docs/)" ]]; then
   exit 0
@@ -28,9 +31,7 @@ else
 fi
 
 if [[ "$AHEAD" -gt 0 ]]; then
-  # 尚未推送：amend 进同一提交，角标与 commit 标题一致
   git -C "$ROOT" commit --amend --no-edit --no-verify -q
 else
-  # 已推送：再补一个同步提交（push 后才会上 Pages）
   git -C "$ROOT" commit --no-verify -q -m "sync: portal version ($MSG)"
 fi

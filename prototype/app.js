@@ -25208,12 +25208,32 @@ function courseWorkflowZoomReset() {
   applyCourseWorkflowZoom();
 }
 
+/** 拉取原型 docs 下的流程图 HTML：兼容本地 prototype/ 与 GitHub Pages（站点根=仓库 docs/） */
+async function fetchPrototypeDocHtml(fileName) {
+  const name = String(fileName || '').replace(/^\/+/, '');
+  const candidates = [
+    `docs/${name}`,   // 本地：prototype/docs/… ；Pages：docs/docs/…
+    name,             // 兜底：与 index 同级
+    `./docs/${name}`
+  ];
+  let lastErr = null;
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) return res;
+      lastErr = new Error(`${url} → ${res.status}`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error(`无法加载 ${name}`);
+}
+
 async function renderCourseWorkflowPage() {
   const mount = document.getElementById('course-workflow-doc-mount');
   if (!mount) return;
   try {
-    const res = await fetch('docs/course-offering-workflow.html', { cache: 'no-store' });
-    if (!res.ok) throw new Error('fetch failed');
+    const res = await fetchPrototypeDocHtml('course-offering-workflow.html');
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const sheet = doc.querySelector('.sheet');
@@ -31201,8 +31221,7 @@ async function renderScheduleWorkflowPage() {
   const mount = document.getElementById('schedule-workflow-doc-mount');
   if (!mount) return;
   try {
-    const res = await fetch('docs/schedule-workflow.html', { cache: 'no-store' });
-    if (!res.ok) throw new Error('fetch failed');
+    const res = await fetchPrototypeDocHtml('schedule-workflow.html');
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const sheet = doc.querySelector('.sheet');
@@ -52838,8 +52857,7 @@ async function renderWorkflowPage() {
   const mount = document.getElementById('workflow-doc-mount');
   if (!mount) return;
   try {
-    const res = await fetch('docs/pyfa-workflow.html', { cache: 'no-store' });
-    if (!res.ok) throw new Error('fetch failed');
+    const res = await fetchPrototypeDocHtml('pyfa-workflow.html');
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const sheet = doc.querySelector('.sheet');

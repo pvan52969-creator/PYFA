@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# push 前校验：角标短 SHA 必须等于即将推送的 HEAD，否则自动改写并拦截本次 push
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+if [[ "${PORTAL_VERSION_HOOK:-}" == "1" ]]; then
+  exit 0
+fi
+
+SHORT="$(git -C "$ROOT" rev-parse --short=7 HEAD)"
+MSG="$(git -C "$ROOT" log -1 --pretty=%s)"
+
+extract_sha() {
+  local f="$1"
+  [[ -f "$f" ]] || return 0
+  # title="git abcdef1" 或 meta content 或 「· abcdef1」
+  sed -n 's/.*title="git \([0-9a-f]\{7\}\)".*/\1/p; s/.*portal-build" content="\([0-9a-f]\{7\}\)".*/\1/p; s/.*· \([0-9a-f]\{7\}\).*/\1/p' "$f" | head -1
+}
+
+CURRENT="$(extract_sha "$ROOT/docs/index.html")"
+[[ -n "$CURRENT" ]] || CURRENT="$(extract_sha "$ROOT/prototype/index.html")"
+
+if [[ "$CURRENT" == "$SHORT" ]]; then
+  exit 0
+fi
+
+export PORTAL_VERSION_HOOK=1
+"$ROOT/scripts/sync-portal-build-version.sh" "$MSG"
+git -C "$ROOT" add -- prototype/index.html docs/
+
+echo ""
+echo "portal-version: 角标已更新为「${MSG} · ${SHORT}」"
+echo "请再 commit 一次（可用 git commit --amend --no-edit）后重新 push。"
+echo "确认线上：右下角应显示 · ${SHORT}，与 git log -1 --oneline 左侧短哈希一致。"
+echo ""
+exit 1

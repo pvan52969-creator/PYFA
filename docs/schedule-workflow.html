@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>XMUM 排课管理 · 操作流程</title>
+<style>
+  @page { size: A3 landscape; margin: 8mm; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+    background: #f8fafc; color: #0f172a;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .sheet { max-width: none; margin: 0 auto; padding: 14px 16px 18px; display: flex; flex-direction: column; background: #f8fafc; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .header-left h1 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+  .header-left p { margin: 0; font-size: 11px; color: #64748b; line-height: 1.45; max-width: 560px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; }
+  .legend-item { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; font-size: 10px; color: #475569; border: 1px solid #e2e8f0; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 999px; }
+  .diagram-area { border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; padding: 6px; overflow: hidden; }
+  .diagram-area svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+  .node { width: 100%; height: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid; border-left-width: 3px; display: flex; flex-direction: column; justify-content: center; gap: 1px; box-sizing: border-box; overflow: hidden; }
+  .node-title { font-size: 12px; font-weight: 600; line-height: 1.3; color: #0f172a; }
+  .node-sub { font-size: 10px; line-height: 1.3; color: #64748b; }
+  .workflow-phases { margin-top: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 11px; line-height: 1.55; color: #475569; }
+  .workflow-phases-title { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 6px; }
+  .workflow-phases p { margin: 0 0 6px; }
+  .workflow-phases p:last-child { margin-bottom: 0; }
+  .footer { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 10px; line-height: 1.45; color: #475569; }
+  .footer-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px; }
+  .footer-item strong { color: #0f172a; }
+  .meta { margin-top: 8px; text-align: right; font-size: 10px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="header">
+    <div class="header-left">
+      <h1>XMUM 排课管理 · 操作流程</h1>
+      <p>主路径：排课基础设置 → 排课表时间 → 排课表教室 → 课表查询 → 调课管理</p>
+    </div>
+    <div class="legend">
+      <span class="legend-item" style="background:#eff6ff"><span class="legend-dot" style="background:#2563eb"></span>排课基础设置</span>
+      <span class="legend-item" style="background:#f0fdf4"><span class="legend-dot" style="background:#16a34a"></span>排课表时间</span>
+      <span class="legend-item" style="background:#fff7ed"><span class="legend-dot" style="background:#ea580c"></span>排课表教室</span>
+      <span class="legend-item" style="background:#faf5ff"><span class="legend-dot" style="background:#9333ea"></span>课表查询</span>
+      <span class="legend-item" style="background:#ecfeff"><span class="legend-dot" style="background:#0891b2"></span>调课管理</span>
+    </div>
+  </div>
+  <div class="diagram-area">
+    <!-- 四列：x=48/376/704/1032 宽200；中轴640；节点高58。主干在汇合点连续，不拆成两段横线。 -->
+    <svg viewBox="0 0 1280 1320" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="sw-arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>
+        <marker id="sw-arr-g" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#16a34a"/></marker>
+        <marker id="sw-arr-o" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ea580c"/></marker>
+        <marker id="sw-arr-p" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#9333ea"/></marker>
+        <marker id="sw-arr-c" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#0891b2"/></marker>
+      </defs>
+
+      <!-- ① 节次 → 时间设置 / 规则设置 -->
+      <path d="M 640 90 L 640 118" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+      <path d="M 476 118 L 804 118" fill="none" stroke="#94a3b8" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M 476 118 L 476 158" fill="none" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#sw-arr)"/>
+      <path d="M 804 118 L 804 158" fill="none" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#sw-arr)"/>
+
+      <!-- ① → ②：一条横总线，主干继续向下穿过列间隙 -->
+      <path d="M 476 216 L 476 260" fill="none" stroke="#16a34a" stroke-width="1.4"/>
+      <path d="M 804 216 L 804 260" fill="none" stroke="#16a34a" stroke-width="1.4"/>
+      <path d="M 148 260 L 1132 260" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M 148 260 L 148 308" fill="none" stroke="#16a34a" stroke-width="1.4" marker-end="url(#sw-arr-g)"/>
+      <path d="M 476 260 L 476 308" fill="none" stroke="#16a34a" stroke-width="1.4" marker-end="url(#sw-arr-g)"/>
+      <path d="M 804 260 L 804 308" fill="none" stroke="#16a34a" stroke-width="1.4" marker-end="url(#sw-arr-g)"/>
+      <path d="M 1132 260 L 1132 308" fill="none" stroke="#16a34a" stroke-width="1.4" marker-end="url(#sw-arr-g)"/>
+      <path d="M 640 260 L 640 366" fill="none" stroke="#16a34a" stroke-width="1.4"/>
+
+      <!-- ② 支路 -->
+      <path d="M 804 366 L 804 422" fill="none" stroke="#16a34a" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-g)"/>
+      <path d="M 1132 366 L 1132 422" fill="none" stroke="#16a34a" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-g)"/>
+      <path d="M 1132 480 L 1132 518" fill="none" stroke="#16a34a" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-g)"/>
+
+      <!-- ② → ③：中轴与绿主干相接后分到教室 -->
+      <path d="M 640 366 L 640 590" fill="none" stroke="#ea580c" stroke-width="1.4"/>
+      <path d="M 476 590 L 804 590" fill="none" stroke="#ea580c" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M 476 590 L 476 638" fill="none" stroke="#ea580c" stroke-width="1.4" marker-end="url(#sw-arr-o)"/>
+      <path d="M 804 590 L 804 638" fill="none" stroke="#ea580c" stroke-width="1.4" marker-end="url(#sw-arr-o)"/>
+
+      <!-- ③ 支路 -->
+      <path d="M 904 667 L 1032 667" fill="none" stroke="#ea580c" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-o)"/>
+      <path d="M 1132 696 L 1132 748" fill="none" stroke="#ea580c" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-o)"/>
+
+      <!-- ③ → ④ -->
+      <path d="M 476 696 L 476 820" fill="none" stroke="#9333ea" stroke-width="1.4"/>
+      <path d="M 804 696 L 804 820" fill="none" stroke="#9333ea" stroke-width="1.4"/>
+      <path d="M 476 820 L 804 820" fill="none" stroke="#9333ea" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M 640 820 L 640 868" fill="none" stroke="#9333ea" stroke-width="1.4" marker-end="url(#sw-arr-p)"/>
+      <path d="M 740 897 L 1032 897" fill="none" stroke="#9333ea" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-p)"/>
+
+      <!-- ④ → ⑤ -->
+      <path d="M 640 926 L 640 980" fill="none" stroke="#0891b2" stroke-width="1.4"/>
+      <path d="M 148 980 L 804 980" fill="none" stroke="#0891b2" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M 148 980 L 148 1028" fill="none" stroke="#0891b2" stroke-width="1.4" marker-end="url(#sw-arr-c)"/>
+      <path d="M 476 980 L 476 1028" fill="none" stroke="#0891b2" stroke-width="1.4" marker-end="url(#sw-arr-c)"/>
+      <path d="M 804 980 L 804 1028" fill="none" stroke="#0891b2" stroke-width="1.4" marker-end="url(#sw-arr-c)"/>
+      <path d="M 476 1086 L 476 1134" fill="none" stroke="#0891b2" stroke-width="1.4" marker-end="url(#sw-arr-c)"/>
+      <path d="M 804 1086 L 804 1134" fill="none" stroke="#0891b2" stroke-width="1.4" marker-end="url(#sw-arr-c)"/>
+      <path d="M 476 1192 L 476 1240" fill="none" stroke="#0891b2" stroke-width="1.4" marker-end="url(#sw-arr-c)"/>
+      <path d="M 804 1192 L 804 1240" fill="none" stroke="#0891b2" stroke-width="1.4" marker-end="url(#sw-arr-c)"/>
+      <path d="M 904 1057 L 1032 1057" fill="none" stroke="#0891b2" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-c)"/>
+      <path d="M 1132 1086 L 1132 1134" fill="none" stroke="#0891b2" stroke-width="1.25" stroke-dasharray="5 3" marker-end="url(#sw-arr-c)"/>
+
+      <!-- ① -->
+      <foreignObject x="540" y="32" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+          <div class="node-title">课表节次维护</div>
+          <div class="node-sub">节次数量 · 起止时间</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="376" y="158" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+          <div class="node-title">排课时间设置</div>
+          <div class="node-sub">排课 / 排教室窗口</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="704" y="158" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#eff6ff;border-color:#2563eb">
+          <div class="node-title">排课规则设置</div>
+          <div class="node-sub">午休 · 节次上限</div>
+        </div>
+      </foreignObject>
+
+      <!-- ② -->
+      <foreignObject x="48" y="308" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">按入学批次排</div>
+          <div class="node-sub">排课起止时间内</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="376" y="308" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">按教师排</div>
+          <div class="node-sub">排课起止时间内</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="704" y="308" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">按课程排</div>
+          <div class="node-sub">排课起止时间内</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="308" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">课表冲突查询</div>
+          <div class="node-sub">排课起止时间内</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="704" y="422" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">联合排课</div>
+          <div class="node-sub">支路 · 含演示版本</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="422" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">自动排课规则</div>
+          <div class="node-sub">支路 · 自动排课表时间</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="518" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="node-title">自动排课</div>
+          <div class="node-sub">支路 · 不插入主路径</div>
+        </div>
+      </foreignObject>
+
+      <!-- ③ -->
+      <foreignObject x="376" y="638" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">按时间排</div>
+          <div class="node-sub">排教室起止时间内</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="704" y="638" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">按场地类型排</div>
+          <div class="node-sub">排教室起止时间内</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="638" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">场地冲突查询</div>
+          <div class="node-sub">支路</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="748" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#fff7ed;border-color:#ea580c">
+          <div class="node-title">自动排教室</div>
+          <div class="node-sub">支路 · 含规则</div>
+        </div>
+      </foreignObject>
+
+      <!-- ④ -->
+      <foreignObject x="540" y="868" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">课表查询</div>
+          <div class="node-sub">多入口查询</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="868" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#faf5ff;border-color:#9333ea">
+          <div class="node-title">课表密度查询</div>
+          <div class="node-sub">支路</div>
+        </div>
+      </foreignObject>
+
+      <!-- ⑤ -->
+      <foreignObject x="48" y="1028" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">New Replacement</div>
+          <div class="node-sub">教师端</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="376" y="1028" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">Pending Replacement</div>
+          <div class="node-sub">教师端</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="704" y="1028" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">调课申请审批</div>
+          <div class="node-sub">管理端</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="376" y="1134" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">调课申请管理</div>
+          <div class="node-sub">管理端</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="704" y="1134" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">调课申请记录</div>
+          <div class="node-sub">全程可查</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="1028" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">教室开放时间设置</div>
+          <div class="node-sub">支路 · 调课配置</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="1032" y="1134" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">调课原因类型</div>
+          <div class="node-sub">支路 · 调课配置</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="376" y="1240" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">公假日停课</div>
+          <div class="node-sub">按日停课</div>
+        </div>
+      </foreignObject>
+      <foreignObject x="704" y="1240" width="200" height="58">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="node" style="background:#ecfeff;border-color:#0891b2">
+          <div class="node-title">批量调课管理</div>
+          <div class="node-sub">按日期节次批量</div>
+        </div>
+      </foreignObject>
+    </svg>
+  </div>
+
+  <div class="workflow-phases">
+    <div class="workflow-phases-title">阶段说明（对照当前原型）</div>
+    <p><strong>① 排课基础设置</strong> 先维护课表节次；在排课时间设置中配置学期排课/排教室窗口、不排课时间、选修课预占位与教师排课时段；再设置午休、节次上限等排课规则。</p>
+    <p><strong>② 排课表时间</strong> 按入学批次 / 教师 / 课程安排上课时间。在「排课起止时间」窗口内列表显示「排课」并可编辑；窗外仅可「查看」。联合排课、自动排课为支路。</p>
+    <p><strong>③ 排课表教室</strong> 在「排教室起止时间」窗口内按时间（星期）/ 场地类型安排上课教室；窗外仅可查看。布局与时间侧一致，时间只读、空格不可新增时间。场地冲突查询、自动排教室为支路。</p>
+    <p><strong>④ 课表查询</strong> 排课完成后可按入学批次、教师、学生、课程、教室、时间查询课表。课表密度查询为支路。</p>
+    <p><strong>⑤ 调课管理</strong> 教师端 New Replacement / Pending Replacement；管理员审批、管理与记录。教室开放时间与原因类型为配置支路；支持公假日停课与批量调课。</p>
+  </div>
+
+  <div class="footer">
+    <div class="footer-item"><strong>时间窗口</strong><br>排课起止时间控制排课表时间入口</div>
+    <div class="footer-item"><strong>教室窗口</strong><br>排教室起止时间控制排课表教室入口</div>
+    <div class="footer-item"><strong>下游</strong><br>课表查询 · 调停补加课审批与记录</div>
+  </div>
+  <div class="meta">排课管理原型流程图 · XMUM</div>
+</div>
+</body>
+</html>

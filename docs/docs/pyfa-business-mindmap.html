@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>XMUM 培养方案管理 · 业务逻辑思维导图</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsmind@0.8.7/style/jsmind.css"/>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    background: #f1f5f9; color: #0f172a;
+  }
+  .toolbar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 14px; background: #fff; border-bottom: 1px solid #e2e8f0;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .toolbar h1 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; min-width: 200px; }
+  .toolbar p { margin: 0; font-size: 11px; color: #64748b; width: 100%; }
+  .btn {
+    border: 1px solid #cbd5e1; background: #fff; color: #334155;
+    border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer;
+  }
+  .btn:hover { background: #f8fafc; }
+  .btn-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 8px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+  .legend span {
+    font-size: 10px; padding: 2px 8px; border-radius: 999px; border: 1px solid #e2e8f0;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  #jsmind_container {
+    width: 100%; height: calc(100vh - 108px); background: #f8fafc;
+  }
+  jmnode { font-size: 12px !important; }
+  jmnode.root { font-size: 16px !important; font-weight: 700; }
+  jmnode[level="1"] { font-weight: 600; }
+  jmexpander { line-height: 14px; }
+  @media print {
+    .toolbar, .legend { display: none; }
+    #jsmind_container { height: 100vh; }
+  }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <h1>XMUM 培养方案管理 · 业务逻辑与校验规则思维导图</h1>
+  <button class="btn" onclick="jm.view.reset()">重置视图</button>
+  <button class="btn" onclick="zoomStep(-0.1)">缩小</button>
+  <button class="btn" onclick="zoomStep(0.1)">放大</button>
+  <button class="btn" onclick="expandAll()">全部展开</button>
+  <button class="btn" onclick="collapseToL1()">折叠到一级</button>
+  <button class="btn btn-primary" onclick="window.print()">打印/导出 PDF</button>
+  <p>左→右逻辑图 · 依据 PRD V1.9、可交互原型与最新执行计划/开课规则整理 · 滚轮缩放 · 点击节点展开/折叠</p>
+</div>
+<div class="legend">
+  <span><i class="dot" style="background:#2563eb"></i>方案版本</span>
+  <span><i class="dot" style="background:#7c3aed"></i>审批</span>
+  <span><i class="dot" style="background:#64748b"></i>版本查询</span>
+  <span><i class="dot" style="background:#d97706"></i>方案变更</span>
+  <span><i class="dot" style="background:#16a34a"></i>执行计划</span>
+  <span><i class="dot" style="background:#0891b2"></i>开课管理</span>
+  <span><i class="dot" style="background:#dc2626"></i>校验/隔离</span>
+</div>
+<div id="jsmind_container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsmind@0.8.7/es6/jsmind.js"></script>
+<script>
+const mindData = {
+  meta: { name: '培养方案管理业务导图', author: 'XMUM', version: '1.0' },
+  format: 'node_tree',
+  data: {
+    id: 'root', topic: '培养方案管理',
+    children: [
+      {
+        id: 'v', topic: '方案版本管理',
+        'background-color': '#dbeafe', 'foreground-color': '#1e3a8a',
+        children: [
+          { id: 'v-list', topic: '版本列表',
+            children: [
+              { id: 'v-list-cols', topic: '列表字段：勾选·专业代码·培养方案版本·学制·版本·开始/截止Intake·学位·审批状态·引用数·操作' },
+              { id: 'v-list-filter', topic: '筛选：专业·审批状态·查询' },
+              { id: 'v-list-batch', topic: '批量：提交审批·版本导出（占位）' }
+            ]
+          },
+          { id: 'v-new', topic: '新增版本',
+            children: [
+              { id: 'v-new-f', topic: '字段：专业(必选)→自动带出学制/学位/方案名' },
+              { id: 'v-new-f2', topic: '开始入学批次(必选)→版本号通常一致' },
+              { id: 'v-new-chain', topic: '批次链：上一版本截止批次 = 下一版本开始批次的前一批次' },
+              { id: 'v-new-val', topic: '校验：开始批次不得早于上一版本截止批次' },
+              { id: 'v-new-go', topic: '确认→创建草稿→进入三标签页编辑' }
+            ]
+          },
+          { id: 'v-status', topic: '状态机',
+            children: [
+              { id: 'v-st-draft', topic: '草稿 draft：可编辑·提交·删除' },
+              { id: 'v-st-pend', topic: '审批中 pending：只读查看' },
+              { id: 'v-st-app', topic: '已通过 approved：只读；可生成执行计划/变更' },
+              { id: 'v-st-rej', topic: '已驳回 rejected：可编辑后重提' }
+            ]
+          },
+          { id: 'v-tab', topic: '三标签页编辑页',
+            children: [
+              { id: 'v-tab1', topic: 'TAB1 课程分类',
+                children: [
+                  { id: 'v-t1-tree', topic: '三级树：H1(预设不可增删改)→H2(+新增分类)→H3(+子级)' },
+                  { id: 'v-t1-l1', topic: '一级：上移/下移排序；课程数自动汇总' },
+                  { id: 'v-t1-credit', topic: '学分：最低/最高；一级=各二级之和' },
+                  { id: 'v-t1-nature', topic: '课程性质：必修 compulsory / 选修 elective' },
+                  { id: 'v-t1-elec', topic: '选修二级：学期修读要求矩阵(学期·最低/最高学分·课程数)' },
+                  { id: 'v-t1-val', topic: '校验：同级不重名·学分非负·最低≤最高·三级合计不突破二级上限·必修三级=二级·选修矩阵学期不重复' },
+                  { id: 'v-t1-gate', topic: '门禁：TAB1未完成→TAB2/3禁用并提示' }
+                ]
+              },
+              { id: 'v-tab2', topic: 'TAB2 课程设置',
+                children: [
+                  { id: 'v-t2-sum', topic: '顶栏：分类课程学分配置面板(课程数/已配/要求/达标)' },
+                  { id: 'v-t2-list', topic: '课程表：课号·课名·H1/H2/H3·学分·开课学期·性质·操作' },
+                  { id: 'v-t2-add', topic: '+新增/批量新增：须先建TAB1分类' },
+                  { id: 'v-t2-modal', topic: '课程设置三步弹窗',
+                    children: [
+                      { id: 'v-t2-s1', topic: 'Step1 基本信息：课程库选取·分类路径·学分·开课学期·先修' },
+                      { id: 'v-t2-s1-ro', topic: '只读带出：课号/课名/单位/负责人/授课语言/简介/参考书/其他信息' },
+                      { id: 'v-t2-s1-opt', topic: '可编辑：分类·学分·开课学期·先修·授课对象·语言水平' },
+                      { id: 'v-t2-s1-sem', topic: '必修须指定学期；选修可开关「指定学期」' },
+                      { id: 'v-t2-s2', topic: 'Step2 CLO：创建/编辑/删除学习成果' },
+                      { id: 'v-t2-s3', topic: 'Step3 SLT：大纲+过程性/期末评估(占比≤100%)' },
+                      { id: 'v-t2-nav', topic: '导航：Step1→2校验分类学分；Step2→3须≥1条CLO' }
+                    ]
+                  },
+                  { id: 'v-t2-val', topic: '校验：未选课程库·分类未选全·有H3必选·学分有效·不超二级最高·不可重复纳入' }
+                ]
+              },
+              { id: 'v-tab3', topic: 'TAB3 方案进程表',
+                children: [
+                  { id: 'v-t3-gen', topic: '由TAB1+TAB2自动生成只读预览' },
+                  { id: 'v-t3-sem', topic: '表头：Sem N（无周次）' },
+                  { id: 'v-t3-pdf', topic: '导出PDF/打印（原型占位）' }
+                ]
+              },
+              { id: 'v-save', topic: '保存：二次确认→写入VERSION_CONTENT_STORE→返回列表' },
+              { id: 'v-submit', topic: '提交审批：学分校验→审批队列→状态变审批中' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'ap', topic: '培养方案版本审批',
+        'background-color': '#ede9fe', 'foreground-color': '#5b21b6',
+        children: [
+          { id: 'ap-list', topic: '待办/已办列表：Status·培养方案·Stage·专业·Intake·总学分·提交人·时间' },
+          { id: 'ap-flow', topic: '三级审批流：院系→学院→校方（原型简化）' },
+          { id: 'ap-dec', topic: '决策：通过 / 驳回 / 需修改' },
+          { id: 'ap-batch', topic: '批量：全部通过或全部驳回（不支持批量需修改）' },
+          { id: 'ap-view', topic: '查看：跳转版本编辑页只读三标签页' },
+          { id: 'ap-pass', topic: '通过后：status=approved；回填上一版本endIntake' }
+        ]
+      },
+      {
+        id: 'vq', topic: '方案版本查询',
+        'background-color': '#f1f5f9', 'foreground-color': '#334155',
+        children: [
+          { id: 'vq-ro', topic: '仅已通过版本只读查看' },
+          { id: 'vq-banner', topic: '只读横幅：当前为查看模式不可编辑' }
+        ]
+      },
+      {
+        id: 'ch', topic: '方案版本变更',
+        'background-color': '#fef3c7', 'foreground-color': '#92400e',
+        children: [
+          { id: 'ch-new', topic: '新建申请：目标版本须已通过；不可并行进行中变更' },
+          { id: 'ch-copy', topic: '复制版本内容→变更编辑页（共用三标签页）' },
+          { id: 'ch-save', topic: '保存：写入变更内容存储；不影响已生成执行计划' },
+          { id: 'ch-submit', topic: '提交变更审批：学分校验同版本提交' },
+          { id: 'ch-pass', topic: '审批通过：覆盖VERSION_CONTENT_STORE；已生成执行计划副本不变' },
+          { id: 'ch-review', topic: '变更审核：同版本审批规则+审批日志' }
+        ]
+      },
+      {
+        id: 'ex', topic: '专业批次执行计划',
+        'background-color': '#dcfce7', 'foreground-color': '#166534',
+        children: [
+          { id: 'ex-iso', topic: '数据隔离：每入学批次独立副本；不回写方案版本；变更通过不影响已生成副本' },
+          { id: 'ex-gen', topic: '生成执行计划',
+            children: [
+              { id: 'ex-gen-match', topic: '选专业+入学批次→自动匹配已通过版本' },
+              { id: 'ex-gen-dup', topic: '校验：批次落在版本生效区间；不可重复生成' },
+              { id: 'ex-gen-rot', topic: '复制内容+旋转Y1S1~YnS3槽位→计算实际开课学期(年月)' },
+              { id: 'ex-gen-base', topic: '生成基线快照→用于「是否调整」对比' }
+            ]
+          },
+          { id: 'ex-list', topic: '执行计划列表',
+            children: [
+              { id: 'ex-list-col', topic: '列：专业代码·专业·专业批次·学院·入学批次·总学分·是否提交·是否调整·AC·操作' },
+              { id: 'ex-list-op', topic: '操作：编辑(未提交)·查看·修改记录(有调整时)' }
+            ]
+          },
+          { id: 'ex-lock', topic: '是否提交（isLocked）',
+            children: [
+              { id: 'ex-lock-yes', topic: '已提交：执行计划页只读；不可编辑' },
+              { id: 'ex-lock-offer', topic: '业务含义：专业开课「生成开课计划」时可见本批次未开课课程' },
+              { id: 'ex-lock-no', topic: '未提交：可编辑(限开课学期+先修)；可删除(无开课任务时)' }
+            ]
+          },
+          { id: 'ex-edit', topic: '执行计划编辑（未提交）',
+            children: [
+              { id: 'ex-t1', topic: 'TAB1：分类树只读(不可增删改/移动/矩阵编辑)' },
+              { id: 'ex-t2', topic: 'TAB2：无新增/批量/移除；列含开课状态·实际开课学期',
+                children: [
+                  { id: 'ex-t2-off', topic: '已开课课程：仅查看' },
+                  { id: 'ex-t2-unoff', topic: '未开课：查看+编辑(限开课学期与先修)' },
+                  { id: 'ex-t2-modal', topic: '课程弹窗三Tab：Tab1部分可编；Tab2 CLO·Tab3 SLT只读' },
+                  { id: 'ex-t2-ro-f', topic: '不可改：分类·学分·语言·简介·参考书·其他信息·CLO·SLT' }
+                ]
+              },
+              { id: 'ex-t3', topic: 'TAB3：方案进程表只读' }
+            ]
+          },
+          { id: 'ex-unlock', topic: '撤回提交',
+            children: [
+              { id: 'ex-unlock-eff', topic: '效果：开课计划生成时看不到本批次还未开课课程' },
+              { id: 'ex-unlock-keep', topic: '已开课课程及已生成开课任务不受影响' },
+              { id: 'ex-unlock-re', topic: '再次提交→未开课候选恢复可见' },
+              { id: 'ex-unlock-edit', topic: '撤回后可重新编辑执行计划(限开课学期+先修)' }
+            ]
+          },
+          { id: 'ex-del', topic: '删除：仅未提交且无开课任务的计划可删' },
+          { id: 'ex-log', topic: '修改记录：相对版本基线的调整日志(AC/时间/摘要)' }
+        ]
+      },
+      {
+        id: 'of', topic: '开课管理',
+        'background-color': '#cffafe', 'foreground-color': '#0e7490',
+        children: [
+          { id: 'of-time', topic: '开课时间设置：唯一「是否开课学期=是」的学年学期' },
+          { id: 'of-plan', topic: '开课计划生成',
+            children: [
+              { id: 'of-plan-src', topic: '数据源：已提交执行计划+当前开课学期+未开课课程' },
+              { id: 'of-plan-dim', topic: '维度：1门课+1专业+1入学批次=1条候选' },
+              { id: 'of-plan-keep', topic: '重新生成时保留已开课教学班' },
+              { id: 'of-plan-split', topic: '拆分：专业开课/通识选修/其他开课' }
+            ]
+          },
+          { id: 'of-major', topic: '专业开课：合分班·分组·教学班列表' },
+          { id: 'of-ge', topic: '通识选修开课' },
+          { id: 'of-other', topic: '其他开课：重修等人工维护' }
+        ]
+      },
+      {
+        id: 'rule', topic: '通用规则与校验汇总',
+        'background-color': '#fee2e2', 'foreground-color': '#991b1b',
+        children: [
+          { id: 'rule-iso', topic: '数据隔离',
+            children: [
+              { id: 'rule-iso-v', topic: '版本保存→VERSION_CONTENT_STORE' },
+              { id: 'rule-iso-e', topic: '执行计划保存→EXEC_CONTENT_STORE(不回写版本)' },
+              { id: 'rule-iso-c', topic: '变更通过→覆盖版本；执行计划副本不变' }
+            ]
+          },
+          { id: 'rule-credit', topic: '总学分',
+            children: [
+              { id: 'rule-c-total', topic: '毕业总学分=TAB1各一级最低学分之和' },
+              { id: 'rule-c-list', topic: '各列表总学分取对应内容存储计算值' },
+              { id: 'rule-c-bar', topic: '编辑顶栏信息条不展示毕业总学分' }
+            ]
+          },
+          { id: 'rule-val', topic: '关键校验阻断',
+            children: [
+              { id: 'rule-v-sub', topic: '提交审批：必修已配≥最低；不超最高；选修矩阵合法' },
+              { id: 'rule-v-tab', topic: 'TAB门禁：分类未完成不可进课程设置' },
+              { id: 'rule-v-course', topic: '课程：库中选取·分类完整·必修指定学期·不重复' },
+              { id: 'rule-v-clo', topic: 'CLO：进Step3前至少1条' },
+              { id: 'rule-v-exec', topic: '执行计划：未提交可编；已提交只读；开课状态在TAB2' }
+            ]
+          },
+          { id: 'rule-term', topic: '学期映射（执行计划）',
+            children: [
+              { id: 'rule-t-y', topic: '方案版本：Y1S1~YnS3不含具体年月' },
+              { id: 'rule-t-a', topic: '执行计划：按入学批次旋转→actualSemester如2026/09' }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+};
+
+const options = {
+  container: 'jsmind_container',
+  theme: 'primary',
+  editable: false,
+  mode: 'side',
+  support_html: false,
+  view: {
+    engine: 'canvas',
+    hmargin: 120,
+    vmargin: 50,
+    line_width: 2,
+    line_color: '#94a3b8',
+    draggable: true,
+    hide_scrollbars_when_draggable: true,
+    zoom: { min: 0.3, max: 2.4, step: 0.1 }
+  },
+  layout: {
+    hspace: 36,
+    vspace: 14,
+    pspace: 16
+  }
+};
+
+const jm = new jsMind(options);
+jm.show(mindData);
+
+function zoomStep(delta) {
+  const v = jm.view;
+  v.zoomIn(delta > 0);
+}
+
+function expandAll() {
+  jm.expand_all();
+}
+
+function collapseToL1() {
+  jm.expand_to_depth(2);
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => jm.view.reset(), 100);
+});
+</script>
+</body>
+</html>

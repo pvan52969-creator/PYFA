@@ -4,5 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$ROOT/.git/hooks"
 cp -f "$ROOT/.githooks/post-commit" "$ROOT/.git/hooks/post-commit"
-chmod +x "$ROOT/.git/hooks/post-commit" "$ROOT/scripts/sync-portal-build-version.sh"
-echo "installed: .git/hooks/post-commit"
+cp -f "$ROOT/.githooks/pre-push" "$ROOT/.git/hooks/pre-push"
+chmod +x "$ROOT/.git/hooks/post-commit" "$ROOT/.git/hooks/pre-push" \
+  "$ROOT/scripts/sync-portal-build-version.sh" "$ROOT/scripts/install-git-hooks.sh"
+echo "installed: post-commit, pre-push"

@@ -29,8 +29,8 @@ export PORTAL_VERSION_HOOK=1
 git -C "$ROOT" add -- prototype/index.html docs/
 
 echo ""
-echo "portal-version: 角标已更新为「${MSG} · ${SHORT}」"
+echo "portal-version: 角标已更新为「${MSG}」（git ${SHORT}）"
 echo "请再 commit 一次（可用 git commit --amend --no-edit）后重新 push。"
-echo "确认线上：右下角应显示 · ${SHORT}，与 git log -1 --oneline 左侧短哈希一致。"
+echo "确认线上：右下角显示「${MSG}」；悬停或查看 meta portal-build 应为 ${SHORT}。"
 echo ""
 exit 1

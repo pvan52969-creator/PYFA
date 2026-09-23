@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 把 Academic Portal 右下角写成：{commit标题} · {短SHA}
+# 把 Academic Portal 右下角写成 commit 标题；短 SHA 仅放 title / meta（悬停或看源码可核对）
 # 用法：
 #   ./scripts/sync-portal-build-version.sh           # 用 HEAD
 #   ./scripts/sync-portal-build-version.sh "自定义"  # 标题自定义，SHA 仍用 HEAD
@@ -17,10 +17,11 @@ case "$SUBJECT" in
   sync:\ portal\ version*|chore:\ portal\ version*) exit 0 ;;
 esac
 
+# 可见文案只保留标题；无标题时才显示短 SHA
 if [[ -z "$SUBJECT" ]]; then
   LABEL="$SHORT"
 else
-  LABEL="${SUBJECT} · ${SHORT}"
+  LABEL="$SUBJECT"
 fi
 
 python3 - "$LABEL" "$SHORT" "$ROOT" <<'PY'
@@ -38,7 +39,7 @@ def update(path: pathlib.Path) -> None:
     if not path.is_file():
         return
     text = path.read_text(encoding="utf-8")
-    # title tooltip + visible label
+    # 可见：标题；悬停 title：git 短 SHA
     text2, n = pat.subn(
         lambda m: (
             f'<div class="portal-build-version" aria-label="原型版本" '
@@ -72,5 +73,5 @@ if proto_docs.is_dir():
         shutil.copy2(src, nested / src.name)
         shutil.copy2(src, docs / src.name)  # 同级兜底
 update(docs / "index.html")
-print(f"portal version → {label}")
+print(f"portal version → {label} (git {short})")
 PY

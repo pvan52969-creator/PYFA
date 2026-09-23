@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 提交后：用本次 commit 标题 + 短 SHA 更新 Portal 角标，并同步 docs/
+# 提交后静默同步 Portal 角标与 docs/（不打印提示、不拦截后续 push）
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -13,16 +13,13 @@ case "$MSG" in
   Merge\ *|Revert\ *|sync:\ portal\ version*|chore:\ portal\ version*) exit 0 ;;
 esac
 
-"$ROOT/scripts/sync-portal-build-version.sh" "$MSG" || {
-  echo "portal-version: sync failed" >&2
-  exit 0
-}
+"$ROOT/scripts/sync-portal-build-version.sh" "$MSG" >/dev/null 2>&1 || exit 0
 
 if [[ -z "$(git -C "$ROOT" status --porcelain -- prototype/index.html docs/)" ]]; then
   exit 0
 fi
 
-git -C "$ROOT" add -- prototype/index.html docs/
+git -C "$ROOT" add -- prototype/index.html docs/ >/dev/null 2>&1 || exit 0
 
 if git -C "$ROOT" rev-parse @{u} >/dev/null 2>&1; then
   AHEAD="$(git -C "$ROOT" rev-list --count @{u}..HEAD 2>/dev/null || echo 0)"
@@ -31,7 +28,7 @@ else
 fi
 
 if [[ "$AHEAD" -gt 0 ]]; then
-  git -C "$ROOT" commit --amend --no-edit --no-verify -q
+  git -C "$ROOT" commit --amend --no-edit --no-verify -q >/dev/null 2>&1 || true
 else
-  git -C "$ROOT" commit --no-verify -q -m "sync: portal version ($MSG)"
+  git -C "$ROOT" commit --no-verify -q -m "sync: portal version ($MSG)" >/dev/null 2>&1 || true
 fi

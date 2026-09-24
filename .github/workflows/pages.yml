@@ -7,7 +7,6 @@ on:
       - feature/pkgl
       - feature/add-login
       - preview
-
   workflow_dispatch:
 
 permissions:
@@ -22,16 +21,19 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # checkout 默认只拉触发分支；多分支站点必须显式 fetch
       - name: Fetch publish branches
-        run: git fetch --no-tags origin main feature/pkgl feature/add-login preview
+        run: |
+          set -euo pipefail
+          for b in main feature/pkgl feature/add-login preview; do
+            git fetch --no-tags origin "$b" 2>/dev/null || true
+          done
 
       - name: Build Pages
         run: |
@@ -39,32 +41,67 @@ jobs:
           rm -rf site
           mkdir -p site
 
-          # 只发布 prototype/ 内容到对应路径，并去掉 node_modules
+          # 只发布 prototype/ 到目标路径，并去掉 node_modules
           publish_branch() {
             local ref="$1"
             local dest="$2"
+            if ! git rev-parse --verify "$ref" >/dev/null 2>&1; then
+              echo "skip missing ref: $ref"
+              return 0
+            fi
+            if ! git cat-file -e "$ref:prototype" 2>/dev/null; then
+              echo "skip no prototype/: $ref"
+              return 0
+            fi
             mkdir -p "$dest"
             git archive "$ref:prototype" | tar -x -C "$dest"
-            rm -rf "$dest/node_modules"
+            rm -rf "$dest/node_modules" "$dest/.venv-doc" "$dest/.cursor"
+            # 角标：可见文案 = 该分支最新 commit 标题；title = 短 SHA
+            local short subject
+            short="$(git rev-parse --short=7 "$ref")"
+            subject="$(git log -1 --pretty=%s "$ref" | head -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            case "$subject" in
+              sync:\ portal\ version*|chore:\ portal\ version*) subject="$short" ;;
+            esac
+            if [[ -f "$dest/index.html" ]]; then
+              SUBJECT="$subject" SHORT="$short" python3 - "$dest/index.html" <<'PY'
+          import os, pathlib, re, sys
+          path = pathlib.Path(sys.argv[1])
+          label, short = os.environ["SUBJECT"], os.environ["SHORT"]
+          text = path.read_text(encoding="utf-8")
+          pat = re.compile(r'<div class="portal-build-version"[^>]*>.*?</div>', re.S)
+          badge = (
+              f'<div class="portal-build-version" aria-label="原型版本" '
+              f'title="git {short}">{label}</div>'
+          )
+          if pat.search(text):
+              text = pat.sub(badge, text, count=1)
+          meta_pat = re.compile(r'<meta\s+name="portal-build"\s+content="[^"]*"\s*/?>', re.I)
+          meta = f'<meta name="portal-build" content="{short}">'
+          if meta_pat.search(text):
+              text = meta_pat.sub(meta, text, count=1)
+          elif "</head>" in text:
+              text = text.replace("</head>", f"  {meta}\n</head>", 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+            fi
+            touch "$dest/.nojekyll"
+            echo "published $ref -> $dest ($subject / $short)"
           }
 
-          # main → 网站根目录
-          publish_branch origin/main site
+          # 站点根目录 = 日常开发分支最新原型（https://…/PYFA/）
+          publish_branch origin/feature/pkgl site
 
-          # feature/pkgl → /feature/pkgl/
-          publish_branch origin/feature/pkgl site/feature/pkgl
-
-          # feature/add-login → /feature/add-login/
+          # 其它分支保留预览路径
+          publish_branch origin/main site/main
           publish_branch origin/feature/add-login site/feature/add-login
-
-          # preview → /preview/
           publish_branch origin/preview site/preview
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./site
 
@@ -72,11 +109,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
-
     needs: build
-
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

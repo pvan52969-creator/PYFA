@@ -27,6 +27,7 @@ jobs:
         with:
           fetch-depth: 0
 
+      # checkout 默认只拉触发分支；多分支站点必须显式 fetch
       - name: Fetch publish branches
         run: |
           set -euo pipefail
@@ -63,28 +64,29 @@ jobs:
               sync:\ portal\ version*|chore:\ portal\ version*) subject="$short" ;;
             esac
             if [[ -f "$dest/index.html" ]]; then
-              python3 - "$dest/index.html" "$subject" "$short" <<'PY'
-import pathlib, re, sys
-path, label, short = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
-text = path.read_text(encoding="utf-8")
-pat = re.compile(r'<div class="portal-build-version"[^>]*>.*?</div>', re.S)
-badge = (
-    f'<div class="portal-build-version" aria-label="原型版本" '
-    f'title="git {short}">{label}</div>'
-)
-if pat.search(text):
-    text = pat.sub(badge, text, count=1)
-meta_pat = re.compile(r'<meta\s+name="portal-build"\s+content="[^"]*"\s*/?>', re.I)
-meta = f'<meta name="portal-build" content="{short}">'
-if meta_pat.search(text):
-    text = meta_pat.sub(meta, text, count=1)
-elif "</head>" in text:
-    text = text.replace("</head>", f"  {meta}\n</head>", 1)
-path.write_text(text, encoding="utf-8")
-PY
+              SUBJECT="$subject" SHORT="$short" python3 - "$dest/index.html" <<'PY'
+          import os, pathlib, re, sys
+          path = pathlib.Path(sys.argv[1])
+          label, short = os.environ["SUBJECT"], os.environ["SHORT"]
+          text = path.read_text(encoding="utf-8")
+          pat = re.compile(r'<div class="portal-build-version"[^>]*>.*?</div>', re.S)
+          badge = (
+              f'<div class="portal-build-version" aria-label="原型版本" '
+              f'title="git {short}">{label}</div>'
+          )
+          if pat.search(text):
+              text = pat.sub(badge, text, count=1)
+          meta_pat = re.compile(r'<meta\s+name="portal-build"\s+content="[^"]*"\s*/?>', re.I)
+          meta = f'<meta name="portal-build" content="{short}">'
+          if meta_pat.search(text):
+              text = meta_pat.sub(meta, text, count=1)
+          elif "</head>" in text:
+              text = text.replace("</head>", f"  {meta}\n</head>", 1)
+          path.write_text(text, encoding="utf-8")
+          PY
             fi
             touch "$dest/.nojekyll"
-            echo "published $ref → $dest ($subject / $short)"
+            echo "published $ref -> $dest ($subject / $short)"
           }
 
           # 站点根目录 = 日常开发分支最新原型（https://…/PYFA/）

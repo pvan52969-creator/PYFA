@@ -59688,10 +59688,10 @@ let adjustmentAddclassSlotSeq = 1;
 let adjustmentApproveRoomContext = null; // { reqId, itemIdx, weekday, period, weeks, date, targetSlots, excludeSlotKeys }
 
 const ADJUSTMENT_TYPE_META = {
-  reschedule: { label: '调课', cls: 'adj-reschedule', needFrom: true, needTo: true, slotMode: 'slot', perSlot: true },
-  cancel: { label: '停课', cls: 'adj-cancel', needFrom: true, needTo: false, slotMode: 'slot' },
-  makeup: { label: '补课', cls: 'adj-makeup', needFrom: true, needTo: true, slotMode: 'slot', perSlot: true, fromCancel: true },
-  addclass: { label: '加课', cls: 'adj-addclass', needFrom: false, needTo: true, slotMode: 'course', multiSlot: true }
+  reschedule: { label: 'Replace Class', cls: 'adj-reschedule', needFrom: true, needTo: true, slotMode: 'slot', perSlot: true },
+  cancel: { label: 'Cancel Class', cls: 'adj-cancel', needFrom: true, needTo: false, slotMode: 'slot' },
+  makeup: { label: 'Reschedule Class', cls: 'adj-makeup', needFrom: true, needTo: true, slotMode: 'slot', perSlot: true, fromCancel: true },
+  addclass: { label: 'Additional Class', cls: 'adj-addclass', needFrom: false, needTo: true, slotMode: 'course', multiSlot: true }
 };
 
 const ADJUSTMENT_REASON_APPLY_TYPE_ITEMS = [
@@ -59719,11 +59719,12 @@ let adjustmentRoomOpenCalState = null;
 listPageSize[ADJUSTMENT_ROOM_OPEN_PICKER_LIST_KEY] = 10;
 
 const ADJUSTMENT_STATUS_META = {
-  pending: { label: '待审批', cls: 'pending' },
-  reviewing: { label: '审批中', cls: 'reviewing' },
-  approved: { label: '已通过', cls: 'approved' },
-  rejected: { label: '不通过', cls: 'rejected' },
-  cancelled: { label: '已取消', cls: 'draft' }
+  pending: { label: 'In Progress', cls: 'in-progress' },
+  reviewing: { label: 'In Progress', cls: 'in-progress' },
+  approved: { label: 'Approved', cls: 'approved' },
+  rejected: { label: 'Rejected', cls: 'rejected' },
+  returned: { label: 'Update Required', cls: 'adj-status-return' },
+  cancelled: { label: 'Cancelled', cls: 'adj-status-cancel' }
 };
 
 /** 审批阶段文案（过程审批环节） */
@@ -59733,19 +59734,26 @@ function getAdjustmentStageLabel(r) {
   if (r.status === 'pending') return '教务初审';
   if (r.status === 'reviewing') return '教务复核';
   if (r.status === 'approved') return '审批完成';
-  if (r.status === 'rejected') return '不通过';
-  if (r.status === 'returned') return '退回修改';
-  if (r.status === 'cancelled') return '已撤销';
+  if (r.status === 'rejected') return 'Rejected';
+  if (r.status === 'returned') return 'Update Required';
+  if (r.status === 'cancelled') return 'Cancelled';
   return '—';
 }
 
-/** 教师端列表/详情：无「待审批」，pending/reviewing 均显示为流程中 */
+/**
+ * 调课审批状态（教师端 / 列表统一口径）：
+ * - pending / reviewing → In Progress（审批中，未终审完）
+ * - cancelled → Cancelled（撤销申请，可再次提交）
+ * - returned → Update Required（驳回，可编辑再提）
+ * - rejected → Rejected（不通过，流程终止）
+ * - approved → Approved（终审通过）
+ */
 const ADJUSTMENT_TEACHER_STATUS_META = {
-  'in-progress': { label: '流程中', cls: 'in-progress' },
-  approved: { label: '通过', cls: 'adj-status-pass' },
-  rejected: { label: '不通过', cls: 'adj-status-fail' },
-  returned: { label: '驳回', cls: 'adj-status-return' },
-  cancelled: { label: '已撤销', cls: 'adj-status-cancel' }
+  'in-progress': { label: 'In Progress', cls: 'in-progress' },
+  approved: { label: 'Approved', cls: 'adj-status-pass' },
+  rejected: { label: 'Rejected', cls: 'adj-status-fail' },
+  returned: { label: 'Update Required', cls: 'adj-status-return' },
+  cancelled: { label: 'Cancelled', cls: 'adj-status-cancel' }
 };
 
 function getAdjustmentTeacherStatusKey(status) {
@@ -61691,11 +61699,76 @@ function getAdjustmentApplicantProfile(teacherId) {
   };
 }
 
+/** 演示用教务操作员工号（无 proxyById 时按姓名回退） */
+const ADJUSTMENT_ADMIN_OPERATOR_STAFF_IDS = {
+  '李教务': 'AC10001',
+  '王敏': 'AC10002',
+  '张教务': 'AC10003',
+  '教务管理员': 'AC10000'
+};
+
 function getAdjustmentListApplicantName(r) {
   if (!r) return '—';
   if (r.source === 'holiday' || r.holidayId) return '系统';
   if (r.source === 'admin') return r.proxyBy || r.operator || '教务管理员';
   return r.teacherName || '—';
+}
+
+/** 代申请：管理员代提 或 系统（公假日等）自动停课 */
+function isAdjustmentOnBehalfRequest(r) {
+  if (!r) return false;
+  return r.source === 'admin' || r.source === 'holiday' || !!r.holidayId;
+}
+
+/** Ref. ID：普通文本（与 Course Code 同款）；代申请在单号后标注 (On Behalf) */
+function formatAdjustmentRefIdHtml(r, noFallback) {
+  const no = String((r && r.no) || noFallback || '').trim() || '—';
+  if (r && isAdjustmentOnBehalfRequest(r)) {
+    return `${escapeHtml(no)} (On Behalf)`;
+  }
+  return escapeHtml(no);
+}
+
+/** Applicant 工号：教师用 teacherId；代申请用 proxyById / 演示映射 */
+function getAdjustmentListApplicantStaffId(r) {
+  if (!r || r.source === 'holiday' || r.holidayId) return '';
+  if (r.source === 'admin') {
+    const explicit = String(r.proxyById || r.operatorId || '').trim();
+    if (explicit) return explicit;
+    const name = r.proxyBy || r.operator || '教务管理员';
+    return ADJUSTMENT_ADMIN_OPERATOR_STAFF_IDS[name] || '';
+  }
+  return String(r.teacherId || '').trim();
+}
+
+/** 列表格：姓名 + 工号（两行）；无工号则仅姓名 */
+function formatAdjustmentPersonTwoLineHtml(name, staffId) {
+  const n = String(name || '').trim() || '—';
+  const id = String(staffId || '').trim();
+  if (!id || id === '—') return escapeHtml(n);
+  return `${escapeHtml(n)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(id)}</span>`;
+}
+
+/** Applicant：系统仅姓名；教师 / 代申请均为姓名+工号两行 */
+function renderAdjustmentListApplicantTd(r) {
+  if (!r) return '<td class="col-center">—</td>';
+  if (r.source === 'holiday' || r.holidayId) {
+    return `<td class="col-center">${escapeHtml(getAdjustmentListApplicantName(r))}</td>`;
+  }
+  return `<td class="col-center">${formatAdjustmentPersonTwoLineHtml(
+    getAdjustmentListApplicantName(r),
+    getAdjustmentListApplicantStaffId(r)
+  )}</td>`;
+}
+
+/** Lecturer：课节任课教师 */
+function renderAdjustmentListLecturerTd(r) {
+  const profile = typeof getAdjustmentApplicantProfile === 'function'
+    ? getAdjustmentApplicantProfile(r?.teacherId)
+    : null;
+  const name = profile?.teacherName || r?.teacherName || '—';
+  const id = profile?.teacherId || r?.teacherId || '';
+  return `<td class="col-center">${formatAdjustmentPersonTwoLineHtml(name, id)}</td>`;
 }
 
 const ADJUSTMENT_TEACHER_SORT_COLUMNS = {
@@ -61722,17 +61795,38 @@ const ADJUSTMENT_TEACHER_SORT_COLUMNS = {
   submittedAt: { get: r => r.submittedAt || '' }
 };
 
-/** 管理端申请列表（审批 / 代申请 / 申请记录）：状态文案用 ADJUSTMENT_STATUS_META，申请人按教师姓名 */
+/** 管理端申请列表（审批 / 代申请 / 申请记录）：审批页 Status 与教师端一致（In-Progress 等） */
 const ADJUSTMENT_REQUEST_SORT_COLUMNS = {
   status: {
-    get: r => (ADJUSTMENT_STATUS_META[r.status] && ADJUSTMENT_STATUS_META[r.status].label) || r.status || ''
+    get: r => (ADJUSTMENT_TEACHER_STATUS_META[getAdjustmentTeacherStatusKey(r.status)] || {}).label
+      || (ADJUSTMENT_STATUS_META[r.status] && ADJUSTMENT_STATUS_META[r.status].label)
+      || r.status
+      || ''
   },
   stage: { get: r => getAdjustmentStageLabel(r) },
   no: { get: r => r.no || '' },
   type: { get: r => (ADJUSTMENT_TYPE_META[r.type] && ADJUSTMENT_TYPE_META[r.type].label) || r.type || '' },
   applicant: { get: r => r.teacherName || '' },
+  lecturer: {
+    get: r => (typeof getAdjustmentApplicantProfile === 'function'
+      ? getAdjustmentApplicantProfile(r.teacherId).teacherName
+      : (r.teacherName || ''))
+  },
+  department: {
+    get: r => (typeof getAdjustmentApplicantProfile === 'function'
+      ? getAdjustmentApplicantProfile(r.teacherId).department
+      : '')
+  },
+  lecturerType: {
+    get: r => (typeof getAdjustmentApplicantProfile === 'function'
+      ? getAdjustmentApplicantProfile(r.teacherId).teacherType
+      : '')
+  },
   applyTime: { get: r => formatAdjustmentRequestApplyTime(r) || '' },
+  leavePeriod: { get: r => formatAdjustmentLeavePeriod(r) || '' },
   slotCount: { get: r => Number(r.slotCount) || 1, type: 'number' },
+  totalDays: { get: r => getAdjustmentLeaveTotalDays(r), type: 'number' },
+  affectedClasses: { get: r => getAdjustmentAffectedClassCount(r), type: 'number' },
   reasonType: { get: r => getAdjustmentReasonTypeDisplay(r) },
   reason: { get: r => r.reason || '' },
   submittedAt: { get: r => r.submittedAt || '' }
@@ -61755,25 +61849,49 @@ function renderAdjustmentRequestListThead(tbody, listKey, { withCheck = false } 
   const checkTh = withCheck
     ? `<th class="col-check"><input type="checkbox" id="adjustment-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-record-body', this.checked)"></th>`
     : '';
+  // 审批列表列序：Status…Applicant → Lecturer → Department → Lecturer Type → Category → Reason → Leave Period → Total Days → Affected Classes → Application Time → Action
+  if (listKey === 'adjustmentApproval') {
+    tr.innerHTML = [
+      '<th class="col-index">No.</th>',
+      th('Status', 'status', true),
+      th('Stage', 'stage', true),
+      th('Ref. ID', 'no', true),
+      th('Adjustment Type', 'type', true),
+      th('Applicant', 'applicant', true),
+      th('Lecturer', 'lecturer', true),
+      th('Department', 'department', true),
+      th('Lecturer Type', 'lecturerType', true),
+      th('Category', 'reasonType', true),
+      th('Reason', 'reason', false, 'adj-reason-cell'),
+      th('Leave Period', 'leavePeriod', true),
+      th('Total Days', 'totalDays', true),
+      th('Affected Classes', 'affectedClasses', true),
+      th('Application Time', 'submittedAt', true),
+      '<th class="col-center">Action</th>'
+    ].join('');
+    return;
+  }
   tr.innerHTML = [
     checkTh,
-    '<th class="col-index">序号</th>',
-    th('审批状态', 'status', true),
-    th('审批阶段', 'stage', true),
-    th('申请单号', 'no'),
-    th('调课类型', 'type', true),
-    th('申请人', 'applicant'),
-    th('调课时间', 'applyTime', true),
-    th('申请节数', 'slotCount', true),
-    th('原因类型', 'reasonType'),
-    th('事由', 'reason', false, 'adj-reason-cell'),
-    th('提交时间', 'submittedAt', true),
-    '<th class="col-center">操作</th>'
+    '<th class="col-index">No.</th>',
+    th('Status', 'status', true),
+    th('Stage', 'stage', true),
+    th('Ref. ID', 'no', true),
+    th('Adjustment Type', 'type', true),
+    th('Applicant', 'applicant', true),
+    th('Date', 'applyTime', true),
+    th('Affected Classes', 'slotCount', true),
+    th('Category', 'reasonType'),
+    th('Reason', 'reason', false, 'adj-reason-cell'),
+    th('Application Time', 'submittedAt', true),
+    '<th class="col-center">Action</th>'
   ].join('');
 }
 
 function isAdjustmentTeacherUnifiedListLayout(listKey) {
-  return listKey === 'adjustmentTeacherReplacement' || listKey === 'adjustmentTeacherMakeup';
+  return listKey === 'adjustmentTeacherReplacement'
+    || listKey === 'adjustmentTeacherMakeup'
+    || listKey === 'adjustmentTeacherAddition';
 }
 
 function renderAdjustmentTeacherListThead(tbody, listKey, staffCols) {
@@ -61786,9 +61904,10 @@ function renderAdjustmentTeacherListThead(tbody, listKey, staffCols) {
       '<th class="col-index col-center">No.</th>',
       th('Status', 'status', true),
       th('Stage', 'stage', true),
-      th('Ref. ID', 'no'),
+      th('Ref. ID', 'no', true),
       th('Adjustment Type', 'type', true),
-      th('Applicant', 'lecturer', true),
+      th('Applicant', 'applicant', true),
+      th('Lecturer', 'lecturer', true),
       th('Category', 'reasonType', true),
       th('Reason', 'reason', false, 'adj-reason-cell'),
       th('Leave Period', 'leavePeriod', true),
@@ -64461,6 +64580,10 @@ function pushAdjustmentDemoRequest(spec, teacher, task, slot) {
         ? (spec.comment || '请补充材料后重新提交')
         : (spec.status === 'approved' ? (spec.comment || '同意') : '')),
     proxyBy: spec.proxyBy || (source === 'admin' ? '教务管理员' : ''),
+    proxyById: spec.proxyById
+      || (source === 'admin'
+        ? (ADJUSTMENT_ADMIN_OPERATOR_STAFF_IDS[spec.proxyBy || '教务管理员'] || ADJUSTMENT_ADMIN_OPERATOR_STAFF_IDS['教务管理员'])
+        : ''),
     cancelledAt: spec.status === 'cancelled' ? submittedAt : '',
     demoOps: true,
     listDemo: true
@@ -65110,8 +65233,8 @@ function getAdjustmentHolidayMakeupStatusKey(makeup) {
 }
 
 function formatAdjustmentHolidayMakeupStatus(makeup) {
-  if (!makeup) return '<span class="text-muted">未申请</span>';
-  return adjustmentStatusBadge(makeup.status);
+  if (!makeup) return '<span class="text-muted">Not Applied</span>';
+  return adjustmentTeacherStatusBadge(makeup.status);
 }
 
 function seedAdjustmentHolidayMakeupDemos() {
@@ -65549,15 +65672,55 @@ function seedAdjustmentHolidays() {
 }
 
 /* ── 教师端：我的调课申请 ── */
+const ADJUSTMENT_TEACHER_DEMO_IDENTITY_LIMIT = 12;
+
+/** 演示身份候选：优先有已排节次的教师，数量上限便于演示 */
+function getAdjustmentTeacherDemoIdentityPool() {
+  const all = typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : [];
+  const withSlots = all.filter(t => teacherHasAdjustmentSlots(t.teacherId));
+  const pool = (withSlots.length ? withSlots : all).slice(0, ADJUSTMENT_TEACHER_DEMO_IDENTITY_LIMIT);
+  return pool;
+}
+
 function ensureAdjustmentTeacherSelect() {
   const sel = document.getElementById('adjustment-teacher-select');
   if (!sel) return;
-  const teachers = getScheduleTeacherGroupRows();
+  const teachers = getAdjustmentTeacherDemoIdentityPool();
+  const preferred = adjustmentActiveTeacherId || sel.value;
   sel.innerHTML = teachers.length
-    ? teachers.map(t => `<option value="${escapeHtml(t.teacherId)}">${escapeHtml(t.name)}（${escapeHtml(t.teacherId)}）</option>`).join('')
+    ? teachers.map(t => `<option value="${escapeHtml(t.teacherId)}">${escapeHtml(t.name)}</option>`).join('')
     : '<option value="">暂无教师</option>';
-  adjustmentActiveTeacherId = resolveAdjustmentActiveTeacherId(teachers);
-  sel.value = adjustmentActiveTeacherId;
+  if (preferred && teachers.some(t => t.teacherId === preferred)) {
+    adjustmentActiveTeacherId = preferred;
+  } else {
+    adjustmentActiveTeacherId = resolveAdjustmentActiveTeacherId(teachers);
+  }
+  sel.value = adjustmentActiveTeacherId || '';
+  if (typeof enhanceAllSelects === 'function') enhanceAllSelects(sel.parentElement || sel);
+}
+
+/** 教师端演示身份切换：刷新列表；申请抽屉开着时清空选中并重刷节次 */
+function onAdjustmentTeacherDemoIdentityChange(teacherId) {
+  const id = String(teacherId || '').trim();
+  if (!id) return;
+  adjustmentActiveTeacherId = id;
+  const sel = document.getElementById('adjustment-teacher-select');
+  if (sel && [...sel.options].some(o => o.value === id)) sel.value = id;
+  const applyOpen = document.getElementById('modal-adjustment-apply')?.classList.contains('open');
+  if (applyOpen && !adjustmentAdminMode) {
+    adjustmentSelectedSlotVals = [];
+    adjustmentApplyBatchSelected = new Set();
+    adjustmentPerSlotState = {};
+    adjustmentAddclassCourses = [];
+    adjustmentAddclassSlots = [];
+    if (typeof buildAdjustmentSlotFilterOptions === 'function') buildAdjustmentSlotFilterOptions();
+    if (typeof renderAdjustmentSlotPickerRows === 'function') renderAdjustmentSlotPickerRows();
+    if (typeof renderAdjustmentPerSlotConfigs === 'function') renderAdjustmentPerSlotConfigs();
+    if (typeof syncAdjustmentApplyMeta === 'function') syncAdjustmentApplyMeta();
+  }
+  if (typeof isAdjustmentTeacherFacingPage === 'function' ? isAdjustmentTeacherFacingPage() : true) {
+    renderAdjustmentTeacherPage();
+  }
 }
 
 /** 填充调课申请页的学年学期下拉；教师端不提供「全部」，默认当前开课学期 */
@@ -65900,7 +66063,7 @@ function renderAdjustmentAdminPage() {
   if (term) rows = rows.filter(r => !r.term || r.term === term);
   if (teacherId) rows = rows.filter(r => r.teacherId === teacherId);
   if (type) rows = rows.filter(r => r.type === type);
-  if (status) rows = rows.filter(r => r.status === status);
+  if (status) rows = rows.filter(r => matchAdjustmentTeacherStatusFilter(r.status, status));
   rows = sortListWithState(rows, 'adjustmentAdmin', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
   if (hint) {
     const adminCount = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin').length;
@@ -65912,11 +66075,11 @@ function renderAdjustmentAdminPage() {
   if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录，可点击上方按钮代教师发起申请'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-index">${i + 1}</td>
-    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
+    <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
-    <td><code>${escapeHtml(r.no)}</code>${r.source === 'admin' ? ' <span class="adj-type-badge adj-admin">代申请</span>' : ''}</td>
+    <td class="col-center">${formatAdjustmentRefIdHtml(r)}</td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
-    <td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
+    <td class="col-center">${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
     <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
@@ -65954,6 +66117,10 @@ function collectAdjustmentTeacherListRows(opts = {}) {
   if (Array.isArray(opts.excludeStatuses) && opts.excludeStatuses.length) {
     pool = pool.filter(r => !opts.excludeStatuses.includes(r.status));
   }
+  if (!adjustmentAdminMode) {
+    const tid = adjustmentActiveTeacherId || resolveAdjustmentActiveTeacherId();
+    if (tid) pool = pool.filter(r => String(r.teacherId || '') === String(tid));
+  }
   let rows = pool;
   if (term) rows = rows.filter(r => !r.term || r.term === term);
   if (type && !opts.onlyType) rows = rows.filter(r => r.type === type);
@@ -65974,28 +66141,26 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
   if (hint) {
     const pend = pool.filter(r => r.status === 'pending' || r.status === 'reviewing').length;
     const userCount = pool.filter(r => !r.demoOps).length;
-    hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条 · 流程中 <strong>${pend}</strong> 条 · 用户新增 <strong>${userCount}</strong> 条</span>`;
+    hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条 · In Progress <strong>${pend}</strong> 条 · 用户新增 <strong>${userCount}</strong> 条</span>`;
     appendAdjustmentRoomOpenListHint(hint);
   }
   if (!tbody) return;
   const staffCols = !!opts.staffCols;
   const isUnifiedLayout = isAdjustmentTeacherUnifiedListLayout(opts.listKey);
-  const colSpan = isUnifiedLayout ? 13 : (staffCols ? 14 : 12);
+  const colSpan = isUnifiedLayout ? 14 : (staffCols ? 14 : 12);
   if (opts.listKey) renderAdjustmentTeacherListThead(tbody, opts.listKey, staffCols);
   if (!rows.length) { renderScheduleEmptyRow(tbody, colSpan, emptyText); return; }
   tbody.innerHTML = rows.map((r, i) => {
     const actionsHtml = renderAdjustmentTeacherActionCell(r);
     if (isUnifiedLayout) {
-      const profile = getAdjustmentApplicantProfile(r.teacherId);
-      const lecturerName = profile?.teacherName || r.teacherName || '—';
-      const staffId = profile?.teacherId || r.teacherId || '—';
       return `<tr>
     <td class="col-index col-center">${i + 1}</td>
     <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
-    <td><code>${escapeHtml(r.no)}</code></td>
+    <td class="col-center">${formatAdjustmentRefIdHtml(r)}</td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
-    <td class="col-center">${escapeHtml(lecturerName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(staffId)}</span></td>
+    ${renderAdjustmentListApplicantTd(r)}
+    ${renderAdjustmentListLecturerTd(r)}
     <td class="col-center">${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
     <td class="col-center adj-col-times">${renderAdjustmentLeavePeriodCell(r)}</td>
@@ -66007,8 +66172,8 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
     }
     const profile = staffCols ? getAdjustmentApplicantProfile(r.teacherId) : null;
     const applicantCell = staffCols
-      ? `<td class="col-center">${escapeHtml(getAdjustmentListApplicantName(r))}</td>`
-      : `<td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>`;
+      ? renderAdjustmentListApplicantTd(r)
+      : `<td>${formatAdjustmentPersonTwoLineHtml(r.teacherName, r.teacherId)}</td>`;
     const staffCells = staffCols
       ? `<td class="col-center">${escapeHtml(profile?.teacherId || '—')}</td><td class="col-center">${escapeHtml(profile?.teacherName || '—')}</td>`
       : '';
@@ -66016,7 +66181,7 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
     <td class="col-index col-center">${i + 1}</td>
     <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
-    <td><code>${escapeHtml(r.no)}</code></td>
+    <td class="col-center">${formatAdjustmentRefIdHtml(r)}</td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
     ${applicantCell}${staffCells}
     <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
@@ -66051,6 +66216,7 @@ function renderAdjustmentTeacherActionCell(r) {
 function renderAdjustmentTeacherPage() {
   ensureAdjustmentDemo();
   ensureScheduleChangeLogDemo();
+  ensureAdjustmentTeacherSelect();
   setAdjustmentTeacherPageTab(adjustmentTeacherPageTab, { skipRender: true });
   if (adjustmentTeacherPageTab === 'addition') {
     renderAdjustmentTeacherAdditionPage();
@@ -66107,7 +66273,7 @@ function renderAdjustmentTeacherAdditionPage() {
     rows,
     pool,
     '暂无加课申请，可点击表格左上角发起申请',
-    { staffCols: true, listKey: 'adjustmentTeacherAddition' }
+    { listKey: 'adjustmentTeacherAddition' }
   );
 }
 
@@ -66271,6 +66437,12 @@ const ADJUSTMENT_MAKEUP_CANCEL_SORT_COLUMNS = {
     }
   },
   no: { get: r => r.no || '' },
+  applicant: {
+    get: r => {
+      const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
+      return cancel ? getAdjustmentListApplicantName(cancel) : '';
+    }
+  },
   lecturer: { get: r => r.teacherName || '' },
   category: {
     get: r => {
@@ -66323,7 +66495,8 @@ function syncAdjustmentTeacherMakeupCancelSortThead() {
   tr.innerHTML = [
     `<th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-teacher-makeup-cancel-check-all" aria-label="全选当前结果" onclick="event.stopPropagation();toggleAdjustmentTeacherMakeupCancelAll(this.checked)"></th>`,
     th('Status', 'status', true, 'adj-makeup-status-col'),
-    th('Ref. ID', 'no'),
+    th('Ref. ID', 'no', true),
+    th('Applicant', 'applicant', true),
     th('Lecturer', 'lecturer', true),
     th('Category', 'category', true),
     th('Course Code', 'courseCode', true),
@@ -66348,7 +66521,7 @@ function renderAdjustmentTeacherMakeupCancelTable() {
     headChk.disabled = true;
   }
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 12, '暂无已通过且尚未补课的停课记录');
+    renderScheduleEmptyRow(tbody, 13, '暂无已通过且尚未补课的停课记录');
     return;
   }
   tbody.innerHTML = rows.map((r) => {
@@ -66367,13 +66540,18 @@ function renderAdjustmentTeacherMakeupCancelTable() {
     const weekText = weekNo
       ? String(weekNo)
       : (String(r.weeks || '').match(/(\d+)/)?.[1] || r.weeks || '—');
+    const applicantTd = cancel
+      ? renderAdjustmentListApplicantTd(cancel)
+      : '<td class="col-center">—</td>';
+    const lecturerTd = `<td class="col-center">${formatAdjustmentPersonTwoLineHtml(r.teacherName, r.teacherId)}</td>`;
     return `<tr>
       <td class="col-center srf-col-pick" onclick="event.stopPropagation()">
         <input type="checkbox" class="adj-makeup-cancel-check" value="${escapeHtml(r.val)}" data-makeup-blocked="${makeupStatus.blocked ? '1' : '0'}" aria-label="选择停课课节">
       </td>
       <td class="col-center adj-makeup-status-col">${formatAdjustmentCancelMakeupStatus(makeupStatus)}</td>
-      <td><code>${escapeHtml(r.no || '—')}</code></td>
-      <td class="col-center">${escapeHtml(r.teacherName || '—')}</td>
+      <td class="col-center">${formatAdjustmentRefIdHtml(cancel, r.no)}</td>
+      ${applicantTd}
+      ${lecturerTd}
       <td class="col-center">${escapeHtml(categoryText)}</td>
       <td class="col-center">${escapeHtml(codeText || '—')}</td>
       <td class="adj-makeup-group-col">${escapeHtml(groupLabel || '—')}</td>
@@ -66449,7 +66627,7 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
     alert('暂无符合条件的数据可导出');
     return;
   }
-  const headers = ['Status', 'Ref. ID', 'Lecturer', 'Category', 'Course Code', 'Group Name', 'Week', 'Date', 'Day', 'Time', 'Venue'];
+  const headers = ['Status', 'Ref. ID', 'Applicant', 'Lecturer', 'Category', 'Course Code', 'Group Name', 'Week', 'Date', 'Day', 'Time', 'Venue'];
   const data = rows.map(r => {
     const status = typeof getAdjustmentCancelMakeupStatus === 'function'
       ? getAdjustmentCancelMakeupStatus(r.val).label
@@ -66460,6 +66638,7 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
       : (r.group || '');
     const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
     const categoryText = cancel ? (getAdjustmentReasonTypeDisplay(cancel) || '') : '';
+    const applicantText = cancel ? getAdjustmentListApplicantName(cancel) : '';
     const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
       ? (Number(getAdjustmentDateInfo(r.dateLabel).week) || 0)
       : 0;
@@ -66469,6 +66648,7 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
     return [
       status,
       r.no || '',
+      applicantText,
       r.teacherName || '',
       categoryText,
       codeText || '',
@@ -66511,10 +66691,10 @@ function renderAdjustmentTeacherMakeupRequestTable() {
 function cancelAdjustment(id) {
   const r = ADJUSTMENT_STORE.requests.find(x => x.id === id);
   if (!r || (r.status !== 'pending' && r.status !== 'reviewing')) return;
-  if (!confirm('确定撤销该申请吗？撤销后审批状态将变为「已撤销」。')) return;
+  if (!confirm('确定撤销该申请吗？撤销后审批状态将变为 Cancelled。')) return;
   const before = cloneEntitySnapshot(r);
   r.status = 'cancelled';
-  r.stage = '已撤销';
+  r.stage = 'Cancelled';
   r.cancelledAt = adjustmentNow();
   r.demoOps = false; // 完结后进入申请记录
   appendEntityChangeLog({
@@ -67168,22 +67348,22 @@ function openAdjustmentDetail(id, withApprove) {
   const teacherFacing = isAdjustmentTeacherFacingPage();
   if (r.status === 'pending' || r.status === 'reviewing') {
     logs.push({
-      title: teacherFacing ? '流程中' : (r.status === 'reviewing' ? '审批中' : '待审批'),
+      title: 'In Progress',
       who: '教务管理员', time: '',
       note: r.status === 'reviewing' ? '教务正在审批' : '等待教务审批', pending: true
     });
   } else if (r.status === 'cancelled') {
-    logs.push({ title: '申请人撤销', who: r.teacherName || '申请人', time: r.cancelledAt || '', note: '申请人主动撤销申请', cls: 'bad' });
+    logs.push({ title: 'Cancelled', who: r.teacherName || '申请人', time: r.cancelledAt || '', note: '申请人主动撤销申请', cls: 'bad' });
   } else if (r.status === 'returned') {
     logs.push({
-      title: '审批驳回',
+      title: 'Update Required',
       who: r.reviewer || '教务管理员', time: r.reviewedAt || '',
       note: r.reviewComment || '请修改后重新提交',
       cls: 'bad'
     });
   } else {
     logs.push({
-      title: r.status === 'approved' ? '审批通过' : '审批不通过',
+      title: r.status === 'approved' ? 'Approved' : 'Rejected',
       who: r.reviewer || '教务管理员', time: r.reviewedAt || '',
       note: r.reviewComment || (r.status === 'approved' ? '同意' : '不予通过'),
       cls: r.status === 'approved' ? 'ok' : 'bad'
@@ -67596,16 +67776,19 @@ function listAdjustmentMakeupRequestsForSlot(val) {
 function getAdjustmentCancelMakeupStatus(val) {
   const items = listAdjustmentMakeupRequestsForSlot(val);
   if (items.some(r => r.status === 'pending' || r.status === 'reviewing')) {
-    return { key: 'applying', label: '申请中', blocked: true, cls: 'in-progress' };
+    return { key: 'applying', label: 'In Progress', blocked: true, cls: 'in-progress' };
   }
   if (items.some(r => r.status === 'approved')) {
-    return { key: 'applied', label: '已申请', blocked: true, cls: 'approved' };
+    return { key: 'applied', label: 'Approved', blocked: true, cls: 'approved' };
   }
   const latest = items[0];
   if (latest && latest.status === 'rejected') {
-    return { key: 'rejected', label: '不通过', blocked: false, cls: 'adj-status-fail' };
+    return { key: 'rejected', label: 'Rejected', blocked: false, cls: 'adj-status-fail' };
   }
-  return { key: 'open', label: 'pending', blocked: false, cls: 'pending' };
+  if (latest && latest.status === 'returned') {
+    return { key: 'returned', label: 'Update Required', blocked: false, cls: 'adj-status-return' };
+  }
+  return { key: 'open', label: 'Pending', blocked: false, cls: 'pending' };
 }
 
 function formatAdjustmentCancelMakeupStatus(status) {
@@ -67807,7 +67990,7 @@ function renderAdjustmentApplyLeftThead() {
   if (!thead) return;
   const showCredits = adjustmentApplyType === 'addclass';
   const isAdd = adjustmentApplyType === 'addclass';
-  const teacherTh = showAdjustmentLeftTeacherCol() ? '<th>教师</th>' : '';
+  const teacherTh = showAdjustmentLeftTeacherCol() ? '<th>Lecturer</th>' : '';
   syncAdjustmentApplyLeftTableMode();
   thead.innerHTML = isAdd
     ? `<tr>
@@ -67825,7 +68008,7 @@ function renderAdjustmentApplyLeftThead() {
         <th class="col-center adj-slot-col-weeks">Week</th>
         <th class="col-center adj-slot-col-date">Date</th>
         <th class="col-center adj-slot-col-weekday">Day</th>
-        <th class="col-center adj-slot-col-period">节次</th>
+        <th class="col-center adj-slot-col-period">Time</th>
         <th class="col-center">Venue</th>
       </tr>`;
 }
@@ -68137,7 +68320,7 @@ function formatAdjustmentCourseLabelWithCredits(label, credits) {
 }
 
 function adjustmentApplyShowsRowTypeCol() {
-  return !!ADJUSTMENT_TYPE_META[adjustmentApplyType]?.perSlot;
+  return false;
 }
 
 function getAdjustmentApplyDetailColSpan(showCredits) {
@@ -68604,13 +68787,13 @@ function renderAdjustmentApplyDetailHead(showCredits) {
     ${showCredits ? '<th class="col-center">学分</th>' : ''}
     <th class="col-center adj-apply-col-merge adj-col-group">Group Name</th>
     ${renderAdjustmentApplyRowTypeHead()}
-    <th class="col-center">教师</th>
+    <th class="col-center">Lecturer</th>
     <th class="col-center">Week</th>
     <th class="col-center">Date</th>
     <th class="col-center">Day</th>
-    <th class="col-center">节次</th>
+    <th class="col-center">Time</th>
     <th class="col-center">Venue</th>
-    <th class="col-center adj-apply-col-action">操作</th>
+    <th class="col-center adj-apply-col-action">Action</th>
   </tr></thead>`;
 }
 
@@ -68766,11 +68949,11 @@ function renderAdjustmentAddclassDetailTable(wrap) {
       <th class="col-center adj-col-group">Group Name</th>
       <th class="col-center">上课日期</th>
       <th class="col-center">Day</th>
-      <th class="col-center">节次</th>
+      <th class="col-center">Time</th>
       <th class="col-center">Week</th>
       <th class="col-center">Venue</th>
       <th class="col-center">compulsory</th>
-      <th class="col-center adj-apply-col-action">操作</th>
+      <th class="col-center adj-apply-col-action">Action</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -69792,6 +69975,7 @@ function submitAdjustmentApplyCore() {
     attachments: applyAttachments,
     submittedAt: adjustmentNow(), reviewedAt: '', reviewer: '', reviewComment: '',
     proxyBy: isAdmin ? '教务管理员' : '',
+    proxyById: isAdmin ? (ADJUSTMENT_ADMIN_OPERATOR_STAFF_IDS['教务管理员'] || 'AC10000') : '',
     demoOps: false // 教师/管理端新增，同步进入调课申请记录
   });
   closeModal('modal-adjustment-apply');
@@ -69830,6 +70014,102 @@ function submitAdjustmentApplyCore() {
 /* ── 教务：申请审批 ── */
 let adjustmentApprovalTab = 'pending';
 
+function ensureAdjustmentApprovalFilters() {
+  fillAdjustmentTermSelect('adjustment-approval-term', { includeAll: true });
+  fillAdjustmentCategoryFilterSelect('adjustment-approval-category');
+  fillAdjustmentApprovalDeptTypeSelects();
+  syncAdjFilterDateBtn('adjustment-approval-date-from');
+  syncAdjFilterDateBtn('adjustment-approval-date-to');
+}
+
+function fillAdjustmentApprovalDeptTypeSelects() {
+  const deptSel = document.getElementById('adjustment-approval-department');
+  const typeSel = document.getElementById('adjustment-approval-lecturer-type');
+  const codes = [...(typeof SCHOOL_CODES !== 'undefined' ? SCHOOL_CODES : [])].slice().sort();
+  if (deptSel) {
+    const cur = deptSel.value;
+    deptSel.innerHTML = '<option value="">全部</option>' + codes.map(code => {
+      const name = (typeof SCHOOL_NAME_MAP !== 'undefined' && SCHOOL_NAME_MAP[code]) ? SCHOOL_NAME_MAP[code] : '';
+      const label = name ? `${code} ${name}` : code;
+      return `<option value="${escapeHtml(code)}">${escapeHtml(label)}</option>`;
+    }).join('');
+    if (cur && codes.includes(cur)) deptSel.value = cur;
+  }
+  if (typeSel) {
+    const cur = typeSel.value;
+    const fromCodes = Array.isArray(typeof TEACHER_TYPE_CODES !== 'undefined' ? TEACHER_TYPE_CODES : null)
+      ? TEACHER_TYPE_CODES.slice()
+      : [];
+    const fromRoster = (typeof getScheduleTeacherGroupRows === 'function' ? getScheduleTeacherGroupRows() : [])
+      .map(t => t.staffType)
+      .filter(Boolean);
+    const fromPool = (typeof buildMockTeacherPickerPool === 'function' ? buildMockTeacherPickerPool() : [])
+      .map(t => t.teacherType)
+      .filter(Boolean);
+    const types = [...new Set([...fromCodes, ...fromRoster, ...fromPool])]
+      .filter(Boolean)
+      .sort((a, b) => String(a).localeCompare(String(b), 'zh-CN'));
+    typeSel.innerHTML = '<option value="">全部</option>'
+      + types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    if (cur && types.includes(cur)) typeSel.value = cur;
+  }
+}
+
+function matchAdjustmentApprovalFilters(r) {
+  if (!r) return false;
+  const term = document.getElementById('adjustment-approval-term')?.value || '';
+  const type = document.getElementById('adjustment-approval-type')?.value || '';
+  const status = document.getElementById('adjustment-approval-status')?.value || '';
+  const lecturerName = (document.getElementById('adjustment-approval-lecturer-name')?.value || '').trim().toLowerCase();
+  const staffId = (document.getElementById('adjustment-approval-staff-id')?.value || '').trim().toLowerCase();
+  const department = document.getElementById('adjustment-approval-department')?.value || '';
+  const lecturerType = document.getElementById('adjustment-approval-lecturer-type')?.value || '';
+  if (term && r.term && r.term !== term) return false;
+  if (term && !r.term) return false;
+  if (type && r.type !== type) return false;
+  if (status && !matchAdjustmentTeacherStatusFilter(r.status, status)) return false;
+  if (!matchAdjustmentTeacherExtraFilters(r, 'adjustment-approval-')) return false;
+  if (lecturerName) {
+    const name = String(r.teacherName || '').toLowerCase();
+    if (!name.includes(lecturerName)) return false;
+  }
+  if (staffId) {
+    const id = String(r.teacherId || '').toLowerCase();
+    if (!id.includes(staffId)) return false;
+  }
+  if (department || lecturerType) {
+    const profile = typeof getAdjustmentApplicantProfile === 'function'
+      ? getAdjustmentApplicantProfile(r.teacherId)
+      : null;
+    if (department) {
+      const deptText = `${r.teacherDept || ''} ${profile?.department || ''}`;
+      if (!deptText.includes(department)) return false;
+    }
+    if (lecturerType) {
+      const typeText = String(r.teacherType || profile?.teacherType || '');
+      if (typeText !== lecturerType) return false;
+    }
+  }
+  return true;
+}
+
+function resetAdjustmentApprovalQuery() {
+  [
+    'adjustment-approval-category', 'adjustment-approval-course-code', 'adjustment-approval-course-name',
+    'adjustment-approval-date-from', 'adjustment-approval-date-to', 'adjustment-approval-week',
+    'adjustment-approval-type', 'adjustment-approval-status',
+    'adjustment-approval-lecturer-name', 'adjustment-approval-staff-id',
+    'adjustment-approval-department', 'adjustment-approval-lecturer-type'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const termSel = document.getElementById('adjustment-approval-term');
+  if (termSel) termSel.value = '';
+  ensureAdjustmentApprovalFilters();
+  renderAdjustmentApprovalPage();
+}
+
 function setAdjustmentApprovalTab(tab) {
   adjustmentApprovalTab = tab === 'submitted' || tab === 'all' ? tab : 'pending';
   document.querySelectorAll('#adjustment-approval-tabs .adj-approval-tab').forEach(btn => {
@@ -69838,56 +70118,74 @@ function setAdjustmentApprovalTab(tab) {
   renderAdjustmentApprovalPage();
 }
 
+function syncAdjustmentApprovalPendingBadge() {
+  const badge = document.getElementById('adjustment-approval-pending-badge');
+  if (!badge) return;
+  const n = (ADJUSTMENT_STORE.requests || []).filter(r => r.source === 'teacher' && r.status === 'pending').length;
+  if (n > 0) {
+    badge.textContent = String(n);
+    badge.hidden = false;
+  } else {
+    badge.textContent = '';
+    badge.hidden = true;
+  }
+}
+
 function renderAdjustmentApprovalPage() {
   ensureAdjustmentDemo();
+  ensureAdjustmentApprovalFilters();
   const tbody = document.getElementById('adjustment-approval-body');
-  const type = document.getElementById('adjustment-approval-type')?.value || '';
-  const hint = document.getElementById('adjustment-approval-hint');
   document.querySelectorAll('#adjustment-approval-tabs .adj-approval-tab').forEach(btn => {
     btn.classList.toggle('is-active', btn.dataset.tab === adjustmentApprovalTab);
   });
+  syncAdjustmentApprovalPendingBadge();
   let rows = ADJUSTMENT_STORE.requests.filter(r => r.source === 'teacher');
   if (adjustmentApprovalTab === 'pending') {
     rows = rows.filter(r => r.status === 'pending');
   } else if (adjustmentApprovalTab === 'submitted') {
-    // 已提交：待审批 + 审批中（过程中的申请）
+    // In-Progress：待审批 + 审批中（过程中的申请）
     rows = rows.filter(r => r.status === 'pending' || r.status === 'reviewing');
   }
-  if (type) rows = rows.filter(r => r.type === type);
+  rows = rows.filter(matchAdjustmentApprovalFilters);
   rows = sortListWithState(rows, 'adjustmentApproval', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
-  if (hint) {
-    // 三个页签顶部统计口径固定：待审批 / 过程中 / 全部（不受当前页签切换影响）
-    const base = ADJUSTMENT_STORE.requests.filter(r => r.source === 'teacher' && (!type || r.type === type));
-    const pend = base.filter(r => r.status === 'pending').length;
-    const inFlight = base.filter(r => r.status === 'pending' || r.status === 'reviewing').length;
-    const all = base.length;
-    hint.innerHTML = `<span class="legend-item">待审批 <strong>${pend}</strong> 条 · 过程中 <strong>${inFlight}</strong> 条 · 全部 <strong>${all}</strong> 条</span>`;
-    appendAdjustmentRoomOpenListHint(hint);
-  }
   if (!tbody) return;
   renderAdjustmentRequestListThead(tbody, 'adjustmentApproval');
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录'); return; }
-  tbody.innerHTML = rows.map((r, i) => `<tr>
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 16, '暂无申请记录'); return; }
+  tbody.innerHTML = rows.map((r, i) => {
+    const profile = typeof getAdjustmentApplicantProfile === 'function'
+      ? getAdjustmentApplicantProfile(r.teacherId)
+      : { department: '—', teacherType: '—' };
+    return `<tr>
     <td class="col-index">${i + 1}</td>
-    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
+    <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
-    <td><code>${escapeHtml(r.no)}</code></td>
+    <td class="col-center">${formatAdjustmentRefIdHtml(r)}</td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
-    <td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
-    <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
-    <td class="col-center">${r.slotCount || 1}</td>
-    <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
+    ${renderAdjustmentListApplicantTd(r)}
+    ${renderAdjustmentListLecturerTd(r)}
+    <td class="col-center">${escapeHtml(profile.department || '—')}</td>
+    <td class="col-center">${escapeHtml(profile.teacherType || '—')}</td>
+    <td class="col-center">${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td class="adj-reason-cell">${formatOfferingGroupingEllipsisCell(r.reason || '—')}</td>
+    <td class="col-center adj-col-times">${renderAdjustmentLeavePeriodCell(r)}</td>
+    <td class="col-center">${getAdjustmentLeaveTotalDays(r)}</td>
+    <td class="col-center">${getAdjustmentAffectedClassCount(r)}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
-    <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing')
+    <td class="col-center actions">${(adjustmentApprovalTab === 'pending' && r.status === 'pending')
       ? `<a href="#" onclick="openAdjustmentApprove('${r.id}');return false">审批</a>`
       : `<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a>`}</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
   bindCellFloatTips(tbody, '.adj-reason-cell .cell-ellipsis-tip[data-tip]');
 }
 
-/** 进入审批界面：展示申请详情，底部提供审批按钮 */
+/** 进入审批界面：仅「待审批」队列（status=pending）可审 */
 function openAdjustmentApprove(id) {
+  const r = ADJUSTMENT_STORE.requests.find(x => x.id === id);
+  if (!r || r.status !== 'pending') {
+    openAdjustmentDetail(id, false);
+    return;
+  }
   openAdjustmentDetail(id, true);
 }
 
@@ -70092,16 +70390,16 @@ function renderAdjustmentHolidayManageThead(tbody) {
   const listKey = 'adjustmentHolidayManage';
   const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
   tr.innerHTML = [
-    '<th class="col-index">序号</th>',
-    th('停课单号', 'no'),
+    '<th class="col-index">No.</th>',
+    th('Ref. ID', 'no'),
     th('假日名称', 'name'),
     th('Date', 'date', true),
     th('Day', 'day', true),
-    th('原因类型', 'reasonType'),
-    th('事由', 'reason'),
-    th('影响课节', 'affected', true),
+    th('Category', 'reasonType'),
+    th('Reason', 'reason'),
+    th('Affected Classes', 'affected', true),
     th('创建时间', 'createdAt', true),
-    '<th class="col-center">操作</th>'
+    '<th class="col-center">Action</th>'
   ].join('');
 }
 
@@ -70114,8 +70412,8 @@ const ADJUSTMENT_HOLIDAY_RECORD_SORT_COLUMNS = {
   holidayName: { get: r => r.holidayName || '' },
   makeupStatus: {
     get: r => {
-      if (!r.makeup || r.makeupKey === 'none') return '未申请';
-      return (ADJUSTMENT_STATUS_META[r.makeup.status] && ADJUSTMENT_STATUS_META[r.makeup.status].label)
+      if (!r.makeup || r.makeupKey === 'none') return 'Not Applied';
+      return (ADJUSTMENT_TEACHER_STATUS_META[getAdjustmentTeacherStatusKey(r.makeup.status)] || {}).label
         || r.makeup.status
         || '';
     }
@@ -70162,7 +70460,11 @@ function renderAdjustmentHolidayRecordPage() {
   let rows = getAdjustmentHolidayRecordRows();
   if (term) rows = rows.filter(r => r.term === term);
   if (name) rows = rows.filter(r => r.holidayName === name);
-  if (makeupKey) rows = rows.filter(r => r.makeupKey === makeupKey);
+  if (makeupKey === 'in-progress') {
+    rows = rows.filter(r => matchAdjustmentTeacherStatusFilter(r.makeupKey, 'in-progress'));
+  } else if (makeupKey) {
+    rows = rows.filter(r => r.makeupKey === makeupKey);
+  }
   rows = sortListWithState(rows, 'adjustmentHolidayRecord', ADJUSTMENT_HOLIDAY_RECORD_SORT_COLUMNS);
   const applied = rows.filter(r => r.makeupKey !== 'none').length;
   if (hint) {
@@ -73976,18 +74278,18 @@ function renderAdjustmentBatchRecordThead(tbody) {
   const th = (label, key, center, extraClass) =>
     renderListSortTh(listKey, label, key, { center, extraClass });
   tr.innerHTML = [
-    '<th class="col-index">序号</th>',
-    th('记录编号', 'no'),
-    th('调课类型', 'kind', true),
+    '<th class="col-index">No.</th>',
+    th('Ref. ID', 'no'),
+    th('Adjustment Type', 'kind', true),
     th('源日期范围', 'sourceRange'),
     th('源节次', 'sourcePeriods', true),
     th('调整目标', 'target'),
-    th('影响节数', 'slotCount', true),
-    th('原因类型', 'reasonType'),
-    th('调整原因', 'reason'),
+    th('Affected Classes', 'slotCount', true),
+    th('Category', 'reasonType'),
+    th('Reason', 'reason'),
     th('操作时间', 'submittedAt', true),
     th('操作人', 'operator', true),
-    '<th class="col-center col-ops">操作</th>'
+    '<th class="col-center col-ops">Action</th>'
   ].join('');
 }
 
@@ -74223,7 +74525,7 @@ function getAdjustmentRecordFilteredRows() {
     r.source === 'teacher' || r.source === 'admin'
   );
   if (type) rows = rows.filter(r => r.type === type);
-  if (status) rows = rows.filter(r => r.status === status);
+  if (status) rows = rows.filter(r => matchAdjustmentTeacherStatusFilter(r.status, status));
   if (source) rows = rows.filter(r => r.source === source);
   if (kw) rows = rows.filter(r =>
     (r.teacherId || '').toLowerCase().includes(kw) ||
@@ -74283,11 +74585,11 @@ function renderAdjustmentRecordPage() {
   tbody.innerHTML = rows.map((r, i) => `<tr>
     <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
     <td class="col-index">${i + 1}</td>
-    <td class="col-center">${adjustmentStatusBadge(r.status)}</td>
+    <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
-    <td><code>${escapeHtml(r.no)}</code></td>
+    <td class="col-center">${formatAdjustmentRefIdHtml(r)}</td>
     <td class="col-center">${adjustmentTypeBadge(r.type)}</td>
-    <td>${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
+    <td class="col-center">${escapeHtml(r.teacherName)}<br><span class="text-muted" style="font-size:11px">${escapeHtml(r.teacherId || '')}</span></td>
     <td class="col-center adj-col-times">${renderAdjustmentRequestTimeCell(r)}</td>
     <td class="col-center">${r.slotCount || 1}</td>
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>

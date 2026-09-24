@@ -8444,6 +8444,28 @@ input#group-assign-recorded-hours {
 .adjustment-apply-actions .slt-info-popover > p:first-child {
   white-space: nowrap;
 }
+/* 教师端 Class Adjustment：右上角演示身份（对齐授课确认 tcc-portal-switch，独立 class） */
+#page-adjustment-teacher > .adj-teacher-page-header {
+  margin-bottom: 10px;
+  justify-content: flex-end;
+}
+.adj-teacher-portal-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  color: var(--text-2);
+}
+.adj-teacher-portal-switch > span {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.adj-teacher-portal-switch > select {
+  min-width: 160px;
+  max-width: 240px;
+}
 .adj-teacher-intro {
   padding: 14px 18px 14px 16px;
   margin-bottom: 12px;
@@ -9303,6 +9325,23 @@ input#group-assign-recorded-hours {
 }
 #modal-adjustment-apply .adj-apply-left-filters {
   margin-bottom: 0;
+  /* 首行仅 3 个条件 + 按钮：三等分自适应，避免按 4 列留空 */
+  grid-template-columns: repeat(3, minmax(0, 1fr)) max-content;
+}
+#modal-adjustment-apply .adj-apply-left-filters > .srf-actions {
+  grid-column: 4;
+}
+#modal-adjustment-apply .adj-apply-left-filters > .srf-actions ~ .srf-item:nth-child(3n+5) { grid-column: 1; }
+#modal-adjustment-apply .adj-apply-left-filters > .srf-actions ~ .srf-item:nth-child(3n+6) { grid-column: 2; }
+#modal-adjustment-apply .adj-apply-left-filters > .srf-actions ~ .srf-item:nth-child(3n+7) { grid-column: 3; }
+#modal-adjustment-apply .adj-apply-left-filters .srf-item > .input,
+#modal-adjustment-apply .adj-apply-left-filters .srf-item > select,
+#modal-adjustment-apply .adj-apply-left-filters .srf-item .ss-wrap,
+#modal-adjustment-apply .adj-apply-left-filters .srf-item .ss-input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .adj-apply-date-range-inputs {
   display: flex;
@@ -15446,6 +15485,10 @@ code {
   border-bottom-color: var(--blue-700, #1d4ed8);
   font-weight: 600;
   cursor: pointer;
+}
+#adjustment-approval-tabs .adj-approval-tab .approval-tab-badge {
+  margin-left: 6px;
+  vertical-align: middle;
 }
 .adj-type-badge.adj-admin {
   background: #e0e7ff;

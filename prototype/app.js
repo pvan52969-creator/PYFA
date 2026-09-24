@@ -66085,7 +66085,7 @@ function renderAdjustmentAdminPage() {
     <td>${escapeHtml(getAdjustmentReasonTypeDisplay(r))}</td>
     <td>${escapeHtml(r.reason)}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
-    <td class="col-center actions">${(r.status === 'pending' || r.status === 'reviewing') ? `<a href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');renderAdjustmentAdminPage();return false">撤销</a> · ` : ''}<a href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a> · ${entityChangeLogLink('adjustment-request', r.id, r.no || r.id)}</td>
+    ${renderAdjustmentTeacherActionCell(r, { allowAnySource: true })}
   </tr>`).join('');
 }
 
@@ -66196,9 +66196,10 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
 }
 
 /** 操作列：详情 / 修改记录固定对齐并整体居中；无撤销时隐藏该项（占位不可见以保持对齐） */
-function renderAdjustmentTeacherActionCell(r) {
+function renderAdjustmentTeacherActionCell(r, opts = {}) {
+  const allowAnySource = !!opts.allowAnySource;
   const canCancel = (r.status === 'pending' || r.status === 'reviewing')
-    && (!r.source || r.source === 'teacher');
+    && (allowAnySource || !r.source || r.source === 'teacher');
   const cancelLink = canCancel
     ? `<a class="adj-act-cancel" href="#" style="color:var(--red)" onclick="cancelAdjustment('${r.id}');return false">撤销</a>`
     : `<span class="adj-act-cancel is-empty" aria-hidden="true"></span>`;

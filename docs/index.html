@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="4efd267">
+  <meta name="portal-build" content="67a3b35">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -242,7 +242,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 4efd267">0923排课6</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 67a3b35">fix: 站点根目录始终发布 feature/pkgl 最新原型</div>
         </div>
       </div>
     </section>
@@ -4363,6 +4363,14 @@
 
     <!-- ═══ 调课管理 · 调课申请（教师端） ═══ -->
     <section class="page-list page adjustment-page" id="page-adjustment-teacher">
+      <div class="page-header compact adj-teacher-page-header">
+        <div class="header-actions">
+          <label class="adj-teacher-portal-switch" title="原型教师身份（正式环境取登录用户）；影响教师端调课列表与可申请节次">
+            <span>演示身份</span>
+            <select class="input input-sm" id="adjustment-teacher-select" aria-label="切换演示教师身份" onchange="onAdjustmentTeacherDemoIdentityChange(this.value)"></select>
+          </label>
+        </div>
+      </div>
       <div class="tab-bar" id="adjustment-teacher-tabs">
         <button type="button" class="tab active" data-teacher-tab="replacement" onclick="setAdjustmentTeacherPageTab('replacement')">Class Replacement</button>
         <button type="button" class="tab" data-teacher-tab="addition" onclick="setAdjustmentTeacherPageTab('addition')">Class Addition</button>
@@ -4447,6 +4455,7 @@
                 <th class="col-center srf-col-pick"><input type="checkbox" id="adjustment-teacher-makeup-cancel-check-all" aria-label="全选当前结果" onclick="event.stopPropagation();toggleAdjustmentTeacherMakeupCancelAll(this.checked)"></th>
                 <th class="col-center adj-makeup-status-col">Status</th>
                 <th>Ref. ID</th>
+                <th class="col-center">Applicant</th>
                 <th class="col-center">Lecturer</th>
                 <th class="col-center">Category</th>
                 <th class="col-center">Course Code</th>
@@ -4528,7 +4537,7 @@
             </div>
             <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
             <thead><tr>
-              <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th>
+              <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th><th class="col-center">Lecturer</th>
               <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th><th class="col-center">Total Days</th><th class="col-center">Affected Classes</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
             </tr></thead>
             <tbody id="adjustment-teacher-body"></tbody>
@@ -4592,11 +4601,11 @@
                   <label for="adjustment-teacher-makeup-status-hist">Status</label>
                   <select class="input input-sm" id="adjustment-teacher-makeup-status-hist">
                     <option value="">全部</option>
-                    <option value="in-progress">流程中</option>
-                    <option value="approved">通过</option>
-                    <option value="rejected">不通过</option>
-                    <option value="returned">驳回</option>
-                    <option value="cancelled">已撤销</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="returned">Update Required</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
               </div>
@@ -4605,7 +4614,7 @@
           <div class="card schedule-card">
             <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
             <thead><tr>
-              <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th>
+              <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th><th class="col-center">Lecturer</th>
               <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th><th class="col-center">Total Days</th><th class="col-center">Affected Classes</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
             </tr></thead>
             <tbody id="adjustment-teacher-makeup-body"></tbody>
@@ -4622,18 +4631,18 @@
           <div class="schedule-query-row">
             <div class="schedule-query-fields">
               <div class="schedule-query-field">
-                <label for="adjustment-teacher-addition-term">学年学期</label>
+                <label for="adjustment-teacher-addition-term">Academic Session</label>
                 <select class="input input-sm" id="adjustment-teacher-addition-term"></select>
               </div>
               <div class="schedule-query-field">
-                <label for="adjustment-teacher-addition-status">审批状态</label>
+                <label for="adjustment-teacher-addition-status">Status</label>
                 <select class="input input-sm" id="adjustment-teacher-addition-status">
                   <option value="">全部</option>
-                  <option value="in-progress">流程中</option>
-                  <option value="approved">通过</option>
-                  <option value="rejected">不通过</option>
-                  <option value="returned">驳回</option>
-                  <option value="cancelled">已撤销</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="returned">Update Required</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
               </div>
             </div>
@@ -4649,8 +4658,20 @@
           </div>
           <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
           <thead><tr>
-            <th class="col-index col-center">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th class="col-center">申请人</th><th class="col-center">Staff ID</th><th class="col-center">Lecturer Name</th>
-            <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th class="col-center">原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+            <th class="col-index col-center">No.</th>
+            <th class="col-center">Status</th>
+            <th class="col-center">Stage</th>
+            <th>Ref. ID</th>
+            <th class="col-center">Adjustment Type</th>
+            <th class="col-center">Applicant</th>
+            <th class="col-center">Lecturer</th>
+            <th class="col-center">Category</th>
+            <th class="adj-reason-cell">Reason</th>
+            <th class="col-center">Leave Period</th>
+            <th class="col-center">Total Days</th>
+            <th class="col-center">Affected Classes</th>
+            <th class="col-center">Application Time</th>
+            <th class="col-center">Action</th>
           </tr></thead>
           <tbody id="adjustment-teacher-addition-body"></tbody>
         </table></div></div>
@@ -4818,11 +4839,11 @@
               <label for="adjustment-admin-status">审批状态</label>
               <select class="input input-sm" id="adjustment-admin-status">
                 <option value="">全部</option>
-                <option value="pending">待审批</option>
-                <option value="reviewing">审批中</option>
-                <option value="approved">已通过</option>
-                <option value="rejected">不通过</option>
-                <option value="cancelled">已取消</option>
+                <option value="in-progress">In Progress</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="returned">Update Required</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
             </div>
@@ -4842,12 +4863,7 @@
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('makeup')">代发起补课</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('addclass')">代发起加课</button>
         </div>
-        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status">
-        <thead><tr>
-          <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
-        </tr></thead>
-        <tbody id="adjustment-admin-body"></tbody>
+        <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
       </table></div></div>
     </section>
 
@@ -4857,34 +4873,104 @@
         <div><h1>调课申请审批</h1><p class="subtitle">教务管理员审批教师提交的调课 / 停课 / 补课 / 加课申请</p></div>
       </div>
       <div class="adj-approval-tabs" id="adjustment-approval-tabs">
-        <button type="button" class="adj-approval-tab is-active" data-tab="pending" onclick="setAdjustmentApprovalTab('pending')">待审批</button>
-        <button type="button" class="adj-approval-tab" data-tab="submitted" onclick="setAdjustmentApprovalTab('submitted')">已提交</button>
-        <button type="button" class="adj-approval-tab" data-tab="all" onclick="setAdjustmentApprovalTab('all')">全部</button>
+        <button type="button" class="adj-approval-tab is-active" data-tab="pending" onclick="setAdjustmentApprovalTab('pending')">Pending<span class="approval-tab-badge" id="adjustment-approval-pending-badge" hidden></span></button>
+        <button type="button" class="adj-approval-tab" data-tab="submitted" onclick="setAdjustmentApprovalTab('submitted')">In-Progress</button>
+        <button type="button" class="adj-approval-tab" data-tab="all" onclick="setAdjustmentApprovalTab('all')">History</button>
       </div>
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
             <div class="schedule-query-field">
-              <label for="adjustment-approval-type">申请类型</label>
-              <select class="input input-sm" id="adjustment-approval-type" onchange="renderAdjustmentApprovalPage()">
+              <label for="adjustment-approval-term">Academic Session</label>
+              <select class="input input-sm" id="adjustment-approval-term"></select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-category">Category</label>
+              <select class="input input-sm" id="adjustment-approval-category">
                 <option value="">全部</option>
-                <option value="reschedule">调课</option>
-                <option value="cancel">停课</option>
-                <option value="makeup">补课</option>
-                <option value="addclass">加课</option>
               </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-course-code">Course Code</label>
+              <input class="input input-sm" id="adjustment-approval-course-code" type="text" placeholder="Course Code">
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-course-name">Course Name</label>
+              <input class="input input-sm" id="adjustment-approval-course-name" type="text" placeholder="Course Name">
             </div>
           </div>
           <div class="schedule-query-actions">
-            <button class="btn btn-outline btn-sm" type="button" onclick="renderAdjustmentApprovalPage()">刷新</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentApprovalPage()">查询</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentApprovalQuery()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
+              <span class="schedule-query-fold-caret" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="schedule-query-more">
+            <div class="schedule-query-field">
+              <label>Date</label>
+              <div class="adj-apply-date-range-inputs">
+                <input type="hidden" id="adjustment-approval-date-from" value="">
+                <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-approval-date-from-btn" onclick="openAdjFilterDatePicker('adjustment-approval-date-from', event)">选择日期</button>
+                <span class="adj-apply-date-sep">~</span>
+                <input type="hidden" id="adjustment-approval-date-to" value="">
+                <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-approval-date-to-btn" onclick="openAdjFilterDatePicker('adjustment-approval-date-to', event)">选择日期</button>
+              </div>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-week">Week</label>
+              <input class="input input-sm" id="adjustment-approval-week" type="number" min="1" placeholder="Week">
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-type">Adjustment Type</label>
+              <select class="input input-sm" id="adjustment-approval-type">
+                <option value="">全部</option>
+                <option value="reschedule">Replace Class</option>
+                <option value="cancel">Cancel Class</option>
+                <option value="makeup">Reschedule Class</option>
+                <option value="addclass">Additional Class</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-status">Status</label>
+              <select class="input input-sm" id="adjustment-approval-status">
+                <option value="">全部</option>
+                <option value="in-progress">In Progress</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="returned">Update Required</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-lecturer-name">Lecturer Name</label>
+              <input class="input input-sm" id="adjustment-approval-lecturer-name" type="text" placeholder="Lecturer Name">
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-staff-id">Staff ID</label>
+              <input class="input input-sm" id="adjustment-approval-staff-id" type="text" placeholder="Staff ID">
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-department">Department</label>
+              <select class="input input-sm" id="adjustment-approval-department">
+                <option value="">全部</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-approval-lecturer-type">Lecturer Type</label>
+              <select class="input input-sm" id="adjustment-approval-lecturer-type">
+                <option value="">全部</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
-      <div class="legend-bar" id="adjustment-approval-hint"></div>
       <div class="card schedule-card"><div class="table-scroll"><table class="data-table adjustment-table adj-freeze-2">
         <thead><tr>
-          <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th class="adj-reason-cell">事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          <th class="col-index">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th>
+          <th class="col-center">Department</th><th class="col-center">Lecturer Type</th>
+          <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th>
+          <th class="col-center">Total Days</th><th class="col-center">Affected Classes</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
         </tr></thead>
         <tbody id="adjustment-approval-body"></tbody>
       </table></div></div>
@@ -4933,8 +5019,8 @@
           </div>
           <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-1">
           <thead><tr>
-            <th class="col-index">序号</th><th>停课单号</th><th>假日名称</th><th class="col-center">Date</th><th class="col-center">Day</th>
-            <th>原因类型</th><th>事由</th><th class="col-center">影响课节</th><th class="col-center">创建时间</th><th class="col-center">操作</th>
+            <th class="col-index">No.</th><th>Ref. ID</th><th>假日名称</th><th class="col-center">Date</th><th class="col-center">Day</th>
+            <th>Category</th><th>Reason</th><th class="col-center">Affected Classes</th><th class="col-center">创建时间</th><th class="col-center">Action</th>
           </tr></thead>
           <tbody id="adjustment-holiday-body"></tbody>
         </table></div></div>
@@ -4957,11 +5043,11 @@
                 <label for="adjustment-holiday-record-makeup">补课申请状态</label>
                 <select class="input input-sm" id="adjustment-holiday-record-makeup">
                   <option value="">全部</option>
-                  <option value="none">未申请</option>
-                  <option value="pending">待审批</option>
-                  <option value="reviewing">审批中</option>
-                  <option value="approved">已通过</option>
-                  <option value="rejected">不通过</option>
+                  <option value="none">Not Applied</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="returned">Update Required</option>
                 </select>
               </div>
             </div>
@@ -5037,18 +5123,18 @@
           <table class="data-table adjustment-table adj-freeze-left-2 adj-freeze-right-1">
             <thead>
               <tr>
-                <th class="col-index">序号</th>
-                <th>记录编号</th>
-                <th class="col-center">调课类型</th>
+                <th class="col-index">No.</th>
+                <th>Ref. ID</th>
+                <th class="col-center">Adjustment Type</th>
                 <th>源日期范围</th>
                 <th class="col-center">源节次</th>
                 <th>调整目标</th>
-                <th class="col-center">影响节数</th>
-                <th>原因类型</th>
-                <th>调整原因</th>
+                <th class="col-center">Affected Classes</th>
+                <th>Category</th>
+                <th>Reason</th>
                 <th class="col-center">操作时间</th>
                 <th class="col-center">操作人</th>
-                <th class="col-center col-ops">操作</th>
+                <th class="col-center col-ops">Action</th>
               </tr>
             </thead>
             <tbody id="adjustment-batch-record-body"></tbody>
@@ -5079,11 +5165,11 @@
               <label for="adjustment-record-status">状态</label>
               <select class="input input-sm" id="adjustment-record-status">
                 <option value="">全部</option>
-                <option value="pending">待审批</option>
-                <option value="reviewing">审批中</option>
-                <option value="approved">已通过</option>
-                <option value="rejected">不通过</option>
-                <option value="cancelled">已取消</option>
+                <option value="in-progress">In Progress</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="returned">Update Required</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
             <div class="schedule-query-field">
@@ -5122,8 +5208,8 @@
         <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status">
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="adjustment-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-record-body', this.checked)"></th>
-          <th class="col-index">序号</th><th class="col-center">审批状态</th><th class="col-center">审批阶段</th><th>申请单号</th><th class="col-center">调课类型</th><th>申请人</th>
-          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>原因类型</th><th>事由</th><th class="col-center">提交时间</th><th class="col-center">操作</th>
+          <th class="col-index">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th>Applicant</th>
+          <th class="col-center">调课时间</th><th class="col-center">申请节数</th><th>Category</th><th>Reason</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
         </tr></thead>
         <tbody id="adjustment-record-body"></tbody>
       </table></div></div>
@@ -9035,7 +9121,7 @@
                 <th class="col-center adj-slot-col-weeks">Week</th>
                 <th class="col-center adj-slot-col-date">Date</th>
                 <th class="col-center adj-slot-col-weekday">Day</th>
-                <th class="col-center adj-slot-col-period">节次</th>
+                <th class="col-center adj-slot-col-period">Time</th>
                 <th class="col-center">Venue</th>
               </tr>
             </thead>

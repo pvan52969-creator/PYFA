@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="402a5a6">
+  <meta name="portal-build" content="81e26a6">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -242,7 +242,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 402a5a6">0925排课</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 81e26a6">1012排课</div>
         </div>
       </div>
     </section>
@@ -2741,32 +2741,37 @@
                 <input class="input input-sm" id="schedule-course-search-teacher-id" type="text" placeholder="请输入教师工号"
                   onkeydown="onScheduleDetailCourseSearchKeydown(event)">
               </div>
-              <div class="schedule-detail-course-search-row">
-                <label for="schedule-course-search-shared-code">共同授课课号</label>
-                <input class="input input-sm" id="schedule-course-search-shared-code" type="text" placeholder="请输入共同授课课号"
-                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
-              </div>
-              <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
-                <label>场地类型</label>
-                <div class="clo-multiselect" id="schedule-course-search-venue-type-multiselect">
-                  <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-search-venue-type-btn" onclick="toggleScheduleCourseSearchVenueTypeDropdown(event)">
-                    <span class="clo-multiselect-display placeholder" id="schedule-course-search-venue-type-display">全部</span>
-                    <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-                  </button>
-                  <div class="clo-multiselect-dropdown" id="schedule-course-search-venue-type-dropdown" hidden>
-                    <div class="clo-multiselect-options" id="schedule-course-search-venue-type-options"></div>
+              <div class="schedule-detail-course-search-more">
+                <div class="schedule-detail-course-search-row">
+                  <label for="schedule-course-search-shared-code">共同授课课号</label>
+                  <input class="input input-sm" id="schedule-course-search-shared-code" type="text" placeholder="请输入共同授课课号"
+                    onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+                </div>
+                <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
+                  <label>场地类型</label>
+                  <div class="clo-multiselect" id="schedule-course-search-venue-type-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-search-venue-type-btn" onclick="toggleScheduleCourseSearchVenueTypeDropdown(event)">
+                      <span class="clo-multiselect-display placeholder" id="schedule-course-search-venue-type-display">全部</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="schedule-course-search-venue-type-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="schedule-course-search-venue-type-options"></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
-                <label for="schedule-course-search-venue-remark">教室偏好</label>
-                <input class="input input-sm" id="schedule-course-search-venue-remark" type="text" placeholder="请输入教室偏好"
-                  onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+                <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
+                  <label for="schedule-course-search-venue-remark">教室偏好</label>
+                  <input class="input input-sm" id="schedule-course-search-venue-remark" type="text" placeholder="请输入教室偏好"
+                    onkeydown="onScheduleDetailCourseSearchKeydown(event)">
+                </div>
               </div>
             </div>
             <div class="schedule-detail-course-search-actions">
               <button type="button" class="btn btn-primary btn-sm" onclick="searchScheduleDetailCourseCards()">查询</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="clearScheduleDetailCourseSearch()">重置</button>
+              <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
+                <span class="schedule-query-fold-caret" aria-hidden="true"></span>
+              </button>
             </div>
           </div>
           <ul class="schedule-detail-course-list" id="schedule-detail-course-list"></ul>
@@ -4518,25 +4523,35 @@
               </div>
             </div>
           </div>
-          <div class="card schedule-card">
+          <div class="card schedule-card adj-teacher-list-card">
             <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
-              <div class="adj-apply-title-item">
-                <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('reschedule')" aria-describedby="adj-apply-reschedule-tip">Replace Class</button>
-                <div class="slt-info-popover" id="adj-apply-reschedule-tip">
-                  <p>Directly replace the scheduled class with another class session.</p>
-                  <p>* Approval is required from the School/Department Management or the Academic Affairs Office.</p>
+              <div class="adj-teacher-list-actions-left">
+                <div class="adj-apply-title-item">
+                  <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('reschedule')" aria-describedby="adj-apply-reschedule-tip">Replace Class</button>
+                  <div class="slt-info-popover" id="adj-apply-reschedule-tip">
+                    <p>Directly replace the scheduled class with another class session.</p>
+                    <p>* Approval is required from the School/Department Management or the Academic Affairs Office.</p>
+                  </div>
+                </div>
+                <div class="adj-apply-title-item">
+                  <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('cancel')" aria-describedby="adj-apply-cancel-tip">Cancel Class</button>
+                  <div class="slt-info-popover" id="adj-apply-cancel-tip">
+                    <p>Cancel the scheduled class. Reschedule it later.</p>
+                    <p>* Approval is required from the School/Department Management or the Academic Affairs Office.</p>
+                  </div>
                 </div>
               </div>
-              <div class="adj-apply-title-item">
-                <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('cancel')" aria-describedby="adj-apply-cancel-tip">Cancel Class</button>
-                <div class="slt-info-popover" id="adj-apply-cancel-tip">
-                  <p>Cancel the scheduled class. Reschedule it later.</p>
-                  <p>* Approval is required from the School/Department Management or the Academic Affairs Office.</p>
+              <div class="list-export-dropdown">
+                <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-teacher-replacement')">导出</button>
+                <div class="list-export-menu" id="list-export-menu-adjustment-teacher-replacement" hidden>
+                  <button type="button" onclick="exportAdjustmentTeacherReplacementRows('selected')">按选择项导出</button>
+                  <button type="button" onclick="exportAdjustmentTeacherReplacementRows('query')">按查询条件导出</button>
                 </div>
               </div>
             </div>
             <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
             <thead><tr>
+              <th class="col-check"><input type="checkbox" id="adjustment-teacher-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-teacher-body', this.checked)"></th>
               <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th><th class="col-center">Lecturer</th>
               <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th><th class="col-center">Total Days</th><th class="col-center">Affected Classes</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
             </tr></thead>
@@ -4611,9 +4626,19 @@
               </div>
             </div>
           </div>
-          <div class="card schedule-card">
+          <div class="card schedule-card adj-teacher-list-card">
+            <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
+              <div class="list-export-dropdown">
+                <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-teacher-history')">导出</button>
+                <div class="list-export-menu" id="list-export-menu-adjustment-teacher-history" hidden>
+                  <button type="button" onclick="exportAdjustmentTeacherHistoryRows('selected')">按选择项导出</button>
+                  <button type="button" onclick="exportAdjustmentTeacherHistoryRows('query')">按查询条件导出</button>
+                </div>
+              </div>
+            </div>
             <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
             <thead><tr>
+              <th class="col-check"><input type="checkbox" id="adjustment-teacher-makeup-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-teacher-makeup-body', this.checked)"></th>
               <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th><th class="col-center">Lecturer</th>
               <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th><th class="col-center">Total Days</th><th class="col-center">Affected Classes</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
             </tr></thead>
@@ -4652,12 +4677,22 @@
             </div>
           </div>
         </div>
-        <div class="card schedule-card">
+        <div class="card schedule-card adj-teacher-list-card">
           <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('addclass')">Additional Class</button>
+            <div class="adj-teacher-list-actions-left">
+              <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentApplyModal('addclass')">Additional Class</button>
+            </div>
+            <div class="list-export-dropdown">
+              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-teacher-addition')">导出</button>
+              <div class="list-export-menu" id="list-export-menu-adjustment-teacher-addition" hidden>
+                <button type="button" onclick="exportAdjustmentTeacherAdditionRows('selected')">按选择项导出</button>
+                <button type="button" onclick="exportAdjustmentTeacherAdditionRows('query')">按查询条件导出</button>
+              </div>
+            </div>
           </div>
           <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
           <thead><tr>
+            <th class="col-check"><input type="checkbox" id="adjustment-teacher-addition-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-teacher-addition-body', this.checked)"></th>
             <th class="col-index col-center">No.</th>
             <th class="col-center">Status</th>
             <th class="col-center">Stage</th>
@@ -4864,7 +4899,23 @@
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('addclass')">代发起加课</button>
         </div>
         <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
-      </table></div></div>
+          <thead><tr>
+            <th class="col-index">No.</th>
+            <th class="col-center">Status</th>
+            <th class="col-center">Stage</th>
+            <th>Ref. ID</th>
+            <th class="col-center">Adjustment Type</th>
+            <th class="col-center">Applicant</th>
+            <th class="col-center">Date</th>
+            <th class="col-center">Affected Classes</th>
+            <th>Category</th>
+            <th class="adj-reason-cell">Reason</th>
+            <th class="col-center">Application Time</th>
+            <th class="col-center">Action</th>
+          </tr></thead>
+          <tbody id="adjustment-admin-body"></tbody>
+        </table></div>
+      </div>
     </section>
 
     <!-- ═══ 调课管理 · 申请审批（教务） ═══ -->
@@ -4962,9 +5013,21 @@
           </div>
         </div>
       </div>
-      <div class="card schedule-card"><div class="table-scroll"><table class="data-table adjustment-table adj-freeze-2">
+      <div class="card schedule-card">
+        <div class="panel-toolbar list-export-bar">
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-approval')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-adjustment-approval" hidden>
+              <button type="button" onclick="exportAdjustmentApprovalRows('selected')">按选择项导出</button>
+              <button type="button" onclick="exportAdjustmentApprovalRows('query')">按查询条件导出</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-2">
         <thead><tr>
+          <th class="col-check"><input type="checkbox" id="adjustment-approval-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-approval-body', this.checked)"></th>
           <th class="col-index">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th>
+          <th class="col-center">Lecturer</th>
           <th class="col-center">Department</th><th class="col-center">Lecturer Type</th>
           <th class="col-center">Category</th><th class="adj-reason-cell">Reason</th><th class="col-center">Leave Period</th>
           <th class="col-center">Total Days</th><th class="col-center">Affected Classes</th><th class="col-center">Application Time</th><th class="col-center">Action</th>
@@ -9153,7 +9216,13 @@
           <div class="adj-detail-field"><span class="adj-detail-k">共计几天</span><span class="adj-detail-v" id="adj-apply-meta-days">0</span></div>
         </div>
         <div class="adj-apply-right-head">
-          <div class="adj-apply-right-title" id="adjustment-apply-slot-list-label">调课清单</div>
+          <div class="adj-apply-right-head-text">
+            <div class="adj-apply-right-title" id="adjustment-apply-slot-list-label">调课清单</div>
+            <label class="adj-apply-group-short-opt" for="adjustment-apply-group-short">
+              <input type="checkbox" id="adjustment-apply-group-short" checked onchange="onAdjustmentApplyGroupNameShortChange(this.checked)">
+              组名简短显示
+            </label>
+          </div>
           <div class="adj-apply-batch-actions" id="adjustment-apply-batch-actions" hidden>
             <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentApplyBatchDatePicker(event)">选择日期</button>
             <div class="adj-apply-batch-period-host" id="adjustment-apply-batch-period-host">

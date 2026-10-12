@@ -25292,11 +25292,14 @@ let scheduleBatchDetailContext = null;
 /** 联合排课：已选专业 / 专业批次 / 教师单位 / 教师（草稿，点确定后才查询） */
 const SCHEDULE_JOINT_PICKER_KINDS = ['programme', 'batch', 'dept', 'teacher'];
 let scheduleJointDraftTerm = '';
+/** 联合排课草稿：公共选修课类型 G01–G04（演示筛选） */
+let scheduleJointDraftGeType = '';
 let scheduleJointSelectedProgrammes = [];
 let scheduleJointSelectedBatches = [];
 let scheduleJointSelectedDepts = [];
 let scheduleJointSelectedTeachers = [];
 let scheduleJointAppliedTerm = '';
+let scheduleJointAppliedGeType = '';
 let scheduleJointAppliedBatches = [];
 let scheduleJointAppliedTeachers = [];
 let scheduleJointPickerSnapshot = { programme: null, batch: null, dept: null, teacher: null };
@@ -39883,10 +39886,12 @@ function getScheduleTimeConflictCrossOccupants(mainProgrammeKey, intake) {
 /** 按学时类型生成带周学时的教师安排，补齐课程列表「周学时 / 起止周 / 计划学时」等字段 */
 function buildScheduleDemoGroupAssignments(sec, overrides = {}) {
   ensureSectionWeekRangeFromTerm(sec);
-  const group = sec.groups?.[0] || {
-    id: `gg-${sec.id || sec.code}-0`,
-    name: overrides.groupName || 'A组'
-  };
+  const groups = (sec.groups || []).length
+    ? sec.groups
+    : [{
+      id: `gg-${sec.id || sec.code}-0`,
+      name: overrides.groupName || 'A组'
+    }];
   const teacher = overrides.teacher
     || String(sec.teachers || '').split(/[、,，]/).map(s => s.trim()).filter(Boolean)[0]
     || SCHEDULE_TEACHER_META[sec.teacherId]?.name
@@ -39906,10 +39911,17 @@ function buildScheduleDemoGroupAssignments(sec, overrides = {}) {
       ? Number(weeklyHoursOverride)
       : Math.max(1, Math.round(planned / weeksN));
     const rowHours = wh * weeksN;
+    // 理论/合并学时多组一起上：一条安排挂全部小组；其余学时类型仍只挂一组
+    const multiOk = hourType === '理论学时' || hourType === '合并学时'
+      || hourType === GROUP_ASSIGN_MERGED_HOUR_TYPE;
+    const useGroups = (multiOk && groups.length > 1) ? groups : [groups[0]];
     rows.push({
       id: `ga-${sec.id || sec.code}-${hourType}`,
-      groupId: group.id,
-      groupName: group.name,
+      deliveryScope: 'group',
+      groupId: useGroups[0].id,
+      groupIds: useGroups.map(g => g.id),
+      groupName: useGroups.map(g => g.name).filter(Boolean).join('、') || useGroups[0].name,
+      simultaneousGroups: useGroups.length > 1,
       teacher,
       staffId,
       role: '主讲',
@@ -40309,10 +40321,18 @@ function pushScheduleGlobalDemoSample(s, programmeKey, intake, grade) {
     teachers: s.teachers || meta.name || '', teacherId: s.teacherId,
     location: s.room || (slots[0]?.room || ''),
     venueTypes: sampleVenueTypes.length ? sampleVenueTypes : [SCHEDULE_VENUE_TYPE_DEFAULT],
-    weeks, studentCount: 40, status: 'offered', className: groupCount > 1 ? groupNames.join('、') : groupNames[0],
+    weeks,
+    studentCount: groupCount > 1 ? groupCount * 40 : 40,
+    status: 'offered',
+    className: groupCount > 1 ? groupNames.join('、') : groupNames[0],
     department: s.dept, offeringUnitAbbr: unitAbbr,
-    grade, estimatedStudents: 40, isGrouped: groupCount > 1,
-    groups: splitSectionGroupCapacityLimits({ estimatedStudents: 40, reservedSpots: 0 }, groupCount).map((limit, i) => ({
+    grade,
+    estimatedStudents: groupCount > 1 ? groupCount * 40 : 40,
+    isGrouped: groupCount > 1,
+    groups: splitSectionGroupCapacityLimits(
+      { estimatedStudents: groupCount > 1 ? groupCount * 40 : 40, reservedSpots: 0 },
+      groupCount
+    ).map((limit, i) => ({
       id: `gg-${s.code}-1-${i}`,
       name: groupNames[i],
       capacityLimit: limit,
@@ -40531,10 +40551,22 @@ function collectScheduleDemoCourseDisplaySamples() {
   const add = (s) => {
     const code = String(s?.code || '').toUpperCase();
     if (!code || !s?.name) return;
-    const groupName = s.groupName
-      || (Array.isArray(s.groupNames) && s.groupNames[0])
-      || 'A组';
-    map.set(code, { name: String(s.name).trim(), groupName: String(groupName).trim() || 'A组' });
+    const wantCount = Math.min(Math.max(1, Number(s.groups) || 0), 3);
+    let groupNames = Array.isArray(s.groupNames) && s.groupNames.length
+      ? s.groupNames.map(x => String(x || '').trim()).filter(Boolean)
+      : (s.groupName ? [String(s.groupName).trim()] : []);
+    if (!groupNames.length) groupNames = ['A组'];
+    const target = wantCount || groupNames.length;
+    while (groupNames.length < target) {
+      const idx = groupNames.length;
+      groupNames.push(idx === 0 ? 'A组' : (idx === 1 ? 'B组' : (idx === 2 ? 'C组' : `Group${idx + 1}`)));
+    }
+    if (wantCount) groupNames = groupNames.slice(0, wantCount);
+    map.set(code, {
+      name: String(s.name).trim(),
+      groupName: groupNames[0] || 'A组',
+      groupNames
+    });
   };
   if (typeof getScheduleTimeConflictDemoSamples === 'function') {
     getScheduleTimeConflictDemoSamples().forEach(add);
@@ -40558,18 +40590,20 @@ function patchScheduleDemoCourseDisplayNames(store) {
     if (!isScheduleDemoOfferingSection(sec)) return;
     const code = String(sec.code || '').toUpperCase();
     let nextName = sec.name;
-    let nextGroup = null;
+    let nextGroups = null;
     if (sec.roomWeekdayPad) {
       const m = /^RWP(\d)(\d{2})$/i.exec(String(sec.code || ''));
       if (m) {
         nextName = getScheduleRoomWeekdayPadCourseName(Number(m[1]), Number(m[2]));
-        nextGroup = 'A组';
+        nextGroups = ['A组'];
       }
     } else {
       const sample = sampleMap.get(code);
       if (sample) {
         nextName = sample.name;
-        nextGroup = sample.groupName || 'A组';
+        nextGroups = (Array.isArray(sample.groupNames) && sample.groupNames.length)
+          ? sample.groupNames.slice()
+          : [sample.groupName || 'A组'];
       } else {
         return;
       }
@@ -40578,20 +40612,66 @@ function patchScheduleDemoCourseDisplayNames(store) {
       sec.name = nextName;
       changed = true;
     }
-    if (Array.isArray(sec.groups) && sec.groups.length) {
+    if (Array.isArray(nextGroups) && nextGroups.length) {
+      if (!Array.isArray(sec.groups)) sec.groups = [];
+      if (sec.groups.length < nextGroups.length) {
+        const limits = typeof splitSectionGroupCapacityLimits === 'function'
+          ? splitSectionGroupCapacityLimits(
+            { estimatedStudents: sec.estimatedStudents || sec.studentCount || 40, reservedSpots: 0 },
+            nextGroups.length
+          )
+          : [];
+        while (sec.groups.length < nextGroups.length) {
+          const i = sec.groups.length;
+          sec.groups.push({
+            id: `gg-${sec.code || code}-1-${i}`,
+            name: nextGroups[i],
+            capacityLimit: limits[i] || Math.max(20, Math.floor((sec.estimatedStudents || 40) / nextGroups.length)),
+            studentCount: 0
+          });
+          changed = true;
+        }
+        if (nextGroups.length > 1) {
+          const total = Math.max(Number(sec.estimatedStudents) || 0, nextGroups.length * 20);
+          if ((Number(sec.estimatedStudents) || 0) < total) {
+            sec.estimatedStudents = total;
+            sec.studentCount = total;
+            changed = true;
+          }
+        }
+      }
       sec.groups.forEach((g, i) => {
-        const desired = nextGroup
-          || (sec.groups.length > 1 ? `Group${i + 1}` : 'A组');
+        if (i >= nextGroups.length) return;
+        const desired = nextGroups[i];
         if (isScheduleDemoFakeGroupShortName(g?.name, sec.name)
-          || (nextGroup && String(g?.name || '') !== desired)) {
+          || String(g?.name || '') !== desired) {
           if (String(g.name || '') !== desired) {
             g.name = desired;
             changed = true;
           }
         }
       });
-      if (sec.groups.length === 1) sec.className = sec.groups[0].name;
-      else sec.className = sec.groups.map(g => g.name).join('、');
+      sec.isGrouped = sec.groups.length > 1;
+      const className = sec.groups.map(g => g.name).filter(Boolean).join('、');
+      if (String(sec.className || '') !== className) {
+        sec.className = className;
+        changed = true;
+      }
+      // 多组合班：理论安排挂全部小组（幂等补齐 groupIds / simultaneousGroups）
+      if (sec.groups.length > 1) {
+        const needReassign = !sec.groupAssignments?.length
+          || !sec.groupAssignments.some(a =>
+            Array.isArray(a.groupIds) && a.groupIds.length > 1 && a.simultaneousGroups
+          );
+        if (needReassign) {
+          sec.groupAssignments = buildScheduleDemoGroupAssignments(sec, {
+            teacher: sec.teachers,
+            teacherId: sec.teacherId,
+            groupName: sec.groups[0]?.name
+          });
+          changed = true;
+        }
+      }
     }
     patchedSectionIds.add(sec.id);
   });
@@ -40620,24 +40700,35 @@ function patchAdjustmentDemoCourseDisplayNames() {
     if (!sec && !(t.conflictDemo || t.roomPendingDemo || t.queryConflictDemo)) return;
     byCode.set(code, t);
   });
+  /** 多组合班保留「A组、B组」；勿再截成首组 */
   const shortGroup = (task) => {
     const names = typeof getScheduleTaskGroupNames === 'function' ? getScheduleTaskGroupNames(task) : [];
-    if (names.length) return names[0];
+    if (names.length) return names.join('、');
     const label = String(task?.groupLabel || '').trim();
-    if (label && !isScheduleDemoFakeGroupShortName(label, task?.name)) return label.split(/[、,，]/)[0].trim();
+    if (label && !isScheduleDemoFakeGroupShortName(label, task?.name)) return label;
     return 'A组';
   };
+  const shouldRefreshGroup = (group, courseName, task) => {
+    if (!group || isScheduleDemoFakeGroupShortName(group, courseName)) return true;
+    const live = shortGroup(task);
+    if (!live) return false;
+    // 任务已是多组，但申请仍是单组短名 → 跟随刷新
+    if (live.includes('、') && !String(group).includes('、')) return true;
+    return false;
+  };
   ADJUSTMENT_STORE.requests.forEach(r => {
-    if (!(r.demoOps || r.makeupSeed || r.holidayMakeupDemo || r.listDemo)) return;
+    if (!(r.demoOps || r.makeupSeed || r.holidayMakeupDemo || r.listDemo || r.multiGroupDemo)) return;
     const task = byCode.get(String(r.code || '').toUpperCase());
     if (!task) return;
     r.courseName = task.name || r.courseName;
-    r.groupLabel = shortGroup(task);
+    if (shouldRefreshGroup(r.groupLabel, r.courseName, task) || !r.groupLabel) {
+      r.groupLabel = shortGroup(task);
+    }
     (r.items || []).forEach(it => {
       const itCode = String(it.code || r.code || '').toUpperCase();
       const itTask = byCode.get(itCode) || task;
       it.courseName = itTask.name || it.courseName;
-      if (isScheduleDemoFakeGroupShortName(it.group, it.courseName) || !it.group) {
+      if (shouldRefreshGroup(it.group, it.courseName, itTask) || !it.group) {
         it.group = shortGroup(itTask);
       }
     });
@@ -41639,11 +41730,13 @@ function backupScheduleJointLiveSelection() {
   if (scheduleBatchDetailContext?.type === 'joint-demo') return;
   scheduleJointLiveBackup = {
     draftTerm: scheduleJointDraftTerm,
+    draftGeType: scheduleJointDraftGeType,
     selectedProgrammes: scheduleJointSelectedProgrammes.slice(),
     selectedBatches: scheduleJointSelectedBatches.slice(),
     selectedDepts: scheduleJointSelectedDepts.slice(),
     selectedTeachers: scheduleJointSelectedTeachers.slice(),
     appliedTerm: scheduleJointAppliedTerm,
+    appliedGeType: scheduleJointAppliedGeType,
     appliedBatches: scheduleJointAppliedBatches.slice(),
     appliedTeachers: scheduleJointAppliedTeachers.slice()
   };
@@ -41653,21 +41746,25 @@ function restoreScheduleJointLiveSelection() {
   const bak = scheduleJointLiveBackup;
   if (!bak) {
     scheduleJointDraftTerm = getDefaultScheduleJointTerm();
+    scheduleJointDraftGeType = '';
     scheduleJointSelectedProgrammes = [];
     scheduleJointSelectedBatches = [];
     scheduleJointSelectedDepts = [];
     scheduleJointSelectedTeachers = [];
     scheduleJointAppliedTerm = '';
+    scheduleJointAppliedGeType = '';
     scheduleJointAppliedBatches = [];
     scheduleJointAppliedTeachers = [];
     return;
   }
   scheduleJointDraftTerm = bak.draftTerm;
+  scheduleJointDraftGeType = bak.draftGeType || '';
   scheduleJointSelectedProgrammes = bak.selectedProgrammes.slice();
   scheduleJointSelectedBatches = bak.selectedBatches.slice();
   scheduleJointSelectedDepts = bak.selectedDepts.slice();
   scheduleJointSelectedTeachers = bak.selectedTeachers.slice();
   scheduleJointAppliedTerm = bak.appliedTerm;
+  scheduleJointAppliedGeType = bak.appliedGeType || '';
   scheduleJointAppliedBatches = bak.appliedBatches.slice();
   scheduleJointAppliedTeachers = bak.appliedTeachers.slice();
 }
@@ -41677,11 +41774,13 @@ function openScheduleJointDemoPage() {
   const cat = ensureScheduleJointDemoCatalog();
   scheduleDetailPhase = 'time';
   scheduleJointDraftTerm = '202604';
+  scheduleJointDraftGeType = '';
   scheduleJointSelectedProgrammes = cat.picker.programme.map(o => o.value);
   scheduleJointSelectedBatches = cat.picker.batch.map(o => o.value);
   scheduleJointSelectedDepts = [];
   scheduleJointSelectedTeachers = cat.picker.teacher.map(o => o.value);
   scheduleJointAppliedTerm = '202604';
+  scheduleJointAppliedGeType = '';
   scheduleJointAppliedBatches = scheduleJointSelectedBatches.slice();
   scheduleJointAppliedTeachers = scheduleJointSelectedTeachers.slice();
   const wasDemo = scheduleBatchDetailContext?.type === 'joint-demo';
@@ -41896,12 +41995,34 @@ function buildScheduleJointPickerFieldHtml(kind, label) {
     </div>`;
 }
 
+/** 联合排课 · 公共选修课类型（对照 GE 开课配额：G01 Arts / G02 Business / G03 Science / G04 不限） */
+const SCHEDULE_JOINT_GE_TYPE_OPTIONS = [
+  { id: 'G01', label: 'G01' },
+  { id: 'G02', label: 'G02' },
+  { id: 'G03', label: 'G03' },
+  { id: 'G04', label: 'G04' }
+];
+
+function buildScheduleJointGeTypeOptionsHtml(selected) {
+  const cur = String(selected || '');
+  const opts = ['<option value="">全部</option>'].concat(
+    SCHEDULE_JOINT_GE_TYPE_OPTIONS.map(o =>
+      `<option value="${escapeHtml(o.id)}"${o.id === cur ? ' selected' : ''}>${escapeHtml(o.label)}</option>`
+    )
+  );
+  return opts.join('');
+}
+
 function buildScheduleJointPickerBarHtml() {
   return `
     <div class="schedule-joint-picker-row schedule-joint-picker-row-term">
       <div class="schedule-joint-picker-field">
         <label class="schedule-joint-picker-label req" for="schedule-joint-term">学年学期</label>
         <select class="input input-sm" id="schedule-joint-term" onchange="onScheduleJointTermChange()"></select>
+      </div>
+      <div class="schedule-joint-picker-field">
+        <label class="schedule-joint-picker-label" for="schedule-joint-ge-type">公共选修课类型</label>
+        <select class="input input-sm" id="schedule-joint-ge-type" title="G01 Arts · G02 Business · G03 Science · G04 不限" onchange="onScheduleJointGeTypeChange()">${buildScheduleJointGeTypeOptionsHtml(scheduleJointDraftGeType)}</select>
       </div>
     </div>
     <div class="schedule-joint-picker-row">
@@ -41930,7 +42051,11 @@ function ensureScheduleJointPickerBar(page) {
     if (header) header.insertAdjacentElement('afterend', bar);
     else host.insertBefore(bar, host.firstChild);
   }
-  if (!host.querySelector('#schedule-joint-term') || !host.querySelector('#schedule-joint-query-confirm')) {
+  if (
+    !host.querySelector('#schedule-joint-term')
+    || !host.querySelector('#schedule-joint-ge-type')
+    || !host.querySelector('#schedule-joint-query-confirm')
+  ) {
     bar.innerHTML = buildScheduleJointPickerBarHtml();
     SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
       const trigger = scheduleDetailEl(getScheduleJointPickerIds(kind).btn);
@@ -42020,6 +42145,24 @@ function fillScheduleJointTermSelect() {
     sel.value = (isScheduleJointDemoContext() ? '202604' : getDefaultScheduleJointTerm()) || terms[0];
     scheduleJointDraftTerm = sel.value;
   }
+}
+
+function fillScheduleJointGeTypeSelect() {
+  const sel = scheduleDetailEl('schedule-joint-ge-type');
+  if (!sel) return;
+  const cur = scheduleJointDraftGeType || '';
+  sel.innerHTML = buildScheduleJointGeTypeOptionsHtml(cur);
+  if (![...sel.options].some(o => o.value === cur)) {
+    sel.value = '';
+    scheduleJointDraftGeType = '';
+  } else {
+    sel.value = cur;
+  }
+}
+
+function onScheduleJointGeTypeChange() {
+  const sel = scheduleDetailEl('schedule-joint-ge-type');
+  scheduleJointDraftGeType = sel?.value || '';
 }
 
 function onScheduleJointTermChange() {
@@ -42204,6 +42347,7 @@ function syncScheduleJointPickers() {
   ensureScheduleJointPickerBar();
   bindScheduleJointPickerTriggers();
   fillScheduleJointTermSelect();
+  fillScheduleJointGeTypeSelect();
   SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
     fillScheduleJointPickerOptions(kind, getScheduleJointSelectedValues(kind));
     updateScheduleJointPickerDisplay(kind);
@@ -42372,9 +42516,11 @@ function confirmScheduleJointQuery(event) {
     applyScheduleJointPickerValues(kind, getScheduleJointPickerDraft(kind));
     closeScheduleJointPicker(kind);
   });
+  onScheduleJointGeTypeChange();
   if (!validateScheduleJointQuery()) return;
   const scope = resolveScheduleJointQueryScope();
   scheduleJointAppliedTerm = scheduleJointDraftTerm || getDefaultScheduleJointTerm();
+  scheduleJointAppliedGeType = scheduleJointDraftGeType || '';
   scheduleJointAppliedBatches = scope.batches;
   scheduleJointAppliedTeachers = scope.teachers;
   applyScheduleJointQueryContext();
@@ -42387,11 +42533,13 @@ function resetScheduleJointQuery(event) {
   SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => closeScheduleJointPicker(kind));
   if (isScheduleJointDemoContext()) {
     scheduleJointDraftTerm = '202604';
+    scheduleJointDraftGeType = '';
     scheduleJointSelectedProgrammes = [];
     scheduleJointSelectedBatches = [];
     scheduleJointSelectedDepts = [];
     scheduleJointSelectedTeachers = [];
     scheduleJointAppliedTerm = '';
+    scheduleJointAppliedGeType = '';
     scheduleJointAppliedBatches = [];
     scheduleJointAppliedTeachers = [];
     applyScheduleJointQueryContext();
@@ -42399,11 +42547,13 @@ function resetScheduleJointQuery(event) {
     return;
   }
   scheduleJointDraftTerm = getDefaultScheduleJointTerm();
+  scheduleJointDraftGeType = '';
   scheduleJointSelectedProgrammes = [];
   scheduleJointSelectedBatches = [];
   scheduleJointSelectedDepts = [];
   scheduleJointSelectedTeachers = [];
   scheduleJointAppliedTerm = '';
+  scheduleJointAppliedGeType = '';
   scheduleJointAppliedBatches = [];
   scheduleJointAppliedTeachers = [];
   applyScheduleJointQueryContext();
@@ -59670,6 +59820,8 @@ const ADJUSTMENT_STORE = { seeded: false, requests: [], holidays: [], batchRecor
 // 调课用户申请仅存内存；遗留 localStorage key 见 clearScheduleEphemeralBrowserStorage
 let adjustmentActiveTeacherId = '';
 let adjustmentApplyType = 'reschedule';
+/** 申请抽屉 Group Name：默认只显示括号内短名（如 B组） */
+let adjustmentApplyGroupNameShort = true;
 let adjustmentRejectId = null;
 let adjustmentApplyFiles = [];
 let adjustmentLastConflict = null;
@@ -61331,7 +61483,7 @@ function scheduleQueryFoldToggleHtml() {
 
 function toggleScheduleQueryMore(btn) {
   const toggle = btn?.closest ? (btn.closest('.schedule-query-fold-toggle') || btn) : btn;
-  const host = toggle?.closest?.('.schedule-query-row, .query-filter-bar, .schedule-room-filter-grid');
+  const host = toggle?.closest?.('.schedule-query-row, .query-filter-bar, .schedule-room-filter-grid, .schedule-room-course-search');
   if (!host || !toggle) return;
   const open = host.classList.toggle('is-query-more-open');
   toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -61841,17 +61993,29 @@ function defaultAdjustmentRequestListCompare(a, b) {
 }
 
 /** 管理端申请主列表 thead（审批 / 代申请 / 申请记录） */
+function getAdjustmentRequestListExportMeta(listKey) {
+  if (listKey === 'adjustmentRecord') {
+    return { checkAllId: 'adjustment-record-check-all', tbodyId: 'adjustment-record-body' };
+  }
+  if (listKey === 'adjustmentApproval') {
+    return { checkAllId: 'adjustment-approval-check-all', tbodyId: 'adjustment-approval-body' };
+  }
+  return null;
+}
+
 function renderAdjustmentRequestListThead(tbody, listKey, { withCheck = false } = {}) {
   const tr = tbody?.closest('table')?.querySelector('thead tr');
   if (!tr || !listKey) return;
   const th = (label, key, center, extraClass) =>
     renderListSortTh(listKey, label, key, { center, extraClass });
-  const checkTh = withCheck
-    ? `<th class="col-check"><input type="checkbox" id="adjustment-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-record-body', this.checked)"></th>`
+  const exportMeta = withCheck ? getAdjustmentRequestListExportMeta(listKey) : null;
+  const checkTh = exportMeta
+    ? `<th class="col-check"><input type="checkbox" id="${exportMeta.checkAllId}" aria-label="全选" onchange="toggleListExportCheckAll('${exportMeta.tbodyId}', this.checked)"></th>`
     : '';
   // 审批列表列序：Status…Applicant → Lecturer → Department → Lecturer Type → Category → Reason → Leave Period → Total Days → Affected Classes → Application Time → Action
   if (listKey === 'adjustmentApproval') {
     tr.innerHTML = [
+      checkTh,
       '<th class="col-index">No.</th>',
       th('Status', 'status', true),
       th('Stage', 'stage', true),
@@ -61894,13 +62058,40 @@ function isAdjustmentTeacherUnifiedListLayout(listKey) {
     || listKey === 'adjustmentTeacherAddition';
 }
 
-function renderAdjustmentTeacherListThead(tbody, listKey, staffCols) {
+function getAdjustmentTeacherListExportMeta(listKey) {
+  if (listKey === 'adjustmentTeacherReplacement') {
+    return {
+      checkAllId: 'adjustment-teacher-check-all',
+      tbodyId: 'adjustment-teacher-body'
+    };
+  }
+  if (listKey === 'adjustmentTeacherMakeup') {
+    return {
+      checkAllId: 'adjustment-teacher-makeup-check-all',
+      tbodyId: 'adjustment-teacher-makeup-body'
+    };
+  }
+  if (listKey === 'adjustmentTeacherAddition') {
+    return {
+      checkAllId: 'adjustment-teacher-addition-check-all',
+      tbodyId: 'adjustment-teacher-addition-body'
+    };
+  }
+  return null;
+}
+
+function renderAdjustmentTeacherListThead(tbody, listKey, staffCols, withCheck) {
   const tr = tbody?.closest('table')?.querySelector('thead tr');
   if (!tr || !listKey) return;
   const th = (label, key, center, extraClass) =>
     renderListSortTh(listKey, label, key, { center, extraClass });
   if (isAdjustmentTeacherUnifiedListLayout(listKey)) {
+    const exportMeta = withCheck ? getAdjustmentTeacherListExportMeta(listKey) : null;
+    const checkTh = exportMeta
+      ? `<th class="col-check"><input type="checkbox" id="${exportMeta.checkAllId}" aria-label="全选" onchange="toggleListExportCheckAll('${exportMeta.tbodyId}', this.checked)"></th>`
+      : '';
     tr.innerHTML = [
+      checkTh,
       '<th class="col-index col-center">No.</th>',
       th('Status', 'status', true),
       th('Stage', 'stage', true),
@@ -64258,14 +64449,125 @@ function getAdjustmentTaskCredits(task) {
   return cat?.credits ?? '—';
 }
 
+/** 拆出小组短名列表（支持「A组、B组」或已拼好的「课名（A组）、课名（B组）」） */
+function splitAdjustmentGroupShortNames(groupField, courseName) {
+  const raw = String(groupField || '').trim();
+  if (!raw || raw === '—' || raw === '上课小组') return [];
+  const course = String(courseName || '').trim();
+  const parts = raw.split(/[,，、;/；]+/).map(s => s.trim()).filter(Boolean);
+  return parts.map(p => {
+    if (course && p.startsWith(`${course}（`) && p.endsWith('）')) {
+      return p.slice(course.length + 1, -1).trim() || p;
+    }
+    const m = /^(.+?)（([^（）]+)）$/.exec(p);
+    if (m && course && m[1].trim() === course) return m[2].trim();
+    return p;
+  }).filter(Boolean);
+}
+
+/** 优先用课表任务实时小组；多组时覆盖单组旧种子 */
+function resolveAdjustmentSlotGroupField(task, fallbackGroup) {
+  const liveNames = (typeof getScheduleTaskGroupNames === 'function' && task)
+    ? getScheduleTaskGroupNames(task)
+    : [];
+  if (liveNames.length >= 2) return liveNames.join('、');
+  if (liveNames.length === 1) {
+    const fb = String(fallbackGroup || '').trim();
+    // 任务仍是单组时保留申请上的多组文案（若有）
+    if (fb.includes('、')) return fb;
+    return liveNames[0];
+  }
+  const fromTask = String(task?.groupLabel || '').trim();
+  if (fromTask) return fromTask;
+  return String(fallbackGroup || '').trim() || '上课小组';
+}
+
+/** 调课 Group Name：多组短名「A组、B组」拆成「课名（A组）、课名（B组）」 */
+function formatAdjustmentCourseGroupLabel(courseName, groupField) {
+  const names = splitAdjustmentGroupShortNames(groupField, courseName);
+  if (!names.length) {
+    return typeof formatScheduleCourseGroupLabel === 'function'
+      ? formatScheduleCourseGroupLabel(courseName, groupField)
+      : (String(groupField || '').trim() || '—');
+  }
+  if (typeof formatScheduleCourseGroupLabel !== 'function') return names.join('、');
+  return names.map(n => formatScheduleCourseGroupLabel(courseName, n)).join('、');
+}
+
+/** 从「课名（组名）」中取出括号内短名；取不到则原样返回 */
+function extractAdjustmentGroupShortLabel(label) {
+  const t = String(label || '').trim();
+  if (!t) return '—';
+  const m = /^(.+?)（([^（）]+)）$/.exec(t);
+  return m ? m[2].trim() : t;
+}
+
+/** 表格用：一组一行；count 有值时另起一行显示「（N人）」；shortOnly 时只显示小组短名 */
+function formatAdjustmentCourseGroupLabelHtml(courseName, groupField, count, shortOnly) {
+  const names = splitAdjustmentGroupShortNames(groupField, courseName);
+  const useShort = !!shortOnly;
+  const fullLabels = names.length
+    ? names.map(n => (typeof formatScheduleCourseGroupLabel === 'function'
+      ? formatScheduleCourseGroupLabel(courseName, n)
+      : n))
+    : [formatAdjustmentCourseGroupLabel(courseName, groupField)];
+  // shortOnly：优先用已拆短名；若短名仍带「课名（组）」则再抽括号
+  const labels = useShort
+    ? fullLabels.map((full, i) => {
+      const raw = names[i] != null ? String(names[i]).trim() : '';
+      if (raw && !/[（(]/.test(raw)) return raw;
+      return extractAdjustmentGroupShortLabel(raw || full);
+    })
+    : fullLabels;
+  const n = Number(count);
+  const countText = (Number.isFinite(n) && n > 0) ? `${Math.floor(n)}人` : '';
+  const lines = labels.map((t, i) => {
+    const title = useShort && fullLabels[i] && fullLabels[i] !== t
+      ? ` title="${escapeHtml(fullLabels[i])}"`
+      : '';
+    return `<div class="adj-makeup-group-line"${title}>${escapeHtml(t || '—')}</div>`;
+  });
+  if (countText) {
+    lines.push(`<div class="adj-makeup-group-line adj-makeup-group-count">共${escapeHtml(countText)}</div>`);
+  }
+  return lines.join('');
+}
+
 function formatAdjustmentGroupWithCount(group, count, courseName) {
   const n = Number(count);
   const countText = (Number.isFinite(n) && n > 0) ? `${Math.floor(n)}人` : '';
+  const parts = String(group || '').split(/[,，、;/；]+/).map(s => s.trim()).filter(Boolean);
+  if (parts.length > 1 && typeof formatScheduleCourseGroupLabel === 'function') {
+    const joined = parts.map(p => formatScheduleCourseGroupLabel(courseName || '', p)).join('、');
+    return countText ? `${joined}（${countText}）` : joined;
+  }
   if (typeof formatScheduleCourseGroupLabel === 'function') {
     return formatScheduleCourseGroupLabel(courseName || '', group, countText);
   }
   const name = group || '上课小组';
   return countText ? `${name}（${countText}）` : name;
+}
+
+/** 表格用：带人数的 Group Name，一组一行 */
+function formatAdjustmentGroupWithCountHtml(group, count, courseName, task, shortOnly) {
+  const groupField = typeof resolveAdjustmentSlotGroupField === 'function'
+    ? resolveAdjustmentSlotGroupField(task, group)
+    : (group || '上课小组');
+  return formatAdjustmentCourseGroupLabelHtml(courseName || task?.name || '', groupField, count, shortOnly);
+}
+
+function syncAdjustmentApplyGroupNameShortUi() {
+  const el = document.getElementById('adjustment-apply-group-short');
+  if (el) el.checked = !!adjustmentApplyGroupNameShort;
+  const modal = document.getElementById('modal-adjustment-apply');
+  if (modal) modal.classList.toggle('is-group-name-short', !!adjustmentApplyGroupNameShort);
+}
+
+function onAdjustmentApplyGroupNameShortChange(checked) {
+  adjustmentApplyGroupNameShort = !!checked;
+  syncAdjustmentApplyGroupNameShortUi();
+  if (typeof renderAdjustmentSlotPickerRows === 'function') renderAdjustmentSlotPickerRows();
+  if (typeof renderAdjustmentPerSlotConfigs === 'function') renderAdjustmentPerSlotConfigs();
 }
 
 /** 学生冲突明细：小组后标注该组冲突人数，如 Group1，冲突3人 */
@@ -64803,6 +65105,7 @@ function ensureAdjustmentMakeupPendingDemoSlots() {
 
 function ensureAdjustmentDemo() {
   ensureScheduleGlobalDemo();
+  ensureAdjustmentMultiGroupDemoCourses();
   ensureAdjustmentScheduleSlotsForDemo();
   ensureAdjustmentLiMingMorningDemoSlots();
   ensureAdjustmentMakeupPendingDemoSlots();
@@ -64814,6 +65117,7 @@ function ensureAdjustmentDemo() {
   ensureAdjustmentHolidayCancelRequests();
   seedAdjustmentApprovedCancelsForMakeup();
   seedAdjustmentMultiSessionCancelForMakeup();
+  seedAdjustmentMultiGroupCancelForMakeup();
   seedAdjustmentMakeupStatusDemos();
   seedAdjustmentCompulsoryDemoSlot();
   syncApprovedAdjustmentsToSchedule();
@@ -65385,6 +65689,9 @@ function seedAdjustmentApprovedCancelsForMakeup() {
       const seq = ADJUSTMENT_STORE.reqSeq++;
       const spec = reasons[i];
       const submittedAt = adjustmentDemoTime(36 + i * 8);
+      const groupLabel = (typeof getScheduleTaskGroupNames === 'function'
+        ? getScheduleTaskGroupNames(task).join('、')
+        : '') || task.groupLabel || '';
       ADJUSTMENT_STORE.requests.push({
         id: seedId,
         no: `TK${String(seq).padStart(4, '0')}`,
@@ -65394,14 +65701,14 @@ function seedAdjustmentApprovedCancelsForMakeup() {
         teacherName: teacher.name,
         code: task.code,
         courseName: task.name,
-        groupLabel: task.groupLabel || '',
+        groupLabel,
         slotCount: 1,
         slotRefs: [ref],
         items: [{
           teacherName: teacher.name,
           code: task.code,
           courseName: task.name,
-          group: task.groupLabel || '上课小组',
+          group: groupLabel || '上课小组',
           credits: getAdjustmentTaskCredits(task),
           studentCount: getAdjustmentGroupStudentCount(task),
           fromLabel: adjustmentSlotLabel(slot),
@@ -65476,11 +65783,14 @@ function seedAdjustmentMultiSessionCancelForMakeup() {
       ? getScheduleDateByTeachingWeek(termStart, weekNo, Number(slot.weekday))
       : '';
     const from = adjustmentSlotStruct(slot, task, dateOverride);
+    const groupLabel = (typeof getScheduleTaskGroupNames === 'function'
+      ? getScheduleTaskGroupNames(task).join('、')
+      : '') || task.groupLabel || '上课小组';
     return {
       teacherName: teacher.name,
       code: task.code,
       courseName: task.name,
-      group: task.groupLabel || '上课小组',
+      group: groupLabel,
       credits: getAdjustmentTaskCredits(task),
       studentCount: getAdjustmentGroupStudentCount(task),
       fromLabel: adjustmentSlotLabel(slot),
@@ -65502,6 +65812,9 @@ function seedAdjustmentMultiSessionCancelForMakeup() {
   }
   const seq = ADJUSTMENT_STORE.reqSeq++;
   const submittedAt = adjustmentDemoTime(28);
+  const headGroup = (typeof getScheduleTaskGroupNames === 'function'
+    ? getScheduleTaskGroupNames(picked[0].task).join('、')
+    : '') || picked[0].task.groupLabel || '';
   ADJUSTMENT_STORE.requests.push({
     id: seedId,
     no: `TK${String(seq).padStart(4, '0')}`,
@@ -65511,7 +65824,7 @@ function seedAdjustmentMultiSessionCancelForMakeup() {
     teacherName: teacher.name,
     code: picked[0].task.code,
     courseName: picked[0].task.name,
-    groupLabel: picked[0].task.groupLabel || '',
+    groupLabel: headGroup,
     slotCount: 2,
     slotRefs: picked.map(p => p.ref),
     items,
@@ -65531,6 +65844,226 @@ function seedAdjustmentMultiSessionCancelForMakeup() {
     demoOps: true,
     makeupSeed: true,
     multiSessionDemo: true
+  });
+}
+
+/** 强制把调课演示用合班课扩成多组，并回写课表任务 groupLabel */
+function ensureAdjustmentMultiGroupDemoCourses() {
+  if (!COURSE_OFFERING_PLAN_STORE?.sections?.length) return;
+  const specs = [
+    { code: 'CTS101', names: ['A组', 'B组'] },
+    { code: 'CMG201', names: ['A组', 'B组', 'C组'] }
+  ];
+  let changed = false;
+  specs.forEach(spec => {
+    const secs = (COURSE_OFFERING_PLAN_STORE.sections || []).filter(s =>
+      String(s.code || '').toUpperCase() === spec.code
+    );
+    secs.forEach(sec => {
+      if (!Array.isArray(sec.groups)) sec.groups = [];
+      const want = spec.names.length;
+      if (sec.groups.length < want) {
+        const limits = typeof splitSectionGroupCapacityLimits === 'function'
+          ? splitSectionGroupCapacityLimits(
+            { estimatedStudents: Math.max(Number(sec.estimatedStudents) || 0, want * 40), reservedSpots: 0 },
+            want
+          )
+          : [];
+        while (sec.groups.length < want) {
+          const i = sec.groups.length;
+          sec.groups.push({
+            id: `gg-${sec.code}-mg-${i}`,
+            name: spec.names[i],
+            capacityLimit: limits[i] || 40,
+            studentCount: 0
+          });
+          changed = true;
+        }
+      }
+      sec.groups.forEach((g, i) => {
+        if (i >= want) return;
+        if (String(g.name || '') !== spec.names[i]) {
+          g.name = spec.names[i];
+          changed = true;
+        }
+      });
+      const total = want * 40;
+      if ((Number(sec.estimatedStudents) || 0) < total) {
+        sec.estimatedStudents = total;
+        sec.studentCount = total;
+        changed = true;
+      }
+      sec.isGrouped = sec.groups.length > 1;
+      const className = sec.groups.map(g => g.name).filter(Boolean).join('、');
+      if (String(sec.className || '') !== className) {
+        sec.className = className;
+        changed = true;
+      }
+      const needReassign = !sec.groupAssignments?.length
+        || !sec.groupAssignments.some(a =>
+          Array.isArray(a.groupIds) && a.groupIds.length > 1 && a.simultaneousGroups
+        );
+      if (needReassign && typeof buildScheduleDemoGroupAssignments === 'function') {
+        sec.groupAssignments = buildScheduleDemoGroupAssignments(sec, {
+          teacher: sec.teachers,
+          teacherId: sec.teacherId,
+          groupName: sec.groups[0]?.name
+        });
+        changed = true;
+      }
+      if (!sec.queryConflictDemo && !sec.conflictDemo) {
+        sec.queryConflictDemo = true;
+        changed = true;
+      }
+    });
+  });
+  if (changed) {
+    COURSE_OFFERING_PLAN_STORE.generatedAt = new Date().toISOString();
+    if (typeof ensureScheduleTasksFromOffering === 'function') ensureScheduleTasksFromOffering();
+  } else if (typeof getScheduleTaskRows === 'function') {
+    // 即使分组已齐，也确保任务 groupLabel 与 section 同步
+    getScheduleTaskRows().forEach(t => {
+      const code = String(t.code || '').toUpperCase();
+      if (code !== 'CTS101' && code !== 'CMG201') return;
+      const names = typeof getScheduleTaskGroupNames === 'function' ? getScheduleTaskGroupNames(t) : [];
+      if (names.length >= 2) t.groupLabel = names.join('、');
+    });
+  }
+}
+
+/**
+ * 演示：多组合班课（CTS101 双组 / CMG201 三组）各造一条已通过停课，
+ * 便于 Pending Replacement 的 Group Name 验收「课名（A组）、课名（B组）…」
+ */
+function seedAdjustmentMultiGroupCancelForMakeup() {
+  const codes = ['CTS101', 'CMG201'];
+  codes.forEach((code, idx) => {
+    const seedId = `adj-makeup-cancel-multigroup-${code}`;
+    const existing = ADJUSTMENT_STORE.requests.find(r => r.id === seedId);
+    if (existing) {
+      rebindAdjustmentCancelToLiveSlot(existing);
+      const liveTask = typeof getScheduleTaskRows === 'function'
+        ? getScheduleTaskRows().find(t => String(t.code || '').toUpperCase() === code)
+        : null;
+      const liveNames = liveTask && typeof getScheduleTaskGroupNames === 'function'
+        ? getScheduleTaskGroupNames(liveTask)
+        : [];
+      if (liveNames.length >= 2) {
+        const liveGroup = liveNames.join('、');
+        existing.groupLabel = liveGroup;
+        existing.multiGroupDemo = true;
+        (existing.items || []).forEach(it => { it.group = liveGroup; });
+      }
+      return;
+    }
+    const tasks = typeof getScheduleTaskRows === 'function'
+      ? getScheduleTaskRows().filter(t =>
+        String(t.code || '').toUpperCase() === code
+        && (typeof taskHasScheduleTeacher === 'function'
+          ? taskHasScheduleTeacher(t, 'T0001')
+          : t.teacherId === 'T0001')
+      )
+      : [];
+    const task = tasks[0];
+    if (!task) return;
+    const names = typeof getScheduleTaskGroupNames === 'function'
+      ? getScheduleTaskGroupNames(task)
+      : String(task.groupLabel || '').split(/[,，、;/；]+/).map(s => s.trim()).filter(Boolean);
+    if (names.length < 2) return;
+    const groupLabel = names.join('、');
+    const usedRefs = new Set();
+    ADJUSTMENT_STORE.requests.forEach(r => {
+      if (r.type !== 'cancel' || r.teacherId !== 'T0001') return;
+      (r.slotRefs || []).forEach(ref => {
+        const head = typeof getAdjustmentSlotRefHead === 'function' ? getAdjustmentSlotRefHead(ref) : ref;
+        if (head) usedRefs.add(head);
+      });
+    });
+    normalizeTaskTimeSlots(task);
+    let picked = null;
+    for (const slot of (task.timeSlots || [])) {
+      if (!slot?.weekday || !slot?.periodFrom) continue;
+      const ref = `${task.id}::${slot.id}`;
+      const head = typeof getAdjustmentSlotRefHead === 'function' ? getAdjustmentSlotRefHead(ref) : ref;
+      if (!head || usedRefs.has(head)) continue;
+      picked = { slot, ref };
+      break;
+    }
+    if (!picked) {
+      // 无空闲节次则补一条演示节次
+      const weekday = 3 + (idx % 2);
+      const period = 5 + idx;
+      const slot = {
+        id: nextScheduleSlotId(),
+        weekday,
+        periodFrom: period,
+        periodTo: period,
+        weeks: task.weeks || '1-8周',
+        room: idx === 0 ? '教学楼A-205' : '教学楼B-301',
+        hourType: 'theory',
+        fromAdjustmentId: 'adj-demo-multigroup'
+      };
+      task.timeSlots = task.timeSlots || [];
+      task.timeSlots.push(slot);
+      if (typeof persistTaskSchedule === 'function') persistTaskSchedule(task);
+      picked = { slot, ref: `${task.id}::${slot.id}` };
+    }
+    const weekList = typeof parseWeeksString === 'function'
+      ? parseWeeksString(picked.slot.weeks || task.weeks || '')
+      : [];
+    const weekNo = weekList.length ? weekList[Math.min(idx + 1, weekList.length - 1)] : (2 + idx);
+    const dateOverride = typeof getScheduleDateByTeachingWeek === 'function'
+      ? getScheduleDateByTeachingWeek(getScheduleTermStartDate(), weekNo, Number(picked.slot.weekday))
+      : '';
+    const fromStruct = adjustmentSlotStruct(picked.slot, task, dateOverride);
+    const teacherName = typeof getAdjustmentTeacherName === 'function'
+      ? getAdjustmentTeacherName('T0001')
+      : '李明';
+    const seq = ADJUSTMENT_STORE.reqSeq++;
+    const submittedAt = adjustmentDemoTime(20 + idx * 3);
+    ADJUSTMENT_STORE.requests.push({
+      id: seedId,
+      no: `TK${String(seq).padStart(4, '0')}`,
+      type: 'cancel',
+      source: 'teacher',
+      teacherId: 'T0001',
+      teacherName,
+      code: task.code,
+      courseName: task.name,
+      groupLabel,
+      slotCount: 1,
+      slotRefs: [picked.ref],
+      items: [{
+        teacherName,
+        code: task.code,
+        courseName: task.name,
+        group: groupLabel,
+        credits: getAdjustmentTaskCredits(task),
+        studentCount: getAdjustmentGroupStudentCount(task),
+        fromLabel: adjustmentSlotLabel(picked.slot),
+        toLabel: '停课',
+        from: fromStruct,
+        to: null
+      }],
+      fromText: adjustmentSlotLabel(picked.slot),
+      toText: '停课',
+      reason: names.length >= 3
+        ? '三组合班课因公假停课，待一并补回'
+        : '双组合班课因公假停课，待一并补回',
+      reasonType: 'Public Holiday',
+      reasonTypeCode: 'public-holiday',
+      status: 'approved',
+      stage: '审批完成',
+      term: getAdjustmentRequestTermCode(),
+      attachments: [],
+      submittedAt,
+      reviewedAt: submittedAt,
+      reviewer: '教务管理员',
+      reviewComment: '同意停课',
+      demoOps: true,
+      makeupSeed: true,
+      multiGroupDemo: true
+    });
   });
 }
 
@@ -66146,14 +66679,21 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
   }
   if (!tbody) return;
   const staffCols = !!opts.staffCols;
+  const withCheck = !!opts.withCheck;
   const isUnifiedLayout = isAdjustmentTeacherUnifiedListLayout(opts.listKey);
-  const colSpan = isUnifiedLayout ? 14 : (staffCols ? 14 : 12);
-  if (opts.listKey) renderAdjustmentTeacherListThead(tbody, opts.listKey, staffCols);
+  const colSpan = (isUnifiedLayout ? 14 : (staffCols ? 14 : 12)) + (withCheck ? 1 : 0);
+  if (opts.listKey) renderAdjustmentTeacherListThead(tbody, opts.listKey, staffCols, withCheck);
+  const exportMeta = withCheck ? getAdjustmentTeacherListExportMeta(opts.listKey) : null;
+  if (exportMeta) resetListExportCheckAll(exportMeta.checkAllId);
   if (!rows.length) { renderScheduleEmptyRow(tbody, colSpan, emptyText); return; }
   tbody.innerHTML = rows.map((r, i) => {
     const actionsHtml = renderAdjustmentTeacherActionCell(r);
+    const checkTd = withCheck
+      ? `<td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>`
+      : '';
     if (isUnifiedLayout) {
       return `<tr>
+    ${checkTd}
     <td class="col-index col-center">${i + 1}</td>
     <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
@@ -66178,6 +66718,7 @@ function fillAdjustmentTeacherListTable(tbody, hint, rows, pool, emptyText, opts
       ? `<td class="col-center">${escapeHtml(profile?.teacherId || '—')}</td><td class="col-center">${escapeHtml(profile?.teacherName || '—')}</td>`
       : '';
     return `<tr>
+    ${checkTd}
     <td class="col-index col-center">${i + 1}</td>
     <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
@@ -66252,7 +66793,7 @@ function renderAdjustmentTeacherReplacementPage() {
     rows,
     pool,
     '暂无调课或停课申请，可点击表格左上角发起申请',
-    { staffCols: true, listKey: 'adjustmentTeacherReplacement' }
+    { staffCols: true, listKey: 'adjustmentTeacherReplacement', withCheck: true }
   );
 }
 
@@ -66274,7 +66815,7 @@ function renderAdjustmentTeacherAdditionPage() {
     rows,
     pool,
     '暂无加课申请，可点击表格左上角发起申请',
-    { listKey: 'adjustmentTeacherAddition' }
+    { listKey: 'adjustmentTeacherAddition', withCheck: true }
   );
 }
 
@@ -66457,9 +66998,11 @@ const ADJUSTMENT_MAKEUP_CANCEL_SORT_COLUMNS = {
       : (r.code || ''))
   },
   group: {
-    get: r => (typeof formatScheduleCourseGroupLabel === 'function'
-      ? formatScheduleCourseGroupLabel(r.courseName, r.group)
-      : (r.group || ''))
+    get: r => (typeof formatAdjustmentCourseGroupLabel === 'function'
+      ? formatAdjustmentCourseGroupLabel(r.courseName, r.group)
+      : (typeof formatScheduleCourseGroupLabel === 'function'
+        ? formatScheduleCourseGroupLabel(r.courseName, r.group)
+        : (r.group || '')))
   },
   week: {
     get: r => {
@@ -66527,9 +67070,17 @@ function renderAdjustmentTeacherMakeupCancelTable() {
   }
   tbody.innerHTML = rows.map((r) => {
     const codeText = typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(r.code) : (r.code || '—');
-    const groupLabel = typeof formatScheduleCourseGroupLabel === 'function'
-      ? formatScheduleCourseGroupLabel(r.courseName, r.group)
+    const liveTask = (r.taskId && typeof getScheduleTaskRows === 'function')
+      ? getScheduleTaskRows().find(t => t.id === r.taskId)
+      : null;
+    const groupField = typeof resolveAdjustmentSlotGroupField === 'function'
+      ? resolveAdjustmentSlotGroupField(liveTask, r.group)
       : (r.group || '—');
+    const groupHtml = typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+      ? formatAdjustmentCourseGroupLabelHtml(r.courseName, groupField)
+      : escapeHtml(typeof formatAdjustmentCourseGroupLabel === 'function'
+        ? formatAdjustmentCourseGroupLabel(r.courseName, groupField)
+        : (groupField || '—'));
     const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
     const categoryText = cancel
       ? (getAdjustmentReasonTypeDisplay(cancel) || '—')
@@ -66555,7 +67106,7 @@ function renderAdjustmentTeacherMakeupCancelTable() {
       ${lecturerTd}
       <td class="col-center">${escapeHtml(categoryText)}</td>
       <td class="col-center">${escapeHtml(codeText || '—')}</td>
-      <td class="adj-makeup-group-col">${escapeHtml(groupLabel || '—')}</td>
+      <td class="adj-makeup-group-col">${groupHtml}</td>
       <td class="col-center">${escapeHtml(weekText)}</td>
       <td class="col-center">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
       <td class="col-center">${escapeHtml(
@@ -66634,9 +67185,17 @@ function exportAdjustmentTeacherMakeupCancelRows(mode) {
       ? getAdjustmentCancelMakeupStatus(r.val).label
       : '';
     const codeText = typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(r.code) : (r.code || '');
-    const groupText = typeof formatScheduleCourseGroupLabel === 'function'
-      ? formatScheduleCourseGroupLabel(r.courseName, r.group)
+    const liveTask = (r.taskId && typeof getScheduleTaskRows === 'function')
+      ? getScheduleTaskRows().find(t => t.id === r.taskId)
+      : null;
+    const groupField = typeof resolveAdjustmentSlotGroupField === 'function'
+      ? resolveAdjustmentSlotGroupField(liveTask, r.group)
       : (r.group || '');
+    const groupText = typeof formatAdjustmentCourseGroupLabel === 'function'
+      ? formatAdjustmentCourseGroupLabel(r.courseName, groupField)
+      : (typeof formatScheduleCourseGroupLabel === 'function'
+        ? formatScheduleCourseGroupLabel(r.courseName, groupField)
+        : (groupField || ''));
     const cancel = ADJUSTMENT_STORE.requests.find(x => x.no === r.no || (x.slotRefs || []).includes(r.val));
     const categoryText = cancel ? (getAdjustmentReasonTypeDisplay(cancel) || '') : '';
     const applicantText = cancel ? getAdjustmentListApplicantName(cancel) : '';
@@ -66685,7 +67244,103 @@ function renderAdjustmentTeacherMakeupRequestTable() {
     rows,
     pool,
     '暂无调课、停课或补课申请',
-    { staffCols: true, listKey: 'adjustmentTeacherMakeup' }
+    { staffCols: true, listKey: 'adjustmentTeacherMakeup', withCheck: true }
+  );
+}
+
+function mapAdjustmentTeacherUnifiedExportRow(r) {
+  const profile = typeof getAdjustmentApplicantProfile === 'function'
+    ? getAdjustmentApplicantProfile(r?.teacherId)
+    : null;
+  const lecturerName = profile?.teacherName || r?.teacherName || '';
+  const lecturerId = profile?.teacherId || r?.teacherId || '';
+  const lecturerText = lecturerId ? `${lecturerName}（${lecturerId}）` : lecturerName;
+  const applicantName = getAdjustmentListApplicantName(r);
+  const applicantId = getAdjustmentListApplicantStaffId(r);
+  const applicantText = applicantId ? `${applicantName}（${applicantId}）` : applicantName;
+  const leavePeriod = typeof formatAdjustmentLeavePeriod === 'function'
+    ? formatAdjustmentLeavePeriod(r)
+    : (getAdjustmentRequestFromDates(r) || []).join('、');
+  return [
+    (ADJUSTMENT_STATUS_META[r.status] && ADJUSTMENT_STATUS_META[r.status].label)
+      || (ADJUSTMENT_TEACHER_STATUS_META[getAdjustmentTeacherStatusKey(r.status)] || {}).label
+      || r.status || '',
+    getAdjustmentStageLabel(r),
+    r.no || '',
+    (ADJUSTMENT_TYPE_META[r.type] && ADJUSTMENT_TYPE_META[r.type].label) || r.type || '',
+    applicantText === '—' ? '' : applicantText,
+    lecturerText === '—' ? '' : lecturerText,
+    getAdjustmentReasonTypeDisplay(r) || '',
+    r.reason || '',
+    leavePeriod || '',
+    getAdjustmentLeaveTotalDays(r),
+    getAdjustmentAffectedClassCount(r),
+    r.submittedAt || ''
+  ];
+}
+
+function exportAdjustmentTeacherUnifiedListRows(mode, collectOpts, tbodyId, filePrefix) {
+  if (typeof closeAllListExportMenus === 'function') closeAllListExportMenus();
+  const all = collectAdjustmentTeacherListRows(collectOpts).rows;
+  const rows = resolveListExportRows(mode || 'query', all, tbodyId);
+  if (!rows) return;
+  if (!rows.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const headers = [
+    'Status', 'Stage', 'Ref. ID', 'Adjustment Type', 'Applicant', 'Lecturer',
+    'Category', 'Reason', 'Leave Period', 'Total Days', 'Affected Classes', 'Application Time'
+  ];
+  const data = rows.map(mapAdjustmentTeacherUnifiedExportRow);
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  downloadCsvFile(`${filePrefix}_${stamp}.csv`, headers, data);
+}
+
+function exportAdjustmentTeacherReplacementRows(mode) {
+  exportAdjustmentTeacherUnifiedListRows(
+    mode,
+    {
+      termId: 'adjustment-teacher-term',
+      includeTypes: ['reschedule', 'cancel'],
+      includeSources: ['teacher', 'admin', 'holiday'],
+      filterPrefix: 'adjustment-teacher-',
+      sortListKey: 'adjustmentTeacherReplacement'
+    },
+    'adjustment-teacher-body',
+    '调课停课申请'
+  );
+}
+
+function exportAdjustmentTeacherHistoryRows(mode) {
+  exportAdjustmentTeacherUnifiedListRows(
+    mode,
+    {
+      termId: 'adjustment-teacher-makeup-hist-term',
+      typeId: 'adjustment-teacher-makeup-type-hist',
+      statusId: 'adjustment-teacher-makeup-status-hist',
+      includeTypes: ['reschedule', 'cancel', 'makeup'],
+      includeSources: ['teacher', 'admin', 'holiday'],
+      filterPrefix: 'adjustment-teacher-makeup-',
+      filterSuffix: '-hist',
+      sortListKey: 'adjustmentTeacherMakeup'
+    },
+    'adjustment-teacher-makeup-body',
+    '调课申请历史'
+  );
+}
+
+function exportAdjustmentTeacherAdditionRows(mode) {
+  exportAdjustmentTeacherUnifiedListRows(
+    mode,
+    {
+      termId: 'adjustment-teacher-addition-term',
+      statusId: 'adjustment-teacher-addition-status',
+      onlyType: 'addclass',
+      sortListKey: 'adjustmentTeacherAddition'
+    },
+    'adjustment-teacher-addition-body',
+    '加课申请'
   );
 }
 
@@ -67443,6 +68098,8 @@ function openAdjustmentApplyModal(type, asAdmin, preset) {
   adjustmentAdminMode = !!asAdmin;
   if (!asAdmin) adjustmentActiveTeacherId = resolveAdjustmentActiveTeacherId();
   adjustmentApplyType = type;
+  adjustmentApplyGroupNameShort = true;
+  syncAdjustmentApplyGroupNameShortUi();
   adjustmentApplyFiles = [];
   adjustmentLastConflict = null;
   adjustmentPerSlotState = {};
@@ -67868,7 +68525,9 @@ function getAdjustmentCancelledSlots(opts = {}) {
         : '') || weekRange;
       const code = (it && it.code) || t?.code || r.code || '';
       const courseName = (it && it.courseName) || t?.name || r.courseName || '';
-      const group = (it && it.group) || t?.groupLabel || r.groupLabel || '上课小组';
+      const group = typeof resolveAdjustmentSlotGroupField === 'function'
+        ? resolveAdjustmentSlotGroupField(t, (it && it.group) || r.groupLabel || t?.groupLabel)
+        : ((it && it.group) || t?.groupLabel || r.groupLabel || '上课小组');
       const periodLabel = from.periodLabel
         || (pf ? formatAdjustmentPeriodLabel(pf, pt) : '');
       const row = enrichAdjustmentSlotRow({
@@ -68141,13 +68800,22 @@ function renderAdjustmentSlotPickerRows() {
       const teacherCell = showAdjustmentLeftTeacherCol()
         ? `<td>${escapeHtml(formatAdjustmentSlotTeacherLabel(r))}</td>`
         : '';
+      const liveTask = (r.taskId && typeof getScheduleTaskRows === 'function')
+        ? getScheduleTaskRows().find(t => t.id === r.taskId)
+        : null;
+      const groupField = typeof resolveAdjustmentSlotGroupField === 'function'
+        ? resolveAdjustmentSlotGroupField(liveTask, r.group)
+        : (r.group || r.groupWithCount || '—');
+      const groupHtml = typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+        ? formatAdjustmentCourseGroupLabelHtml(r.courseName, groupField, null, adjustmentApplyGroupNameShort)
+        : escapeHtml(r.groupWithCount || r.group || '—');
       if (isAdd) {
         return `<tr class="${rowCls}"${rowClick}${pickTitle ? ` title="${escapeHtml(pickTitle)}"` : ''}>
           <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''}${pickDisabled ? ' disabled' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
           <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
           ${creditsCell}
           ${teacherCell}
-          <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
+          <td class="adj-col-group">${groupHtml}</td>
         </tr>`;
       }
       const weekNo = r.dateLabel && typeof getAdjustmentDateInfo === 'function'
@@ -68162,7 +68830,7 @@ function renderAdjustmentSlotPickerRows() {
       return `<tr class="${rowCls}"${rowClick}${pickTitle ? ` title="${escapeHtml(pickTitle)}"` : ''}>
         <td class="col-center srf-col-pick"><input type="checkbox" value="${v}"${checked ? ' checked' : ''}${pickDisabled ? ' disabled' : ''} onclick="event.stopPropagation();toggleAdjustmentSlotPick('${v}')"></td>
         <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
-        <td class="adj-col-group">${escapeHtml(r.groupWithCount || r.group)}</td>
+        <td class="adj-col-group">${groupHtml}</td>
         ${teacherCell}
         <td class="col-center adj-slot-col-weeks">${escapeHtml(weekText)}</td>
         <td class="col-center adj-slot-col-date">${escapeHtml(r.dateLabel ? formatAdjustmentDateDisplay(r.dateLabel) : '—')}</td>
@@ -68853,7 +69521,13 @@ function renderAdjustmentPerSlotConfigs() {
       ${renderAdjustmentApplyBatchCheckCell(val, rowSpan)}
       <td class="col-center adj-apply-col-merge adj-col-code" rowspan="${rowSpan}">${escapeHtml(codeText)}</td>
       ${showCredits ? `<td class="col-center" rowspan="${rowSpan}">${escapeHtml(String(group.credits ?? getAdjustmentTaskCredits(t)))}</td>` : ''}
-      <td class="col-center adj-apply-col-merge adj-col-group" rowspan="${rowSpan}">${escapeHtml(group.groupWithCount || formatAdjustmentGroupWithCount(t.groupLabel || '上课小组', getAdjustmentGroupStudentCount(t), group.courseName || t.name))}</td>
+      <td class="adj-apply-col-merge adj-col-group" rowspan="${rowSpan}">${formatAdjustmentGroupWithCountHtml(
+        group.group || t.groupLabel || '上课小组',
+        group.studentCount ?? getAdjustmentGroupStudentCount(t),
+        group.courseName || t.name,
+        t,
+        adjustmentApplyGroupNameShort
+      )}</td>
       ${renderAdjustmentApplyRowTypeCell('Previous')}
       <td class="col-center">${escapeHtml(getAdjustmentTeacherName(teacherId))}</td>
       <td class="col-center">${escapeHtml(origWeek)}</td>
@@ -68917,17 +69591,19 @@ function renderAdjustmentAddclassDetailTable(wrap) {
     const confHtml = showConf
       ? `<div class="adj-resch-conf-full">${renderAdjustmentConflictLines(conf, null)}</div>` : '';
     const codeText = task ? (formatScheduleCourseCode(task.code) || task.code || '—') : '—';
-    const groupName = formatAdjustmentGroupWithCount(
+    const groupHtml = formatAdjustmentGroupWithCountHtml(
       task?.groupLabel || '上课小组',
       getAdjustmentGroupStudentCount(task),
-      task?.name
+      task?.name,
+      task,
+      adjustmentApplyGroupNameShort
     );
     const compulsory = isAdjustmentCompulsoryYes(st.compulsory) ? 'Y' : 'N';
     const addColSpan = (adjustmentApplySupportsBatchEdit() ? 1 : 0) + 10;
     return `<tr class="adj-apply-to-row" data-adj-val="${v}">
       ${renderAdjustmentApplyBatchCheckCell(val, 1)}
       <td class="col-center adj-col-code">${escapeHtml(codeText)}</td>
-      <td class="col-center adj-col-group">${escapeHtml(groupName)}</td>
+      <td class="adj-col-group">${groupHtml}</td>
       <td class="col-center"><button class="input input-sm adj-pick-btn" type="button" onclick="openAdjustmentDatePicker(event,'${v}')">${escapeHtml(st.date ? formatAdjustmentDateDisplay(st.date) : '选择日期')}</button></td>
       <td class="col-center">${escapeHtml(weekdayText)}</td>
       <td class="col-center">${periodDd}</td>
@@ -70132,14 +70808,7 @@ function syncAdjustmentApprovalPendingBadge() {
   }
 }
 
-function renderAdjustmentApprovalPage() {
-  ensureAdjustmentDemo();
-  ensureAdjustmentApprovalFilters();
-  const tbody = document.getElementById('adjustment-approval-body');
-  document.querySelectorAll('#adjustment-approval-tabs .adj-approval-tab').forEach(btn => {
-    btn.classList.toggle('is-active', btn.dataset.tab === adjustmentApprovalTab);
-  });
-  syncAdjustmentApprovalPendingBadge();
+function collectAdjustmentApprovalListRows() {
   let rows = ADJUSTMENT_STORE.requests.filter(r => r.source === 'teacher');
   if (adjustmentApprovalTab === 'pending') {
     rows = rows.filter(r => r.status === 'pending');
@@ -70148,15 +70817,28 @@ function renderAdjustmentApprovalPage() {
     rows = rows.filter(r => r.status === 'pending' || r.status === 'reviewing');
   }
   rows = rows.filter(matchAdjustmentApprovalFilters);
-  rows = sortListWithState(rows, 'adjustmentApproval', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
+  return sortListWithState(rows, 'adjustmentApproval', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
+}
+
+function renderAdjustmentApprovalPage() {
+  ensureAdjustmentDemo();
+  ensureAdjustmentApprovalFilters();
+  const tbody = document.getElementById('adjustment-approval-body');
+  document.querySelectorAll('#adjustment-approval-tabs .adj-approval-tab').forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.tab === adjustmentApprovalTab);
+  });
+  syncAdjustmentApprovalPendingBadge();
+  const rows = collectAdjustmentApprovalListRows();
   if (!tbody) return;
-  renderAdjustmentRequestListThead(tbody, 'adjustmentApproval');
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 16, '暂无申请记录'); return; }
+  renderAdjustmentRequestListThead(tbody, 'adjustmentApproval', { withCheck: true });
+  resetListExportCheckAll('adjustment-approval-check-all');
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 17, '暂无申请记录'); return; }
   tbody.innerHTML = rows.map((r, i) => {
     const profile = typeof getAdjustmentApplicantProfile === 'function'
       ? getAdjustmentApplicantProfile(r.teacherId)
       : { department: '—', teacherType: '—' };
     return `<tr>
+    <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
     <td class="col-index">${i + 1}</td>
     <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
@@ -70178,6 +70860,57 @@ function renderAdjustmentApprovalPage() {
   </tr>`;
   }).join('');
   bindCellFloatTips(tbody, '.adj-reason-cell .cell-ellipsis-tip[data-tip]');
+}
+
+function exportAdjustmentApprovalRows(mode) {
+  if (typeof closeAllListExportMenus === 'function') closeAllListExportMenus();
+  ensureAdjustmentDemo();
+  const all = collectAdjustmentApprovalListRows();
+  const rows = resolveListExportRows(mode || 'query', all, 'adjustment-approval-body');
+  if (!rows) return;
+  if (!rows.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const headers = [
+    'Status', 'Stage', 'Ref. ID', 'Adjustment Type', 'Applicant', 'Lecturer',
+    'Department', 'Lecturer Type', 'Category', 'Reason', 'Leave Period',
+    'Total Days', 'Affected Classes', 'Application Time'
+  ];
+  const data = rows.map(r => {
+    const profile = typeof getAdjustmentApplicantProfile === 'function'
+      ? getAdjustmentApplicantProfile(r.teacherId)
+      : null;
+    const lecturerName = profile?.teacherName || r.teacherName || '';
+    const lecturerId = profile?.teacherId || r.teacherId || '';
+    const lecturerText = lecturerId ? `${lecturerName}（${lecturerId}）` : lecturerName;
+    const applicantName = getAdjustmentListApplicantName(r);
+    const applicantId = getAdjustmentListApplicantStaffId(r);
+    const applicantText = applicantId ? `${applicantName}（${applicantId}）` : applicantName;
+    const leavePeriod = typeof formatAdjustmentLeavePeriod === 'function'
+      ? formatAdjustmentLeavePeriod(r)
+      : (getAdjustmentRequestFromDates(r) || []).join('、');
+    return [
+      (ADJUSTMENT_STATUS_META[r.status] && ADJUSTMENT_STATUS_META[r.status].label)
+        || (ADJUSTMENT_TEACHER_STATUS_META[getAdjustmentTeacherStatusKey(r.status)] || {}).label
+        || r.status || '',
+      getAdjustmentStageLabel(r),
+      r.no || '',
+      (ADJUSTMENT_TYPE_META[r.type] && ADJUSTMENT_TYPE_META[r.type].label) || r.type || '',
+      applicantText === '—' ? '' : applicantText,
+      lecturerText === '—' ? '' : lecturerText,
+      profile?.department || r.teacherDept || '',
+      profile?.teacherType || r.teacherType || '',
+      getAdjustmentReasonTypeDisplay(r) || '',
+      r.reason || '',
+      leavePeriod || '',
+      getAdjustmentLeaveTotalDays(r),
+      getAdjustmentAffectedClassCount(r),
+      r.submittedAt || ''
+    ];
+  });
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  downloadCsvFile('调课申请审批_' + stamp + '.csv', headers, data);
 }
 
 /** 进入审批界面：仅「待审批」队列（status=pending）可审 */

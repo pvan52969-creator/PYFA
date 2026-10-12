@@ -13550,9 +13550,16 @@ code {
   color: #1d4ed8;
   background: #dbeafe;
 }
+.schedule-joint-kind.is-course {
+  color: #0f766e;
+  background: #ccfbf1;
+}
 .is-schedule-joint .schedule-detail-grid-table.is-joint-object-cols {
   --sch-object-w: 150px;
   --sch-day-col-w: calc((100cqw - var(--sch-period-w) - var(--sch-object-w)) / var(--sch-day-count));
+}
+.is-schedule-joint .schedule-detail-grid-table.is-joint-object-cols.has-course-objects {
+  --sch-object-w: 200px;
 }
 .is-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols .schedule-grid-object-col {
   width: var(--sch-object-w);
@@ -14133,12 +14140,34 @@ code {
 .schedule-detail-course-code {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 6px;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 4px 8px;
+  width: 100%;
   font-family: var(--font-mono, monospace);
   font-size: 12px;
   font-weight: 600;
   color: var(--text-1);
+}
+.schedule-detail-course-code .sdc-code-left {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
+}
+.schedule-detail-course-code .sdc-course-type {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: system-ui, "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #1e40af;
+  background: #dbeafe;
+  white-space: nowrap;
 }
 .schedule-detail-course-code .sdc-hours-icon {
   display: inline-flex;
@@ -14765,6 +14794,33 @@ code {
 .ss-wrap .ss-input {
   width: 100%;
   box-sizing: border-box;
+}
+.ss-wrap.is-clearable .ss-input {
+  padding-right: 28px;
+}
+.ss-wrap > .ss-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-3, #94a3b8);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ss-wrap > .ss-clear:hover {
+  color: var(--text, #0f172a);
+  background: #f1f5f9;
+}
+.ss-wrap > .ss-clear[hidden] {
+  display: none !important;
 }
 .ss-dropdown {
   position: absolute;

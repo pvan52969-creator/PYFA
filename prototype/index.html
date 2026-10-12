@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="e23f2c2">
+  <meta name="portal-build" content="78f30b4">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -245,7 +245,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git e23f2c2">1012排课3</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 78f30b4">1012排课4</div>
         </div>
       </div>
     </section>
@@ -4927,13 +4927,23 @@
       <div class="legend-bar" id="adjustment-admin-hint"></div>
       <div class="card schedule-card">
         <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
-          <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('reschedule')">代发起调课</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('cancel')">代发起停课</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('makeup')">代发起补课</button>
-          <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('addclass')">代发起加课</button>
+          <div class="adj-teacher-list-actions-left">
+            <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('reschedule')">代发起调课</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('cancel')">代发起停课</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('makeup')">代发起补课</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('addclass')">代发起加课</button>
+          </div>
+          <div class="list-export-dropdown">
+            <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-admin')">导出</button>
+            <div class="list-export-menu" id="list-export-menu-adjustment-admin" hidden>
+              <button type="button" onclick="exportAdjustmentAdminRows('selected')">按选择项导出</button>
+              <button type="button" onclick="exportAdjustmentAdminRows('query')">按查询条件导出</button>
+            </div>
+          </div>
         </div>
         <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status adj-freeze-1">
           <thead><tr>
+            <th class="col-check"><input type="checkbox" id="adjustment-admin-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-admin-body', this.checked)"></th>
             <th class="col-index">No.</th>
             <th class="col-center">Status</th>
             <th class="col-center">Stage</th>
@@ -5108,11 +5118,21 @@
         <div class="legend-bar" id="adjustment-holiday-hint"></div>
         <div class="card schedule-card">
           <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentHolidayConfirmModal()">公假日停课确认</button>
-            <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentHolidayModal()">新增公假日停课</button>
+            <div class="adj-teacher-list-actions-left">
+              <button class="btn btn-primary btn-sm" type="button" onclick="openAdjustmentHolidayConfirmModal()">公假日停课确认</button>
+              <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentHolidayModal()">新增公假日停课</button>
+            </div>
+            <div class="list-export-dropdown">
+              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-holiday-manage')">导出</button>
+              <div class="list-export-menu" id="list-export-menu-adjustment-holiday-manage" hidden>
+                <button type="button" onclick="exportAdjustmentHolidayManageRows('selected')">按选择项导出</button>
+                <button type="button" onclick="exportAdjustmentHolidayManageRows('query')">按查询条件导出</button>
+              </div>
+            </div>
           </div>
           <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-1">
           <thead><tr>
+            <th class="col-check"><input type="checkbox" id="adjustment-holiday-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-holiday-body', this.checked)"></th>
             <th class="col-index">No.</th><th>Ref. ID</th><th>假日名称</th><th class="col-center">Date</th><th class="col-center">Day</th>
             <th>Category</th><th>Reason</th><th class="col-center">Affected Classes</th><th class="col-center">创建时间</th><th class="col-center">Action</th>
           </tr></thead>
@@ -5153,8 +5173,18 @@
         </div>
         <div class="legend-bar" id="adjustment-holiday-record-hint"></div>
         <div class="card schedule-card">
+          <div class="panel-toolbar list-export-bar">
+            <div class="list-export-dropdown">
+              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-holiday-record')">导出</button>
+              <div class="list-export-menu" id="list-export-menu-adjustment-holiday-record" hidden>
+                <button type="button" onclick="exportAdjustmentHolidayRecordRows('selected')">按选择项导出</button>
+                <button type="button" onclick="exportAdjustmentHolidayRecordRows('query')">按查询条件导出</button>
+              </div>
+            </div>
+          </div>
           <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-1">
           <thead><tr>
+            <th class="col-check"><input type="checkbox" id="adjustment-holiday-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-holiday-record-body', this.checked)"></th>
             <th class="col-index">序号</th>
             <th>学年学期</th>
             <th>假日名称</th>
@@ -5211,18 +5241,29 @@
             <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('room')">批量调教室</button>
             <button type="button" class="btn btn-primary btn-sm" onclick="openAdjustmentBatchDrawer('time')">批量调时间</button>
           </div>
-          <div class="legend-bar" id="adjustment-batch-record-hint"></div>
+          <div class="adjustment-batch-toolbar-right">
+            <div class="legend-bar" id="adjustment-batch-record-hint"></div>
+            <div class="list-export-dropdown">
+              <button class="btn btn-outline btn-sm" type="button" onclick="toggleListExportMenu(event, 'adjustment-batch')">导出</button>
+              <div class="list-export-menu" id="list-export-menu-adjustment-batch" hidden>
+                <button type="button" onclick="exportAdjustmentBatchRecordRows('selected')">按选择项导出</button>
+                <button type="button" onclick="exportAdjustmentBatchRecordRows('query')">按查询条件导出</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="table-scroll">
           <table class="data-table adjustment-table adj-freeze-left-2 adj-freeze-right-1">
             <thead>
               <tr>
+                <th class="col-check"><input type="checkbox" id="adjustment-batch-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-batch-record-body', this.checked)"></th>
                 <th class="col-index">No.</th>
                 <th>Ref. ID</th>
                 <th class="col-center">Adjustment Type</th>
-                <th>源日期范围</th>
-                <th class="col-center">源节次</th>
-                <th>调整目标</th>
+                <th>原日期</th>
+                <th>原节次</th>
+                <th>目标日期</th>
+                <th>目标节次</th>
                 <th class="col-center">Affected Classes</th>
                 <th>Category</th>
                 <th>Reason</th>

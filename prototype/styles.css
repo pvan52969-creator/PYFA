@@ -8888,6 +8888,17 @@ input#group-assign-recorded-hours {
 #page-adjustment-admin > .schedule-card > .schedule-tt-export-bar.adjustment-apply-actions {
   padding: 8px 16px;
   margin-bottom: 0;
+  justify-content: space-between;
+}
+#page-adjustment-admin .adj-teacher-list-actions-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+#page-adjustment-admin .list-export-menu {
+  left: auto;
+  right: 0;
 }
 
 .adj-room-open-table { min-width: 1080px; }
@@ -8995,42 +9006,57 @@ input#group-assign-recorded-hours {
   text-overflow: ellipsis;
   cursor: help;
 }
-/* 调课申请记录：勾选列 + 序号 + 审批状态 + 审批阶段 */
+/* 调课申请记录 / 调课申请管理：勾选列 + 序号 + 审批状态 + 审批阶段 */
 #page-adjustment-record .adjustment-table th:nth-child(-n+4),
-#page-adjustment-record .adjustment-table td:nth-child(-n+4) {
+#page-adjustment-record .adjustment-table td:nth-child(-n+4),
+#page-adjustment-admin .adjustment-table th:nth-child(-n+4),
+#page-adjustment-admin .adjustment-table td:nth-child(-n+4) {
   position: sticky;
   z-index: 3;
   background: #fff;
 }
 .main .page.page-list.active #page-adjustment-record .adjustment-table thead th:nth-child(-n+4),
-#page-adjustment-record .adjustment-table thead th:nth-child(-n+4) {
+#page-adjustment-record .adjustment-table thead th:nth-child(-n+4),
+.main .page.page-list.active #page-adjustment-admin .adjustment-table thead th:nth-child(-n+4),
+#page-adjustment-admin .adjustment-table thead th:nth-child(-n+4) {
   position: sticky;
   top: 0;
   z-index: 6;
   background: var(--table-head-bg, var(--blue-50));
   box-shadow: inset 0 -1px 0 var(--border);
 }
-#page-adjustment-record .adjustment-table tr:hover td:nth-child(-n+4) { background: #fafbfc; }
+#page-adjustment-record .adjustment-table tr:hover td:nth-child(-n+4),
+#page-adjustment-admin .adjustment-table tr:hover td:nth-child(-n+4) { background: #fafbfc; }
 #page-adjustment-record .adjustment-table th:nth-child(1),
-#page-adjustment-record .adjustment-table td:nth-child(1) {
+#page-adjustment-record .adjustment-table td:nth-child(1),
+#page-adjustment-admin .adjustment-table th:nth-child(1),
+#page-adjustment-admin .adjustment-table td:nth-child(1) {
   left: 0; width: 40px; min-width: 40px; text-align: center;
 }
 #page-adjustment-record .adjustment-table th:nth-child(2),
-#page-adjustment-record .adjustment-table td:nth-child(2) {
+#page-adjustment-record .adjustment-table td:nth-child(2),
+#page-adjustment-admin .adjustment-table th:nth-child(2),
+#page-adjustment-admin .adjustment-table td:nth-child(2) {
   left: 40px; width: 52px; min-width: 52px;
 }
 #page-adjustment-record .adjustment-table.adj-freeze-left-status th:nth-child(3),
-#page-adjustment-record .adjustment-table.adj-freeze-left-status td:nth-child(3) {
+#page-adjustment-record .adjustment-table.adj-freeze-left-status td:nth-child(3),
+#page-adjustment-admin .adjustment-table.adj-freeze-left-status th:nth-child(3),
+#page-adjustment-admin .adjustment-table.adj-freeze-left-status td:nth-child(3) {
   left: 92px; width: 96px; min-width: 96px;
   box-shadow: none;
 }
 #page-adjustment-record .adjustment-table.adj-freeze-left-status th:nth-child(4),
-#page-adjustment-record .adjustment-table.adj-freeze-left-status td:nth-child(4) {
+#page-adjustment-record .adjustment-table.adj-freeze-left-status td:nth-child(4),
+#page-adjustment-admin .adjustment-table.adj-freeze-left-status th:nth-child(4),
+#page-adjustment-admin .adjustment-table.adj-freeze-left-status td:nth-child(4) {
   left: 188px; width: 96px; min-width: 96px;
   box-shadow: 6px 0 8px -6px rgba(15,52,96,.22);
 }
 .main .page.page-list.active #page-adjustment-record .adjustment-table thead th:nth-child(4),
-#page-adjustment-record .adjustment-table thead th:nth-child(4) {
+#page-adjustment-record .adjustment-table thead th:nth-child(4),
+.main .page.page-list.active #page-adjustment-admin .adjustment-table thead th:nth-child(4),
+#page-adjustment-admin .adjustment-table thead th:nth-child(4) {
   box-shadow: 6px 0 8px -6px rgba(15,52,96,.22), inset 0 -1px 0 var(--border);
 }
 /* 申请审批：勾选列 + No. + Status + Stage */
@@ -9145,9 +9171,42 @@ input#group-assign-recorded-hours {
 .adjustment-table thead th:nth-child(3) {
   box-shadow: 6px 0 8px -6px rgba(15,52,96,.22), inset 0 -1px 0 var(--border);
 }
-/* 公假日停课记录：列结构与申请单不同，取消左侧 2/3 列冻结，避免挡住补课状态与日期 */
-#adjustment-holiday-tab-record .adjustment-table th:nth-child(n+2):nth-child(-n+3),
-#adjustment-holiday-tab-record .adjustment-table td:nth-child(n+2):nth-child(-n+3) {
+/* 公假日停课管理 / 记录：勾选列 + 序号冻结 */
+#adjustment-holiday-tab-manage .adjustment-table th:nth-child(1),
+#adjustment-holiday-tab-manage .adjustment-table td:nth-child(1),
+#adjustment-holiday-tab-record .adjustment-table th:nth-child(1),
+#adjustment-holiday-tab-record .adjustment-table td:nth-child(1) {
+  left: 0; width: 40px; min-width: 40px; text-align: center;
+}
+#adjustment-holiday-tab-manage .adjustment-table th:nth-child(2),
+#adjustment-holiday-tab-manage .adjustment-table td:nth-child(2),
+#adjustment-holiday-tab-record .adjustment-table th:nth-child(2),
+#adjustment-holiday-tab-record .adjustment-table td:nth-child(2) {
+  left: 40px; width: 52px; min-width: 52px;
+  box-shadow: none;
+}
+/* 管理页：勾选 + No. + Ref. ID 三列冻结 */
+#adjustment-holiday-tab-manage .adjustment-table th:nth-child(3),
+#adjustment-holiday-tab-manage .adjustment-table td:nth-child(3) {
+  left: 92px; width: 100px; min-width: 100px;
+  box-shadow: 6px 0 8px -6px rgba(15,52,96,.22);
+}
+.main .page.page-list.active #adjustment-holiday-tab-manage .adjustment-table thead th:nth-child(3),
+#adjustment-holiday-tab-manage .adjustment-table thead th:nth-child(3) {
+  box-shadow: 6px 0 8px -6px rgba(15,52,96,.22), inset 0 -1px 0 var(--border);
+}
+/* 记录页：仅勾选 + 序号冻结 */
+#adjustment-holiday-tab-record .adjustment-table th:nth-child(2),
+#adjustment-holiday-tab-record .adjustment-table td:nth-child(2) {
+  box-shadow: 6px 0 8px -6px rgba(15,52,96,.22);
+}
+.main .page.page-list.active #adjustment-holiday-tab-record .adjustment-table thead th:nth-child(2),
+#adjustment-holiday-tab-record .adjustment-table thead th:nth-child(2) {
+  box-shadow: 6px 0 8px -6px rgba(15,52,96,.22), inset 0 -1px 0 var(--border);
+}
+/* 公假日停课记录：勾选后取消第 3/4 列（学期/假日）冻结，避免挡住补课状态与日期 */
+#adjustment-holiday-tab-record .adjustment-table th:nth-child(n+3):nth-child(-n+4),
+#adjustment-holiday-tab-record .adjustment-table td:nth-child(n+3):nth-child(-n+4) {
   position: static;
   left: auto;
   width: auto;
@@ -9156,7 +9215,7 @@ input#group-assign-recorded-hours {
   z-index: auto;
   background: transparent;
 }
-.main .page.page-list.active #adjustment-holiday-tab-record .adjustment-table thead th:nth-child(n+2):nth-child(-n+3) {
+.main .page.page-list.active #adjustment-holiday-tab-record .adjustment-table thead th:nth-child(n+3):nth-child(-n+4) {
   position: sticky;
   top: 0;
   left: auto;
@@ -9166,9 +9225,26 @@ input#group-assign-recorded-hours {
   box-shadow: inset 0 -1px 0 var(--border);
   background: var(--table-head-bg, var(--blue-50));
 }
-#adjustment-holiday-tab-record .adjustment-table th:nth-child(7),
-#adjustment-holiday-tab-record .adjustment-table td:nth-child(7) {
+#adjustment-holiday-tab-record .adjustment-table th:nth-child(8),
+#adjustment-holiday-tab-record .adjustment-table td:nth-child(8) {
   text-align: center;
+}
+#adjustment-holiday-tab-manage .schedule-tt-export-bar.adjustment-apply-actions {
+  justify-content: space-between;
+}
+#adjustment-holiday-tab-manage .adj-teacher-list-actions-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+#adjustment-holiday-tab-manage .list-export-menu,
+#adjustment-holiday-tab-record .list-export-menu {
+  left: auto;
+  right: 0;
+}
+#adjustment-holiday-tab-record .list-export-bar {
+  padding: 8px 16px;
 }
 #adjustment-holiday-tab-record .adj-holiday-period-stack {
   display: inline-flex;
@@ -10559,9 +10635,20 @@ input#group-assign-recorded-hours {
 #modal-adjustment-detail .adj-detail-log-summary .adj-detail-field {
   gap: 6px; line-height: 1.35;
 }
+/* log summary 三列各自独立，不按固定标签宽对齐，避免短标签与值间距过大 */
+#modal-adjustment-detail .adj-detail-log-summary .adj-detail-field {
+  gap: 4px;
+}
 #modal-adjustment-detail .adj-detail-section-staff .adj-detail-k,
 #modal-adjustment-detail .adj-detail-log-summary .adj-detail-k {
-  color: var(--text-1); font-weight: 700; flex: 0 0 auto; min-width: 132px; white-space: nowrap;
+  color: var(--text-1); font-weight: 700; flex: 0 0 auto; white-space: nowrap;
+  /* 原 min-width: 132px 导致 log summary 短标签与值空隙过大；Staff 仍保留对齐宽 */
+}
+#modal-adjustment-detail .adj-detail-section-staff .adj-detail-k {
+  min-width: 132px;
+}
+#modal-adjustment-detail .adj-detail-log-summary .adj-detail-k {
+  min-width: 0;
 }
 #modal-adjustment-detail .adj-detail-section-staff .adj-detail-k::after,
 #modal-adjustment-detail .adj-detail-log-summary .adj-detail-k::after {
@@ -12819,6 +12906,19 @@ code {
 }
 .schedule-page .card > .table-scroll {
   margin-top: 0;
+}
+/* 排课模块（含调课）主列表：纵向框线 */
+.schedule-page .table-scroll .data-table > thead > tr > th,
+.schedule-page .table-scroll .data-table > tbody > tr > td,
+.adjustment-page .table-scroll .data-table > thead > tr > th,
+.adjustment-page .table-scroll .data-table > tbody > tr > td {
+  border-right: 1px solid var(--border-light);
+}
+.schedule-page .table-scroll .data-table > thead > tr > th:first-child,
+.schedule-page .table-scroll .data-table > tbody > tr > td:first-child,
+.adjustment-page .table-scroll .data-table > thead > tr > th:first-child,
+.adjustment-page .table-scroll .data-table > tbody > tr > td:first-child {
+  border-left: 1px solid var(--border-light);
 }
 .schedule-query-card {
   margin-bottom: 12px;
@@ -17209,8 +17309,74 @@ code {
   align-items: center;
   gap: 8px;
 }
+#page-adjustment-batch .adjustment-batch-toolbar-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-left: auto;
+}
 #page-adjustment-batch .adjustment-batch-table-toolbar .legend-bar {
   margin: 0;
+}
+#page-adjustment-batch .list-export-menu {
+  left: auto;
+  right: 0;
+}
+/* 批量调课：勾选 + No. + Ref. ID 左侧冻结 */
+#page-adjustment-batch .adj-freeze-left-2 th:nth-child(-n+3),
+#page-adjustment-batch .adj-freeze-left-2 td:nth-child(-n+3) {
+  position: sticky;
+  z-index: 3;
+  background: #fff;
+}
+.main .page.page-list.active #page-adjustment-batch .adj-freeze-left-2 thead th:nth-child(-n+3),
+#page-adjustment-batch .adj-freeze-left-2 thead th:nth-child(-n+3) {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--table-head-bg, var(--blue-50));
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+#page-adjustment-batch .adj-freeze-left-2 th:nth-child(1),
+#page-adjustment-batch .adj-freeze-left-2 td:nth-child(1) {
+  left: 0;
+  width: 40px;
+  min-width: 40px;
+  text-align: center;
+}
+#page-adjustment-batch .adj-freeze-left-2 th.col-index,
+#page-adjustment-batch .adj-freeze-left-2 td.col-index {
+  left: 40px;
+  min-width: 52px;
+  width: 52px;
+  box-shadow: none;
+}
+#page-adjustment-batch .adj-freeze-left-2 th:nth-child(3),
+#page-adjustment-batch .adj-freeze-left-2 td:nth-child(3) {
+  left: 92px;
+  min-width: 100px;
+  box-shadow: 2px 0 4px rgba(15, 52, 96, 0.06);
+}
+.main .page.page-list.active #page-adjustment-batch .adj-freeze-left-2 thead th:nth-child(3),
+#page-adjustment-batch .adj-freeze-left-2 thead th:nth-child(3) {
+  box-shadow: 2px 0 4px rgba(15, 52, 96, 0.06), inset 0 -1px 0 var(--border);
+}
+#page-adjustment-batch .adj-freeze-left-2 tr:hover td:nth-child(-n+3) {
+  background: #fafbfc;
+}
+#page-adjustment-batch .adj-batch-period-cell {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+#page-adjustment-batch .adj-batch-period-line {
+  text-align: left;
+  white-space: nowrap;
+}
+#page-adjustment-batch .adj-batch-period-line + .adj-batch-period-line {
+  margin-top: 2px;
 }
 
 .schedule-arrange-toolbar {

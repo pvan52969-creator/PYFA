@@ -62908,6 +62908,9 @@ function getAdjustmentRequestListExportMeta(listKey) {
   if (listKey === 'adjustmentApproval') {
     return { checkAllId: 'adjustment-approval-check-all', tbodyId: 'adjustment-approval-body' };
   }
+  if (listKey === 'adjustmentAdmin') {
+    return { checkAllId: 'adjustment-admin-check-all', tbodyId: 'adjustment-admin-body' };
+  }
   return null;
 }
 
@@ -67486,16 +67489,11 @@ function resetAdjustmentAdminQuery() {
   renderAdjustmentAdminPage();
 }
 
-function renderAdjustmentAdminPage() {
-  ensureAdjustmentDemo();
-  ensureScheduleChangeLogDemo();
-  ensureAdjustmentAdminSelects();
-  const tbody = document.getElementById('adjustment-admin-body');
+function getAdjustmentAdminFilteredRows() {
   const term = document.getElementById('adjustment-admin-term')?.value || '';
   const teacherId = document.getElementById('adjustment-admin-teacher')?.value || '';
   const type = document.getElementById('adjustment-admin-type')?.value || '';
   const status = document.getElementById('adjustment-admin-status')?.value || '';
-  const hint = document.getElementById('adjustment-admin-hint');
   // 管理页演示：优先展示代申请；每个类型只保留一条
   let rows = ADJUSTMENT_STORE.requests.filter(r => isAdjustmentApplicationListRow(r, 'admin'));
   if (!rows.length) rows = ADJUSTMENT_STORE.requests.filter(r =>
@@ -67505,16 +67503,57 @@ function renderAdjustmentAdminPage() {
   if (teacherId) rows = rows.filter(r => r.teacherId === teacherId);
   if (type) rows = rows.filter(r => r.type === type);
   if (status) rows = rows.filter(r => matchAdjustmentTeacherStatusFilter(r.status, status));
-  rows = sortListWithState(rows, 'adjustmentAdmin', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
+  return sortListWithState(rows, 'adjustmentAdmin', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
+}
+
+function exportAdjustmentAdminRows(mode) {
+  if (typeof closeAllListExportMenus === 'function') closeAllListExportMenus();
+  const all = getAdjustmentAdminFilteredRows();
+  const rows = resolveListExportRows(mode || 'query', all, 'adjustment-admin-body');
+  if (!rows) return;
+  if (!rows.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const headers = [
+    'Status', 'Stage', 'Ref. ID', 'Adjustment Type', 'Applicant', 'Staff ID',
+    'Date', 'Affected Classes', 'Category', 'Reason', 'Application Time'
+  ];
+  const data = rows.map(r => [
+    (ADJUSTMENT_STATUS_META[r.status] && ADJUSTMENT_STATUS_META[r.status].label) || r.status || '',
+    getAdjustmentStageLabel(r),
+    r.no || '',
+    (ADJUSTMENT_TYPE_META[r.type] && ADJUSTMENT_TYPE_META[r.type].label) || r.type || '',
+    r.teacherName || '',
+    r.teacherId || '',
+    formatAdjustmentRequestApplyTime(r),
+    r.slotCount || 1,
+    getAdjustmentReasonTypeDisplay(r),
+    r.reason || '',
+    formatAdjustmentDateDisplay(r.submittedAt) || r.submittedAt || ''
+  ]);
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  downloadCsvFile(`调课申请管理_${stamp}.csv`, headers, data);
+}
+
+function renderAdjustmentAdminPage() {
+  ensureAdjustmentDemo();
+  ensureScheduleChangeLogDemo();
+  ensureAdjustmentAdminSelects();
+  const tbody = document.getElementById('adjustment-admin-body');
+  const hint = document.getElementById('adjustment-admin-hint');
+  const rows = getAdjustmentAdminFilteredRows();
   if (hint) {
     const adminCount = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin').length;
     const userCount = ADJUSTMENT_STORE.requests.filter(r => r.source === 'admin' && !r.demoOps).length;
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条 · 代申请库 <strong>${adminCount}</strong> 条 · 用户新增 <strong>${userCount}</strong> 条</span>`;
   }
   if (!tbody) return;
-  renderAdjustmentRequestListThead(tbody, 'adjustmentAdmin');
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 12, '暂无申请记录，可点击上方按钮代教师发起申请'); return; }
+  renderAdjustmentRequestListThead(tbody, 'adjustmentAdmin', { withCheck: true });
+  resetListExportCheckAll('adjustment-admin-check-all');
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 13, '暂无申请记录，可点击上方按钮代教师发起申请'); return; }
   tbody.innerHTML = rows.map((r, i) => `<tr>
+    <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
     <td class="col-index">${i + 1}</td>
     <td class="col-center">${adjustmentTeacherStatusBadge(r.status)}</td>
     <td class="col-center">${escapeHtml(getAdjustmentStageLabel(r))}</td>
@@ -71934,23 +71973,53 @@ function renderAdjustmentHolidayPage() {
   else renderAdjustmentHolidayManagePage();
 }
 
+function getAdjustmentHolidayManageFilteredRows() {
+  const kw = (document.getElementById('adjustment-holiday-keyword')?.value || '').trim().toLowerCase();
+  const wd = document.getElementById('adjustment-holiday-weekday')?.value || '';
+  let rows = ADJUSTMENT_STORE.holidays || [];
+  if (kw) rows = rows.filter(h => `${h.name} ${h.reason || ''}`.toLowerCase().includes(kw));
+  if (wd) rows = rows.filter(h => (h.weekdays || [h.weekday]).some(x => Number(x) === Number(wd)));
+  return sortListWithState(rows, 'adjustmentHolidayManage', ADJUSTMENT_HOLIDAY_MANAGE_SORT_COLUMNS);
+}
+
+function exportAdjustmentHolidayManageRows(mode) {
+  if (typeof closeAllListExportMenus === 'function') closeAllListExportMenus();
+  const all = getAdjustmentHolidayManageFilteredRows();
+  const rows = resolveListExportRows(mode || 'query', all, 'adjustment-holiday-body');
+  if (!rows) return;
+  if (!rows.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const headers = ['Ref. ID', '假日名称', 'Date', 'Day', 'Category', 'Reason', 'Affected Classes', '创建时间'];
+  const data = rows.map(h => [
+    h.no || '',
+    h.name || '',
+    formatAdjustmentDateDisplay(h.dateLabel || h.date) || h.dateLabel || h.date || '',
+    h.weekdayLabel || getScheduleWeekdayLabel(h.weekday) || '',
+    h.reasonType || 'Public Holiday',
+    h.reason || '',
+    h.affected || 0,
+    formatAdjustmentDateDisplay(h.createdAt) || h.createdAt || ''
+  ]);
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  downloadCsvFile(`公假日停课管理_${stamp}.csv`, headers, data);
+}
+
 function renderAdjustmentHolidayManagePage() {
   ensureAdjustmentDemo();
   ensureScheduleChangeLogDemo();
   const tbody = document.getElementById('adjustment-holiday-body');
   const hint = document.getElementById('adjustment-holiday-hint');
   if (!tbody) return;
-  const kw = (document.getElementById('adjustment-holiday-keyword')?.value || '').trim().toLowerCase();
-  const wd = document.getElementById('adjustment-holiday-weekday')?.value || '';
-  const all = ADJUSTMENT_STORE.holidays;
-  let rows = all;
-  if (kw) rows = rows.filter(h => `${h.name} ${h.reason || ''}`.toLowerCase().includes(kw));
-  if (wd) rows = rows.filter(h => (h.weekdays || [h.weekday]).some(x => Number(x) === Number(wd)));
-  rows = sortListWithState(rows, 'adjustmentHolidayManage', ADJUSTMENT_HOLIDAY_MANAGE_SORT_COLUMNS);
+  const all = ADJUSTMENT_STORE.holidays || [];
+  const rows = getAdjustmentHolidayManageFilteredRows();
   if (hint) hint.innerHTML = `<span class="legend-item">共 <strong>${all.length}</strong> 个公假日 · 当前筛选 <strong>${rows.length}</strong> 个 · 累计影响 <strong>${rows.reduce((s, h) => s + (h.affected || 0), 0)}</strong> 课节 · 批量停课无需审批</span>`;
   renderAdjustmentHolidayManageThead(tbody);
-  if (!rows.length) { renderScheduleEmptyRow(tbody, 10, '暂无公假日停课记录，可点击表格左上角新增'); return; }
+  resetListExportCheckAll('adjustment-holiday-check-all');
+  if (!rows.length) { renderScheduleEmptyRow(tbody, 11, '暂无公假日停课记录，可点击表格左上角新增'); return; }
   tbody.innerHTML = rows.map((h, i) => `<tr>
+    <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
     <td class="col-index">${i + 1}</td>
     <td><code>${escapeHtml(h.no)}</code></td>
     <td>${escapeHtml(h.name)}</td>
@@ -72036,6 +72105,7 @@ function renderAdjustmentHolidayManageThead(tbody) {
   const listKey = 'adjustmentHolidayManage';
   const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
   tr.innerHTML = [
+    '<th class="col-check"><input type="checkbox" id="adjustment-holiday-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'adjustment-holiday-body\', this.checked)"></th>',
     '<th class="col-index">No.</th>',
     th('Ref. ID', 'no'),
     th('假日名称', 'name'),
@@ -72079,6 +72149,7 @@ function renderAdjustmentHolidayRecordThead(tbody) {
   const listKey = 'adjustmentHolidayRecord';
   const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
   tr.innerHTML = [
+    '<th class="col-check"><input type="checkbox" id="adjustment-holiday-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'adjustment-holiday-record-body\', this.checked)"></th>',
     '<th class="col-index">序号</th>',
     th('学年学期', 'term'),
     th('假日名称', 'holidayName'),
@@ -72094,12 +72165,7 @@ function renderAdjustmentHolidayRecordThead(tbody) {
   ].join('');
 }
 
-function renderAdjustmentHolidayRecordPage() {
-  ensureAdjustmentDemo();
-  fillAdjustmentHolidayRecordFilters();
-  const tbody = document.getElementById('adjustment-holiday-record-body');
-  const hint = document.getElementById('adjustment-holiday-record-hint');
-  if (!tbody) return;
+function getAdjustmentHolidayRecordFilteredRows() {
   const term = document.getElementById('adjustment-holiday-record-term')?.value || '';
   const name = document.getElementById('adjustment-holiday-record-name')?.value || '';
   const makeupKey = document.getElementById('adjustment-holiday-record-makeup')?.value || '';
@@ -72111,14 +72177,63 @@ function renderAdjustmentHolidayRecordPage() {
   } else if (makeupKey) {
     rows = rows.filter(r => r.makeupKey === makeupKey);
   }
-  rows = sortListWithState(rows, 'adjustmentHolidayRecord', ADJUSTMENT_HOLIDAY_RECORD_SORT_COLUMNS);
+  return sortListWithState(rows, 'adjustmentHolidayRecord', ADJUSTMENT_HOLIDAY_RECORD_SORT_COLUMNS);
+}
+
+function exportAdjustmentHolidayRecordRows(mode) {
+  if (typeof closeAllListExportMenus === 'function') closeAllListExportMenus();
+  const all = getAdjustmentHolidayRecordFilteredRows();
+  const rows = resolveListExportRows(mode || 'query', all, 'adjustment-holiday-record-body');
+  if (!rows) return;
+  if (!rows.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const headers = [
+    '学年学期', '假日名称', '补课申请状态', 'Date', 'Day', '节次',
+    '课程班名称', '课程组', '任课教师', 'Venue'
+  ];
+  const data = rows.map(row => {
+    const termText = row.term && typeof formatCourseTermDisplay === 'function'
+      ? formatCourseTermDisplay(row.term)
+      : (row.term || '');
+    const makeupLabel = !row.makeup || row.makeupKey === 'none'
+      ? 'Not Applied'
+      : ((ADJUSTMENT_TEACHER_STATUS_META[getAdjustmentTeacherStatusKey(row.makeup.status)] || {}).label
+        || row.makeup.status
+        || '');
+    return [
+      termText,
+      row.holidayName || '',
+      makeupLabel,
+      row.date ? (formatAdjustmentDateDisplay(row.date) || row.date) : '',
+      row.weekdayLabel || '',
+      row.period || '',
+      row.course || '',
+      row.group || '',
+      row.teacher || '',
+      row.room || ''
+    ];
+  });
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  downloadCsvFile(`公假日停课记录_${stamp}.csv`, headers, data);
+}
+
+function renderAdjustmentHolidayRecordPage() {
+  ensureAdjustmentDemo();
+  fillAdjustmentHolidayRecordFilters();
+  const tbody = document.getElementById('adjustment-holiday-record-body');
+  const hint = document.getElementById('adjustment-holiday-record-hint');
+  if (!tbody) return;
+  const rows = getAdjustmentHolidayRecordFilteredRows();
   const applied = rows.filter(r => r.makeupKey !== 'none').length;
   if (hint) {
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 个停课课节 · 已申请补课 <strong>${applied}</strong> 个 · 未申请 <strong>${rows.length - applied}</strong> 个</span>`;
   }
   renderAdjustmentHolidayRecordThead(tbody);
+  resetListExportCheckAll('adjustment-holiday-record-check-all');
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 12, '暂无公假日停课课节');
+    renderScheduleEmptyRow(tbody, 13, '暂无公假日停课课节');
     return;
   }
   tbody.innerHTML = rows.map((row, i) => {
@@ -72130,6 +72245,7 @@ function renderAdjustmentHolidayRecordPage() {
       ? formatCourseTermDisplay(row.term)
       : (row.term || '—');
     return `<tr>
+      <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
       <td class="col-index">${i + 1}</td>
       <td>${escapeHtml(termText)}</td>
       <td>${escapeHtml(row.holidayName || '—')}</td>
@@ -75890,10 +76006,25 @@ function formatAdjustmentBatchRecordPeriods(periods, termCode) {
   return periods.map(p => formatAdjustmentPeriodLabel(p, p, term) || `第${p}节`).join('、');
 }
 
-function formatAdjustmentBatchRecordTarget(record) {
+/** 列表展示：节次一行一条 */
+function formatAdjustmentBatchRecordPeriodsHtml(periods, termCode) {
+  if (!periods?.length) return '—';
+  const term = termCode || getAdjustmentBatchPeriodTerm();
+  return periods
+    .map(p => escapeHtml(formatAdjustmentPeriodLabel(p, p, term) || `第${p}节`))
+    .map(t => `<div class="adj-batch-period-line">${t}</div>`)
+    .join('');
+}
+
+function formatAdjustmentBatchRecordTargetDate(record) {
   if (record.kind === 'room') return record.targetRoom || '—';
   const range = record.targetRange;
-  const rangeText = range?.start && range?.end ? `${range.start} ~ ${range.end}` : '—';
+  return range?.start && range?.end ? `${range.start} ~ ${range.end}` : '—';
+}
+
+function formatAdjustmentBatchRecordTarget(record) {
+  if (record.kind === 'room') return record.targetRoom || '—';
+  const rangeText = formatAdjustmentBatchRecordTargetDate(record);
   const pdText = formatAdjustmentBatchRecordPeriods(record.targetPeriods, record?.termCode);
   return `${rangeText} · ${pdText}`;
 }
@@ -75921,7 +76052,12 @@ const ADJUSTMENT_BATCH_RECORD_SORT_COLUMNS = {
   sourcePeriods: {
     get: r => formatAdjustmentBatchRecordPeriods(r.sourcePeriods, r.termCode) || ''
   },
-  target: { get: r => formatAdjustmentBatchRecordTarget(r) || '' },
+  targetDate: { get: r => formatAdjustmentBatchRecordTargetDate(r) || '' },
+  targetPeriods: {
+    get: r => (r.kind === 'room'
+      ? ''
+      : (formatAdjustmentBatchRecordPeriods(r.targetPeriods, r.termCode) || ''))
+  },
   slotCount: { get: r => Number(r.slotCount) || 0, type: 'number' },
   reasonType: { get: r => r.reasonType || '' },
   reason: { get: r => r.reason || '' },
@@ -75940,12 +76076,14 @@ function renderAdjustmentBatchRecordThead(tbody) {
   const th = (label, key, center, extraClass) =>
     renderListSortTh(listKey, label, key, { center, extraClass });
   tr.innerHTML = [
+    '<th class="col-check"><input type="checkbox" id="adjustment-batch-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'adjustment-batch-record-body\', this.checked)"></th>',
     '<th class="col-index">No.</th>',
     th('Ref. ID', 'no'),
     th('Adjustment Type', 'kind', true),
-    th('源日期范围', 'sourceRange'),
-    th('源节次', 'sourcePeriods', true),
-    th('调整目标', 'target'),
+    th('原日期', 'sourceRange'),
+    th('原节次', 'sourcePeriods'),
+    th('目标日期', 'targetDate'),
+    th('目标节次', 'targetPeriods'),
     th('Affected Classes', 'slotCount', true),
     th('Category', 'reasonType'),
     th('Reason', 'reason'),
@@ -75992,22 +76130,63 @@ function resetAdjustmentBatchQuery() {
   renderAdjustmentBatchRecords();
 }
 
-function renderAdjustmentBatchRecords() {
-  ensureAdjustmentDemo();
-  ensureAdjustmentBatchTermSelect(true);
-  const tbody = document.getElementById('adjustment-batch-record-body');
-  const hint = document.getElementById('adjustment-batch-record-hint');
+function getAdjustmentBatchRecordFilteredRows() {
   const termCode = document.getElementById('adjustment-batch-filter-term')?.value || '';
   const kind = document.getElementById('adjustment-batch-filter-kind')?.value || '';
   let rows = ADJUSTMENT_STORE.batchRecords || [];
   if (termCode) rows = rows.filter(r => (r.termCode || getDefaultOfferingTermCode()) === termCode);
   if (kind) rows = rows.filter(r => r.kind === kind);
-  rows = sortListWithState(
+  return sortListWithState(
     rows,
     'adjustmentBatchRecord',
     ADJUSTMENT_BATCH_RECORD_SORT_COLUMNS,
     defaultAdjustmentBatchRecordCompare
   );
+}
+
+function exportAdjustmentBatchRecordRows(mode) {
+  if (typeof closeAllListExportMenus === 'function') closeAllListExportMenus();
+  const all = getAdjustmentBatchRecordFilteredRows();
+  const rows = resolveListExportRows(mode || 'query', all, 'adjustment-batch-record-body');
+  if (!rows) return;
+  if (!rows.length) {
+    alert('暂无符合条件的数据可导出');
+    return;
+  }
+  const headers = [
+    'Ref. ID', 'Adjustment Type', '原日期', '原节次', '目标日期', '目标节次',
+    'Affected Classes', 'Category', 'Reason', '操作时间', '操作人'
+  ];
+  const data = rows.map(r => {
+    const srcRange = r.sourceRange?.start && r.sourceRange?.end
+      ? `${r.sourceRange.start} ~ ${r.sourceRange.end}` : '';
+    const targetPeriodsText = r.kind === 'room'
+      ? ''
+      : (formatAdjustmentBatchRecordPeriods(r.targetPeriods, r.termCode) || '');
+    return [
+      r.no || '',
+      getAdjustmentBatchKindLabel(r.kind) || '',
+      srcRange,
+      formatAdjustmentBatchRecordPeriods(r.sourcePeriods, r.termCode) || '',
+      formatAdjustmentBatchRecordTargetDate(r) || '',
+      targetPeriodsText === '—' ? '' : targetPeriodsText,
+      r.slotCount || 0,
+      r.reasonType || '',
+      r.reason || '',
+      formatAdjustmentDateDisplay(r.submittedAt) || r.submittedAt || '',
+      r.operator || ''
+    ];
+  });
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  downloadCsvFile(`批量调课管理_${stamp}.csv`, headers, data);
+}
+
+function renderAdjustmentBatchRecords() {
+  ensureAdjustmentDemo();
+  ensureAdjustmentBatchTermSelect(true);
+  const tbody = document.getElementById('adjustment-batch-record-body');
+  const hint = document.getElementById('adjustment-batch-record-hint');
+  const rows = getAdjustmentBatchRecordFilteredRows();
   const timeCount = rows.filter(r => r.kind === 'time').length;
   const roomCount = rows.filter(r => r.kind === 'room').length;
   const courseCount = rows.filter(r => r.kind === 'course').length;
@@ -76016,21 +76195,28 @@ function renderAdjustmentBatchRecords() {
   }
   if (!tbody) return;
   renderAdjustmentBatchRecordThead(tbody);
+  resetListExportCheckAll('adjustment-batch-check-all');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-cell">暂无匹配的调课申请记录</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">暂无匹配的调课申请记录</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((r, i) => {
     const srcRange = r.sourceRange?.start && r.sourceRange?.end
       ? `${r.sourceRange.start} ~ ${r.sourceRange.end}` : '—';
     const typeBadge = getAdjustmentBatchKindBadge(r.kind);
+    const targetDate = formatAdjustmentBatchRecordTargetDate(r);
+    const targetPeriodsHtml = r.kind === 'room'
+      ? '—'
+      : formatAdjustmentBatchRecordPeriodsHtml(r.targetPeriods, r.termCode);
     return `<tr>
+      <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
       <td class="col-index">${i + 1}</td>
       <td><code>${escapeHtml(r.no)}</code></td>
       <td class="col-center">${typeBadge}</td>
       <td>${escapeHtml(srcRange)}</td>
-      <td class="col-center">${escapeHtml(formatAdjustmentBatchRecordPeriods(r.sourcePeriods, r.termCode))}</td>
-      <td>${escapeHtml(formatAdjustmentBatchRecordTarget(r))}</td>
+      <td class="adj-batch-period-cell">${formatAdjustmentBatchRecordPeriodsHtml(r.sourcePeriods, r.termCode)}</td>
+      <td>${escapeHtml(targetDate)}</td>
+      <td class="adj-batch-period-cell">${targetPeriodsHtml}</td>
       <td class="col-center">${r.slotCount || 0}</td>
       <td>${escapeHtml(r.reasonType || '—')}</td>
       <td>${escapeHtml(r.reason || '—')}</td>

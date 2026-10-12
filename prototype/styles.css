@@ -8617,10 +8617,11 @@ input#group-assign-recorded-hours {
   vertical-align: middle;
   line-height: 1.35;
 }
-.adjustment-makeup-cancel-table td.adj-makeup-group-col .adj-makeup-group-line {
+/* 调课各列表：多课程组一行一个 */
+.adj-makeup-group-line {
   display: block;
 }
-.adjustment-makeup-cancel-table td.adj-makeup-group-col .adj-makeup-group-line + .adj-makeup-group-line {
+.adj-makeup-group-line + .adj-makeup-group-line {
   margin-top: 2px;
 }
 .adjustment-makeup-cancel-table td.adj-makeup-course-col .cell-ellipsis-tip {
@@ -8653,11 +8654,8 @@ input#group-assign-recorded-hours {
 }
 .adjustment-teacher-table .adj-act-sep {
   display: inline-block;
-  text-align: center;
-  color: var(--text-3);
-  font-weight: 400;
 }
-/* 无撤销：隐藏「·撤销」，不露空白文案，列宽仍对齐 */
+/* 无撤销：隐藏撤销槽位与前导间隔，列宽仍对齐 */
 .adjustment-teacher-table .adj-teacher-actions.is-no-cancel .adj-act-cancel-sep,
 .adjustment-teacher-table .adj-teacher-actions .adj-act-cancel.is-empty {
   visibility: hidden;
@@ -9184,6 +9182,23 @@ input#group-assign-recorded-hours {
   font-size: 11px;
   color: var(--text-3);
 }
+/* 操作列：详情固定槽位；无补课详情时占位隐藏，保证各行「详情」对齐 */
+#adjustment-holiday-tab-record .adj-holiday-record-actions {
+  display: inline-grid;
+  grid-template-columns: 2em 4em;
+  align-items: center;
+  justify-items: center;
+  column-gap: 8px;
+  vertical-align: middle;
+}
+#adjustment-holiday-tab-record .adj-holiday-record-actions .adj-act-makeup.is-empty {
+  visibility: hidden;
+}
+#adjustment-holiday-tab-record .adj-freeze-1 th:last-child,
+#adjustment-holiday-tab-record .adj-freeze-1 td:last-child {
+  width: 120px;
+  min-width: 120px;
+}
 /* 右侧冻结：审批状态 + 操作 */
 .adj-freeze-2 th:last-child, .adj-freeze-2 td:last-child,
 .adj-freeze-1 th:last-child, .adj-freeze-1 td:last-child {
@@ -9215,6 +9230,12 @@ input#group-assign-recorded-hours {
 }
 .adj-freeze-2 tr:hover td:last-child, .adj-freeze-2 tr:hover td:nth-last-child(2),
 .adj-freeze-1 tr:hover td:last-child { background: #fafbfc; }
+/* 教师端 / 代申请等：Action 含「详情·修改记录·撤销」，比通用 132px 更宽 */
+.adjustment-teacher-table.adj-freeze-1 th:last-child,
+.adjustment-teacher-table.adj-freeze-1 td:last-child {
+  width: 144px;
+  min-width: 144px;
+}
 
 /* ?? ????? ?? */
 .modal-overlay.modal-drawer { justify-content: flex-end; align-items: stretch; padding: 0; }
@@ -10516,13 +10537,18 @@ input#group-assign-recorded-hours {
 .adj-log { position: relative; padding-left: 6px; }
 .adj-log-item { position: relative; display: flex; gap: 12px; padding: 0 0 14px 16px; border-left: 2px solid var(--border); }
 .adj-log-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+.adj-log-body { flex: 1; min-width: 0; }
 .adj-log-dot { position: absolute; left: -7px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--blue-700); border: 2px solid #fff; }
 .adj-log-item.ok .adj-log-dot { background: #15803d; }
 .adj-log-item.bad .adj-log-dot { background: var(--red); }
 .adj-log-item.pending .adj-log-dot { background: #d97706; }
 .adj-log-title { font-size: 13px; font-weight: 600; color: var(--text-1); display: flex; align-items: center; gap: 10px; }
 .adj-log-time { font-size: 12px; font-weight: 400; color: var(--text-3); }
-.adj-log-meta { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.adj-log-meta {
+  display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px;
+  font-size: 12px; color: var(--text-2); margin-top: 2px;
+}
+.adj-log-who { min-width: 0; }
 .adj-log-note { font-size: 12px; color: var(--text-2); margin-top: 3px; background: var(--bg-2); border-radius: 5px; padding: 4px 8px; }
 
 /* 调课申请详情抽屉：图2 Staff Details 紧凑双列 + 英文字段 */
@@ -10548,13 +10574,52 @@ input#group-assign-recorded-hours {
 #modal-adjustment-detail .adj-detail-h-note {
   font-size: 12px; font-weight: 400; color: var(--text-3); margin-left: 4px;
 }
+/* Approval Log：浅蓝底 + 边框，与 Staff Details / 下方课节区分更明显 */
+#modal-adjustment-detail .adj-detail-section-log {
+  padding: 12px 14px 14px;
+  background: var(--blue-50, #eff6ff);
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+#modal-adjustment-detail .adj-detail-section-log .adj-detail-h {
+  margin-bottom: 10px;
+}
 #modal-adjustment-detail .adj-detail-log-summary {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 16px;
-  padding: 8px 12px; margin-bottom: 10px; background: var(--bg-2); border-radius: 6px;
+  padding: 0 0 10px; margin-bottom: 10px;
+  background: transparent; border-radius: 0;
 }
-#modal-adjustment-detail .adj-detail-file { color: var(--text-1); }
+#modal-adjustment-detail .adj-detail-section-log .adj-log-note {
+  background: #fff;
+  border: 1px solid #dbeafe;
+}
+#modal-adjustment-detail .adj-detail-section-log .adj-log-dot {
+  border-color: var(--blue-50, #eff6ff);
+}
+#modal-adjustment-detail .adj-detail-file {
+  color: var(--text-1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 #modal-adjustment-detail .adj-detail-file-link {
-  color: var(--blue-700); text-decoration: underline; margin-left: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 0;
+  color: var(--blue-700);
+  text-decoration: none;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+#modal-adjustment-detail .adj-detail-file-link:hover {
+  color: var(--blue-800, #1d4ed8);
+  background: rgba(37, 99, 235, 0.08);
+}
+#modal-adjustment-detail .adj-detail-file-link svg {
+  display: block;
 }
 /* ???? ? ?????? */
 .adj-conflict-panel { display: flex; flex-direction: column; gap: 6px; }

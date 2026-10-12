@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="f500bfa">
+  <meta name="portal-build" content="e23f2c2">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -157,7 +157,9 @@
       <a href="#" class="nav-item" data-page="schedule-teacher">按教师排</a>
       <a href="#" class="nav-item" data-page="schedule-course">按课程排</a>
       <a href="#" class="nav-item" data-page="schedule-joint" role="button" onclick="return launchScheduleJointTab(event)" onauxclick="return launchScheduleJointTab(event)">联合排课</a>
+      <!-- 联合排课演示入口暂隐藏：data-page="schedule-joint-demo"
       <a href="#" class="nav-item" data-page="schedule-joint-demo" role="button" onclick="return launchScheduleJointDemoTab(event)" onauxclick="return launchScheduleJointDemoTab(event)">联合排课（演示版本）</a>
+      -->
       <a href="#" class="nav-item" data-page="schedule-time-conflict">课表冲突查询</a>
       <div class="nav-group">自动排课表时间</div>
       <a href="#" class="nav-item" data-page="schedule-auto-time-rule">自动排课规则</a>
@@ -243,7 +245,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git f500bfa">1012排课2</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git e23f2c2">1012排课3</div>
         </div>
       </div>
     </section>
@@ -4581,7 +4583,7 @@
                 </div>
               </div>
             </div>
-            <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+            <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status adj-freeze-1">
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="adjustment-teacher-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-teacher-body', this.checked)"></th>
               <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th><th class="col-center">Lecturer</th>
@@ -4668,7 +4670,7 @@
                 </div>
               </div>
             </div>
-            <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+            <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status adj-freeze-1">
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="adjustment-teacher-makeup-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-teacher-makeup-body', this.checked)"></th>
               <th class="col-index col-center">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th class="col-center">Applicant</th><th class="col-center">Lecturer</th>
@@ -4722,7 +4724,7 @@
               </div>
             </div>
           </div>
-          <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+          <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status adj-freeze-1">
           <thead><tr>
             <th class="col-check"><input type="checkbox" id="adjustment-teacher-addition-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-teacher-addition-body', this.checked)"></th>
             <th class="col-index col-center">No.</th>
@@ -4930,7 +4932,7 @@
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('makeup')">代发起补课</button>
           <button class="btn btn-outline btn-sm" type="button" onclick="openAdjustmentAdminApplyModal('addclass')">代发起加课</button>
         </div>
-        <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status">
+        <div class="table-scroll"><table class="data-table adjustment-table adjustment-teacher-table adj-freeze-left-status adj-freeze-1">
           <thead><tr>
             <th class="col-index">No.</th>
             <th class="col-center">Status</th>
@@ -5297,7 +5299,7 @@
             </div>
           </div>
         </div>
-        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status">
+        <div class="table-scroll"><table class="data-table adjustment-table adj-freeze-left-status adj-freeze-1">
         <thead><tr>
           <th class="col-check"><input type="checkbox" id="adjustment-record-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-record-body', this.checked)"></th>
           <th class="col-index">No.</th><th class="col-center">Status</th><th class="col-center">Stage</th><th>Ref. ID</th><th class="col-center">Adjustment Type</th><th>Applicant</th>

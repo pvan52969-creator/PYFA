@@ -9213,8 +9213,8 @@ function renderOtherOfferingPlanRowActions(line, sec) {
   if (sec?.submitStatus !== 'submitted') {
     parts.push(`<a href="#" class="text-danger" onclick="removeOtherOfferingLine('${escapeHtml(line.id)}');return false">删除</a>`);
   }
-  return parts.join(' · ');
-  // ${submitted ? '' : ` · <a ...>删除</a>`} // 原内联操作列，改统一渲染并支持回退说明
+  return parts.join('');
+  // ${submitted ? '' : `<a ...>删除</a>`} // 原内联操作列，改统一渲染并支持回退说明
 }
 
 function getOtherOfferingSectionForLine(line) {
@@ -9644,7 +9644,7 @@ function renderOtherOfferingTaskRowActions(sec) {
   if ((sec?.taskRevertRemark || '').trim()) {
     parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">退回说明</a>`);
   }
-  return parts.join(' · ');
+  return parts.join('');
 }
 
 function submitSelectedOtherOfferingTaskArrangements(selectedIds = null) {
@@ -9800,7 +9800,7 @@ function renderOtherOfferingRosterRowActions(sec) {
     `<a href="#" onclick="openOtherOfferingTaskView('${sec.id}');return false">查看</a>`,
     `<a href="#" onclick="openOtherOfferingGroupRosterManage('${sec.id}');return false">管理名单</a>`
   ];
-  return parts.join(' · ');
+  return parts.join('');
 }
 
 function defaultCourseSpecialOfferingTaskCompare(a, b) {
@@ -10722,7 +10722,7 @@ function renderCourseOfferingManifestPage() {
         <td class="col-center">${row.rosterStudentCount ?? row.studentCount ?? '—'}</td>
         <!-- <td class="col-center">${renderOfferingManifestSharedTeachingCodeCell(row.sharedTeachingCode)}</td> --> <!-- 原共同授课码列 -->
         <td>${escapeHtml(row.teachers)}</td>
-        <td class="actions col-sticky-actions"><a href="#" onclick="viewOfferingManifestCourseSettings('${row.sectionId}', '${escapeHtml(row.termCode)}', '${escapeHtml(row.offeringType)}');return false">查看</a> · <a href="#" onclick="viewOfferingManifestEntry('${row.sectionId}', '${escapeHtml(row.termCode)}');return false">分组详情</a></td>
+        <td class="actions col-sticky-actions"><a href="#" onclick="viewOfferingManifestCourseSettings('${row.sectionId}', '${escapeHtml(row.termCode)}', '${escapeHtml(row.offeringType)}');return false">查看</a><a href="#" onclick="viewOfferingManifestEntry('${row.sectionId}', '${escapeHtml(row.termCode)}');return false">分组详情</a></td>
         <!-- <td class="actions col-sticky-actions"><a href="#" onclick="viewOfferingManifestEntry(...)">查看</a></td> --> <!-- 原单一查看入口 -->
       </tr>`;
       }).join('')
@@ -11953,8 +11953,8 @@ function renderGeOfferingPlanPage() {
         <td>${escapeHtml(line.remark) || '—'}</td>
         <td class="actions col-sticky-actions">
           <a href="#" onclick="openGeOfferingScopeModal('${escapeHtml(line.id)}');return false">修读范围</a>
-          · <a href="#" onclick="openGeOfferingEditDrawer('${escapeHtml(line.id)}');return false">修改</a>
-          ${submitted ? '' : ` · <a href="#" class="text-danger" onclick="removeGeOfferingLine('${escapeHtml(line.id)}');return false">删除</a>`}
+          <a href="#" onclick="openGeOfferingEditDrawer('${escapeHtml(line.id)}');return false">修改</a>
+          ${submitted ? '' : `<a href="#" class="text-danger" onclick="removeGeOfferingLine('${escapeHtml(line.id)}');return false">删除</a>`}
         </td>
       </tr>`;
       }).join('')
@@ -15087,7 +15087,7 @@ function renderMajorOfferingTaskRowActions(sec) {
   if ((sec?.taskRevertRemark || '').trim()) {
     parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">退回说明</a>`);
   }
-  return parts.join(' · ');
+  return parts.join('');
 }
 
 function getMajorOfferingSectionSupportUnits(sec) {
@@ -15216,7 +15216,7 @@ function renderMajorOfferingStructureActions(sec) {
   if (sec?.submitStatus === 'reverted' && (sec.taskRevertRemark || '').trim()) {
     parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">回退说明</a>`);
   }
-  return parts.join(' · ');
+  return parts.join('');
   // return `<a href="#" onclick="openMajorOfferingEditDrawer('${sec.id}');return false">修改</a>`; // 原仅修改，回退任务增加回退说明
   // <a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合分班</a> // 原计划页合分班，改由任务安排环节操作
   // <a href="#" onclick="openOfferingGroupingModal('${sec.id}');return false">分组</a> // 原计划页分组，改由任务安排环节操作
@@ -18403,7 +18403,7 @@ function renderMajorOfferingRosterRowActions(sec) {
   } else {
     parts.push(`<a href="#" onclick="openMajorOfferingGroupRosterManage('${sec.id}');return false">管理名单</a>`);
   }
-  return parts.join(' · ');
+  return parts.join('');
 }
 
 function getMajorOfferingTaskPendingSelection() {
@@ -18817,7 +18817,7 @@ function renderGeOfferingTaskRowActions(sec) {
   if ((sec?.taskRevertRemark || '').trim()) {
     parts.push(`<a href="#" onclick="openMajorOfferingTaskRevertRemarkView('${sec.id}');return false">退回说明</a>`);
   }
-  return parts.join(' · ');
+  return parts.join('');
   // `<a href="#" onclick="openMajorMergeSplitModal('${sec.id}');return false">合分班</a>` // 通识选修无合分班
 }
 
@@ -19147,7 +19147,7 @@ function renderGeOfferingRosterRowActions(sec) {
     `<a href="#" onclick="openGeOfferingTaskView('${sec.id}');return false">查看</a>`,
     `<a href="#" onclick="openGeOfferingGroupRosterManage('${sec.id}');return false">管理名单</a>`
   ];
-  return parts.join(' · ');
+  return parts.join('');
 }
 
 // function openGeOfferingGroupRosterView(sectionId) { ... } // 原只读「查看名单」，改 openGeOfferingGroupRosterManage
@@ -28338,7 +28338,7 @@ function ensureScheduleChangeLogDemo() {
 function scheduleOpsCell(editHandler, deleteHandler, changeLogOpts) {
   let links = `<a href="#" onclick="${editHandler};return false">修改</a><a href="#" onclick="${deleteHandler};return false">删除</a>`;
   if (changeLogOpts?.entityType && changeLogOpts.entityId != null && changeLogOpts.entityId !== '') {
-    links += ` · ${entityChangeLogLink(changeLogOpts.entityType, changeLogOpts.entityId, changeLogOpts.entityLabel || '')}`;
+    links += entityChangeLogLink(changeLogOpts.entityType, changeLogOpts.entityId, changeLogOpts.entityLabel || '');
   }
   return `<td class="col-center actions">${links}</td>`;
 }
@@ -28736,7 +28736,7 @@ function buildScheduleProgrammeTimeActionsHtml(term, row) {
   const label = getScheduleProgrammeLabel(row.programmeKey) || row.programmeKey || '';
   return `<a href="#" onclick="editScheduleProgrammeTime('${t}','${id}');return false">修改</a>
     <a href="#" style="color:var(--red)" onclick="deleteScheduleProgrammeTime('${t}','${id}');return false">删除</a>
-    · ${entityChangeLogLink('schedule-unit-time', row.id, label)}`;
+    ${entityChangeLogLink('schedule-unit-time', row.id, label)}`;
 }
 
 function renderScheduleProgrammeTimeSubRows(term, cfg) {
@@ -29022,7 +29022,7 @@ function renderScheduleTimeTermTable() {
       <a href="#" onclick="openScheduleTimeTermModal('${escapeHtml(r.term)}');return false">修改</a>
       <a href="#" onclick="addScheduleProgrammeTimeRow('${escapeHtml(r.term)}');return false">新增专业时间</a>
       <a href="#" onclick="deleteScheduleTimeTermRow('${escapeHtml(r.term)}');return false">删除</a>
-      · ${entityChangeLogLink('schedule-term-time', r.term, formatCourseTermDisplay(r.term))}
+      ${entityChangeLogLink('schedule-term-time', r.term, formatCourseTermDisplay(r.term))}
     </td>
   </tr>${expanded ? renderScheduleProgrammeTimeSubRows(r.term, r.cfg) : ''}`;
   }).join('');
@@ -31205,7 +31205,7 @@ function renderScheduleRuleSettingPage() {
     <td>${nameCell}</td>
     <td class="col-center">${escapeHtml(formatScheduleRuleValue(rule))}</td>
     <td class="col-center">${renderScheduleRuleEnabledSwitch(rule)}</td>
-    <td class="col-center actions"><a href="#" onclick="openScheduleRuleModal('${escapeHtml(rule.id)}');return false">修改</a> · ${entityChangeLogLink('schedule-rule', rule.id, rule.name)}</td>
+    <td class="col-center actions"><a href="#" onclick="openScheduleRuleModal('${escapeHtml(rule.id)}');return false">修改</a>${entityChangeLogLink('schedule-rule', rule.id, rule.name)}</td>
   </tr>`;
   }).join('');
 }
@@ -46534,7 +46534,7 @@ function renderScheduleTimePage() {
     <td class="col-center">${renderScheduleArrangeStatusBadge(row)}</td>
     <td class="col-center actions">
       ${renderScheduleDetailLaunchLink({ type: 'batch', programmeKey: row.programmeKey, intake: row.intake }, 'time', canArrange ? '排课' : '查看')}
-      · ${entityChangeLogLink('schedule-arrange-batch', `${row.programmeKey}|${row.intake}`, `${row.programmeName || row.programmeKey} · ${formatIntakeDisplay(row.intake)}`)}
+      ${entityChangeLogLink('schedule-arrange-batch', `${row.programmeKey}|${row.intake}`, `${row.programmeName || row.programmeKey} · ${formatIntakeDisplay(row.intake)}`)}
     </td>
   </tr>`;
   }).join('');
@@ -46896,7 +46896,7 @@ function renderScheduleTeacherPage() {
     <td class="col-center">${r.doneUnits}</td>
     <td class="col-center">${r.pendingUnits ? `<span class="status draft">${r.pendingUnits}</span>` : '0'}</td>
     <td class="col-center">${renderScheduleArrangeStatusBadge(r)}</td>
-    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'teacher', teacherId: r.teacherId }, 'time', canArrange ? '排课' : '查看')} · ${entityChangeLogLink('schedule-arrange-teacher', r.teacherId, `${r.name}（${r.teacherId}）`)}</td>
+    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'teacher', teacherId: r.teacherId }, 'time', canArrange ? '排课' : '查看')}${entityChangeLogLink('schedule-arrange-teacher', r.teacherId, `${r.name}（${r.teacherId}）`)}</td>
   </tr>`;
   }).join('');
 }
@@ -47128,7 +47128,7 @@ function renderScheduleCoursePage() {
     <td class="col-center">${r.doneUnits}</td>
     <td class="col-center">${r.pendingUnits ? `<span class="status draft">${r.pendingUnits}</span>` : '0'}</td>
     <td class="col-center">${renderScheduleArrangeStatusBadge(r)}</td>
-    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'course', courseCode: r.code }, 'time', canArrange ? '排课' : '查看')} · ${entityChangeLogLink('schedule-arrange-course', r.code, `${formatScheduleCourseCode(r.code)} ${r.name}`)}</td>
+    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'course', courseCode: r.code }, 'time', canArrange ? '排课' : '查看')}${entityChangeLogLink('schedule-arrange-course', r.code, `${formatScheduleCourseCode(r.code)} ${r.name}`)}</td>
   </tr>`;
   }).join('');
 }
@@ -47160,7 +47160,7 @@ function renderScheduleRoomWeekPage() {
     <td class="col-center">${row.roomDone}</td>
     <td class="col-center">${row.roomPending ? `<span class="status draft">${row.roomPending}</span>` : '0'}</td>
     <td class="col-center">${renderScheduleRoomArrangeStatusBadge(row)}</td>
-    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'weekday', weekday: row.weekday }, 'room', canArrange ? '排教室' : '查看')} · ${entityChangeLogLink('schedule-room-arrange-weekday', String(row.weekday), row.weekdayLabel || getScheduleWeekdayLabel(row.weekday))}</td>
+    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'weekday', weekday: row.weekday }, 'room', canArrange ? '排教室' : '查看')}${entityChangeLogLink('schedule-room-arrange-weekday', String(row.weekday), row.weekdayLabel || getScheduleWeekdayLabel(row.weekday))}</td>
   </tr>`;
   }).join('');
 }
@@ -47195,7 +47195,7 @@ function renderScheduleRoomCategoryPage() {
     <td class="col-center">${r.roomDone}</td>
     <td class="col-center">${r.roomPending ? `<span class="status draft">${r.roomPending}</span>` : '0'}</td>
     <td class="col-center">${renderScheduleRoomArrangeStatusBadge(r)}</td>
-    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'venueType', venueType: r.venueType }, 'room', canArrange ? '排教室' : '查看')} · ${entityChangeLogLink('schedule-room-arrange-venue', r.venueType, r.venueTypeLabel || getScheduleVenueTypeLabel(r.venueType) || r.venueType)}</td>
+    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'venueType', venueType: r.venueType }, 'room', canArrange ? '排教室' : '查看')}${entityChangeLogLink('schedule-room-arrange-venue', r.venueType, r.venueTypeLabel || getScheduleVenueTypeLabel(r.venueType) || r.venueType)}</td>
   </tr>`;
   }).join('');
 }
@@ -63967,8 +63967,8 @@ function renderAdjustmentReasonTypePage() {
     const hintText = r.attachmentHint || '—';
     const hintShort = hintText.length > 28 ? `${hintText.slice(0, 28)}…` : hintText;
     const del = r.builtin
-      ? ` · ${renderDisabledAction('删除', '固定原因不可删除')}`
-      : ` · <a href="#" style="color:var(--red)" onclick="deleteAdjustmentReasonType('${r.id}');return false">删除</a>`;
+      ? renderDisabledAction('删除', '固定原因不可删除')
+      : `<a href="#" style="color:var(--red)" onclick="deleteAdjustmentReasonType('${r.id}');return false">删除</a>`;
     return `<tr class="${r.enabled ? '' : 'is-disabled'}">
       <td class="col-index">${i + 1}</td>
       <td>${escapeHtml(r.name)}${r.builtin ? ' <span class="adj-reason-builtin">固定</span>' : ''}</td>
@@ -63978,7 +63978,7 @@ function renderAdjustmentReasonTypePage() {
       <td>${escapeHtml(formatAdjustmentReasonApplyTypes(r.applyTypes))}</td>
       <td class="adj-reason-teacher-cell">${formatAdjustmentReasonTeacherTypesHtml(r.teacherTypes)}</td>
       <td class="col-center">${renderAdjustmentReasonTypeEnabledSwitch(r)}</td>
-      <td class="col-center actions"><a href="#" onclick="openAdjustmentReasonTypeModal('${r.id}');return false">修改</a>${del} · ${entityChangeLogLink('adjustment-reason-type', r.id, r.name)}</td>
+      <td class="col-center actions"><a href="#" onclick="openAdjustmentReasonTypeModal('${r.id}');return false">修改</a>${del}${entityChangeLogLink('adjustment-reason-type', r.id, r.name)}</td>
     </tr>`;
   }).join('');
   bindCellFloatTips(tbody, '.adj-reason-hint-cell .cell-ellipsis-tip[data-tip]', { alwaysShow: true });
@@ -64646,8 +64646,8 @@ function renderAdjustmentRoomOpenPage() {
     const venueType = p.venueType || mapAdjustmentRoomVenueType(p.room);
     const checked = adjustmentRoomOpenListSelected.has(p.id) ? ' checked' : '';
     const actions = `<a href="#" onclick="openAdjustmentRoomOpenEditModal('${p.id}');return false">修改</a>`
-      + ` · <a href="#" style="color:var(--red)" onclick="deleteAdjustmentRoomOpenProfile('${p.id}');return false">删除</a>`
-      + ` · ${entityChangeLogLink('adjustment-room-open', p.id, p.room)}`;
+      + `<a href="#" style="color:var(--red)" onclick="deleteAdjustmentRoomOpenProfile('${p.id}');return false">删除</a>`
+      + entityChangeLogLink('adjustment-room-open', p.id, p.room);
     return `<tr>
       <td class="col-check"><input type="checkbox" class="adjustment-room-open-row-check" value="${escapeHtml(p.id)}"${checked} onchange="onAdjustmentRoomOpenListCheck('${escapeHtml(p.id)}', this.checked)"></td>
       <td class="col-index">${i + 1}</td>
@@ -67655,9 +67655,9 @@ function renderAdjustmentTeacherActionCell(r, opts = {}) {
   return `<td class="col-center actions">
     <span class="adj-teacher-actions${canCancel ? '' : ' is-no-cancel'}">
       <a class="adj-act-detail" href="#" onclick="openAdjustmentDetail('${r.id}');return false">详情</a>
-      <span class="adj-act-sep" aria-hidden="true">·</span>
+      <span class="adj-act-sep" aria-hidden="true"></span>
       <span class="adj-act-log">${entityChangeLogLink('adjustment-request', r.id, r.no || r.id)}</span>
-      <span class="adj-act-sep adj-act-cancel-sep" aria-hidden="true">·</span>
+      <span class="adj-act-sep adj-act-cancel-sep" aria-hidden="true"></span>
       ${cancelLink}
     </span>
   </td>`;
@@ -68477,13 +68477,13 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
       (typeof formatScheduleCourseCode === 'function'
         ? formatScheduleCourseCode(x.code)
         : (x.code || '')) || '—'));
-    const groupLabel = joinAdjustmentUniqueLabels(g.items.map(x => formatAdjustmentGroupWithCount(
-      x.group || '上课小组',
-      x.studentCount || getAdjustmentGroupStudentCount(
-        getScheduleTaskRows().find(row => row.code === x.code && (row.groupLabel || '上课小组') === (x.group || '上课小组'))
-      ),
-      x.courseName
-    )));
+    const groupField = joinAdjustmentUniqueLabels(g.items.map(x => x.group || '上课小组'));
+    const groupCount = g.items[0]?.studentCount || getAdjustmentGroupStudentCount(
+      getScheduleTaskRows().find(row => row.code === it.code && (row.groupLabel || '上课小组') === (it.group || '上课小组'))
+    );
+    const groupHtml = typeof formatAdjustmentGroupWithCountHtml === 'function'
+      ? formatAdjustmentGroupWithCountHtml(groupField, groupCount, it.courseName)
+      : escapeHtml(formatAdjustmentGroupWithCount(groupField, groupCount, it.courseName));
     const isAddclass = r.type === 'addclass';
     const fromCells = isAddclass
       ? ''
@@ -68527,7 +68527,7 @@ function renderAdjustmentDetailInfoTable(r, items, opts = {}) {
     return `<tr>
       <td class="col-index col-center adj-detail-freeze-col adj-detail-freeze-1">${gi + 1}</td>
       <td class="col-center adj-detail-freeze-col adj-detail-freeze-2">${escapeHtml(courseCodeLabel)}</td>
-      <td class="adj-detail-freeze-col adj-detail-freeze-3">${escapeHtml(groupLabel)}</td>
+      <td class="adj-detail-freeze-col adj-detail-freeze-3">${groupHtml}</td>
       <td>${escapeHtml(it.teacherName || r.teacherName || '')}</td>
       ${fromCells}${toCells}
     </tr>`;
@@ -68905,7 +68905,7 @@ function openAdjustmentDetail(id, withApprove) {
   if (r.teacherName) profile.teacherName = r.teacherName;
   const span = getAdjustmentRequestTimeSpan(r);
   const attachHtml = (r.attachments && r.attachments.length)
-    ? r.attachments.map(a => `<span class="adj-detail-file">${escapeHtml(a.name)}${a.size ? `（${escapeHtml(formatFileSize(a.size))}）` : ''} <a href="#" class="adj-detail-file-link" onclick="return false">view</a>/<a href="#" class="adj-detail-file-link" onclick="return false">download</a></span>`).join('')
+    ? r.attachments.map(a => `<span class="adj-detail-file">${escapeHtml(a.name)}${a.size ? `（${escapeHtml(formatFileSize(a.size))}）` : ''} <a href="#" class="adj-detail-file-link" onclick="return false" title="View" aria-label="View"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></a><a href="#" class="adj-detail-file-link" onclick="return false" title="Download" aria-label="Download"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2.5v7.2M5.2 7.2 8 10l2.8-2.8M3 12.5h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a></span>`).join('')
     : '<span class="text-muted">—</span>';
   const logs = [];
   logs.push({ title: '提交申请', who: r.teacherName || '申请人', time: r.submittedAt, note: r.reason || '' });
@@ -68914,7 +68914,7 @@ function openAdjustmentDetail(id, withApprove) {
     logs.push({
       title: 'In Progress',
       who: '教务管理员', time: '',
-      note: r.status === 'reviewing' ? '教务正在审批' : '等待教务审批', pending: true
+      statusTag: 'Pending', pending: true
     });
   } else if (r.status === 'cancelled') {
     logs.push({ title: 'Cancelled', who: r.teacherName || '申请人', time: r.cancelledAt || '', note: '申请人主动撤销申请', cls: 'bad' });
@@ -68937,7 +68937,10 @@ function openAdjustmentDetail(id, withApprove) {
     <div class="adj-log-dot"></div>
     <div class="adj-log-body">
       <div class="adj-log-title">${escapeHtml(l.title)}${l.time ? `<span class="adj-log-time">${escapeHtml(formatAdjustmentDateDisplay(l.time) || l.time)}</span>` : ''}</div>
-      <div class="adj-log-meta">${escapeHtml(l.who)}</div>
+      <div class="adj-log-meta">
+        <span class="adj-log-who">${escapeHtml(l.who)}</span>
+        ${l.statusTag ? `<span class="status pending">${escapeHtml(l.statusTag)}</span>` : ''}
+      </div>
       ${l.note ? `<div class="adj-log-note">${escapeHtml(l.note)}</div>` : ''}
     </div>
   </div>`).join('');
@@ -71957,7 +71960,7 @@ function renderAdjustmentHolidayManagePage() {
     <td>${escapeHtml(h.reason || '—')}</td>
     <td class="col-center">${h.affected}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(h.createdAt) || '—')}</td>
-    <td class="col-center actions"><a href="#" onclick="openAdjustmentHolidayDetail('${h.id}');return false">详情</a> · ${entityChangeLogLink('adjustment-holiday', h.id, h.name || h.no)}</td>
+    <td class="col-center actions"><a href="#" onclick="openAdjustmentHolidayDetail('${h.id}');return false">详情</a>${entityChangeLogLink('adjustment-holiday', h.id, h.name || h.no)}</td>
   </tr>`).join('');
 }
 
@@ -72007,6 +72010,7 @@ function getAdjustmentHolidayRecordRows() {
         weekdayLabel: f.weekdayLabel || holiday?.weekdayLabel || '—',
         period: formatAdjustmentHolidayListPeriod(f, live?.slot),
         course: `${formatScheduleCourseCode(it.code || r.code)} ${it.courseName || r.courseName || ''}`.trim(),
+        courseName: it.courseName || r.courseName || '',
         group: it.group || r.groupLabel || '上课小组',
         teacher: formatAdjustmentHolidayListTeacher(r, it, live?.task),
         room: f.room || '—',
@@ -72118,9 +72122,10 @@ function renderAdjustmentHolidayRecordPage() {
     return;
   }
   tbody.innerHTML = rows.map((row, i) => {
-    const makeupLink = row.makeup
-      ? ` · <a href="#" onclick="openAdjustmentDetail('${row.makeup.id}');return false">补课详情</a>`
-      : '';
+    const hasMakeup = !!row.makeup;
+    const makeupLink = hasMakeup
+      ? `<a class="adj-act-makeup" href="#" onclick="openAdjustmentDetail('${row.makeup.id}');return false">补课详情</a>`
+      : `<span class="adj-act-makeup is-empty" aria-hidden="true"></span>`;
     const termText = row.term && typeof formatCourseTermDisplay === 'function'
       ? formatCourseTermDisplay(row.term)
       : (row.term || '—');
@@ -72133,10 +72138,17 @@ function renderAdjustmentHolidayRecordPage() {
       <td class="col-center">${escapeHtml(row.weekdayLabel || '—')}</td>
       <td class="col-center">${formatAdjustmentHolidayPeriodCellHtml(row.period)}</td>
       <td>${escapeHtml(row.course || '—')}</td>
-      <td>${escapeHtml(row.group || '—')}</td>
+      <td>${typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+        ? formatAdjustmentCourseGroupLabelHtml(row.courseName, row.group)
+        : escapeHtml(row.group || '—')}</td>
       <td>${escapeHtml(row.teacher || '—')}</td>
       <td>${escapeHtml(row.room || '—')}</td>
-      <td class="col-center actions"><a href="#" onclick="openAdjustmentDetail('${row.cancel.id}');return false">详情</a>${makeupLink}</td>
+      <td class="col-center actions">
+        <span class="adj-holiday-record-actions${hasMakeup ? '' : ' is-no-makeup'}">
+          <a class="adj-act-detail" href="#" onclick="openAdjustmentDetail('${row.cancel.id}');return false">详情</a>
+          ${makeupLink}
+        </span>
+      </td>
     </tr>`;
   }).join('');
   if (typeof enhanceAllSelects === 'function') enhanceAllSelects(document.getElementById('adjustment-holiday-tab-record'));
@@ -72206,7 +72218,9 @@ function openAdjustmentHolidayDetail(id) {
           <td class="col-center">${escapeHtml(formatAdjustmentHolidayListPeriod(f, live?.slot))}</td>
           <td class="col-center">${escapeHtml(f.weeks || '—')}</td>
           <td>${escapeHtml(formatScheduleCourseCode(it.code || r.code))} ${escapeHtml(it.courseName || r.courseName || '')}</td>
-          <td>${escapeHtml(typeof formatScheduleCourseGroupLabel === 'function' ? formatScheduleCourseGroupLabel(it.courseName || r.courseName, it.group || r.groupLabel) : (it.group || r.groupLabel || '上课小组'))}</td>
+          <td>${typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+            ? formatAdjustmentCourseGroupLabelHtml(it.courseName || r.courseName, it.group || r.groupLabel)
+            : escapeHtml(it.group || r.groupLabel || '上课小组')}</td>
           <td>${escapeHtml(formatAdjustmentHolidayListTeacher(r, it, live?.task))}</td>
           <td>${escapeHtml(f.room || '—')}</td>
           <td class="col-center">${formatAdjustmentHolidayMakeupStatus(makeup)}</td>
@@ -72527,7 +72541,9 @@ function queryAdjustmentHolidayConfirmSlots() {
     <td><code>${escapeHtml(formatScheduleCourseCode(r.code))}</code></td>
     <td>${escapeHtml(r.name)}</td>
     <td>${escapeHtml(r.teacher)}</td>
-    <td>${escapeHtml(r.group)}</td>
+    <td>${typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+      ? formatAdjustmentCourseGroupLabelHtml(r.name, r.group)
+      : escapeHtml(r.group || '—')}</td>
     <td>${escapeHtml(r.room || '—')}</td>
   </tr>`).join('');
 }
@@ -73912,7 +73928,9 @@ function renderAdjustmentBatchCoursePreviewBody(tbody) {
       <td class="col-index">${idx + 1}</td>
       <td><code>${escapeHtml(formatScheduleCourseCode(code))}</code></td>
       <td>${escapeHtml(courseName)}</td>
-      <td>${escapeHtml(groupLabel)}</td>
+      <td>${typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+        ? formatAdjustmentCourseGroupLabelHtml(courseName, groupLabel)
+        : escapeHtml(groupLabel)}</td>
       <td>${escapeHtml(r.teachers || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDateParen(r.dateStr))}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(r.period, r.period) || '—')}</td>
@@ -75517,7 +75535,9 @@ function renderAdjustmentBatchPreview(kind) {
       <td class="col-index">${idx + 1}</td>
       <td><code>${escapeHtml(formatScheduleCourseCode(code))}</code></td>
       <td>${escapeHtml(courseName)}</td>
-      <td>${escapeHtml(groupLabel)}</td>
+      <td>${typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+        ? formatAdjustmentCourseGroupLabelHtml(courseName, groupLabel)
+        : escapeHtml(groupLabel)}</td>
       <td>${escapeHtml(r.teachers || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDateParen(r.dateStr))}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentPeriodLabel(r.period, r.period) || '—')}</td>
@@ -76042,7 +76062,11 @@ function renderAdjustmentBatchDetailTable(record) {
       <tbody>${details.map((d, i) => `<tr>
         <td class="col-index">${i + 1}</td>
         <td><code>${escapeHtml(typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(d.code) : (d.code || '—'))}</code></td>
-        <td>${escapeHtml(d.name || '—')}${d.group && d.group !== '—' ? `<br><span class="text-muted" style="font-size:11px">${escapeHtml(typeof formatScheduleCourseGroupLabel === 'function' ? formatScheduleCourseGroupLabel(d.name, d.group) : d.group)}</span>` : ''}</td>
+        <td>${escapeHtml(d.name || '—')}${d.group && d.group !== '—'
+          ? `<br><span class="text-muted" style="font-size:11px">${typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+            ? formatAdjustmentCourseGroupLabelHtml(d.name, d.group)
+            : escapeHtml(d.group)}</span>`
+          : ''}</td>
         <td>${escapeHtml(d.teachers || '—')}</td>
         <td class="col-center">${escapeHtml(formatAdjustmentBatchDetailDate(d.dateStr))}</td>
         <td class="col-center">${escapeHtml(formatAdjustmentBatchDetailWeek(resolveAdjustmentBatchDetailWeekNo(d.dateStr, d.weekNo)))}</td>
@@ -76064,7 +76088,9 @@ function renderAdjustmentBatchDetailTable(record) {
       <td class="col-index">${i + 1}</td>
       <td><code>${escapeHtml(typeof formatScheduleCourseCode === 'function' ? formatScheduleCourseCode(d.code) : (d.code || '—'))}</code></td>
       <td>${escapeHtml(d.name || '—')}</td>
-      <td>${escapeHtml(typeof formatScheduleCourseGroupLabel === 'function' ? formatScheduleCourseGroupLabel(d.name, d.group) : (d.group || '—'))}</td>
+      <td>${typeof formatAdjustmentCourseGroupLabelHtml === 'function'
+        ? formatAdjustmentCourseGroupLabelHtml(d.name, d.group)
+        : escapeHtml(d.group || '—')}</td>
       <td>${escapeHtml(d.teachers || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDetailDate(d.dateStr))}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentBatchDetailWeek(resolveAdjustmentBatchDetailWeekNo(d.dateStr, d.weekNo)))}</td>

@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="ff21943">
+  <meta name="portal-build" content="1e52734">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -245,7 +245,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git ff21943">1012排课5</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 1e52734">1012排课6</div>
         </div>
       </div>
     </section>
@@ -1943,7 +1943,7 @@
               <th>课程号</th>
               <th>课程名称</th>
               <!-- <th>课程班名称</th> --> <!-- 原列名 -->
-              <th>开课单位</th>
+              <th class="col-center">开课单位</th>
               <th class="col-center">选课类型</th>
               <th class="col-center">学分</th>
               <th class="col-center">小组数</th>
@@ -2697,7 +2697,7 @@
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
-          <th class="col-index">序号</th><th>入学批次</th><th class="col-center">专业代码</th><th>专业名称</th><th class="col-center">学院</th>
+          <th class="col-index">序号</th><th class="col-center">入学批次</th><th class="col-center">专业代码</th><th>专业名称</th><th class="col-center">学院</th>
           <th class="col-center">课程数</th><th class="col-center">小组数</th><th class="col-center">已排完</th><th class="col-center">未排完</th>
           <th class="col-center">排课状态</th><th class="col-center">操作</th>
         </tr></thead>
@@ -3010,7 +3010,7 @@
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
-          <th class="col-index">序号</th><th>教师工号</th><th>教师姓名</th><th>所在单位</th>
+          <th class="col-index">序号</th><th class="col-center">教师工号</th><th>教师姓名</th><th class="col-center">所在单位</th>
           <th class="col-center">教职工类型</th><th class="col-center">课程数</th><th class="col-center">小组数</th><th class="col-center">已排完</th>
           <th class="col-center">未排完</th><th class="col-center">排课状态</th><th class="col-center">操作</th>
         </tr></thead>
@@ -3076,7 +3076,7 @@
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
-          <th class="col-index">序号</th><th>Course Code</th><th>课程班名称</th><th class="col-center">课程类型</th><th>开课单位</th>
+          <th class="col-index">序号</th><th class="col-center">Course Code</th><th>课程班名称</th><th class="col-center">课程类型</th><th class="col-center">开课单位</th>
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
           <th class="col-center">未排完</th><th class="col-center">排课状态</th><th class="col-center">操作</th>
         </tr></thead>
@@ -3424,7 +3424,7 @@
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
           <th class="col-index">序号</th>
-          <th>Day</th>
+          <th class="col-center">Day</th>
           <th class="col-center">课程数</th>
           <th class="col-center">小组数</th>
           <th class="col-center">已排完</th>
@@ -3473,7 +3473,7 @@
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
           <th class="col-index">序号</th>
-          <th>场地类型</th>
+          <th class="col-center">场地类型</th>
           <th class="col-center">课程数</th>
           <th class="col-center">小组数</th>
           <th class="col-center">已排完</th>
@@ -3817,7 +3817,7 @@
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
           <th class="col-center srf-col-pick"><input type="checkbox" id="schedule-room-course-check-all" onchange="toggleScheduleRoomListCheckAll('course', this.checked)"></th>
-          <th class="col-index">序号</th><th>Course Code</th><th>课程班名称</th><th>开课单位</th>
+          <th class="col-index">序号</th><th class="col-center">Course Code</th><th>课程班名称</th><th class="col-center">开课单位</th>
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
           <th class="col-center">未排完</th><th class="col-center">排教室状态</th><th class="col-center">发布状态</th><th class="col-center">操作</th>
         </tr></thead>
@@ -4177,7 +4177,7 @@
             <thead><tr>
               <th class="col-check"><input type="checkbox" id="schedule-time-tt-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-time-tt-body', this.checked)"></th>
               <th class="col-index">序号</th><th class="col-center">Date</th><th>Week</th><th class="col-center">Day</th><th class="col-center">节次</th>
-              <th>Course Code</th><th>课程班名称</th><th>开课单位</th><th class="col-center">教师工号</th><th>教师姓名</th>
+              <th>Course Code</th><th>课程班名称</th><th class="col-center">开课单位</th><th class="col-center">教师工号</th><th>教师姓名</th>
               <th>所属单位</th><th>课程组</th><th class="col-center">人数</th><th class="col-center">入学批次</th><th>专业名称</th>
               <th>上课单位</th><th class="col-center">Venue</th>
             </tr></thead>
@@ -5258,14 +5258,14 @@
               <tr>
                 <th class="col-check"><input type="checkbox" id="adjustment-batch-check-all" aria-label="全选" onchange="toggleListExportCheckAll('adjustment-batch-record-body', this.checked)"></th>
                 <th class="col-index">No.</th>
-                <th>Ref. ID</th>
+                <th class="col-center">Ref. ID</th>
                 <th class="col-center">Adjustment Type</th>
-                <th>原日期</th>
-                <th>原节次</th>
-                <th>目标日期</th>
-                <th>目标节次</th>
+                <th class="col-center">原日期</th>
+                <th class="col-center">原节次</th>
+                <th class="col-center">目标日期</th>
+                <th class="col-center">目标节次</th>
                 <th class="col-center">Affected Classes</th>
-                <th>Category</th>
+                <th class="col-center">Category</th>
                 <th>Reason</th>
                 <th class="col-center">操作时间</th>
                 <th class="col-center">操作人</th>

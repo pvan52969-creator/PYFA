@@ -322,6 +322,45 @@ const LIST_SORT_REFRESH = {
   },
   adjustmentHolidayRecord: () => {
     if (typeof renderAdjustmentHolidayRecordPage === 'function') renderAdjustmentHolidayRecordPage();
+  },
+  scheduleTime: () => {
+    if (typeof renderScheduleTimePage === 'function') renderScheduleTimePage();
+  },
+  scheduleTeacher: () => {
+    if (typeof renderScheduleTeacherPage === 'function') renderScheduleTeacherPage();
+  },
+  scheduleCourse: () => {
+    if (typeof renderScheduleCoursePage === 'function') renderScheduleCoursePage();
+  },
+  scheduleRoomWeek: () => {
+    if (typeof renderScheduleRoomWeekPage === 'function') renderScheduleRoomWeekPage();
+  },
+  scheduleRoomCategory: () => {
+    if (typeof renderScheduleRoomCategoryPage === 'function') renderScheduleRoomCategoryPage();
+  },
+  scheduleTimeConflict: () => {
+    if (typeof renderScheduleTimeConflictPage === 'function') renderScheduleTimeConflictPage();
+  },
+  scheduleRoomConflict: () => {
+    if (typeof renderScheduleRoomConflictPage === 'function') renderScheduleRoomConflictPage();
+  },
+  schedulePeriod: () => {
+    if (typeof renderSchedulePeriodPage === 'function') renderSchedulePeriodPage();
+  },
+  scheduleRule: () => {
+    if (typeof renderScheduleRuleSettingPage === 'function') renderScheduleRuleSettingPage();
+  },
+  scheduleAutoTimeRule: () => {
+    if (typeof renderScheduleAutoTimeRulePage === 'function') renderScheduleAutoTimeRulePage();
+  },
+  scheduleAutoRoomRule: () => {
+    if (typeof renderScheduleAutoRoomRulePage === 'function') renderScheduleAutoRoomRulePage();
+  },
+  adjustmentReasonType: () => {
+    if (typeof renderAdjustmentReasonTypePage === 'function') renderAdjustmentReasonTypePage();
+  },
+  adjustmentRoomOpen: () => {
+    if (typeof renderAdjustmentRoomOpenPage === 'function') renderAdjustmentRoomOpenPage();
   }
 };
 
@@ -10621,7 +10660,7 @@ function renderCourseOfferingManifestTableHeader() {
     renderListSortTh('courseOfferingManifest', '课程号', 'code') +
     renderListSortTh('courseOfferingManifest', '课程名称', 'courseName') +
     // renderListSortTh('courseOfferingManifest', '课程班名称', 'className') + // 原列名
-    renderListSortTh('courseOfferingManifest', '开课单位', 'offeringUnit') +
+    renderListSortTh('courseOfferingManifest', '开课单位', 'offeringUnit', { center: true }) +
     renderListSortTh('courseOfferingManifest', '选课类型', 'enrollmentType', { center: true }) +
     renderListSortTh('courseOfferingManifest', '学分', 'credits', { center: true }) +
     renderListSortTh('courseOfferingManifest', '小组数', 'groupCount', { center: true }) +
@@ -10711,7 +10750,7 @@ function renderCourseOfferingManifestPage() {
         <td class="col-center">${escapeHtml(row.typeLabel)}</td>
         <td><strong>${escapeHtml(row.code)}</strong></td>
         <td class="col-nowrap">${escapeHtml(row.courseName || row.className || '—')}</td>
-        <td class="col-nowrap">${escapeHtml(row.offeringUnit || '—')}</td>
+        <td class="col-center col-nowrap">${escapeHtml(row.offeringUnit || '—')}</td>
         <td class="col-center">${escapeHtml(row.enrollmentTypeLabel || '—')}</td>
         <td class="col-center">${row.credits ?? '—'}</td>
         <td class="col-center">${row.groupCount ? row.groupCount : '—'}</td>
@@ -10937,7 +10976,7 @@ function renderCourseSharedTeachingMaintenanceTableHeader() {
     renderListSortTh('courseSharedTeachingMaintenance', '开课类型', 'offeringType', { center: true }) +
     renderListSortTh('courseSharedTeachingMaintenance', '课程号', 'code') +
     renderListSortTh('courseSharedTeachingMaintenance', '课程名称', 'courseName') +
-    renderListSortTh('courseSharedTeachingMaintenance', '开课单位', 'offeringUnit') +
+    renderListSortTh('courseSharedTeachingMaintenance', '开课单位', 'offeringUnit', { center: true }) +
     // renderListSortTh('courseSharedTeachingMaintenance', '共同授课状态', 'sharedTeachingStatus', { center: true }) + // 原列位，改最左
     // renderListSortTh('courseSharedTeachingMaintenance', '共同授课码', 'sharedTeachingCode', { center: true }) + // 原并入状态列，改序号右侧授课码列
     renderListSortTh('courseSharedTeachingMaintenance', '任课教师', 'teachers');
@@ -10972,7 +11011,7 @@ function renderCourseSharedTeachingMaintenancePage() {
         <td class="col-center">${escapeHtml(row.typeLabel)}</td>
         <td><strong>${escapeHtml(row.code)}</strong></td>
         <td class="col-nowrap">${escapeHtml(row.courseName || row.className || '—')}</td>
-        <td class="col-nowrap">${escapeHtml(row.offeringUnit || '—')}</td>
+        <td class="col-center col-nowrap">${escapeHtml(row.offeringUnit || '—')}</td>
         <td>${escapeHtml(row.teachers)}</td>
       </tr>`;
       }).join('')
@@ -30632,6 +30671,30 @@ function deleteScheduleBatch(programmeKey, intake) {
   renderScheduleTimePage();
 }
 
+const SCHEDULE_PERIOD_SORT_COLUMNS = {
+  periodNo: { get: p => Number(p.periodNo) || 0, type: 'number' },
+  startTime: { get: p => p.startTime || '' },
+  endTime: { get: p => p.endTime || '' },
+  sortNo: { get: p => Number(p.sortNo) || 0, type: 'number' },
+  remark: { get: p => schedulePeriodRemarkLabel(p.remark) || '' }
+};
+
+function renderSchedulePeriodListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'schedulePeriod';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-check"><input type="checkbox" id="schedule-period-check-all" aria-label="全选" onchange="toggleSchedulePeriodCheckAll(this.checked)"></th>',
+    renderListSortTh(listKey, '节次', 'periodNo', { extraClass: 'col-index' }),
+    th('开始时间', 'startTime', true),
+    th('结束时间', 'endTime', true),
+    th('排序', 'sortNo', true),
+    th('节次备注', 'remark'),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
 function renderSchedulePeriodPage() {
   initScheduleConfigStores();
   ensureScheduleChangeLogDemo();
@@ -30639,9 +30702,11 @@ function renderSchedulePeriodPage() {
   const termSel = document.getElementById('schedule-period-term');
   const term = getSelectedSchedulePeriodTerm();
   if (termSel && !termSel.dataset.lastValue) termSel.dataset.lastValue = term;
-  const periods = cloneSchedulePeriodList(ensureSchedulePeriods(term));
+  let periods = cloneSchedulePeriodList(ensureSchedulePeriods(term));
   sortSchedulePeriodList(periods);
+  periods = sortListWithState(periods, 'schedulePeriod', SCHEDULE_PERIOD_SORT_COLUMNS);
   const tbody = document.getElementById('schedule-period-body');
+  renderSchedulePeriodListThead(tbody);
   const summary = document.getElementById('schedule-period-summary');
   if (summary) {
     summary.innerHTML = `<span class="legend-item">${formatCourseTermDisplay(term)} · 共 <strong>${periods.length}</strong> 个节次</span>`;
@@ -31187,11 +31252,33 @@ function saveScheduleSlotCopyModal() {
   alert('复制完成');
 }
 
+const SCHEDULE_RULE_SORT_COLUMNS = {
+  name: { get: r => r.name || '' },
+  value: { get: r => formatScheduleRuleValue(r) },
+  enabled: { get: r => (r.enabled ? 1 : 0), type: 'number' }
+};
+
+function renderScheduleRuleListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleRule';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('排课规则名称', 'name'),
+    th('规则值', 'value', true),
+    th('是否启用', 'enabled', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
 function renderScheduleRuleSettingPage() {
   ensureScheduleChangeLogDemo();
   const tbody = document.getElementById('schedule-rule-body');
   if (!tbody) return;
-  const rules = getScheduleRules();
+  renderScheduleRuleListThead(tbody);
+  let rules = getScheduleRules();
+  rules = sortListWithState(rules, 'scheduleRule', SCHEDULE_RULE_SORT_COLUMNS);
   if (!rules.length) {
     renderScheduleEmptyRow(tbody, 5, '暂无排课规则');
     return;
@@ -46500,8 +46587,168 @@ function renderScheduleDetailSlotsTable(task) {
   </tr>`).join('');
 }
 
+function getScheduleArrangeStatusSortLabel(row) {
+  if (row?.pendingUnits > 0) return '未排完';
+  if (row?.doneUnits > 0) return '已排完';
+  return '';
+}
+
+function getScheduleRoomArrangeStatusSortLabel(row) {
+  if (!(row?.groupCount > 0) && !(row?.roomDone > 0) && !(row?.roomPending > 0)) return '—';
+  if (row.roomPending > 0) return '未排完';
+  if (row.roomDone > 0) return '已排完';
+  return '未排完';
+}
+
+const SCHEDULE_TIME_SORT_COLUMNS = {
+  intake: { get: r => r.intake || '', type: 'intake' },
+  programmeCode: { get: r => r.programmeCode || getProgrammeCode(r.programmeKey) || '' },
+  programmeName: { get: r => r.programmeName || '' },
+  schoolCode: { get: r => r.schoolCode || '' },
+  courseCount: { get: r => Number(r.courseCount) || 0, type: 'number' },
+  groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
+  doneUnits: { get: r => Number(r.doneUnits) || 0, type: 'number' },
+  pendingUnits: { get: r => Number(r.pendingUnits) || 0, type: 'number' },
+  status: { get: r => getScheduleArrangeStatusSortLabel(r) }
+};
+
+function renderScheduleTimeListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleTime';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('入学批次', 'intake', true),
+    th('专业代码', 'programmeCode', true),
+    th('专业名称', 'programmeName'),
+    th('学院', 'schoolCode', true),
+    th('课程数', 'courseCount', true),
+    th('小组数', 'groupCount', true),
+    th('已排完', 'doneUnits', true),
+    th('未排完', 'pendingUnits', true),
+    th('排课状态', 'status', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
+const SCHEDULE_TEACHER_SORT_COLUMNS = {
+  teacherId: { get: r => r.teacherId || '' },
+  name: { get: r => r.name || '' },
+  dept: { get: r => r.dept || '' },
+  staffType: { get: r => r.staffType || '' },
+  courseCount: { get: r => Number(r.courseCount) || 0, type: 'number' },
+  groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
+  doneUnits: { get: r => Number(r.doneUnits) || 0, type: 'number' },
+  pendingUnits: { get: r => Number(r.pendingUnits) || 0, type: 'number' },
+  status: { get: r => getScheduleArrangeStatusSortLabel(r) }
+};
+
+function renderScheduleTeacherListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleTeacher';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('教师工号', 'teacherId', true),
+    th('教师姓名', 'name'),
+    th('所在单位', 'dept', true),
+    th('教职工类型', 'staffType', true),
+    th('课程数', 'courseCount', true),
+    th('小组数', 'groupCount', true),
+    th('已排完', 'doneUnits', true),
+    th('未排完', 'pendingUnits', true),
+    th('排课状态', 'status', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
+const SCHEDULE_COURSE_SORT_COLUMNS = {
+  code: { get: r => formatScheduleCourseCode(r.code) || r.code || '' },
+  name: { get: r => r.name || '' },
+  courseType: { get: r => formatScheduleCourseTypeLabel(r.courseType) },
+  dept: { get: r => r.dept || '' },
+  groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
+  doneUnits: { get: r => Number(r.doneUnits) || 0, type: 'number' },
+  pendingUnits: { get: r => Number(r.pendingUnits) || 0, type: 'number' },
+  status: { get: r => getScheduleArrangeStatusSortLabel(r) }
+};
+
+function renderScheduleCourseListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleCourse';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('Course Code', 'code', true),
+    th('课程班名称', 'name'),
+    th('课程类型', 'courseType', true),
+    th('开课单位', 'dept', true),
+    th('小组数', 'groupCount', true),
+    th('已排完', 'doneUnits', true),
+    th('未排完', 'pendingUnits', true),
+    th('排课状态', 'status', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
+const SCHEDULE_ROOM_WEEK_SORT_COLUMNS = {
+  weekday: { get: r => Number(r.weekday) || 0, type: 'number' },
+  courseCount: { get: r => Number(r.courseCount) || 0, type: 'number' },
+  groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
+  roomDone: { get: r => Number(r.roomDone) || 0, type: 'number' },
+  roomPending: { get: r => Number(r.roomPending) || 0, type: 'number' },
+  status: { get: r => getScheduleRoomArrangeStatusSortLabel(r) }
+};
+
+function renderScheduleRoomWeekListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleRoomWeek';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('Day', 'weekday', true),
+    th('课程数', 'courseCount', true),
+    th('小组数', 'groupCount', true),
+    th('已排完', 'roomDone', true),
+    th('未排完', 'roomPending', true),
+    th('排教室状态', 'status', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
+const SCHEDULE_ROOM_CATEGORY_SORT_COLUMNS = {
+  venueType: { get: r => r.venueTypeLabel || getScheduleVenueTypeLabel(r.venueType) || r.venueType || '' },
+  courseCount: { get: r => Number(r.courseCount) || 0, type: 'number' },
+  groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
+  roomDone: { get: r => Number(r.roomDone) || 0, type: 'number' },
+  roomPending: { get: r => Number(r.roomPending) || 0, type: 'number' },
+  status: { get: r => getScheduleRoomArrangeStatusSortLabel(r) }
+};
+
+function renderScheduleRoomCategoryListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleRoomCategory';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('场地类型', 'venueType', true),
+    th('课程数', 'courseCount', true),
+    th('小组数', 'groupCount', true),
+    th('已排完', 'roomDone', true),
+    th('未排完', 'roomPending', true),
+    th('排教室状态', 'status', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
 function renderScheduleTimePage() {
   const tbody = document.getElementById('schedule-time-body');
+  renderScheduleTimeListThead(tbody);
   rebuildScheduleTermSelects();
   renderScheduleOfferingHint('schedule-time-hint');
   rebuildScheduleBatchFilterOptions();
@@ -46514,6 +46761,7 @@ function renderScheduleTimePage() {
   let rows = filterScheduleBatchSummaryRows(buildScheduleBatchSummaries());
   const status = document.getElementById('schedule-time-filter-status')?.value || '';
   rows = filterScheduleArrangeRowsByStatus(rows, status);
+  rows = sortListWithState(rows, 'scheduleTime', SCHEDULE_TIME_SORT_COLUMNS);
   if (!rows.length) {
     renderScheduleEmptyRow(tbody, 11, status ? '暂无匹配记录' : '暂无专业批次数据，请先在开课管理中完成合分班');
     return;
@@ -46523,7 +46771,7 @@ function renderScheduleTimePage() {
     const programmeCode = row.programmeCode || getProgrammeCode(row.programmeKey) || '—';
     return `<tr>
     <td class="col-index">${idx + 1}</td>
-    <td><code>${formatIntakeDisplay(row.intake)}</code></td>
+    <td class="col-center"><code>${formatIntakeDisplay(row.intake)}</code></td>
     <td class="col-center"><code>${escapeHtml(programmeCode)}</code></td>
     <td>${escapeHtml(row.programmeName)}</td>
     <td class="col-center"><code>${escapeHtml(row.schoolCode)}</code></td>
@@ -46860,6 +47108,7 @@ function renderScheduleArrangeStatusBadge(row) {
 
 function renderScheduleTeacherPage() {
   const tbody = document.getElementById('schedule-teacher-body');
+  renderScheduleTeacherListThead(tbody);
   rebuildScheduleTermSelects();
   const termEl = document.getElementById('schedule-teacher-filter-term');
   if (termEl) { const term = getActiveOfferingTermSetting(); termEl.value = term ? formatCourseTermDisplay(term.termCode) : ''; }
@@ -46879,6 +47128,7 @@ function renderScheduleTeacherPage() {
   if (nameQ) rows = rows.filter(r => (r.name || '').toLowerCase().includes(nameQ));
   if (deptQ) rows = rows.filter(r => (r.dept || '').toLowerCase().includes(deptQ));
   rows = filterScheduleArrangeRowsByStatus(rows, status);
+  rows = sortListWithState(rows, 'scheduleTeacher', SCHEDULE_TEACHER_SORT_COLUMNS);
   if (!rows.length) {
     renderScheduleEmptyRow(tbody, 11, status ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
     return;
@@ -46887,9 +47137,9 @@ function renderScheduleTeacherPage() {
     const canArrange = canScheduleArrangeActionAny('time', (r.tasks || []).map(t => t.programmeKey));
     return `<tr>
     <td class="col-index">${idx + 1}</td>
-    <td><code>${escapeHtml(r.teacherId)}</code></td>
+    <td class="col-center"><code>${escapeHtml(r.teacherId)}</code></td>
     <td>${escapeHtml(r.name)}</td>
-    <td>${escapeHtml(r.dept)}</td>
+    <td class="col-center">${escapeHtml(r.dept)}</td>
     <td class="col-center">${escapeHtml(r.staffType)}</td>
     <td class="col-center">${r.courseCount}</td>
     <td class="col-center">${r.groupCount || 0}</td>
@@ -47089,6 +47339,7 @@ function getScheduleCourseGroupRows() {
 
 function renderScheduleCoursePage() {
   const tbody = document.getElementById('schedule-course-body');
+  renderScheduleCourseListThead(tbody);
   rebuildScheduleTermSelects();
   ensureScheduleCourseTypeFilterMultiselect();
   const termEl = document.getElementById('schedule-course-filter-term');
@@ -47112,6 +47363,7 @@ function renderScheduleCoursePage() {
   if (deptQ) rows = rows.filter(r => (r.dept || '').toLowerCase().includes(deptQ));
   if (typeQ.length) rows = rows.filter(r => typeQ.includes(r.courseType));
   rows = filterScheduleArrangeRowsByStatus(rows, status);
+  rows = sortListWithState(rows, 'scheduleCourse', SCHEDULE_COURSE_SORT_COLUMNS);
   if (!rows.length) {
     renderScheduleEmptyRow(tbody, 10, status || typeQ.length || codeQ || nameQ || deptQ ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
     return;
@@ -47120,10 +47372,10 @@ function renderScheduleCoursePage() {
     const canArrange = canScheduleArrangeActionAny('time', (r.tasks || []).map(t => t.programmeKey));
     return `<tr>
     <td class="col-index">${idx + 1}</td>
-    <td><strong>${escapeHtml(formatScheduleCourseCode(r.code))}</strong></td>
+    <td class="col-center"><strong>${escapeHtml(formatScheduleCourseCode(r.code))}</strong></td>
     <td>${escapeHtml(r.name)}</td>
     <td class="col-center">${escapeHtml(formatScheduleCourseTypeLabel(r.courseType))}</td>
-    <td>${escapeHtml(r.dept)}</td>
+    <td class="col-center">${escapeHtml(r.dept)}</td>
     <td class="col-center">${r.groupCount || 0}</td>
     <td class="col-center">${r.doneUnits}</td>
     <td class="col-center">${r.pendingUnits ? `<span class="status draft">${r.pendingUnits}</span>` : '0'}</td>
@@ -47135,6 +47387,7 @@ function renderScheduleCoursePage() {
 
 function renderScheduleRoomWeekPage() {
   const tbody = document.getElementById('schedule-room-intake-body');
+  renderScheduleRoomWeekListThead(tbody);
   rebuildScheduleTermSelects();
   renderScheduleOfferingHint('schedule-room-intake-hint');
   if (!ensureCourseOfferingPlan()) {
@@ -47146,6 +47399,7 @@ function renderScheduleRoomWeekPage() {
   let rows = filterScheduleRoomWeekdaySummaryRows(buildScheduleRoomWeekdaySummaries());
   const status = document.getElementById('schedule-room-intake-filter-status')?.value || '';
   rows = filterScheduleRoomRowsByStatus(rows, status);
+  rows = sortListWithState(rows, 'scheduleRoomWeek', SCHEDULE_ROOM_WEEK_SORT_COLUMNS);
   if (!rows.length) {
     renderScheduleEmptyRow(tbody, 8, status ? '暂无匹配记录' : '暂无已排时间数据，请先完成排课表时间');
     return;
@@ -47154,7 +47408,7 @@ function renderScheduleRoomWeekPage() {
     const canArrange = canScheduleArrangeActionAny('room', (row.tasks || []).map(t => t.programmeKey));
     return `<tr>
     <td class="col-index">${idx + 1}</td>
-    <td>${escapeHtml(row.weekdayLabel)}</td>
+    <td class="col-center">${escapeHtml(row.weekdayLabel)}</td>
     <td class="col-center">${row.courseCount}</td>
     <td class="col-center">${row.groupCount || 0}</td>
     <td class="col-center">${row.roomDone}</td>
@@ -47170,6 +47424,7 @@ function renderScheduleRoomIntakePage() { return renderScheduleRoomWeekPage(); }
 
 function renderScheduleRoomCategoryPage() {
   const tbody = document.getElementById('schedule-room-teacher-body');
+  renderScheduleRoomCategoryListThead(tbody);
   rebuildScheduleTermSelects();
   renderScheduleOfferingHint('schedule-room-teacher-hint');
   ensureScheduleGlobalDemo();
@@ -47181,6 +47436,7 @@ function renderScheduleRoomCategoryPage() {
   let rows = filterScheduleRoomVenueTypeSummaryRows(buildScheduleRoomVenueTypeSummaries());
   const status = document.getElementById('schedule-room-teacher-filter-status')?.value || '';
   rows = filterScheduleRoomRowsByStatus(rows, status);
+  rows = sortListWithState(rows, 'scheduleRoomCategory', SCHEDULE_ROOM_CATEGORY_SORT_COLUMNS);
   if (!rows.length) {
     renderScheduleEmptyRow(tbody, 8, status ? '暂无匹配记录' : '暂无已排时间数据，请先完成排课表时间');
     return;
@@ -47189,7 +47445,7 @@ function renderScheduleRoomCategoryPage() {
     const canArrange = canScheduleArrangeActionAny('room', (r.tasks || []).map(t => t.programmeKey));
     return `<tr>
     <td class="col-index">${idx + 1}</td>
-    <td>${escapeHtml(r.venueTypeLabel)}</td>
+    <td class="col-center">${escapeHtml(r.venueTypeLabel)}</td>
     <td class="col-center">${r.courseCount}</td>
     <td class="col-center">${r.groupCount || 0}</td>
     <td class="col-center">${r.roomDone}</td>
@@ -48050,9 +48306,96 @@ function openScheduleRoomConflictDetail(idx) {
   openModal('modal-schedule-room-conflict-detail');
 }
 
+const SCHEDULE_ROOM_CONFLICT_SORT_COLUMNS = {
+  term: { get: r => r.termLabel || '' },
+  date: { get: r => r.date || '' },
+  week: { get: r => Number(r.weeks?.[0] || r.weekNo) || 0, type: 'number' },
+  weekday: { get: r => Number(r.weekday) || 0, type: 'number' },
+  period: { get: r => Number(r.overlapFrom || r.periodFrom) || 0, type: 'number' },
+  courseCode: { get: r => r.courseCodeLabel || '' },
+  courseName: { get: r => r.courseNameLabel || '' },
+  teacher: { get: r => r.teacherLabel || '' },
+  group: { get: r => r.groupLabel || '' },
+  school: { get: r => r.schoolCodeLabel || '' },
+  programme: { get: r => r.programmeNameLabel || '' },
+  intake: { get: r => r.intakeLabel || '' },
+  room: { get: r => r.room || '' },
+  joint: { get: r => r.jointTeachingStatus || 'N' },
+  conflictType: { get: r => r.conflictTypeLabel || r.conflictType || '' }
+};
+
+function renderScheduleRoomConflictListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleRoomConflict';
+  const th = (label, key, opts) => renderListSortTh(listKey, label, key, opts || {});
+  tr.innerHTML = [
+    '<th class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" id="schedule-room-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'schedule-room-conflict-body\', this.checked)"></th>',
+    '<th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>',
+    th('学期', 'term'),
+    th('Date', 'date'),
+    th('Week', 'week'),
+    th('Day', 'weekday'),
+    th('节次', 'period'),
+    th('Course Code', 'courseCode'),
+    th('课程班名称', 'courseName'),
+    th('上课教师', 'teacher'),
+    th('课程组（人数）', 'group'),
+    th('学院', 'school'),
+    th('专业', 'programme'),
+    th('入学批次', 'intake'),
+    th('Venue', 'room'),
+    th('共同授课状态', 'joint', { center: true }),
+    th('冲突类型', 'conflictType', { extraClass: 'sch-conflict-freeze sch-conflict-freeze-type' }),
+    '<th class="col-center sch-conflict-freeze sch-conflict-freeze-ops">操作</th>'
+  ].join('');
+}
+
+const SCHEDULE_TIME_CONFLICT_SORT_COLUMNS = {
+  term: { get: r => r.termLabel || '' },
+  date: { get: r => r.date || '' },
+  week: { get: r => Number(r.weeks?.[0]) || 0, type: 'number' },
+  weekday: { get: r => Number(r.weekday) || 0, type: 'number' },
+  period: { get: r => Number(r.periodFrom) || 0, type: 'number' },
+  courseCode: { get: r => r.courseCode || '' },
+  courseName: { get: r => r.courseName || '' },
+  teacher: { get: r => r.teacherLabel || '' },
+  group: { get: r => r.groupLabel || '' },
+  school: { get: r => r.schoolCode || '' },
+  programme: { get: r => r.programmeName || '' },
+  intake: { get: r => r.intakeLabel || r.intake || '' },
+  conflictType: { get: r => r.conflictTypeLabel || r.conflictType || '' }
+};
+
+function renderScheduleTimeConflictListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'scheduleTimeConflict';
+  const th = (label, key, opts) => renderListSortTh(listKey, label, key, opts || {});
+  tr.innerHTML = [
+    '<th class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" id="schedule-time-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'schedule-time-conflict-body\', this.checked)"></th>',
+    '<th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>',
+    th('学期', 'term'),
+    th('Date', 'date'),
+    th('Week', 'week'),
+    th('Day', 'weekday'),
+    th('节次', 'period'),
+    th('Course Code', 'courseCode'),
+    th('课程班名称', 'courseName'),
+    th('上课教师', 'teacher'),
+    th('课程组（人数）', 'group'),
+    th('学院', 'school'),
+    th('专业', 'programme'),
+    th('入学批次', 'intake'),
+    th('冲突类型', 'conflictType', { extraClass: 'sch-conflict-freeze sch-conflict-freeze-type' }),
+    '<th class="col-center sch-conflict-freeze sch-conflict-freeze-ops">操作</th>'
+  ].join('');
+}
+
 function renderScheduleRoomConflictPage() {
   const tbody = document.getElementById('schedule-room-conflict-body');
   if (!tbody) return;
+  renderScheduleRoomConflictListThead(tbody);
   rebuildScheduleTermSelects();
   const termEl = document.getElementById('schedule-room-conflict-filter-term');
   const term = getActiveOfferingTermSetting();
@@ -48073,7 +48416,8 @@ function renderScheduleRoomConflictPage() {
     resetListExportCheckAll('schedule-room-conflict-check-all');
     return;
   }
-  const rows = filterScheduleRoomConflictRows(getScheduleRoomConflictQueryRows(true), readScheduleRoomConflictFilters());
+  let rows = filterScheduleRoomConflictRows(getScheduleRoomConflictQueryRows(true), readScheduleRoomConflictFilters());
+  rows = sortListWithState(rows, 'scheduleRoomConflict', SCHEDULE_ROOM_CONFLICT_SORT_COLUMNS);
   scheduleRoomConflictFilteredRows = rows;
   renderScheduleRoomConflictHint(rows);
   resetListExportCheckAll('schedule-room-conflict-check-all');
@@ -48612,6 +48956,7 @@ function renderScheduleTimeConflictHint(rows) {
 function renderScheduleTimeConflictPage() {
   const tbody = document.getElementById('schedule-time-conflict-body');
   if (!tbody) return;
+  renderScheduleTimeConflictListThead(tbody);
   rebuildScheduleTermSelects();
   ensureScheduleAutoTermSelect('schedule-time-conflict-filter-term', true);
   rebuildScheduleTimeConflictBatchFilters();
@@ -48633,7 +48978,8 @@ function renderScheduleTimeConflictPage() {
     resetListExportCheckAll('schedule-time-conflict-check-all');
     return;
   }
-  const rows = filterScheduleTimeConflictRows(getScheduleTimeConflictQueryRows(true), readScheduleTimeConflictFilters());
+  let rows = filterScheduleTimeConflictRows(getScheduleTimeConflictQueryRows(true), readScheduleTimeConflictFilters());
+  rows = sortListWithState(rows, 'scheduleTimeConflict', SCHEDULE_TIME_CONFLICT_SORT_COLUMNS);
   scheduleTimeConflictFilteredRows = rows;
   renderScheduleTimeConflictHint(rows);
   resetListExportCheckAll('schedule-time-conflict-check-all');
@@ -48769,9 +49115,9 @@ function renderScheduleRoomCoursePage() {
     return `<tr>
     <td class="col-center srf-col-pick"><input type="checkbox" data-schedule-room-pick="course" value="${escapeHtml(r.code)}"${checked} onchange="toggleScheduleRoomListCheck('course','${escapeHtml(r.code)}',this.checked)"></td>
     <td class="col-index">${idx + 1}</td>
-    <td><strong>${escapeHtml(formatScheduleCourseCode(r.code))}</strong></td>
+    <td class="col-center"><strong>${escapeHtml(formatScheduleCourseCode(r.code))}</strong></td>
     <td>${escapeHtml(r.name)}</td>
-    <td>${escapeHtml(r.dept)}</td>
+    <td class="col-center">${escapeHtml(r.dept)}</td>
     <td class="col-center">${r.groupCount}</td>
     <td class="col-center">${r.roomDone}</td>
     <td class="col-center">${r.roomPending ? `<span class="status draft">${r.roomPending}</span>` : '0'}</td>
@@ -50046,7 +50392,7 @@ function renderScheduleTimeTimetableTable() {
     <td class="col-center">${escapeHtml(r.periodLabel)}</td>
     <td>${escapeHtml(formatScheduleCourseCode(r.code))}</td>
     <td>${escapeHtml(r.name || '—')}</td>
-    <td>${escapeHtml(r.offerUnit || '—')}</td>
+    <td class="col-center">${escapeHtml(r.offerUnit || '—')}</td>
     <td class="col-center">${escapeHtml(r.teacherId)}</td>
     <td>${escapeHtml(r.teacherName || '—')}</td>
     <td>${escapeHtml(r.affilUnit || '—')}</td>
@@ -63027,7 +63373,7 @@ function renderAdjustmentTeacherListThead(tbody, listKey, staffCols, withCheck) 
     '<th class="col-index col-center">序号</th>',
     th('审批状态', 'status', true),
     th('审批阶段', 'stage', true),
-    th('申请单号', 'no'),
+    th('申请单号', 'no', true),
     th('调课类型', 'type', true),
     th('申请人', 'applicant', true),
     staffTh,
@@ -63945,10 +64291,39 @@ function setAdjustmentReasonTypeEnabled(id, enabled) {
   renderAdjustmentReasonTypePage();
 }
 
+const ADJUSTMENT_REASON_TYPE_SORT_COLUMNS = {
+  name: { get: r => r.name || '' },
+  attachmentHint: { get: r => r.attachmentHint || '' },
+  requireReason: { get: r => (r.requireReason ? 1 : 0), type: 'number' },
+  requireAttachment: { get: r => (r.requireAttachment ? 1 : 0), type: 'number' },
+  applyTypes: { get: r => formatAdjustmentReasonApplyTypes(r.applyTypes) },
+  teacherTypes: { get: r => formatAdjustmentReasonTeacherTypes(r.teacherTypes) },
+  enabled: { get: r => (r.enabled ? 1 : 0), type: 'number' }
+};
+
+function renderAdjustmentReasonTypeListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'adjustmentReasonType';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('原因类型', 'name'),
+    th('附件说明', 'attachmentHint'),
+    th('是否需填写申请事由', 'requireReason', true),
+    th('是否需上传附件', 'requireAttachment', true),
+    th('适用调课类型', 'applyTypes'),
+    th('适用教师', 'teacherTypes'),
+    th('是否启用', 'enabled', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
 function renderAdjustmentReasonTypePage() {
   ensureAdjustmentReasonTypeStore();
   ensureScheduleChangeLogDemo();
   const tbody = document.getElementById('adjustment-reason-type-body');
+  renderAdjustmentReasonTypeListThead(tbody);
   const hint = document.getElementById('adjustment-reason-type-hint');
   const kw = (document.getElementById('adjustment-reason-type-keyword')?.value || '').trim().toLowerCase();
   const en = document.getElementById('adjustment-reason-type-enabled')?.value || '';
@@ -63958,6 +64333,7 @@ function renderAdjustmentReasonTypePage() {
   if (en === '1') rows = rows.filter(r => r.enabled);
   if (en === '0') rows = rows.filter(r => !r.enabled);
   if (apply) rows = rows.filter(r => !r.applyTypes?.length || r.applyTypes.includes(apply));
+  rows = sortListWithState(rows, 'adjustmentReasonType', ADJUSTMENT_REASON_TYPE_SORT_COLUMNS);
   if (hint) {
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条 · 启用 <strong>${rows.filter(r => r.enabled).length}</strong> 条</span>`;
   }
@@ -64613,6 +64989,55 @@ function getAdjustmentRoomOpenFilteredProfiles() {
   });
 }
 
+const ADJUSTMENT_ROOM_OPEN_SORT_COLUMNS = {
+  venueType: {
+    get: p => {
+      const venueType = p.venueType || mapAdjustmentRoomVenueType(p.room);
+      return getScheduleVenueTypeLabel(venueType) || venueType || '';
+    }
+  },
+  room: { get: p => p.room || '' },
+  building: {
+    get: p => {
+      const meta = (typeof getScheduleRoomMetaByName === 'function' ? getScheduleRoomMetaByName(p.room) : null) || {};
+      return meta.building || '';
+    }
+  },
+  floor: {
+    get: p => {
+      const meta = (typeof getScheduleRoomMetaByName === 'function' ? getScheduleRoomMetaByName(p.room) : null) || {};
+      const n = Number(meta.floor);
+      return Number.isFinite(n) ? n : -Infinity;
+    },
+    type: 'number'
+  },
+  roomType: {
+    get: p => {
+      const meta = (typeof getScheduleRoomMetaByName === 'function' ? getScheduleRoomMetaByName(p.room) : null) || {};
+      return meta.roomType || '';
+    }
+  },
+  openSummary: { get: p => formatAdjustmentRoomOpenSummary(p) }
+};
+
+function renderAdjustmentRoomOpenListThead(tbody) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const listKey = 'adjustmentRoomOpen';
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-check"><input type="checkbox" id="adjustment-room-open-check-all" aria-label="全选" onchange="toggleAdjustmentRoomOpenListAll(this.checked)"></th>',
+    '<th class="col-index">序号</th>',
+    th('场地类型', 'venueType'),
+    th('Venue Name', 'room'),
+    th('楼栋', 'building'),
+    th('楼层', 'floor', true),
+    th('Venue Type', 'roomType'),
+    th('开放时间', 'openSummary'),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
 function renderAdjustmentRoomOpenPage() {
   ensureAdjustmentRoomOpenStore();
   ensureScheduleChangeLogDemo();
@@ -64621,8 +65046,10 @@ function renderAdjustmentRoomOpenPage() {
   fillAdjustmentRoomOpenBuildingOptions();
   const term = getAdjustmentRoomOpenTerm();
   const tbody = document.getElementById('adjustment-room-open-body');
+  renderAdjustmentRoomOpenListThead(tbody);
   const hint = document.getElementById('adjustment-room-open-hint');
-  const rows = term ? getAdjustmentRoomOpenFilteredProfiles() : [];
+  let rows = term ? getAdjustmentRoomOpenFilteredProfiles() : [];
+  rows = sortListWithState(rows, 'adjustmentRoomOpen', ADJUSTMENT_ROOM_OPEN_SORT_COLUMNS);
   const total = term
     ? ADJUSTMENT_ROOM_OPEN_STORE.profiles.filter(p => p.term === term && p.dateFrom && p.dateTo).length
     : 0;
@@ -72021,11 +72448,11 @@ function renderAdjustmentHolidayManagePage() {
   tbody.innerHTML = rows.map((h, i) => `<tr>
     <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
     <td class="col-index">${i + 1}</td>
-    <td><code>${escapeHtml(h.no)}</code></td>
+    <td class="col-center"><code>${escapeHtml(h.no)}</code></td>
     <td>${escapeHtml(h.name)}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(h.dateLabel || h.date) || '—')}</td>
     <td class="col-center">${escapeHtml(h.weekdayLabel || getScheduleWeekdayLabel(h.weekday))}</td>
-    <td>${escapeHtml(h.reasonType || 'Public Holiday')}</td>
+    <td class="col-center">${escapeHtml(h.reasonType || 'Public Holiday')}</td>
     <td>${escapeHtml(h.reason || '—')}</td>
     <td class="col-center">${h.affected}</td>
     <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(h.createdAt) || '—')}</td>
@@ -72107,11 +72534,11 @@ function renderAdjustmentHolidayManageThead(tbody) {
   tr.innerHTML = [
     '<th class="col-check"><input type="checkbox" id="adjustment-holiday-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'adjustment-holiday-body\', this.checked)"></th>',
     '<th class="col-index">No.</th>',
-    th('Ref. ID', 'no'),
+    th('Ref. ID', 'no', true),
     th('假日名称', 'name'),
     th('Date', 'date', true),
     th('Day', 'day', true),
-    th('Category', 'reasonType'),
+    th('Category', 'reasonType', true),
     th('Reason', 'reason'),
     th('Affected Classes', 'affected', true),
     th('创建时间', 'createdAt', true),
@@ -76078,14 +76505,14 @@ function renderAdjustmentBatchRecordThead(tbody) {
   tr.innerHTML = [
     '<th class="col-check"><input type="checkbox" id="adjustment-batch-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'adjustment-batch-record-body\', this.checked)"></th>',
     '<th class="col-index">No.</th>',
-    th('Ref. ID', 'no'),
+    th('Ref. ID', 'no', true),
     th('Adjustment Type', 'kind', true),
-    th('原日期', 'sourceRange'),
-    th('原节次', 'sourcePeriods'),
-    th('目标日期', 'targetDate'),
-    th('目标节次', 'targetPeriods'),
+    th('原日期', 'sourceRange', true),
+    th('原节次', 'sourcePeriods', true),
+    th('目标日期', 'targetDate', true),
+    th('目标节次', 'targetPeriods', true),
     th('Affected Classes', 'slotCount', true),
-    th('Category', 'reasonType'),
+    th('Category', 'reasonType', true),
     th('Reason', 'reason'),
     th('操作时间', 'submittedAt', true),
     th('操作人', 'operator', true),
@@ -76211,14 +76638,14 @@ function renderAdjustmentBatchRecords() {
     return `<tr>
       <td class="col-check"><input type="checkbox" class="list-export-check" value="${i}" aria-label="选择第${i + 1}行"></td>
       <td class="col-index">${i + 1}</td>
-      <td><code>${escapeHtml(r.no)}</code></td>
+      <td class="col-center"><code>${escapeHtml(r.no)}</code></td>
       <td class="col-center">${typeBadge}</td>
-      <td>${escapeHtml(srcRange)}</td>
-      <td class="adj-batch-period-cell">${formatAdjustmentBatchRecordPeriodsHtml(r.sourcePeriods, r.termCode)}</td>
-      <td>${escapeHtml(targetDate)}</td>
-      <td class="adj-batch-period-cell">${targetPeriodsHtml}</td>
+      <td class="col-center">${escapeHtml(srcRange)}</td>
+      <td class="col-center adj-batch-period-cell">${formatAdjustmentBatchRecordPeriodsHtml(r.sourcePeriods, r.termCode)}</td>
+      <td class="col-center">${escapeHtml(targetDate)}</td>
+      <td class="col-center adj-batch-period-cell">${targetPeriodsHtml}</td>
       <td class="col-center">${r.slotCount || 0}</td>
-      <td>${escapeHtml(r.reasonType || '—')}</td>
+      <td class="col-center">${escapeHtml(r.reasonType || '—')}</td>
       <td>${escapeHtml(r.reason || '—')}</td>
       <td class="col-center">${escapeHtml(formatAdjustmentDateDisplay(r.submittedAt) || '—')}</td>
       <td class="col-center">${escapeHtml(r.operator || '—')}</td>
@@ -76696,11 +77123,40 @@ function updateScheduleAutoRulePriority(side, id, value) {
   else renderScheduleAutoTimeRulePage();
 }
 
+const SCHEDULE_AUTO_RULE_SORT_COLUMNS = {
+  name: { get: r => r.name || '' },
+  mode: { get: r => getScheduleAutoModeLabel(r._sortSide || 'time', r.mode) },
+  priority: { get: r => Number(r.priority) || 0, type: 'number' },
+  enabled: { get: r => (r.enabled ? 1 : 0), type: 'number' }
+};
+
+function renderScheduleAutoRuleListThead(tbody, listKey) {
+  const tr = tbody?.closest('table')?.querySelector('thead tr');
+  if (!tr) return;
+  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  tr.innerHTML = [
+    '<th class="col-index">序号</th>',
+    th('约束名称', 'name'),
+    th('策略', 'mode', true),
+    th('优先级', 'priority', true),
+    th('是否启用', 'enabled', true),
+    '<th class="col-center">操作</th>'
+  ].join('');
+}
+
 function renderScheduleAutoRulePage(side) {
   ensureScheduleAutoDemoRules();
+  const listKey = side === 'room' ? 'scheduleAutoRoomRule' : 'scheduleAutoTimeRule';
   const tbody = document.getElementById(side === 'room' ? 'schedule-auto-room-rule-body' : 'schedule-auto-time-rule-body');
   const hint = document.getElementById(side === 'room' ? 'schedule-auto-room-rule-hint' : 'schedule-auto-time-rule-hint');
-  const rows = getScheduleAutoRules(side).slice().sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name, 'zh'));
+  renderScheduleAutoRuleListThead(tbody, listKey);
+  let rows = getScheduleAutoRules(side).slice().map(r => ({ ...r, _sortSide: side }));
+  rows = sortListWithState(
+    rows,
+    listKey,
+    SCHEDULE_AUTO_RULE_SORT_COLUMNS,
+    (a, b) => a.priority - b.priority || a.name.localeCompare(b.name, 'zh')
+  );
   if (hint) {
     hint.innerHTML = `<span class="legend-item">共 <strong>${rows.length}</strong> 条约束 · 启用 <strong>${rows.filter(r => r.enabled).length}</strong> 条</span>`;
   }

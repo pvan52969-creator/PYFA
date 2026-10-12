@@ -593,6 +593,18 @@ body {
 .data-table td.col-center {
   text-align: center;
 }
+/* 序号 / 节次等短索引列：表头与单元格居中（长文案列仍默认左对齐）
+ * 选择器需高于 .data-table th、.schedule-page/.page-list 表头规则，避免序号仍左对齐 */
+.data-table th.col-index,
+.data-table td.col-index,
+.main .page.page-list.active .table-scroll table thead th.col-index,
+.main .page.page-list.active .table-scroll table tbody td.col-index,
+.schedule-page .table-scroll .data-table > thead > tr > th.col-index,
+.schedule-page .table-scroll .data-table > tbody > tr > td.col-index,
+.adjustment-page .table-scroll .data-table > thead > tr > th.col-index,
+.adjustment-page .table-scroll .data-table > tbody > tr > td.col-index {
+  text-align: center;
+}
 .data-table th.th-sortable,
 #tab-courses .data-table th.th-sortable {
   cursor: pointer;

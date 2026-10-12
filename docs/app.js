@@ -48101,8 +48101,8 @@ function renderScheduleRoomConflictPage() {
       <td>${escapeHtml(row.room || '—')}</td>
       <td class="col-center"><span class="sch-joint-badge ${jointCls}">${escapeHtml(row.jointTeachingStatus || 'N')}</span></td>
       <td class="sch-conflict-type-cell sch-conflict-freeze sch-conflict-freeze-type">${renderScheduleRoomConflictTypeTag(row)}</td>
-      <td class="col-center sch-conflict-freeze sch-conflict-freeze-ops">
-        <button type="button" class="btn btn-outline btn-sm" onclick="openScheduleRoomConflictDetail(${idx})">详情</button>
+      <td class="col-center actions sch-conflict-freeze sch-conflict-freeze-ops">
+        <a href="#" onclick="openScheduleRoomConflictDetail(${idx});return false">详情</a>
       </td>
     </tr>`;
   }).join('');

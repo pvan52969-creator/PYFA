@@ -25330,20 +25330,30 @@ const SCHEDULE_TASK_STORE = {
 let scheduleBatchDetailContext = null;
 /** 联合排课：已选专业 / 专业批次 / 教师单位 / 教师（草稿，点确定后才查询） */
 const SCHEDULE_JOINT_PICKER_KINDS = ['programme', 'batch', 'dept', 'teacher'];
+/** 公共选修课类型多选（与专业等共用 clo-multiselect，但不参与批次/教师级联） */
+const SCHEDULE_JOINT_GE_PICKER_KIND = 'geType';
+/** 联合排课条上全部可搜索多选控件（含公共选修课类型） */
+function getScheduleJointUiPickerKinds() {
+  return SCHEDULE_JOINT_PICKER_KINDS.concat(SCHEDULE_JOINT_GE_PICKER_KIND);
+}
 let scheduleJointDraftTerm = '';
-/** 联合排课草稿：公共选修课类型 G01–G04（演示筛选） */
-let scheduleJointDraftGeType = '';
+/**
+ * 联合排课草稿：公共选修课类型 G01–G04（可多选）
+ * @deprecated 曾为单个字符串；现为 id 数组，空数组=不按 GE 类型筛
+ */
+let scheduleJointDraftGeType = [];
 let scheduleJointSelectedProgrammes = [];
 let scheduleJointSelectedBatches = [];
 let scheduleJointSelectedDepts = [];
 let scheduleJointSelectedTeachers = [];
 let scheduleJointAppliedTerm = '';
-let scheduleJointAppliedGeType = '';
+/** 已生效的公共选修课类型（点确定后）；空数组=未按 GE 类型筛 */
+let scheduleJointAppliedGeType = [];
 let scheduleJointAppliedBatches = [];
 let scheduleJointAppliedTeachers = [];
-let scheduleJointPickerSnapshot = { programme: null, batch: null, dept: null, teacher: null };
-let scheduleJointPickerDraft = { programme: null, batch: null, dept: null, teacher: null };
-let scheduleJointPickerQuery = { programme: '', batch: '', dept: '', teacher: '' };
+let scheduleJointPickerSnapshot = { programme: null, batch: null, dept: null, teacher: null, geType: null };
+let scheduleJointPickerDraft = { programme: null, batch: null, dept: null, teacher: null, geType: null };
+let scheduleJointPickerQuery = { programme: '', batch: '', dept: '', teacher: '', geType: '' };
 let scheduleJointPickerDocBound = false;
 let scheduleJointLiveBackup = null;
 let SCHEDULE_JOINT_DEMO_CATALOG = null;
@@ -39718,7 +39728,8 @@ function prioritizeScheduleTimeArrangeCourses(tasks) {
       .filter(s => String(s.sharedTeachingCode || '').trim())
       .map(s => String(s.code || '').toUpperCase())
   );
-  const geFilterOn = !!(typeof scheduleJointAppliedGeType !== 'undefined' && scheduleJointAppliedGeType);
+  const geFilterOn = typeof hasScheduleJointGeTypeFilter === 'function'
+    && hasScheduleJointGeTypeFilter(scheduleJointAppliedGeType);
   const activeId = scheduleActiveTaskId;
   const rank = t => {
     if (activeId && t.id === activeId) return 0;
@@ -41858,7 +41869,10 @@ function getScheduleTasksForScopeCtx(ctx) {
 
 function getScheduleJointUnionTasks(ctx) {
   const source = ctx || scheduleBatchDetailContext || {};
-  const geType = source.geType || scheduleJointAppliedGeType || '';
+  const geTypes = normalizeScheduleJointGeTypes(
+    source.geType != null ? source.geType : scheduleJointAppliedGeType
+  );
+  const geFilterOn = geTypes.length > 0;
   if (source.type === 'joint-demo' || isScheduleJointDemoContext()) {
     const cat = ensureScheduleJointDemoCatalog();
     const batchKeys = new Set(source.batches || scheduleJointAppliedBatches || []);
@@ -41866,9 +41880,9 @@ function getScheduleJointUnionTasks(ctx) {
     const termCode = source.termCode || scheduleJointAppliedTerm || '';
     return (cat.tasks || []).filter(task => {
       if (termCode && String(task.termCode || '') !== termCode) return false;
-      if (!scheduleJointTaskMatchesGeType(task, geType)) return false;
+      if (!scheduleJointTaskMatchesGeType(task, geTypes)) return false;
       // 仅选 G01–G04：纳入匹配的 GE 课（演示目录常不挂所选批次）
-      if (geType && !batchKeys.size && !teacherIds.size) return true;
+      if (geFilterOn && !batchKeys.size && !teacherIds.size) return true;
       if (batchKeys.size && getScheduleTaskBatchKeys(task).some(k => batchKeys.has(k))) return true;
       if (teacherIds.size && (task.teacherIds || []).some(id => teacherIds.has(id))) return true;
       return false;
@@ -41882,7 +41896,7 @@ function getScheduleJointUnionTasks(ctx) {
   const accept = task => {
     if (!task?.id || seen.has(task.id)) return false;
     if (termCode && String(task.termCode || '') !== termCode) return false;
-    if (!scheduleJointTaskMatchesGeType(task, geType)) return false;
+    if (!scheduleJointTaskMatchesGeType(task, geTypes)) return false;
     seen.add(task.id);
     return true;
   };
@@ -41901,11 +41915,11 @@ function getScheduleJointUnionTasks(ctx) {
     });
   });
   // 选了 G01–G04 时：并入匹配的 GE 课（无学期码视为不限学期；公共选修常不挂单一专业批次）
-  if (geType) {
+  if (geFilterOn) {
     getScheduleTaskRows().forEach(t => {
       if (!t?.id || seen.has(t.id)) return;
       if (termCode && String(t.termCode || '') && String(t.termCode) !== termCode) return;
-      if (!scheduleJointTaskMatchesGeType(t, geType)) return;
+      if (!scheduleJointTaskMatchesGeType(t, geTypes)) return;
       seen.add(t.id);
       out.push(t);
     });
@@ -41915,10 +41929,11 @@ function getScheduleJointUnionTasks(ctx) {
 
 /** 已选 G01–G04 时：GE 以课为对象行，不再挂专业批次/教师行 */
 function scheduleJointGeUsesCourseObjectRows() {
-  const geType = String(
-    scheduleBatchDetailContext?.geType || scheduleJointAppliedGeType || ''
-  ).trim();
-  return !!geType;
+  return hasScheduleJointGeTypeFilter(
+    scheduleBatchDetailContext?.geType != null
+      ? scheduleBatchDetailContext.geType
+      : scheduleJointAppliedGeType
+  );
 }
 
 function buildScheduleJointCourseObject(task) {
@@ -42001,7 +42016,10 @@ function buildScheduleJointObjectsFromTasks(tasks) {
 
 function getScheduleJointRowObjects() {
   const ctx = scheduleBatchDetailContext || {};
-  const geType = String(ctx.geType || scheduleJointAppliedGeType || '').trim();
+  const geTypes = normalizeScheduleJointGeTypes(
+    ctx.geType != null ? ctx.geType : scheduleJointAppliedGeType
+  );
+  const geFilterOn = geTypes.length > 0;
   let objs = [];
   if (isScheduleJointDemoContext() || ctx.type === 'joint-demo') {
     const cat = ensureScheduleJointDemoCatalog();
@@ -42038,7 +42056,7 @@ function getScheduleJointRowObjects() {
     });
   }
   // 已选 G01–G04：GE 以课为对象；批次/教师只保留非 GE 仍挂靠的行，去掉 GE 空壳批次
-  if (geType) {
+  if (geFilterOn) {
     const tasks = getScheduleJointUnionTasks(ctx);
     const courseObjs = buildScheduleJointCourseObjectsFromTasks(tasks);
     if (objs.length) {
@@ -42164,6 +42182,7 @@ function openScheduleJointPage() {
     type: 'joint',
     phase: 'time',
     termCode: scheduleJointAppliedTerm,
+    geType: normalizeScheduleJointGeTypes(scheduleJointAppliedGeType),
     batches: scheduleJointAppliedBatches.slice(),
     teachers: scheduleJointAppliedTeachers.slice()
   };
@@ -42175,13 +42194,13 @@ function backupScheduleJointLiveSelection() {
   if (scheduleBatchDetailContext?.type === 'joint-demo') return;
   scheduleJointLiveBackup = {
     draftTerm: scheduleJointDraftTerm,
-    draftGeType: scheduleJointDraftGeType,
+    draftGeType: normalizeScheduleJointGeTypes(scheduleJointDraftGeType),
     selectedProgrammes: scheduleJointSelectedProgrammes.slice(),
     selectedBatches: scheduleJointSelectedBatches.slice(),
     selectedDepts: scheduleJointSelectedDepts.slice(),
     selectedTeachers: scheduleJointSelectedTeachers.slice(),
     appliedTerm: scheduleJointAppliedTerm,
-    appliedGeType: scheduleJointAppliedGeType,
+    appliedGeType: normalizeScheduleJointGeTypes(scheduleJointAppliedGeType),
     appliedBatches: scheduleJointAppliedBatches.slice(),
     appliedTeachers: scheduleJointAppliedTeachers.slice()
   };
@@ -42191,25 +42210,25 @@ function restoreScheduleJointLiveSelection() {
   const bak = scheduleJointLiveBackup;
   if (!bak) {
     scheduleJointDraftTerm = getDefaultScheduleJointTerm();
-    scheduleJointDraftGeType = '';
+    scheduleJointDraftGeType = [];
     scheduleJointSelectedProgrammes = [];
     scheduleJointSelectedBatches = [];
     scheduleJointSelectedDepts = [];
     scheduleJointSelectedTeachers = [];
     scheduleJointAppliedTerm = '';
-    scheduleJointAppliedGeType = '';
+    scheduleJointAppliedGeType = [];
     scheduleJointAppliedBatches = [];
     scheduleJointAppliedTeachers = [];
     return;
   }
   scheduleJointDraftTerm = bak.draftTerm;
-  scheduleJointDraftGeType = bak.draftGeType || '';
+  scheduleJointDraftGeType = normalizeScheduleJointGeTypes(bak.draftGeType);
   scheduleJointSelectedProgrammes = bak.selectedProgrammes.slice();
   scheduleJointSelectedBatches = bak.selectedBatches.slice();
   scheduleJointSelectedDepts = bak.selectedDepts.slice();
   scheduleJointSelectedTeachers = bak.selectedTeachers.slice();
   scheduleJointAppliedTerm = bak.appliedTerm;
-  scheduleJointAppliedGeType = bak.appliedGeType || '';
+  scheduleJointAppliedGeType = normalizeScheduleJointGeTypes(bak.appliedGeType);
   scheduleJointAppliedBatches = bak.appliedBatches.slice();
   scheduleJointAppliedTeachers = bak.appliedTeachers.slice();
 }
@@ -42219,13 +42238,13 @@ function openScheduleJointDemoPage() {
   const cat = ensureScheduleJointDemoCatalog();
   scheduleDetailPhase = 'time';
   scheduleJointDraftTerm = '202604';
-  scheduleJointDraftGeType = '';
+  scheduleJointDraftGeType = [];
   scheduleJointSelectedProgrammes = cat.picker.programme.map(o => o.value);
   scheduleJointSelectedBatches = cat.picker.batch.map(o => o.value);
   scheduleJointSelectedDepts = [];
   scheduleJointSelectedTeachers = cat.picker.teacher.map(o => o.value);
   scheduleJointAppliedTerm = '202604';
-  scheduleJointAppliedGeType = '';
+  scheduleJointAppliedGeType = [];
   scheduleJointAppliedBatches = scheduleJointSelectedBatches.slice();
   scheduleJointAppliedTeachers = scheduleJointSelectedTeachers.slice();
   const wasDemo = scheduleBatchDetailContext?.type === 'joint-demo';
@@ -42233,6 +42252,7 @@ function openScheduleJointDemoPage() {
     type: 'joint-demo',
     phase: 'time',
     termCode: '202604',
+    geType: [],
     batches: scheduleJointAppliedBatches.slice(),
     teachers: scheduleJointAppliedTeachers.slice()
   };
@@ -42447,8 +42467,11 @@ function syncScheduleJointDemoChromeToggle(page) {
 
 function buildScheduleJointPickerFieldHtml(kind, label) {
   const ph = getScheduleJointPickerPlaceholder(kind, false);
+  const fieldTitle = kind === 'geType'
+    ? ' title="G01 Arts · G02 Business · G03 Science · G04 不限；可多选"'
+    : '';
   return `
-    <div class="schedule-joint-picker-field">
+    <div class="schedule-joint-picker-field"${fieldTitle}>
       <label class="schedule-joint-picker-label" for="schedule-joint-${kind}-search">${label}</label>
       <div class="clo-multiselect schedule-joint-multiselect" id="schedule-joint-${kind}-multiselect">
         <div class="clo-multiselect-trigger input input-sm schedule-joint-picker-trigger" id="schedule-joint-${kind}-btn">
@@ -42466,12 +42489,12 @@ function buildScheduleJointPickerFieldHtml(kind, label) {
     </div>`;
 }
 
-/** 联合排课 · 公共选修课类型（对照 GE 开课配额：G01 Arts / G02 Business / G03 Science / G04 不限） */
+/** 联合排课 · 公共选修课类型（对照校选课类别：G01 Arts / G02 Business / G03 Science / G04 不限） */
 const SCHEDULE_JOINT_GE_TYPE_OPTIONS = [
-  { id: 'G01', label: 'G01' },
-  { id: 'G02', label: 'G02' },
-  { id: 'G03', label: 'G03' },
-  { id: 'G04', label: 'G04' }
+  { id: 'G01', label: 'G01（Arts）' },
+  { id: 'G02', label: 'G02（Business）' },
+  { id: 'G03', label: 'G03（Science）' },
+  { id: 'G04', label: 'G04（不限）' }
 ];
 /** G01–G03 对应校选 GE 文商理；G04 不限 = 全部 GE */
 const SCHEDULE_JOINT_GE_TYPE_STREAM = {
@@ -42560,22 +42583,59 @@ function resolveScheduleJointGeStream(task) {
   return '';
 }
 
-/** 任务是否匹配已选公共选修课类型 G01–G04；未选则不过滤 */
-function scheduleJointTaskMatchesGeType(task, geType) {
-  const key = String(geType || '').trim().toUpperCase();
-  if (!key) return true;
-  if (!SCHEDULE_JOINT_GE_TYPE_OPTIONS.some(o => o.id === key)) return true;
-  if (!isScheduleJointGeCourse(task)) return false;
-  // G04 不限：任意 GE
-  if (key === 'G04') return true;
-  const want = SCHEDULE_JOINT_GE_TYPE_STREAM[key];
-  if (!want) return true;
-  return resolveScheduleJointGeStream(task) === want;
+/**
+ * 规范化公共选修课类型为合法 id 数组（兼容旧单字符串）
+ * @param {string|string[]|null|undefined} value 已选类型
+ * @returns {string[]}
+ */
+function normalizeScheduleJointGeTypes(value) {
+  const raw = Array.isArray(value)
+    ? value
+    : (value == null || value === '' ? [] : [value]);
+  const allow = new Set(SCHEDULE_JOINT_GE_TYPE_OPTIONS.map(o => o.id));
+  const out = [];
+  raw.forEach(item => {
+    const key = String(item || '').trim().toUpperCase();
+    if (!key || !allow.has(key) || out.includes(key)) return;
+    out.push(key);
+  });
+  return out;
 }
 
+/**
+ * 是否启用了公共选修课类型筛选（多选非空）
+ * @param {string|string[]|null|undefined} value
+ */
+function hasScheduleJointGeTypeFilter(value) {
+  return normalizeScheduleJointGeTypes(value).length > 0;
+}
+
+/**
+ * 任务是否匹配已选公共选修课类型 G01–G04（多选为并集）；未选则不过滤
+ * @param {object} task 开课任务
+ * @param {string|string[]|null|undefined} geType 单个或数组
+ */
+function scheduleJointTaskMatchesGeType(task, geType) {
+  const keys = normalizeScheduleJointGeTypes(geType);
+  if (!keys.length) return true;
+  if (!isScheduleJointGeCourse(task)) return false;
+  return keys.some(key => {
+    // G04 不限：任意 GE
+    if (key === 'G04') return true;
+    const want = SCHEDULE_JOINT_GE_TYPE_STREAM[key];
+    if (!want) return true;
+    return resolveScheduleJointGeStream(task) === want;
+  });
+}
+
+/**
+ * @deprecated 旧单选 <select> 选项 HTML；已改为 clo-multiselect 多选
+ * @param {string|string[]} selected 已选类型
+ */
 function buildScheduleJointGeTypeOptionsHtml(selected) {
-  const cur = String(selected || '');
-  const valid = SCHEDULE_JOINT_GE_TYPE_OPTIONS.some(o => o.id === cur);
+  const keys = normalizeScheduleJointGeTypes(selected);
+  const cur = keys[0] || '';
+  const valid = !!cur;
   // 空值=取消筛选（非「全部 GE」）；列表可见「不选」以便删掉已选；关闭态由 ss 同步为空以显示 placeholder
   const opts = [`<option value=""${valid ? '' : ' selected'}>不选</option>`].concat(
     SCHEDULE_JOINT_GE_TYPE_OPTIONS.map(o =>
@@ -42592,10 +42652,7 @@ function buildScheduleJointPickerBarHtml() {
         <label class="schedule-joint-picker-label req" for="schedule-joint-term">学年学期</label>
         <select class="input input-sm" id="schedule-joint-term" onchange="onScheduleJointTermChange()"></select>
       </div>
-      <div class="schedule-joint-picker-field">
-        <label class="schedule-joint-picker-label" for="schedule-joint-ge-type">公共选修课类型</label>
-        <select class="input input-sm" id="schedule-joint-ge-type" data-ss-clearable="1" title="G01 Arts · G02 Business · G03 Science · G04 不限；可选「不选」取消" onchange="onScheduleJointGeTypeChange()">${buildScheduleJointGeTypeOptionsHtml(scheduleJointDraftGeType)}</select>
-      </div>
+      ${buildScheduleJointPickerFieldHtml('geType', '公共选修课类型')}
     </div>
     <div class="schedule-joint-picker-row">
       ${buildScheduleJointPickerFieldHtml('programme', '专业')}
@@ -42623,13 +42680,16 @@ function ensureScheduleJointPickerBar(page) {
     if (header) header.insertAdjacentElement('afterend', bar);
     else host.insertBefore(bar, host.firstChild);
   }
-  if (
-    !host.querySelector('#schedule-joint-term')
-    || !host.querySelector('#schedule-joint-ge-type')
+  // ge-multi-1：公共选修课类型由单选 ss-select 升级为 clo-multiselect 多选
+  const needsRebuild = bar.dataset.jointPickerVer !== 'ge-multi-1'
+    || !host.querySelector('#schedule-joint-term')
     || !host.querySelector('#schedule-joint-query-confirm')
-  ) {
+    || !host.querySelector('#schedule-joint-geType-multiselect')
+    || !!host.querySelector('select#schedule-joint-ge-type');
+  if (needsRebuild) {
     bar.innerHTML = buildScheduleJointPickerBarHtml();
-    SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+    bar.dataset.jointPickerVer = 'ge-multi-1';
+    getScheduleJointUiPickerKinds().forEach(kind => {
       const trigger = scheduleDetailEl(getScheduleJointPickerIds(kind).btn);
       if (trigger) delete trigger.dataset.jointTriggerBound;
     });
@@ -42642,12 +42702,13 @@ function bindScheduleJointPickerDocClose() {
   document.addEventListener('click', e => {
     if (!isScheduleJointContext()) return;
     if (e.target?.closest?.('.schedule-joint-multiselect')) return;
-    SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => closeScheduleJointPicker(kind));
+    getScheduleJointUiPickerKinds().forEach(kind => closeScheduleJointPicker(kind));
   });
 }
 
 function getScheduleJointPickerIds(kind) {
-  const prefix = SCHEDULE_JOINT_PICKER_KINDS.includes(kind) ? kind : 'batch';
+  const known = SCHEDULE_JOINT_PICKER_KINDS.includes(kind) || kind === SCHEDULE_JOINT_GE_PICKER_KIND;
+  const prefix = known ? kind : 'batch';
   return {
     options: `schedule-joint-${prefix}-options`,
     dropdown: `schedule-joint-${prefix}-dropdown`,
@@ -42658,6 +42719,7 @@ function getScheduleJointPickerIds(kind) {
 }
 
 function getScheduleJointPickerPlaceholder(kind, forSearch) {
+  if (kind === 'geType') return forSearch ? '搜索公共选修课类型' : '请选择或搜索';
   if (kind === 'programme') return forSearch ? '搜索专业' : '请选择或搜索专业';
   if (kind === 'dept') return forSearch ? '搜索教师单位' : '请选择或搜索教师单位';
   if (kind === 'teacher') return forSearch ? '搜索教师' : '请选择或搜索教师';
@@ -42719,22 +42781,22 @@ function fillScheduleJointTermSelect() {
   }
 }
 
+/**
+ * @deprecated 旧单选下拉填充；公共选修课类型已改为多选 clo-multiselect，由 syncScheduleJointPickers 维护
+ */
 function fillScheduleJointGeTypeSelect() {
-  const sel = scheduleDetailEl('schedule-joint-ge-type');
-  if (!sel) return;
-  const cur = scheduleJointDraftGeType || '';
-  sel.innerHTML = buildScheduleJointGeTypeOptionsHtml(cur);
-  if (![...sel.options].some(o => o.value === cur)) {
-    sel.value = '';
-    scheduleJointDraftGeType = '';
-  } else {
-    sel.value = cur;
-  }
+  scheduleJointDraftGeType = normalizeScheduleJointGeTypes(scheduleJointDraftGeType);
+  fillScheduleJointPickerOptions('geType', scheduleJointDraftGeType);
+  updateScheduleJointPickerDisplay('geType');
 }
 
+/**
+ * @deprecated 旧 <select onchange>；现由 onScheduleJointPickerCheck('geType') 写入草稿
+ */
 function onScheduleJointGeTypeChange() {
-  const sel = scheduleDetailEl('schedule-joint-ge-type');
-  scheduleJointDraftGeType = sel?.value || '';
+  scheduleJointDraftGeType = normalizeScheduleJointGeTypes(
+    getScheduleJointSelectedValues('geType')
+  );
 }
 
 function onScheduleJointTermChange() {
@@ -42748,6 +42810,13 @@ function onScheduleJointTermChange() {
 }
 
 function getScheduleJointAllPickerOptions(kind) {
+  if (kind === 'geType') {
+    return SCHEDULE_JOINT_GE_TYPE_OPTIONS.map(o => ({
+      value: o.id,
+      text: o.label,
+      search: `${o.id} ${o.label} Arts Business Science 不限`
+    }));
+  }
   if (isScheduleJointDemoContext()) {
     const cat = ensureScheduleJointDemoCatalog();
     return (cat.picker && cat.picker[kind]) ? cat.picker[kind].slice() : [];
@@ -42810,6 +42879,7 @@ function getScheduleJointPickerOptions(kind) {
 }
 
 function getScheduleJointSelectedValues(kind) {
+  if (kind === 'geType') return normalizeScheduleJointGeTypes(scheduleJointDraftGeType);
   if (kind === 'programme') return scheduleJointSelectedProgrammes.slice();
   if (kind === 'dept') return scheduleJointSelectedDepts.slice();
   if (kind === 'teacher') return scheduleJointSelectedTeachers.slice();
@@ -42865,7 +42935,7 @@ function ensureScheduleJointPickerChipsHost(kind) {
 }
 
 function bindScheduleJointPickerTriggers() {
-  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+  getScheduleJointUiPickerKinds().forEach(kind => {
     ensureScheduleJointPickerChipsHost(kind);
     const trigger = scheduleDetailEl(getScheduleJointPickerIds(kind).btn);
     if (!trigger || trigger.dataset.jointTriggerBound === '1') return;
@@ -42919,8 +42989,9 @@ function syncScheduleJointPickers() {
   ensureScheduleJointPickerBar();
   bindScheduleJointPickerTriggers();
   fillScheduleJointTermSelect();
-  fillScheduleJointGeTypeSelect();
-  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+  scheduleJointDraftGeType = normalizeScheduleJointGeTypes(scheduleJointDraftGeType);
+  scheduleJointAppliedGeType = normalizeScheduleJointGeTypes(scheduleJointAppliedGeType);
+  getScheduleJointUiPickerKinds().forEach(kind => {
     fillScheduleJointPickerOptions(kind, getScheduleJointSelectedValues(kind));
     updateScheduleJointPickerDisplay(kind);
   });
@@ -42940,7 +43011,7 @@ function openScheduleJointPicker(kind, event, opts = {}) {
   const ids = getScheduleJointPickerIds(kind);
   const dd = scheduleDetailEl(ids.dropdown);
   if (!dd) return;
-  SCHEDULE_JOINT_PICKER_KINDS.forEach(other => {
+  getScheduleJointUiPickerKinds().forEach(other => {
     if (other !== kind) closeScheduleJointPicker(other);
   });
   if (!dd.hidden) return;
@@ -42988,6 +43059,10 @@ function onScheduleJointPickerSearch(kind, event) {
 
 function applyScheduleJointPickerValues(kind, next) {
   const values = Array.isArray(next) ? next.slice() : [];
+  if (kind === 'geType') {
+    scheduleJointDraftGeType = normalizeScheduleJointGeTypes(values);
+    return;
+  }
   if (kind === 'programme') scheduleJointSelectedProgrammes = values;
   else if (kind === 'dept') scheduleJointSelectedDepts = values;
   else if (kind === 'teacher') scheduleJointSelectedTeachers = values;
@@ -43053,7 +43128,7 @@ function confirmScheduleJointPicker(kind, event) {
 function applyScheduleJointQueryContext() {
   if (scheduleBatchDetailContext?.type !== 'joint' && scheduleBatchDetailContext?.type !== 'joint-demo') return;
   scheduleBatchDetailContext.termCode = scheduleJointAppliedTerm;
-  scheduleBatchDetailContext.geType = scheduleJointAppliedGeType || '';
+  scheduleBatchDetailContext.geType = normalizeScheduleJointGeTypes(scheduleJointAppliedGeType);
   scheduleBatchDetailContext.batches = scheduleJointAppliedBatches.slice();
   scheduleBatchDetailContext.teachers = scheduleJointAppliedTeachers.slice();
 }
@@ -43067,9 +43142,11 @@ function resolveScheduleJointQueryScope() {
   if (!teachers.length && scheduleJointSelectedDepts.length) {
     teachers = getScheduleJointPickerOptions('teacher').map(o => o.value);
   }
-  const geType = String(scheduleJointDraftGeType || scheduleJointAppliedGeType || '').trim();
+  const geTypes = normalizeScheduleJointGeTypes(
+    scheduleJointDraftGeType.length ? scheduleJointDraftGeType : scheduleJointAppliedGeType
+  );
   // 仅选公共选修类型时：不要默认展开全部专业批次，否则课表「对象」列会刷出无关批次
-  if (!batches.length && !teachers.length && !geType) {
+  if (!batches.length && !teachers.length && !geTypes.length) {
     batches = getScheduleJointPickerOptions('batch').map(o => o.value);
   }
   return { batches, teachers };
@@ -43087,15 +43164,14 @@ function validateScheduleJointQuery() {
 function confirmScheduleJointQuery(event) {
   event?.stopPropagation?.();
   event?.preventDefault?.();
-  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => {
+  getScheduleJointUiPickerKinds().forEach(kind => {
     applyScheduleJointPickerValues(kind, getScheduleJointPickerDraft(kind));
     closeScheduleJointPicker(kind);
   });
-  onScheduleJointGeTypeChange();
   if (!validateScheduleJointQuery()) return;
   const scope = resolveScheduleJointQueryScope();
   scheduleJointAppliedTerm = scheduleJointDraftTerm || getDefaultScheduleJointTerm();
-  scheduleJointAppliedGeType = scheduleJointDraftGeType || '';
+  scheduleJointAppliedGeType = normalizeScheduleJointGeTypes(scheduleJointDraftGeType);
   scheduleJointAppliedBatches = scope.batches;
   scheduleJointAppliedTeachers = scope.teachers;
   applyScheduleJointQueryContext();
@@ -43105,16 +43181,16 @@ function confirmScheduleJointQuery(event) {
 function resetScheduleJointQuery(event) {
   event?.stopPropagation?.();
   event?.preventDefault?.();
-  SCHEDULE_JOINT_PICKER_KINDS.forEach(kind => closeScheduleJointPicker(kind));
+  getScheduleJointUiPickerKinds().forEach(kind => closeScheduleJointPicker(kind));
   if (isScheduleJointDemoContext()) {
     scheduleJointDraftTerm = '202604';
-    scheduleJointDraftGeType = '';
+    scheduleJointDraftGeType = [];
     scheduleJointSelectedProgrammes = [];
     scheduleJointSelectedBatches = [];
     scheduleJointSelectedDepts = [];
     scheduleJointSelectedTeachers = [];
     scheduleJointAppliedTerm = '';
-    scheduleJointAppliedGeType = '';
+    scheduleJointAppliedGeType = [];
     scheduleJointAppliedBatches = [];
     scheduleJointAppliedTeachers = [];
     applyScheduleJointQueryContext();
@@ -43122,13 +43198,13 @@ function resetScheduleJointQuery(event) {
     return;
   }
   scheduleJointDraftTerm = getDefaultScheduleJointTerm();
-  scheduleJointDraftGeType = '';
+  scheduleJointDraftGeType = [];
   scheduleJointSelectedProgrammes = [];
   scheduleJointSelectedBatches = [];
   scheduleJointSelectedDepts = [];
   scheduleJointSelectedTeachers = [];
   scheduleJointAppliedTerm = '';
-  scheduleJointAppliedGeType = '';
+  scheduleJointAppliedGeType = [];
   scheduleJointAppliedBatches = [];
   scheduleJointAppliedTeachers = [];
   applyScheduleJointQueryContext();
@@ -44103,10 +44179,12 @@ function renderScheduleJointTimetableGrid(term, tasks, activeTaskId, weekFilter)
   }
   const objects = getScheduleJointRowObjects();
   if (!objects.length) {
-    const geType = String(
-      scheduleBatchDetailContext?.geType || scheduleJointAppliedGeType || ''
-    ).trim();
-    const emptyHint = geType
+    const geFilterOn = hasScheduleJointGeTypeFilter(
+      scheduleBatchDetailContext?.geType != null
+        ? scheduleBatchDetailContext.geType
+        : scheduleJointAppliedGeType
+    );
+    const emptyHint = geFilterOn
       ? '当前公共选修类型下暂无课对象，请调整类型或选择专业批次/教师后查询'
       : '请先选择专业批次、教师，或公共选修课类型后查询';
     mount.innerHTML = `<p class="text-muted" style="padding:16px">${emptyHint}</p>`;

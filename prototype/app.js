@@ -12753,7 +12753,9 @@ function ensureSectionOfferingFields(sec) {
   // if (!sec.weekRange) sec.weekRange = sec.weeks || meta.weekRange; // 原取课程目录默认，改按开课学期教学周数默认 1-N
   ensureSectionWeekRangeFromTerm(sec);
   // 同课程号学分/学时/开课单位对齐目录，避免不同专业批次出现不同学分总学时或开课单位
-  if (!sec.offeringType || sec.offeringType === 'major') {
+  // 排课演示课（冲突锚点/查询演示/待排教室）保留样本学时，勿被目录默认 60 学时盖掉（否则永远进不了「已排完」）
+  const isScheduleDemoSection = !!(sec.conflictDemo || sec.queryConflictDemo || sec.roomPendingDemo);
+  if ((!sec.offeringType || sec.offeringType === 'major') && !isScheduleDemoSection) {
     applyCanonicalMajorOfferingCourseMetrics(
       sec,
       getCanonicalMajorOfferingCourseMetrics(sec.catalogId, sec.code)
@@ -36857,6 +36859,36 @@ function detectSchedulePrereqConflicts(activeTask, weekday, periodNo, weeksStr) 
 }
 
 /**
+ * GE / 公共选修：课表排好后才开放选课，落点时无学生名单，不参与学生冲突。
+ * @param {object} task 开课任务
+ * @returns {boolean}
+ */
+function scheduleTaskSkipsStudentPlaceConflict(task) {
+  if (!task) return true;
+  if (task.offeringType === 'ge') return true;
+  return typeof isScheduleJointGeCourse === 'function' && isScheduleJointGeCourse(task);
+}
+
+/**
+ * 两门课是否应按「同专业批次学生名单」判学生冲突。
+ * 无专业批次、或任一方为 GE 选修时不判。
+ * @param {object} leftTask 当前落点课
+ * @param {object} rightTask 已排课
+ * @returns {boolean}
+ */
+function scheduleTasksShareStudentPlaceConflict(leftTask, rightTask) {
+  if (!leftTask || !rightTask) return false;
+  if (scheduleTaskSkipsStudentPlaceConflict(leftTask) || scheduleTaskSkipsStudentPlaceConflict(rightTask)) {
+    return false;
+  }
+  const programmeKey = leftTask.programmeKey;
+  const intake = leftTask.intake;
+  // 与调课侧一致：必须双方都有明确专业批次才互斥
+  if (!programmeKey || !intake) return false;
+  return programmeKey === rightTask.programmeKey && String(intake) === String(rightTask.intake);
+}
+
+/**
  * 检测新排/落点的硬冲突（师生场地、同课占用）与软冲突（不排课/选修占位/教师时段/排课规则/先修）。
  * @param {object} [opts]
  * @param {Set|string[]} [opts.excludeSlotIds] 排除节次（默认排除当前选中，避免重排时与自身旧位比对）
@@ -36881,6 +36913,9 @@ function detectSchedulePlaceConflicts(tasks, activeTask, weekday, periodNo, week
       || (scheduleActiveFromCourseList ? [] : scheduleSelectedSlotIds)
       || []
     );
+  // 教师/场地仍扫全库（含跨批教师锚点）；学生冲突仅与调用方传入的作用域课比对
+  // （排时间详情=左侧/课表可见；课表冲突查询页传入全量，含 queryConflictDemo）
+  const studentPeerIds = new Set((tasks || []).map(t => t?.id).filter(Boolean));
   const allTasks = getScheduleTaskRows();
   allTasks.forEach(t => {
     const isSelf = t.id === activeTask.id;
@@ -36906,7 +36941,9 @@ function detectSchedulePlaceConflicts(tasks, activeTask, weekday, periodNo, week
         pushSchedulePlaceTeacherConflict(result, activeTask, t, `${at} 与 ${other} 教师冲突`, pushUniq);
         return;
       }
-      if (t.programmeKey === activeTask.programmeKey && t.intake === activeTask.intake) {
+      // GE 选修无名单；无专业批次也不互斥；且对方须在当前可见/查询作用域内
+      if (scheduleTasksShareStudentPlaceConflict(activeTask, t)
+        && studentPeerIds.has(t.id)) {
         pushUniq(result.student, `${at} 与 ${other} 学生冲突`);
       }
       pushSchedulePlaceTeacherConflict(result, activeTask, t, `${at} 与 ${other} 教师冲突`, pushUniq);
@@ -37068,7 +37105,7 @@ function getScheduleOccupiedTimeConflictCellKeys(tasks) {
   const map = new Map();
   const focusTasks = tasks || [];
   if (!focusTasks.length) return map;
-  const scanTasks = getScheduleTaskRows();
+  // 传入 focusTasks：学生冲突仅与课表可见课互判；教师冲突仍在 detect 内扫全库
   const term = getActiveOfferingTermSetting()?.termCode || getSelectedScheduleTimeSettingTerm();
   const periods = ensureSchedulePeriods(term);
   const weekdays = scheduleShowWeekend ? SCHEDULE_WEEKDAYS : SCHEDULE_WEEKDAYS.filter(w => w.value <= 5);
@@ -37083,7 +37120,7 @@ function getScheduleOccupiedTimeConflictCellKeys(tasks) {
         mergeSchedulePlaceConflicts(
           merged,
           detectSchedulePlaceConflicts(
-            scanTasks,
+            focusTasks,
             h.task,
             w.value,
             p.periodNo,
@@ -38268,6 +38305,11 @@ function aggregateScheduleGroupArrangeStats(tasks, mode = 'time') {
 }
 
 function getScheduleTaskBatchKeys(task) {
+  // GE 无固定上课批次：不生成专业批次键（联合排课按类型/教师选课，不按批次挂靠）
+  if (task?.offeringType === 'ge'
+    || (typeof isScheduleJointGeCourse === 'function' && isScheduleJointGeCourse(task))) {
+    return [];
+  }
   const keys = (task?.batchKeys || []).filter(k => k && k !== '|');
   if (keys.length) return keys;
   if (task?.programmeKey && task?.intake) return [`${task.programmeKey}|${task.intake}`];
@@ -39716,7 +39758,7 @@ function ensureScheduleTasksFromOffering() {
 const SCHEDULE_TIME_MENU_MAX_COURSE_COUNT = 5;
 const SCHEDULE_TIME_MENU_MAX_GROUP_COUNT = 10;
 
-/** 排时间课程优先级：当前选中 > 共同授课演示对 > 冲突演示课 > 其余按课号 */
+/** 排时间课程优先级：当前选中 > 共同授课演示对 > 已排冲突锚点 > 空探测课 > 其余按课号 */
 function prioritizeScheduleTimeArrangeCourses(tasks) {
   const samples = typeof getScheduleTimeConflictDemoSamples === 'function'
     ? getScheduleTimeConflictDemoSamples()
@@ -39728,6 +39770,12 @@ function prioritizeScheduleTimeArrangeCourses(tasks) {
       .filter(s => String(s.sharedTeachingCode || '').trim())
       .map(s => String(s.code || '').toUpperCase())
   );
+  // 样本里已带节次的锚点课（CDF201 / FIN101 等），保证进可见列表与「已排完」
+  const presetSlotDemoCodes = new Set(
+    samples
+      .filter(s => Array.isArray(s.slots) && s.slots.length)
+      .map(s => String(s.code || '').toUpperCase())
+  );
   const geFilterOn = typeof hasScheduleJointGeTypeFilter === 'function'
     && hasScheduleJointGeTypeFilter(scheduleJointAppliedGeType);
   const activeId = scheduleActiveTaskId;
@@ -39737,9 +39785,10 @@ function prioritizeScheduleTimeArrangeCourses(tasks) {
     // 联合排课已选 G01–G04 时优先展示 GE 课
     if (geFilterOn && typeof isScheduleJointGeCourse === 'function' && isScheduleJointGeCourse(t)) return 1;
     if (sharedDemoCodes.has(code)) return 2;
-    if (demoCodes.has(code) || t.conflictDemo) return 3;
-    if (code === 'ACC101') return 4;
-    return 5;
+    if (presetSlotDemoCodes.has(code)) return 3;
+    if (demoCodes.has(code) || t.conflictDemo) return 4;
+    if (code === 'ACC101') return 5;
+    return 6;
   };
   return [...(tasks || [])].sort((a, b) => {
     const d = rank(a) - rank(b);
@@ -39812,10 +39861,25 @@ function buildScheduleTimeArrangeMenuStats(tasks) {
   return { scopedTasks, unitRows, ...summary };
 }
 
+/**
+ * 是否不应进入「按入学批次排」作用域。
+ * 产品口径：GE/公共选修无固定上课批次 ——
+ * 可走「按教师排 / 按课程排 / 联合排课」；不可出现在「按入学批次排」列表与详情。
+ * @param {object} task 排课任务
+ * @returns {boolean}
+ */
+function isScheduleBatchScopeExcludedTask(task) {
+  if (!task) return true;
+  if (task.offeringType === 'ge') return true;
+  return typeof isScheduleJointGeCourse === 'function' && isScheduleJointGeCourse(task);
+}
+
 function buildScheduleBatchSummaries() {
   ensureScheduleTasksFromOffering();
   const map = new Map();
   getScheduleTaskRows().forEach(task => {
+    // GE 不挂专业批次，不参与批次汇总
+    if (isScheduleBatchScopeExcludedTask(task)) return;
     getScheduleTaskBatchKeys(task).forEach(key => {
       const [programmeKey, intake] = key.split('|');
       if (!programmeKey || !intake) return;
@@ -39853,21 +39917,24 @@ function buildScheduleBatchSummaries() {
 
 function getScheduleTasksForBatch(programmeKey, intake) {
   const batchKey = `${programmeKey}|${intake}`;
-  const tasks = getScheduleTaskRows().filter(task =>
-    (task.batchKeys || []).includes(batchKey)
-    || (task.programmeKey === programmeKey && task.intake === intake)
-  );
+  const tasks = getScheduleTaskRows().filter(task => {
+    // GE 无固定上课批次，不出现在按批次排课列表/详情
+    if (isScheduleBatchScopeExcludedTask(task)) return false;
+    return (task.batchKeys || []).includes(batchKey)
+      || (task.programmeKey === programmeKey && task.intake === intake);
+  });
   return consolidateScheduleTasksByCourse(tasks);
 }
 
 /**
  * 排时间侧冲突演示样本（海洋环境化学 · 202409）
  * 含：学生 / 教师 / 先修 / 预重修 / 共同授课（同码仍报教师冲突，可继续排课）。
+ * 已排锚点学时排满，可在左侧「已排完」看到并改排。
  *
- * | 冲突 | 已排锚点 | 操作探测课 → 落点 |
- * | 学生 | CDF201 周二5 | CDF203 → 周二5 |
+ * | 冲突 | 已排锚点（学时已满） | 操作探测课 → 落点 |
+ * | 学生 | CDF201 周二5-6 | CDF203 → 周二5 |
  * | 教师 | 跨批 CDX101 周二2（同教师 T3202） | CDF202 → 周二2 |
- * | 先修 | FIN101 周四1 | FIN201 → 周四1 |
+ * | 先修 | FIN101 周四1-2 | FIN201 → 周四1 |
  * | 预重修 | 跨批 CDF105 周四3（重修生课表） | CDF208 → 周四3 |
  * | 共同授课 | 跨批 CST201 周三4（共同授课课号 CST202） | CST202 → 周三4（教师冲突可继续） |
  */
@@ -39878,7 +39945,8 @@ function getScheduleTimeConflictDemoSamples() {
       code: 'CDF201', name: 'Marine Environmental Chemistry', dept: '教务演示',
       teacherId: 'T3201', teachers: '锚点甲', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
-      slots: [[2, 5, '', weeks]], remark: '示例数据·学生冲突锚点（仅 1 个节次）'
+      // 联排 2 节 × 14 周 = 28 学时，进「已排完」；占周二第5节供学生冲突
+      slots: [[2, [5, 6], '', weeks]], remark: '示例数据·学生冲突锚点（学时已排完）'
     },
     {
       code: 'CDF203', name: 'Introduction to Oceanography', dept: '教务演示',
@@ -39890,7 +39958,8 @@ function getScheduleTimeConflictDemoSamples() {
       code: 'FIN101', catalogId: 'fin101', name: 'Introduction to Finance', dept: '经济管理学院',
       teacherId: 'T3101', teachers: '林金融', groupName: 'A组',
       theory: 28, practice: 0, tutor: 0, other: 0, weeks, weeklyHours: 2,
-      slots: [[4, 1, '', weeks]], remark: '示例数据·先修冲突锚点'
+      // 第二门预设已排完，便于左侧「已排完」与先修冲突联调
+      slots: [[4, [1, 2], '', weeks]], remark: '示例数据·先修冲突锚点（学时已排完）'
     },
     {
       code: 'CDF202', name: 'Coastal Engineering', dept: '教务演示',
@@ -40579,6 +40648,85 @@ function pushScheduleGlobalDemoSample(s, programmeKey, intake, grade) {
   line.sectionId = sec.id;
   COURSE_OFFERING_PLAN_STORE.lines.push(line);
   COURSE_OFFERING_PLAN_STORE.sections.push(sec);
+}
+
+/**
+ * 矫正已注入的排时间冲突演示锚点：同步样本节次 + 计划学时，
+ * 使 CDF201/FIN101 等「已排 = 计划」从而进入左侧「已排完」。
+ * @param {object} store 开课计划 store
+ */
+function patchScheduleTimeConflictDemoSections(store) {
+  if (!store?.sections?.length) return;
+  const sampleMap = new Map(
+    (typeof getScheduleTimeConflictDemoSamples === 'function'
+      ? getScheduleTimeConflictDemoSamples()
+      : []
+    )
+      .filter(s => Array.isArray(s.slots) && s.slots.length)
+      .map(s => [String(s.code || '').toUpperCase(), s])
+  );
+  if (!sampleMap.size) return;
+  let changed = false;
+  (store.sections || []).forEach(sec => {
+    const sample = sampleMap.get(String(sec.code || '').toUpperCase());
+    if (!sample) return;
+    if (!sec.conflictDemo) {
+      sec.conflictDemo = true;
+      changed = true;
+    }
+    const weeks = sample.weeks || sec.weeks || '1-14周';
+    const weekRange = sample.weekRange || String(weeks).replace(/周$/, '');
+    const teachingWeekCount = Math.max(1, parseWeeksString(weeks).length || Number(sample.teachingWeeks) || 14);
+    const weeklyHours = Number(sample.weeklyHours) > 0 ? Number(sample.weeklyHours) : 2;
+    // 计划学时与联排节次对齐（2 节 × 14 周 = 28），避免旧数据 theory/practice 被撑到 60 永远「未排完」
+    const theoryHours = Number.isFinite(Number(sample.theory))
+      ? Math.min(Number(sample.theory), weeklyHours * teachingWeekCount)
+      : weeklyHours * teachingWeekCount;
+    const practiceHours = Number(sample.practice) > 0 ? Number(sample.practice) : 0;
+    const tutorHours = Number(sample.tutor) > 0 ? Number(sample.tutor) : 0;
+    const otherHours = Number(sample.other) || 0;
+    const totalHours = theoryHours + practiceHours + tutorHours + otherHours;
+    const nextSlots = buildScheduleDemoTimeSlotsFromSample(sample, weeks);
+    if (!nextSlots.length) return;
+    nextSlots.forEach(slot => { slot.room = ''; });
+    const prevSig = JSON.stringify({
+      slots: (sec.timeSlots || []).map(s =>
+        [s.weekday, s.periodFrom, s.periodTo || s.periodFrom, s.weeks || '']),
+      hours: [sec.theoryHours, sec.practiceHours, sec.tutorHours, sec.tutorialHours, sec.otherHours, sec.totalHours]
+    });
+    const nextSig = JSON.stringify({
+      slots: nextSlots.map(s =>
+        [s.weekday, s.periodFrom, s.periodTo || s.periodFrom, s.weeks || '']),
+      hours: [theoryHours, practiceHours, tutorHours, tutorHours, otherHours, totalHours]
+    });
+    if (prevSig === nextSig && (sec.groupAssignments || []).length) return;
+    sec.timeSlots = nextSlots;
+    sec.weeks = weeks;
+    sec.weekRange = weekRange;
+    sec.teachingWeeks = teachingWeekCount;
+    sec.theoryHours = theoryHours;
+    sec.practiceHours = practiceHours;
+    sec.tutorHours = tutorHours;
+    // tutorialHours 与 tutorHours 同源；不置 0 会被默认 10 抬高计划学时
+    sec.tutorialHours = tutorHours;
+    sec.otherHours = otherHours;
+    sec.totalHours = totalHours;
+    sec.weekday = nextSlots[0].weekday;
+    sec.periodFrom = nextSlots[0].periodFrom;
+    sec.periodTo = nextSlots[0].periodTo || nextSlots[0].periodFrom;
+    // 重建教师安排，保证合并学时口径与周学时一致
+    if (typeof buildScheduleDemoGroupAssignments === 'function') {
+      sec.groupAssignments = buildScheduleDemoGroupAssignments(sec, {
+        teacher: (sample.teachers || '').split(/[、,，]/)[0]?.trim(),
+        teacherId: sample.teacherId,
+        groupName: sample.groupName || (sec.groups && sec.groups[0]?.name) || 'A组',
+        weeklyHours,
+        weekRange
+      });
+    }
+    changed = true;
+  });
+  if (changed) store.generatedAt = new Date().toISOString();
 }
 
 /** 矫正已注入演示课：同步样本节次（含联排 2/3 节），并标记 roomPendingDemo */
@@ -41379,6 +41527,8 @@ function ensureScheduleGlobalDemo() {
   patchScheduleDemoCourseDisplayNames(COURSE_OFFERING_PLAN_STORE);
   ensureScheduleRoomDemoPendingState();
   restoreScheduleDemoArrangeState(COURSE_OFFERING_PLAN_STORE, arrangeSnap);
+  // 冲突锚点在 restore 之后再钉死样本节次，避免旧快照盖掉「已排完」预设
+  patchScheduleTimeConflictDemoSections(COURSE_OFFERING_PLAN_STORE);
   ensureScheduleTasksFromOffering();
   ensureScheduleRetakeDemoStudents();
   scheduleGlobalDemoSeeded = true;
@@ -41421,8 +41571,11 @@ function getScheduleDetailScopeTasks() {
       )
     );
   } else if (ctx.type === 'joint' || ctx.type === 'joint-demo') {
+    // 联合排课：GE 经公共选修类型 / 教师并入，不经专业批次挂靠
     tasks = getScheduleJointUnionTasks(ctx);
   } else {
+    // 按入学批次排：仅有固定上课批次的课；GE 在 getScheduleTasksForBatch 中排除
+    // （按教师 / 按课程见上方分支，仍包含 GE）
     tasks = getScheduleTasksForBatch(ctx.programmeKey, ctx.intake);
   }
   return tasks;

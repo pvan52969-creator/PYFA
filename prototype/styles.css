@@ -13838,6 +13838,22 @@ code {
 .is-schedule-joint .schedule-detail-main .schedule-detail-grid-table tbody td.schedule-grid-weekday-col.is-wd-zebra-even {
   background: #e2e8f0;
 }
+/* 非本课对象行：统一更深灰底（压过斑马线 / sticky 对象列） */
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table tr.is-joint-inactive-object > td,
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table tr.is-joint-inactive-object > td.schedule-grid-weekday-col.is-wd-zebra-odd,
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table tr.is-joint-inactive-object > td.schedule-grid-weekday-col.is-wd-zebra-even,
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table.is-joint-object-cols tr.is-joint-inactive-object > td.schedule-grid-object-col,
+.is-schedule-joint .schedule-detail-main .schedule-detail-grid-table tr.is-joint-inactive-object > td.schedule-grid-cell.is-joint-row-disabled {
+  background: #cbd5e1;
+  color: #475569;
+}
+.is-schedule-joint .schedule-grid-cell.is-joint-row-disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.is-schedule-joint .schedule-grid-cell.is-joint-row-disabled:hover {
+  background: #cbd5e1;
+}
 
 .schedule-detail-layout {
   display: grid;
@@ -14522,10 +14538,12 @@ code {
   white-space: nowrap;
 }
 .schedule-detail-course-fields .sdc-k {
-  flex: 0 0 64px;
+  flex: 0 0 auto;
+  min-width: 5.5em;
   font-style: normal;
   color: var(--text-3);
   font-weight: 400;
+  white-space: nowrap;
 }
 .schedule-detail-course-fields .sdc-v {
   flex: 1;

@@ -2672,11 +2672,36 @@ code {
   font-weight: 700;
   font-size: 13px;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .portal-user-name {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-2);
+}
+/* 与开课原型一致：门户顶栏角色下拉 */
+.portal-user-role-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236b7280' d='M1 1l4 4 4-4'/%3E%3C/svg%3E") right center no-repeat;
+  padding: 2px 16px 2px 0;
+  margin: 0;
+  min-width: 0;
+  max-width: 180px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  line-height: 1.3;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portal-user-role-select:hover,
+.portal-user-role-select:focus {
+  color: var(--text);
+  outline: none;
 }
 
 .portal-content {
@@ -5317,6 +5342,10 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 #modal-delete-confirm.modal-nested {
   z-index: 1180;
+}
+/* 冲突弹窗之上的「去调整」权限不足提示，须高于 #modal-schedule-place-conflict（1100） */
+#modal-delete-confirm.modal-nested.is-over-schedule-place-conflict {
+  z-index: 1300;
 }
 #modal-delete-confirm .delete-confirm-hint.is-warn {
   margin-top: 10px;
@@ -12449,11 +12478,36 @@ code {
   font-weight: 700;
   font-size: 13px;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .portal-user-name {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-2);
+}
+/* 与开课原型一致：门户顶栏角色下拉 */
+.portal-user-role-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236b7280' d='M1 1l4 4 4-4'/%3E%3C/svg%3E") right center no-repeat;
+  padding: 2px 16px 2px 0;
+  margin: 0;
+  min-width: 0;
+  max-width: 180px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  line-height: 1.3;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portal-user-role-select:hover,
+.portal-user-role-select:focus {
+  color: var(--text);
+  outline: none;
 }
 
 .portal-content {
@@ -14237,6 +14291,69 @@ code {
   font-size: 13px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
   pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* display:inline-flex 会盖掉 [hidden] 的 display:none，消失后只剩一小块黑底 */
+.schedule-room-cell-toast[hidden] {
+  display: none !important;
+}
+.schedule-room-cell-toast.is-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  box-shadow: 0 8px 24px rgba(6, 95, 70, 0.12);
+}
+.schedule-room-cell-toast.is-warn {
+  /* 与默认横幅同款深色底 + 白字（橙感叹号区分警告） */
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  border: 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
+  max-width: min(640px, 92vw);
+  pointer-events: none;
+  z-index: 1300;
+}
+.schedule-room-cell-toast.is-warn .schedule-room-cell-toast-text {
+  color: #fff;
+  font-weight: 600;
+}
+/* 挂 body 的覆盖横幅：高于冲突弹窗(1100)与 delete-confirm(1180/1300) */
+.schedule-room-cell-toast.is-overlay {
+  z-index: 1400;
+  max-width: min(640px, 92vw);
+}
+.schedule-room-cell-toast-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.schedule-room-cell-toast-warn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.schedule-room-cell-toast-text {
+  font-weight: 600;
 }
 @media (max-width: 960px) {
   .main:has(> .schedule-detail-page.active) {
@@ -14579,6 +14696,8 @@ code {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-top: 2px;
   padding-top: 8px;
   border-top: 1px dashed var(--border);
@@ -15801,6 +15920,13 @@ code {
   white-space: nowrap;
   max-width: 100%;
 }
+.schedule-grid-block .schedule-grid-line.schedule-grid-group {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+  line-height: 1.3;
+}
 .schedule-grid-block .schedule-grid-line.schedule-grid-venue-remark {
   white-space: normal;
   overflow: visible;
@@ -15904,7 +16030,79 @@ code {
 .sch-conflict-summary.is-retake { background: #ffedd5; color: #9a3412; border-left-color: #ea580c; }
 .sch-conflict-summary.is-prereq { background: #cffafe; color: #155e75; border-left-color: #0891b2; }
 .sch-conflict-summary.is-mixed { background: #fae8ff; color: #86198f; border-left-color: #c026d3; }
-.sch-conflict-line { margin-bottom: 8px; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+.sch-conflict-line {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.sch-conflict-line-label { display: block; }
+/* 排课冲突弹窗：加宽以容纳英文周次/星期长文案 */
+#modal-schedule-place-conflict .schedule-place-conflict-modal {
+  width: min(94vw, 860px);
+  max-width: 860px;
+}
+/* 左文案（可换行）/ 右操作栏（左边线分隔），避免长英文与「去调整」缠在一起 */
+.sch-conflict-peer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0;
+  margin-top: 8px;
+}
+.sch-conflict-peer-row:first-child { margin-top: 0; }
+.sch-conflict-peer-row.is-text-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+.sch-conflict-peer-msg {
+  margin: 0;
+  min-width: 0;
+  color: #9a3412;
+  line-height: 1.55;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+/* 弃用：整句可点链接样式 —— 下划线长句易与右侧按钮视觉缠绕；保留类名以免旧 DOM 裸奔 */
+.sch-conflict-peer-link {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9a3412;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.55;
+  text-decoration: none;
+  white-space: normal;
+  word-break: break-word;
+}
+.sch-conflict-peer-link:hover { color: #c2410c; text-decoration: underline; }
+.sch-conflict-peer-actions {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  flex-shrink: 0;
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(154, 52, 18, 0.22);
+}
+.sch-conflict-peer-adjust {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+#modal-schedule-place-conflict .adj-conflict-detail {
+  width: 100%;
+  min-width: 0;
+}
+.schedule-demo-admin-switch { margin-right: 4px; }
+.schedule-demo-admin-switch > select { min-width: 120px; max-width: 180px; }
+#schedule-demo-admin-scope { min-width: 140px; max-width: 220px; }
 .sch-conflict-line.is-teacher { background: #fef2f2; border-left: 3px solid #dc2626; }
 .sch-conflict-line.is-student { background: #faf5ff; border-left: 3px solid #9333ea; }
 .sch-conflict-line.is-room { background: #fef2f2; border-left: 3px solid #dc2626; }
@@ -16034,6 +16232,14 @@ code {
   max-width: 100%;
 }
 .schedule-grid-line.schedule-grid-code { font-weight: 700; font-size: 11px; }
+/* 课程组：多组换行展示，不省略截断（联合排课拆组/合班均适用） */
+.schedule-grid-line.schedule-grid-group {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  word-break: break-word;
+  line-height: 1.3;
+}
 .schedule-grid-line.schedule-grid-venue-remark {
   white-space: normal;
   overflow: visible;

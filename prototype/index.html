@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="fd904fd">
+  <meta name="portal-build" content="a56b528">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -209,9 +209,11 @@
           <h1 class="portal-topbar-title">排课原型DEMO</h1>
           <div class="portal-topbar-right">
             <button type="button" class="portal-lang-btn">中文</button>
-            <div class="portal-user">
-              <span class="portal-user-avatar">A</span>
-              <span class="portal-user-name">ADMIN USER</span>
+            <div class="portal-user" title="原型角色切换（正式环境取登录用户）；影响开课相关列表数据权限，及排课冲突「去调整」权限">
+              <span class="portal-user-avatar" id="portal-user-avatar" aria-hidden="true">教</span>
+              <!-- 弃用：静态 ADMIN USER —— 与开课原型统一为角色下拉 -->
+              <!-- <span class="portal-user-name">ADMIN USER</span> -->
+              <select id="prototype-role-select" class="portal-user-role-select" aria-label="切换原型角色" onchange="setPrototypeRole(this.value)"></select>
             </div>
           </div>
         </header>
@@ -245,7 +247,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git fd904fd">1022排课1</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git a56b528">1026排课1</div>
         </div>
       </div>
     </section>
@@ -2714,6 +2716,19 @@
           <span id="schedule-time-detail-title">排课</span>
         </div>
         <div class="page-header-actions">
+          <!-- 弃用：排时间详情「演示管理员」切换 —— 改与开课一致，统一用门户顶栏 #prototype-role-select -->
+          <!--
+          <label class="adj-teacher-portal-switch schedule-demo-admin-switch" id="schedule-demo-admin-switch" data-sch-phase-tab="time"
+            title="原型排课管理员身份（正式环境取登录用户）；仅影响冲突弹窗「去调整」权限">
+            <span>演示管理员</span>
+            <select class="input input-sm" id="schedule-demo-admin-level" aria-label="切换演示管理员层级" onchange="onScheduleDemoAdminLevelChange(this.value)">
+              <option value="school">学校负责人</option>
+              <option value="college">学院负责人</option>
+              <option value="programme">专业负责人</option>
+            </select>
+            <select class="input input-sm" id="schedule-demo-admin-scope" aria-label="管辖学院或专业" hidden onchange="onScheduleDemoAdminScopeChange(this.value)"></select>
+          </label>
+          -->
           <button class="btn btn-ghost btn-sm" type="button" data-schedule-detail-back onclick="backFromScheduleDetailPage()">返回</button>
         </div>
       </div>
@@ -2940,6 +2955,7 @@
               </div>
               <div class="schedule-time-room-preview-row">
                 <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button>
+                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview-refresh" onclick="refreshScheduleTimeRoomPreview()" title="拉取其它已开排课页签的最新节次并刷新本页冲突；不打开教室安排抽屉">刷新</button>
               </div>
             </div>
             <div class="schedule-detail-op-hint is-warn schedule-detail-room-clear-hint" id="schedule-detail-room-clear-hint" hidden></div>
@@ -9797,9 +9813,9 @@
   </div>
 </div>
 
-<!-- 弹窗：排课冲突提醒 -->
+<!-- 弹窗：排课冲突提醒（加宽，避免对端长文案换行） -->
 <div class="modal-overlay modal-nested" id="modal-schedule-place-conflict">
-  <div class="modal modal-md">
+  <div class="modal modal-lg schedule-place-conflict-modal">
     <div class="modal-head"><h3 id="schedule-place-conflict-title">排课冲突提醒</h3><button class="modal-close" type="button" onclick="closeSchedulePlaceConflictModal()">×</button></div>
     <div class="modal-body" id="schedule-place-conflict-body"></div>
     <div class="modal-foot">
@@ -10537,7 +10553,7 @@
   <button type="button" class="schedule-ctx-item" data-sch-ctx="setVenueType" role="menuitem">设置场地类型</button>
   <button type="button" class="schedule-ctx-item" data-sch-ctx="retakeDetect" role="menuitem">预重修检测</button>
   <div class="schedule-ctx-sep" role="separator"></div>
-  <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoSlot" role="menuitem">撤销本节次</button>
+  <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoSlot" role="menuitem">撤销选中节次</button>
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoCourse" role="menuitem">撤销本课程</button>
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoAll" role="menuitem">撤销全部课程</button>
 </div>

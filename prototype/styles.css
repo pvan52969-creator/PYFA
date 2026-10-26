@@ -12297,6 +12297,17 @@ code {
 .offering-status-pill.is-off { background: #f1f5f9; color: #64748b; }
 .offering-status-pill.is-warn { background: #fef3c7; color: #b45309; }
 .offering-status-pill.is-danger { background: #fee2e2; color: #b91c1c; }
+/* 部分组已停：生效状态后缀「（存在停课组）」允许换行，避免挤列宽 */
+.offering-status-pill.has-cancel-groups-hint,
+#page-course-major-offering-task-style2 .mot-style2-table td.col-task-submit .offering-status-pill.has-cancel-groups-hint,
+#page-course-major-offering-roster .course-major-offering-roster-table td.col-task-submit .offering-status-pill.has-cancel-groups-hint,
+#page-course-offering-ge .course-ge-offering-task-table.mot-style2-table td.col-task-submit .offering-status-pill.has-cancel-groups-hint,
+#page-course-ge-offering-roster .course-ge-offering-roster-table td.col-task-submit .offering-status-pill.has-cancel-groups-hint {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+  max-width: 9.5em;
+}
 .link-student-count {
   color: var(--blue-700);
   font-weight: 600;
@@ -18154,6 +18165,80 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   font-weight: 600;
 }
 .group-tree-node.is-child { border: 1px solid var(--border-light); background: #fff; }
+/* 已停课组：浅灰底表示作废/禁用（非警示红） */
+.group-tree-node.is-child.is-cancelled {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #64748b;
+}
+.group-tree-node.is-child.is-cancelled.is-selected {
+  border-color: #94a3b8;
+  background: #e2e8f0;
+  box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.16);
+}
+.group-tree-node.is-child.is-cancelled .group-tree-label,
+.group-tree-node.is-child.is-cancelled .group-tree-count {
+  color: #64748b;
+}
+/* 「停课」角标仍用红色；仅卡片底为灰 */
+.group-tree-cancelled-tag {
+  flex-shrink: 0;
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+/* 停课软作废的学时安排行：保留展示、更深灰底，不进下游 */
+tr.is-assign-voided > td {
+  color: #64748b;
+  background: #e2e8f0;
+}
+tr.is-assign-voided .group-assign-voided-tag,
+.group-assign-voided-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fecaca;
+  color: #991b1b;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+/* 课程名可省略；组名后缀与「停课」角标不省略、同一行 */
+.group-assign-group-label {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  vertical-align: middle;
+}
+.group-assign-course-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.group-assign-group-suffix,
+.group-assign-group-label .group-assign-voided-tag {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+/* 多组同行中某组停课：划掉该组（课程名+组名） */
+.group-assign-cancelled-strike .group-assign-course-name,
+.group-assign-cancelled-strike .group-assign-group-suffix {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  color: #64748b;
+}
 .group-tree-node.is-clickable {
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
@@ -18161,6 +18246,10 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 .group-tree-node.is-clickable:hover {
   border-color: var(--blue-200);
   background: var(--blue-50);
+}
+.group-tree-node.is-child.is-cancelled.is-clickable:hover {
+  border-color: #94a3b8;
+  background: #e2e8f0;
 }
 .group-tree-node.is-selected {
   border-color: var(--blue-400);
@@ -19266,17 +19355,17 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   white-space: nowrap;
 }
 .offering-group-status-assign-table th.col-groups {
-  min-width: 160px;
-  width: 200px;
+  min-width: 280px;
+  width: 320px;
   padding-left: 8px;
   padding-right: 6px;
   white-space: nowrap;
 }
 .offering-group-status-assign-table td.col-groups {
-  min-width: 160px;
-  width: 200px;
-  max-width: 280px;
-  overflow: visible;
+  min-width: 280px;
+  width: 320px;
+  max-width: 420px;
+  overflow: hidden;
   padding-left: 8px;
   padding-right: 6px;
   white-space: normal;
@@ -19284,9 +19373,9 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 }
 .offering-group-status-assign-table.is-editing-draft th.col-groups,
 .offering-group-status-assign-table.is-editing-draft td.col-groups {
-  min-width: 200px;
-  width: 220px;
-  max-width: 280px;
+  min-width: 300px;
+  width: 340px;
+  max-width: 420px;
 }
 .offering-group-status-assign-draft td.col-groups {
   vertical-align: middle;
@@ -19458,6 +19547,10 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   text-align: left;
   vertical-align: middle;
 }
+.offering-group-status-assign-table td.col-groups > .group-assign-group-label {
+  display: flex;
+  width: 100%;
+}
 .offering-group-status-assign-table td.col-groups .offering-hour-summary-groups {
   display: flex;
   flex-direction: column;
@@ -19466,14 +19559,20 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
   line-height: 1.35;
   text-align: left;
   min-width: 0;
+  max-width: 100%;
   white-space: normal;
 }
 .offering-group-status-assign-table td.col-groups .offering-hour-summary-group-line {
-  display: block;
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
   text-align: left;
-  white-space: normal;
-  overflow: visible;
-  word-break: break-word;
+  overflow: hidden;
+}
+.offering-group-status-assign-table td.col-groups .offering-hour-summary-group-line .group-assign-group-label {
+  display: flex;
+  width: 100%;
+  min-width: 0;
 }
 .offering-group-status-assign-table td.col-actions,
 .offering-group-status-assign-table td.col-index {

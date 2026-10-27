@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="679196b">
+  <meta name="portal-build" content="8a16296">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -247,7 +247,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 679196b">1027排课1</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 8a16296">1027排课2</div>
         </div>
       </div>
     </section>
@@ -2816,11 +2816,15 @@
               <span class="sch-leg-item is-soft" data-sch-leg="time">不排课时段</span>
               <span class="sch-leg-item is-retake" data-sch-leg="retake">预重修冲突</span>
               <span class="sch-leg-item is-prereq" data-sch-leg="time">先修冲突</span>
+              <!-- 排时间侧固定展示；显隐由 renderScheduleDetailModeUi 按相位控制 -->
+              <span class="sch-leg-item is-shared" data-sch-leg="shared">共同授课课程</span>
               <span class="sch-leg-item is-room" data-sch-leg="room" hidden>教室时间冲突</span>
               <!-- 座位数/场地类型不一致仅弹窗提示，不参与课表格着色/图例 -->
               <span class="sch-leg-item is-room-seats" data-sch-leg="none" hidden>座位数冲突</span>
               <span class="sch-leg-item is-room-type" data-sch-leg="none" hidden>场地类型不一致</span>
             </div>
+            <!-- 弃用：原课表外共同授课引导条；现改为 #schedule-timetable-grid 内 .sch-shared-hint-panel 提示表。保留空节点以免教室页 clone / 旧脚本取节点报错 -->
+            <div class="schedule-shared-teaching-hint" id="schedule-shared-teaching-hint" hidden></div>
             <div class="schedule-timetable-toolbar">
               <div class="schedule-scope-switch">
                 <label class="schedule-scope-label" id="schedule-scope-label" for="schedule-scope-select">入学批次</label>
@@ -3214,14 +3218,14 @@
           <table class="data-table schedule-time-conflict-table sch-conflict-query-table">
             <thead>
               <tr>
-                <th class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" id="schedule-time-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-time-conflict-body', this.checked)"></th>
-                <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
+                <th class="col-check"><input type="checkbox" id="schedule-time-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-time-conflict-body', this.checked)"></th>
+                <th class="col-index">序号</th>
                 <th>学期</th>
                 <th>Date</th>
                 <th>Week</th>
                 <th>Day</th>
                 <th>节次</th>
-                <th>Course Code</th>
+                <th class="col-center">Course Code</th>
                 <th>课程班名称</th>
                 <th>上课教师</th>
                 <th>课程组（人数）</th>
@@ -3601,7 +3605,7 @@
                 <th>Week</th>
                 <th>Day</th>
                 <th>节次</th>
-                <th>Course Code</th>
+                <th class="col-center">Course Code</th>
                 <th>课程班名称</th>
                 <th>上课教师</th>
                 <th>课程组（人数）</th>
@@ -7542,11 +7546,13 @@
   <div class="modal">
     <div class="modal-head"><h3 id="delete-confirm-title">确认删除</h3><button class="modal-close" onclick="cancelDeleteConfirm()">×</button></div>
     <div class="modal-body">
-      <p id="delete-confirm-msg">确定删除吗？此操作不可撤销。</p>
+      <!-- 原 <p>：正文现可含对照列表等块级内容，改为 div 避免非法嵌套 -->
+      <div id="delete-confirm-msg">确定删除吗？此操作不可撤销。</div>
       <p class="form-hint delete-confirm-hint" id="delete-confirm-hint" style="display:none"></p>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="cancelDeleteConfirm()">取消</button>
+      <button class="btn btn-ghost" type="button" id="delete-confirm-cancel-btn" onclick="cancelDeleteConfirm(true)">取消</button>
+      <!-- <button class="btn btn-ghost" type="button" onclick="cancelDeleteConfirm()">取消</button> --> <!-- 原无 onCancel；现 footer 传 true 以支持「单独排」等取消即行动作，右上角 × 仍 abort -->
       <button class="btn btn-primary" type="button" id="delete-confirm-btn" onclick="confirmDeleteConfirm()">确认</button>
       <!-- <button class="btn btn-primary" type="button" onclick="confirmDeleteConfirm()">确认</button> --> <!-- 原无 id，改支持禁用确认 -->
       <!-- <button class="btn btn-danger" type="button" onclick="confirmDeleteConfirm()">确认</button> -->

@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="2a46358">
+  <meta name="portal-build" content="679196b">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -247,7 +247,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 2a46358">1026排课2</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 679196b">1027排课1</div>
         </div>
       </div>
     </section>
@@ -2779,7 +2779,7 @@
                 </div>
                 <div class="schedule-detail-course-search-row" data-sch-phase-tab="room" hidden>
                   <label for="schedule-course-search-venue-remark">教室偏好</label>
-                  <input class="input input-sm" id="schedule-course-search-venue-remark" type="text" placeholder="请输入教室偏好"
+                  <input class="input input-sm" id="schedule-course-search-venue-remark" type="text" placeholder="请输入教室号"
                     onkeydown="onScheduleDetailCourseSearchKeydown(event)">
                 </div>
               </div>
@@ -2835,6 +2835,7 @@
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
+              <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 教室偏好</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" onchange="onScheduleViewSettingChange()"> 课程组</label>
               <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
             </div>
@@ -2902,8 +2903,10 @@
                   <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-lock-room-btn" onclick="openScheduleLockRoomPicker()">选择锁定教室</button>
                 </div>
                 <div class="schedule-venue-remark-field" id="schedule-venue-remark-field" hidden>
-                  <label class="schedule-venue-remark-label" for="schedule-detail-venue-remark">教室偏好</label>
-                  <input class="input input-sm schedule-venue-remark-input" id="schedule-detail-venue-remark" type="text" placeholder="请输入教室偏好" oninput="onScheduleVenueRemarkInput()">
+                  <label class="schedule-venue-remark-label" for="schedule-detail-prefer-rooms-btn">教室偏好</label>
+                  <!-- 弃用：自由文本教室偏好，改多选教室号 -->
+                  <input class="input input-sm schedule-venue-remark-input" id="schedule-detail-venue-remark" type="hidden" value="">
+                  <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-prefer-rooms-btn" onclick="openSchedulePreferRoomsPicker()">选择教室偏好</button>
                   <button class="btn btn-primary btn-sm" id="btn-schedule-venue-save" type="button" onclick="saveScheduleVenueFields()" hidden>保存</button>
                 </div>
               </div>
@@ -3575,7 +3578,8 @@
           </div>
         </div>
       </div>
-      <div class="legend-bar" id="schedule-room-conflict-hint"></div>
+      <!-- 弃用：产品要求去掉教室课表冲突查询页顶部统计 hint 条（原 id=schedule-room-conflict-hint） -->
+      <!-- <div class="legend-bar" id="schedule-room-conflict-hint"></div> -->
       <div class="card schedule-card">
         <div class="panel-toolbar list-export-bar">
           <div class="list-export-dropdown">
@@ -3590,8 +3594,8 @@
           <table class="data-table schedule-room-conflict-table sch-conflict-query-table">
             <thead>
               <tr>
-                <th class="col-check sch-conflict-freeze sch-conflict-freeze-check"><input type="checkbox" id="schedule-room-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-room-conflict-body', this.checked)"></th>
-                <th class="col-index sch-conflict-freeze sch-conflict-freeze-index">序号</th>
+                <th class="col-check"><input type="checkbox" id="schedule-room-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-room-conflict-body', this.checked)"></th>
+                <th class="col-index">序号</th>
                 <th>学期</th>
                 <th>Date</th>
                 <th>Week</th>
@@ -3603,7 +3607,7 @@
                 <th>课程组（人数）</th>
                 <th>学院</th>
                 <th>专业</th>
-                <th>入学批次</th>
+                <th class="col-center">入学批次</th>
                 <th>Venue</th>
                 <th class="col-center">共同授课状态</th>
                 <th class="sch-conflict-freeze sch-conflict-freeze-type">冲突类型</th>
@@ -4291,9 +4295,9 @@
       </div>
       <div class="card">
         <p class="text-muted" style="margin:0;font-size:13px;line-height:1.6">
-          <strong>课程班</strong>：一门课程班一行，上课时间地点汇总在一列。<br>
-          <strong>上课地点</strong>：一个上课节次一行，含星期、时间、周次与教室信息。<br>
-          首期导出为 CSV（可用 Excel 打开）；无数据的列为空。
+          <strong>课程班</strong>：每个课程班按组一行。上课时间地点先查该组各周：全周时间、地点、教师一致则一条；某一周不同则在同一格分成多条（如 Week 1-12&amp;14）。<br>
+          <strong>上课地点</strong>：一个上课节次按所属组各一行，课程班名称与上面的组汇总一致。<br>
+          导出为 CSV（可用 Excel 打开）；格内多条时间地点用换行分隔，无数据的列为空。
         </p>
       </div>
     </section>
@@ -9819,8 +9823,10 @@
     <div class="modal-head"><h3 id="schedule-place-conflict-title">排课冲突提醒</h3><button class="modal-close" type="button" onclick="closeSchedulePlaceConflictModal()">×</button></div>
     <div class="modal-body" id="schedule-place-conflict-body"></div>
     <div class="modal-foot">
+      <!-- 弃用：按建议周次排课入口；学时裁周仅保留「继续排课」（原周次强排）与关闭 -->
+      <button class="btn btn-primary" type="button" id="schedule-place-conflict-adjust" hidden onclick="confirmSchedulePlaceWithAdjustedWeeks()">按建议周次排课</button>
       <button class="btn btn-outline" type="button" id="schedule-place-conflict-force" hidden onclick="forceSchedulePlaceDespiteConflict()">继续排课</button>
-      <button class="btn btn-primary" type="button" onclick="closeSchedulePlaceConflictModal()">关闭</button>
+      <button class="btn btn-ghost" type="button" onclick="closeSchedulePlaceConflictModal()">关闭</button>
     </div>
   </div>
 </div>

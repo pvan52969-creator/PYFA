@@ -10337,14 +10337,23 @@ input#group-assign-recorded-hours {
   font-size: 12px; color: #d97706; line-height: 1.5;
 }
 .adj-density-table-wrap { max-height: min(60vh, 560px); }
+/* sticky 节次列：collapse 下 box-shadow 右边线会被相邻格背景盖住，改用 separate + border-right */
+.adj-density-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
 .adj-density-table th.adj-density-period-col,
 .adj-density-table td.adj-density-period-col,
 .adj-density-table .adj-density-period-col {
   text-align: left; min-width: 140px; white-space: nowrap;
   position: sticky; left: 0; z-index: 2; background: #fff;
-  box-shadow: 1px 0 0 var(--border);
+  border-right: 1px solid var(--border);
 }
-.adj-density-table thead .adj-density-period-col { z-index: 3; background: var(--blue-50); }
+.adj-density-table thead .adj-density-period-col {
+  z-index: 3;
+  background: var(--blue-50);
+  text-align: center;
+}
 .adj-density-table tbody th.adj-density-period-col { font-weight: 500; color: var(--text-1); }
 .adj-density-table tbody tr:nth-child(even) td,
 .adj-density-table tbody tr:nth-child(even) th.adj-density-period-col {
@@ -10375,8 +10384,12 @@ input#group-assign-recorded-hours {
 #page-schedule-density-query .schedule-density-table-wrap {
   max-height: min(70vh, 720px);
 }
+/* 密度页提示：说明性文案，用浅蓝信息条，不用调课抽屉的琥珀警告底 */
 #page-schedule-density-query .schedule-density-hint {
   margin: 0 0 8px;
+  background: var(--blue-50);
+  border: 1px solid var(--border);
+  color: var(--text-2);
 }
 #page-schedule-density-query .schedule-density-filter-grid {
   margin-bottom: 0;
@@ -13089,10 +13102,12 @@ code {
 }
 .main .page.schedule-tt-query-page.active > .tab-panel.active > .page-header,
 .main .page.schedule-tt-query-page.active > .tab-panel.active > .schedule-query-card,
-.main .page.schedule-tt-query-page.active > .tab-panel.active > .legend-bar,
-.main .page.schedule-tt-query-page.active > .tab-panel.active > .schedule-density-hint {
+.main .page.schedule-tt-query-page.active > .tab-panel.active > .legend-bar {
   flex-shrink: 0;
   background: #f0f4f8;
+}
+.main .page.schedule-tt-query-page.active > .tab-panel.active > .schedule-density-hint {
+  flex-shrink: 0;
 }
 .main .page.schedule-tt-query-page.active > .tab-panel.active > .schedule-query-card {
   position: relative;
@@ -14545,20 +14560,28 @@ code {
   font-weight: 400;
   white-space: nowrap;
 }
-.schedule-detail-course-fields .sdc-v {
+/* 按批次/教师/课程等入口共用：字段值统一字重与颜色（含场地类型、教室偏好） */
+.schedule-detail-course-fields .sdc-v,
+.schedule-detail-course-fields b.sdc-v {
   flex: 1;
   min-width: 0;
   font-weight: 500;
+  font-synthesis: none;
   color: var(--text-1);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.schedule-detail-course-fields .sdc-v.sdc-v-wrap {
+.schedule-detail-course-fields .sdc-v.sdc-v-wrap,
+.schedule-detail-course-fields b.sdc-v.sdc-v-wrap {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
   word-break: break-word;
+}
+/* 场地类型 / 教室偏好：不加粗 */
+.schedule-detail-course-fields .sdc-v.sdc-v-regular {
+  font-weight: 400;
 }
 /* 排教室侧课程列表：字段值超出时换行显示（不截断省略） */
 #page-schedule-room-detail .schedule-detail-course-fields .sdc-field {
@@ -14746,6 +14769,88 @@ code {
   display: flex;
   flex-shrink: 0;
   margin-bottom: 0;
+}
+/* 排教室：Day 与「当前场地类型」同一工具栏行；标签样式与场地类型一致 */
+#page-schedule-room-detail .schedule-scope-switch .schedule-room-day-banner {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  margin-left: 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  height: auto;
+}
+/* 按时间排仅保留 Day：去掉与「当前星期」并排时的左边距 */
+#page-schedule-room-detail .schedule-scope-switch.is-weekday-day-only .schedule-room-day-banner {
+  margin-left: 0;
+}
+/* 按时间排：强制隐藏左侧「当前星期」标签/可搜索下拉，避免与 Day 重复露出 */
+#page-schedule-room-detail .schedule-scope-switch.is-weekday-day-only > .schedule-scope-label,
+#page-schedule-room-detail .schedule-scope-switch.is-weekday-day-only > #schedule-scope-select,
+#page-schedule-room-detail .schedule-scope-switch.is-weekday-day-only > .ss-wrap {
+  display: none !important;
+}
+#page-schedule-room-detail .schedule-room-day-banner[hidden] {
+  display: none;
+}
+#page-schedule-room-detail .schedule-scope-switch .schedule-room-day-banner-select {
+  width: 8.5em !important;
+  min-width: 8.5em !important;
+  max-width: 8.5em !important;
+}
+/* 选中节次卡片后：Day 下拉明显置灰，表示禁选 */
+#page-schedule-room-detail .schedule-room-day-banner.is-day-locked .schedule-room-day-banner-select {
+  color: #94a3b8;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  opacity: 1;
+  cursor: not-allowed;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23cbd5e1' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
+}
+#page-schedule-room-detail .schedule-room-day-banner .ss-wrap {
+  display: none !important;
+}
+/* 工具栏内可下拉框统一显示 ▾，悬停手势 */
+#page-schedule-room-detail .schedule-scope-switch select.input {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 26px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 7px;
+}
+#page-schedule-room-detail .schedule-scope-switch .ss-wrap {
+  position: relative;
+  cursor: pointer;
+}
+#page-schedule-room-detail .schedule-scope-switch .ss-wrap > .ss-input {
+  padding-right: 26px;
+  cursor: pointer;
+}
+#page-schedule-room-detail .schedule-scope-switch .ss-wrap::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 10px;
+  height: 7px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 10px 7px;
+  z-index: 1;
+}
+#page-schedule-room-detail .schedule-scope-switch .ss-wrap.is-clearable::after {
+  right: 28px;
+}
+#page-schedule-room-detail .schedule-scope-switch .ss-wrap.is-clearable > .ss-input {
+  padding-right: 44px;
 }
 #modal-schedule-time-room-preview .schedule-room-grid-shell {
   flex: 1;
@@ -15174,6 +15279,48 @@ code {
 .schedule-scope-switch .ss-wrap { width: auto; min-width: 200px; }
 .schedule-room-filter-grid .srf-item .clo-multiselect { width: 100%; }
 .schedule-room-filter-grid .srf-item .clo-multiselect-trigger { width: 100%; }
+/* 教室筛选：楼栋 / Venue Type / 设备 / 软件 / 备注 等下拉统一 ▾，悬停手势 */
+.schedule-room-filter-grid .srf-item select.input {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 26px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 7px;
+}
+.schedule-room-filter-grid .srf-item .ss-wrap {
+  position: relative;
+  cursor: pointer;
+}
+.schedule-room-filter-grid .srf-item .ss-wrap > .ss-input {
+  padding-right: 26px;
+  cursor: pointer;
+}
+.schedule-room-filter-grid .srf-item .clo-multiselect-trigger {
+  cursor: pointer;
+}
+.schedule-room-filter-grid .srf-item .ss-wrap::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 10px;
+  height: 7px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 10px 7px;
+  z-index: 1;
+}
+.schedule-room-filter-grid .srf-item .ss-wrap.is-clearable::after {
+  right: 28px;
+}
+.schedule-room-filter-grid .srf-item .ss-wrap.is-clearable > .ss-input {
+  padding-right: 44px;
+}
 .schedule-room-filter-grid .srf-item .clo-multiselect-dropdown {
   z-index: 30;
   max-height: 240px;
@@ -16048,6 +16195,24 @@ code {
 .sch-conflict-summary.is-retake { background: #ffedd5; color: #9a3412; border-left-color: #ea580c; }
 .sch-conflict-summary.is-prereq { background: #cffafe; color: #155e75; border-left-color: #0891b2; }
 .sch-conflict-summary.is-mixed { background: #fae8ff; color: #86198f; border-left-color: #c026d3; }
+/* 落点弹窗：排课周次（左）+ 排课时间（右）同一行 */
+.sch-conflict-place-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 24px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid var(--border, #e2e8f0);
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.55;
+}
+.sch-conflict-place-meta-item {
+  white-space: nowrap;
+}
 .sch-conflict-line {
   display: flex;
   flex-direction: column;
@@ -16528,7 +16693,13 @@ code {
   min-width: 0;
   flex-wrap: wrap;
 }
-.schedule-scope-label { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+/* 与「排课周次」schedule-detail-field-label 同字重/字号/颜色 */
+.schedule-scope-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
 .schedule-scope-switch .input { width: auto; min-width: 200px; }
 .schedule-scope-switch .ss-input { min-width: 200px; }
 .schedule-timetable-weeks {
@@ -16551,6 +16722,36 @@ code {
 .schedule-time-table th.col-center,
 .schedule-time-table td.col-center { text-align: center; }
 .schedule-time-table td code { font-size: 12px; }
+/* 排课时间设置：单元格不换行可横滚；右侧冻结操作列（含「修改记录」） */
+#page-schedule-time-setting .schedule-time-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+}
+#page-schedule-time-setting .schedule-time-table th,
+#page-schedule-time-setting .schedule-time-table td {
+  white-space: nowrap;
+  max-width: none;
+}
+#page-schedule-time-setting .schedule-time-table thead th:last-child,
+#page-schedule-time-setting .schedule-time-table tbody td.actions {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: #fff;
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22);
+}
+.main .page.page-list.active #page-schedule-time-setting .schedule-time-table thead th:last-child,
+#page-schedule-time-setting .schedule-time-table thead th:last-child {
+  top: 0;
+  z-index: 6;
+  background: var(--table-head-bg, var(--blue-50));
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22), inset 0 -1px 0 var(--border);
+}
+#page-schedule-time-setting .schedule-time-table tbody tr:hover td.actions {
+  background: #fafbfc;
+}
 .schedule-modal-bool-switch { margin-top: 4px; }
 .schedule-slot-section-title {
   font-size: 14px;
@@ -17722,6 +17923,32 @@ code {
   text-decoration: underline;
 }
 
+/* 课表/场地冲突查询：列表卡去内边距，避免上方留白过大；导出条贴顶且按钮靠右 */
+#page-schedule-time-conflict > .schedule-card,
+#page-schedule-room-conflict > .schedule-card {
+  padding: 0;
+}
+#page-schedule-time-conflict > .schedule-card > .list-export-bar,
+#page-schedule-room-conflict > .schedule-card > .list-export-bar {
+  justify-content: flex-end;
+  padding: 8px 16px;
+  margin-bottom: 0;
+  /* 表格左右有留白，导出条全宽下边框会超出表格，故去掉 */
+  border-bottom: none;
+}
+#page-schedule-time-conflict > .schedule-card .list-export-menu,
+#page-schedule-room-conflict > .schedule-card .list-export-menu {
+  left: auto;
+  right: 0;
+}
+/* 列表左右留白，冻结列不贴死卡片边界（用 margin，避免 sticky 与 padding 冲突） */
+#page-schedule-time-conflict > .schedule-card > .table-scroll,
+#page-schedule-room-conflict > .schedule-card > .table-scroll {
+  margin: 0 12px;
+  width: calc(100% - 24px);
+  box-sizing: border-box;
+}
+
 /* 课表/场地冲突查询：左右滚动冻结序号、冲突类型、操作 */
 .schedule-room-conflict-filters,
 .schedule-time-conflict-filters {
@@ -17740,6 +17967,13 @@ code {
 .schedule-room-conflict-table,
 .schedule-time-conflict-table {
   min-width: 100%;
+}
+/* 场地冲突：冲突类型文案较短，冻结列不必占满 180px（时间侧仍用共享默认） */
+.schedule-room-conflict-table {
+  --sch-conflict-freeze-type-w: 140px;
+}
+.schedule-room-conflict-table .sch-conflict-type-cell {
+  min-width: 140px;
 }
 .sch-conflict-query-table th,
 .sch-conflict-query-table td {
@@ -17783,6 +18017,7 @@ code {
   min-width: var(--sch-conflict-freeze-type-w);
   width: auto;
   white-space: nowrap;
+  text-align: center;
   box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.12);
 }
 /*
@@ -17881,7 +18116,8 @@ code {
   background: #f1f5f9;
   color: #64748b;
 }
-#schedule-room-conflict-hint .sch-leg-item {
+/* 弃用：教室课表冲突查询页顶部 hint 条已去掉，以下样式不再生效，保留备查 */
+/* #schedule-room-conflict-hint .sch-leg-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -17900,7 +18136,7 @@ code {
 #schedule-room-conflict-hint .sch-leg-item.is-room-type {
   background: #dcfce7;
   color: #166534;
-}
+} */
 
 /* 排课表时间 · 课表冲突查询色标 */
 .sch-conflict-type-tag.is-teacher,

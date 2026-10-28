@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="8a16296">
+  <meta name="portal-build" content="99e5cd9">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -247,7 +247,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 8a16296">1027排课2</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 99e5cd9">1028排课1</div>
         </div>
       </div>
     </section>
@@ -2712,6 +2712,7 @@
       <div class="page-header compact">
         <div class="breadcrumb">
           <a href="#" id="schedule-detail-breadcrumb-root" data-schedule-detail-back onclick="backFromScheduleDetailPage();return false">排课表时间</a><span>/</span>
+          <span id="schedule-detail-breadcrumb-term" class="schedule-detail-breadcrumb-term">—</span><span>/</span>
           <span id="schedule-detail-breadcrumb-mid">按入学批次排</span><span>/</span>
           <span id="schedule-time-detail-title">排课</span>
         </div>
@@ -2849,6 +2850,7 @@
             </div>
             <div class="schedule-detail-field schedule-detail-room-filter-panel" id="schedule-detail-room-filter-panel" hidden>
               <label class="schedule-detail-field-label">教室筛选</label>
+              <!-- 一行最多 4 条件；按钮组第 5 列；第 5 条件起默认收起，重置右侧半三角展开 -->
               <div class="schedule-room-filter-grid schedule-room-timetable-filter-grid">
                 <div class="srf-item"><label for="srtf-room">Venue</label><input class="input input-sm" id="srtf-room" type="text" placeholder="教室名称"></div>
                 <div class="srf-item"><label for="srtf-building">楼栋</label><select class="input input-sm" id="srtf-building"></select></div>
@@ -2865,14 +2867,15 @@
                     </div>
                   </div>
                 </div>
-                <div class="srf-item"><label for="srtf-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srtf-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srtf-seats-max" type="number" min="0" placeholder="最大"></div></div>
-                <div class="srf-item"><label for="srtf-equipment">教室设备</label><select class="input input-sm" id="srtf-equipment"></select></div>
-                <div class="srf-item"><label for="srtf-software">教室软件</label><select class="input input-sm" id="srtf-software"></select></div>
-                <div class="srf-item"><label for="srtf-remark">备注</label><select class="input input-sm" id="srtf-remark"></select></div>
                 <div class="srf-actions">
                   <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleRoomTimetableFilter()">查询</button>
                   <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomTimetableFilter()">重置</button>
+                  <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
                 </div>
+                <div class="srf-item" data-query-more="1"><label for="srtf-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srtf-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srtf-seats-max" type="number" min="0" placeholder="最大"></div></div>
+                <div class="srf-item" data-query-more="1"><label for="srtf-equipment">教室设备</label><select class="input input-sm" id="srtf-equipment"></select></div>
+                <div class="srf-item" data-query-more="1"><label for="srtf-software">教室软件</label><select class="input input-sm" id="srtf-software"></select></div>
+                <div class="srf-item" data-query-more="1"><label for="srtf-remark">备注</label><select class="input input-sm" id="srtf-remark"></select></div>
               </div>
             </div>
             <div class="schedule-detail-field schedule-room-hold-bar" id="schedule-room-hold-bar" hidden>

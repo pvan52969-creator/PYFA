@@ -14081,6 +14081,28 @@ code {
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta-index::before {
   bottom: 0;
 }
+/* 序号列 ::before 会盖住本格 inset 右边线，用 ::after 画在底衬之上 */
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-index::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  pointer-events: none;
+  z-index: 1;
+}
+/* 表头序号：一并补回被 ::before 盖住的右/下边线 */
+.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-meta-index::after {
+  left: 0;
+  width: auto;
+  right: 0;
+  background: transparent;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
+}
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-room {
   min-width: 76px;
   z-index: 5;
@@ -15178,11 +15200,16 @@ code {
   justify-content: center;
   min-height: 28px;
   padding: 2px 6px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #991b1b;
   background: #fee2e2;
   border-radius: 4px;
+  /* 容纳「排考占用」「场地借用占用」等类型文案 */
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .schedule-retake-detect-panel[hidden] {
   display: none !important;

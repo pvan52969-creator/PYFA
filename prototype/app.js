@@ -34918,13 +34918,18 @@ function getAdjustmentApproveRoomPeriodOccupancy(room, weekday, periodNo, weekFi
     : [];
   nsoHits.forEach(hit => {
     const kind = (SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL && SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL[hit.kind])
-      || '占用';
+      || '非排课';
     details.push(`${kind}：${hit.title || ''}`.trim());
   });
   const slotBlocked = isScheduleRoomPeriodBlockedByRoomSlot(room, weekday, periodNo, weeksStr);
   if (slotBlocked) details.push('教室不排课');
   if (!details.length) return { busy: false, text: '', title: '空闲', courseBusy: false };
-  const text = names[0]?.code || (slotBlocked ? '不排课' : (nsoHits[0] ? '占用' : '占用'));
+  // 格内文案写清占用类型（排考占用 / 场地借用占用），勿只写「占用」
+  const nsoKind = nsoHits[0]
+    ? ((SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL && SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL[nsoHits[0].kind]) || '非排课')
+    : '';
+  const text = names[0]?.code
+    || (slotBlocked ? '不排课' : (nsoKind ? `${nsoKind}占用` : '占用'));
   return { busy: true, text, title: details.join('\n'), courseBusy: names.length > 0 };
 }
 
@@ -34932,11 +34937,12 @@ function buildScheduleRoomOccLookup(weekday, weekFilter, tasks) {
   const map = new Map();
   const put = (room, periodNo, patch) => {
     const key = `${String(room || '').trim()}|${periodNo}`;
-    const cur = map.get(key) || { names: [], details: [], nso: false, blocked: false };
+    const cur = map.get(key) || { names: [], details: [], nso: false, blocked: false, nsoKinds: [] };
     if (patch.name && !cur.names.some(n => n.code === patch.name.code)) cur.names.push(patch.name);
     if (patch.detail && !cur.details.includes(patch.detail)) cur.details.push(patch.detail);
     if (patch.nso) cur.nso = true;
     if (patch.blocked) cur.blocked = true;
+    if (patch.nsoKind && !cur.nsoKinds.includes(patch.nsoKind)) cur.nsoKinds.push(patch.nsoKind);
     map.set(key, cur);
   };
   (tasks || []).forEach(task => {
@@ -34958,22 +34964,31 @@ function buildScheduleRoomOccLookup(weekday, weekFilter, tasks) {
       if (Number(row.weekday) !== Number(weekday)) return;
       const room = String(row.room || '').trim();
       if (!room) return;
-      const kind = (SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL && SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL[row.kind]) || '占用';
+      const kind = (SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL && SCHEDULE_ROOM_NON_SCHEDULE_OCCUPANCY_KIND_LABEL[row.kind]) || '非排课';
       const detail = `${kind}：${row.title || ''}`.trim();
       const pf = Number(row.periodFrom);
       const pt = Number(row.periodTo || row.periodFrom);
-      for (let p = pf; p <= pt; p++) put(room, p, { nso: true, detail });
+      for (let p = pf; p <= pt; p++) put(room, p, { nso: true, detail, nsoKind: kind });
     });
   }
   return map;
 }
 
+/**
+ * 由占用 lookup 取某教室某节次展示文案（课号 / 不排课 / 排考占用 / 场地借用占用）
+ * @param {Map} lookup buildScheduleRoomOccLookup 结果
+ * @param {string} room 教室号
+ * @param {number} periodNo 节次
+ * @returns {{ busy: boolean, text: string, title: string, courseBusy: boolean }}
+ */
 function occupancyFromLookup(lookup, room, periodNo) {
   const hit = lookup?.get(`${String(room || '').trim()}|${periodNo}`);
   if (!hit || (!hit.names.length && !hit.nso && !hit.blocked)) {
     return { busy: false, text: '', title: '空闲', courseBusy: false };
   }
-  const text = hit.names[0]?.code || (hit.blocked ? '不排课' : '占用');
+  const nsoKind = (hit.nsoKinds && hit.nsoKinds[0]) || '';
+  const text = hit.names[0]?.code
+    || (hit.blocked ? '不排课' : (nsoKind ? `${nsoKind}占用` : (hit.nso ? '非排课占用' : '占用')));
   return { busy: true, text, title: (hit.details || []).join('\n') || text, courseBusy: hit.names.length > 0 };
 }
 

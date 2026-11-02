@@ -8981,16 +8981,20 @@ input#group-assign-recorded-hours {
 /* 列表卡：去掉卡片 padding，避免与导出/操作条叠加造成上方留白过大 */
 #page-adjustment-approval > .schedule-card,
 #page-adjustment-admin > .schedule-card,
-#page-adjustment-record > .schedule-card {
+#page-adjustment-record > .schedule-card,
+#page-adjustment-room-open > .schedule-card {
   padding: 0;
 }
 #page-adjustment-approval > .schedule-card > .list-export-bar,
 #page-adjustment-record > .schedule-card > .list-export-bar {
   padding: 8px 16px;
 }
-#page-adjustment-admin > .schedule-card > .schedule-tt-export-bar.adjustment-apply-actions {
+#page-adjustment-admin > .schedule-card > .schedule-tt-export-bar.adjustment-apply-actions,
+#page-adjustment-room-open > .schedule-card > .schedule-tt-export-bar.adjustment-apply-actions {
   padding: 8px 16px;
   margin-bottom: 0;
+}
+#page-adjustment-admin > .schedule-card > .schedule-tt-export-bar.adjustment-apply-actions {
   justify-content: space-between;
 }
 #page-adjustment-admin .adj-teacher-list-actions-left {
@@ -13644,6 +13648,73 @@ code {
 .is-schedule-joint .schedule-scope-switch {
   display: none !important;
 }
+/* 联合排课 · 对象类型选择弹窗 */
+.schedule-joint-mode-modal .schedule-joint-mode-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.schedule-joint-mode-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.schedule-joint-mode-choice:hover {
+  border-color: var(--blue-400, #60a5fa);
+  background: var(--blue-50, #eff6ff);
+}
+.schedule-joint-mode-choice strong {
+  font-size: 14px;
+  color: var(--text);
+}
+.schedule-joint-mode-choice span {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+/* 联合排课 · 页内类型切换 */
+.schedule-joint-mode-switcher {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  align-self: flex-start;
+}
+.schedule-joint-mode-switch-btn {
+  appearance: none;
+  border: 0;
+  background: #fff;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.schedule-joint-mode-switch-btn:last-child {
+  border-right: 0;
+}
+.schedule-joint-mode-switch-btn.is-active {
+  background: var(--blue-50, #eff6ff);
+  color: var(--blue-700, #1d4ed8);
+}
+.schedule-joint-mode-switch-btn:hover:not(.is-active) {
+  background: var(--gray-50, #f8fafc);
+}
 .schedule-joint-picker-bar {
   position: relative;
   z-index: 6;
@@ -13657,6 +13728,14 @@ code {
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+/* 顶栏仅放类型切换 */
+.schedule-joint-picker-toolbar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+/* 筛选项固定一行两个 */
 .schedule-joint-picker-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -13668,10 +13747,14 @@ code {
 .schedule-joint-picker-field {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
-/* 标签统一 110px（容纳「公共选修课类型」），两列控件左缘与宽度对齐 */
+.schedule-joint-picker-field-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+/* 标签统一宽度（原按「公共选修课类型」定宽，现文案为「校选课类别」仍够用），右对齐使短文案贴近输入框；两列控件左缘仍齐 */
 .schedule-joint-picker-field > select.input,
 .schedule-joint-picker-field > .ss-wrap,
 .schedule-joint-picker-field > .schedule-joint-multiselect {
@@ -13688,16 +13771,24 @@ code {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-2);
+  text-align: right;
 }
-.is-schedule-joint .schedule-joint-picker-label.req::after {
-  content: " *";
+/* 必填星号在字段名左侧（右对齐标签时更贴文案） */
+.is-schedule-joint .schedule-joint-picker-label.req::before {
+  content: "* ";
   color: var(--red);
 }
+.is-schedule-joint .schedule-joint-picker-label.req::after {
+  content: none;
+}
+/* 确定/重置固定在筛选栏右下方 */
 .schedule-joint-picker-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 8px;
   margin-top: 4px;
+  width: 100%;
 }
 .schedule-joint-multiselect {
   flex: 1;
@@ -13804,6 +13895,20 @@ code {
 .schedule-joint-perf-notice strong {
   margin-right: 6px;
   color: #b45309;
+}
+/* 对象数超过 SCHEDULE_JOINT_MAX_OBJECT_COUNT 时的拦截横幅 */
+.schedule-joint-perf-notice.is-limit {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.12);
+}
+.schedule-joint-perf-notice.is-limit::before {
+  background: #dc2626;
+  content: "!";
+}
+.schedule-joint-perf-notice.is-limit strong {
+  color: #b91c1c;
 }
 .schedule-joint-picker-chip {
   display: inline-flex;
@@ -14247,7 +14352,10 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* 排教室详情：去掉顶栏操作说明（时间侧 #schedule-detail-edit-hint 保留） */
+/* 弃用：顶栏操作说明 #schedule-detail-edit-hint。原因：产品要求去掉该提示条（排时间/联合排课/排教室统一隐藏） */
+#page-schedule-time-detail #schedule-detail-edit-hint,
+#page-schedule-joint #schedule-detail-edit-hint,
+#page-schedule-joint-demo #schedule-detail-edit-hint,
 #page-schedule-room-detail #schedule-detail-edit-hint {
   display: none !important;
 }
@@ -16145,16 +16253,28 @@ code {
   color: #166534 !important;
   opacity: 1 !important;
 }
+/* 共同授课标记贴课号右侧，不再单独占一整行 */
+.schedule-grid-block.is-shared-partner-block .schedule-grid-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  max-width: 100%;
+}
 .schedule-grid-block.is-shared-partner-block .schedule-grid-shared-tag {
   display: inline-block;
-  margin-top: 2px;
-  padding: 0 4px;
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 0 3px;
   border-radius: 3px;
   background: #16a34a;
   color: #fff;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 .schedule-detail-main .schedule-detail-grid-table .schedule-grid-cell.is-shared-partner-flash {
   animation: sch-shared-partner-flash 1.2s ease;
@@ -16818,6 +16938,18 @@ code {
 .schedule-demo-admin-switch { margin-right: 4px; }
 .schedule-demo-admin-switch > select { min-width: 120px; max-width: 180px; }
 #schedule-demo-admin-scope { min-width: 140px; max-width: 220px; }
+/* 共同授课可继续排课：脚注加绿底/加粗，区别于普通灰色 form-hint */
+#modal-schedule-place-conflict .sch-conflict-shared-hint {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #16a34a;
+  background: #ecfdf5;
+  color: #14532d;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
 .sch-conflict-line.is-teacher { background: #fef2f2; border-left: 3px solid #dc2626; }
 .sch-conflict-line.is-student { background: #faf5ff; border-left: 3px solid #9333ea; }
 .sch-conflict-line.is-room { background: #fef2f2; border-left: 3px solid #dc2626; }

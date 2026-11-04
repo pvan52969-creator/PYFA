@@ -27154,7 +27154,7 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
           ${renderListSortTh(listKey, 'Status', 'status', { center: true, extraClass: 'col-status' })}
           ${renderListSortTh(listKey, 'Lecturer', 'teacherName', { extraClass: 'col-teacher' })}
           ${renderListSortTh(listKey, 'Course\nCode', 'code', { center: true, extraClass: 'col-code' })}
-          ${renderListSortTh(listKey, 'Course Name', 'courseName', { extraClass: 'col-course-name' })}
+          ${renderListSortTh(listKey, '课程班名称', 'courseName', { extraClass: 'col-course-name' })}
           ${renderListSortTh(listKey, 'Classification', 'classification', { center: true, extraClass: 'col-class' })}
           ${renderListSortTh(listKey, 'Credits', 'credits', { center: true, extraClass: 'col-credits' })}
           ${renderListSortTh(listKey, 'Teaching\nWeeks', 'teachingWeeks', { center: true, extraClass: 'col-weeks' })}

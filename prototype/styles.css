@@ -9712,6 +9712,7 @@ code {
   white-space: nowrap;
   vertical-align: middle;
 }
+/* 原：联动组 rowspan「联动」徽章底色；已改为每行「查看」链接，下列样式停用
 #page-course-scheduling-plan .scheduling-plan-table td.scheduling-plan-link-group-cell.is-linked {
   background: rgba(37, 99, 235, 0.08);
   vertical-align: middle;
@@ -9727,6 +9728,7 @@ code {
   background: rgba(37, 99, 235, 0.14);
   border: 1px solid rgba(37, 99, 235, 0.22);
 }
+*/
 #page-course-scheduling-plan .scheduling-plan-table .col-teacher {
   min-width: 120px;
   max-width: 200px;
@@ -19047,6 +19049,53 @@ tr.is-assign-voided .group-assign-voided-tag,
   gap: 8px;
   flex-shrink: 0;
 }
+/* 安排详情：课程组旁授课确认圆点 + 表头图例 */
+.offering-assign-groups-with-tcc {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+.offering-assign-groups-with-tcc .offering-assign-groups-label {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.offering-assign-tcc-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+.offering-assign-tcc-dot.is-confirmed {
+  background: #16a34a;
+}
+.offering-assign-tcc-dot.is-partial {
+  background: #f59e0b;
+}
+.offering-assign-tcc-dot.is-pending {
+  background: #3b82f6;
+}
+.offering-assign-tcc-dot-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-3, #64748b);
+  margin-left: 4px;
+}
+.offering-assign-tcc-dot-legend .offering-assign-tcc-dot {
+  margin-top: 0;
+  margin-left: 6px;
+}
+.offering-assign-tcc-dot-legend .offering-assign-tcc-dot:first-child {
+  margin-left: 0;
+}
 .offering-group-status-assign-table th.col-check,
 .offering-group-status-assign-table td.col-check {
   width: 36px;
@@ -19131,13 +19180,52 @@ tr.is-assign-voided .group-assign-voided-tag,
   white-space: nowrap;
   overflow: hidden;
 }
+.offering-group-status-assign-table td.col-hour-type {
+  max-width: 88px;
+}
+.offering-group-status-assign-table td.col-hour-type select.input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
 .offering-group-status-assign-table .col-week {
   width: 56px;
   min-width: 52px;
-  max-width: 64px;
+  max-width: 72px;
   padding-left: 2px;
   padding-right: 2px;
   white-space: nowrap;
+  overflow: hidden;
+}
+/* 草稿编辑态：周次列需容纳 input(~48) + ✎(~22) + gap，否则 overflow:hidden 会裁掉点选按钮 */
+.offering-group-status-assign-table.is-editing-draft .col-week {
+  width: 88px;
+  min-width: 84px;
+  max-width: 100px;
+  overflow: visible;
+}
+/* 草稿行周次编辑：input 可收缩，✎ 不压缩，避免撑破或被挡 */
+.offering-group-status-assign-table .offering-group-status-week-edit {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-width: 0;
+  /* overflow: hidden; 原因：窄列时会裁掉 ✎，改由加宽 is-editing-draft .col-week 防撑破 */
+  overflow: visible;
+  box-sizing: border-box;
+}
+.offering-group-status-assign-table .offering-group-status-week-edit .input {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.offering-group-status-assign-table .offering-group-status-week-edit .offering-group-status-inline-edit {
+  flex: 0 0 auto;
+  flex-shrink: 0;
 }
 .offering-group-status-assign-table .col-weekly {
   width: 52px;
@@ -19724,18 +19812,25 @@ tr.is-assign-voided .group-assign-voided-tag,
 .offering-group-status-week-edit .input {
   min-width: 0;
 }
+/* 原 flex:0 0 auto + min-width:48px 会在窄列抢走 ✎ 空间；改为可收缩并限制上限 */
 .offering-group-status-assign-table .offering-group-status-week-edit .input {
-  flex: 0 0 auto;
-  width: 48px;
-  min-width: 48px;
+  /* flex: 0 0 auto; */
+  /* width: 48px; */
+  /* min-width: 48px; */
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
   max-width: 56px;
   text-align: center;
   padding-left: 2px;
   padding-right: 2px;
 }
 .offering-group-status-assign-draft .offering-group-status-week-edit .input {
-  width: 48px;
-  min-width: 48px;
+  /* width: 48px; */
+  /* min-width: 48px; */
+  /* max-width: 52px; */
+  width: auto;
+  min-width: 0;
   max-width: 52px;
 }
 .offering-group-status-assign-table .col-weekly .offering-group-status-weekly-input {

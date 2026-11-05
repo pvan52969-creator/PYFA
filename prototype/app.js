@@ -6527,6 +6527,14 @@ function formatOfferingArrangeStatusExportText(sec) {
 }
 
 function formatTeacherConfirmExportText(sec) {
+  // 与列表「授课确认」列一致：齐套 / 部分确认 / 未确认 / 无教师
+  if (typeof getSectionTeacherConfirmationProgress === 'function') {
+    const p = getSectionTeacherConfirmationProgress(sec);
+    if (!p.total) return '无教师';
+    if (p.complete) return '已确认';
+    if (p.confirmed > 0) return '部分确认';
+    return '未确认';
+  }
   const key = typeof getSectionTeacherConfirmFilterKey === 'function'
     ? getSectionTeacherConfirmFilterKey(sec)
     : '';
@@ -6536,13 +6544,24 @@ function formatTeacherConfirmExportText(sec) {
   return '';
 }
 
-function formatTeacherCourseConfirmationStatusText(state) {
+function formatTeacherCourseConfirmationStatusText(state, cancelReason = '') {
+  void cancelReason; // 保留入参兼容调用方；展示不再按原因分流
   if (state === 'admin-proxy') return '管理端确认';
   if (state === 'confirmed') return '已确认';
+  if (state === 'partial') return '部分确认';
   if (state === 'disagreed') return '退回';
+  // 底层均为 cancelled（安排变更 / 教师替换等同状态）；界面统一标记 Cancelled
+  if (state === 'cancelled') return 'Cancelled';
   if (state === 'pending') return '待确认';
   return '未发送';
 }
+
+/* 原：按 cancelReason 区分 Cancelled / 作废。产品确认：cancelled 一律显示 Cancelled，不再分流。
+function isTeacherCourseConfirmationCancelByReplace(cancelReason = '') {
+  const r = String(cancelReason || '').trim();
+  return r === 'teacher-replaced' || r === 'removed-from-section';
+}
+*/
 
 function formatGeQuotaProgressText(row) {
   if (!row?.met) return '未达标';
@@ -20640,7 +20659,10 @@ function openSharedTeachingSlotLinkModalFromGrouping() {
     alert('当前课程未设置共同授课，请先在共同授课中添加同伴教学班。');
     return;
   }
-  openSharedTeachingSlotLinkModal(mark, sec.termCode || COURSE_OFFERING_PLAN_STORE?.termCode);
+  // 配置共同授课可能改安排关联，已下发/已确认时先提示作废后果
+  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
+    openSharedTeachingSlotLinkModal(mark, sec.termCode || COURSE_OFFERING_PLAN_STORE?.termCode);
+  });
 }
 
 function closeSharedTeachingSlotLinkModal() {
@@ -21152,7 +21174,120 @@ function formatSharedTeachingSetupCourseCodes(rows = []) {
   return codes;
 }
 
+/** 从开课清单行收集教学班（去重），供共同授课变更后同步授课确认 */
+function collectSectionsFromSharedTeachingSetupRows(rows = []) {
+  const seen = new Set();
+  const out = [];
+  (rows || []).forEach(row => {
+    const sec = typeof getOfferingManifestSectionByRow === 'function'
+      ? getOfferingManifestSectionByRow(row)
+      : null;
+    const id = String(sec?.id || row?.sectionId || '').trim();
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    if (sec) out.push(sec);
+    else if (typeof findOfferingSectionByIdAnywhere === 'function') {
+      const found = findOfferingSectionByIdAnywhere(id);
+      if (found) out.push(found);
+    }
+  });
+  return out;
+}
+
+/** 添加共同授课时会改到 Combined with 的相关教学班（本课、同伴及原组/并组） */
+function collectSectionsForSharedTeachingSetupAdd(seed, peer, all = []) {
+  const seedMark = String(seed?.sharedTeachingCode || '').trim();
+  const peerMark = String(peer?.sharedTeachingCode || '').trim();
+  const rows = [seed, peer];
+  (all || []).forEach(row => {
+    const mark = String(row?.sharedTeachingCode || '').trim();
+    if (!mark) return;
+    if ((seedMark && mark === seedMark) || (peerMark && mark === peerMark)) rows.push(row);
+  });
+  return collectSectionsFromSharedTeachingSetupRows(rows);
+}
+
+/** 移出/解除共同授课时，组内成员 Combined with 都会变，需全部纳入提示与同步 */
+function collectSectionsForSharedTeachingSetupMark(mark, all = []) {
+  const code = String(mark || '').trim();
+  if (!code) return [];
+  return collectSectionsFromSharedTeachingSetupRows(
+    (all || []).filter(row => String(row?.sharedTeachingCode || '').trim() === code)
+  );
+}
+
+function sharedTeachingSetupSectionsNeedConfirmVoidWarn(sections = []) {
+  return (sections || []).some(sec =>
+    typeof sectionHasIssuedOrConfirmedTeacherConfirmation === 'function'
+    && sectionHasIssuedOrConfirmedTeacherConfirmation(sec)
+  );
+}
+
+/**
+ * 共同授课标记变更后：强制作废相关课已下发/已确认段（Combined with 不在安排指纹内，不能靠 sync 指纹比对）。
+ * 作废后教师仍在课上 → 当前态回「未发送」；History 留作废快照。
+ * 调用示例：syncTeacherConfirmAfterSharedTeachingChange([secA, secB])
+ */
+function syncTeacherConfirmAfterSharedTeachingChange(sections = []) {
+  let invalidated = false;
+  (sections || []).forEach(sec => {
+    if (!sec?.id) return;
+    const termCode = typeof resolveSectionOfferingTermCode === 'function'
+      ? resolveSectionOfferingTermCode(sec)
+      : (sec.termCode || '');
+    const sectionId = String(sec.id);
+    const teacherIds = typeof getSectionAssignedTeacherIds === 'function'
+      ? getSectionAssignedTeacherIds(sec)
+      : [];
+    teacherIds.forEach(teacherId => {
+      const pkg = typeof ensureTeacherCourseConfirmationPackage === 'function'
+        ? ensureTeacherCourseConfirmationPackage(teacherId, termCode)
+        : null;
+      if (!pkg) return;
+      if (typeof migrateTeacherCourseConfirmationPackageSectionStates === 'function') {
+        migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+      }
+      const st = typeof getTeacherCourseConfirmationSectionState === 'function'
+        ? getTeacherCourseConfirmationSectionState(pkg, sectionId)
+        : null;
+      if (!['pending', 'confirmed', 'admin-proxy', 'disagreed'].includes(st?.status)) return;
+      // 作废前优先用确认快照；否则用包内/现场行（保留作废前 Combined with 等展示）
+      let frozen = st?.frozenRow || null;
+      if (!frozen && st?.snapshotHash) {
+        try {
+          const parsed = JSON.parse(st.snapshotHash);
+          frozen = Array.isArray(parsed) ? parsed[0] : parsed;
+        } catch (_) {
+          frozen = null;
+        }
+      }
+      if (!frozen) {
+        if (!pkg.rows?.length && typeof buildTeacherCourseConfirmationRows === 'function') {
+          pkg.rows = buildTeacherCourseConfirmationRows(teacherId, termCode);
+        }
+        frozen = (pkg.rows || []).find(r => String(r.sectionId) === sectionId) || null;
+      }
+      if (typeof cancelTeacherCourseConfirmationSection === 'function'
+        && cancelTeacherCourseConfirmationSection(teacherId, termCode, sectionId, {
+          reason: 'arrangement-changed',
+          frozenRow: frozen
+        })) {
+        invalidated = true;
+      }
+      // 刷新 live 行（新 Combined with）；当前态已是 draft，History 靠 cancelledArchives / history.frozenRow
+      if (typeof syncTeacherCourseConfirmationPackageRows === 'function') {
+        syncTeacherCourseConfirmationPackageRows(teacherId, termCode);
+      }
+    });
+  });
+  if (invalidated && typeof notifyTeacherConfirmInvalidatedIfNeeded === 'function') {
+    notifyTeacherConfirmInvalidatedIfNeeded({ invalidated: true });
+  }
+  return { invalidated };
+}
+
 function applySharedTeachingSetupAdd(seed, peer, all) {
+  const sectionsBefore = collectSectionsForSharedTeachingSetupAdd(seed, peer, all);
   const seedMark = (seed.sharedTeachingCode || '').trim();
   const peerMark = (peer.sharedTeachingCode || '').trim();
   const mark = seedMark
@@ -21174,6 +21309,13 @@ function applySharedTeachingSetupAdd(seed, peer, all) {
     alert('未能写入共同授课标记，请刷新后重试。');
     return;
   }
+  // 写入后再收集一次，确保并组后的成员也同步
+  const sectionsAfter = collectSectionsForSharedTeachingSetupMark(mark, getSharedTeachingSetupManifestRows());
+  const touched = [...sectionsBefore];
+  sectionsAfter.forEach(sec => {
+    if (!touched.some(s => s.id === sec.id)) touched.push(sec);
+  });
+  syncTeacherConfirmAfterSharedTeachingChange(touched);
   refreshSharedTeachingSetupRelatedViews();
 }
 
@@ -21213,26 +21355,50 @@ function addSharedTeachingSetupRow(sectionId) {
     return;
   }
   const existingPeerCodes = getSharedTeachingSetupOtherGroupPeerCodes(seed, all);
-  if (seedMark && existingPeerCodes.length) {
-    const existingCodes = formatSharedTeachingSetupCourseCodes([seed, ...all.filter(row =>
+  const joiningExisting = !!(seedMark && existingPeerCodes.length);
+  const peerCode = String(peer.code || '').trim() || '该课程';
+  const existingCodes = joiningExisting
+    ? formatSharedTeachingSetupCourseCodes([seed, ...all.filter(row =>
       (row.sharedTeachingCode || '').trim() === seedMark
-    )]);
-    const afterCodes = formatSharedTeachingSetupCourseCodes([
+    )])
+    : [];
+  const afterCodes = joiningExisting
+    ? formatSharedTeachingSetupCourseCodes([
       seed,
       peer,
       ...all.filter(row => (row.sharedTeachingCode || '').trim() === seedMark)
-    ]);
-    const peerCode = String(peer.code || '').trim() || '该课程';
+    ])
+    : [];
+  const affectedSecs = collectSectionsForSharedTeachingSetupAdd(seed, peer, all);
+  const runAdd = () => applySharedTeachingSetupAdd(seed, peer, all);
+
+  // 已下发/已确认：须先提示 Combined with 变更将作废确认（已生效入口仍禁用，此处覆盖未生效可操作场景）
+  if (sharedTeachingSetupSectionsNeedConfirmVoidWarn(affectedSecs)) {
+    const joinExtra = joiningExisting
+      ? `现有成员：${existingCodes.join('、')}。加入后 ${afterCodes.join('、')} 将共同授课，Combined with 等信息会变更。`
+      : `将把 ${peerCode} 与本课设为共同授课，授课确认函中的 Combined with 等信息会变更。`;
+    openDeleteConfirm({
+      title: '修改将作废授课确认',
+      message: escapeHtml(TEACHER_CONFIRM_VOID_SHARED_TEACHING_WARN),
+      hint: joinExtra,
+      hintWarn: true,
+      confirmLabel: joiningExisting ? '加入并继续' : '继续',
+      onConfirm: runAdd
+    });
+    return;
+  }
+
+  if (joiningExisting) {
     openDeleteConfirm({
       title: '加入共同授课组',
       message: `确定将 ${peerCode} 加入已有共同授课组吗？`,
       hint: `现有成员：${existingCodes.join('、')}。加入后，${afterCodes.join('、')} 将共同授课。`,
       confirmLabel: '加入',
-      onConfirm: () => applySharedTeachingSetupAdd(seed, peer, all)
+      onConfirm: runAdd
     });
     return;
   }
-  applySharedTeachingSetupAdd(seed, peer, all);
+  runAdd();
 }
 
 function toggleSharedTeachingSetupRulesTip(event) {
@@ -21416,18 +21582,35 @@ function removeSharedTeachingSetupConfiguredRow(sectionId) {
   const isSelf = !!seedId && id === seedId;
   const remaining = getSharedTeachingSetupRemainingPeerRows(target, all);
   const courseCode = String(target.code || '').trim() || '该课程';
+  // 移出前组内成员 Combined with 都会变，全部纳入提示与同步
+  const affectedSecs = collectSectionsForSharedTeachingSetupMark(mark, all);
+  const leaveMessage = isSelf
+    ? `确定将本课 ${courseCode} 移出共同授课组吗？`
+    : `确定将 ${courseCode} 移出共同授课组吗？`;
+  const leaveHint = formatSharedTeachingSetupLeaveHint(remaining, { isSelf, courseCode });
+  const doRemove = () => {
+    clearSharedTeachingCodeOnRow(target);
+    if (mark && remaining.length === 1) clearSharedTeachingCodeOnRow(remaining[0]);
+    syncTeacherConfirmAfterSharedTeachingChange(affectedSecs);
+    refreshSharedTeachingSetupRelatedViews();
+  };
+  if (sharedTeachingSetupSectionsNeedConfirmVoidWarn(affectedSecs)) {
+    openDeleteConfirm({
+      title: '修改将作废授课确认',
+      message: escapeHtml(TEACHER_CONFIRM_VOID_SHARED_TEACHING_WARN),
+      hint: `${leaveMessage} ${leaveHint}`,
+      hintWarn: true,
+      confirmLabel: '移出并继续',
+      onConfirm: doRemove
+    });
+    return;
+  }
   openDeleteConfirm({
     title: '移出共同授课组',
-    message: isSelf
-      ? `确定将本课 ${courseCode} 移出共同授课组吗？`
-      : `确定将 ${courseCode} 移出共同授课组吗？`,
-    hint: formatSharedTeachingSetupLeaveHint(remaining, { isSelf, courseCode }),
+    message: leaveMessage,
+    hint: leaveHint,
     confirmLabel: '移出',
-    onConfirm: () => {
-      clearSharedTeachingCodeOnRow(target);
-      if (mark && remaining.length === 1) clearSharedTeachingCodeOnRow(remaining[0]);
-      refreshSharedTeachingSetupRelatedViews();
-    }
+    onConfirm: doRemove
   });
 }
 
@@ -21647,26 +21830,47 @@ function clearSharedTeachingMaintenanceCode() {
     alert('所选课程均未设置共同授课标记。');
     return;
   }
+  // 勾选课 + 同标记组剩余成员（Combined with 会变）一并纳入
+  const marks = [...new Set(affected.map(row => String(row.sharedTeachingCode || '').trim()).filter(Boolean))];
+  const allRows = typeof getSharedTeachingSetupManifestRows === 'function'
+    ? getSharedTeachingSetupManifestRows()
+    : affected;
+  const groupRows = allRows.filter(row => marks.includes(String(row.sharedTeachingCode || '').trim()));
+  const affectedSecs = collectSectionsFromSharedTeachingSetupRows(groupRows.length ? groupRows : affected);
+  const clearMessage = `确定解除已选 ${affected.length} 门课程的共同授课标记吗？`;
+  const clearHint = '解除后，排课冲突校验将恢复按各课程独立处理。';
+  const doClear = () => {
+    const term = affected[0]?.termCode || getSharedTeachingMaintenanceTermCode();
+    affected.forEach(row => {
+      const sec = getOfferingManifestSectionByRow(row);
+      if (sec) sec.sharedTeachingCode = '';
+    });
+    marks.forEach(mark => {
+      const store = getOfferingPlanStoreForTermCode(term);
+      const still = (store?.sections || []).some(s => String(s.sharedTeachingCode || '').trim() === mark);
+      if (!still) clearSharedTeachingSlotLinksForMark(mark, term, { silent: false });
+    });
+    syncTeacherConfirmAfterSharedTeachingChange(affectedSecs);
+    sharedTeachingMaintenanceSelectedKeys.clear();
+    renderCourseSharedTeachingMaintenancePage();
+  };
+  if (sharedTeachingSetupSectionsNeedConfirmVoidWarn(affectedSecs)) {
+    openDeleteConfirm({
+      title: '修改将作废授课确认',
+      message: escapeHtml(TEACHER_CONFIRM_VOID_SHARED_TEACHING_WARN),
+      hint: `${clearMessage} ${clearHint}`,
+      hintWarn: true,
+      confirmLabel: '解除并继续',
+      onConfirm: doClear
+    });
+    return;
+  }
   openDeleteConfirm({
     title: '解除共同授课标记',
-    message: `确定解除已选 ${affected.length} 门课程的共同授课标记吗？`,
-    hint: '解除后，排课冲突校验将恢复按各课程独立处理。',
+    message: clearMessage,
+    hint: clearHint,
     confirmLabel: '解除',
-    onConfirm: () => {
-      const marks = [...new Set(affected.map(row => String(row.sharedTeachingCode || '').trim()).filter(Boolean))];
-      const term = affected[0]?.termCode || getSharedTeachingMaintenanceTermCode();
-      affected.forEach(row => {
-        const sec = getOfferingManifestSectionByRow(row);
-        if (sec) sec.sharedTeachingCode = '';
-      });
-      marks.forEach(mark => {
-        const store = getOfferingPlanStoreForTermCode(term);
-        const still = (store?.sections || []).some(s => String(s.sharedTeachingCode || '').trim() === mark);
-        if (!still) clearSharedTeachingSlotLinksForMark(mark, term, { silent: false });
-      });
-      sharedTeachingMaintenanceSelectedKeys.clear();
-      renderCourseSharedTeachingMaintenancePage();
-    }
+    onConfirm: doClear
   });
 }
 
@@ -22027,6 +22231,7 @@ function getSharedTeachingCohortSectionsIncludingSelf(sec) {
     : [])];
 }
 
+/** 共同授课整组是否齐套（历史入池门槛；现已不再作为排课计划入池条件，保留供对照/调试） */
 function isSharedTeachingCohortReadyForSchedulingPlan(sec, termCode) {
   const mark = (sec?.sharedTeachingCode || '').trim();
   if (!mark) return true;
@@ -22049,14 +22254,13 @@ function isSharedTeachingCohortReadyForSchedulingPlan(sec, termCode) {
 }
 
 function isSchedulingPlanSectionCollectible(sec, termCode, cohortReadyCache) {
-  if (!isSectionEligibleForSchedulingPlan(sec)) return false;
-  const mark = (sec.sharedTeachingCode || '').trim();
-  if (!mark) return true;
-  const cacheKey = `${termCode || sec.termCode || ''}::${mark}`;
-  if (!cohortReadyCache.has(cacheKey)) {
-    cohortReadyCache.set(cacheKey, isSharedTeachingCohortReadyForSchedulingPlan(sec, termCode));
-  }
-  return cohortReadyCache.get(cacheKey);
+  // 入池只看本课安排已生效。共同授课不挡入池；联动行是否入池由
+  // collectSchedulingPlanRows 内 isSchedulingPlanSlotLinkFullyEligible 判定（组内各方均已生效才一起进）。
+  void termCode;
+  void cohortReadyCache;
+  return isSectionEligibleForSchedulingPlan(sec);
+  // 原：有共同授课标记时要求整组 isSharedTeachingCohortReadyForSchedulingPlan 齐套才收集，
+  // 导致同伴草稿会挡住本课未联动学时行入池。
 }
 
 function isSchedulingPlanSlotLinkFullyEligible(link, termCode) {
@@ -22122,87 +22326,79 @@ function formatSchedulingPlanStackedCell(values) {
   ).join('')}</div>`;
 }
 
-function buildSchedulingPlanLinkGroupDisplay(linkId) {
+/**
+ * 排课计划「联动组」列展示：有联动则每行「查看」（打开联动明细弹窗），无则 —。
+ * 不再用 rowspan「联动」徽章，避免分页拆行/排序后合并格错位。
+ * linkGroup 文本供筛选/排序/导出（有联动时为「查看」）。
+ */
+function buildSchedulingPlanLinkGroupDisplay(linkId, termCode) {
   if (!linkId) {
     return { linkGroup: '—', linkGroupHtml: '<span class="text-muted">—</span>' };
   }
+  const lid = JSON.stringify(String(linkId || ''));
+  const tc = JSON.stringify(String(termCode || ''));
   return {
-    linkGroup: '联动',
-    linkGroupHtml: '<span class="scheduling-plan-link-badge">联动</span>'
+    linkGroup: '查看',
+    // 与开课安排学时表 col-slot-link「查看」一致：打开 openSharedTeachingSlotLinkViewModal
+    linkGroupHtml: `<a href="#" onclick='event.preventDefault();openSharedTeachingSlotLinkViewModal(${lid},${tc});return false'>查看</a>`
   };
+  // 原：linkGroupHtml 为 <span class="scheduling-plan-link-badge">联动</span>，列表用 rowspan 合并
 }
 
-function annotateSchedulingPlanLinkGroupRowspans(rows) {
-  const list = (rows || []).map(row => ({ ...row, linkGroupRowspan: 1, linkGroupSkip: false }));
-  let i = 0;
-  while (i < list.length) {
-    const row = list[i];
-    if (row.kind !== 'linked' || !row.linkId) {
-      i += 1;
-      continue;
-    }
-    let j = i + 1;
-    while (j < list.length && list[j].kind === 'linked' && list[j].linkId === row.linkId) {
-      j += 1;
-    }
-    const span = j - i;
-    list[i].linkGroupRowspan = span;
-    for (let k = i + 1; k < j; k++) list[k].linkGroupSkip = true;
-    i = j;
-  }
-  return list;
-}
+// 原：annotateSchedulingPlanLinkGroupRowspans — 同联动组多行合并「联动」格；分页/排序会拆坏 rowspan，已停用
+// function annotateSchedulingPlanLinkGroupRowspans(rows) { ... }
 
 function renderSchedulingPlanLinkGroupCell(row) {
-  if (row.linkGroupSkip) return '';
-  const spanAttr = row.linkGroupRowspan > 1 ? ` rowspan="${row.linkGroupRowspan}"` : '';
-  const isLinked = row.kind === 'linked' && row.linkId;
-  const cellCls = isLinked
-    ? 'col-center col-link-group scheduling-plan-link-group-cell is-linked'
-    : 'col-center col-link-group';
-  return `<td class="${cellCls}"${spanAttr}>${row.linkGroupHtml}</td>`;
+  // 每行独立单元格（有联动为「查看」操作链），不再 rowspan
+  // 原：if (row.linkGroupSkip) return ''; + rowspan + is-linked 底色徽章
+  return `<td class="col-center col-link-group actions">${row.linkGroupHtml}</td>`;
 }
 
 function buildSchedulingPlanDisplayRowsFromGroup(group) {
   const items = group?.items || [];
   if (!items.length) return [];
   const esc = (v) => escapeHtml(String(v == null || v === '' ? '—' : v));
-  const linkDisplay = buildSchedulingPlanLinkGroupDisplay(group.kind === 'linked' ? (group.linkId || '') : '');
-  const mapItem = (item, kind) => ({
-    kind,
-    linkId: group.linkId || '',
-    termCode: item.termCode || '',
-    offeringType: item.offeringType || '',
-    electiveKind: item.electiveKind || '',
-    termDisplay: item.termDisplay,
-    offeringModule: item.offeringModule,
-    code: item.code,
-    className: item.className,
-    groups: item.groups,
-    linkGroup: linkDisplay.linkGroup,
-    hourType: item.hourType,
-    weekRange: item.weekRange,
-    weeklyHours: item.weeklyHours,
-    totalHours: item.totalHours,
-    teachers: item.teachers,
-    simultaneous: item.simultaneous,
-    classroomAttribute: item.classroomAttribute,
-    classroomPreferences: item.classroomPreferences,
-    termDisplayHtml: esc(item.termDisplay),
-    offeringModuleHtml: esc(item.offeringModule),
-    codeHtml: esc(item.code),
-    classNameHtml: esc(item.className),
-    groupsHtml: formatSchedulingPlanStackedCell(item.groupLabels || []),
-    linkGroupHtml: linkDisplay.linkGroupHtml,
-    hourTypeHtml: esc(item.hourType),
-    weekRangeHtml: `<code>${esc(item.weekRange)}</code>`,
-    weeklyHoursHtml: esc(item.weeklyHours),
-    totalHoursHtml: esc(item.totalHours),
-    teachersHtml: esc(item.teachers),
-    simultaneousHtml: esc(item.simultaneous),
-    classroomAttributeHtml: esc(item.classroomAttribute),
-    classroomPreferencesHtml: esc(item.classroomPreferences)
-  });
+  const mapItem = (item, kind) => {
+    const linkId = kind === 'linked' ? (group.linkId || item.linkId || '') : (item.linkId || '');
+    const linkDisplay = buildSchedulingPlanLinkGroupDisplay(linkId, item.termCode || '');
+    return {
+      kind,
+      linkId,
+      sectionId: item.sectionId || '',
+      assignmentId: item.assignmentId || '',
+      termCode: item.termCode || '',
+      offeringType: item.offeringType || '',
+      electiveKind: item.electiveKind || '',
+      termDisplay: item.termDisplay,
+      offeringModule: item.offeringModule,
+      code: item.code,
+      className: item.className,
+      groups: item.groups,
+      linkGroup: linkDisplay.linkGroup,
+      hourType: item.hourType,
+      weekRange: item.weekRange,
+      weeklyHours: item.weeklyHours,
+      totalHours: item.totalHours,
+      teachers: item.teachers,
+      simultaneous: item.simultaneous,
+      classroomAttribute: item.classroomAttribute,
+      classroomPreferences: item.classroomPreferences,
+      termDisplayHtml: esc(item.termDisplay),
+      offeringModuleHtml: esc(item.offeringModule),
+      codeHtml: esc(item.code),
+      classNameHtml: esc(item.className),
+      groupsHtml: formatSchedulingPlanStackedCell(item.groupLabels || []),
+      linkGroupHtml: linkDisplay.linkGroupHtml,
+      hourTypeHtml: esc(item.hourType),
+      weekRangeHtml: `<code>${esc(item.weekRange)}</code>`,
+      weeklyHoursHtml: esc(item.weeklyHours),
+      totalHoursHtml: esc(item.totalHours),
+      teachersHtml: esc(item.teachers),
+      simultaneousHtml: esc(item.simultaneous),
+      classroomAttributeHtml: esc(item.classroomAttribute),
+      classroomPreferencesHtml: esc(item.classroomPreferences)
+    };
+  };
   if (group.kind !== 'linked') return [mapItem(items[0], 'single')];
   return items.map(item => mapItem(item, 'linked'));
 }
@@ -22392,17 +22588,21 @@ function resetSchedulingPlanFilters() {
   renderSchedulingPlanPage();
 }
 
+/** 排课计划默认序：按本课聚拢（学期→课号→班名→课程组），不按联动组把不同课号插在一起 */
+function compareSchedulingPlanRowsDefault(a, b) {
+  return String(a.termCode || a.termDisplay || '').localeCompare(String(b.termCode || b.termDisplay || ''), 'en')
+    || String(a.code || '').localeCompare(String(b.code || ''), 'en')
+    || String(a.className || '').localeCompare(String(b.className || ''), 'zh-CN')
+    || String(a.groups || '').localeCompare(String(b.groups || ''), 'zh-CN');
+  // 原：先按 linkId 聚联动组，导致 ACC201 本课行被同伴课拆开
+}
+
 function exportSchedulingPlanList() {
   const rows = sortListWithState(
     getFilteredSchedulingPlanRows(),
     'schedulingPlan',
     SCHEDULING_PLAN_SORT_COLUMNS,
-    (a, b) => {
-      const linkCmp = String(a.linkId || '').localeCompare(String(b.linkId || ''), 'en');
-      if (linkCmp) return linkCmp;
-      return String(a.code || '').localeCompare(String(b.code || ''), 'en')
-        || String(a.groups || '').localeCompare(String(b.groups || ''), 'zh-CN');
-    }
+    compareSchedulingPlanRowsDefault
   ).map(row => [
     row.termDisplay || '',
     row.offeringModule || '',
@@ -22458,15 +22658,11 @@ function renderSchedulingPlanPage() {
     getFilteredSchedulingPlanRows(),
     'schedulingPlan',
     SCHEDULING_PLAN_SORT_COLUMNS,
-    (a, b) => {
-      const linkCmp = String(a.linkId || '').localeCompare(String(b.linkId || ''), 'en');
-      if (linkCmp) return linkCmp;
-      return String(a.code || '').localeCompare(String(b.code || ''), 'en')
-        || String(a.groups || '').localeCompare(String(b.groups || ''), 'zh-CN');
-    }
+    compareSchedulingPlanRowsDefault
   );
   const paged = paginateListItems(rows, 'schedulingPlan');
-  const pageRows = annotateSchedulingPlanLinkGroupRowspans(paged.items);
+  // 原：annotateSchedulingPlanLinkGroupRowspans(paged.items) — rowspan 合并联动格，已改为每行「查看」
+  const pageRows = paged.items;
   const colCount = 14;
   tbody.innerHTML = pageRows.length
     ? pageRows.map(row => `<tr>
@@ -23799,7 +23995,10 @@ function mapTeacherCourseConfirmationLetterExportRow(row) {
     ? row.coTeachingStaffList.map(t => t.email).join('、')
     : (row.coTeachingStaffEmails || '');
   return [
-    formatTeacherCourseConfirmationStatusText(row.sectionStatus || row.status),
+    formatTeacherCourseConfirmationStatusText(
+      row.sectionStatus || row.status,
+      row.sectionCancelReason || row.cancelReason || ''
+    ),
     row.code || '',
     row.name || row.courseName || '',
     row.classification || '',
@@ -23827,13 +24026,16 @@ function exportTeacherCourseConfirmationPortalList() {
   }
   syncTeacherCourseConfirmationPackageRows(staffId, term);
   const pkg = getTeacherCourseConfirmationPackage(staffId, term);
-  const baseRows = pkg?.rows?.length ? pkg.rows : buildTeacherCourseConfirmationRows(staffId, term);
-  const annotated = annotateTeacherCourseConfirmationPortalRows(staffId, term, pkg, baseRows);
+  const annotated = collectTeacherCourseConfirmationPortalAnnotatedRows(staffId, term, pkg);
   const tab = teacherCourseConfirmationPortalTab === 'history' ? 'history' : 'pending';
   const displayRows = tab === 'pending'
-    ? annotated.filter(r => r.sectionStatus === 'pending')
+    ? annotated.filter(r => r.sectionStatus === 'pending'
+      && isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, r.sectionId))
     : annotated.filter(r =>
-      r.sectionStatus === 'confirmed' || r.sectionStatus === 'admin-proxy' || r.sectionStatus === 'disagreed'
+      r.sectionStatus === 'confirmed'
+      || r.sectionStatus === 'admin-proxy'
+      || r.sectionStatus === 'disagreed'
+      || r.sectionStatus === 'cancelled'
     );
   const rows = sortListWithState(
     displayRows,
@@ -24128,10 +24330,123 @@ function getTeacherCourseConfirmationSectionStatus(staffId, termCode, sectionId,
   if (!p || !sectionId) return 'draft';
   const st = getTeacherCourseConfirmationSectionState(p, sectionId);
   const status = st.status || 'draft';
-  if ((status === 'confirmed' || status === 'admin-proxy') && !isTeacherCourseConfirmationSectionSnapshotCurrent(p, sectionId)) {
-    return 'pending';
-  }
+  // 已作废直接返回；脏快照由 sync 落成 cancelled，不再伪装成 pending
+  if (status === 'cancelled') return 'cancelled';
+  // if ((status === 'confirmed' || status === 'admin-proxy') && !isTeacherCourseConfirmationSectionSnapshotCurrent(p, sectionId)) {
+  //   return 'pending';
+  // } // 原脏确认显示为待确认；改作废进 History
   return status;
+}
+
+/**
+ * 作废教师某课确认段：进 History（状态 Cancelled），不自动新建 pending。
+ * reason 示例：arrangement-changed（安排指纹变）/ teacher-replaced（A 被换成 B）/ removed-from-section
+ *
+ * 教师仍在该课上（安排变更等）：History 留作废快照，当前态回到 draft「未发送」便于管理端重发。
+ * 教师已离开该课（替换/移除）：当前态保持 cancelled + frozenRow，供 History 孤儿行展示。
+ */
+function cancelTeacherCourseConfirmationSection(teacherId, termCode, sectionId, {
+  reason = 'arrangement-changed',
+  frozenRow = null
+} = {}) {
+  const id = String(teacherId || '').trim();
+  const sid = String(sectionId || '').trim();
+  if (!id || !sid || isOfferingTbcTeacher(id)) return false;
+  const pkg = ensureTeacherCourseConfirmationPackage(id, termCode);
+  if (!pkg) return false;
+  migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  const st = states[sid];
+  if (!st) return false;
+  if (st.status === 'cancelled' || st.status === 'draft') return false;
+  if (!['pending', 'confirmed', 'admin-proxy', 'disagreed'].includes(st.status)) return false;
+  const live = (pkg.rows || []).find(r => String(r.sectionId) === sid)
+    || buildTeacherCourseConfirmationRows(id, termCode).find(r => String(r.sectionId) === sid);
+  // History 优先用确认时快照（含作废前 Combined with），避免被 live 新数据覆盖
+  let snapshotRow = null;
+  if (st.snapshotHash) {
+    try {
+      const parsed = JSON.parse(st.snapshotHash);
+      snapshotRow = Array.isArray(parsed) ? parsed[0] : parsed;
+    } catch (_) {
+      snapshotRow = null;
+    }
+  }
+  const rowKeep = frozenRow || snapshotRow || live || st.frozenRow || null;
+  // arrangement-changed 等：教师仍在课上 → 当前态回未发送；仅替换/移除保持 cancelled 孤儿态
+  const stillOnCourse = reason !== 'teacher-replaced' && reason !== 'removed-from-section';
+  st.confirmedBy = null;
+  st.confirmedAt = null;
+  st.proxyBy = null;
+  st.feedback = '';
+  st.cancelReason = reason;
+  const archivedRow = rowKeep ? { ...rowKeep, sectionId: sid } : null;
+  pushTeacherCourseConfirmationHistory(pkg, {
+    type: 'cancelled',
+    reason,
+    operator: reason === 'teacher-replaced' ? '系统（教师替换）' : '系统',
+    sectionIds: [sid],
+    courseCodes: [rowKeep?.code || sid],
+    // 供教师端 History 回放作废行（与 cancelledArchives 双写，防档案丢失）
+    frozenRow: archivedRow
+  });
+  if (!stillOnCourse) {
+    // 已离开该课：整段作废留档
+    st.status = 'cancelled';
+    if (archivedRow) {
+      st.frozenRow = archivedRow;
+      if (!st.snapshotHash) {
+        st.snapshotHash = computeTeacherCourseConfirmationSnapshotHash([st.frozenRow]);
+      }
+    }
+  } else {
+    // 仍在课上：作废进 History 档案，当前回到未发送（管理弹窗可再点「发送」）
+    // 原：st.status = 'cancelled' 导致管理端仍显示作废/已确认且无法发送
+    if (!Array.isArray(st.cancelledArchives)) st.cancelledArchives = [];
+    if (archivedRow) {
+      st.cancelledArchives.push({
+        ...archivedRow,
+        cancelledAt: new Date().toISOString(),
+        cancelReason: reason
+      });
+    }
+    st.status = 'draft';
+    st.snapshotHash = '';
+    delete st.frozenRow;
+  }
+  recomputeTeacherCourseConfirmationPackageStatus(pkg);
+  return true;
+}
+
+/**
+ * 兼容旧数据：教师仍在课上但段状态仍为 cancelled 时，落成 draft + cancelledArchives。
+ * 在 sync 时调用，避免管理弹窗继续显示「作废/已确认」且无法发送。
+ */
+function repairCancelledSectionStateWhileStillAssigned(pkg, sectionId, liveRow, prevRow) {
+  if (!pkg || !sectionId) return false;
+  const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+  const sid = String(sectionId);
+  const st = states[sid];
+  if (!st || st.status !== 'cancelled') return false;
+  if (!liveRow) return false;
+  if (!Array.isArray(st.cancelledArchives)) st.cancelledArchives = [];
+  const rowKeep = st.frozenRow || prevRow || liveRow;
+  if (rowKeep) {
+    st.cancelledArchives.push({
+      ...rowKeep,
+      sectionId: sid,
+      cancelledAt: new Date().toISOString(),
+      cancelReason: st.cancelReason || 'arrangement-changed'
+    });
+  }
+  st.status = 'draft';
+  st.snapshotHash = '';
+  st.confirmedBy = null;
+  st.confirmedAt = null;
+  st.proxyBy = null;
+  st.feedback = '';
+  delete st.frozenRow;
+  return true;
 }
 
 function recomputeTeacherCourseConfirmationPackageStatus(pkg) {
@@ -24163,8 +24478,18 @@ function recomputeTeacherCourseConfirmationPackageStatus(pkg) {
     pkg.proxyBy = first?.proxyBy || null;
     return;
   }
+  // 有人已确认但未齐套（其余 draft/cancelled 等）→ 部分确认；勿标整包「已确认」
+  // if (states.some(s => s === 'confirmed' || s === 'admin-proxy')) {
+  //   pkg.status = 'confirmed';
+  //   return;
+  // } // 原：部分确认也写成已确认
   if (states.some(s => s === 'confirmed' || s === 'admin-proxy')) {
-    pkg.status = 'confirmed';
+    pkg.status = 'partial';
+    return;
+  }
+  // 仅剩作废/草稿：包级视为无待办
+  if (states.every(s => s === 'cancelled' || s === 'draft')) {
+    pkg.status = states.some(s => s === 'cancelled') ? 'cancelled' : 'draft';
     return;
   }
   pkg.status = 'draft';
@@ -24680,11 +25005,13 @@ function syncTeacherCourseConfirmationPackageRows(teacherId, termCode) {
   const pkg = ensureTeacherCourseConfirmationPackage(teacherId, termCode);
   if (!pkg) return null;
   migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+  const prevRows = Array.isArray(pkg.rows) ? pkg.rows.slice() : [];
   const rows = buildTeacherCourseConfirmationRows(teacherId, termCode);
   pkg.teacherName = resolveOfferingTeacherDisplayName(teacherId, pkg.teacherName);
   pkg.rows = rows;
   const states = ensureTeacherCourseConfirmationSectionStates(pkg);
-  if (!rows.length) {
+  // 仍保留已作废段（含已从安排移除的课），供 History 展示；勿整包清空
+  if (!rows.length && !Object.values(states).some(s => s?.status === 'cancelled')) {
     pkg.sectionStates = {};
     recomputeTeacherCourseConfirmationPackageStatus(pkg);
     pkg.snapshotHash = '';
@@ -24692,32 +25019,46 @@ function syncTeacherCourseConfirmationPackageRows(teacherId, termCode) {
   }
   const liveIds = new Set(rows.map(r => r.sectionId).filter(Boolean));
   Object.keys(states).forEach(sid => {
-    if (!liveIds.has(sid)) {
-      delete states[sid];
-      return;
-    }
     const st = states[sid];
     if (!st) return;
+    if (!liveIds.has(sid)) {
+      // 教师已不在该课安排：已下发/已确认等 → 作废并冻结行，供 History
+      if (st.status === 'cancelled') return;
+      if (['pending', 'confirmed', 'admin-proxy', 'disagreed'].includes(st.status)) {
+        const frozen = prevRows.find(r => String(r.sectionId) === String(sid)) || st.frozenRow || null;
+        cancelTeacherCourseConfirmationSection(teacherId, termCode, sid, {
+          reason: 'teacher-replaced',
+          frozenRow: frozen
+        });
+      } else {
+        delete states[sid];
+      }
+      return;
+    }
     const live = rows.find(r => r.sectionId === sid);
-    if ((st.status === 'confirmed' || st.status === 'admin-proxy')
+    const prevRow = prevRows.find(r => String(r.sectionId) === String(sid)) || null;
+    // 兼容：仍在课上却停在 cancelled → 纠正为未发送，作废进 History 档案
+    if (st.status === 'cancelled') {
+      repairCancelledSectionStateWhileStillAssigned(pkg, sid, live, prevRow);
+      return;
+    }
+    const activeStatuses = ['pending', 'confirmed', 'admin-proxy'];
+    if (activeStatuses.includes(st.status) && st.snapshotHash
       && !isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, sid)) {
       if (live) {
         const liveFp = getTeacherCourseConfirmationArrangementFingerprint(live);
         const snapFp = getTeacherCourseConfirmationArrangementFingerprintFromSnapshot(st.snapshotHash);
+        // 仅快照序列化形态变化、指纹仍一致：刷新 hash，不作废
         if (liveFp && liveFp === snapFp) {
           st.snapshotHash = computeTeacherCourseConfirmationSnapshotHash([live]);
           return;
         }
       }
-      st.status = 'pending';
-      st.confirmedBy = null;
-      st.confirmedAt = null;
-      st.proxyBy = null;
-      pushTeacherCourseConfirmationHistory(pkg, {
-        type: 'invalidated',
+      // 安排内容已变：作废旧确认（进 History），当前态回未发送，不自动新建 pending
+      // st.status = 'pending'; ... type: 'invalidated' // 原打回待确认卡在 Pending
+      cancelTeacherCourseConfirmationSection(teacherId, termCode, sid, {
         reason: 'arrangement-changed',
-        operator: '系统',
-        sectionIds: [sid]
+        frozenRow: live || prevRow || null
       });
     } else if (st.status === 'pending') {
       repairSpuriousTeacherCourseConfirmationInvalidation(pkg, sid, st);
@@ -24841,13 +25182,17 @@ function issueTeacherCourseConfirmation(teacherId, termCode, { reissue = false, 
   }
   const states = ensureTeacherCourseConfirmationSectionStates(pkg);
   targets.forEach(row => {
+    const prev = states[row.sectionId] || {};
+    // 保留作废档案，避免重新下发后 History 丢掉「作废」记录
+    const cancelledArchives = Array.isArray(prev.cancelledArchives) ? prev.cancelledArchives : [];
     states[row.sectionId] = {
       status: 'pending',
       confirmedBy: null,
       confirmedAt: null,
       proxyBy: null,
       feedback: '',
-      snapshotHash: computeTeacherCourseConfirmationSnapshotHash([row])
+      snapshotHash: computeTeacherCourseConfirmationSnapshotHash([row]),
+      cancelledArchives
     };
   });
   recomputeTeacherCourseConfirmationPackageStatus(pkg);
@@ -25080,11 +25425,18 @@ function invalidateTeacherCourseConfirmationsForSection(sec) {
 }
 
 const TEACHER_CONFIRM_EDIT_WARN =
-  '本课已完成授课确认。保存时如改动已确认的安排内容，授课确认将取消，相关教师需重新确认。';
+  '本课已下发或已完成授课确认。修改安排将作废相关教师的原确认记录（进入 History，状态为 Cancelled）；须重新下发后教师方可再次确认。';
+// const TEACHER_CONFIRM_EDIT_WARN = '本课已完成授课确认。保存时如改动已确认的安排内容，授课确认将取消，相关教师需重新确认。'; // 原文案：取消→未确认
 const TEACHER_CONFIRM_EDIT_SAVE_HINT =
-  '若本次保存改动了已确认的安排，授课确认将变为未确认，相关教师需重新确认。';
+  '若本次保存改动了已下发/已确认的安排，原确认将作废（History Cancelled），须重新下发后再确认。';
 const TEACHER_CONFIRM_EDIT_SAVED_HINT =
-  '因安排内容已变更，授课确认已取消，相关教师需重新确认。';
+  '因安排内容已变更，相关教师的原授课确认已作废（History Cancelled）；须由教务重新下发后，教师方可再次确认。';
+/** 安排详情点操作/保存前的确认文案 */
+const TEACHER_CONFIRM_VOID_ARRANGE_WARN =
+  '本课已下发或已完成授课确认。继续操作将作废相关教师的原确认记录（进入 History，状态为 Cancelled）；须由教务重新下发后，教师方可再次确认。';
+/** 共同授课添加/移出/解除前：Combined with 等会变，已下发/已确认须提示作废（已生效仍禁止新开共同授课入口） */
+const TEACHER_CONFIRM_VOID_SHARED_TEACHING_WARN =
+  '调整共同授课会变更授课确认函中的 Combined with 等信息。涉及课程已下发或已完成授课确认的，原确认将作废（进入 History，状态为 Cancelled）；须由教务重新下发后，教师方可再次确认。';
 
 function sectionHasCompletedTeacherConfirmation(sec) {
   if (!sec) return false;
@@ -25092,16 +25444,79 @@ function sectionHasCompletedTeacherConfirmation(sec) {
   return progress.total > 0 && progress.complete;
 }
 
-/** 安排内容相对已确认快照发生变化时，授课确认变为未确认；未改动则保持已确认。不改安排生效状态。 */
+/**
+ * 本课是否存在已进入授课确认流的确认段（用于安排详情改前拦截）。
+ * 含：待确认 / 已确认 / 代确认 / 退回（曾下发过）。
+ * 注意：此处不要 sync（sync 会先作废脏快照，导致随后编辑不再弹提示）。
+ */
+function sectionHasIssuedOrConfirmedTeacherConfirmation(sec) {
+  if (!sec?.id) return false;
+  const termCode = resolveSectionOfferingTermCode(sec);
+  const sectionId = String(sec.id);
+  const teacherIds = getSectionAssignedTeacherIds(sec);
+  if (!teacherIds.length) return false;
+  return teacherIds.some(id => {
+    const pkg = ensureTeacherCourseConfirmationPackage(id, termCode);
+    if (!pkg) return false;
+    migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+    const states = ensureTeacherCourseConfirmationSectionStates(pkg);
+    const st = states[sectionId] || states[sec.id] || getTeacherCourseConfirmationSectionState(pkg, sectionId);
+    // 含 disagreed：退回也表示已走过确认，改安排仍应提示作废后果
+    // return ['pending', 'confirmed', 'admin-proxy'].includes(st?.status); // 原不含退回，易漏提示
+    return ['pending', 'confirmed', 'admin-proxy', 'disagreed'].includes(st?.status);
+  });
+}
+
+/**
+ * 安排详情编辑前确认（系统二次确认弹窗）。
+ * 无需提示时同步执行 onProceed；需要提示时点「继续」后再执行。
+ * 调用示例：confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => { ...开始编辑... });
+ */
+function confirmTeacherConfirmVoidBeforeArrangeEdit(sec, onProceed) {
+  const run = typeof onProceed === 'function' ? onProceed : null;
+  if (!run) return;
+  if (!sectionHasIssuedOrConfirmedTeacherConfirmation(sec)) {
+    run();
+    return;
+  }
+  // 不用 window.confirm：沉浸式分组页里原生对话框不明显，且易被忽略
+  openDeleteConfirm({
+    title: '修改将作废授课确认',
+    message: escapeHtml(TEACHER_CONFIRM_VOID_ARRANGE_WARN),
+    hint: '确定后可继续操作；相关教师须由教务重新下发后方可再次确认。',
+    hintWarn: true,
+    confirmLabel: '继续',
+    onConfirm: () => run()
+  });
+}
+
+/**
+ * 安排内容相对已确认/已下发快照变化时作废确认（进 History）；未改动则保持。
+ * 不改安排生效状态；不自动新建 pending。
+ */
 function syncSectionTeachingConfirmStatusAfterArrangementChange(sec) {
   if (!sec) return { invalidated: false };
-  const wasComplete = sectionHasCompletedTeacherConfirmation(sec);
+  const termCode = resolveSectionOfferingTermCode(sec);
+  const sectionId = String(sec.id || '');
+  const before = getSectionAssignedTeacherIds(sec).map(id => {
+    const st = getTeacherCourseConfirmationSectionState(
+      getTeacherCourseConfirmationPackage(id, termCode),
+      sectionId
+    );
+    return { id, status: st?.status || 'draft' };
+  });
   invalidateTeacherCourseConfirmationsForSection(sec);
-  const progress = getSectionTeacherConfirmationProgress(sec);
-  if (wasComplete && !progress.complete) {
-    return { invalidated: true };
-  }
-  return { invalidated: false };
+  const cancelled = before.some(b => {
+    if (!['pending', 'confirmed', 'admin-proxy'].includes(b.status)) return false;
+    const st = getTeacherCourseConfirmationSectionState(
+      getTeacherCourseConfirmationPackage(b.id, termCode),
+      sectionId
+    );
+    return st?.status === 'cancelled';
+  });
+  // const wasComplete = sectionHasCompletedTeacherConfirmation(sec);
+  // ... progress.complete ... // 原「完整确认被打散」判定；改检测是否已作废
+  return { invalidated: cancelled };
 }
 
 function notifyTeacherConfirmInvalidatedIfNeeded(result) {
@@ -25826,9 +26241,10 @@ function applyOfferingTeacherReplacePending() {
   }
   const confirmHint = (typeof isSectionTeacherConfirmationComplete === 'function'
     && !isSectionTeacherConfirmationComplete(sec))
-    ? '安排仍为已生效；受影响教师须重新下发/确认授课（确认进度可能变为部分确认/未确认）。'
+    ? '安排仍为已生效；被换下教师的原确认已作废（History Cancelled），新教师须重新下发后再确认。'
     : '安排仍为已生效。';
-  alert(`已整行替换教师。${confirmHint}`);
+  // 邮件模板待业务提供；原型仅占位提示
+  alert(`已整行替换教师。${confirmHint}\n已模拟向被替换教师发送 cancel 通知（原型占位）。`);
 }
 
 function listOfferingTeacherReplaceSectionTeachers(sec) {
@@ -26165,9 +26581,9 @@ function applyOfferingTeacherReplaceBatch() {
   }
   const confirmHint = (typeof isSectionTeacherConfirmationComplete === 'function'
     && !isSectionTeacherConfirmationComplete(sec))
-    ? '安排仍为已生效；受影响教师须重新下发/确认授课（确认进度可能变为部分确认/未确认）。'
+    ? '安排仍为已生效；被换下教师的原确认已作废（History Cancelled），新教师须重新下发后再确认。'
     : '安排仍为已生效。';
-  alert(`已一键替换 ${touchedRows.length} 条安排中的教师。${confirmHint}`);
+  alert(`已一键替换 ${touchedRows.length} 条安排中的教师。${confirmHint}\n已模拟向被替换教师发送 cancel 通知（原型占位）。`);
 }
 
 /** 演示：仅当学期内尚无任何已生效开课时，才把 MPU3113 / MEC101 标为已生效，便于替换页空库联调 */
@@ -26221,7 +26637,7 @@ function ensureTeacherReplaceDemoEffectiveSections() {
   });
 }
 
-/** 管理端列表状态：未发送 / 待确认 / 退回 / 已确认 / 管理端确认 */
+/** 管理端列表状态：未发送 / 待确认 / 退回 / 部分确认 / 已确认 / 管理端确认 / Cancelled */
 function renderTeacherCourseConfirmationStatusPill(state) {
   if (state === 'admin-proxy') {
     return '<span class="offering-status-pill is-on is-proxy-confirm">管理端确认</span>';
@@ -26229,31 +26645,45 @@ function renderTeacherCourseConfirmationStatusPill(state) {
   if (state === 'confirmed') {
     return '<span class="offering-status-pill is-on">已确认</span>';
   }
+  if (state === 'partial') {
+    return '<span class="offering-status-pill is-warn">部分确认</span>';
+  }
   if (state === 'disagreed') {
     return '<span class="offering-status-pill is-warn">退回</span>';
+  }
+  if (state === 'cancelled') {
+    // 底层 cancelled；界面统一 Cancelled（含安排变更 / 教师替换）
+    return '<span class="offering-status-pill is-off">Cancelled</span>';
   }
   if (state === 'pending') return '<span class="offering-status-pill is-warn">待确认</span>';
   return '<span class="offering-status-pill is-off">未发送</span>';
 }
 
-/** Teaching Load 弹窗：未发送 / 待确认 / 已确认 / 管理端确认 / 退回 */
+/** Teaching Load 弹窗：未发送 / 待确认 / 已确认 / 管理端确认 / 退回 / 部分确认 / Cancelled */
 function renderTeacherCourseConfirmationTeachingLoadStatusPill(state) {
   if (state === 'admin-proxy') {
     return '<span class="offering-status-pill is-on is-proxy-confirm">管理端确认</span>';
   }
   if (state === 'confirmed') return '<span class="offering-status-pill is-on">已确认</span>';
+  if (state === 'partial') return '<span class="offering-status-pill is-warn">部分确认</span>';
   if (state === 'disagreed') return '<span class="offering-status-pill is-warn">退回</span>';
+  if (state === 'cancelled') return '<span class="offering-status-pill is-off">Cancelled</span>';
   if (state === 'pending') return '<span class="offering-status-pill is-warn">待确认</span>';
   return '<span class="offering-status-pill is-off">未发送</span>';
 }
 
-/** 确认信表格行状态：待确认 / 已确认 / 管理端确认 / 退回 */
-function renderTeacherCourseConfirmationLetterRowStatus(state, feedback = '') {
+/** 确认信表格行状态：待确认 / 已确认 / 管理端确认 / 退回 / Cancelled */
+function renderTeacherCourseConfirmationLetterRowStatus(state, feedback = '', cancelReason = '') {
+  void cancelReason; // 保留入参兼容调用方；cancelled 一律 Cancelled
   if (state === 'admin-proxy') {
     return '<span class="offering-status-pill is-on is-proxy-confirm">管理端确认</span>';
   }
   if (state === 'confirmed') return '<span class="offering-status-pill is-on">已确认</span>';
   if (state === 'disagreed') return '<span class="offering-status-pill is-warn">退回</span>';
+  // 底层均为 cancelled；界面统一标记 Cancelled（安排变更 / 教师替换相同）
+  if (state === 'cancelled') {
+    return '<span class="offering-status-pill is-off">Cancelled</span>';
+  }
   if (state === 'pending') return '<span class="offering-status-pill is-warn">待确认</span>';
   return '<span class="text-muted">—</span>';
 }
@@ -26265,7 +26695,10 @@ function renderSectionTeacherConfirmationProgressCell(sec) {
     if (p.complete) {
       return '<span class="tcc-progress-pill is-complete">已确认</span>';
     }
-    if (p.confirmed > 0 || p.disagreed > 0) {
+    // 仅当确有人已确认（含代确认）且未齐套时才显示「部分确认」
+    // 仅退回/未发送/待确认/作废 →「未确认」，避免「部分确认但也没确认」
+    // if (p.confirmed > 0 || p.disagreed > 0) { ... } // 原把退回也算进部分确认
+    if (p.confirmed > 0) {
       return '<span class="tcc-progress-pill is-partial">部分确认</span>';
     }
     return '<span class="tcc-progress-pill is-none">未确认</span>';
@@ -26279,15 +26712,26 @@ function getSectionTeacherConfirmationProgressForTeacher(staffId, termCode, pkg)
   const p = pkg || getTeacherCourseConfirmationPackage(staffId, termCode);
   if (!p) return { status: 'draft' };
   migrateTeacherCourseConfirmationPackageSectionStates(p);
-  const rows = p.rows?.length ? p.rows : buildTeacherCourseConfirmationRows(staffId, termCode);
-  if (!rows.length) return { status: 'draft' };
-  const statuses = rows.map(r => getTeacherCourseConfirmationSectionStatus(staffId, termCode, r.sectionId, p));
+  // 含作废留档课，避免只看 live rows 漏掉已换下课程的状态汇总
+  const statesMap = ensureTeacherCourseConfirmationSectionStates(p);
+  const liveRows = p.rows?.length ? p.rows : buildTeacherCourseConfirmationRows(staffId, termCode);
+  const liveIds = new Set(liveRows.map(r => String(r.sectionId || '')).filter(Boolean));
+  const statuses = [
+    ...liveRows.map(r => getTeacherCourseConfirmationSectionStatus(staffId, termCode, r.sectionId, p)),
+    ...Object.keys(statesMap)
+      .filter(sid => !liveIds.has(String(sid)) && statesMap[sid]?.status === 'cancelled')
+      .map(() => 'cancelled')
+  ];
+  if (!statuses.length) return { status: 'draft' };
   if (statuses.some(s => s === 'pending')) return { status: 'pending' };
   if (statuses.some(s => s === 'disagreed')) return { status: 'disagreed' };
-  if (statuses.length && statuses.every(s => s === 'confirmed' || s === 'admin-proxy')) {
+  if (statuses.every(s => s === 'confirmed' || s === 'admin-proxy')) {
     return { status: statuses.every(s => s === 'admin-proxy') ? 'admin-proxy' : 'confirmed' };
   }
-  if (statuses.some(s => s === 'confirmed' || s === 'admin-proxy')) return { status: 'confirmed' };
+  // 有已确认但未齐套 → 部分确认（勿标「已确认」）
+  // if (statuses.some(s => s === 'confirmed' || s === 'admin-proxy')) return { status: 'confirmed' };
+  if (statuses.some(s => s === 'confirmed' || s === 'admin-proxy')) return { status: 'partial' };
+  if (statuses.some(s => s === 'cancelled')) return { status: 'cancelled' };
   return { status: 'draft' };
 }
 
@@ -26403,9 +26847,12 @@ function defaultTeacherCourseConfirmationAdminCompare(a, b) {
 
 const TEACHER_COURSE_CONFIRMATION_ADMIN_STATUS_SORT = {
   draft: 0,
-  pending: 1,
-  disagreed: 2,
-  confirmed: 3
+  cancelled: 1,
+  pending: 2,
+  disagreed: 3,
+  partial: 4,
+  confirmed: 5,
+  'admin-proxy': 6
 };
 
 const TEACHER_COURSE_CONFIRMATION_ADMIN_SORT_COLUMNS = {
@@ -26840,8 +27287,9 @@ function renderTeacherCourseConfirmationLetterTable(rows, termCode, {
         : '';
       const thisStatus = row.sectionStatus || row.status || rowStatus;
       const thisFeedback = row.sectionFeedback || row.feedback || rowFeedback || '';
+      const thisCancelReason = row.sectionCancelReason || row.cancelReason || '';
       const statusTd = showRowStatus
-        ? `<td class="col-center tcc-letter-status">${renderTeacherCourseConfirmationLetterRowStatus(thisStatus, thisFeedback)}</td>`
+        ? `<td class="col-center tcc-letter-status">${renderTeacherCourseConfirmationLetterRowStatus(thisStatus, thisFeedback, thisCancelReason)}</td>`
         : '';
       const historyTd = showHistoryAction
         ? `<td class="actions col-center tcc-letter-action tcc-letter-history"><a href="#" onclick="event.preventDefault();openTeacherCourseConfirmationHistoryModal('${histId}', '${histTerm}', '${rowKey}', '${codeEsc}');return false">View</a></td>`
@@ -27083,9 +27531,11 @@ function renderTeacherCourseConfirmationAdminPanel(mountId, { termCode = '', foc
             <option value="">全部</option>
             <option value="draft"${teacherCourseConfirmationAdminExtraQuery.status === 'draft' ? ' selected' : ''}>未发送</option>
             <option value="pending"${teacherCourseConfirmationAdminExtraQuery.status === 'pending' ? ' selected' : ''}>待确认</option>
+            <option value="partial"${teacherCourseConfirmationAdminExtraQuery.status === 'partial' ? ' selected' : ''}>部分确认</option>
             <option value="confirmed"${teacherCourseConfirmationAdminExtraQuery.status === 'confirmed' ? ' selected' : ''}>已确认</option>
             <option value="admin-proxy"${teacherCourseConfirmationAdminExtraQuery.status === 'admin-proxy' ? ' selected' : ''}>管理端确认</option>
             <option value="disagreed"${teacherCourseConfirmationAdminExtraQuery.status === 'disagreed' ? ' selected' : ''}>退回</option>
+            <option value="cancelled"${teacherCourseConfirmationAdminExtraQuery.status === 'cancelled' ? ' selected' : ''}>Cancelled</option>
           </select>
         </div>
         <div class="course-query-more" id="tcc-admin-query-more"${teacherCourseConfirmationAdminQueryMoreOpen ? '' : ' hidden'}>
@@ -27951,18 +28401,20 @@ function openTeacherCourseConfirmationPortal(staffId = '') {
 function listTeacherCourseConfirmationPortalTeachers(termCode, { scope = 'all' } = {}) {
   const rows = listTeacherCourseConfirmationAdminRows(termCode, null);
   return rows.filter(row => {
-    const courseRows = row.pkg?.rows?.length
-      ? row.pkg.rows
-      : buildTeacherCourseConfirmationRows(row.staffId, termCode);
-    const statuses = courseRows.map(c =>
-      getTeacherCourseConfirmationSectionStatus(row.staffId, termCode, c.sectionId, row.pkg)
-    );
-    if (scope === 'pending') return statuses.some(s => s === 'pending');
+    syncTeacherCourseConfirmationPackageRows(row.staffId, termCode);
+    const pkg = getTeacherCourseConfirmationPackage(row.staffId, termCode) || row.pkg;
+    const annotated = collectTeacherCourseConfirmationPortalAnnotatedRows(row.staffId, termCode, pkg);
+    const statuses = annotated.map(c => c.sectionStatus);
+    if (scope === 'pending') {
+      return statuses.some(s => s === 'pending');
+    }
     if (scope === 'history') {
-      return statuses.some(s => s === 'confirmed' || s === 'admin-proxy' || s === 'disagreed');
+      return statuses.some(s =>
+        s === 'confirmed' || s === 'admin-proxy' || s === 'disagreed' || s === 'cancelled'
+      );
     }
     return statuses.some(s =>
-      s === 'pending' || s === 'confirmed' || s === 'admin-proxy' || s === 'disagreed'
+      s === 'pending' || s === 'confirmed' || s === 'admin-proxy' || s === 'disagreed' || s === 'cancelled'
     );
   });
 }
@@ -27982,6 +28434,101 @@ function annotateTeacherCourseConfirmationPortalRows(staffId, termCode, pkg, row
       sectionFeedback: st.feedback || ''
     };
   });
+}
+
+/**
+ * 教师端列表行：当前安排行
+ * + 已从安排移除但仍作废留档的课（frozenRow）
+ * + 仍在课上、安排变更作废后的 cancelledArchives（当前态已回未发送）
+ * + history 中 type=cancelled 且带 frozenRow 的回放（档案兜底）。
+ * 作用：A 被换成 B / 安排变更后，History 仍能看到该课「作废」。
+ */
+function collectTeacherCourseConfirmationPortalAnnotatedRows(staffId, termCode, pkg) {
+  const baseRows = pkg?.rows?.length ? pkg.rows : buildTeacherCourseConfirmationRows(staffId, termCode);
+  const annotated = annotateTeacherCourseConfirmationPortalRows(staffId, termCode, pkg, baseRows);
+  const liveIds = new Set(annotated.map(r => String(r.sectionId || '')).filter(Boolean));
+  const states = pkg ? ensureTeacherCourseConfirmationSectionStates(pkg) : {};
+  const cancelKeys = new Set(); // sectionId::cancelledAt|histIdx 去重
+  const pushCancelled = (frozen, sid, dedupeKey, cancelReason = '') => {
+    if (!frozen || !sid) return;
+    const key = String(dedupeKey || `${sid}::${frozen.cancelledAt || frozen.code || ''}`);
+    if (cancelKeys.has(key)) return;
+    cancelKeys.add(key);
+    const reason = cancelReason
+      || frozen.cancelReason
+      || frozen.sectionCancelReason
+      || '';
+    annotated.push({
+      ...frozen,
+      sectionId: sid,
+      sectionStatus: 'cancelled',
+      sectionCancelReason: reason,
+      cancelReason: reason,
+      sectionFeedback: ''
+    });
+  };
+  Object.keys(states).forEach(sid => {
+    const st = states[sid];
+    if (!st) return;
+    // 安排变更作废档案：教师可能仍在课上（当前 draft/pending），History 单独挂作废行
+    const archives = Array.isArray(st.cancelledArchives) ? st.cancelledArchives : [];
+    archives.forEach((frozen, idx) => {
+      pushCancelled(
+        frozen,
+        sid,
+        `${sid}::archive::${idx}::${frozen?.cancelledAt || ''}`,
+        frozen?.cancelReason || st.cancelReason || 'arrangement-changed'
+      );
+    });
+    if (liveIds.has(String(sid))) return;
+    if (st.status !== 'cancelled') return;
+    let frozen = st.frozenRow || null;
+    if (!frozen && st.snapshotHash) {
+      try {
+        const parsed = JSON.parse(st.snapshotHash);
+        frozen = Array.isArray(parsed) ? parsed[0] : parsed;
+      } catch (_) {
+        frozen = null;
+      }
+    }
+    if (!frozen) {
+      frozen = {
+        sectionId: sid,
+        code: '—',
+        name: '（已作废安排）',
+        classification: '—',
+        credits: '—',
+        teachingWeeks: '—',
+        weekRange: '—',
+        teachingMethod: '—',
+        groupCount: '—',
+        combinedGroupsCount: 0,
+        totalStudentNo: '—',
+        weeklyHours: '—',
+        totalTeachingHours: '—'
+      };
+    }
+    // 孤儿 cancelled 多为教师替换；展示统一 Cancelled
+    pushCancelled(
+      frozen,
+      sid,
+      `${sid}::orphan-frozen`,
+      st.cancelReason || 'teacher-replaced'
+    );
+  });
+  // history 兜底：有 frozenRow 的作废事件也进 History（避免仅有日志、档案未写入时看不到「作废」）
+  (Array.isArray(pkg?.history) ? pkg.history : []).forEach((h, histIdx) => {
+    if (h?.type !== 'cancelled' || !h.frozenRow) return;
+    const sid = String((h.sectionIds && h.sectionIds[0]) || h.frozenRow.sectionId || '').trim();
+    if (!sid) return;
+    pushCancelled(
+      { ...h.frozenRow, cancelledAt: h.at || h.frozenRow.cancelledAt, cancelReason: h.reason },
+      sid,
+      `${sid}::hist::${histIdx}`,
+      h.reason || ''
+    );
+  });
+  return annotated;
 }
 
 function renderTeacherCourseConfirmationPortalPage() {
@@ -28014,11 +28561,18 @@ function renderTeacherCourseConfirmationPortalPage() {
   if (staffId) {
     syncTeacherCourseConfirmationPackageRows(staffId, term);
     pkg = getTeacherCourseConfirmationPackage(staffId, term);
-    const baseRows = pkg?.rows?.length ? pkg.rows : buildTeacherCourseConfirmationRows(staffId, term);
-    const annotated = annotateTeacherCourseConfirmationPortalRows(staffId, term, pkg, baseRows);
-    pendingRows = annotated.filter(r => r.sectionStatus === 'pending');
+    // const baseRows = pkg?.rows?.length ? pkg.rows : buildTeacherCourseConfirmationRows(staffId, term);
+    // const annotated = annotateTeacherCourseConfirmationPortalRows(staffId, term, pkg, baseRows);
+    // 含作废留档行（教师被换下后仍进 History）
+    const annotated = collectTeacherCourseConfirmationPortalAnnotatedRows(staffId, term, pkg);
+    // Pending 仅可确认的 pending（脏快照已在 sync 中作废，不再卡在此 Tab）
+    pendingRows = annotated.filter(r => r.sectionStatus === 'pending'
+      && isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, r.sectionId));
     historyRows = annotated.filter(r =>
-      r.sectionStatus === 'confirmed' || r.sectionStatus === 'admin-proxy' || r.sectionStatus === 'disagreed'
+      r.sectionStatus === 'confirmed'
+      || r.sectionStatus === 'admin-proxy'
+      || r.sectionStatus === 'disagreed'
+      || r.sectionStatus === 'cancelled'
     );
     hasPending = pendingRows.length > 0;
     hasHistory = historyRows.length > 0;
@@ -28062,8 +28616,8 @@ function renderTeacherCourseConfirmationPortalPage() {
     `<button type="button" class="approval-tab${tab === t.id ? ' active' : ''}" role="tab" aria-selected="${tab === t.id ? 'true' : 'false'}" onclick="setTeacherCourseConfirmationPortalTab('${t.id}')">${t.label}${t.badge}</button>`
   ).join('');
 
-  const canAct = tab === 'pending' && pendingRows.length > 0
-    && pendingRows.every(r => isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, r.sectionId));
+  // Pending 列表已过滤为快照一致的 pending，可直接确认
+  const canAct = tab === 'pending' && pendingRows.length > 0;
   const showHistoryAction = true;
   const emptyMessage = tab === 'pending' ? '暂无待确认的授课安排' : '暂无历史确认记录';
 
@@ -28087,7 +28641,7 @@ function renderTeacherCourseConfirmationPortalPage() {
       showTotalsFooter: true,
       totalsSourceRows: sortedRows
     })}
-    ${tab === 'pending' && pendingRows.length && !canAct ? '<p class="text-muted">安排已变更，请等待教务重新下发后再确认。</p>' : ''}
+    ${'' /* tab === 'pending' && pendingRows.length && !canAct ? '...安排已变更...' : '' // 原脏 pending 卡死提示；改作废进 History */}
   </div>`;
 
   const termHost = document.getElementById('teacher-course-confirmation-term');
@@ -28109,18 +28663,19 @@ function onTeacherCourseConfirmationPortalTeacherChange(value) {
   if (teacherCourseConfirmationPortalTeacherId) {
     syncTeacherCourseConfirmationPackageRows(teacherCourseConfirmationPortalTeacherId, term);
     const pkg = getTeacherCourseConfirmationPackage(teacherCourseConfirmationPortalTeacherId, term);
-    const baseRows = pkg?.rows?.length
-      ? pkg.rows
-      : buildTeacherCourseConfirmationRows(teacherCourseConfirmationPortalTeacherId, term);
-    const annotated = annotateTeacherCourseConfirmationPortalRows(
+    const annotated = collectTeacherCourseConfirmationPortalAnnotatedRows(
       teacherCourseConfirmationPortalTeacherId,
       term,
-      pkg,
-      baseRows
+      pkg
     );
-    if (annotated.some(r => r.sectionStatus === 'pending')) teacherCourseConfirmationPortalTab = 'pending';
-    else if (annotated.some(r =>
-      r.sectionStatus === 'confirmed' || r.sectionStatus === 'admin-proxy' || r.sectionStatus === 'disagreed'
+    if (annotated.some(r => r.sectionStatus === 'pending'
+      && isTeacherCourseConfirmationSectionSnapshotCurrent(pkg, r.sectionId))) {
+      teacherCourseConfirmationPortalTab = 'pending';
+    } else if (annotated.some(r =>
+      r.sectionStatus === 'confirmed'
+      || r.sectionStatus === 'admin-proxy'
+      || r.sectionStatus === 'disagreed'
+      || r.sectionStatus === 'cancelled'
     )) {
       teacherCourseConfirmationPortalTab = 'history';
     }
@@ -32553,7 +33108,9 @@ function renderGeOfferingRowActions(line, sec) {
     if (sec?.id) {
       parts.push(`<a href="#" onclick="openOfferingGroupingModal('${sec.id}', { returnPage: 'course-offering-ge' });return false">安排教师</a>`);
       if (isMajorOfferingTaskArrangementSubmitted(sec)) {
-        parts.push(renderDisabledAction('共同授课', '已生效，不支持设置共同授课。'));
+        // 原：'已生效，不支持设置共同授课。'（选修安排 PRD 曾写不提示先退回）
+        // 对齐专业开课样式二置灰 tip：已生效禁用时提示可先退回再调
+        parts.push(renderDisabledAction('共同授课', '已生效，不支持设置共同授课。如需调整请先退回。'));
       } else {
         parts.push(`<a href="#" onclick="event.preventDefault();openSharedTeachingSetupFromMajorTask('${sec.id}');return false">共同授课</a>`);
       }
@@ -43989,8 +44546,8 @@ function exportMajorOfferingTaskStyle2List() {
     defaultCourseMajorOfferingTaskStyle2Compare
   ).map(row => {
     const sec = row.sec;
-    const confirmKey = getSectionTeacherConfirmFilterKey(sec);
-    const confirmLabel = confirmKey === 'confirmed' ? '已确认' : (confirmKey === 'none' ? '无教师' : '未确认');
+    // 与列表列一致：已确认 / 部分确认 / 未确认 / 无教师
+    const confirmLabel = formatTeacherConfirmExportText(sec);
     return [
       getSectionOfferingTermDisplay(sec),
       formatMajorOfferingTaskSubmitStatusText(sec),
@@ -45258,9 +45815,8 @@ function openSharedTeachingSetupFromMajorTask(sectionId) {
     return;
   }
   if (isMajorOfferingTaskArrangementSubmitted(sec)) {
-    alert(sec.offeringType === 'ge'
-      ? '已生效，不支持设置共同授课。'
-      : '已生效，不支持设置共同授课。如需调整请先退回。');
+    // 原 GE 单独短文案：'已生效，不支持设置共同授课。'；现与专业开课置灰 tip 统一
+    alert('已生效，不支持设置共同授课。如需调整请先退回。');
     return;
   }
   ensureSectionOfferingFields(sec);
@@ -52378,6 +52934,55 @@ function formatGroupAssignGroupsSummaryCell(row, sec, options = {}) {
   ).join('')}</div>`;
 }
 
+/**
+ * 安排详情行：本行任课教师在该课的授课确认进度（用于课程组旁圆点）。
+ * 返回 tone: confirmed（全员已确认）/ partial（部分已确认）/ pending（已下发待确认）/ ''（未下发）
+ */
+function getGroupAssignRowTeacherConfirmTone(sec, row) {
+  if (!sec?.id || !row) return '';
+  const teachers = getGroupAssignTeachers(row)
+    .map(t => String(t?.staffId || '').trim())
+    .filter(id => id && !isOfferingTbcTeacher(id));
+  if (!teachers.length) return '';
+  const termCode = resolveSectionOfferingTermCode(sec);
+  const sectionId = String(sec.id);
+  const statuses = teachers.map(id => {
+    // 只读状态，不 sync，避免打开安排详情时副作用作废确认
+    const pkg = getTeacherCourseConfirmationPackage(id, termCode)
+      || ensureTeacherCourseConfirmationPackage(id, termCode);
+    if (!pkg) return 'draft';
+    migrateTeacherCourseConfirmationPackageSectionStates(pkg);
+    const st = getTeacherCourseConfirmationSectionState(pkg, sectionId);
+    return st?.status || 'draft';
+  });
+  const confirmedLike = s => s === 'confirmed' || s === 'admin-proxy';
+  if (statuses.every(confirmedLike)) return 'confirmed';
+  if (statuses.some(confirmedLike)) return 'partial';
+  if (statuses.some(s => s === 'pending')) return 'pending';
+  return '';
+}
+
+/** 课程组单元格前的授课确认圆点（已确认绿 / 部分确认橙 / 已下发蓝） */
+function renderGroupAssignRowTeacherConfirmDot(sec, row) {
+  const tone = getGroupAssignRowTeacherConfirmTone(sec, row);
+  if (!tone) return '';
+  const title = tone === 'confirmed'
+    ? '本行授课教师均已授课确认'
+    : (tone === 'partial'
+      ? '本行部分授课教师已授课确认'
+      : '本行已下发授课确认，待教师确认');
+  return `<span class="offering-assign-tcc-dot is-${tone}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"></span>`;
+}
+
+/** 安排详情课程组列：圆点 + 组名 */
+function formatGroupAssignGroupsSummaryCellWithConfirmDot(row, sec, options = {}) {
+  const label = formatGroupAssignGroupsSummaryCell(row, sec, options);
+  if (label === '—') return label;
+  const dot = renderGroupAssignRowTeacherConfirmDot(sec, row);
+  if (!dot) return label;
+  return `<span class="offering-assign-groups-with-tcc">${dot}<span class="offering-assign-groups-label">${label}</span></span>`;
+}
+
 function formatGroupAssignWeeklyHoursDisplay(row) {
   return row?.weeklyHours != null && row.weeklyHours !== '' ? String(row.weeklyHours) : '—';
 }
@@ -52588,27 +53193,32 @@ function removeOfferingGroupAssignSelected() {
     return;
   }
   const count = offeringGroupingAssignSelected.size;
-  openDeleteConfirm({
-    title: '删除',
-    // title: '撤销安排', // 原确认标题
-    message: `确定删除选中的 <strong>${count}</strong> 条教师安排吗？`,
-    // message: `确定撤销选中的 <strong>${count}</strong> 条教师安排吗？`, // 原文案
-    hint: '删除后该学时类型对应小组的任课教师安排将被移除，可重新安排。',
-    // hint: '撤销后该学时类型对应小组的任课教师安排将被移除，可重新安排。', // 原文案
-    onConfirm: () => {
-      const ids = new Set(offeringGroupingAssignSelected);
-      sec.groupAssignments = (sec.groupAssignments || []).filter(a => !ids.has(a.id));
-      resetSectionGroupAssignHoursModeIfEmpty(sec);
-      offeringGroupingAssignSelected.clear();
-      ids.forEach(id => {
-        reconcileSharedTeachingSlotLinksAfterAssignmentChange(sec, {
-          deletedAssignmentId: id,
-          reason: '安排行已删除'
+  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
+    openDeleteConfirm({
+      title: '删除',
+      // title: '撤销安排', // 原确认标题
+      message: `确定删除选中的 <strong>${count}</strong> 条教师安排吗？`,
+      // message: `确定撤销选中的 <strong>${count}</strong> 条教师安排吗？`, // 原文案
+      hint: '删除后该学时类型对应小组的任课教师安排将被移除，可重新安排。',
+      // hint: '撤销后该学时类型对应小组的任课教师安排将被移除，可重新安排。', // 原文案
+      onConfirm: () => {
+        const ids = new Set(offeringGroupingAssignSelected);
+        sec.groupAssignments = (sec.groupAssignments || []).filter(a => !ids.has(a.id));
+        resetSectionGroupAssignHoursModeIfEmpty(sec);
+        offeringGroupingAssignSelected.clear();
+        ids.forEach(id => {
+          reconcileSharedTeachingSlotLinksAfterAssignmentChange(sec, {
+            deletedAssignmentId: id,
+            reason: '安排行已删除'
+          });
         });
-      });
-      renderOfferingGroupingPanel();
-      renderCourseOfferingMajorPage();
-    }
+        notifyTeacherConfirmInvalidatedIfNeeded(
+          syncSectionTeachingConfirmStatusAfterArrangementChange(sec)
+        );
+        renderOfferingGroupingPanel();
+        renderCourseOfferingMajorPage();
+      }
+    });
   });
 }
 
@@ -53756,10 +54366,13 @@ function addOfferingGroupStatusAssignDraft() {
     alert('请先保存或取消当前正在编辑的安排。');
     return;
   }
-  offeringGroupStatusAssignDraft = getOfferingGroupStatusDraftDefault(sec);
-  renderOfferingGroupingGroupStatusPanel();
-  requestAnimationFrame(() => {
-    document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
+  // 已下发/已确认时先确认作废后果，再进入新增草稿
+  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
+    offeringGroupStatusAssignDraft = getOfferingGroupStatusDraftDefault(sec);
+    renderOfferingGroupingGroupStatusPanel();
+    requestAnimationFrame(() => {
+      document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
+    });
   });
 }
 
@@ -53776,11 +54389,13 @@ function editOfferingGroupStatusAssignRow(assignId) {
     alert('请先保存或取消当前正在编辑的安排。');
     return;
   }
-  offeringGroupStatusAssignDraft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
-  renderOfferingGroupingGroupStatusPanel();
-  requestAnimationFrame(() => {
-    document.querySelector('.offering-group-status-assign-draft')?.scrollIntoView({ block: 'nearest' });
-    document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
+  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
+    offeringGroupStatusAssignDraft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
+    renderOfferingGroupingGroupStatusPanel();
+    requestAnimationFrame(() => {
+      document.querySelector('.offering-group-status-assign-draft')?.scrollIntoView({ block: 'nearest' });
+      document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
+    });
   });
 }
 
@@ -53798,14 +54413,16 @@ function copyOfferingGroupStatusAssignRow(assignId) {
     alert('请先保存或取消当前正在编辑的安排。');
     return;
   }
-  const draft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
-  draft.id = '';
-  draft.mode = 'copy';
-  offeringGroupStatusAssignDraft = draft;
-  renderOfferingGroupingGroupStatusPanel();
-  requestAnimationFrame(() => {
-    document.querySelector('.offering-group-status-assign-draft')?.scrollIntoView({ block: 'nearest' });
-    document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
+  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
+    const draft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
+    draft.id = '';
+    draft.mode = 'copy';
+    offeringGroupStatusAssignDraft = draft;
+    renderOfferingGroupingGroupStatusPanel();
+    requestAnimationFrame(() => {
+      document.querySelector('.offering-group-status-assign-draft')?.scrollIntoView({ block: 'nearest' });
+      document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
+    });
   });
 }
 
@@ -54125,21 +54742,26 @@ function removeOfferingGroupStatusAssignRow(assignId) {
     alert('该安排已因停课作废，不可删除（仅可查看）。');
     return;
   }
-  openDeleteConfirm({
-    title: '删除',
-    message: '确定删除该条教师安排吗？',
-    hint: '删除后可重新在安排详情中新增。',
-    onConfirm: () => {
-      sec.groupAssignments = (sec.groupAssignments || []).filter(a => a.id !== assignId);
-      resetSectionGroupAssignHoursModeIfEmpty(sec);
-      offeringGroupingAssignSelected.delete(assignId);
-      reconcileSharedTeachingSlotLinksAfterAssignmentChange(sec, {
-        deletedAssignmentId: assignId,
-        reason: '安排行已删除'
-      });
-      renderOfferingGroupingPanel();
-      renderCourseOfferingMajorPage();
-    }
+  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
+    openDeleteConfirm({
+      title: '删除',
+      message: '确定删除该条教师安排吗？',
+      hint: '删除后可重新在安排详情中新增。',
+      onConfirm: () => {
+        sec.groupAssignments = (sec.groupAssignments || []).filter(a => a.id !== assignId);
+        resetSectionGroupAssignHoursModeIfEmpty(sec);
+        offeringGroupingAssignSelected.delete(assignId);
+        reconcileSharedTeachingSlotLinksAfterAssignmentChange(sec, {
+          deletedAssignmentId: assignId,
+          reason: '安排行已删除'
+        });
+        notifyTeacherConfirmInvalidatedIfNeeded(
+          syncSectionTeachingConfirmStatusAfterArrangementChange(sec)
+        );
+        renderOfferingGroupingPanel();
+        renderCourseOfferingMajorPage();
+      }
+    });
   });
 }
 
@@ -54175,6 +54797,15 @@ function openOfferingGroupStatusDraftWeekEditor() {
 }
 
 function saveOfferingGroupStatusAssignDraft() {
+  const sec = getOfferingGroupingSection();
+  const draft = offeringGroupStatusAssignDraft;
+  if (!sec || !draft) return;
+  // 行内 ✓ 保存前再确认一次（与点 ✎ 时的第一次确认独立）
+  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => saveOfferingGroupStatusAssignDraftAfterVoidConfirm());
+}
+
+/** 作废提示通过后执行安排详情草稿保存（由 saveOfferingGroupStatusAssignDraft 调用） */
+function saveOfferingGroupStatusAssignDraftAfterVoidConfirm() {
   const sec = getOfferingGroupingSection();
   const draft = offeringGroupStatusAssignDraft;
   if (!sec || !draft) return;
@@ -54333,8 +54964,15 @@ function saveOfferingGroupStatusAssignDraft() {
   reconcileSharedTeachingSlotLinksAfterAssignmentChange(sec, {
     reason: '周次或周学时已变更'
   });
+  // 保存后按指纹作废受影响教师确认；未改动则保持
+  notifyTeacherConfirmInvalidatedIfNeeded(
+    syncSectionTeachingConfirmStatusAfterArrangementChange(sec)
+  );
   renderOfferingGroupingPanel();
   renderCourseOfferingMajorPage();
+  if (typeof renderCourseMajorOfferingTaskStyle2Page === 'function') {
+    renderCourseMajorOfferingTaskStyle2Page();
+  }
 }
 
 function getOfferingGroupStatusDraftWeeklyWarning(sec, draft) {
@@ -54934,7 +55572,7 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
       ${showOps ? (rowVoided
         ? '<td class="col-check"></td>'
         : `<td class="col-check"><input type="checkbox" class="oga-row-check" value="${escapeHtml(row.id)}"${checked} aria-label="选择安排" onchange="updateOfferingGroupingAssignSelection(this)"></td>`) : ''}
-      <td class="col-groups">${formatGroupAssignGroupsSummaryCell(row, sec, { inline: inlineGroups })}</td>
+      <td class="col-groups">${formatGroupAssignGroupsSummaryCellWithConfirmDot(row, sec, { inline: inlineGroups })}</td>
       <td class="col-center col-hour-type">${escapeHtml(getGroupAssignHourTypeDisplayLabel(sec, row.hourType) || '—')}</td>
       <td class="col-center col-week"><code>${escapeHtml(clampGroupAssignWeekRangeToSection(sec, row.weekRange) || row.weekRange || '—')}</code></td>
       <td class="col-center col-weekly">${escapeHtml(formatGroupAssignWeeklyHoursDisplay(row))}</td>
@@ -54958,6 +55596,12 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
   const sharedTeachingBtn = String(sec.sharedTeachingCode || '').trim()
     ? `<button type="button" class="btn btn-outline btn-sm" onclick="openSharedTeachingSlotLinkModalFromGrouping()" title="将共同授课组内各班学时安排行绑定，供后续同堂排课">配置共同授课</button>`
     : `<button type="button" class="btn btn-outline btn-sm" disabled title="请先设置共同授课后再配置">配置共同授课</button>`;
+  // 课程组旁圆点图例：绿=本行已确认，橙=部分确认，蓝=已下发待确认
+  const tccDotLegend = `<span class="offering-assign-tcc-dot-legend" title="课程组左侧圆点表示本行教师授课确认情况">
+      <span class="offering-assign-tcc-dot is-confirmed" aria-hidden="true"></span><span>已确认</span>
+      <span class="offering-assign-tcc-dot is-partial" aria-hidden="true"></span><span>部分确认</span>
+      <span class="offering-assign-tcc-dot is-pending" aria-hidden="true"></span><span>待确认</span>
+    </span>`;
   const headActions = showOps
     ? `<div class="offering-group-status-assign-head-actions">
         ${isOfferingGroupingHistoryCopyPendingConfirm(sec)
@@ -54992,6 +55636,7 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
       <div class="offering-group-status-assign-head-leading">
         <strong>${escapeHtml(heading)}</strong>
         ${sharedTeachingBtn}
+        ${tccDotLegend}
       </div>
       ${headActions}
     </div>

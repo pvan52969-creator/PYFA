@@ -3172,7 +3172,7 @@
       <div class="page-header">
         <div>
           <h1>排课计划</h1>
-          <p class="subtitle">汇总任务安排已生效的学时安排，供下游排课消费；联动组按课号逐行展示，课程组仅本行，联动组成员列于「联动组」</p>
+          <p class="subtitle">汇总任务安排已生效的学时安排，供下游排课消费；共同授课不挡入池，联动组须各方均已生效后一起进入；「联动组」列点「查看」看明细</p>
         </div>
       </div>
       <div class="card course-major-query-card">
@@ -3224,7 +3224,7 @@
             </div>
             <div class="course-time-query-field">
               <label for="scheduling-plan-filter-link-group">联动组</label>
-              <input class="input input-sm" id="scheduling-plan-filter-link-group" placeholder="联动组">
+              <input class="input input-sm" id="scheduling-plan-filter-link-group" placeholder="查看">
             </div>
             <div class="course-time-query-field">
               <label for="scheduling-plan-filter-weekly">周学时</label>
@@ -3256,7 +3256,7 @@
       </div>
       <div class="card scheduling-plan-list-card">
         <div class="panel-toolbar scheduling-plan-toolbar">
-          <span class="form-hint">数据来源：各开课模块中任务安排已生效的学时安排（不以授课确认齐套为入池门槛）；共同授课须全部关联开课班均已生效，且学时安排与联动组齐套后才展示</span>
+          <span class="form-hint">数据来源：各开课模块中任务安排已生效的学时安排（不以授课确认齐套为入池门槛）；共同授课不挡入池；已绑定联动的学时行须联动各方均已生效后一起展示</span>
           <button class="btn btn-outline btn-sm course-list-toolbar-export" type="button" onclick="exportSchedulingPlanList()">导出</button>
         </div>
         <div class="table-scroll">

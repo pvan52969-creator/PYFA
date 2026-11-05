@@ -18859,6 +18859,29 @@ code {
 .schedule-auto-run-row {
   align-items: flex-end;
 }
+/* 自动排时间：一行固定 4 个筛选栏 + 右侧确定/重置，不受全局 ≤1100 折成 3 列影响 */
+#page-schedule-auto-time .schedule-query-row.schedule-auto-run-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) max-content;
+}
+#page-schedule-auto-time .schedule-query-row.schedule-auto-run-row > .schedule-auto-run-actions {
+  grid-column: 5;
+}
+#page-schedule-auto-time .schedule-query-row.schedule-auto-run-row .schedule-query-more {
+  grid-column: 1 / 5;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 640px) {
+  #page-schedule-auto-time .schedule-query-row.schedule-auto-run-row {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+  #page-schedule-auto-time .schedule-query-row.schedule-auto-run-row > .schedule-auto-run-actions {
+    grid-column: 2;
+  }
+  #page-schedule-auto-time .schedule-query-row.schedule-auto-run-row .schedule-query-more {
+    grid-column: 1 / 2;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .schedule-auto-run-actions {
   display: flex;
   flex-wrap: wrap;
@@ -18866,6 +18889,15 @@ code {
   gap: 8px;
   margin-left: 0;
   flex-shrink: 0;
+}
+/* 自动排时间：确定/重置与输入框同高 */
+#page-schedule-auto-time .schedule-auto-run-actions .btn {
+  height: 28px;
+  min-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  box-sizing: border-box;
+  line-height: 26px;
 }
 .schedule-auto-run-scope {
   margin-top: 12px;
@@ -18893,11 +18925,67 @@ code {
 .schedule-auto-progress-line .schedule-auto-progress-bar {
   width: 100%;
 }
+/* 自动排时间：进度文案左、执行按钮右；进度条仅开排后显示 */
+#page-schedule-auto-time .schedule-auto-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+#page-schedule-auto-time .schedule-auto-progress-meta .schedule-auto-progress-text {
+  flex: 1 1 240px;
+  min-width: 0;
+  /* 覆盖全局 .schedule-auto-progress-text 的 margin-top，与右侧按钮垂直居中 */
+  margin-top: 0;
+  line-height: 28px;
+}
+#page-schedule-auto-time .schedule-auto-run-scope-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#page-schedule-auto-time .schedule-auto-run-scope-actions .btn {
+  height: 28px;
+  min-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  box-sizing: border-box;
+  line-height: 26px;
+}
+#page-schedule-auto-time .schedule-auto-progress-bar[hidden] {
+  display: none;
+}
+/* 功能区（进度文案+执行按钮）与下方待排/已排列表用横线隔开 */
+#page-schedule-auto-time #sat-progress-line {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
 .schedule-auto-boards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   min-height: 360px;
+}
+/* 仅自动排时间：Tab 单栏展示；排教室仍用上方双栏 grid */
+#page-schedule-auto-time .schedule-auto-boards.is-sat-tabbed {
+  grid-template-columns: minmax(0, 1fr);
+}
+#page-schedule-auto-time .schedule-auto-boards.is-sat-tabbed .schedule-auto-board[hidden] {
+  display: none;
+}
+#page-schedule-auto-time .schedule-auto-result-tabs {
+  margin: 0;
+}
+/* 勾选列关闭整表 ellipsis，避免 36px 列把全选框裁成省略号 */
+#page-schedule-auto-time .schedule-auto-board-table th.schedule-auto-pick-col,
+#page-schedule-auto-time .schedule-auto-board-table td.schedule-auto-pick-col {
+  padding-left: 6px;
+  padding-right: 6px;
+  overflow: visible;
+  text-overflow: clip;
 }
 .schedule-auto-board {
   display: flex;
@@ -19032,9 +19120,55 @@ code {
 .schedule-auto-board-table td.schedule-auto-status-col {
   width: 76px;
 }
+/* 自动排时间：状态文案（如「排课失败」）完整显示，不 ellipsis */
+#page-schedule-auto-time .schedule-auto-board-table th.schedule-auto-status-col,
+#page-schedule-auto-time .schedule-auto-board-table td.schedule-auto-status-col {
+  width: 92px;
+  min-width: 92px;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  text-align: center;
+}
+/* 自动排时间：单元格垂直居中；状态/课号/性质/批次水平居中 */
+#page-schedule-auto-time .schedule-auto-board-table th,
+#page-schedule-auto-time .schedule-auto-board-table td {
+  vertical-align: middle;
+}
+#page-schedule-auto-time .schedule-auto-board-table th.schedule-auto-code,
+#page-schedule-auto-time .schedule-auto-board-table td.schedule-auto-code,
+#page-schedule-auto-time .schedule-auto-board-table th.schedule-auto-nature,
+#page-schedule-auto-time .schedule-auto-board-table td.schedule-auto-nature,
+#page-schedule-auto-time .schedule-auto-board-table th.schedule-auto-intake,
+#page-schedule-auto-time .schedule-auto-board-table td.schedule-auto-intake {
+  text-align: center;
+}
+/* 自动排时间：表内框线 */
+#page-schedule-auto-time .schedule-auto-board-table {
+  border: 1px solid var(--border-light);
+}
+#page-schedule-auto-time .schedule-auto-board-table th,
+#page-schedule-auto-time .schedule-auto-board-table td {
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+#page-schedule-auto-time .schedule-auto-board-table th:last-child,
+#page-schedule-auto-time .schedule-auto-board-table td:last-child {
+  border-right: none;
+}
+#page-schedule-auto-time .schedule-auto-board-table tbody tr:last-child td {
+  border-bottom: none;
+}
+#page-schedule-auto-time .schedule-auto-cell-line + .schedule-auto-cell-line {
+  margin-top: 2px;
+}
+/* Course Code 表头/课号勿 ellipsis 截断（原 88px + text-overflow:ellipsis 会显示成「Course C…」） */
 .schedule-auto-board-table th.schedule-auto-code,
 .schedule-auto-board-table td.schedule-auto-code {
-  width: 88px;
+  width: 110px;
+  min-width: 110px;
+  overflow: hidden;
+  text-overflow: clip;
 }
 .schedule-auto-board-table th.schedule-auto-nature,
 .schedule-auto-board-table td.schedule-auto-nature {
@@ -19082,10 +19216,20 @@ code {
   overflow: visible;
   text-overflow: clip;
 }
-/* 自动排课待排无上课时间列，老师列略宽 */
+/* 自动排课待排：教师逐行显示，列宽收窄；课程组略放宽承接换行 */
 #page-schedule-auto-time .schedule-auto-board.is-pending .schedule-auto-board-table th.schedule-auto-teacher,
 #page-schedule-auto-time .schedule-auto-board.is-pending .schedule-auto-board-table td.schedule-auto-teacher {
-  width: 28%;
+  width: 140px;
+  min-width: 120px;
+  max-width: 160px;
+}
+#page-schedule-auto-time .schedule-auto-board.is-pending .schedule-auto-board-table th.schedule-auto-group,
+#page-schedule-auto-time .schedule-auto-board.is-pending .schedule-auto-board-table td.schedule-auto-group {
+  width: 26%;
+}
+/* 失败原因跨列时去掉与操作列之间的多余右边线干扰 */
+#page-schedule-auto-time .schedule-auto-board-table tr.schedule-auto-board-fail-row td {
+  border-right: none;
 }
 .schedule-auto-board-table th.schedule-auto-class-time,
 .schedule-auto-board-table td.schedule-auto-class-time {

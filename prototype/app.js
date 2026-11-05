@@ -83488,7 +83488,8 @@ const SCHEDULE_AUTO_RULE_SCHEMA = 'constraint-v2';
 let scheduleAutoRuleSeq = 1;
 let scheduleAutoJobSeq = 1;
 let scheduleAutoRuleEdit = { side: 'time', id: null };
-let scheduleAutoTimeResultTab = 'success';
+/** 自动排时间结果 Tab：pending=待排 | success=已排（排教室仍双栏，不读此状态） */
+let scheduleAutoTimeResultTab = 'pending';
 let scheduleAutoRoomResultTab = 'success';
 let scheduleAutoTimeSelectedIds = new Set();
 let scheduleAutoRoomSelectedIds = new Set();
@@ -83496,6 +83497,15 @@ let scheduleAutoTimeRunning = false;
 let scheduleAutoRoomRunning = false;
 /** 自动排课查询：已选课程号（多选，回显至选择器） */
 let scheduleAutoTimeSelectedCourseCodes = [];
+/** 自动排课查询：学院代码多选草稿（空=全部；点「确定」后写入 applied） */
+let scheduleAutoTimeSelectedSchools = [];
+/** 自动排课查询：专业代码多选草稿（空=全部；存 PROGRAMMES.code，与级联选项一致） */
+let scheduleAutoTimeSelectedProgrammes = [];
+/**
+ * 已生效查询条件：仅「确定 / 重置 / 首次进入」写入。
+ * 下方待排/已排板与自动排课范围只读此快照，避免改筛选项即刷新列表。
+ */
+let scheduleAutoTimeAppliedQuery = null;
 /** 自动排教室查询：已选课程号 */
 let scheduleAutoRoomSelectedCourseCodes = [];
 /** 自动排课/排教室课程选择抽屉草稿勾选 */
@@ -83626,6 +83636,11 @@ function getScheduleAutoConstraintBundle(side) {
 }
 
 function rebuildScheduleAutoFilterOptions(prefix) {
+  // 自动排时间：学院/专业改为多选勾选下拉；排教室仍用原生单选级联
+  if (prefix === 'sat') {
+    rebuildScheduleAutoTimeCascadeFilters();
+    return;
+  }
   const schoolId = `${prefix}-filter-school`;
   if (!document.getElementById(schoolId)) return;
   rebuildCascadeFilterSelects({
@@ -83635,6 +83650,216 @@ function rebuildScheduleAutoFilterOptions(prefix) {
     items: getScheduleBatchFilterItems(),
     getProgrammeKey: item => item.programmeKey,
     getIntake: item => item.intake
+  });
+}
+
+/**
+ * 自动排课学院/专业多选 + 入学批次单选级联。
+ * 学院/专业未选=全部；已选学院收窄专业选项，并剔除失效勾选；批次随学院+专业收窄。
+ */
+function rebuildScheduleAutoTimeCascadeFilters() {
+  const items = getScheduleBatchFilterItems();
+  const getPk = item => item.programmeKey;
+  const schoolCodes = [...new Set(
+    items.map(item => getProgrammeSchoolCode(getPk(item))).filter(c => c && c !== '—')
+  )].sort();
+  const schoolSet = new Set(scheduleAutoTimeSelectedSchools.filter(c => schoolCodes.includes(c)));
+  scheduleAutoTimeSelectedSchools = [...schoolSet];
+
+  const progPoolItems = schoolSet.size
+    ? items.filter(item => schoolSet.has(getProgrammeSchoolCode(getPk(item))))
+    : items;
+  const programmeCodes = [...new Set(
+    progPoolItems.map(item => getProgrammeCode(getPk(item))).filter(Boolean)
+  )].sort();
+  const progSet = new Set(scheduleAutoTimeSelectedProgrammes.filter(c => programmeCodes.includes(c)));
+  scheduleAutoTimeSelectedProgrammes = [...progSet];
+
+  fillScheduleAutoTimeMsOptions('school', schoolCodes.map(c => ({ value: c, label: c })));
+  fillScheduleAutoTimeMsOptions('prog', programmeCodes.map(c => ({ value: c, label: c })));
+  syncScheduleAutoTimeMsDisplay('school');
+  syncScheduleAutoTimeMsDisplay('prog');
+
+  const intakeSel = document.getElementById('sat-filter-intake');
+  if (!intakeSel) return;
+  const curIntake = intakeSel.value || '';
+  const intakeItems = items.filter(item => {
+    const pk = getPk(item);
+    if (schoolSet.size && !schoolSet.has(getProgrammeSchoolCode(pk))) return false;
+    if (progSet.size && !progSet.has(getProgrammeCode(pk))) return false;
+    return true;
+  });
+  const intakes = [...new Set(intakeItems.map(item => item.intake).filter(Boolean))].sort();
+  intakeSel.innerHTML = '<option value="">全部入学批次</option>'
+    + intakes.map(code => `<option value="${escapeHtml(code)}">${formatIntakeDisplay(code)}</option>`).join('');
+  intakeSel.value = curIntake && intakes.includes(curIntake) ? curIntake : '';
+}
+
+function getScheduleAutoTimeMsIds(kind) {
+  const key = kind === 'prog' ? 'prog' : 'school';
+  return {
+    key,
+    ms: `sat-filter-${key}-ms`,
+    btn: `sat-filter-${key}-btn`,
+    dd: `sat-filter-${key}-dropdown`,
+    options: `sat-filter-${key}-options`,
+    display: `sat-filter-${key}-display`,
+    checkClass: `sat-filter-${key}-check`,
+    emptyLabel: key === 'prog' ? '全部专业' : '全部学院',
+    selectedRef: key === 'prog' ? 'programmes' : 'schools'
+  };
+}
+
+function getScheduleAutoTimeMsSelected(kind) {
+  return kind === 'prog' ? scheduleAutoTimeSelectedProgrammes : scheduleAutoTimeSelectedSchools;
+}
+
+function setScheduleAutoTimeMsSelected(kind, values) {
+  const next = [...new Set((values || []).map(v => String(v || '').trim()).filter(Boolean))];
+  if (kind === 'prog') scheduleAutoTimeSelectedProgrammes = next;
+  else scheduleAutoTimeSelectedSchools = next;
+}
+
+function fillScheduleAutoTimeMsOptions(kind, options) {
+  const ids = getScheduleAutoTimeMsIds(kind);
+  const box = document.getElementById(ids.options);
+  if (!box) return;
+  const selected = new Set(getScheduleAutoTimeMsSelected(kind));
+  if (!options.length) {
+    box.innerHTML = '<div class="clo-multiselect-empty">暂无选项</div>';
+  } else {
+    box.innerHTML = options.map(o =>
+      `<label class="clo-multiselect-option" onclick="event.stopPropagation()">
+        <input type="checkbox" class="${ids.checkClass}" value="${escapeHtml(o.value)}"
+          ${selected.has(o.value) ? 'checked' : ''}
+          onchange="onScheduleAutoTimeMsCheck('${ids.key}', this.value, this.checked)">
+        <span>${escapeHtml(o.label)}</span>
+      </label>`
+    ).join('');
+  }
+  const dd = document.getElementById(ids.dd);
+  if (dd && !dd.dataset.boundStop) {
+    dd.addEventListener('click', e => e.stopPropagation());
+    dd.addEventListener('mousedown', e => e.stopPropagation());
+    dd.dataset.boundStop = '1';
+  }
+  bindScheduleAutoTimeMsDocClose();
+}
+
+function syncScheduleAutoTimeMsDisplay(kind) {
+  const ids = getScheduleAutoTimeMsIds(kind);
+  const display = document.getElementById(ids.display);
+  if (!display) return;
+  const selected = getScheduleAutoTimeMsSelected(kind);
+  if (selected.length) {
+    display.textContent = selected.join('、');
+    display.classList.remove('placeholder');
+  } else {
+    display.textContent = ids.emptyLabel;
+    display.classList.add('placeholder');
+  }
+}
+
+/** 勾选学院/专业后：只收窄下级草稿选项，不刷新下方待排板（需点「确定」） */
+function onScheduleAutoTimeMsCheck(kind, value, checked) {
+  const next = new Set(getScheduleAutoTimeMsSelected(kind));
+  if (checked) next.add(String(value));
+  else next.delete(String(value));
+  setScheduleAutoTimeMsSelected(kind, [...next]);
+  // 改学院时清空专业与批次，避免残留无效勾选
+  if (kind === 'school') {
+    scheduleAutoTimeSelectedProgrammes = [];
+    const intakeSel = document.getElementById('sat-filter-intake');
+    if (intakeSel) intakeSel.value = '';
+  } else if (kind === 'prog') {
+    const intakeSel = document.getElementById('sat-filter-intake');
+    if (intakeSel) intakeSel.value = '';
+  }
+  onScheduleAutoTimeDraftFilterChange();
+}
+
+/** 读取查询区当前草稿（控件值 / 多选状态），尚未生效到待排板 */
+function readScheduleAutoTimeDraftQuery() {
+  return {
+    term: document.getElementById('sat-filter-term')?.value || '',
+    schools: scheduleAutoTimeSelectedSchools.slice(),
+    programmes: scheduleAutoTimeSelectedProgrammes.slice(),
+    intake: document.getElementById('sat-filter-intake')?.value || '',
+    category: document.getElementById('sat-filter-category')?.value || '',
+    nature: document.getElementById('sat-filter-nature')?.value || '',
+    teacherKw: (document.getElementById('sat-filter-teacher')?.value || '').trim().toLowerCase(),
+    courseCodes: scheduleAutoTimeSelectedCourseCodes.slice()
+  };
+}
+
+/** 将草稿固化为已生效条件，并刷新待排/已排结果板 */
+function applyScheduleAutoTimeQuery() {
+  closeAllScheduleAutoTimeMs();
+  scheduleAutoTimeAppliedQuery = readScheduleAutoTimeDraftQuery();
+  renderScheduleAutoTimePage({ refreshResult: true });
+}
+
+/**
+ * 筛选项草稿变更：只重建级联/下拉选项，不刷新下方结果板。
+ * 例：改学院后专业选项收窄，但待排表仍显示上次「确定」的结果。
+ */
+function onScheduleAutoTimeDraftFilterChange() {
+  ensureScheduleAutoTimeTermSelect(true);
+  rebuildScheduleAutoFilterOptions('sat');
+  const term = document.getElementById('sat-filter-term')?.value || '';
+  const termUnits = collectScheduleAutoTimeUnits().filter(u => !term || u.termCode === term);
+  fillScheduleAutoTimeMetaFilters(termUnits);
+  syncScheduleAutoTimeCourseFilterDisplay();
+}
+
+function closeScheduleAutoTimeMs(kind) {
+  const ids = getScheduleAutoTimeMsIds(kind);
+  const dd = document.getElementById(ids.dd);
+  const btn = document.getElementById(ids.btn);
+  if (dd) resetScheduleFixedMultiselectDropdown(dd);
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function closeAllScheduleAutoTimeMs(exceptKind) {
+  ['school', 'prog'].forEach(k => {
+    if (exceptKind && k === exceptKind) return;
+    closeScheduleAutoTimeMs(k);
+  });
+}
+
+function toggleScheduleAutoTimeSchoolMs(event) {
+  toggleScheduleAutoTimeMs('school', event);
+}
+
+function toggleScheduleAutoTimeProgMs(event) {
+  toggleScheduleAutoTimeMs('prog', event);
+}
+
+function toggleScheduleAutoTimeMs(kind, event) {
+  event?.stopPropagation?.();
+  event?.preventDefault?.();
+  const ids = getScheduleAutoTimeMsIds(kind);
+  const dd = document.getElementById(ids.dd);
+  const btn = document.getElementById(ids.btn);
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeAllScheduleAutoTimeMs(kind);
+  if (!willOpen) {
+    closeScheduleAutoTimeMs(kind);
+    return;
+  }
+  dd.hidden = false;
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  const count = dd.querySelectorAll('.clo-multiselect-option').length || 4;
+  positionScheduleFixedMultiselectDropdown(btn, dd, count);
+}
+
+function bindScheduleAutoTimeMsDocClose() {
+  if (bindScheduleAutoTimeMsDocClose.bound) return;
+  bindScheduleAutoTimeMsDocClose.bound = true;
+  document.addEventListener('click', e => {
+    if (e.target.closest('#sat-filter-school-ms, #sat-filter-prog-ms')) return;
+    closeAllScheduleAutoTimeMs();
   });
 }
 
@@ -84175,26 +84400,35 @@ function confirmScheduleAutoTimeCoursePicker() {
   scheduleAutoTimeSelectedCourseCodes = codes;
   syncScheduleAutoTimeCourseFilterDisplay();
   closeScheduleAutoTimeCoursePicker();
-  renderScheduleAutoTimePage();
+  // 课程选择仅写入草稿，待排板等点「确定」后再按新条件刷新
 }
 
 function getScheduleAutoTimeFilteredUnits() {
-  const term = document.getElementById('sat-filter-term')?.value || '';
-  const school = document.getElementById('sat-filter-school')?.value || '';
-  const prog = document.getElementById('sat-filter-prog')?.value || '';
-  const intake = document.getElementById('sat-filter-intake')?.value || '';
-  const category = document.getElementById('sat-filter-category')?.value || '';
-  const nature = document.getElementById('sat-filter-nature')?.value || '';
-  const teacherKw = (document.getElementById('sat-filter-teacher')?.value || '').trim().toLowerCase();
+  // 无已生效快照时按当前草稿（首次进入会先 commit）；之后只认「确定」写入的条件
+  const q = scheduleAutoTimeAppliedQuery || readScheduleAutoTimeDraftQuery();
+  const term = q.term || '';
+  const schools = q.schools || [];
+  const progs = q.programmes || [];
+  const intake = q.intake || '';
+  const category = q.category || '';
+  const nature = q.nature || '';
+  const teacherKw = q.teacherKw || '';
   const courseCodeSet = new Set(
-    scheduleAutoTimeSelectedCourseCodes.map(c => normalizeScheduleAutoTimeCourseCode(c).toLowerCase()).filter(Boolean)
+    (q.courseCodes || []).map(c => normalizeScheduleAutoTimeCourseCode(c).toLowerCase()).filter(Boolean)
   );
   return collectScheduleAutoTimeUnits().filter(u => {
     if (term && u.termCode !== term) return false;
-    if (prog && u.programmeKey !== prog) return false;
+    // 专业多选：按专业代码匹配（与下拉选项一致；原先用 programmeKey 比对会漏选）
+    if (progs.length && !progs.some(code => programmeMatchesCodeFilter(u.programmeKey, code))) return false;
     if (intake && String(u.intake) !== String(intake)) return false;
-    if (school && !programmeMatchesSchoolCodeFilter(u.programmeKey, school)
-      && (u.task.schoolCode || '') !== school) return false;
+    // 学院多选：专业所属学院或任务 schoolCode 命中任一即可
+    if (schools.length) {
+      const hit = schools.some(school =>
+        programmeMatchesSchoolCodeFilter(u.programmeKey, school)
+        || (u.task.schoolCode || '') === school
+      );
+      if (!hit) return false;
+    }
     if (category && u.category !== category) return false;
     if (nature && u.nature !== nature) return false;
     if (courseCodeSet.size) {
@@ -84287,7 +84521,8 @@ function getScheduleAutoTimeBoardRows() {
         ...buildScheduleAutoTimeUnitMeta(u),
         status: 'failed',
         statusLabel: '排课失败',
-        failReason: fail.reason || '—'
+        failReason: fail.reason || '—',
+        failReasonCode: fail.reasonCode || ''
       });
       return;
     }
@@ -84316,10 +84551,33 @@ function getScheduleAutoTimeBoardRows() {
       }),
       status: 'failed',
       statusLabel: '排课失败',
-      failReason: fail.reason || '—'
+      failReason: fail.reason || '—',
+      failReasonCode: fail.reasonCode || ''
     });
   });
   return { leftRows, successRows };
+}
+
+/**
+ * 自动排时间失败是否给出「调整排课」。
+ * 凡带失败原因的失败行均可跳转手工调整（含教师/学生冲突、学时超排等）。
+ */
+function isScheduleAutoTimeAdjustableConflict(row) {
+  const reason = String(row?.failReason || '').trim();
+  return row?.status === 'failed' && !!reason && reason !== '—';
+}
+
+/**
+ * 课程组 / 授课老师：按顿号等分隔，每项单独一行显示。
+ * 例："A（Group1）、B（Group2）" → 两行；"Dr. A、Dr. B" → 两行。
+ */
+function formatScheduleAutoMultilineCell(text) {
+  const raw = String(text || '').trim();
+  if (!raw || raw === '—') return '—';
+  const parts = raw.split(/[、,，;；]/).map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return '—';
+  if (parts.length === 1) return escapeHtml(parts[0]);
+  return parts.map(p => `<div class="schedule-auto-cell-line">${escapeHtml(p)}</div>`).join('');
 }
 
 function isScheduleAutoElectiveNature(nature) {
@@ -84362,8 +84620,12 @@ function getScheduleAutoTimeIntakeLabel(row) {
   ) || '—';
 }
 
-/** 成功课程「跳转排课」：必修→按入学批次排详情，选修→按课程排详情 */
-function renderScheduleAutoTimeJumpAction(row) {
+/**
+ * 跳转排课详情：必修→按入学批次，选修→按课程。
+ * actionLabel 默认「跳转排课」（已排成功行）；冲突失败行传入「调整排课」。
+ */
+function renderScheduleAutoTimeJumpAction(row, actionLabel) {
+  const label = actionLabel || '跳转排课';
   let nature = row?.nature || '';
   let courseCode = row?.code || '';
   let courseName = row?.name || '';
@@ -84388,11 +84650,32 @@ function renderScheduleAutoTimeJumpAction(row) {
   }
   if (!ctx || typeof buildScheduleDetailLaunchUrl !== 'function') {
     const tip = elective ? '缺少课程号，无法跳转按课程排课' : '缺少专业批次，无法跳转按入学批次排课';
-    return `<button class="btn btn-outline btn-sm schedule-auto-jump-btn" type="button" disabled title="${escapeHtml(tip)}">跳转排课</button>`;
+    return `<button class="btn btn-outline btn-sm schedule-auto-jump-btn" type="button" disabled title="${escapeHtml(tip)}">${escapeHtml(label)}</button>`;
   }
   const href = buildScheduleDetailLaunchUrl(ctx, 'time');
   const title = elective ? '跳转按课程排课' : '跳转按入学批次排课';
-  return `<button class="btn btn-outline btn-sm schedule-auto-jump-btn" type="button" title="${escapeHtml(title)}" data-sch-href="${escapeHtml(href)}" onclick="return launchScheduleDetailTab(event)">跳转排课</button>`;
+  return `<button class="btn btn-outline btn-sm schedule-auto-jump-btn" type="button" title="${escapeHtml(title)}" data-sch-href="${escapeHtml(href)}" onclick="return launchScheduleDetailTab(event)">${escapeHtml(label)}</button>`;
+}
+
+/** 切换自动排时间「待排 / 已排」Tab；不改排教室侧 */
+function setScheduleAutoTimeResultTab(tab) {
+  const next = tab === 'success' ? 'success' : 'pending';
+  scheduleAutoTimeResultTab = next;
+  syncScheduleAutoTimeResultTabUi();
+}
+
+/** 同步自动排时间结果 Tab 显隐与选中态（数量由 renderScheduleAutoTimeBoardTables 刷新） */
+function syncScheduleAutoTimeResultTabUi() {
+  const tab = scheduleAutoTimeResultTab === 'success' ? 'success' : 'pending';
+  document.querySelectorAll('#sat-result-tabs [data-sat-tab]').forEach(btn => {
+    const on = btn.getAttribute('data-sat-tab') === tab;
+    btn.classList.toggle('is-active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('#page-schedule-auto-time [data-sat-tab-panel]').forEach(panel => {
+    const on = panel.getAttribute('data-sat-tab-panel') === tab;
+    panel.toggleAttribute('hidden', !on);
+  });
 }
 
 function renderScheduleAutoTimeBoardTables() {
@@ -84403,26 +84686,31 @@ function renderScheduleAutoTimeBoardTables() {
   const rightCount = document.getElementById('sat-right-count');
   if (leftCount) leftCount.textContent = String(leftRows.length);
   if (rightCount) rightCount.textContent = String(successRows.length);
+  syncScheduleAutoTimeResultTabUi();
   if (leftBody) {
     leftBody.innerHTML = leftRows.length
       ? leftRows.map(r => {
           const code = normalizeScheduleAutoTimeCourseCode(r.code) || r.code || '—';
           const failReason = String(r.failReason || '').trim();
           const showFail = r.status === 'failed' && failReason && failReason !== '—';
+          // 失败行：操作列跨课程行与原因行，跳转排课详情手工调整
+          const canAdjust = showFail && isScheduleAutoTimeAdjustableConflict(r);
+          const jump = canAdjust ? renderScheduleAutoTimeJumpAction(r, '调整排课') : '';
           return `<tr class="schedule-auto-board-main-row${showFail ? ' has-fail-reason' : ''}">
           <td class="col-status schedule-auto-status-col"><span class="schedule-auto-status is-${r.status}">${escapeHtml(r.statusLabel)}</span></td>
           <td class="schedule-auto-code">${escapeHtml(code)}</td>
           <td class="schedule-auto-nature">${escapeHtml(r.nature || '—')}</td>
           <td class="col-center schedule-auto-weeks">${escapeHtml(r.weeks || '—')}</td>
           <td class="col-center schedule-auto-hours">${escapeHtml(String(r.total ?? '—'))}</td>
-          <td class="schedule-auto-group">${escapeHtml(r.group || '—')}</td>
+          <td class="schedule-auto-group">${formatScheduleAutoMultilineCell(r.group || '—')}</td>
           <td class="schedule-auto-intake">${escapeHtml(getScheduleAutoTimeIntakeLabel(r))}</td>
-          <td class="schedule-auto-teacher">${escapeHtml(r.teachers || '—')}</td>
+          <td class="schedule-auto-teacher">${formatScheduleAutoMultilineCell(r.teachers || '—')}</td>
+          <td class="col-center schedule-auto-ops-col"${canAdjust ? ' rowspan="2"' : ''} onclick="event.stopPropagation()">${jump}</td>
         </tr>${showFail ? `<tr class="schedule-auto-board-fail-row">
-          <td colspan="8"><div class="schedule-auto-fail-reason-line">失败原因：${escapeHtml(failReason)}</div></td>
+          <td colspan="${canAdjust ? 8 : 9}"><div class="schedule-auto-fail-reason-line">失败原因：${escapeHtml(failReason)}</div></td>
         </tr>` : ''}`;
         }).join('')
-      : '<tr><td colspan="8" class="empty-cell">暂无待排/失败课程</td></tr>';
+      : '<tr><td colspan="9" class="empty-cell">暂无待排/失败课程</td></tr>';
   }
   if (rightBody) {
     const selectedCount = successRows.filter(r => scheduleAutoTimeSelectedIds.has(r.taskId)).length;
@@ -84445,9 +84733,9 @@ function renderScheduleAutoTimeBoardTables() {
           <td class="schedule-auto-nature">${escapeHtml(r.nature || '—')}</td>
           <td class="col-center schedule-auto-weeks">${escapeHtml(r.weeks || '—')}</td>
           <td class="col-center schedule-auto-hours">${escapeHtml(String(r.total ?? '—'))}</td>
-          <td class="schedule-auto-group">${escapeHtml(r.group || '—')}</td>
+          <td class="schedule-auto-group">${formatScheduleAutoMultilineCell(r.group || '—')}</td>
           <td class="schedule-auto-intake">${escapeHtml(getScheduleAutoTimeIntakeLabel(r))}</td>
-          <td class="schedule-auto-teacher">${escapeHtml(r.teachers || '—')}</td>
+          <td class="schedule-auto-teacher">${formatScheduleAutoMultilineCell(r.teachers || '—')}</td>
           <td class="schedule-auto-class-time">${escapeHtml(r.classTime || '—')}</td>
           <td class="col-center schedule-auto-ops-col" onclick="event.stopPropagation()">${renderScheduleAutoTimeJumpAction(r)}</td>
         </tr>`;
@@ -84535,7 +84823,12 @@ function unlockScheduleAutoTimeSelected() {
   alert(n ? `已解锁 ${n} 门课程` : '所选课程未锁定');
 }
 
-function renderScheduleAutoTimePage() {
+/**
+ * 渲染自动排课页。
+ * @param {{ refreshResult?: boolean }} [opts] refreshResult=false 时只同步筛选项控件，不重刷待排板
+ */
+function renderScheduleAutoTimePage(opts = {}) {
+  const refreshResult = opts.refreshResult !== false;
   ensureScheduleGlobalDemo();
   ensureScheduleAutoTimeTermSelect(true);
   rebuildScheduleAutoFilterOptions('sat');
@@ -84543,12 +84836,18 @@ function renderScheduleAutoTimePage() {
   const termUnits = collectScheduleAutoTimeUnits().filter(u => !term || u.termCode === term);
   fillScheduleAutoTimeMetaFilters(termUnits);
   syncScheduleAutoTimeCourseFilterDisplay();
+  // 首次进入：把当前草稿固化为已生效，避免待排板空白
+  if (!scheduleAutoTimeAppliedQuery) {
+    scheduleAutoTimeAppliedQuery = readScheduleAutoTimeDraftQuery();
+  }
+  if (!refreshResult) return;
   const units = getScheduleAutoTimeFilteredUnits();
   const pendingUnits = units.filter(u => u.status === 'pending');
-  const hint = document.getElementById('schedule-auto-time-hint');
-  if (hint) {
-    hint.innerHTML = `查询范围内开课任务 <strong>${units.length}</strong> 个 · 未排完 <strong>${pendingUnits.length}</strong> 个（点击「自动排课」将对未排任务执行）`;
-  }
+  // 弃用：写入 #schedule-auto-time-hint。原因：该提示行已按产品要求去掉，避免空节点写入
+  // const hint = document.getElementById('schedule-auto-time-hint');
+  // if (hint) {
+  //   hint.innerHTML = `查询范围内开课任务 <strong>${units.length}</strong> 个 · 未排完 <strong>${pendingUnits.length}</strong> 个（点击「自动排课」将对未排任务执行）`;
+  // }
   syncScheduleAutoTimeProgressUi();
   const startBtn = document.getElementById('btn-sat-start');
   const stopBtn = document.getElementById('btn-sat-stop');
@@ -84563,23 +84862,34 @@ function renderScheduleAutoTimePage() {
 
 function resetScheduleAutoTimeQuery() {
   ensureScheduleAutoTimeTermSelect(false);
-  ['sat-filter-school', 'sat-filter-prog', 'sat-filter-intake', 'sat-filter-category', 'sat-filter-nature', 'sat-filter-teacher'].forEach(id => {
+  // 学院/专业已改为多选状态，不再写原生 select value
+  ['sat-filter-intake', 'sat-filter-category', 'sat-filter-nature', 'sat-filter-teacher'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  scheduleAutoTimeSelectedSchools = [];
+  scheduleAutoTimeSelectedProgrammes = [];
   scheduleAutoTimeSelectedCourseCodes = [];
   scheduleAutoTimeCoursePickerDraft = new Set();
   scheduleAutoTimeSelectedIds.clear();
+  closeAllScheduleAutoTimeMs();
   syncScheduleAutoTimeCourseFilterDisplay();
-  renderScheduleAutoTimePage();
+  // 重置同时清空并立即生效，待排板回到默认范围
+  scheduleAutoTimeAppliedQuery = readScheduleAutoTimeDraftQuery();
+  renderScheduleAutoTimePage({ refreshResult: true });
 }
 
 function syncScheduleAutoTimeProgressUi() {
   const pendingUnits = getScheduleAutoTimeScopePendingUnits();
   const job = SCHEDULE_AUTO_STORE.timeJob;
   const bar = document.getElementById('sat-progress-bar');
+  const barWrap = document.getElementById('sat-progress-bar-wrap');
   const text = document.getElementById('sat-progress-text');
   const scopePending = pendingUnits.length;
+  // 进度条仅在已开排（含进行中/结束/完成）时显示；未开排或已撤回则隐藏
+  const showBar = !!(job && job.status && job.status !== 'revoked');
+
+  if (barWrap) barWrap.hidden = !showBar;
 
   if (!job || job.status === 'revoked') {
     if (bar) bar.style.width = '0%';

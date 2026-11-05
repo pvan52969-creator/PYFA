@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="6a1a463">
+  <meta name="portal-build" content="49d6fde">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -247,7 +247,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 6a1a463">1102排课1</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 49d6fde">1105排课1</div>
         </div>
       </div>
     </section>
@@ -3280,41 +3280,63 @@
 
     <!-- ═══ 自动排课表时间 · 自动排课 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-auto-time">
+      <!-- 弃用：页头标题/副标题。原因：产品要求去掉，页面直接从查询区开始 -->
+      <!--
       <div class="page-header">
         <div>
           <h1>自动排课</h1>
           <p class="subtitle">按查询条件范围内的未排开课任务自动排课；成功后静默提交至排课表教室</p>
         </div>
       </div>
+      -->
       <div class="card schedule-query-card schedule-auto-run-card">
         <div class="schedule-query-row schedule-auto-run-row">
           <div class="schedule-query-fields schedule-query-fields-wide">
             <div class="schedule-query-field">
               <label for="sat-filter-term">学年学期</label>
-              <select class="input input-sm" id="sat-filter-term" onchange="renderScheduleAutoTimePage()"></select>
+              <select class="input input-sm" id="sat-filter-term" onchange="onScheduleAutoTimeDraftFilterChange()"></select>
             </div>
             <div class="schedule-query-field">
-              <label for="sat-filter-school">学院</label>
-              <select class="input input-sm" id="sat-filter-school" onchange="renderScheduleAutoTimePage()"></select>
+              <label id="sat-filter-school-label">学院</label>
+              <div class="clo-multiselect" id="sat-filter-school-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="sat-filter-school-btn"
+                  onclick="toggleScheduleAutoTimeSchoolMs(event)" aria-labelledby="sat-filter-school-label" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="clo-multiselect-display placeholder" id="sat-filter-school-display">全部学院</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="sat-filter-school-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="sat-filter-school-options"></div>
+                </div>
+              </div>
             </div>
             <div class="schedule-query-field">
-              <label for="sat-filter-prog">专业</label>
-              <select class="input input-sm" id="sat-filter-prog" onchange="renderScheduleAutoTimePage()"></select>
+              <label id="sat-filter-prog-label">专业</label>
+              <div class="clo-multiselect" id="sat-filter-prog-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="sat-filter-prog-btn"
+                  onclick="toggleScheduleAutoTimeProgMs(event)" aria-labelledby="sat-filter-prog-label" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="clo-multiselect-display placeholder" id="sat-filter-prog-display">全部专业</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="sat-filter-prog-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="sat-filter-prog-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- 第一行固定 4 条件：学年学期 / 学院 / 专业 / 入学批次；第 5 列为确定重置 -->
+            <div class="schedule-query-field">
+              <label for="sat-filter-intake">入学批次</label>
+              <select class="input input-sm" id="sat-filter-intake" onchange="onScheduleAutoTimeDraftFilterChange()"></select>
             </div>
             <div class="schedule-query-more">
             <div class="schedule-query-field">
-              <label for="sat-filter-intake">入学批次</label>
-              <select class="input input-sm" id="sat-filter-intake" onchange="renderScheduleAutoTimePage()"></select>
-            </div>
-            <div class="schedule-query-field">
               <label for="sat-filter-category">课程类别</label>
-              <select class="input input-sm" id="sat-filter-category" onchange="renderScheduleAutoTimePage()">
+              <select class="input input-sm" id="sat-filter-category" onchange="onScheduleAutoTimeDraftFilterChange()">
                 <option value="">全部</option>
               </select>
             </div>
             <div class="schedule-query-field">
               <label for="sat-filter-nature">课程性质</label>
-              <select class="input input-sm" id="sat-filter-nature" onchange="renderScheduleAutoTimePage()">
+              <select class="input input-sm" id="sat-filter-nature" onchange="onScheduleAutoTimeDraftFilterChange()">
                 <option value="">全部</option>
               </select>
             </div>
@@ -3325,30 +3347,43 @@
             </div>
             <div class="schedule-query-field">
               <label for="sat-filter-teacher">教师</label>
-              <input class="input input-sm" id="sat-filter-teacher" placeholder="教师工号 / 姓名" oninput="renderScheduleAutoTimePage()">
+              <input class="input input-sm" id="sat-filter-teacher" placeholder="教师工号 / 姓名" oninput="onScheduleAutoTimeDraftFilterChange()">
             </div>
             </div>
           </div>
           <div class="schedule-auto-run-actions">
-            <button class="btn btn-primary" type="button" id="btn-sat-start" onclick="startScheduleAutoTimeJob()">自动排课</button>
-            <button class="btn btn-outline btn-sm" type="button" id="btn-sat-stop" onclick="stopScheduleAutoTimeJob()" disabled>结束排课</button>
-            <button class="btn btn-outline btn-sm" type="button" id="btn-sat-revoke" onclick="revokeScheduleAutoTimeJob()">撤回结果</button>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleAutoTimeQuery()">重置</button>
+            <button class="btn btn-primary btn-sm" type="button" id="btn-sat-apply" onclick="applyScheduleAutoTimeQuery()">确定</button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleAutoTimeQuery()">重置</button>
             <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
-        <div class="schedule-auto-run-scope" id="schedule-auto-time-hint"></div>
+        <!-- 弃用：查询范围提示行（与下方进度文案重复）。原因：产品要求去掉该行，范围说明改由进度文案承接 -->
+        <!-- <div class="schedule-auto-run-scope" id="schedule-auto-time-hint"></div> -->
       </div>
       <div class="card schedule-card schedule-auto-boards-card">
         <div class="schedule-auto-progress-line" id="sat-progress-line">
-          <div class="schedule-auto-progress-bar"><span id="sat-progress-bar" style="width:0%"></span></div>
-          <div class="schedule-auto-progress-text" id="sat-progress-text">设置查询条件后点击「自动排课」</div>
+          <!-- 进度条：仅任务开始后显示，平时 hidden -->
+          <div class="schedule-auto-progress-bar" id="sat-progress-bar-wrap" hidden>
+            <span id="sat-progress-bar" style="width:0%"></span>
+          </div>
+          <div class="schedule-auto-progress-meta">
+            <div class="schedule-auto-progress-text" id="sat-progress-text">设置查询条件后点击「自动排课」</div>
+            <div class="schedule-auto-run-scope-actions">
+              <button class="btn btn-primary btn-sm" type="button" id="btn-sat-start" onclick="startScheduleAutoTimeJob()">自动排课</button>
+              <button class="btn btn-outline btn-sm" type="button" id="btn-sat-stop" onclick="stopScheduleAutoTimeJob()" disabled>结束排课</button>
+              <button class="btn btn-outline btn-sm" type="button" id="btn-sat-revoke" onclick="revokeScheduleAutoTimeJob()">撤回结果</button>
+            </div>
+          </div>
         </div>
-        <div class="schedule-auto-boards">
-          <div class="schedule-auto-board is-pending">
+        <!-- 仅自动排时间：待排/已排 Tab 切换，避免双栏挤宽；排教室侧保持双栏不动 -->
+        <div class="schedule-detail-tabs schedule-auto-result-tabs" id="sat-result-tabs" role="tablist" aria-label="自动排课结果">
+          <button type="button" class="schedule-detail-tab is-active" role="tab" aria-selected="true" data-sat-tab="pending" onclick="setScheduleAutoTimeResultTab('pending')">待排 <span id="sat-left-count">0</span></button>
+          <button type="button" class="schedule-detail-tab" role="tab" aria-selected="false" data-sat-tab="success" onclick="setScheduleAutoTimeResultTab('success')">已排 <span id="sat-right-count">0</span></button>
+        </div>
+        <div class="schedule-auto-boards is-sat-tabbed">
+          <div class="schedule-auto-board is-pending" data-sat-tab-panel="pending">
             <div class="schedule-auto-board-head">
               <span>待排课程</span>
-              <strong id="sat-left-count">0</strong>
             </div>
             <div class="table-wrap schedule-auto-board-table-wrap">
               <table class="data-table schedule-auto-board-table">
@@ -3362,17 +3397,17 @@
                     <th class="schedule-auto-group">课程组</th>
                     <th class="schedule-auto-intake">上课批次</th>
                     <th class="schedule-auto-teacher">授课老师</th>
+                    <th class="col-center schedule-auto-ops-col">操作</th>
                   </tr>
                 </thead>
                 <tbody id="sat-left-body"></tbody>
               </table>
             </div>
           </div>
-          <div class="schedule-auto-board is-success">
+          <div class="schedule-auto-board is-success" data-sat-tab-panel="success" hidden>
             <div class="schedule-auto-board-head">
               <div class="schedule-auto-board-head-title">
-                <span>成功课程</span>
-                <strong id="sat-right-count">0</strong>
+                <span>已排课程</span>
               </div>
               <div class="schedule-auto-board-head-actions">
                 <button class="btn btn-outline btn-sm" type="button" id="btn-sat-lock" onclick="lockScheduleAutoTimeSelected()" disabled>锁定</button>
@@ -3388,7 +3423,7 @@
                 <thead>
                   <tr>
                     <th class="col-center srf-col-pick schedule-auto-pick-col">
-                      <input type="checkbox" id="sat-success-check-all" title="全选成功课程" onchange="toggleScheduleAutoTimeSuccessCheckAll(this.checked)">
+                      <input type="checkbox" id="sat-success-check-all" title="全选已排课程" onchange="toggleScheduleAutoTimeSuccessCheckAll(this.checked)">
                     </th>
                     <th class="col-status schedule-auto-status-col">排课状态</th>
                     <th class="schedule-auto-code">Course Code</th>

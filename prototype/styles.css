@@ -11212,11 +11212,10 @@ code {
   overflow: visible;
   margin-bottom: 12px;
 }
+/* 产品要求：GE/ME 开课统计卡标题栏不要纵向冻结，随主内容滚动（原 sticky top:0 已停用） */
 #page-course-ge-offering-roster #ge-offering-roster-stats-card .ge-offering-roster-stats-card-head {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: var(--blue-50);
+  position: static;
+  z-index: auto;
 }
 #page-course-ge-offering-roster .course-ge-roster-list-card {
   flex: 1;

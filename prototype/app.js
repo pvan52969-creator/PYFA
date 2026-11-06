@@ -13438,8 +13438,72 @@ function seedGeOfferingTaskPageDemosIntoCurrentStore() {
 /** 会话内只 bootstrap 一次，避免版本号被 ensure 提前打标后漏种，或重复补种 */
 let geOfferingTaskPageDemosBootstrapped = false;
 
+/** ME 选修开课演示：与 GE 分开计数；有 ME 行/班则不再补种 */
+const ME_OFFERING_TASK_PAGE_DEMO_VERSION = 'v1'; // v1：启动补种若干已生效 ME 开课，供 ME Tab 预览
+
+function storeHasMeOfferingPlanData(store = COURSE_OFFERING_PLAN_STORE) {
+  if (!store) return false;
+  const isTtl = (row) => !!(row && (row._ttlCourseTypeDemo || row._ttlHistoricalDemo));
+  if ((store.lines || []).some(l => {
+    if (!l || l.offeringType !== 'ge' || isTtl(l)) return false;
+    if (l.source === 'me') return true;
+    // 课号非 G 开头的校选视为 ME（与 isMeOfferingGeSection 一致）
+    return typeof resolveSchoolElectiveType === 'function'
+      && resolveSchoolElectiveType({ code: l.code, electiveType: l.electiveType }) === 'ME';
+  })) return true;
+  if ((store.sections || []).some(s => {
+    if (!s || s.offeringType !== 'ge' || isTtl(s)) return false;
+    if (s.source === 'me') return true;
+    return typeof isMeOfferingGeSection === 'function' && isMeOfferingGeSection(s);
+  })) return true;
+  return false;
+}
+
 /**
- * 启动一次性：仅当前学期在无通识数据时补演示课。
+ * 当前学期无 ME 开课时补演示：优先管辖内 ME 库课，生成已分组且多数已生效的任务。
+ * 作用：选修开课安排 / 名单页切到「ME」Tab 时不再空列表。
+ */
+function seedMeOfferingTaskPageDemosIntoCurrentStore() {
+  if (!COURSE_OFFERING_PLAN_STORE) return;
+  if (storeHasMeOfferingPlanData()) return;
+  if (typeof appendMeOfferingOpenSectionToPlan !== 'function') return;
+
+  const targetCount = 3;
+  const termCode = COURSE_OFFERING_PLAN_STORE.termCode || getDefaultOfferingTermCode();
+  const termDisplay = getDefaultOfferingTermDisplay() || '';
+  const managed = typeof getPrototypeRoleManagedProgrammeCodes === 'function'
+    ? getPrototypeRoleManagedProgrammeCodes()
+    : new Set();
+  const meLibOk = (course) => {
+    const lib = String(course?.meLibraryProgramme || '').trim().toUpperCase();
+    if (!lib) return true;
+    if (!managed.size) return true;
+    return managed.has(lib);
+  };
+  const courses = ensureSchoolElectiveCourseStore()
+    .filter(c => c
+      && c.status === 'active'
+      && resolveSchoolElectiveType(c) === 'ME'
+      && meLibOk(c)
+      && !isGeOfferingSchoolElectiveInPlan(c, termCode))
+    .sort((a, b) => String(a.code || '').localeCompare(String(b.code || '')))
+    .slice(0, targetCount);
+  if (!courses.length) return;
+
+  courses.forEach((course, idx) => {
+    // 走正式 ME 开课路径：写入 source=me 的 ge 行/班，并预填专业批次
+    const { section } = appendMeOfferingOpenSectionToPlan(course, termDisplay);
+    if (!section) return;
+    prepareGeOfferingTaskDemoSection(section, { groupCount: idx === 0 ? 3 : 2 });
+    // 「开好的」：前两门做成已生效安排（含齐套授课确认），第三门保留草稿便于对比
+    if (idx <= 1) {
+      markGeOfferingDemoSectionSubmitted(section);
+    }
+  });
+}
+
+/**
+ * 启动一次性：仅当前学期在无通识数据时补演示课；并在无 ME 数据时补 ME 已开课演示。
  * 禁止从「开课计划」渲染 / 计划重生 / 选修页刷新调用。
  */
 function seedGeOfferingTaskPageDemosAtBootstrap() {
@@ -13450,13 +13514,17 @@ function seedGeOfferingTaskPageDemosAtBootstrap() {
   if (!store) return;
   // 不看版本号：只看是否已有通识数据（init/ensure 可能已提前打上版本号）
   seedGeOfferingTaskPageDemosIntoCurrentStore();
+  // ME 与 GE 独立：已有 GE 演示时仍可补 ME，避免 ME Tab 空列表
+  seedMeOfferingTaskPageDemosIntoCurrentStore();
   Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).forEach(s => {
     if (s) delete s._geReservedSpotsDefaultZeroMigratedV2;
   });
   migrateGeOfferingReservedSpotsDefaultZero();
   store._geTaskPageDemosVersion = GE_OFFERING_TASK_PAGE_DEMO_VERSION;
+  store._meTaskPageDemosVersion = ME_OFFERING_TASK_PAGE_DEMO_VERSION;
   Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).forEach(s => {
     if (s && !s._geTaskPageDemosVersion) s._geTaskPageDemosVersion = GE_OFFERING_TASK_PAGE_DEMO_VERSION;
+    if (s && !s._meTaskPageDemosVersion) s._meTaskPageDemosVersion = ME_OFFERING_TASK_PAGE_DEMO_VERSION;
   });
   healGeOfferingSubmittedTeacherConfirmConsistency();
 }
@@ -76174,11 +76242,13 @@ if (!prototypeRuntimeMockLoadedAtBootstrap) {
   initCourseOfferingPlanStore();
   // generateCourseOfferingPlan({ silent: true }); // 原改由开课页按需生成；排课模块合并后需完整开课计划驱动入学批次列表，见下行
   generateCourseOfferingPlan({ silent: true }); // 合并 new 版：启动时从已提交执行计划生成开课计划，供入学批次排课汇总
-  // 通识演示仅此处补一次；之后 ensureGeOfferingTaskPageDemos 只纠偏不加课
+  // 通识演示仅此处补一次；之后 ensureGeOfferingTaskPageDemos 只纠偏不加课（内含 ME 演示补种）
   seedGeOfferingTaskPageDemosAtBootstrap();
   ensureSpecialOfferingTaskPageDemos();
 } else {
   syncCourseOfferingPlanStoreFromTerm(getDefaultOfferingTermCode());
+  // 运行时 mock 可能只有 GE：无 ME 开课时补若干已生效 ME 演示，避免 ME Tab 空列表
+  seedMeOfferingTaskPageDemosIntoCurrentStore();
 }
 syncAllVersionEndIntakes();
 bindProgramCourseFilters();

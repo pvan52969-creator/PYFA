@@ -19226,10 +19226,11 @@ tr.is-assign-voided .group-assign-voided-tag,
   flex: 0 0 auto;
   flex-shrink: 0;
 }
+/* 原：width 52 / min 48 / max 58 — 仅够单输入；告警「!」出现时 44+4+18 溢出 */
 .offering-group-status-assign-table .col-weekly {
-  width: 52px;
-  min-width: 48px;
-  max-width: 58px;
+  width: 76px;
+  min-width: 72px;
+  max-width: 84px;
   padding-left: 2px;
   padding-right: 2px;
   white-space: nowrap;
@@ -19260,9 +19261,10 @@ tr.is-assign-voided .group-assign-voided-tag,
   padding-right: 3px;
 }
 .offering-group-status-assign-table .col-classroom-pref {
-  width: 120px;
-  min-width: 110px;
-  max-width: 140px;
+  /* 原 120/110/140：芯片「A1#109」被 ellipsis 截成看不清，加宽并允许完整教室号 */
+  width: 168px;
+  min-width: 150px;
+  max-width: 220px;
   border-right: 1px solid var(--border-light);
 }
 .offering-group-status-assign-draft .offering-group-status-classroom-attr-select,
@@ -19279,16 +19281,78 @@ tr.is-assign-voided .group-assign-voided-tag,
   z-index: 40;
   max-height: 280px;
   min-width: 260px;
+  max-width: 320px;
+  width: max(100%, 260px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
 }
 .offering-group-status-pref-multiselect .clo-multiselect-dropdown[hidden] {
   display: none !important;
 }
-.offering-group-status-pref-multiselect .mos-edit-classroom-ref-options {
+.offering-group-status-pref-multiselect .mos-edit-classroom-ref-options,
+.offering-group-status-pref-multiselect .classroom-pref-remark-options {
   overflow-y: auto;
   max-height: 220px;
+}
+/* Others：在触发器与下拉之间常显；下拉相对整个 multiselect 定位，不会盖住输入框 */
+.classroom-pref-editor {
+  display: block;
+  min-width: 0;
+  width: 100%;
+}
+.classroom-pref-others-wrap {
+  /* 原挂在编辑器底部会被 absolute 下拉盖住；改到 trigger 与 dropdown 之间 */
+  margin-top: 4px;
+  padding: 0;
+  border-top: 0;
+  flex: 0 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+.classroom-pref-others-wrap[hidden] {
+  display: none !important;
+}
+.classroom-pref-others-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 28px;
+}
+.classroom-pref-remark-option {
+  white-space: normal;
+  align-items: flex-start;
+}
+/* 统一勾选框尺寸，避免长文案行被压成 14×16 / 16×16 不一 */
+.offering-group-status-pref-multiselect .classroom-pref-remark-option input[type="checkbox"],
+.mos-edit-classroom-ref-multiselect .classroom-pref-remark-option input[type="checkbox"],
+.classroom-pref-remark-option input.classroom-pref-remark-check,
+.classroom-pref-remark-option input.offering-group-status-pref-check {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 16px;
+  max-height: 16px;
+  margin: 2px 0 0;
+  flex: 0 0 16px;
+  box-sizing: border-box;
+  accent-color: var(--blue-600);
+  cursor: pointer;
+}
+.classroom-pref-remark-option > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.35;
+}
+.mos-edit-classroom-ref-multiselect[data-pref-mode="remarks"] .clo-multiselect-dropdown,
+.offering-group-status-pref-multiselect[data-pref-mode="remarks"] .clo-multiselect-dropdown {
+  min-width: 260px;
+  max-width: 320px;
+}
+.offering-group-status-assign-draft .classroom-pref-editor {
+  max-width: 100%;
 }
 .offering-group-status-pref-disabled {
   font-size: 12px;
@@ -19349,23 +19413,29 @@ tr.is-assign-voided .group-assign-voided-tag,
 }
 /* .offering-group-status-simul-toggle / .offering-group-status-simul-opt { ... } 原分段按钮 */
 .offering-group-status-weekly-edit {
-  display: flex;
+  display: inline-flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 4px;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* 防止 input+告警图标被列宽裁切后撑破单元格 */
+  overflow: visible;
 }
 .offering-group-status-weekly-edit .offering-group-status-weekly-input {
   flex: 0 0 auto;
   width: 44px;
-  min-width: 44px;
-  max-width: 52px;
+  min-width: 40px;
+  max-width: 44px;
   text-align: center;
   padding-left: 4px;
   padding-right: 4px;
 }
 .offering-group-status-weekly-warn {
-  flex-shrink: 0;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
   margin-top: 0;
   cursor: help;
   position: relative;
@@ -19426,10 +19496,12 @@ tr.is-assign-voided .group-assign-voided-tag,
   padding-right: 4px;
   overflow: hidden;
 }
+/* 原：width 168 / max-width none / overflow visible — 教师名+chip×+清空×+▾+更多 撑破表格 */
 .offering-group-status-assign-table.is-editing-draft .col-teacher {
-  min-width: 160px;
-  width: 168px;
-  max-width: none;
+  min-width: 180px;
+  width: 200px;
+  max-width: 220px;
+  /* 编辑态下拉需可见；单元格内容收缩由内部 trigger overflow 处理 */
   overflow: visible;
 }
 .offering-group-status-assign-table .col-total {
@@ -19529,6 +19601,21 @@ tr.is-assign-voided .group-assign-voided-tag,
   min-width: 0;
   flex: 1 1 auto;
 }
+/* 教室偏好：教室号短且关键，禁止省略号截断（教师/课程组芯片仍可用 ellipsis） */
+.offering-group-status-assign-draft .offering-group-status-pref-multiselect .offering-group-status-chip {
+  max-width: none;
+  flex: 0 0 auto;
+}
+.offering-group-status-assign-draft .offering-group-status-pref-multiselect .offering-group-status-chip-label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  min-width: auto;
+  flex: 0 0 auto;
+}
+.offering-group-status-assign-draft .offering-group-status-pref-multiselect .clo-multiselect-display.offering-group-status-chips {
+  overflow: visible;
+}
 .offering-group-status-chip-remove {
   flex: 0 0 auto;
   border: 0;
@@ -19599,7 +19686,7 @@ tr.is-assign-voided .group-assign-voided-tag,
   display: none !important;
 }
 .offering-group-status-assign-draft .offering-group-status-teacher-edit {
-  align-items: flex-start;
+  align-items: center;
 }
 .offering-group-status-teacher-line {
   display: block;
@@ -19833,12 +19920,15 @@ tr.is-assign-voided .group-assign-voided-tag,
   max-width: 52px;
 }
 .offering-group-status-assign-table .col-weekly .offering-group-status-weekly-input {
+  /* 固定输入宽度，给右侧告警「!」留位，避免 width:100% 挤占图标 */
   width: 44px;
-  min-width: 44px;
-  max-width: 52px;
+  min-width: 40px;
+  max-width: 44px;
 }
 .offering-group-status-assign-draft .col-weekly .offering-group-status-weekly-input {
   width: 44px;
+  min-width: 40px;
+  max-width: 44px;
 }
 .offering-group-status-assign-draft td {
   background: var(--blue-50, #eff6ff);
@@ -19852,10 +19942,11 @@ tr.is-assign-voided .group-assign-voided-tag,
 }
 .offering-group-status-assign-draft .col-teacher {
   text-align: center;
+  /* 原 overflow:hidden — 历史教师下拉被裁；姓名截断交给 trigger/chips */
   overflow: visible;
-  min-width: 160px;
-  width: 168px;
-  max-width: none;
+  min-width: 180px;
+  width: 200px;
+  max-width: 220px;
 }
 .offering-group-status-assign-draft .col-groups .input,
 .offering-group-status-assign-draft .col-teacher .input {
@@ -19868,9 +19959,15 @@ tr.is-assign-voided .group-assign-voided-tag,
   gap: 4px;
   min-width: 0;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
+/* 原：min-width 170px — 再加「更多」按钮后必然溢出单元格 */
 .offering-group-status-assign-draft .offering-group-status-teacher-edit {
-  min-width: 170px;
+  /* min-width: 170px; */
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 .offering-group-status-prior-teacher-multiselect {
   flex: 1 1 auto;
@@ -19878,18 +19975,28 @@ tr.is-assign-voided .group-assign-voided-tag,
   max-width: 100%;
   width: auto;
   position: relative;
+  /* 原 overflow:hidden — 会裁掉绝对定位下拉，历史教师看起来像「没有」；改 visible，下拉用 fixed 浮层 */
+  overflow: visible;
 }
 .offering-group-status-prior-teacher-multiselect .clo-multiselect-trigger {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
-.offering-group-status-prior-teacher-multiselect .clo-multiselect-dropdown {
+.offering-group-status-prior-teacher-multiselect .clo-multiselect-dropdown,
+.offering-group-status-prior-teacher-dropdown {
   z-index: 40;
   max-height: 220px;
   right: auto;
-  min-width: 100%;
-  width: max-content;
-  max-width: min(280px, 70vw);
+  /* 原 min-width:100% + width:max-content：fixed 后 100% 相对视口，下拉被拉到整屏宽 */
+  /* min-width: 100%; */
+  /* width: max-content; */
+  width: 100%;
+  max-width: 280px;
+  box-sizing: border-box;
+  /* 打开时由 JS 设为 position:fixed，并写入具体 width/minWidth */
 }
 .offering-group-status-prior-teacher-dropdown .clo-multiselect-option > span {
   white-space: nowrap;
@@ -19908,10 +20015,23 @@ tr.is-assign-voided .group-assign-voided-tag,
   max-width: 100%;
   width: auto;
 }
+/* 原：min-width 140px — 窄列内与「更多」并排时撑破；改为可收缩，姓名 ellipsis */
 .offering-group-status-assign-draft .offering-group-status-prior-teacher-select,
 .offering-group-status-assign-draft .offering-group-status-prior-teacher-multiselect,
 .offering-group-status-assign-draft .offering-group-status-prior-teacher-multiselect .clo-multiselect-trigger {
-  min-width: 140px;
+  /* min-width: 140px; */
+  min-width: 0;
+}
+.offering-group-status-assign-draft .offering-group-status-prior-teacher-multiselect .clo-multiselect-display.offering-group-status-chips {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+}
+.offering-group-status-assign-draft .offering-group-status-prior-teacher-multiselect .offering-group-status-chip {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 .offering-group-status-teacher-more-btn {
   flex: 0 0 auto;

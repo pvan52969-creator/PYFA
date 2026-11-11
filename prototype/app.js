@@ -8466,6 +8466,128 @@ function getClassroomAttributeLabel(value) {
   return CLASSROOM_ATTRIBUTE_OPTIONS.find(o => o.value === value)?.label || value || '';
 }
 
+/**
+ * 普通教室「教室偏好」设施 remark（稳定英文 value；UI 展示 labelEn）
+ * labelZh 保留作对照，当前界面按产品要求显示英文。
+ */
+const CLASSROOM_NORMAL_REMARK_OPTIONS = [
+  { value: 'desk_set_computer', labelEn: 'Desk Set for Computer Class Preferred', labelZh: '偏好电脑课课桌套装' },
+  { value: 'round_table', labelEn: 'Round Table Preferred', labelZh: '偏好圆桌' },
+  { value: 'lecture_hall', labelEn: 'Lecture Hall Preferred', labelZh: '偏好讲堂' },
+  { value: 'large_whiteboard', labelEn: 'Large Whiteboard Required', labelZh: '需要大白板' },
+  { value: 'smartboard', labelEn: 'Smartboard Required', labelZh: '需要智能白板' },
+  { value: 'others', labelEn: 'Others', labelZh: '其他' }
+];
+const CLASSROOM_NORMAL_REMARK_VALUE_SET = new Set(CLASSROOM_NORMAL_REMARK_OPTIONS.map(o => o.value));
+
+/** 按场地类型决定偏好编辑模式：none | remarks | rooms */
+function getClassroomPreferenceMode(attribute) {
+  const attr = normalizeClassroomAttribute(attribute);
+  if (!attr) return 'none';
+  if (attr === 'normal') return 'remarks';
+  return 'rooms';
+}
+
+function getClassroomNormalRemarkLabel(value) {
+  const v = String(value || '').trim();
+  // 界面展示英文原文（如 Round Table Preferred）
+  return CLASSROOM_NORMAL_REMARK_OPTIONS.find(o => o.value === v)?.labelEn || v || '';
+}
+
+/** 解析偏好列表原始值（数组或分隔字符串）→ 去重非空串 */
+function parseClassroomPreferenceRawList(value) {
+  let list = [];
+  if (Array.isArray(value)) {
+    list = value.map(v => String(v || '').trim()).filter(Boolean);
+  } else if (value != null && value !== '') {
+    const raw = String(value).trim();
+    if (raw.includes('、') || raw.includes(';') || raw.includes('，') || raw.includes(',')) {
+      list = raw.split(/[、;，,]/).map(s => s.trim()).filter(Boolean);
+    } else {
+      list = [raw];
+    }
+  }
+  return [...new Set(list.filter(v => v && v !== DEFAULT_REFERENCE_CLASSROOM))];
+}
+
+/**
+ * 普通教室 remark 归一化：仅保留目录内 value；遗留教室号一律丢弃。
+ * 作用：避免历史 demo 在普通教室下仍显示 A1#xxx。
+ */
+function normalizeClassroomRemarkList(value) {
+  return parseClassroomPreferenceRawList(value).filter(v => CLASSROOM_NORMAL_REMARK_VALUE_SET.has(v));
+}
+
+/**
+ * 按场地类型归一化偏好 + Others 文本。
+ * 示例：normal + ['round_table','others'] + '靠窗' → 保留两项与文本；
+ * computer + 教室号 → othersText 强制清空。
+ */
+function normalizeClassroomPreferencesForAttribute(attribute, list, othersText) {
+  const mode = getClassroomPreferenceMode(attribute);
+  if (mode === 'none') return { preferences: [], othersText: '' };
+  if (mode === 'remarks') {
+    const preferences = normalizeClassroomRemarkList(list);
+    const hasOthers = preferences.includes('others');
+    // Others 勾选即可，文本非必填、可为空；未勾选则清空文本
+    return {
+      preferences,
+      othersText: hasOthers ? String(othersText == null ? '' : othersText) : ''
+    };
+  }
+  const attr = normalizeClassroomAttribute(attribute);
+  const rooms = getClassroomsByCategories([attr]);
+  return {
+    preferences: normalizeReferenceClassroomList(list, rooms),
+    othersText: ''
+  };
+}
+
+/**
+ * 教室偏好展示文案（普通教室用英文 remark；计算机/专业用教室号）。
+ * 示例：['round_table','others'] + '投影仪' →「Round Table Preferred、Others（投影仪）」
+ */
+function formatClassroomPreferenceDisplay(attribute, list, othersText) {
+  const mode = getClassroomPreferenceMode(attribute);
+  if (mode === 'none') return '无偏好';
+  if (mode === 'remarks') {
+    const prefs = normalizeClassroomRemarkList(list);
+    if (!prefs.length) return '无偏好';
+    const labels = prefs.map(v => {
+      if (v === 'others') {
+        const t = String(othersText || '').trim();
+        return t ? `Others（${t}）` : 'Others';
+      }
+      return getClassroomNormalRemarkLabel(v);
+    });
+    if (labels.length <= 3) return labels.join('、');
+    return `${labels.slice(0, 3).join('、')}...`;
+  }
+  const attr = normalizeClassroomAttribute(attribute) || 'normal';
+  const rooms = getClassroomsByCategories([attr]);
+  const vals = normalizeReferenceClassroomList(list, rooms);
+  if (!vals.length) return '无偏好';
+  if (vals.length <= 2) return vals.join('、');
+  return `${vals.slice(0, 2).join('、')} 等${vals.length}项`;
+}
+
+function formatClassroomPreferenceFullText(attribute, list, othersText) {
+  const mode = getClassroomPreferenceMode(attribute);
+  if (mode === 'remarks') {
+    const prefs = normalizeClassroomRemarkList(list);
+    if (!prefs.length) return '';
+    return prefs.map(v => {
+      if (v === 'others') {
+        const t = String(othersText || '').trim();
+        return t ? `Others（${t}）` : 'Others';
+      }
+      return getClassroomNormalRemarkLabel(v);
+    }).join('、');
+  }
+  const vals = normalizeReferenceClassroomList(list || []);
+  return vals.length ? vals.join('、') : '';
+}
+
 function getClassroomHourTypeLabel(value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -8721,20 +8843,17 @@ function normalizeReferenceClassroomList(value, rooms) {
   return filtered;
 }
 
-function formatReferenceClassroomPreferenceDisplay(list, attribute) {
-  const attr = normalizeClassroomAttribute(attribute) || 'normal';
-  const rooms = getClassroomsByCategories([attr]);
-  const vals = normalizeReferenceClassroomList(list, rooms);
-  if (!vals.length) return '无偏好';
-  if (vals.length <= 2) return vals.join('、');
-  return `${vals.slice(0, 2).join('、')} ?${vals.length}?`;
+function formatReferenceClassroomPreferenceDisplay(list, attribute, othersText) {
+  // 统一走按属性分叉展示（普通教室中文 remark；计算机/专业教室号）
+  return formatClassroomPreferenceDisplay(attribute, list, othersText);
 }
 
 function getDefaultClassroomHourRequirements() {
   return CLASSROOM_ATTR_HOUR_TYPE_OPTIONS.map(h => ({
     hourType: h.value,
     attribute: 'normal',
-    referenceClassrooms: []
+    referenceClassrooms: [],
+    classroomPreferenceOthersText: ''
   }));
 }
 
@@ -8744,25 +8863,31 @@ function getDefaultClassroomHourReferences() {
   return map;
 }
 
-/** 始终补齐四种学时；属性默认普通教室，偏好默认空 */
+/** 始终补齐四种学时；属性默认普通教室，偏好默认空（普通教室存 remark value + 可选 Others 文本） */
 function normalizeClassroomHourRequirements(rows) {
   const byHour = {};
   (Array.isArray(rows) ? rows : []).forEach(row => {
     const hourType = normalizeClassroomAttrHourType(row?.hourType);
     if (!hourType || byHour[hourType]) return;
     const attribute = normalizeClassroomAttribute(row?.attribute) || 'normal';
-    const rooms = getClassroomsByCategories([attribute]);
     const rawRef = row?.referenceClassrooms != null ? row.referenceClassrooms : row?.referenceClassroom;
+    const normalized = normalizeClassroomPreferencesForAttribute(
+      attribute,
+      rawRef,
+      row?.classroomPreferenceOthersText
+    );
     byHour[hourType] = {
       hourType,
       attribute,
-      referenceClassrooms: normalizeReferenceClassroomList(rawRef, rooms)
+      referenceClassrooms: normalized.preferences,
+      classroomPreferenceOthersText: normalized.othersText
     };
   });
   return CLASSROOM_ATTR_HOUR_TYPE_OPTIONS.map(h => byHour[h.value] || {
     hourType: h.value,
     attribute: 'normal',
-    referenceClassrooms: []
+    referenceClassrooms: [],
+    classroomPreferenceOthersText: ''
   });
 }
 
@@ -8811,11 +8936,12 @@ function isDefaultClassroomAttributeBindings(bindings) {
   return DEFAULT_CLASSROOM_ATTR_HOUR_TYPES.every(h => map[h] === 'normal');
 }
 
-/** 四种学时均为普通教室且无参考偏好 */
+/** 四种学时均为普通教室且无参考偏好（含无 Others 文本） */
 function isDefaultClassroomHourRequirements(rows) {
   return normalizeClassroomHourRequirements(rows).every(row =>
     (normalizeClassroomAttribute(row.attribute) || 'normal') === 'normal'
     && !(row.referenceClassrooms || []).length
+    && !String(row.classroomPreferenceOthersText || '').trim()
   );
 }
 
@@ -8826,27 +8952,229 @@ function getClassroomsByCategories(categories) {
     .filter(c => set.has(c.category));
 }
 
-function buildReferenceClassroomMultiselectHtml(attribute, selectedList, hourType, locked) {
-  const attr = normalizeClassroomAttribute(attribute) || 'normal';
-  const rooms = getClassroomsByCategories([attr]);
-  const selected = normalizeReferenceClassroomList(selectedList, rooms);
-  const selectedSet = new Set(selected);
-  const displayText = formatReferenceClassroomPreferenceDisplay(selected, attr);
+/** 普通教室 remark 下拉选项 HTML（仅勾选项；Others 文本框在触发器外侧常显） */
+function buildClassroomRemarkOptionsHtml(selectedList, options = {}) {
+  const selectedSet = new Set(normalizeClassroomRemarkList(selectedList));
+  const disabled = !!options.disabled;
+  const checkClass = options.checkClass || 'classroom-pref-remark-check';
+  const onchange = options.onchange || 'onClassroomPreferenceRemarkToggle(this)';
+  return CLASSROOM_NORMAL_REMARK_OPTIONS.map(opt => {
+    const checked = selectedSet.has(opt.value);
+    return `<label class="clo-multiselect-option classroom-pref-remark-option">
+      <input type="checkbox" class="${checkClass}" value="${escapeHtml(opt.value)}"
+        ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}
+        onchange="${onchange}">
+      <span>${escapeHtml(opt.labelEn)}</span>
+    </label>`;
+  }).join('');
+}
+
+/**
+ * Others 自定义说明输入：挂在多选触发器下方（不必打开下拉即可看到/编辑）。
+ * 文本非必填，可为空。
+ */
+function buildClassroomPrefOthersInputHtml(othersText, options = {}) {
+  const disabled = !!options.disabled;
+  const othersChecked = !!options.othersChecked;
+  const oninput = options.oninput || 'onClassroomPreferenceOthersInput(this)';
+  return `<div class="classroom-pref-others-wrap"${othersChecked ? '' : ' hidden'}>
+    <input type="text" class="input input-sm classroom-pref-others-input"
+      placeholder="Others（optional）"
+      aria-label="Others classroom preference remark"
+      value="${escapeHtml(String(othersText || ''))}"
+      ${disabled ? 'disabled' : ''}
+      onclick="event.stopPropagation()"
+      onkeydown="event.stopPropagation()"
+      oninput="${oninput}">
+  </div>`;
+}
+
+/** 从偏好编辑器根节点取 Others 区域（触发器外侧） */
+function getClassroomPrefEditorRoot(fromEl) {
+  return fromEl?.closest?.('.classroom-pref-editor')
+    || fromEl?.closest?.('.mos-edit-classroom-special-row')
+    || fromEl?.closest?.('.offering-group-status-pref-multiselect')?.parentElement
+    || null;
+}
+
+/**
+ * 共享教室偏好编辑器：普通教室 = remark 多选 + Others；计算机/专业 = 教室号多选。
+ * context: 'hour-row' | 'group-draft'
+ */
+function buildClassroomPreferenceEditorHtml({
+  attribute,
+  selectedList = [],
+  othersText = '',
+  hourType = '',
+  locked = false,
+  context = 'hour-row'
+} = {}) {
+  const mode = getClassroomPreferenceMode(attribute);
+  if (mode === 'none') {
+    return `<span class="text-muted offering-group-status-pref-disabled">先选场地类型</span>`;
+  }
+  const normalized = normalizeClassroomPreferencesForAttribute(attribute, selectedList, othersText);
+  const selected = normalized.preferences;
+  const others = normalized.othersText;
+  const displayText = formatClassroomPreferenceDisplay(attribute, selected, others);
   const isPlaceholder = !selected.length;
-  const optionsInner = buildClassroomRefDropdownInnerHtml(rooms, {
-    selectedSet,
-    disabled: locked
-  });
-  return `<div class="clo-multiselect mos-edit-classroom-ref-multiselect" data-hour-type="${escapeHtml(hourType)}">
-    <button type="button" class="clo-multiselect-trigger input input-sm" ${locked ? 'disabled' : ''}
-      onclick="toggleMajorOfferingClassroomRefDropdown(event, '${escapeHtml(hourType)}')" title="参考教室（可多选，非必填偏好；下拉内可搜教室号或软件名）">
-      <span class="clo-multiselect-display${isPlaceholder ? ' placeholder' : ''}">${escapeHtml(displayText)}</span>
-      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-    </button>
-    <div class="clo-multiselect-dropdown mos-edit-classroom-ref-dropdown" hidden>
-      ${optionsInner}
+  const isDraft = context === 'group-draft';
+  const msClass = isDraft
+    ? 'clo-multiselect offering-group-status-pref-multiselect'
+    : 'clo-multiselect mos-edit-classroom-ref-multiselect';
+  const ddClass = isDraft
+    ? 'clo-multiselect-dropdown offering-group-status-pref-dropdown'
+    : 'clo-multiselect-dropdown mos-edit-classroom-ref-dropdown';
+  const dataHour = hourType ? ` data-hour-type="${escapeHtml(hourType)}"` : '';
+  const dataMode = ` data-pref-mode="${escapeHtml(mode)}"`;
+
+  let optionsInner = '';
+  let title = '';
+  let othersOutsideHtml = '';
+  if (mode === 'remarks') {
+    title = '教室偏好（设施备注，可多选，非必填）';
+    optionsInner = `<div class="clo-multiselect-options classroom-pref-remark-options">${
+      buildClassroomRemarkOptionsHtml(selected, {
+        disabled: locked,
+        checkClass: isDraft ? 'offering-group-status-pref-check classroom-pref-remark-check' : 'classroom-pref-remark-check',
+        onchange: isDraft
+          ? 'onOfferingGroupStatusDraftClassroomPrefToggle(this)'
+          : 'onClassroomPreferenceRemarkToggle(this)'
+      })
+    }</div>`;
+    // Others 输入放在触发器下方常显，避免必须打开下拉才发现可自定义
+    othersOutsideHtml = buildClassroomPrefOthersInputHtml(others, {
+      disabled: locked,
+      othersChecked: selected.includes('others'),
+      oninput: isDraft
+        ? 'onOfferingGroupStatusDraftClassroomOthersInput(this)'
+        : 'onClassroomPreferenceOthersInput(this)'
+    });
+  } else {
+    title = '教室偏好（可多选，非必填；下拉内可搜教室号或软件名）';
+    const rooms = getClassroomsByCategories([normalizeClassroomAttribute(attribute)]);
+    optionsInner = buildClassroomRefDropdownInnerHtml(rooms, {
+      selectedSet: new Set(selected),
+      disabled: locked,
+      checkClass: isDraft ? 'offering-group-status-pref-check' : 'mos-edit-classroom-ref-check',
+      onchange: isDraft
+        ? 'onOfferingGroupStatusDraftClassroomPrefToggle(this)'
+        : 'onMajorOfferingClassroomRefToggle(this)'
+    });
+  }
+
+  if (isDraft) {
+    const hasSelection = selected.length > 0;
+    // Others 放在触发器与下拉之间：常显且下拉 top:100% 会落在输入框下方，不被选项挡住
+    return `<div class="classroom-pref-editor"${dataMode}>
+      <div class="${msClass}"${dataHour}${dataMode}>
+        <div class="clo-multiselect-trigger input input-sm" role="button" tabindex="0"
+          onclick="toggleOfferingGroupStatusDraftPrefDropdown(event)"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOfferingGroupStatusDraftPrefDropdown(event)}"
+          title="${escapeHtml(title)}" aria-label="教室偏好">
+          ${formatOfferingGroupStatusDraftPrefChipsHtml(selected, attribute, others)}
+          ${renderOfferingGroupStatusMultiselectClearBtn('clearOfferingGroupStatusDraftClassroomPrefs', hasSelection)}
+          <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+        </div>
+        ${othersOutsideHtml}
+        <div class="${ddClass}" hidden>
+          ${optionsInner}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="classroom-pref-editor"${dataMode}>
+    <div class="${msClass}"${dataHour}${dataMode}>
+      <button type="button" class="clo-multiselect-trigger input input-sm" ${locked ? 'disabled' : ''}
+        onclick="toggleMajorOfferingClassroomRefDropdown(event, '${escapeHtml(hourType)}')" title="${escapeHtml(title)}">
+        <span class="clo-multiselect-display${isPlaceholder ? ' placeholder' : ''}">${escapeHtml(displayText)}</span>
+        <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+      </button>
+      ${othersOutsideHtml}
+      <div class="${ddClass}" hidden>
+        ${optionsInner}
+      </div>
     </div>
   </div>`;
+}
+
+function buildReferenceClassroomMultiselectHtml(attribute, selectedList, hourType, locked, othersText) {
+  return buildClassroomPreferenceEditorHtml({
+    attribute,
+    selectedList,
+    othersText: othersText || '',
+    hourType,
+    locked,
+    context: 'hour-row'
+  });
+}
+
+/** 学时行：remark 勾选变化时刷新展示；勾选 Others 后在触发器下方露出输入框 */
+function onClassroomPreferenceRemarkToggle(input) {
+  const ms = input?.closest('.mos-edit-classroom-ref-multiselect, .offering-group-status-pref-multiselect');
+  if (!ms) return;
+  const editor = getClassroomPrefEditorRoot(ms);
+  const rowEl = ms.closest('.mos-edit-classroom-special-row');
+  const attribute = normalizeClassroomAttribute(
+    rowEl?.querySelector('.mos-edit-classroom-hour-attr-select')?.value
+  ) || 'normal';
+  const selected = [...ms.querySelectorAll('.classroom-pref-remark-check:checked, .offering-group-status-pref-check.classroom-pref-remark-check:checked')]
+    .map(c => c.value);
+  const othersWrap = editor?.querySelector('.classroom-pref-others-wrap');
+  const othersInput = editor?.querySelector('.classroom-pref-others-input');
+  const hasOthers = selected.includes('others');
+  if (othersWrap) othersWrap.hidden = !hasOthers;
+  if (!hasOthers && othersInput) othersInput.value = '';
+  const othersText = hasOthers ? String(othersInput?.value || '') : '';
+  const display = ms.querySelector('.clo-multiselect-display');
+  if (display) {
+    display.textContent = formatClassroomPreferenceDisplay(attribute, selected, othersText);
+    display.classList.toggle('placeholder', !selected.length);
+  }
+}
+
+function onClassroomPreferenceOthersInput(input) {
+  const editor = getClassroomPrefEditorRoot(input);
+  const ms = editor?.querySelector('.mos-edit-classroom-ref-multiselect, .offering-group-status-pref-multiselect');
+  if (!ms) return;
+  const rowEl = ms.closest('.mos-edit-classroom-special-row');
+  const attribute = normalizeClassroomAttribute(
+    rowEl?.querySelector('.mos-edit-classroom-hour-attr-select')?.value
+  ) || 'normal';
+  const selected = [...ms.querySelectorAll('.classroom-pref-remark-check:checked')]
+    .map(c => c.value);
+  const display = ms.querySelector('.clo-multiselect-display');
+  if (display) {
+    display.textContent = formatClassroomPreferenceDisplay(attribute, selected, input.value);
+    display.classList.toggle('placeholder', !selected.length);
+  }
+}
+
+/**
+ * 从学时行 DOM 收集偏好（按场地类型分叉）。
+ * 普通教室 → remark checks + Others 文本；计算机/专业 → 教室号 checks。
+ */
+function collectClassroomPreferenceFromHourRowEl(rowEl, attribute) {
+  const attr = normalizeClassroomAttribute(attribute)
+    || normalizeClassroomAttribute(rowEl?.querySelector('.mos-edit-classroom-hour-attr-select')?.value)
+    || 'normal';
+  const mode = getClassroomPreferenceMode(attr);
+  if (mode === 'remarks') {
+    const referenceClassrooms = [...(rowEl?.querySelectorAll('.classroom-pref-remark-check:checked') || [])]
+      .map(el => el.value);
+    // Others 输入在触发器外侧 .classroom-pref-editor 内
+    const classroomPreferenceOthersText = referenceClassrooms.includes('others')
+      ? String(rowEl?.querySelector('.classroom-pref-others-input')?.value || '')
+      : '';
+    return { attribute: attr, referenceClassrooms, classroomPreferenceOthersText };
+  }
+  return {
+    attribute: attr,
+    referenceClassrooms: [...(rowEl?.querySelectorAll('.mos-edit-classroom-ref-check:checked') || [])]
+      .map(el => el.value),
+    classroomPreferenceOthersText: ''
+  };
 }
 
 function collectClassroomHourRequirementsFromDom(wrapId = 'mos-edit-classroom-hour-attrs') {
@@ -8855,13 +9183,13 @@ function collectClassroomHourRequirementsFromDom(wrapId = 'mos-edit-classroom-ho
   const rows = [];
   wrap.querySelectorAll('.mos-edit-classroom-special-row').forEach(rowEl => {
     const hourType = normalizeClassroomAttrHourType(rowEl.dataset.hourType);
-    const attribute = normalizeClassroomAttribute(rowEl.querySelector('.mos-edit-classroom-hour-attr-select')?.value) || 'normal';
     if (!hourType) return;
-    const checks = [...rowEl.querySelectorAll('.mos-edit-classroom-ref-check:checked')].map(el => el.value);
+    const pref = collectClassroomPreferenceFromHourRowEl(rowEl);
     rows.push({
       hourType,
-      attribute,
-      referenceClassrooms: checks
+      attribute: pref.attribute,
+      referenceClassrooms: pref.referenceClassrooms,
+      classroomPreferenceOthersText: pref.classroomPreferenceOthersText
     });
   });
   return normalizeClassroomHourRequirements(rows);
@@ -8905,7 +9233,13 @@ function renderClassroomHourAttrList(secOrRows, locked = false, wrapId = 'mos-ed
         onchange="onMajorOfferingSpecialClassroomAttrChange(this)">
         ${attrOpts}
       </select>
-      ${buildReferenceClassroomMultiselectHtml(row.attribute, row.referenceClassrooms, row.hourType, locked)}
+      ${buildReferenceClassroomMultiselectHtml(
+        row.attribute,
+        row.referenceClassrooms,
+        row.hourType,
+        locked,
+        row.classroomPreferenceOthersText
+      )}
     </div>`;
   }).join('');
   wrap.innerHTML = head + body;
@@ -9004,12 +9338,12 @@ function snapshotMajorOfferingEditClassroomFromDom() {
       .map(r => [r.hourType, {
         hourType: r.hourType,
         attribute: r.attribute,
-        referenceClassrooms: [...(r.referenceClassrooms || [])]
+        referenceClassrooms: [...(r.referenceClassrooms || [])],
+        classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
       }])
   );
   wrap.querySelectorAll('.mos-edit-classroom-special-row').forEach(rowEl => {
-    const attribute = normalizeClassroomAttribute(rowEl.querySelector('.mos-edit-classroom-hour-attr-select')?.value) || 'normal';
-    const checks = [...rowEl.querySelectorAll('.mos-edit-classroom-ref-check:checked')].map(el => el.value);
+    const pref = collectClassroomPreferenceFromHourRowEl(rowEl);
     const sources = String(rowEl.dataset.sourceTypes || '')
       .split(',')
       .map(s => normalizeClassroomAttrHourType(s.trim()) || classroomHourKeyFromCn(s.trim()))
@@ -9019,15 +9353,17 @@ function snapshotMajorOfferingEditClassroomFromDom() {
     keys.forEach(key => {
       byHour[key] = {
         hourType: key,
-        attribute,
-        referenceClassrooms: [...checks]
+        attribute: pref.attribute,
+        referenceClassrooms: [...pref.referenceClassrooms],
+        classroomPreferenceOthersText: pref.classroomPreferenceOthersText
       };
     });
   });
   majorOfferingEditClassroomSnapshot = DEFAULT_CLASSROOM_ATTR_HOUR_TYPES.map(h => byHour[h] || {
     hourType: h,
     attribute: 'normal',
-    referenceClassrooms: []
+    referenceClassrooms: [],
+    classroomPreferenceOthersText: ''
   });
 }
 
@@ -9130,7 +9466,8 @@ function initMajorOfferingEditHourTypeDraft(sec) {
     .map(r => ({
       hourType: r.hourType,
       attribute: r.attribute,
-      referenceClassrooms: [...(r.referenceClassrooms || [])]
+      referenceClassrooms: [...(r.referenceClassrooms || [])],
+      classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
     }));
   document.querySelectorAll('input[name="mos-edit-hours-mode"]').forEach(el => {
     el.checked = el.value === majorOfferingEditHoursMode;
@@ -9350,7 +9687,8 @@ function initGeOfferingEditHourTypeDraft(sec) {
     .map(r => ({
       hourType: r.hourType,
       attribute: r.attribute,
-      referenceClassrooms: [...(r.referenceClassrooms || [])]
+      referenceClassrooms: [...(r.referenceClassrooms || [])],
+      classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
     }));
   document.querySelectorAll('input[name="ge-edit-hours-mode"]').forEach(el => {
     el.checked = el.value === majorOfferingEditHoursMode;
@@ -9367,12 +9705,12 @@ function snapshotGeOfferingEditClassroomFromDom() {
       .map(r => [r.hourType, {
         hourType: r.hourType,
         attribute: r.attribute,
-        referenceClassrooms: [...(r.referenceClassrooms || [])]
+        referenceClassrooms: [...(r.referenceClassrooms || [])],
+        classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
       }])
   );
   wrap.querySelectorAll('.mos-edit-classroom-special-row').forEach(rowEl => {
-    const attribute = normalizeClassroomAttribute(rowEl.querySelector('.mos-edit-classroom-hour-attr-select')?.value) || 'normal';
-    const checks = [...rowEl.querySelectorAll('.mos-edit-classroom-ref-check:checked')].map(el => el.value);
+    const pref = collectClassroomPreferenceFromHourRowEl(rowEl);
     const sources = String(rowEl.dataset.sourceTypes || '')
       .split(',')
       .map(s => normalizeClassroomAttrHourType(s.trim()) || classroomHourKeyFromCn(s.trim()))
@@ -9382,15 +9720,17 @@ function snapshotGeOfferingEditClassroomFromDom() {
     keys.forEach(key => {
       byHour[key] = {
         hourType: key,
-        attribute,
-        referenceClassrooms: [...checks]
+        attribute: pref.attribute,
+        referenceClassrooms: [...pref.referenceClassrooms],
+        classroomPreferenceOthersText: pref.classroomPreferenceOthersText
       };
     });
   });
   majorOfferingEditClassroomSnapshot = DEFAULT_CLASSROOM_ATTR_HOUR_TYPES.map(h => byHour[h] || {
     hourType: h,
     attribute: 'normal',
-    referenceClassrooms: []
+    referenceClassrooms: [],
+    classroomPreferenceOthersText: ''
   });
 }
 
@@ -9564,7 +9904,8 @@ function initOtherOfferingEditHourTypeDraft(sec) {
     .map(r => ({
       hourType: r.hourType,
       attribute: r.attribute,
-      referenceClassrooms: [...(r.referenceClassrooms || [])]
+      referenceClassrooms: [...(r.referenceClassrooms || [])],
+      classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
     }));
   document.querySelectorAll('input[name="other-edit-hours-mode"]').forEach(el => {
     el.checked = el.value === majorOfferingEditHoursMode;
@@ -9581,12 +9922,12 @@ function snapshotOtherOfferingEditClassroomFromDom() {
       .map(r => [r.hourType, {
         hourType: r.hourType,
         attribute: r.attribute,
-        referenceClassrooms: [...(r.referenceClassrooms || [])]
+        referenceClassrooms: [...(r.referenceClassrooms || [])],
+        classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
       }])
   );
   wrap.querySelectorAll('.mos-edit-classroom-special-row').forEach(rowEl => {
-    const attribute = normalizeClassroomAttribute(rowEl.querySelector('.mos-edit-classroom-hour-attr-select')?.value) || 'normal';
-    const checks = [...rowEl.querySelectorAll('.mos-edit-classroom-ref-check:checked')].map(el => el.value);
+    const pref = collectClassroomPreferenceFromHourRowEl(rowEl);
     const sources = String(rowEl.dataset.sourceTypes || '')
       .split(',')
       .map(s => normalizeClassroomAttrHourType(s.trim()) || classroomHourKeyFromCn(s.trim()))
@@ -9596,15 +9937,17 @@ function snapshotOtherOfferingEditClassroomFromDom() {
     keys.forEach(key => {
       byHour[key] = {
         hourType: key,
-        attribute,
-        referenceClassrooms: [...checks]
+        attribute: pref.attribute,
+        referenceClassrooms: [...pref.referenceClassrooms],
+        classroomPreferenceOthersText: pref.classroomPreferenceOthersText
       };
     });
   });
   majorOfferingEditClassroomSnapshot = DEFAULT_CLASSROOM_ATTR_HOUR_TYPES.map(h => byHour[h] || {
     hourType: h,
     attribute: 'normal',
-    referenceClassrooms: []
+    referenceClassrooms: [],
+    classroomPreferenceOthersText: ''
   });
 }
 
@@ -9724,7 +10067,7 @@ function onMajorOfferingClassroomRefToggle(input) {
   const selected = checks.filter(c => c.checked).map(c => c.value);
   const display = ms.querySelector('.clo-multiselect-display');
   if (display) {
-    display.textContent = formatReferenceClassroomPreferenceDisplay(selected, attribute);
+    display.textContent = formatClassroomPreferenceDisplay(attribute, selected, '');
     display.classList.toggle('placeholder', !selected.length);
   }
 }
@@ -9735,14 +10078,16 @@ function onMajorOfferingSpecialClassroomAttrChange(sel) {
   const hourType = rowEl.dataset.hourType;
   const attribute = normalizeClassroomAttribute(sel.value) || 'normal';
   rowEl.classList.toggle('is-special', attribute !== 'normal');
-  const msWrap = rowEl.querySelector('.mos-edit-classroom-ref-multiselect');
-  if (!msWrap) return;
-  // 切换属性后重置为 All，并重建可选项
-  msWrap.outerHTML = buildReferenceClassroomMultiselectHtml(
+  // 整块偏好编辑器（含外侧 Others 输入）一并重建并清空
+  const editor = rowEl.querySelector('.classroom-pref-editor')
+    || rowEl.querySelector('.mos-edit-classroom-ref-multiselect');
+  if (!editor) return;
+  editor.outerHTML = buildReferenceClassroomMultiselectHtml(
     attribute,
     [],
     hourType,
-    false
+    false,
+    ''
   );
 }
 
@@ -10080,7 +10425,8 @@ function getSpecialCourseDefaults(code) {
     classroomHourRequirements: normalizeClassroomHourRequirements(row.classroomHourRequirements).map(r => ({
       hourType: r.hourType,
       attribute: r.attribute,
-      referenceClassrooms: [...(r.referenceClassrooms || [])]
+      referenceClassrooms: [...(r.referenceClassrooms || [])],
+      classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
     })),
     groupAssignHoursMode: row.groupAssignHoursMode || 'separate',
     groupAssignPartialMergeGroups: Array.isArray(row.groupAssignPartialMergeGroups)
@@ -10119,7 +10465,8 @@ function applySpecialCourseDefaultsToSection(sec, options = {}) {
     sec.specialClassroomRequirements = defaults.classroomHourRequirements.map(r => ({
       hourType: r.hourType,
       attribute: r.attribute,
-      referenceClassrooms: [...(r.referenceClassrooms || [])]
+      referenceClassrooms: [...(r.referenceClassrooms || [])],
+      classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
     }));
     ensureSectionClassroomInfoFields(sec);
     changed = true;
@@ -10197,7 +10544,7 @@ function getSpecialCourseClassroomSummaryLines(row) {
   const byKey = Object.fromEntries(reqs.map(r => [r.hourType, r]));
   const lineFor = (label, r) => {
     const attr = getClassroomAttributeLabel(r?.attribute || 'normal');
-    const pref = formatReferenceClassroomPreferenceDisplay(r?.referenceClassrooms || [], r?.attribute);
+    const pref = formatReferenceClassroomPreferenceDisplay(r?.referenceClassrooms || [], r?.attribute, r?.classroomPreferenceOthersText);
     return `${label}：${attr}${pref && pref !== '无偏好' ? ` · ${pref}` : ''}`;
   };
   if (mode === 'all') {
@@ -10798,7 +11145,8 @@ function openSpecialCourseSettingsEdit(id) {
     .map(r => ({
       hourType: r.hourType,
       attribute: r.attribute,
-      referenceClassrooms: [...(r.referenceClassrooms || [])]
+      referenceClassrooms: [...(r.referenceClassrooms || [])],
+      classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
     }));
   const set = (eid, val) => {
     const el = document.getElementById(eid);
@@ -10917,12 +11265,12 @@ function snapshotSpecialCourseEditClassroomFromDom() {
       .map(r => [r.hourType, {
         hourType: r.hourType,
         attribute: r.attribute,
-        referenceClassrooms: [...(r.referenceClassrooms || [])]
+        referenceClassrooms: [...(r.referenceClassrooms || [])],
+        classroomPreferenceOthersText: r.classroomPreferenceOthersText || ''
       }])
   );
   wrap.querySelectorAll('.mos-edit-classroom-special-row').forEach(rowEl => {
-    const attribute = normalizeClassroomAttribute(rowEl.querySelector('.mos-edit-classroom-hour-attr-select')?.value) || 'normal';
-    const checks = [...rowEl.querySelectorAll('.mos-edit-classroom-ref-check:checked')].map(el => el.value);
+    const pref = collectClassroomPreferenceFromHourRowEl(rowEl);
     const sources = String(rowEl.dataset.sourceTypes || '')
       .split(',')
       .map(s => normalizeClassroomAttrHourType(s.trim()) || classroomHourKeyFromCn(s.trim()))
@@ -10932,15 +11280,17 @@ function snapshotSpecialCourseEditClassroomFromDom() {
     keys.forEach(key => {
       byHour[key] = {
         hourType: key,
-        attribute,
-        referenceClassrooms: [...checks]
+        attribute: pref.attribute,
+        referenceClassrooms: [...pref.referenceClassrooms],
+        classroomPreferenceOthersText: pref.classroomPreferenceOthersText
       };
     });
   });
   specialCourseEditClassroomSnapshot = DEFAULT_CLASSROOM_ATTR_HOUR_TYPES.map(h => byHour[h] || {
     hourType: h,
     attribute: 'normal',
-    referenceClassrooms: []
+    referenceClassrooms: [],
+    classroomPreferenceOthersText: ''
   });
 }
 
@@ -20335,9 +20685,15 @@ function findOfferingSectionByIdAnywhere(sectionId) {
 
 function ensureGroupAssignmentStableIds(sec) {
   if (!sec?.groupAssignments?.length) return;
+  const seen = new Set();
   sec.groupAssignments.forEach(row => {
     if (!row) return;
-    if (!row.id) row.id = `ga-${offeringGroupAssignSeq++}`;
+    const id = String(row.id || '').trim();
+    // 无 id，或与本课其它安排撞号：重新发号，避免编辑时同 id 多行被一起替换
+    if (!id || seen.has(id)) {
+      row.id = `ga-${offeringGroupAssignSeq++}`;
+    }
+    seen.add(String(row.id));
   });
 }
 
@@ -20462,7 +20818,7 @@ function renderSharedTeachingSlotLinkGroupTableHtml(link) {
       ? formatAssignClassroomAttributeDisplay(row.classroomAttribute)
       : (row.classroomAttribute || '—');
     const classroomPref = typeof formatAssignClassroomPreferenceCellHtml === 'function'
-      ? formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)
+      ? formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute, row.classroomPreferenceOthersText)
       : '—';
     return `<tr>
       <td class="col-center col-stl-term">${escapeHtml(termLabel)}</td>
@@ -20946,7 +21302,7 @@ function renderSharedTeachingSlotLinkModal() {
             ? formatAssignClassroomAttributeDisplay(row.classroomAttribute)
             : (row.classroomAttribute || '—');
           const classroomPref = typeof formatAssignClassroomPreferenceCellHtml === 'function'
-            ? formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)
+            ? formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute, row.classroomPreferenceOthersText)
             : '—';
           return `<tr data-slot-link-key="${escapeHtml(key)}" class="${disabled ? 'is-slot-link-row-disabled' : ''}"${rowTitle}>
             <td class="col-check"><input type="checkbox"${isSelected ? ' checked' : ''}${disabled ? ' disabled' : ''}
@@ -22376,7 +22732,7 @@ function buildSchedulingPlanItemFromAssignRow(sec, row, termCode) {
     teachers: formatGroupAssignTeacherNamesDisplay(row),
     simultaneous: row.simultaneousGroups ? '是' : '否',
     classroomAttribute: formatAssignClassroomAttributeDisplay(row.classroomAttribute),
-    classroomPreferences: formatAssignClassroomPreferenceDisplay(row.classroomPreferences, row.classroomAttribute),
+    classroomPreferences: formatAssignClassroomPreferenceDisplay(row.classroomPreferences, row.classroomAttribute, row.classroomPreferenceOthersText),
     sectionId: sec.id,
     assignmentId: row.id,
     linkId: link?.linkId || ''
@@ -25982,7 +26338,7 @@ function renderOfferingTeacherReplaceAssignPanel(sec) {
           : escapeHtml(view.teacherNames)}</td>
         <td class="col-center col-simul">${view.simultaneous ? '是' : '否'}</td>
         <td class="col-center col-classroom-attr">${escapeHtml(formatAssignClassroomAttributeDisplay(view.row.classroomAttribute))}</td>
-        <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(view.row.classroomPreferences, view.row.classroomAttribute)}</td>
+        <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(view.row.classroomPreferences, view.row.classroomAttribute, view.row.classroomPreferenceOthersText)}</td>
         <td class="actions col-center col-sticky-actions">
           <a href="#" onclick="openOfferingTeacherReplacePicker('${escapeHtml(sec.id)}','${escapeHtml(view.assignRowId)}');return false">替换教师</a>
         </td>
@@ -29007,9 +29363,11 @@ function seedTeacherCourseConfirmationFieldDemo(termCode) {
           ? getGroupAssignTeachers(template)
           : [teacher];
         const groupIds = getGroupAssignRowGroupIds(template);
+        // id 带序号，避免多课/多次补种撞号（旧：仅 week+hours，易重复）
+        let demoSeq = 0;
         const mk = (weekRange, weeklyHours, simultaneousGroups = false) => ({
           ...template,
-          id: `ga-tcc-demo-${weekRange}-${weeklyHours}`,
+          id: `ga-tcc-demo-${weekRange}-${weeklyHours}-${++demoSeq}-${offeringGroupAssignSeq++}`,
           weekRange,
           weeklyHours,
           hours: calcGroupAssignRowHours(weeklyHours, weekRange, hoursTarget),
@@ -39984,7 +40342,14 @@ function assertMajorOfferingStructureEditable(sec, actionLabel = '操作') {
 }
 
 function assertOfferingGroupingEditable(actionLabel = '操作') {
-  return assertMajorOfferingStructureEditable(getOfferingGroupingSection(), actionLabel);
+  const sec = getOfferingGroupingSection();
+  // 学院/专业角色不可改管辖外课程（教务不受限）
+  if (sec && typeof passesPrototypeRoleOfferingGroupingSection === 'function'
+    && !passesPrototypeRoleOfferingGroupingSection(sec)) {
+    alert(`当前角色无权${actionLabel}该开课安排。`);
+    return false;
+  }
+  return assertMajorOfferingStructureEditable(sec, actionLabel);
 }
 
 function isOfferingGroupingRosterContext() {
@@ -45930,7 +46295,7 @@ function renderMajorOfferingTaskStyle2AssignSubtable(sec, opts = {}) {
     <td class="col-center col-simul">${row.simultaneousGroups ? '是' : '否'}</td>
     <td class="col-center col-slot-link">${formatSharedTeachingSlotLinkCellHtml(sec, row)}</td>
     <td class="col-center col-classroom-attr">${escapeHtml(formatAssignClassroomAttributeDisplay(row.classroomAttribute))}</td>
-    <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)}</td>
+    <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute, row.classroomPreferenceOthersText)}</td>
   </tr>`;
   }).join('');
   return `<div class="offering-grouping-global-assign-panel">
@@ -48716,44 +49081,82 @@ function formatOfferingGroupingCourseStatusMeta(statusKey) {
   };
 }
 
+/**
+ * 分组页课程可见/可操作范围（与开课安排列表角色口径对齐）：
+ * - 教务管理员：全部
+ * - 学院/专业管理员：仅管辖开课单位或开课/上课专业范围内的课
+ */
+function passesPrototypeRoleOfferingGroupingSection(sec) {
+  if (!sec) return false;
+  const role = typeof getPrototypeRolePreset === 'function' ? getPrototypeRolePreset() : null;
+  if (!role || role.kind === 'academic') return true;
+
+  if (sec.offeringType === 'ge') {
+    const line = (COURSE_OFFERING_PLAN_STORE?.lines || []).find(
+      l => l.offeringType === 'ge' && (l.sectionId === sec.id || (sec.lineIds || []).includes(l.id))
+    );
+    if (typeof isMeOfferingGeSection === 'function' && isMeOfferingGeSection(sec)) {
+      return typeof passesPrototypeRoleMeLine === 'function' && passesPrototypeRoleMeLine(line, sec);
+    }
+    if (line && typeof passesPrototypeRoleGeLine === 'function') {
+      return passesPrototypeRoleGeLine(line);
+    }
+    return typeof passesPrototypeRoleDataScope === 'function' && passesPrototypeRoleDataScope({
+      offeringUnit: typeof resolveGeOfferingSectionOfferingUnit === 'function'
+        ? resolveGeOfferingSectionOfferingUnit(sec)
+        : '',
+      offeringProgrammeCode: sec.offeringProgrammeCode || ''
+    });
+  }
+
+  // major / other：与专业开课安排主列表同一口径
+  return typeof passesPrototypeRoleMajorSection === 'function'
+    && passesPrototypeRoleMajorSection(sec);
+}
+
 function getOfferingGroupingCourseListSections() {
   ensureCourseOfferingPlan();
   const page = offeringGroupingReturnPage || '';
   const excludeDemo = sec => !isTeacherTeachingLoadDemoSection(sec);
+  // 教务看全部；学院/专业按管辖收窄（B）
+  const inRole = sec => passesPrototypeRoleOfferingGroupingSection(sec);
   if (page === 'course-major-offering-roster') {
     return getMajorOfferingSections().filter(sec =>
       excludeDemo(sec)
+      && inRole(sec)
       && sec.submitStatus === 'submitted'
       && isMajorOfferingTaskArrangementSubmitted(sec)
     );
   }
   if (page === 'course-offering-ge' || page === 'course-ge-offering-task') {
     // course-ge-offering-task：旧入口兼容，已并入通识选修开课
-    return getGeOfferingSections().filter(excludeDemo);
+    return getGeOfferingSections().filter(sec => excludeDemo(sec) && inRole(sec));
     // return getGeOfferingSections().filter(sec => sec.submitStatus === 'submitted'); // 原须先计划提交
   }
   if (page === 'course-ge-offering-roster') {
     return getGeOfferingSections().filter(sec =>
       excludeDemo(sec)
+      && inRole(sec)
       && sec.submitStatus === 'submitted'
       && isMajorOfferingTaskArrangementSubmitted(sec)
     );
   }
   if (page === 'course-special-offering-task') {
     return getOtherOfferingSections().filter(sec =>
-      excludeDemo(sec) && sec.submitStatus === 'submitted'
+      excludeDemo(sec) && inRole(sec) && sec.submitStatus === 'submitted'
     );
   }
   if (page === 'course-special-offering-roster') {
     return getOtherOfferingSections().filter(sec =>
       excludeDemo(sec)
+      && inRole(sec)
       && sec.submitStatus === 'submitted'
       && isMajorOfferingTaskArrangementSubmitted(sec)
     );
   }
   // 默认：专业开课任务安排可管理课程
   return getMajorOfferingSections().filter(sec =>
-    excludeDemo(sec) && sec.submitStatus === 'submitted'
+    excludeDemo(sec) && inRole(sec) && sec.submitStatus === 'submitted'
   );
 }
 
@@ -48881,7 +49284,7 @@ function renderOfferingGroupingGlobalAssignSubtable(sec) {
     <td class="col-center col-simul">${row.simultaneousGroups ? '是' : '否'}</td>
     <td class="col-center col-slot-link">${formatSharedTeachingSlotLinkCellHtml(sec, row)}</td>
     <td class="col-center col-classroom-attr">${escapeHtml(formatAssignClassroomAttributeDisplay(row.classroomAttribute))}</td>
-    <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)}</td>
+    <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute, row.classroomPreferenceOthersText)}</td>
   </tr>`).join('');
   return `<div class="offering-grouping-global-assign-panel">
     <div class="offering-grouping-global-assign-head">
@@ -54046,7 +54449,7 @@ function getOfferingGroupStatusAssignSortColumns(sec) {
     groups: { get: row => getGroupAssignRowGroupLabels(row, sec).join('、') },
     hourType: { get: row => getGroupAssignHourTypeDisplayLabel(sec, row.hourType) || row.hourType || '' },
     classroomAttribute: { get: row => formatAssignClassroomAttributeDisplay(row.classroomAttribute) },
-    classroomPreferences: { get: row => formatAssignClassroomPreferenceDisplay(row.classroomPreferences, row.classroomAttribute) },
+    classroomPreferences: { get: row => formatAssignClassroomPreferenceDisplay(row.classroomPreferences, row.classroomAttribute, row.classroomPreferenceOthersText) },
     weekRange: { get: row => clampGroupAssignWeekRangeToSection(sec, row.weekRange) || row.weekRange || '' },
     weeklyHours: { get: row => Number(row.weeklyHours) || 0, type: 'number' },
     totalHours: { get: row => getGroupAssignRowRecordedHours(row, sec) || 0, type: 'number' },
@@ -54226,32 +54629,46 @@ function mapGroupAssignHourTypeToClassroomKeys(sec, hourType) {
 }
 
 function sameClassroomPreferenceLists(a, b) {
-  const na = [...normalizeReferenceClassroomList(a || [])].sort();
-  const nb = [...normalizeReferenceClassroomList(b || [])].sort();
+  const na = [...parseClassroomPreferenceRawList(a || [])].sort();
+  const nb = [...parseClassroomPreferenceRawList(b || [])].sort();
   if (na.length !== nb.length) return false;
   return na.every((v, i) => v === nb[i]);
 }
 
+function sameClassroomPreferenceOthersText(a, b) {
+  return String(a || '') === String(b || '');
+}
+
 /** 按安排学时类型从开课教室信息带入；合并学时若属性/偏好不一致则留空需手填 */
 function resolveSectionClassroomInfoForAssignHourType(sec, hourType) {
-  if (!sec) return { attribute: '', referenceClassrooms: [] };
+  if (!sec) return { attribute: '', referenceClassrooms: [], classroomPreferenceOthersText: '' };
   ensureSectionClassroomInfoFields(sec);
   const keys = mapGroupAssignHourTypeToClassroomKeys(sec, hourType);
-  if (!keys.length) return { attribute: '', referenceClassrooms: [] };
+  if (!keys.length) return { attribute: '', referenceClassrooms: [], classroomPreferenceOthersText: '' };
   const reqs = specialClassroomRequirementsFromSection(sec);
   const matched = keys.map(k => reqs.find(r => r.hourType === k)).filter(Boolean);
-  if (!matched.length) return { attribute: '', referenceClassrooms: [] };
+  if (!matched.length) return { attribute: '', referenceClassrooms: [], classroomPreferenceOthersText: '' };
   const attrs = [...new Set(matched.map(r => r.attribute || 'normal'))];
   const prefsConsistent = matched.every(r =>
     sameClassroomPreferenceLists(r.referenceClassrooms, matched[0].referenceClassrooms)
+    && sameClassroomPreferenceOthersText(
+      r.classroomPreferenceOthersText,
+      matched[0].classroomPreferenceOthersText
+    )
   );
   if (attrs.length === 1 && prefsConsistent) {
+    const normalized = normalizeClassroomPreferencesForAttribute(
+      attrs[0],
+      matched[0].referenceClassrooms || [],
+      matched[0].classroomPreferenceOthersText
+    );
     return {
       attribute: attrs[0],
-      referenceClassrooms: normalizeReferenceClassroomList(matched[0].referenceClassrooms || [])
+      referenceClassrooms: normalized.preferences,
+      classroomPreferenceOthersText: normalized.othersText
     };
   }
-  return { attribute: '', referenceClassrooms: [] };
+  return { attribute: '', referenceClassrooms: [], classroomPreferenceOthersText: '' };
 }
 
 function applySectionClassroomInfoToAssignDraft(sec, draft, hourType) {
@@ -54259,6 +54676,7 @@ function applySectionClassroomInfoToAssignDraft(sec, draft, hourType) {
   const info = resolveSectionClassroomInfoForAssignHourType(sec, hourType || draft.hourType);
   draft.classroomAttribute = info.attribute || '';
   draft.classroomPreferences = info.referenceClassrooms || [];
+  draft.classroomPreferenceOthersText = info.classroomPreferenceOthersText || '';
 }
 
 /** 写入/回填安排行的教室属性与偏好（仅补缺，不覆盖已有值；空数组表示「无偏好」） */
@@ -54277,6 +54695,10 @@ function enrichGroupAssignRowClassroomInfo(sec, row, { force = false } = {}) {
     row.classroomPreferences = Array.isArray(info.referenceClassrooms)
       ? [...info.referenceClassrooms]
       : [];
+  }
+  const hasOthersKey = Object.prototype.hasOwnProperty.call(row, 'classroomPreferenceOthersText');
+  if (!hasOthersKey) {
+    row.classroomPreferenceOthersText = info.classroomPreferenceOthersText || '';
   }
   return row;
 }
@@ -54297,9 +54719,11 @@ function isSectionClassroomInfoConsistent(sec) {
   if (!reqs.length) return true;
   const attr0 = normalizeClassroomAttribute(reqs[0].attribute) || 'normal';
   const pref0 = reqs[0].referenceClassrooms || [];
+  const others0 = reqs[0].classroomPreferenceOthersText || '';
   return reqs.every(r =>
     (normalizeClassroomAttribute(r.attribute) || 'normal') === attr0
     && sameClassroomPreferenceLists(r.referenceClassrooms, pref0)
+    && sameClassroomPreferenceOthersText(r.classroomPreferenceOthersText, others0)
   );
 }
 
@@ -54331,43 +54755,47 @@ function seedDemoSectionClassroomInfo(sec) {
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   const variant = hash % 3;
   const offset = hash % 7;
-  // 各学时类型保持一致，便于「总学时」合并安排也能按规则带入（不一致会留空）
+  // 各学时类型保持一致；普通教室种 remark（不再种教室号）
   let attribute = 'normal';
-  let referenceClassrooms = pick(normalRooms, variant === 1 ? 2 : 1, offset);
-  if (variant === 2) {
+  let referenceClassrooms = ['round_table'];
+  let classroomPreferenceOthersText = '';
+  if (variant === 1) {
+    attribute = 'normal';
+    referenceClassrooms = ['round_table', 'large_whiteboard'];
+  } else if (variant === 2) {
     attribute = 'computer';
     referenceClassrooms = pick(computerRooms, 2, offset);
-  } else if (variant === 0) {
+  } else {
     attribute = 'specialized';
     referenceClassrooms = pick(specializedRooms, 1, offset);
   }
   sec.specialClassroomRequirements = getDefaultClassroomHourRequirements().map(row => ({
     ...row,
     attribute,
-    referenceClassrooms: [...referenceClassrooms]
+    referenceClassrooms: [...referenceClassrooms],
+    classroomPreferenceOthersText
   }));
   ensureSectionClassroomInfoFields(sec);
   sec._demoClassroomInfoSeeded = true;
 }
 
-function formatAssignClassroomPreferenceDisplay(prefs, attribute) {
-  const list = normalizeReferenceClassroomList(prefs || []);
-  if (!list.length) return '无偏好';
-  if (list.length <= 3) return list.join('、');
-  return `${list.slice(0, 3).join('、')}...`;
+function formatAssignClassroomPreferenceDisplay(prefs, attribute, othersText) {
+  return formatClassroomPreferenceDisplay(attribute, prefs, othersText);
 }
 
-function formatAssignClassroomPreferenceFullText(prefs) {
-  const list = normalizeReferenceClassroomList(prefs || []);
-  return list.length ? list.join('、') : '';
+function formatAssignClassroomPreferenceFullText(prefs, attribute, othersText) {
+  return formatClassroomPreferenceFullText(attribute, prefs, othersText);
 }
 
-/** 表格单元格：超过 3 个省略，title 悬停看全部 */
-function formatAssignClassroomPreferenceCellHtml(prefs, attribute) {
-  const list = normalizeReferenceClassroomList(prefs || []);
-  const text = formatAssignClassroomPreferenceDisplay(prefs, attribute);
+/** 表格单元格：超过 3 个省略，title 悬停看全部；普通教室显示中文 remark */
+function formatAssignClassroomPreferenceCellHtml(prefs, attribute, othersText) {
+  const mode = getClassroomPreferenceMode(attribute);
+  const list = mode === 'remarks'
+    ? normalizeClassroomRemarkList(prefs || [])
+    : normalizeReferenceClassroomList(prefs || []);
+  const text = formatAssignClassroomPreferenceDisplay(prefs, attribute, othersText);
   if (list.length <= 3) return escapeHtml(text);
-  return `<span title="${escapeHtml(formatAssignClassroomPreferenceFullText(prefs))}">${escapeHtml(text)}</span>`;
+  return `<span title="${escapeHtml(formatAssignClassroomPreferenceFullText(prefs, attribute, othersText))}">${escapeHtml(text)}</span>`;
 }
 
 function formatAssignClassroomAttributeDisplay(attr) {
@@ -54393,7 +54821,8 @@ function getOfferingGroupStatusDraftDefault(sec) {
     // 单组（或未选满多组）固定为否；≥2 组须手动选择
     simultaneousGroups: groupIds.length > 1 ? null : false,
     classroomAttribute: '',
-    classroomPreferences: []
+    classroomPreferences: [],
+    classroomPreferenceOthersText: ''
   };
   applySectionClassroomInfoToAssignDraft(sec, draft);
   return draft;
@@ -54409,7 +54838,8 @@ function buildOfferingGroupStatusDraftFromAssignRow(sec, row) {
     groupIds = ['__course__'];
   }
   const draft = {
-    id: row.id || '',
+    // 必须保留原行 id，渲染时才能用 id 替换原行；丢 id 会被当成新增叠出第二条
+    id: String(row.id || '').trim(),
     mode: 'edit',
     groupIds,
     hourType: row.hourType || getSectionGroupAssignModeHourTypes(sec)[0] || '',
@@ -54418,8 +54848,19 @@ function buildOfferingGroupStatusDraftFromAssignRow(sec, row) {
     teachers: getGroupAssignTeachers(row).map(t => enrichGroupAssignFormTeacher({ ...t }, sec)),
     simultaneousGroups: groupIds.filter(id => id !== '__course__').length > 1 ? !!row.simultaneousGroups : false,
     classroomAttribute: normalizeClassroomAttribute(row.classroomAttribute) || '',
-    classroomPreferences: normalizeReferenceClassroomList(row.classroomPreferences || [])
+    classroomPreferences: [],
+    classroomPreferenceOthersText: ''
   };
+  {
+    // 按场地类型归一化：普通教室仅保留 remark；计算机/专业保留教室号
+    const normalized = normalizeClassroomPreferencesForAttribute(
+      draft.classroomAttribute,
+      row.classroomPreferences || [],
+      row.classroomPreferenceOthersText
+    );
+    draft.classroomPreferences = normalized.preferences;
+    draft.classroomPreferenceOthersText = normalized.othersText;
+  }
   // 历史行无教室字段时，按学时尝试带入
   if (!draft.classroomAttribute && !(draft.classroomPreferences || []).length) {
     applySectionClassroomInfoToAssignDraft(sec, draft);
@@ -54447,7 +54888,8 @@ function addOfferingGroupStatusAssignDraft() {
 function editOfferingGroupStatusAssignRow(assignId) {
   const sec = getOfferingGroupingSection();
   if (!sec || !assertOfferingGroupingEditable('修改安排')) return;
-  const row = (sec.groupAssignments || []).find(a => a.id === assignId);
+  const wantId = String(assignId || '').trim();
+  const row = (sec.groupAssignments || []).find(a => String(a?.id || '').trim() === wantId);
   if (!row) return;
   if (typeof isGroupAssignRowVoided === 'function' && isGroupAssignRowVoided(row, sec)) {
     alert('该安排已因停课作废，仅可查看，不可修改。');
@@ -54458,7 +54900,11 @@ function editOfferingGroupStatusAssignRow(assignId) {
     return;
   }
   confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
-    offeringGroupStatusAssignDraft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
+    // 强制带上点击行的 id + edit 模式，避免草稿丢 id 后被当成「新增」叠在原行下方（同一条变两条）
+    const draft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
+    draft.id = wantId || String(row.id || '').trim();
+    draft.mode = 'edit';
+    offeringGroupStatusAssignDraft = draft;
     renderOfferingGroupingGroupStatusPanel();
     requestAnimationFrame(() => {
       document.querySelector('.offering-group-status-assign-draft')?.scrollIntoView({ block: 'nearest' });
@@ -54517,8 +54963,9 @@ function updateOfferingGroupStatusAssignDraftField(field, value, rerender = true
     offeringGroupStatusAssignDraft.simultaneousGroups = parsed;
   } else if (field === 'classroomAttribute') {
     offeringGroupStatusAssignDraft.classroomAttribute = normalizeClassroomAttribute(value) || '';
-    // 切换属性后清空偏好（非必填）；只刷新偏好列，避免整表重绘清空同时授课并重置横向滚动
+    // 切换属性后清空偏好与 Others 文本；只刷新偏好列，避免整表重绘
     offeringGroupStatusAssignDraft.classroomPreferences = [];
+    offeringGroupStatusAssignDraft.classroomPreferenceOthersText = '';
     refreshOfferingGroupStatusDraftClassroomPreferenceCell();
     return;
   }
@@ -54929,10 +55376,13 @@ function saveOfferingGroupStatusAssignDraftAfterVoidConfirm() {
     alert('请选择场地类型。');
     return;
   }
-  const classroomPreferences = normalizeReferenceClassroomList(
+  const prefNorm = normalizeClassroomPreferencesForAttribute(
+    classroomAttribute,
     draft.classroomPreferences || [],
-    getClassroomsByCategories([classroomAttribute])
+    draft.classroomPreferenceOthersText
   );
+  const classroomPreferences = prefNorm.preferences;
+  const classroomPreferenceOthersText = prefNorm.othersText;
   // 多组且「同时授课=否」：保存时拆成每个小组一条；学时类型/周次/周学时/总学时/教师/教室字段不变
   const shouldSplit = groupIds.length > 1 && draft.simultaneousGroups === false;
   const targetGroupIdSets = shouldSplit
@@ -54975,6 +55425,7 @@ function saveOfferingGroupStatusAssignDraftAfterVoidConfirm() {
         simultaneousGroups: false,
         classroomAttribute,
         classroomPreferences: [...classroomPreferences],
+        classroomPreferenceOthersText,
         teachers: teachers.map(t => ({ ...t })),
         staffId: teachers.map(t => t.staffId).filter(Boolean).join('、'),
         teacher: teachers.map(t => t.name).filter(Boolean).join('、'),
@@ -55004,6 +55455,7 @@ function saveOfferingGroupStatusAssignDraftAfterVoidConfirm() {
       simultaneousGroups: simultaneousForPayload && realIds.length > 1,
       classroomAttribute,
       classroomPreferences: [...classroomPreferences],
+      classroomPreferenceOthersText,
       teachers: teachers.map(t => ({ ...t })),
       staffId: teachers.map(t => t.staffId).filter(Boolean).join('、'),
       teacher: teachers.map(t => t.name).filter(Boolean).join('、'),
@@ -55203,7 +55655,7 @@ function renderOfferingGroupStatusDraftTeacherCell(sec, draft) {
   </label>`;
   const optionsHtml = `${priorOptionsHtml}${tbcOptionHtml}`;
   return `<div class="offering-group-status-teacher-edit">
-    <div class="clo-multiselect offering-group-status-prior-teacher-multiselect">
+    <div class="clo-multiselect offering-group-status-prior-teacher-multiselect" id="offering-group-status-prior-teacher-multiselect">
       <div class="clo-multiselect-trigger input input-sm" role="button" tabindex="0"
         onclick="toggleOfferingGroupStatusDraftPriorTeacherDropdown(event)"
         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOfferingGroupStatusDraftPriorTeacherDropdown(event)}"
@@ -55212,7 +55664,7 @@ function renderOfferingGroupStatusDraftTeacherCell(sec, draft) {
         ${renderOfferingGroupStatusMultiselectClearBtn('clearOfferingGroupStatusDraftTeachers', selected.length > 0)}
         <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
       </div>
-      <div class="clo-multiselect-dropdown offering-group-status-prior-teacher-dropdown" hidden>
+      <div class="clo-multiselect-dropdown offering-group-status-prior-teacher-dropdown" id="offering-group-status-prior-teacher-dropdown" hidden>
         <div class="clo-multiselect-options">${optionsHtml}</div>
       </div>
     </div>
@@ -55224,22 +55676,75 @@ function renderOfferingGroupStatusDraftTeacherCell(sec, draft) {
   </div>`;
 }
 
+/** 历史教师下拉：fixed 定位，避免被 table-scroll / 单元格 overflow 裁切（与课程组下拉一致） */
+function positionOfferingGroupStatusDraftPriorTeacherDropdown() {
+  const trigger = document.querySelector('#offering-group-status-prior-teacher-multiselect .clo-multiselect-trigger');
+  const dd = document.getElementById('offering-group-status-prior-teacher-dropdown');
+  if (!trigger || !dd || dd.hidden) return;
+  const rect = trigger.getBoundingClientRect();
+  // fixed 时 CSS min-width:100% 会相对视口拉满；宽度钳在触发器宽与 280 之间
+  const width = Math.min(Math.max(rect.width || 0, 200), 280);
+  const maxHeight = 240;
+  const spaceBelow = window.innerHeight - rect.bottom - 8;
+  const spaceAbove = rect.top - 8;
+  const openUp = spaceBelow < Math.min(maxHeight, 160) && spaceAbove > spaceBelow;
+  dd.style.position = 'fixed';
+  dd.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`;
+  dd.style.width = `${width}px`;
+  dd.style.minWidth = `${width}px`;
+  dd.style.maxWidth = '280px';
+  dd.style.right = 'auto';
+  dd.style.zIndex = '4000';
+  dd.style.maxHeight = `${Math.min(maxHeight, openUp ? spaceAbove : spaceBelow)}px`;
+  dd.style.overflowY = 'auto';
+  if (openUp) {
+    dd.style.top = 'auto';
+    dd.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+  } else {
+    dd.style.top = `${rect.bottom + 4}px`;
+    dd.style.bottom = 'auto';
+  }
+}
+
+function clearOfferingGroupStatusDraftPriorTeacherDropdownPosition() {
+  const dd = document.getElementById('offering-group-status-prior-teacher-dropdown');
+  if (!dd) return;
+  dd.style.position = '';
+  dd.style.left = '';
+  dd.style.right = '';
+  dd.style.top = '';
+  dd.style.bottom = '';
+  dd.style.width = '';
+  dd.style.minWidth = '';
+  dd.style.maxWidth = '';
+  dd.style.maxHeight = '';
+  dd.style.zIndex = '';
+  dd.style.overflowY = '';
+}
+
 function closeOfferingGroupStatusDraftPriorTeacherDropdown() {
-  const dd = document.querySelector('.offering-group-status-assign-draft .offering-group-status-prior-teacher-dropdown');
-  if (dd) dd.hidden = true;
+  const dd = document.getElementById('offering-group-status-prior-teacher-dropdown')
+    || document.querySelector('.offering-group-status-assign-draft .offering-group-status-prior-teacher-dropdown');
+  if (!dd) return;
+  dd.hidden = true;
+  clearOfferingGroupStatusDraftPriorTeacherDropdownPosition();
 }
 
 function toggleOfferingGroupStatusDraftPriorTeacherDropdown(event) {
   if (event?.target?.closest?.('.offering-group-status-chip-remove, .clo-multiselect-clear')) return;
   event?.stopPropagation?.();
-  const ms = event?.currentTarget?.closest?.('.offering-group-status-prior-teacher-multiselect');
-  const dd = ms?.querySelector('.offering-group-status-prior-teacher-dropdown');
+  const ms = event?.currentTarget?.closest?.('.offering-group-status-prior-teacher-multiselect')
+    || document.getElementById('offering-group-status-prior-teacher-multiselect');
+  const dd = ms?.querySelector('.offering-group-status-prior-teacher-dropdown')
+    || document.getElementById('offering-group-status-prior-teacher-dropdown');
   if (!dd) return;
   const willOpen = dd.hidden;
   closeOfferingGroupStatusDraftPriorTeacherDropdown();
   if (typeof closeOfferingGroupStatusDraftGroupDropdown === 'function') closeOfferingGroupStatusDraftGroupDropdown();
   if (typeof closeOfferingGroupStatusDraftPrefDropdown === 'function') closeOfferingGroupStatusDraftPrefDropdown();
-  if (willOpen) dd.hidden = false;
+  if (!willOpen) return;
+  dd.hidden = false;
+  positionOfferingGroupStatusDraftPriorTeacherDropdown();
 }
 
 function onOfferingGroupStatusDraftPriorTeacherToggle(input) {
@@ -55399,45 +55904,41 @@ function renderOfferingGroupStatusDraftClassroomAttributeCell(draft) {
 }
 
 function renderOfferingGroupStatusDraftClassroomPreferenceCell(draft) {
-  const attr = normalizeClassroomAttribute(draft?.classroomAttribute) || '';
-  if (!attr) {
-    return `<span class="text-muted offering-group-status-pref-disabled">先选场地类型</span>`;
-  }
-  const rooms = getClassroomsByCategories([attr]);
-  const selected = normalizeReferenceClassroomList(draft?.classroomPreferences || [], rooms);
-  const selectedSet = new Set(selected);
-  const optionsInner = buildClassroomRefDropdownInnerHtml(rooms, {
-    selectedSet,
-    checkClass: 'offering-group-status-pref-check',
-    onchange: 'onOfferingGroupStatusDraftClassroomPrefToggle(this)'
+  return buildClassroomPreferenceEditorHtml({
+    attribute: draft?.classroomAttribute,
+    selectedList: draft?.classroomPreferences || [],
+    othersText: draft?.classroomPreferenceOthersText || '',
+    locked: false,
+    context: 'group-draft'
   });
-  return `<div class="clo-multiselect offering-group-status-pref-multiselect">
-    <div class="clo-multiselect-trigger input input-sm" role="button" tabindex="0"
-      onclick="toggleOfferingGroupStatusDraftPrefDropdown(event)"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleOfferingGroupStatusDraftPrefDropdown(event)}"
-      title="教室偏好（可多选，非必填；下拉内可搜教室号或软件名）" aria-label="教室偏好">
-      ${formatOfferingGroupStatusDraftPrefChipsHtml(selected)}
-      ${renderOfferingGroupStatusMultiselectClearBtn('clearOfferingGroupStatusDraftClassroomPrefs', selected.length > 0)}
-      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-    </div>
-    <div class="clo-multiselect-dropdown offering-group-status-pref-dropdown" hidden>
-      ${optionsInner}
-    </div>
-  </div>`;
 }
 
-function formatOfferingGroupStatusDraftPrefChipsHtml(selected) {
+/** 草稿芯片：普通教室显示英文 remark；教室号模式显示教室号 */
+function formatOfferingGroupStatusDraftPrefChipsHtml(selected, attribute, othersText) {
+  const attr = normalizeClassroomAttribute(attribute)
+    || normalizeClassroomAttribute(offeringGroupStatusAssignDraft?.classroomAttribute)
+    || '';
+  const mode = getClassroomPreferenceMode(attr);
   const list = selected || [];
   if (!list.length) {
     return '<span class="clo-multiselect-display placeholder offering-group-status-pref-display">无偏好</span>';
   }
-  const chips = list.map(room => {
-    const code = String(room || '').trim();
+  const chips = list.map(raw => {
+    const code = String(raw || '').trim();
     if (!code) return '';
-    return `<span class="offering-group-status-chip" title="${escapeHtml(code)}">
-      <span class="offering-group-status-chip-label">${escapeHtml(code)}</span>
+    let label = code;
+    if (mode === 'remarks') {
+      if (code === 'others') {
+        const t = String(othersText || offeringGroupStatusAssignDraft?.classroomPreferenceOthersText || '').trim();
+        label = t ? `Others（${t}）` : 'Others';
+      } else {
+        label = getClassroomNormalRemarkLabel(code);
+      }
+    }
+    return `<span class="offering-group-status-chip" title="${escapeHtml(label)}">
+      <span class="offering-group-status-chip-label">${escapeHtml(label)}</span>
       <button type="button" class="offering-group-status-chip-remove"
-        aria-label="移除 ${escapeHtml(code)}"
+        aria-label="移除 ${escapeHtml(label)}"
         title="移除"
         onclick="event.preventDefault();event.stopPropagation();removeOfferingGroupStatusDraftClassroomPref('${escapeHtml(code)}');return false"
         onmousedown="event.preventDefault();event.stopPropagation()">×</button>
@@ -55450,16 +55951,25 @@ function updateOfferingGroupStatusDraftPrefDisplay(ms, selected) {
   const display = ms?.querySelector('.offering-group-status-pref-display')
     || ms?.querySelector('.clo-multiselect-display');
   if (!display) return;
-  display.outerHTML = formatOfferingGroupStatusDraftPrefChipsHtml(selected);
+  const attr = offeringGroupStatusAssignDraft?.classroomAttribute;
+  const others = offeringGroupStatusAssignDraft?.classroomPreferenceOthersText || '';
+  display.outerHTML = formatOfferingGroupStatusDraftPrefChipsHtml(selected, attr, others);
   syncOfferingGroupStatusMultiselectClearBtn(ms, !!(selected || []).length);
 }
 
 function clearOfferingGroupStatusDraftClassroomPrefs() {
   if (!offeringGroupStatusAssignDraft) return;
   offeringGroupStatusAssignDraft.classroomPreferences = [];
+  offeringGroupStatusAssignDraft.classroomPreferenceOthersText = '';
   const ms = document.querySelector('.offering-group-status-assign-draft .offering-group-status-pref-multiselect');
+  const editor = getClassroomPrefEditorRoot(ms)
+    || document.querySelector('.offering-group-status-assign-draft .classroom-pref-editor');
   ms?.querySelectorAll('.offering-group-status-pref-check:checked')
     .forEach(el => { el.checked = false; });
+  const othersInput = editor?.querySelector('.classroom-pref-others-input');
+  if (othersInput) othersInput.value = '';
+  const othersWrap = editor?.querySelector('.classroom-pref-others-wrap');
+  if (othersWrap) othersWrap.hidden = true;
   closeOfferingGroupStatusDraftPrefDropdown();
   updateOfferingGroupStatusDraftPrefDisplay(ms, []);
 }
@@ -55469,10 +55979,21 @@ function removeOfferingGroupStatusDraftClassroomPref(classroom) {
   if (!code || !offeringGroupStatusAssignDraft) return;
   const next = (offeringGroupStatusAssignDraft.classroomPreferences || []).filter(r => String(r) !== code);
   offeringGroupStatusAssignDraft.classroomPreferences = next;
+  if (code === 'others') {
+    offeringGroupStatusAssignDraft.classroomPreferenceOthersText = '';
+  }
   const ms = document.querySelector('.offering-group-status-assign-draft .offering-group-status-pref-multiselect');
+  const editor = getClassroomPrefEditorRoot(ms)
+    || document.querySelector('.offering-group-status-assign-draft .classroom-pref-editor');
   const check = [...(ms?.querySelectorAll('.offering-group-status-pref-check') || [])]
     .find(el => el.value === code);
   if (check) check.checked = false;
+  if (code === 'others') {
+    const othersInput = editor?.querySelector('.classroom-pref-others-input');
+    if (othersInput) othersInput.value = '';
+    const othersWrap = editor?.querySelector('.classroom-pref-others-wrap');
+    if (othersWrap) othersWrap.hidden = true;
+  }
   closeOfferingGroupStatusDraftPrefDropdown();
   updateOfferingGroupStatusDraftPrefDisplay(ms, next);
 }
@@ -55483,7 +56004,7 @@ function closeOfferingGroupStatusDraftPrefDropdown() {
 }
 
 function toggleOfferingGroupStatusDraftPrefDropdown(event) {
-  if (event?.target?.closest?.('.offering-group-status-chip-remove, .clo-multiselect-clear')) return;
+  if (event?.target?.closest?.('.offering-group-status-chip-remove, .clo-multiselect-clear, .classroom-pref-others-input')) return;
   event?.stopPropagation?.();
   const ms = event?.currentTarget?.closest?.('.offering-group-status-pref-multiselect');
   const dd = ms?.querySelector('.offering-group-status-pref-dropdown');
@@ -55494,7 +56015,8 @@ function toggleOfferingGroupStatusDraftPrefDropdown(event) {
   if (typeof closeOfferingGroupStatusDraftPriorTeacherDropdown === 'function') closeOfferingGroupStatusDraftPriorTeacherDropdown();
   if (willOpen) {
     dd.hidden = false;
-    focusClassroomRefDropdownSearch(dd);
+    // 仅教室号模式下聚焦搜索；remark 模式无搜索框
+    if (ms?.dataset?.prefMode === 'rooms') focusClassroomRefDropdownSearch(dd);
   }
 }
 
@@ -55502,9 +56024,38 @@ function onOfferingGroupStatusDraftClassroomPrefToggle(input) {
   if (!offeringGroupStatusAssignDraft) return;
   const ms = input?.closest('.offering-group-status-pref-multiselect');
   if (!ms) return;
+  const editor = getClassroomPrefEditorRoot(ms);
   const selected = [...ms.querySelectorAll('.offering-group-status-pref-check:checked')].map(el => el.value);
   offeringGroupStatusAssignDraft.classroomPreferences = selected;
+  const mode = getClassroomPreferenceMode(offeringGroupStatusAssignDraft.classroomAttribute);
+  if (mode === 'remarks') {
+    const hasOthers = selected.includes('others');
+    const othersWrap = editor?.querySelector('.classroom-pref-others-wrap');
+    const othersInput = editor?.querySelector('.classroom-pref-others-input');
+    if (othersWrap) othersWrap.hidden = !hasOthers;
+    if (!hasOthers) {
+      if (othersInput) othersInput.value = '';
+      offeringGroupStatusAssignDraft.classroomPreferenceOthersText = '';
+    } else {
+      offeringGroupStatusAssignDraft.classroomPreferenceOthersText = String(othersInput?.value || '');
+    }
+  } else {
+    offeringGroupStatusAssignDraft.classroomPreferenceOthersText = '';
+  }
   updateOfferingGroupStatusDraftPrefDisplay(ms, selected);
+}
+
+/** 草稿 Others 文本输入（触发器下方常显；非必填，可为空） */
+function onOfferingGroupStatusDraftClassroomOthersInput(input) {
+  if (!offeringGroupStatusAssignDraft || !input) return;
+  offeringGroupStatusAssignDraft.classroomPreferenceOthersText = String(input.value || '');
+  const editor = getClassroomPrefEditorRoot(input);
+  const ms = editor?.querySelector('.offering-group-status-pref-multiselect')
+    || document.querySelector('.offering-group-status-assign-draft .offering-group-status-pref-multiselect');
+  updateOfferingGroupStatusDraftPrefDisplay(
+    ms,
+    offeringGroupStatusAssignDraft.classroomPreferences || []
+  );
 }
 
 document.addEventListener('click', (e) => {
@@ -55513,7 +56064,8 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-  if (e.target?.closest?.('.offering-group-status-prior-teacher-multiselect')) return;
+  // fixed 浮层在单元格外，点击选项仍算在 multiselect / dropdown 内
+  if (e.target?.closest?.('#offering-group-status-prior-teacher-multiselect, #offering-group-status-prior-teacher-dropdown, .offering-group-status-prior-teacher-multiselect')) return;
   closeOfferingGroupStatusDraftPriorTeacherDropdown();
 });
 
@@ -55535,7 +56087,14 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
   );
   const hourTypes = getSectionGroupAssignModeHourTypes(sec);
   const draft = offeringGroupStatusAssignDraft;
-  const editingId = draft?.id || '';
+  // 编辑态用字符串 id 对齐；copy/add 的 id 为空，原行应保留
+  const editingId = String(draft?.id || '').trim();
+  const draftMode = draft
+    ? (draft.mode || (editingId ? 'edit' : 'add'))
+    : '';
+  // 仅「修改」替换原行；「复制/新增」在表尾加草稿，不藏原行
+  const replaceOriginalWithDraft = !!(draft && !forceReadOnly && !offeringGroupingReadOnly
+    && draftMode === 'edit' && editingId);
   const actionsHead = showOps ? '<th class="col-center col-actions col-sticky-actions">操作</th>' : '';
   const checkHead = showOps
     ? `<th class="col-check"><input type="checkbox" id="oga-status-assign-check-all" aria-label="全选" onchange="toggleOfferingGroupingAssignCheckAll(this.checked)"></th>`
@@ -55555,7 +56114,6 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
     if (!draft || offeringGroupingReadOnly || forceReadOnly) return '';
     const totalHours = calcGroupAssignRowHours(draft.weeklyHours, draft.weekRange, sec);
     const weeklyWarning = getOfferingGroupStatusDraftWeeklyWarning(sec, draft);
-    const draftMode = draft.mode || (draft.id ? 'edit' : 'add');
     const cancelHint = draftMode === 'copy'
       ? '删除未保存的复制，原安排不会被删除'
       : draftMode === 'edit'
@@ -55563,7 +56121,7 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
         : '放弃本次新增，不会删除已有安排';
     const cancelBtn = `<button type="button" class="offering-group-status-inline-cancel" title="${escapeHtml(cancelHint)}" aria-label="${escapeHtml(cancelHint)}" onclick="cancelOfferingGroupStatusAssignDraft()"><span class="offering-group-status-cancel-icon" aria-hidden="true"></span></button>`;
     // 原 copy 用 ×、edit/add 用「取消」文案，统一为灰色圆形关闭图标
-    return `<tr class="offering-group-status-assign-draft">
+    return `<tr class="offering-group-status-assign-draft" data-editing-assign-id="${escapeHtml(editingId)}">
       <td class="col-check"></td>
       <td class="col-groups">${renderOfferingGroupStatusDraftGroupCell(sec, draft)}</td>
       <td class="col-hour-type">
@@ -55612,7 +56170,10 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
     });
   }
   rows.forEach(row => {
-    if (!forceReadOnly && editingId && row.id === editingId) {
+    const rowId = String(row?.id || '').trim();
+    // 修改态：只把「第一条」同 id 行换成草稿；其余同 id 行仍展示（避免 4 条因重复 id 被跳成 3 条）
+    // 原：同 id 一律 return，草稿只插一次 → 多条同 id 时行数变少
+    if (replaceOriginalWithDraft && !draftInserted && rowId && rowId === editingId) {
       displayIndex += 1;
       bodyParts.push(renderDraftRowHtml(displayIndex));
       draftInserted = true;
@@ -55649,10 +56210,11 @@ function renderOfferingGroupStatusAssignmentTable(sec, options = {}) {
       <td class="col-center col-simul">${row.simultaneousGroups ? '是' : '否'}</td>
       <td class="col-center col-slot-link actions">${formatSharedTeachingSlotLinkCellHtml(sec, row)}</td>
       <td class="col-center col-classroom-attr">${escapeHtml(formatAssignClassroomAttributeDisplay(row.classroomAttribute))}</td>
-      <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute)}</td>
+      <td class="col-center col-classroom-pref">${formatAssignClassroomPreferenceCellHtml(row.classroomPreferences, row.classroomAttribute, row.classroomPreferenceOthersText)}</td>
       ${rowOps}
     </tr>`);
   });
+  // 新增/复制：表尾追加草稿；修改态若上面已按 id 替换则不会走进这里
   if (draft && !draftInserted && !offeringGroupingReadOnly && !forceReadOnly) {
     displayIndex += 1;
     bodyParts.push(renderDraftRowHtml(displayIndex));
@@ -55791,14 +56353,18 @@ function bindOfferingGroupStatusGroupDropdownReposition() {
   if (offeringGroupStatusGroupDropdownRepositionBound) return;
   offeringGroupStatusGroupDropdownRepositionBound = true;
   const repositionOrClose = () => {
-    const dd = document.getElementById('offering-group-status-group-dropdown');
-    if (!dd || dd.hidden) return;
-    positionOfferingGroupStatusDraftGroupDropdown();
+    const groupDd = document.getElementById('offering-group-status-group-dropdown');
+    if (groupDd && !groupDd.hidden) positionOfferingGroupStatusDraftGroupDropdown();
+    // 历史教师下拉同步跟随滚动/缩放，避免浮层错位
+    const teacherDd = document.getElementById('offering-group-status-prior-teacher-dropdown');
+    if (teacherDd && !teacherDd.hidden) positionOfferingGroupStatusDraftPriorTeacherDropdown();
   };
   window.addEventListener('resize', repositionOrClose);
   document.getElementById('offering-group-group-status-panel')
     ?.addEventListener('scroll', repositionOrClose, { passive: true });
   document.querySelector('.offering-group-main')
+    ?.addEventListener('scroll', repositionOrClose, { passive: true });
+  document.querySelector('.offering-group-status-assign-table-wrap')
     ?.addEventListener('scroll', repositionOrClose, { passive: true });
 }
 
@@ -56483,8 +57049,24 @@ function renderOfferingGroupingHourSummaryPanel() {
 }
 
 function renderOfferingGroupingPanel() {
+  // 角色收窄后：当前课若不在可见列表，自动切到第一条管辖内课程
+  const scoped = typeof getOfferingGroupingCourseListSections === 'function'
+    ? getOfferingGroupingCourseListSections()
+    : [];
+  if (scoped.length
+    && offeringGroupingSectionId
+    && !scoped.some(s => s.id === offeringGroupingSectionId)) {
+    offeringGroupingSectionId = scoped[0].id;
+  }
   const sec = COURSE_OFFERING_PLAN_STORE?.sections.find(s => s.id === offeringGroupingSectionId);
   if (!sec) return;
+  // 越权：强制只读；回到管辖内：按结构锁定重算，勿沿用越权只读
+  if (typeof passesPrototypeRoleOfferingGroupingSection === 'function'
+    && !passesPrototypeRoleOfferingGroupingSection(sec)) {
+    offeringGroupingReadOnly = true;
+  } else if (typeof isMajorOfferingSectionStructureLocked === 'function') {
+    offeringGroupingReadOnly = isMajorOfferingSectionStructureLocked(sec);
+  }
   if (sec.offeringType === 'ge') ensureGeOfferingSectionFields(sec);
   else if (sec.offeringType === 'other') ensureOtherOfferingSectionFields(sec);
   else ensureSectionOfferingFields(sec);
@@ -69336,7 +69918,9 @@ function refreshViewsForPrototypeRole() {
     'page-course-major-offering-roster': () => typeof renderCourseMajorOfferingRosterPage === 'function' && renderCourseMajorOfferingRosterPage(),
     'page-course-offering-ge': () => typeof renderGeOfferingPlanPage === 'function' && renderGeOfferingPlanPage(),
     'page-course-ge-offering-roster': () => typeof renderCourseGeOfferingRosterPage === 'function' && renderCourseGeOfferingRosterPage(),
-    'page-course-ge-offering-quota': () => typeof renderGeOfferingQuotaPage === 'function' && renderGeOfferingQuotaPage()
+    'page-course-ge-offering-quota': () => typeof renderGeOfferingQuotaPage === 'function' && renderGeOfferingQuotaPage(),
+    // 分组页侧栏随角色刷新：学院/专业收窄，教务仍全部
+    'page-offering-grouping': () => typeof renderOfferingGroupingPanel === 'function' && renderOfferingGroupingPanel()
   };
   refreshMap[activeId]?.();
 }

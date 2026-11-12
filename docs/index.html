@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="49d6fde">
+  <meta name="portal-build" content="f3b3cd1">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -247,7 +247,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 49d6fde">1105排课1</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git f3b3cd1">1112排课1</div>
         </div>
       </div>
     </section>
@@ -2714,8 +2714,13 @@
           <a href="#" id="schedule-detail-breadcrumb-root" data-schedule-detail-back onclick="backFromScheduleDetailPage();return false">排课表时间</a><span>/</span>
           <span id="schedule-detail-breadcrumb-term" class="schedule-detail-breadcrumb-term">—</span><span>/</span>
           <span id="schedule-detail-breadcrumb-mid">按入学批次排</span><span>/</span>
-          <span id="schedule-time-detail-title">排课</span>
+          <!-- 标题即作用域下拉：当前对象名 + 切换；原工具栏 .schedule-scope-switch 已弃用 -->
+          <span id="schedule-time-detail-title" class="schedule-scope-title-switch">
+            <select class="input input-sm" id="schedule-scope-select" aria-label="切换排课对象" onchange="onScheduleScopeSwitch(this.value)"></select>
+          </span>
         </div>
+        <!-- 弃用：顶栏内固定共同授课提示条。原因：产品要求用顶部浮层通知，勿嵌死在 page-header -->
+        <!-- <div id="schedule-shared-hint-header" class="schedule-shared-hint-header" hidden role="status" aria-live="polite"></div> -->
         <div class="page-header-actions">
           <!-- 弃用：排时间详情「演示管理员」切换 —— 改与开课一致，统一用门户顶栏 #prototype-role-select -->
           <!--
@@ -2730,11 +2735,23 @@
             <select class="input input-sm" id="schedule-demo-admin-scope" aria-label="管辖学院或专业" hidden onchange="onScheduleDemoAdminScopeChange(this.value)"></select>
           </label>
           -->
+          <!-- 弃用：顶栏「课表全屏」文字按钮。原因：改为课表 Day 列表头内图标入口，避免占顶栏 -->
+          <!--
+          <button class="btn btn-outline btn-sm schedule-tt-fullscreen-enter" type="button" id="btn-schedule-tt-fullscreen"
+            data-sch-tt-fs-enter="time" onclick="toggleScheduleTimeTtFullscreen(true)" title="隐藏左侧列表与上方工具区，仅显示课表">课表全屏</button>
+          -->
           <button class="btn btn-ghost btn-sm" type="button" data-schedule-detail-back onclick="backFromScheduleDetailPage()">返回</button>
         </div>
       </div>
       <div class="schedule-detail-layout" id="schedule-detail-layout">
         <aside class="card schedule-detail-sidebar">
+          <!-- 排时间/联合：左侧课程列表展开收起轨；教室页 clone 后隐藏，避免改教室侧交互 -->
+          <button type="button" class="schedule-detail-sidebar-rail" id="btn-schedule-detail-sidebar-toggle"
+            data-sch-sidebar-toggle="time"
+            onclick="toggleScheduleDetailSidebar(event)"
+            aria-expanded="true" aria-label="收起课程列表" title="收起课程列表">
+            <span class="schedule-detail-sidebar-rail-icon" aria-hidden="true"></span>
+          </button>
           <div class="schedule-detail-tabs" id="schedule-detail-course-tabs">
             <button type="button" class="schedule-detail-tab is-active" data-tab="all" onclick="setScheduleCourseTab('all')">全部 <span id="schedule-tab-all-count">0</span></button>
             <button type="button" class="schedule-detail-tab" data-tab="pending" data-sch-phase-tab="time" onclick="setScheduleCourseTab('pending')"><span data-sch-tab-pending-label>未排完</span> <span id="schedule-tab-pending-count">0</span></button>
@@ -2786,12 +2803,33 @@
               </div>
             </div>
             <div class="schedule-detail-course-search-actions">
+              <!-- 教室安排入口：放在「查询」左侧；教室/联合 clone 后去掉 -->
+              <div class="schedule-sidebar-room-preview-actions" data-sch-phase-tab="time">
+                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button>
+                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview-refresh" onclick="refreshScheduleTimeRoomPreview()" title="拉取其它已开排课页签的最新节次并刷新本页冲突；不打开教室安排抽屉">刷新</button>
+                <!-- 手动排时间：一键导入当前待排（非自动排课作业页） -->
+                <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-time-one-click-import" onclick="runScheduleTimeOneClickImport()">一键导入</button>
+              </div>
               <button type="button" class="btn btn-primary btn-sm" onclick="searchScheduleDetailCourseCards()">查询</button>
               <button type="button" class="btn btn-outline btn-sm" onclick="clearScheduleDetailCourseSearch()">重置</button>
               <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
                 <span class="schedule-query-fold-caret" aria-hidden="true"></span>
               </button>
+              <!-- 弃用：查询冲突曾放在左侧查询动作行右侧。原因：改放到课表 .schedule-timetable-scroll 上方，贴近冲突可视化 -->
+              <!--
+              <div class="schedule-sidebar-time-actions" data-sch-phase-tab="time">
+                <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry-sidebar-legacy">
+                  <button class="btn btn-primary btn-sm" type="button">查询冲突</button>
+                </div>
+              </div>
+              -->
             </div>
+            <!-- 弃用：预重修检测表单曾跟按钮在左侧查询动作区下方展开。原因：随「查询冲突」一并迁到课表滚动区上方 -->
+            <!--
+            <div class="schedule-detail-field schedule-retake-detect-panel" id="schedule-retake-detect-panel-sidebar-legacy" data-sch-phase-tab="time">
+              ... moved above .schedule-timetable-scroll ...
+            </div>
+            -->
           </div>
           <ul class="schedule-detail-course-list" id="schedule-detail-course-list"></ul>
           <div class="schedule-detail-sidebar-foot">
@@ -2809,46 +2847,121 @@
           <div class="card schedule-timetable-wrap">
             <!-- 弃用：顶栏操作说明。原因：产品要求去掉该提示条；保留空节点以免教室页/联合排课 clone 与旧脚本取节点报错 -->
             <div class="schedule-detail-op-hint" id="schedule-detail-edit-hint" hidden></div>
-            <div class="schedule-conflict-legend" id="schedule-conflict-legend">
-              <span class="sch-leg-title">冲突类型：</span>
-              <span class="sch-leg-item is-teacher" data-sch-leg="time">教师冲突</span>
-              <span class="sch-leg-item is-student" data-sch-leg="time">学生冲突</span>
-              <!-- 排时间侧不再展示教室冲突；排教室侧用下方三类图例 -->
-              <span class="sch-leg-item is-room" id="schedule-conflict-legend-room" data-sch-leg="none" hidden>教室冲突</span>
-              <span class="sch-leg-item is-soft" data-sch-leg="time">不排课时段</span>
+            <!-- 排时间/联合：可折叠顶 chrome（教室页用 display:contents 不改变其布局流） -->
+            <div class="schedule-time-top-chrome" id="schedule-time-top-chrome">
+              <!-- 冲突图例 + 批次 + 显示项合并一排（教室页 contents，由教室脚本自行排 Day/显示项） -->
+              <div class="schedule-time-chrome-merge-row" id="schedule-time-chrome-merge-row">
+                <div class="schedule-conflict-legend" id="schedule-conflict-legend">
+                  <span class="sch-leg-title">冲突类型：</span>
+                  <span class="sch-leg-item is-teacher" data-sch-leg="time">教师冲突</span>
+                  <span class="sch-leg-item is-student" data-sch-leg="time">学生冲突</span>
+                  <!-- 排时间侧不再展示教室冲突；排教室侧用下方三类图例 -->
+                  <span class="sch-leg-item is-room" id="schedule-conflict-legend-room" data-sch-leg="none" hidden>教室冲突</span>
+                  <span class="sch-leg-item is-soft" data-sch-leg="time">不排课时段</span>
+                  <!-- 教室资源检查：售罄/超排；「未超排」图例已去掉（格上仍可有细淡描边） -->
+                  <!-- <span class="sch-leg-item is-room-resource-ok" data-sch-leg="resource">未超排</span> -->
+                  <span class="sch-leg-item is-room-resource-sellout" data-sch-leg="resource">售罄</span>
+                  <span class="sch-leg-item is-room-resource-over" data-sch-leg="resource">超排</span>
               <span class="sch-leg-item is-retake" data-sch-leg="retake">预重修冲突</span>
-              <span class="sch-leg-item is-prereq" data-sch-leg="time">先修冲突</span>
-              <!-- 排时间侧固定展示；显隐由 renderScheduleDetailModeUi 按相位控制 -->
-              <span class="sch-leg-item is-shared" data-sch-leg="shared">共同授课课程</span>
-              <span class="sch-leg-item is-room" data-sch-leg="room" hidden>教室时间冲突</span>
-              <!-- 座位数/场地类型不一致仅弹窗提示，不参与课表格着色/图例 -->
-              <span class="sch-leg-item is-room-seats" data-sch-leg="none" hidden>座位数冲突</span>
-              <span class="sch-leg-item is-room-type" data-sch-leg="none" hidden>场地类型不一致</span>
-            </div>
-            <!-- 弃用：原课表外共同授课引导条；现改为 #schedule-timetable-grid 内 .sch-shared-hint-panel 提示表。保留空节点以免教室页 clone / 旧脚本取节点报错 -->
-            <div class="schedule-shared-teaching-hint" id="schedule-shared-teaching-hint" hidden></div>
-            <div class="schedule-timetable-toolbar">
-              <div class="schedule-scope-switch">
-                <label class="schedule-scope-label" id="schedule-scope-label" for="schedule-scope-select">入学批次</label>
-                <select class="input input-sm" id="schedule-scope-select" onchange="onScheduleScopeSwitch(this.value)"></select>
+              <!-- 先修冲突：仅预重修检测开启时与预重修图例一并展示（青色） -->
+              <span class="sch-leg-item is-prereq" data-sch-leg="retake">先修冲突</span>
+              <!-- 弃用：「共同授课课程」图例。原因：产品要求从图例去掉；格上共同授课表现保留 -->
+              <!-- <span class="sch-leg-item is-shared" data-sch-leg="shared">共同授课课程</span> -->
+                  <span class="sch-leg-item is-room" data-sch-leg="room" hidden>教室时间冲突</span>
+                  <!-- 座位数/场地类型不一致仅弹窗提示，不参与课表格着色/图例 -->
+                  <span class="sch-leg-item is-room-seats" data-sch-leg="none" hidden>座位数冲突</span>
+                  <span class="sch-leg-item is-room-type" data-sch-leg="none" hidden>场地类型不一致</span>
+                </div>
+                <!-- 弃用：原课表外共同授课引导条；现改为 #schedule-timetable-grid 内 .sch-shared-hint-panel 提示表。保留空节点以免教室页 clone / 旧脚本取节点报错 -->
+                <div class="schedule-shared-teaching-hint" id="schedule-shared-teaching-hint" hidden></div>
+                <!-- 弃用：工具栏「当前批次」等作用域切换。原因：已迁到面包屑 #schedule-time-detail-title 标题下拉 -->
+                <!--
+                <div class="schedule-timetable-toolbar">
+                  <div class="schedule-scope-switch">
+                    <label class="schedule-scope-label" id="schedule-scope-label" for="schedule-scope-select">入学批次</label>
+                    <select class="input input-sm" id="schedule-scope-select" onchange="onScheduleScopeSwitch(this.value)"></select>
+                  </div>
+                </div>
+                -->
+                <div class="schedule-detail-view-settings" id="schedule-detail-view-settings">
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-show-weekend" onchange="onScheduleViewSettingChange()"> 显示周末</label>
+                  <span class="schedule-view-sep">课表卡片显示：</span>
+                  <label class="schedule-view-opt is-required"><input type="checkbox" id="sch-card-code" checked disabled> Course Code</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-name" onchange="onScheduleViewSettingChange()"> 课程班名称</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
+                  <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 教室偏好</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" onchange="onScheduleViewSettingChange()"> 课程组</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
+                </div>
+              </div>
+              <div class="schedule-detail-field schedule-time-top-chrome-weeks">
+                <label class="schedule-detail-field-label">排课周次</label>
+                <!-- 周次格子 + 右侧预重修检测入口；表单仍在下方 panel；教室/联合 clone 会 remove actions -->
+                <div class="schedule-time-weeks-main">
+                  <div class="schedule-week-grid" id="schedule-detail-week-grid"></div>
+                  <div class="schedule-sidebar-time-actions" data-sch-phase-tab="time">
+                    <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry">
+                      <span class="schedule-retake-detect-label">预重修检测</span>
+                      <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">查询冲突</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- 弃用：预重修入口单独占顶 chrome 下一行。原因：改到「排课周次」行右侧 -->
+              <!--
+              <div class="schedule-sidebar-time-actions" data-sch-phase-tab="time">
+                <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry-legacy-below-weeks">
+                  <span class="schedule-retake-detect-label">预重修检测</span>
+                  <button class="btn btn-primary btn-sm" type="button">查询冲突</button>
+                </div>
+              </div>
+              -->
+              <div class="schedule-detail-field schedule-retake-detect-panel" id="schedule-retake-detect-panel" data-sch-phase-tab="time">
+                <!-- 弃用：面板内「预重修检测」大标题 + tools 入口。原因：入口已并入「查询冲突」按钮 -->
+                <!-- <label class="schedule-detail-field-label">预重修检测</label> -->
+                <div class="schedule-retake-detect-form" id="schedule-retake-detect-form" hidden>
+                  <div class="schedule-retake-detect-controls">
+                    <label class="schedule-retake-detect-item">
+                      <span>学生</span>
+                      <div class="schedule-retake-combo" data-retake-combo="student">
+                        <input class="input input-sm" id="schedule-retake-detect-student" type="text" placeholder="学号（学生姓名）" autocomplete="off"
+                          onfocus="openScheduleRetakeDetectCombo('student')"
+                          oninput="onScheduleRetakeDetectFilterInput('student')"
+                          onkeydown="onScheduleRetakeDetectComboKeydown(event,'student')">
+                        <button type="button" class="schedule-retake-combo-clear" id="schedule-retake-detect-student-clear" title="清空" hidden
+                          onmousedown="event.preventDefault()"
+                          onclick="clearScheduleRetakeDetectField('student')">×</button>
+                        <div class="schedule-retake-combo-list" id="schedule-retake-detect-student-list" hidden></div>
+                      </div>
+                    </label>
+                    <label class="schedule-retake-detect-item">
+                      <span>课程</span>
+                      <div class="schedule-retake-combo" data-retake-combo="course">
+                        <input class="input input-sm" id="schedule-retake-detect-course" type="text" placeholder="Course Code或课程班名称" autocomplete="off"
+                          oninput="syncScheduleRetakeDetectClearBtn('course')"
+                          onkeydown="onScheduleRetakeDetectCourseKeydown(event)">
+                        <button type="button" class="schedule-retake-combo-clear" id="schedule-retake-detect-course-clear" title="清空" hidden
+                          onmousedown="event.preventDefault()"
+                          onclick="clearScheduleRetakeDetectField('course')">×</button>
+                      </div>
+                    </label>
+                    <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-detect" onclick="runScheduleRetakeDetect()">查询</button>
+                    <button class="btn btn-ghost btn-sm" type="button" id="btn-schedule-retake-detect-clear" onclick="clearScheduleRetakeDetect()">清除</button>
+                    <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-retake-detect-exit" onclick="exitScheduleRetakeDetect()">退出检测</button>
+                  </div>
+                  <div class="schedule-retake-detect-hint" id="schedule-retake-detect-hint"></div>
+                </div>
               </div>
             </div>
-            <div class="schedule-detail-view-settings" id="schedule-detail-view-settings">
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-show-weekend" onchange="onScheduleViewSettingChange()"> 显示周末</label>
-              <span class="schedule-view-sep">课表卡片显示：</span>
-              <label class="schedule-view-opt is-required"><input type="checkbox" id="sch-card-code" checked disabled> Course Code</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-name" onchange="onScheduleViewSettingChange()"> 课程班名称</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
-              <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 教室偏好</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" onchange="onScheduleViewSettingChange()"> 课程组</label>
-              <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
-            </div>
-            <div class="schedule-detail-field">
-              <label class="schedule-detail-field-label">排课周次</label>
-              <div class="schedule-week-grid" id="schedule-detail-week-grid"></div>
-            </div>
+            <!-- 排时间/联合：课表壳顶边折叠轨（收起合并行+周次+预重修检测）；教室页隐藏 -->
+            <button type="button" class="schedule-time-top-chrome-rail" id="btn-schedule-time-top-chrome-toggle"
+              data-sch-top-chrome-toggle="time"
+              onclick="toggleScheduleTimeTopChrome(event)"
+              aria-expanded="true" aria-label="收起上方工具区" title="收起上方工具区">
+              <span class="schedule-time-top-chrome-rail-icon" aria-hidden="true"></span>
+            </button>
             <div class="schedule-detail-field schedule-detail-room-filter-panel" id="schedule-detail-room-filter-panel" hidden>
               <label class="schedule-detail-field-label">教室筛选</label>
               <!-- 一行最多 4 条件；按钮组第 5 列；第 5 条件起默认收起，重置右侧半三角展开 -->
@@ -2883,6 +2996,8 @@
               <div class="schedule-room-hold-actions" id="schedule-room-hold-actions">
                 <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-room-hold-lock" onclick="lockScheduleRoomHold()">锁定</button>
                 <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-room-hold-revoke" onclick="revokeScheduleRoomHold()">撤回</button>
+                <!-- 排教室手动一键导入（含 B2B）；时间侧 hold 栏隐藏，不展示此钮 -->
+                <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-room-one-click-import" data-sch-phase-tab="room" onclick="runScheduleRoomOneClickImport()">一键导入</button>
               </div>
               <div class="schedule-room-lock-legend" id="schedule-room-lock-legend">
                 <span class="sch-leg-title" id="schedule-lock-legend-title">锁定状态：</span>
@@ -2925,53 +3040,21 @@
               <span class="schedule-venue-actions-sep" id="schedule-venue-actions-sep" hidden aria-hidden="true"></span>
               <button class="btn btn-danger-outline btn-sm" id="btn-schedule-slot-cancel" type="button" onclick="cancelSelectedScheduleSlot()" hidden>取消排该时段</button>
             </div>
-            <div class="schedule-detail-field schedule-retake-detect-panel" id="schedule-retake-detect-panel">
-              <label class="schedule-detail-field-label">预重修检测</label>
-              <div class="schedule-retake-detect-tools">
-                <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry">
-                  <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">查询冲突</button>
-                </div>
-              </div>
-              <div class="schedule-retake-detect-form" id="schedule-retake-detect-form" hidden>
-                <div class="schedule-retake-detect-controls">
-                  <label class="schedule-retake-detect-item">
-                    <span>学生</span>
-                    <div class="schedule-retake-combo" data-retake-combo="student">
-                      <input class="input input-sm" id="schedule-retake-detect-student" type="text" placeholder="学号（学生姓名）" autocomplete="off"
-                        onfocus="openScheduleRetakeDetectCombo('student')"
-                        oninput="onScheduleRetakeDetectFilterInput('student')"
-                        onkeydown="onScheduleRetakeDetectComboKeydown(event,'student')">
-                      <button type="button" class="schedule-retake-combo-clear" id="schedule-retake-detect-student-clear" title="清空" hidden
-                        onmousedown="event.preventDefault()"
-                        onclick="clearScheduleRetakeDetectField('student')">×</button>
-                      <div class="schedule-retake-combo-list" id="schedule-retake-detect-student-list" hidden></div>
-                    </div>
-                  </label>
-                  <label class="schedule-retake-detect-item">
-                    <span>课程</span>
-                    <div class="schedule-retake-combo" data-retake-combo="course">
-                      <input class="input input-sm" id="schedule-retake-detect-course" type="text" placeholder="Course Code或课程班名称" autocomplete="off"
-                        oninput="syncScheduleRetakeDetectClearBtn('course')"
-                        onkeydown="onScheduleRetakeDetectCourseKeydown(event)">
-                      <button type="button" class="schedule-retake-combo-clear" id="schedule-retake-detect-course-clear" title="清空" hidden
-                        onmousedown="event.preventDefault()"
-                        onclick="clearScheduleRetakeDetectField('course')">×</button>
-                    </div>
-                  </label>
-                  <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-detect" onclick="runScheduleRetakeDetect()">查询</button>
-                  <button class="btn btn-ghost btn-sm" type="button" id="btn-schedule-retake-detect-clear" onclick="clearScheduleRetakeDetect()">清除</button>
-                  <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-retake-detect-exit" onclick="exitScheduleRetakeDetect()">退出检测</button>
-                </div>
-                <div class="schedule-retake-detect-hint" id="schedule-retake-detect-hint"></div>
-              </div>
-              <div class="schedule-time-room-preview-row">
-                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button>
-                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview-refresh" onclick="refreshScheduleTimeRoomPreview()" title="拉取其它已开排课页签的最新节次并刷新本页冲突；不打开教室安排抽屉">刷新</button>
-              </div>
+            <!-- 弃用：课表上方预重修/教室安排按钮区。原因：迁到左侧 #schedule-room-course-search 查询动作区下方，腾出课表高度 -->
+            <!--
+            <div class="schedule-detail-field schedule-retake-detect-panel" id="schedule-retake-detect-panel-legacy">
+              ... moved to sidebar ...
             </div>
+            -->
             <div class="schedule-detail-op-hint is-warn schedule-detail-room-clear-hint" id="schedule-detail-room-clear-hint" hidden></div>
             <input type="hidden" id="schedule-detail-weeks">
             <div class="schedule-room-grid-shell" id="schedule-room-grid-shell">
+            <!-- 弃用：全屏态「退出全屏」浮钮。原因：改由 Day 角图标在全屏时切换为对内缩小符号，点击即可退出 -->
+            <!--
+            <button type="button" class="btn btn-primary btn-sm schedule-tt-fullscreen-exit" id="btn-schedule-tt-fullscreen-exit"
+              data-sch-tt-fs-exit="time" onclick="toggleScheduleTimeTtFullscreen(false)">退出全屏</button>
+            -->
+            <!-- 弃用：预重修检测曾放在 .schedule-room-grid-shell 内课表滚动区上方。原因：改入 #schedule-time-top-chrome 底部，随顶栏一并折叠 -->
             <div class="schedule-timetable-scroll">
               <div id="schedule-timetable-grid" class="schedule-timetable-grid"></div>
             </div>
@@ -9893,6 +9976,17 @@
 </div>
 
 <!-- 弹窗：排课冲突提醒（加宽，避免对端长文案换行） -->
+<!-- 教室资源容量表（排时间右键「查看教室资源」） -->
+<div class="modal-overlay modal-nested" id="modal-schedule-room-capacity">
+  <div class="modal modal-md">
+    <div class="modal-head"><h3 id="schedule-room-capacity-title">教室资源使用情况</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-room-capacity')">×</button></div>
+    <div class="modal-body" id="schedule-room-capacity-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-room-capacity')">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay modal-nested" id="modal-schedule-place-conflict">
   <div class="modal modal-lg schedule-place-conflict-modal">
     <div class="modal-head"><h3 id="schedule-place-conflict-title">排课冲突提醒</h3><button class="modal-close" type="button" onclick="closeSchedulePlaceConflictModal()">×</button></div>
@@ -9900,7 +9994,8 @@
     <div class="modal-foot">
       <!-- 弃用：按建议周次排课入口；学时裁周仅保留「继续排课」（原周次强排）与关闭 -->
       <button class="btn btn-primary" type="button" id="schedule-place-conflict-adjust" hidden onclick="confirmSchedulePlaceWithAdjustedWeeks()">按建议周次排课</button>
-      <button class="btn btn-outline" type="button" id="schedule-place-conflict-force" hidden onclick="forceSchedulePlaceDespiteConflict()">继续排课</button>
+      <!-- 文案改为「强行排入」：可忽略冲突或教室容量（schedule-manual-resource-check-import）；原「继续排课」语义保留 -->
+      <button class="btn btn-outline" type="button" id="schedule-place-conflict-force" hidden onclick="forceSchedulePlaceDespiteConflict()">强行排入</button>
       <button class="btn btn-ghost" type="button" onclick="closeSchedulePlaceConflictModal()">关闭</button>
     </div>
   </div>
@@ -10627,10 +10722,11 @@
   </div>
 </aside>
 
-<!-- 排课表时间：课表右键菜单（勿往此菜单加教室侧项） -->
+<!-- 排课表时间：课表右键菜单（勿往此菜单加教室侧锁定/撤回项） -->
 <div class="schedule-ctx-menu" id="schedule-grid-context-menu" hidden role="menu" aria-label="课表卡片操作">
   <span class="schedule-ctx-arrow" aria-hidden="true"></span>
   <button type="button" class="schedule-ctx-item" data-sch-ctx="viewConflict" role="menuitem">查看冲突</button>
+  <button type="button" class="schedule-ctx-item" data-sch-ctx="viewRoomCapacity" role="menuitem">查看教室资源</button>
   <button type="button" class="schedule-ctx-item" data-sch-ctx="setVenueType" role="menuitem">设置场地类型</button>
   <button type="button" class="schedule-ctx-item" data-sch-ctx="retakeDetect" role="menuitem">预重修检测</button>
   <div class="schedule-ctx-sep" role="separator"></div>

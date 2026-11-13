@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="f3b3cd1">
+  <meta name="portal-build" content="1089ddc">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -169,9 +169,11 @@
       <a href="#" class="nav-item" data-page="schedule-room-category">按场地类型排</a>
       <a href="#" class="nav-item" data-page="schedule-room-conflict">场地冲突查询</a>
       <!-- 按课程排已隐藏：data-page="schedule-room-course" -->
+      <!-- 暂隐藏「自动排课表教室」分组及子菜单（2026-08-11 已有，非本次新增；先去掉侧栏入口，页面/逻辑保留）
       <div class="nav-group">自动排课表教室</div>
       <a href="#" class="nav-item" data-page="schedule-auto-room-rule">自动排教室规则</a>
       <a href="#" class="nav-item" data-page="schedule-auto-room">自动排教室</a>
+      -->
       <div class="nav-group">课表查询</div>
       <a href="#" class="nav-item" data-page="schedule-timetable-query">课表查询</a>
       <a href="#" class="nav-item" data-page="schedule-density-query">课表密度查询</a>
@@ -247,7 +249,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git f3b3cd1">1112排课1</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 1089ddc">1113排课</div>
         </div>
       </div>
     </section>
@@ -2745,7 +2747,7 @@
       </div>
       <div class="schedule-detail-layout" id="schedule-detail-layout">
         <aside class="card schedule-detail-sidebar">
-          <!-- 排时间/联合：左侧课程列表展开收起轨；教室页 clone 后隐藏，避免改教室侧交互 -->
+          <!-- 排时间/联合：左侧课程列表展开收起轨；教室页 clone 后改绑 data-sch-sidebar-toggle=room + 教室独立 handler -->
           <button type="button" class="schedule-detail-sidebar-rail" id="btn-schedule-detail-sidebar-toggle"
             data-sch-sidebar-toggle="time"
             onclick="toggleScheduleDetailSidebar(event)"
@@ -2803,10 +2805,10 @@
               </div>
             </div>
             <div class="schedule-detail-course-search-actions">
-              <!-- 教室安排入口：放在「查询」左侧；教室/联合 clone 后去掉 -->
+              <!-- 弃用：查看教室安排/刷新曾放查询左侧。原因：改到「排课周次」行「预重修冲突查询」右侧 -->
               <div class="schedule-sidebar-room-preview-actions" data-sch-phase-tab="time">
-                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button>
-                <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview-refresh" onclick="refreshScheduleTimeRoomPreview()" title="拉取其它已开排课页签的最新节次并刷新本页冲突；不打开教室安排抽屉">刷新</button>
+                <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button> -->
+                <!-- <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview-refresh" onclick="refreshScheduleTimeRoomPreview()" title="拉取其它已开排课页签的最新节次并刷新本页冲突；不打开教室安排抽屉">刷新</button> -->
                 <!-- 手动排时间：一键导入当前待排（非自动排课作业页） -->
                 <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-time-one-click-import" onclick="runScheduleTimeOneClickImport()">一键导入</button>
               </div>
@@ -2865,9 +2867,11 @@
               <span class="sch-leg-item is-retake" data-sch-leg="retake">预重修冲突</span>
               <!-- 先修冲突：仅预重修检测开启时与预重修图例一并展示（青色） -->
               <span class="sch-leg-item is-prereq" data-sch-leg="retake">先修冲突</span>
-              <!-- 弃用：「共同授课课程」图例。原因：产品要求从图例去掉；格上共同授课表现保留 -->
-              <!-- <span class="sch-leg-item is-shared" data-sch-leg="shared">共同授课课程</span> -->
-                  <span class="sch-leg-item is-room" data-sch-leg="room" hidden>教室时间冲突</span>
+                  <!-- 弃用：「共同授课课程」图例。原因：产品要求从图例去掉；格上共同授课表现保留 -->
+                  <!-- <span class="sch-leg-item is-shared" data-sch-leg="shared">共同授课课程</span> -->
+                  <!-- 弃用：排教室单条「教室时间冲突」图例。原因：改为与排时间一致展示售罄/超排两种样式（上方 data-sch-leg=resource） -->
+                  <!-- <span class="sch-leg-item is-room" data-sch-leg="room" hidden>教室时间冲突</span> -->
+                  <span class="sch-leg-item is-room" data-sch-leg="room" hidden style="display:none">教室时间冲突</span>
                   <!-- 座位数/场地类型不一致仅弹窗提示，不参与课表格着色/图例 -->
                   <span class="sch-leg-item is-room-seats" data-sch-leg="none" hidden>座位数冲突</span>
                   <span class="sch-leg-item is-room-type" data-sch-leg="none" hidden>场地类型不一致</span>
@@ -2903,8 +2907,12 @@
                   <div class="schedule-week-grid" id="schedule-detail-week-grid"></div>
                   <div class="schedule-sidebar-time-actions" data-sch-phase-tab="time">
                     <div class="schedule-retake-detect-entry" id="schedule-retake-detect-entry">
-                      <span class="schedule-retake-detect-label">预重修检测</span>
-                      <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">查询冲突</button>
+                      <!-- 弃用：「预重修检测」文案标签。原因：按钮已改为「预重修冲突查询」，标签冗余 -->
+                      <!-- <span class="schedule-retake-detect-label">预重修检测</span> -->
+                      <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">预重修冲突查询</button>
+                      <!-- 顺序：预重修冲突查询 → 查看教室安排情况 → 刷新；教室/联合 clone 会 remove 整块 actions -->
+                      <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button>
+                      <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview-refresh" onclick="refreshScheduleTimeRoomPreview()" title="拉取其它已开排课页签的最新节次并刷新本页冲突；不打开教室安排抽屉">刷新</button>
                     </div>
                   </div>
                 </div>
@@ -2955,7 +2963,7 @@
                 </div>
               </div>
             </div>
-            <!-- 排时间/联合：课表壳顶边折叠轨（收起合并行+周次+预重修检测）；教室页隐藏 -->
+            <!-- 排时间/联合：课表壳顶边折叠轨（收起合并行+周次+预重修检测）；教室页 clone 后改绑 room，收起含筛选+hold-bar -->
             <button type="button" class="schedule-time-top-chrome-rail" id="btn-schedule-time-top-chrome-toggle"
               data-sch-top-chrome-toggle="time"
               onclick="toggleScheduleTimeTopChrome(event)"
@@ -3058,6 +3066,14 @@
             <div class="schedule-timetable-scroll">
               <div id="schedule-timetable-grid" class="schedule-timetable-grid"></div>
             </div>
+            <!-- 排时间一键导入：进度条（一门一门跑）+ 结束后的未排满说明；教室侧 CSS 隐藏 -->
+            <div id="schedule-time-one-click-progress" class="schedule-time-one-click-progress" hidden role="status" aria-live="polite">
+              <div class="schedule-auto-progress-bar schedule-time-one-click-progress-bar">
+                <span id="schedule-time-one-click-progress-bar" style="width:0%"></span>
+              </div>
+              <div class="schedule-auto-progress-text" id="schedule-time-one-click-progress-text">准备导入…</div>
+            </div>
+            <div id="schedule-time-one-click-result-hint" class="schedule-detail-op-hint schedule-time-one-click-result-hint" hidden role="status" aria-live="polite"></div>
             <div class="schedule-room-grid-footer" id="schedule-room-grid-footer" hidden>
               <button type="button" class="btn btn-ghost btn-sm sch-room-expand-btn" id="btn-schedule-room-grid-expand" onclick="toggleScheduleRoomTimetableExpand()">展开更多教室</button>
             </div>

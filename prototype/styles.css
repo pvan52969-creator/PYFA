@@ -5521,6 +5521,17 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-delete-confirm .delete-confirm-shared-room-item .dcsr-meta {
   color: var(--text-2, #475569);
 }
+/* 课程组：一行一个组（A组 / B组 纵向排列，避免顿号长串） */
+#modal-delete-confirm .delete-confirm-shared-room-item .dcsr-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+#modal-delete-confirm .delete-confirm-shared-room-item .dcsr-group-line {
+  display: block;
+}
 /* 「单独排」取消钮：描边可见（与 ghost 透明边区分） */
 #modal-delete-confirm #delete-confirm-cancel-btn.btn-outline {
   border-color: var(--blue-500, #3b82f6);
@@ -14203,7 +14214,9 @@ code {
 #page-schedule-time-detail.is-schedule-tt-fullscreen .schedule-room-grid-shell > .schedule-retake-detect-panel {
   display: none !important;
 } */
-#page-schedule-time-detail.is-schedule-tt-fullscreen .schedule-detail-layout {
+/* 全屏必须压过侧栏收起的 28px|1fr：侧栏 display:none 后若仍保留双列，主区会挤进 28px 第一列导致一片空白 */
+#page-schedule-time-detail.is-schedule-tt-fullscreen .schedule-detail-layout,
+#page-schedule-time-detail.is-schedule-tt-fullscreen .schedule-detail-layout.is-schedule-sidebar-collapsed {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
@@ -14233,7 +14246,9 @@ code {
 .is-schedule-joint.is-schedule-tt-fullscreen .schedule-timetable-wrap > :not(.schedule-room-grid-shell):not(.schedule-room-cell-toast) {
   display: none !important;
 }
-.is-schedule-joint.is-schedule-tt-fullscreen .schedule-detail-layout {
+/* 同时间侧：联合全屏 + 侧栏收起时避免主区落入 28px 轨 */
+.is-schedule-joint.is-schedule-tt-fullscreen .schedule-detail-layout,
+.is-schedule-joint.is-schedule-tt-fullscreen .schedule-detail-layout.is-schedule-sidebar-collapsed {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
@@ -14252,12 +14267,30 @@ code {
 #page-schedule-room-detail.is-schedule-room-tt-fullscreen #schedule-room-grid-footer {
   display: none !important;
 }
-#page-schedule-room-detail.is-schedule-room-tt-fullscreen .schedule-detail-layout {
+#page-schedule-room-detail.is-schedule-room-tt-fullscreen .schedule-detail-layout,
+#page-schedule-room-detail.is-schedule-room-tt-fullscreen .schedule-detail-layout.is-schedule-sidebar-collapsed {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
 }
 #page-schedule-room-detail.is-schedule-room-tt-fullscreen .schedule-timetable-wrap {
   padding: 8px;
+}
+/* 顶栏文字「课表全屏」弃用：改由序号列表头图标入口（与时间侧 Day 角一致）；覆盖任意父级以免漏藏 */
+#page-schedule-room-detail .schedule-tt-fullscreen-enter,
+#page-schedule-room-detail #btn-schedule-room-tt-fullscreen,
+#page-schedule-room-detail [data-sch-tt-fs-enter] {
+  display: none !important;
+}
+/* 教室全屏：角标切为缩小符号（独立 class，不共用时间侧 is-schedule-tt-fullscreen） */
+.is-schedule-room-tt-fullscreen .schedule-tt-fs-icon.is-expand {
+  display: none;
+}
+.is-schedule-room-tt-fullscreen .schedule-tt-fs-icon.is-compress {
+  display: block;
+}
+.is-schedule-room-tt-fullscreen .schedule-tt-fs-icon-btn {
+  background: transparent;
+  color: var(--blue-700);
 }
 /* 弃用：教室全屏浮钮退出（教室若仍注入则强制隐藏，与时间侧一致） */
 /* #page-schedule-room-detail.is-schedule-room-tt-fullscreen .schedule-tt-fullscreen-exit {
@@ -14924,14 +14957,16 @@ code {
   margin-left: 3px;
   transition: transform 0.2s ease, margin 0.2s ease;
 }
-/* 收起：列表完全隐藏，仅留窄轨 + 展开图标 */
+/* 收起：列表完全隐藏，仅留窄轨 + 展开图标（排时间 / 联合 / 排教室各自页面作用域，互不串改） */
 #page-schedule-time-detail .schedule-detail-layout.is-schedule-sidebar-collapsed,
-.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed {
+.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed,
+#page-schedule-room-detail .schedule-detail-layout.is-schedule-sidebar-collapsed {
   grid-template-columns: 28px minmax(0, 1fr);
   gap: 0;
 }
 #page-schedule-time-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar,
-.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar {
+.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar,
+#page-schedule-room-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar {
   overflow: visible;
   background: transparent;
   border: none;
@@ -14939,11 +14974,13 @@ code {
   padding: 0;
 }
 #page-schedule-time-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar > :not(.schedule-detail-sidebar-rail),
-.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar > :not(.schedule-detail-sidebar-rail) {
+.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar > :not(.schedule-detail-sidebar-rail),
+#page-schedule-room-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar > :not(.schedule-detail-sidebar-rail) {
   display: none !important;
 }
 #page-schedule-time-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail,
-.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail {
+.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail,
+#page-schedule-room-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail {
   top: 50%;
   right: auto;
   left: 2px;
@@ -14953,35 +14990,105 @@ code {
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
 }
 #page-schedule-time-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail-icon,
-.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail-icon {
+.is-schedule-joint .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail-icon,
+#page-schedule-room-detail .schedule-detail-layout.is-schedule-sidebar-collapsed .schedule-detail-sidebar-rail-icon {
   transform: rotate(-135deg);
   margin-left: 0;
 }
-/* 教室侧不展示时间侧折叠轨（独立性） */
-#page-schedule-room-detail .schedule-detail-sidebar-rail {
+/* 弃用：教室侧强制隐藏折叠轨。原因：产品要求排教室对齐排时间提供侧栏展开收起；改由教室独立 handler 绑定 */
+/* #page-schedule-room-detail .schedule-detail-sidebar-rail {
   display: none !important;
-}
+} */
 
 /* ========== 排时间/联合：课表上方工具区折叠 + 合并行 ========== */
 /*
- * 教室页：保留顶栏真实纵向盒。
- * 弃用 display:contents。原因：contents 把 Day/显示项行与「排课周次」展平进
- * .schedule-timetable-wrap 同一列，并误命中 wrap>.schedule-detail-field 虚线，视觉交织。
+ * 教室页：保留顶栏真实纵向盒（弃用 display:contents）。
+ * 顶区压成 3 行：① merge-row（Day/卡片/图例/锁定）② 周次 ③ 教室筛选。
  */
 #page-schedule-room-detail .schedule-time-top-chrome {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   min-width: 0;
+  gap: 0;
 }
+/* Row1：横排 — Day+卡片显示 | 售罄/超排 | 锁定/待定图例（操作钮已迁到周次行右） */
 #page-schedule-room-detail .schedule-time-chrome-merge-row {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 6px;
   min-width: 0;
+  padding: 4px 0 4px;
 }
-/* 教室：周次与上方 Day/显示项分行，避免贴死/虚线叠层 */
+#page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-shared-teaching-hint {
+  display: none !important;
+}
+#page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-room-view-settings-row {
+  order: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+#page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-conflict-legend {
+  order: 2;
+  margin: 0;
+  min-width: 0;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+#page-schedule-room-detail .schedule-time-chrome-merge-row > #schedule-room-hold-bar {
+  order: 3;
+  flex: 0 1 auto;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  position: static;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 10px;
+}
+#page-schedule-room-detail .schedule-time-chrome-merge-row > #schedule-room-hold-bar::before {
+  content: none;
+  display: none;
+}
+/* 去掉「冲突类型：」；仅保留色标（对齐排时间） */
+#page-schedule-room-detail .schedule-conflict-legend > .sch-leg-title {
+  display: none !important;
+}
+#page-schedule-room-detail #schedule-room-hold-bar #schedule-lock-legend-title {
+  display: none !important;
+}
+#page-schedule-room-detail #schedule-room-hold-bar .schedule-room-lock-legend {
+  margin-left: 0;
+  gap: 6px 10px;
+}
+/* 弃用：操作钮曾与图例同在 hold-bar。原因：改到周次行右侧 */
+#page-schedule-room-detail .schedule-time-chrome-merge-row > #schedule-room-hold-bar > #schedule-room-hold-actions {
+  display: none;
+}
+/* Row2：教室筛选（与周次对调后进 chrome；藏「教室筛选」标签） */
+#page-schedule-room-detail .schedule-time-top-chrome > #schedule-detail-room-filter-panel {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(15, 23, 42, 0.08);
+  position: relative;
+}
+#page-schedule-room-detail .schedule-time-top-chrome > #schedule-detail-room-filter-panel::before {
+  content: none;
+  display: none;
+}
+#page-schedule-room-detail #schedule-detail-room-filter-panel > .schedule-detail-field-label {
+  display: none !important;
+}
+/* Row3：排课周次 + 右侧锁定/撤回/一键导入 */
 #page-schedule-room-detail .schedule-time-top-chrome > .schedule-time-top-chrome-weeks {
-  margin-top: 8px;
+  margin-top: 4px;
   padding-top: 8px;
   border-top: 1px dashed rgba(15, 23, 42, 0.08);
   position: relative;
@@ -14989,6 +15096,26 @@ code {
 #page-schedule-room-detail .schedule-time-top-chrome > .schedule-time-top-chrome-weeks::before {
   content: none;
   display: none;
+}
+#page-schedule-room-detail .schedule-time-top-chrome-weeks .schedule-time-weeks-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+#page-schedule-room-detail .schedule-time-top-chrome-weeks .schedule-week-grid {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#page-schedule-room-detail .schedule-time-top-chrome-weeks #schedule-room-hold-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 /*
  * 时间/联合顶栏：显示项与冲突图例合为一行（左显示项 / 右冲突色标；批次靠右中）
@@ -15121,10 +15248,23 @@ code {
   transform: rotate(-45deg);
   margin-top: -2px;
 }
-/* 教室侧不展示时间侧顶栏折叠轨 */
-#page-schedule-room-detail .schedule-time-top-chrome-rail {
+/* 排教室：收起第1–3行（chrome 含 merge+周次+已并入的 hold；另藏筛选栏） */
+#page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed .schedule-time-top-chrome,
+#page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed #schedule-detail-room-filter-panel {
   display: none !important;
 }
+/* 兼容：hold 若尚未归入 chrome，收起时仍隐藏 */
+#page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed #schedule-room-hold-bar {
+  display: none !important;
+}
+#page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed .schedule-time-top-chrome-rail-icon {
+  transform: rotate(-45deg);
+  margin-top: -2px;
+}
+/* 弃用：教室侧强制隐藏顶栏折叠轨。原因：产品要求对齐排时间，收起 hold-bar 及往上区域 */
+/* #page-schedule-room-detail .schedule-time-top-chrome-rail {
+  display: none !important;
+} */
 /* 左侧查询动作行：靠右（教室安排|刷新 → 查询|重置|▾） */
 /* 弃用：justify-content:flex-start。原因：产品要求动作行靠右排列 */
 #page-schedule-time-detail .schedule-detail-course-search-actions {
@@ -15411,6 +15551,11 @@ code {
 } */
 /* 排教室侧不提供「显示周末」入口（hidden 属性会被 .schedule-view-opt 的 display:inline-flex 覆盖，故按页面作用域强制隐藏；不影响时间侧） */
 #page-schedule-room-detail #schedule-detail-view-settings .schedule-view-opt[hidden] {
+  display: none !important;
+}
+/* 排教室：对齐排时间精简——去掉「课表卡片显示：」文案与固定 Course Code 勾选（课号仍恒显示；节点保留供 JS） */
+#page-schedule-room-detail #schedule-detail-view-settings .schedule-view-sep,
+#page-schedule-room-detail #schedule-detail-view-settings .schedule-view-opt.is-required {
   display: none !important;
 }
 .schedule-detail-course-fields .sdc-v.sdc-v-teachers {
@@ -15713,32 +15858,42 @@ code {
 #page-schedule-room-detail .schedule-timetable-toolbar[hidden] {
   display: none !important;
 }
-/* 排教室：Day + 课表卡片显示同一行（Day 在左） */
+/* 排教室：Day + 课表卡片显示同一行（Day 在左）；已并入 merge-row，不再单独加顶虚线 */
 #page-schedule-room-detail .schedule-room-view-settings-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 16px;
+  gap: 6px 12px;
   position: relative;
-  margin-top: 12px;
-  margin-bottom: 0;
+  margin: 0;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
-#page-schedule-room-detail .schedule-room-view-settings-row::before {
+/* 弃用：view-settings-row 顶虚线。原因：顶区压成 3 行后由 chrome/周次分隔线承担 */
+/* #page-schedule-room-detail .schedule-room-view-settings-row::before {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   top: -12px;
   border-top: 1px dashed var(--border, #e2e8f0);
+} */
+#page-schedule-room-detail .schedule-room-view-settings-row::before {
+  content: none;
+  display: none;
 }
 #page-schedule-room-detail .schedule-room-view-settings-row > #schedule-detail-view-settings {
   flex: 1;
   min-width: 0;
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  white-space: normal;
+  flex-wrap: wrap;
+  gap: 6px 12px;
 }
 #page-schedule-room-detail .schedule-room-view-settings-row > #schedule-detail-view-settings::before {
   display: none;
@@ -15852,6 +16007,26 @@ code {
   background: #fee2e2;
   border-radius: 4px;
   /* 容纳「排考占用」「场地借用占用」等类型文案 */
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 排教室主表：同步容量售罄/超排演示占用芯片样式（与预览抽屉一致；仅教室页作用域） */
+#page-schedule-room-detail .schedule-grid-cell.is-srpv-occ {
+  background: #fef2f2;
+}
+#page-schedule-room-detail .srpv-occ-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #991b1b;
+  background: #fee2e2;
+  border-radius: 4px;
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
@@ -16688,6 +16863,42 @@ code {
 .schedule-detail-room-clear-hint {
   margin-top: -2px;
 }
+/* 排时间：一键导入进度/结果贴课表滚动区下方；教室克隆页隐藏，避免串面 */
+#page-schedule-time-detail .schedule-room-grid-shell > .schedule-time-one-click-progress,
+#page-schedule-time-detail .schedule-room-grid-shell > .schedule-time-one-click-result-hint,
+.is-schedule-joint .schedule-room-grid-shell > .schedule-time-one-click-progress,
+.is-schedule-joint .schedule-room-grid-shell > .schedule-time-one-click-result-hint,
+#page-schedule-joint .schedule-room-grid-shell > .schedule-time-one-click-progress,
+#page-schedule-joint .schedule-room-grid-shell > .schedule-time-one-click-result-hint,
+#page-schedule-joint-demo .schedule-room-grid-shell > .schedule-time-one-click-progress,
+#page-schedule-joint-demo .schedule-room-grid-shell > .schedule-time-one-click-result-hint {
+  flex-shrink: 0;
+  margin: 8px 0 0;
+}
+#page-schedule-room-detail .schedule-time-one-click-progress,
+#page-schedule-room-detail .schedule-time-one-click-result-hint {
+  display: none !important;
+}
+.schedule-time-one-click-progress {
+  padding: 8px 12px;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+}
+.schedule-time-one-click-progress .schedule-time-one-click-progress-bar {
+  width: 100%;
+}
+.schedule-time-one-click-progress .schedule-auto-progress-text {
+  margin-top: 6px;
+  color: #1e3a5f;
+}
+.schedule-time-one-click-result-hint .sch-one-click-stuck-list {
+  margin: 6px 0 0;
+  padding-left: 1.2em;
+}
+.schedule-time-one-click-result-hint .sch-one-click-stuck-list li {
+  margin: 2px 0;
+}
 .schedule-conflict-legend {
   display: flex;
   flex-wrap: wrap;
@@ -17425,15 +17636,44 @@ code {
 #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-conflict-room {
   background: transparent !important;
 }
-/* 排教室图例「教室时间冲突」：描边示意，无填色色块 */
-#page-schedule-room-detail .schedule-conflict-legend .sch-leg-item.is-room {
+/* 排教室：教室占用描边与图例售罄/超排一致（1 门或活动=虚线；≥2 门=实线） */
+#page-schedule-room-detail .schedule-grid-cell.is-room-resource-sellout {
+  background: transparent !important;
+  box-shadow: none;
+  outline: 2px dashed #dc2626;
+  outline-offset: -2px;
+}
+#page-schedule-room-detail .schedule-grid-cell.is-room-resource-over {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 3px #dc2626;
+  outline: none;
+}
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-room-resource-sellout {
+  background: transparent !important;
+  box-shadow: 0 0 0 2px #2563eb;
+  outline: 2px dashed #dc2626;
+  outline-offset: -2px;
+}
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-room-resource-over {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 3px #dc2626, 0 0 0 2px #2563eb;
+  outline: none;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-sellout,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-sellout,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-over,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-over {
+  background: transparent !important;
+}
+/* 弃用：排教室图例「教室时间冲突」描边样式。原因：图例已改为售罄/超排（与排时间 resource 图例共用样式） */
+/* #page-schedule-room-detail .schedule-conflict-legend .sch-leg-item.is-room {
   background: transparent;
   color: #991b1b;
   border: 2px solid #dc2626;
 }
 #page-schedule-room-detail .schedule-conflict-legend .sch-leg-item.is-room::before {
   display: none;
-}
+} */
 /* 待定/锁定格上仍需露出冲突色（座位数等） */
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-conflict,
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-conflict {
@@ -17497,11 +17737,15 @@ code {
 .is-schedule-joint .schedule-grid-cell.is-room-resource-ok {
   box-shadow: inset 0 0 0 0.5px #e5e7eb;
 }
+/* 售罄：对齐图例虚线红框；弃用「实线 inset + 1px 虚线」叠层（虚线几乎看不见） */
 #page-schedule-time-detail .schedule-grid-cell.is-room-resource-sellout,
 .is-schedule-joint .schedule-grid-cell.is-room-resource-sellout {
-  box-shadow: inset 0 0 0 2px #dc2626;
-  outline: 1px dashed #dc2626;
-  outline-offset: -3px;
+  /* box-shadow: inset 0 0 0 2px #dc2626; */
+  /* outline: 1px dashed #dc2626; */
+  /* outline-offset: -3px; */
+  box-shadow: none;
+  outline: 2px dashed #dc2626;
+  outline-offset: -2px;
 }
 #page-schedule-time-detail .schedule-grid-cell.is-room-resource-over,
 .is-schedule-joint .schedule-grid-cell.is-room-resource-over {
@@ -17514,9 +17758,12 @@ code {
 }
 #page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-room-resource-sellout,
 .is-schedule-joint .schedule-grid-cell.is-slot-selected.is-room-resource-sellout {
-  box-shadow: inset 0 0 0 2px #dc2626, 0 0 0 2px #2563eb;
-  outline: 1px dashed #dc2626;
-  outline-offset: -3px;
+  /* box-shadow: inset 0 0 0 2px #dc2626, 0 0 0 2px #2563eb; */
+  /* outline: 1px dashed #dc2626; */
+  /* outline-offset: -3px; */
+  box-shadow: 0 0 0 2px #2563eb;
+  outline: 2px dashed #dc2626;
+  outline-offset: -2px;
 }
 #page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-room-resource-over,
 .is-schedule-joint .schedule-grid-cell.is-slot-selected.is-room-resource-over {
@@ -17528,10 +17775,11 @@ code {
   border: 1px solid #e5e7eb;
 }
 .schedule-conflict-legend .sch-leg-item.is-room-resource-ok::before { display: none; }
+/* 图例售罄：与格子同为红色虚线框（略细适配小色标） */
 .schedule-conflict-legend .sch-leg-item.is-room-resource-sellout {
   background: transparent;
   color: #991b1b;
-  border: 1px dashed #dc2626;
+  border: 1.5px dashed #dc2626;
 }
 .schedule-conflict-legend .sch-leg-item.is-room-resource-sellout::before { display: none; }
 .schedule-conflict-legend .sch-leg-item.is-room-resource-over {

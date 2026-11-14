@@ -20634,20 +20634,20 @@ function validateSharedTeachingSetupTeacherRule(rows = []) {
     return {
       ok: false,
       message: sharedTeachingSetupSeedSectionId
-        ? '请在右侧勾选至少 1 个其他教学班。'
-        : '请至少勾选 2 个教学班。'
+        ? '请在右侧勾选至少 1 个其他课程班。'
+        : '请至少勾选 2 个课程班。'
     };
   }
   const sectionIds = [...new Set(rows.map(r => String(r.sectionId || '').trim()).filter(Boolean))];
   if (sectionIds.length < 2) {
-    return { ok: false, message: '共同授课须选择至少 2 个不同教学班（可同课号）。' };
+    return { ok: false, message: '共同授课须选择至少 2 个不同课程班（可同课号）。' };
   }
   const codes = [...new Set(rows.map(r => String(r.code || '').trim()).filter(Boolean))];
   const commonTeachers = getSharedTeachingCommonTeachers(rows);
   if (!commonTeachers.length) {
     return {
       ok: false,
-      message: '所选教学班须至少有一名相同的任课教师。共同授课用于同一教师讲授内容相近的不同教学班时，排课可忽略彼此时间冲突。'
+      message: '所选课程班须至少有一名相同的任课教师。共同授课用于同一教师讲授内容相近的不同课程班时，排课可忽略彼此时间冲突。'
     };
   }
   return { ok: true, commonTeachers, codes, sectionIds };
@@ -20905,12 +20905,12 @@ function validateSharedTeachingSlotLinkItems(items) {
   const resolved = [];
   for (const it of list) {
     const sec = findOfferingSectionByIdAnywhere(it.sectionId);
-    if (!sec) return { ok: false, message: '所选安排所属教学班不存在。' };
+    if (!sec) return { ok: false, message: '所选安排所属课程班不存在。' };
     ensureGroupAssignmentStableIds(sec);
     const row = (sec.groupAssignments || []).find(a => a.id === it.assignmentId);
     if (!row) return { ok: false, message: '所选学时安排行不存在或已删除。' };
     const mark = String(sec.sharedTeachingCode || '').trim();
-    if (!mark) return { ok: false, message: '仅能对已设置共同授课的教学班建立联动。' };
+    if (!mark) return { ok: false, message: '仅能对已设置共同授课的课程班建立联动。' };
     resolved.push({
       sectionId: sec.id,
       assignmentId: row.id,
@@ -21058,7 +21058,7 @@ function openSharedTeachingSlotLinkModal(mark, termCode) {
   sharedTeachingSlotLinkSelectedKeys = new Set();
   const secs = getSharedTeachingGroupSectionsByMark(code, sharedTeachingSlotLinkContextTermCode);
   if (secs.length < 2) {
-    alert('共同授课组内至少需要 2 个教学班才能管理联动安排。');
+    alert('共同授课组内至少需要 2 个课程班才能管理联动安排。');
     return;
   }
   secs.forEach(ensureGroupAssignmentStableIds);
@@ -21080,7 +21080,7 @@ function openSharedTeachingSlotLinkModalFromGrouping() {
   const sec = typeof getOfferingGroupingSection === 'function' ? getOfferingGroupingSection() : null;
   const mark = String(sec?.sharedTeachingCode || '').trim();
   if (!mark) {
-    alert('当前课程未设置共同授课，请先在共同授课中添加同伴教学班。');
+    alert('当前课程未设置共同授课，请先在共同授课中添加同伴课程班。');
     return;
   }
   // 配置共同授课可能改安排关联，已下发/已确认时先提示作废后果
@@ -21092,6 +21092,11 @@ function openSharedTeachingSlotLinkModalFromGrouping() {
 function closeSharedTeachingSlotLinkModal() {
   closeModal('modal-shared-teaching-slot-link');
   sharedTeachingSlotLinkSelectedKeys = new Set();
+  // 从联动弹窗返回设置页时刷新「暂未/已设置联动组」状态
+  if (document.getElementById('modal-shared-teaching-setup')?.classList.contains('open')
+    && typeof renderSharedTeachingSetupConfiguredTable === 'function') {
+    renderSharedTeachingSetupConfiguredTable();
+  }
 }
 
 function sharedTeachingSlotLinkRowKey(sectionId, assignmentId) {
@@ -22081,11 +22086,89 @@ function renderSharedTeachingSetupConfiguredTable() {
       }</td></tr>`;
   const seed = getSharedTeachingSetupSeedRow();
   const manageBtn = document.getElementById('btn-shared-teaching-setup-slot-link');
+  const mark = String(seed?.sharedTeachingCode || seedMark || '').trim();
   if (manageBtn) {
-    const mark = String(seed?.sharedTeachingCode || seedMark || '').trim();
     manageBtn.hidden = !mark;
     manageBtn.disabled = !mark;
   }
+  // 同步「暂未设置联动组 / 已设置联动组」提示
+  renderSharedTeachingSetupLinkStatus(mark, seed?.termCode || sharedTeachingSetupContextTermCode);
+}
+
+/**
+ * 共同授课设置页：当前标记下的联动组数量与是否可管理。
+ * @param {string} mark 共同授课码
+ * @param {string} [termCode] 学期
+ * @returns {{ hasGroup: boolean, sectionCount: number, linkCount: number }}
+ */
+function getSharedTeachingSetupLinkStatus(mark, termCode) {
+  const code = String(mark || '').trim();
+  if (!code) return { hasGroup: false, sectionCount: 0, linkCount: 0 };
+  const term = String(termCode || sharedTeachingSetupContextTermCode || getSharedTeachingMaintenanceTermCode() || '').trim();
+  const secs = typeof getSharedTeachingGroupSectionsByMark === 'function'
+    ? getSharedTeachingGroupSectionsByMark(code, term)
+    : [];
+  const links = typeof getSharedTeachingSlotLinksForMark === 'function'
+    ? getSharedTeachingSlotLinksForMark(code, term)
+    : [];
+  return {
+    hasGroup: secs.length >= 2,
+    sectionCount: secs.length,
+    linkCount: links.length
+  };
+}
+
+/**
+ * 刷新设置页「联动组」状态文案（已设置共同授课标题旁）。
+ * 示例：暂未设置联动组 / 已设置联动组 2 个
+ * @param {string} mark 共同授课码
+ * @param {string} [termCode] 学期
+ */
+function renderSharedTeachingSetupLinkStatus(mark, termCode) {
+  const el = document.getElementById('shared-teaching-setup-link-status');
+  if (!el) return;
+  const code = String(mark || '').trim();
+  if (!code) {
+    el.hidden = true;
+    el.textContent = '';
+    el.classList.remove('is-pending', 'is-done');
+    return;
+  }
+  const st = getSharedTeachingSetupLinkStatus(code, termCode);
+  // 仅 1 门时尚不能建联动，不强调状态
+  if (!st.hasGroup) {
+    el.hidden = true;
+    el.textContent = '';
+    el.classList.remove('is-pending', 'is-done');
+    return;
+  }
+  el.hidden = false;
+  if (st.linkCount > 0) {
+    el.classList.remove('is-pending');
+    el.classList.add('is-done');
+    el.textContent = `已设置联动组 ${st.linkCount} 个`;
+  } else {
+    el.classList.remove('is-done');
+    el.classList.add('is-pending');
+    el.textContent = '暂未设置联动组';
+  }
+}
+
+/**
+ * 关闭设置弹窗前：已设共同授课（≥2 班）但尚无联动组时需二次确认。
+ * @returns {boolean}
+ */
+function sharedTeachingSetupNeedsLinkPrompt() {
+  const seed = typeof getSharedTeachingSetupSeedRow === 'function'
+    ? getSharedTeachingSetupSeedRow()
+    : null;
+  const mark = String(seed?.sharedTeachingCode || '').trim();
+  if (!mark) return false;
+  const st = getSharedTeachingSetupLinkStatus(
+    mark,
+    seed?.termCode || sharedTeachingSetupContextTermCode
+  );
+  return st.hasGroup && st.linkCount === 0;
 }
 
 const SHARED_TEACHING_SETUP_SORT_COLUMNS = {
@@ -22215,7 +22298,35 @@ function openSharedTeachingSetupModal(opts = {}) {
   openModal('modal-shared-teaching-setup');
 }
 
-function closeSharedTeachingSetupModal() {
+/**
+ * 关闭「设置共同授课」。
+ * 若已设共同授课但暂无联动组：弹窗询问「去设置 / 关闭」；force 时直接关。
+ * @param {{ force?: boolean }} [opts] force=true 跳过联动提示（二次确认选「关闭」时用）
+ */
+function closeSharedTeachingSetupModal(opts = {}) {
+  const force = !!opts.force;
+  // 已设共同授课、尚未联动：提示是否前往「管理联动安排」
+  if (!force && typeof sharedTeachingSetupNeedsLinkPrompt === 'function'
+    && sharedTeachingSetupNeedsLinkPrompt()) {
+    openDeleteConfirm({
+      title: '暂未设置联动组',
+      message: '当前共同授课组暂未设置联动组，是否前往设置？',
+      confirmLabel: '去设置',
+      cancelLabel: '关闭',
+      cancelOutline: true,
+      onConfirm: () => {
+        // 保留设置弹窗，打开联动安排
+        if (typeof openSharedTeachingSlotLinkModalFromSeed === 'function') {
+          openSharedTeachingSlotLinkModalFromSeed();
+        }
+      },
+      onCancel: () => {
+        // 用户选择直接关闭，不再提示
+        closeSharedTeachingSetupModal({ force: true });
+      }
+    });
+    return;
+  }
   closeModal('modal-shared-teaching-setup');
   sharedTeachingSetupContextTermCode = '';
   sharedTeachingSetupSeedSectionId = '';
@@ -70409,6 +70520,7 @@ function closeModal(id) {
   if (id === 'modal-delete-version') pendingDeleteVersionId = null;
   if (id === 'modal-delete-confirm') {
     deleteConfirmCallback = null;
+    deleteConfirmCancelCallback = null;
     deleteConfirmResetCallback = null;
     resetDeleteConfirmChrome();
   }
@@ -70421,14 +70533,22 @@ function closeModal(id) {
 
 let deleteConfirmCallback = null;
 let deleteConfirmResetCallback = null;
+/** 底部取消/关闭按钮回调（× 不触发） */
+let deleteConfirmCancelCallback = null;
 
 function resetDeleteConfirmChrome() {
   const confirmBtn = document.getElementById('delete-confirm-btn');
-  const cancelBtn = document.querySelector('#modal-delete-confirm .modal-foot .btn-ghost');
+  const cancelBtn = document.getElementById('delete-confirm-cancel-btn')
+    || document.querySelector('#modal-delete-confirm .modal-foot .btn-ghost');
   const resetBtn = document.getElementById('delete-confirm-reset-btn');
   const hintEl = document.getElementById('delete-confirm-hint');
   const emailHintEl = document.getElementById('delete-confirm-email-hint');
-  if (cancelBtn) cancelBtn.removeAttribute('hidden');
+  if (cancelBtn) {
+    cancelBtn.removeAttribute('hidden');
+    cancelBtn.textContent = '取消';
+    cancelBtn.classList.remove('btn-outline');
+    cancelBtn.classList.add('btn-ghost');
+  }
   if (resetBtn) {
     resetBtn.hidden = true;
     resetBtn.disabled = false;
@@ -70455,15 +70575,24 @@ function resetDeleteConfirmChrome() {
   }
 }
 
+/**
+ * @param {object} opts
+ * @param {function} [opts.onCancel] 点底部取消/关闭（× 不触发）
+ * @param {string} [opts.cancelLabel] 取消按钮文案，如「关闭」
+ * @param {boolean} [opts.cancelOutline] 取消按钮用描边样式
+ */
 function openDeleteConfirm({
   title,
   message,
   hint,
   emailHint = '',
   onConfirm,
+  onCancel = null,
   onReset = null,
   confirmDisabled = false,
   confirmLabel,
+  cancelLabel,
+  cancelOutline = false,
   resetLabel,
   resetDisabled = false,
   hintWarn = false,
@@ -70472,13 +70601,15 @@ function openDeleteConfirm({
   confirmDanger = false
 }) {
   deleteConfirmCallback = onConfirm || null;
+  deleteConfirmCancelCallback = typeof onCancel === 'function' ? onCancel : null;
   deleteConfirmResetCallback = typeof onReset === 'function' ? onReset : null;
   const titleEl = document.getElementById('delete-confirm-title');
   const msgEl = document.getElementById('delete-confirm-msg');
   const hintEl = document.getElementById('delete-confirm-hint');
   const emailHintEl = document.getElementById('delete-confirm-email-hint');
   const confirmBtn = document.getElementById('delete-confirm-btn');
-  const cancelBtn = document.querySelector('#modal-delete-confirm .modal-foot .btn-ghost');
+  const cancelBtn = document.getElementById('delete-confirm-cancel-btn')
+    || document.querySelector('#modal-delete-confirm .modal-foot .btn-ghost');
   const resetBtn = document.getElementById('delete-confirm-reset-btn');
   if (titleEl) titleEl.textContent = title || '确认删除';
   if (msgEl) msgEl.innerHTML = message || '确定删除吗？此操作不可撤销。';
@@ -70507,7 +70638,12 @@ function openDeleteConfirm({
       emailHintEl.style.display = 'none';
     }
   }
-  if (cancelBtn) cancelBtn.toggleAttribute('hidden', hideCancel);
+  if (cancelBtn) {
+    cancelBtn.toggleAttribute('hidden', hideCancel);
+    cancelBtn.textContent = cancelLabel || '取消';
+    cancelBtn.classList.toggle('btn-outline', !!cancelOutline);
+    cancelBtn.classList.toggle('btn-ghost', !cancelOutline);
+  }
   if (resetBtn) {
     const showReset = !!deleteConfirmResetCallback;
     resetBtn.hidden = !showReset;
@@ -70529,11 +70665,18 @@ function openDeleteConfirm({
   openModal('modal-delete-confirm');
 }
 
-function cancelDeleteConfirm() {
+/**
+ * 关闭确认弹窗
+ * @param {boolean} [runCancelAction] true=底部取消并执行 onCancel；falsy=×/abort，不执行 onCancel
+ */
+function cancelDeleteConfirm(runCancelAction) {
+  const cancelCb = deleteConfirmCancelCallback;
   deleteConfirmCallback = null;
+  deleteConfirmCancelCallback = null;
   deleteConfirmResetCallback = null;
   resetDeleteConfirmChrome();
   closeModal('modal-delete-confirm');
+  if (runCancelAction && cancelCb) cancelCb();
 }
 
 function resetDeleteConfirmAction() {
@@ -70541,6 +70684,7 @@ function resetDeleteConfirmAction() {
   if (resetBtn?.disabled) return;
   const cb = deleteConfirmResetCallback;
   deleteConfirmCallback = null;
+  deleteConfirmCancelCallback = null;
   deleteConfirmResetCallback = null;
   resetDeleteConfirmChrome();
   closeModal('modal-delete-confirm');
@@ -70552,6 +70696,7 @@ function confirmDeleteConfirm() {
   if (confirmBtn?.disabled) return;
   const cb = deleteConfirmCallback;
   deleteConfirmCallback = null;
+  deleteConfirmCancelCallback = null;
   deleteConfirmResetCallback = null;
   resetDeleteConfirmChrome();
   closeModal('modal-delete-confirm');

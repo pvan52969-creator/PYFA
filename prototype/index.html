@@ -8124,8 +8124,12 @@
           <div class="shared-teaching-setup-configured">
             <div class="shared-teaching-setup-section-label-row">
               <div class="shared-teaching-setup-section-label">已设置共同授课</div>
-              <button type="button" class="btn btn-outline btn-sm" id="btn-shared-teaching-setup-slot-link" hidden
-                onclick="openSharedTeachingSlotLinkModalFromSeed()">管理联动安排</button>
+              <div class="shared-teaching-setup-configured-actions">
+                <!-- 联动组状态：纯文案，放在「管理联动安排」左侧 -->
+                <span id="shared-teaching-setup-link-status" class="shared-teaching-setup-link-status" hidden></span>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-shared-teaching-setup-slot-link" hidden
+                  onclick="openSharedTeachingSlotLinkModalFromSeed()">管理联动安排</button>
+              </div>
             </div>
             <div class="table-scroll shared-teaching-setup-configured-wrap">
               <table class="data-table compact course-offering-table">
@@ -8152,13 +8156,13 @@
               <button type="button" class="slt-info-btn shared-teaching-setup-rules-btn" aria-label="共同授课规则" onclick="toggleSharedTeachingSetupRulesTip(event)">!</button>
               <div class="slt-info-popover shared-teaching-setup-rules-popover">
                 <p class="slt-info-item"><strong>共同授课规则</strong></p>
-                <p class="slt-info-formula">1. 须选择至少 <strong>2 个不同教学班</strong>（可同课号）。</p>
-                <p class="slt-info-formula">2. 所选教学班须至少有一名<strong>相同任课教师</strong>。</p>
-                <p class="slt-info-formula">3. 右侧列表仅展示与当前教学班有相同任课教师、且尚未与本课共同授课的开课记录。</p>
+                <p class="slt-info-formula">1. 须选择至少 <strong>2 个不同课程班</strong>（可同课号）。</p>
+                <p class="slt-info-formula">2. 所选课程班须至少有一名<strong>相同任课教师</strong>。</p>
+                <p class="slt-info-formula">3. 右侧列表仅展示与当前课程班有相同任课教师、且尚未与本课共同授课的开课记录。</p>
                 <p class="slt-info-formula">4. 已属于其他共同授课组的课程仍可看见，但不可添加；须先在原组移出。</p>
                 <p class="slt-info-formula">5. 点击「添加」后系统自动打上共同授课标记；排课时该教师可为这些班忽略时间冲突。加入组不会自动建立联动安排。</p>
                 <p class="slt-info-formula">6. 若本课已有共同授课组，再添加时会先确认：新课将加入该组，组内课程将共同授课。</p>
-                <p class="slt-info-formula">7. 左侧「已设置」列出本组全部教学班（含本课）。移出某课后其余仍同组（仅剩 1 门时清除标记）。</p>
+                <p class="slt-info-formula">7. 左侧「已设置」列出本组全部课程班（含本课）。移出某课后其余仍同组（仅剩 1 门时清除标记）。</p>
                 <p class="slt-info-formula">8. 已设置后可「管理联动安排」，将各班学时安排行按周次/周学时一致绑定，供后续同堂排课。</p>
               </div>
             </div>
@@ -8287,7 +8291,8 @@
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline btn-danger-text" type="button" id="delete-confirm-reset-btn" hidden onclick="resetDeleteConfirmAction()">重置</button>
-      <button class="btn btn-ghost" type="button" onclick="cancelDeleteConfirm()">取消</button>
+      <!-- footer 传 true：执行 onCancel（如「关闭」共同授课设置）；右上角 × 仍 abort 不执行 onCancel -->
+      <button class="btn btn-ghost" type="button" id="delete-confirm-cancel-btn" onclick="cancelDeleteConfirm(true)">取消</button>
       <button class="btn btn-primary" type="button" id="delete-confirm-btn" onclick="confirmDeleteConfirm()">确认</button>
       <!-- <button class="btn btn-primary" type="button" onclick="confirmDeleteConfirm()">确认</button> --> <!-- 原无 id，改支持禁用确认 -->
       <!-- <button class="btn btn-danger" type="button" onclick="confirmDeleteConfirm()">确认</button> -->

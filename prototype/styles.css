@@ -1220,6 +1220,27 @@ body {
 #modal-shared-teaching-setup .shared-teaching-setup-section-label-row .shared-teaching-setup-section-label {
   margin-bottom: 0;
 }
+#modal-shared-teaching-setup .shared-teaching-setup-configured-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+/* 纯文案提示：不用底色/描边，避免像按钮；靠字重与颜色醒目 */
+#modal-shared-teaching-setup .shared-teaching-setup-link-status {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-link-status.is-pending {
+  color: #c2410c;
+}
+#modal-shared-teaching-setup .shared-teaching-setup-link-status.is-done {
+  color: #15803d;
+}
 
 /* 共同授课 · 设置弹窗（加宽；左侧为主，尽量避免横向滚动） */
 #modal-shared-teaching-setup .shared-teaching-setup-modal.modal-xl {

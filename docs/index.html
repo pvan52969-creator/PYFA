@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="1089ddc">
+  <meta name="portal-build" content="9204d08">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -249,7 +249,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 1089ddc">1113排课</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 9204d08">1114排课</div>
         </div>
       </div>
     </section>
@@ -2895,8 +2895,8 @@
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label>
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
-                  <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 教室偏好</label>
-                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" onchange="onScheduleViewSettingChange()"> 课程组</label>
+                  <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 已排教室</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" checked onchange="onScheduleViewSettingChange()"> 课程组</label>
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
                 </div>
               </div>
@@ -2916,6 +2916,43 @@
                     </div>
                   </div>
                 </div>
+              </div>
+              <!-- 排时间场地设置：固定在「排课周次」正下方，随顶 chrome 折叠；未点选卡片时隐藏，点选已排节次后展示并可编辑 -->
+              <div class="schedule-detail-field schedule-detail-venue-field" id="schedule-detail-venue-field" hidden>
+                <label class="schedule-detail-field-label" id="schedule-detail-venue-field-label">场地类型</label>
+                <div class="schedule-detail-venue-controls" id="schedule-detail-venue-type-block">
+                  <div class="clo-multiselect" id="schedule-detail-venue-types-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-detail-venue-types-btn" onclick="toggleScheduleVenueTypeDropdown(event)">
+                      <span class="clo-multiselect-display placeholder" id="schedule-detail-venue-types-display">请选择</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="schedule-detail-venue-types-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="schedule-detail-venue-types-options"></div>
+                      <div class="clo-multiselect-foot">
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="cancelScheduleVenueTypeDropdown(event)">取消</button>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="confirmScheduleVenueTypeDropdown(event)">确定</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- 弃用：锁定教室放在场地类型后（标签+「选择锁定教室」选择器）。原因：改为「锁定教室」按钮，放在教室偏好/保存右侧 -->
+                  <div class="schedule-venue-remark-field" id="schedule-venue-remark-field" hidden>
+                    <label class="schedule-venue-remark-label" for="schedule-detail-prefer-rooms-btn">教室偏好</label>
+                    <!-- 弃用：自由文本教室偏好，改多选教室号 -->
+                    <input class="input input-sm schedule-venue-remark-input" id="schedule-detail-venue-remark" type="hidden" value="">
+                    <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-prefer-rooms-btn" onclick="openSchedulePreferRoomsPicker()">选择教室偏好</button>
+                    <button class="btn btn-primary btn-sm" id="btn-schedule-venue-save" type="button" onclick="saveScheduleVenueFields()" hidden>保存</button>
+                  </div>
+                  <div class="schedule-lock-room-field" id="schedule-lock-room-field" hidden>
+                    <button type="button" class="btn btn-outline btn-sm" id="schedule-detail-lock-room-btn" onclick="openScheduleLockRoomPicker()">锁定教室</button>
+                  </div>
+                  <span class="form-hint schedule-venue-apply-hint" id="schedule-venue-apply-hint" hidden></span>
+                </div>
+                <div class="schedule-detail-room-controls" id="schedule-detail-room-pick-block" hidden>
+                  <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-room-pick-btn" onclick="openScheduleDetailRoomPicker()">选择教室</button>
+                  <span class="form-hint schedule-room-pick-hint" id="schedule-detail-room-pick-hint">请先选择已排节次课程</span>
+                </div>
+                <span class="schedule-venue-actions-sep" id="schedule-venue-actions-sep" hidden aria-hidden="true"></span>
+                <button class="btn btn-danger-outline btn-sm" id="btn-schedule-slot-cancel" type="button" onclick="cancelSelectedScheduleSlot()" hidden>取消排该时段</button>
               </div>
               <!-- 弃用：预重修入口单独占顶 chrome 下一行。原因：改到「排课周次」行右侧 -->
               <!--
@@ -2963,7 +3000,7 @@
                 </div>
               </div>
             </div>
-            <!-- 排时间/联合：课表壳顶边折叠轨（收起合并行+周次+预重修检测）；教室页 clone 后改绑 room，收起含筛选+hold-bar -->
+            <!-- 排时间/联合：课表壳顶边折叠轨（收起合并行+周次+场地栏+预重修检测）；教室页 clone 后改绑 room，收起含筛选+hold-bar -->
             <button type="button" class="schedule-time-top-chrome-rail" id="btn-schedule-time-top-chrome-toggle"
               data-sch-top-chrome-toggle="time"
               onclick="toggleScheduleTimeTopChrome(event)"
@@ -3013,41 +3050,7 @@
                 <span class="sch-leg-item is-room-pending">待定</span>
               </div>
             </div>
-            <div class="schedule-detail-field schedule-detail-venue-field" hidden>
-              <label class="schedule-detail-field-label" id="schedule-detail-venue-field-label">场地类型</label>
-              <div class="schedule-detail-venue-controls" id="schedule-detail-venue-type-block">
-                <div class="clo-multiselect" id="schedule-detail-venue-types-multiselect">
-                  <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-detail-venue-types-btn" onclick="toggleScheduleVenueTypeDropdown(event)">
-                    <span class="clo-multiselect-display placeholder" id="schedule-detail-venue-types-display">请选择</span>
-                    <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-                  </button>
-                  <div class="clo-multiselect-dropdown" id="schedule-detail-venue-types-dropdown" hidden>
-                    <div class="clo-multiselect-options" id="schedule-detail-venue-types-options"></div>
-                    <div class="clo-multiselect-foot">
-                      <button type="button" class="btn btn-ghost btn-sm" onclick="cancelScheduleVenueTypeDropdown(event)">取消</button>
-                      <button type="button" class="btn btn-primary btn-sm" onclick="confirmScheduleVenueTypeDropdown(event)">确定</button>
-                    </div>
-                  </div>
-                </div>
-                <div class="schedule-lock-room-field" id="schedule-lock-room-field" hidden>
-                  <label class="schedule-venue-remark-label" for="schedule-detail-lock-room-btn">锁定教室</label>
-                  <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-lock-room-btn" onclick="openScheduleLockRoomPicker()">选择锁定教室</button>
-                </div>
-                <div class="schedule-venue-remark-field" id="schedule-venue-remark-field" hidden>
-                  <label class="schedule-venue-remark-label" for="schedule-detail-prefer-rooms-btn">教室偏好</label>
-                  <!-- 弃用：自由文本教室偏好，改多选教室号 -->
-                  <input class="input input-sm schedule-venue-remark-input" id="schedule-detail-venue-remark" type="hidden" value="">
-                  <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-prefer-rooms-btn" onclick="openSchedulePreferRoomsPicker()">选择教室偏好</button>
-                  <button class="btn btn-primary btn-sm" id="btn-schedule-venue-save" type="button" onclick="saveScheduleVenueFields()" hidden>保存</button>
-                </div>
-              </div>
-              <div class="schedule-detail-room-controls" id="schedule-detail-room-pick-block" hidden>
-                <button type="button" class="input input-sm adj-pick-btn schedule-room-picker is-empty" id="schedule-detail-room-pick-btn" onclick="openScheduleDetailRoomPicker()">选择教室</button>
-                <span class="form-hint schedule-room-pick-hint" id="schedule-detail-room-pick-hint">请先选择已排节次课程</span>
-              </div>
-              <span class="schedule-venue-actions-sep" id="schedule-venue-actions-sep" hidden aria-hidden="true"></span>
-              <button class="btn btn-danger-outline btn-sm" id="btn-schedule-slot-cancel" type="button" onclick="cancelSelectedScheduleSlot()" hidden>取消排该时段</button>
-            </div>
+            <!-- 弃用：场地栏曾放在折叠轨下方。原因：产品要求固定在顶 chrome「排课周次」正下方并随 chrome 折叠；已迁入 #schedule-time-top-chrome -->
             <!-- 弃用：课表上方预重修/教室安排按钮区。原因：迁到左侧 #schedule-room-course-search 查询动作区下方，腾出课表高度 -->
             <!--
             <div class="schedule-detail-field schedule-retake-detect-panel" id="schedule-retake-detect-panel-legacy">
@@ -7699,6 +7702,23 @@
   </div>
 </div>
 
+<!-- ═══ 弹窗：共同授课 · 联动组只读详情（排时间侧栏 / 开课查看共用） ═══ -->
+<div class="modal-overlay modal-nested" id="modal-shared-teaching-slot-link-view">
+  <div class="modal modal-xl shared-teaching-slot-link-view-modal">
+    <div class="modal-head">
+      <h3 id="shared-teaching-slot-link-view-title">联动组</h3>
+      <button class="modal-close" type="button" onclick="closeSharedTeachingSlotLinkViewModal()">×</button>
+    </div>
+    <div class="modal-body shared-teaching-slot-link-view-body">
+      <p class="form-hint" id="shared-teaching-slot-link-view-hint">以下安排行已绑定联动；排课将同时间同教室（开课侧不强制教室相同）。</p>
+      <div id="shared-teaching-slot-link-view-content"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="button" onclick="closeSharedTeachingSlotLinkViewModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 弹窗：专业开课 · 退回说明填写 ═══ -->
 <div class="modal-overlay modal-nested" id="modal-major-task-revert-remark">
   <div class="modal">
@@ -10551,6 +10571,7 @@
       <div class="schedule-room-picker-hint" id="schedule-room-picker-hint" hidden></div>
       <div class="schedule-room-picker-occ-bar" id="schedule-room-picker-occ-bar" hidden></div>
       <div id="schedule-approve-room-occ-toast" class="schedule-approve-room-occ-toast" hidden role="status" aria-live="polite"></div>
+      <!-- 一行最多 4 条件；按钮组第 5 列；第 5 条件起默认收起 + 半三角 -->
       <div class="schedule-room-filter-grid">
         <div class="srf-item srf-item-room-select"><label>Venue</label><select class="input input-sm" id="srf-room"></select></div>
         <div class="srf-item srf-item-room-input"><label>Venue</label><input class="input input-sm" id="srf-room-text" type="text" placeholder="请输入教室名称"></div>
@@ -10582,19 +10603,6 @@
             </div>
           </div>
         </div>
-        <div class="srf-actions">
-          <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleRoomModal()">查询</button>
-          <button class="btn btn-ghost btn-sm" type="button" onclick="resetScheduleRoomModal()">重置</button>
-        </div>
-        <div class="srf-item srf-item-seats-select"><label>有效座位数</label><select class="input input-sm" id="srf-seats"></select></div>
-        <div class="srf-item srf-item-seats-range">
-          <label>有效座位数</label>
-          <div class="srf-seats-range-inputs">
-            <input class="input input-sm" id="srf-seats-min" type="number" min="0" placeholder="起">
-            <span class="srf-seats-range-sep">至</span>
-            <input class="input input-sm" id="srf-seats-max" type="number" min="0" placeholder="止">
-          </div>
-        </div>
         <div class="srf-item">
           <label>场地类型</label>
           <div class="clo-multiselect" id="srf-type-multiselect">
@@ -10608,7 +10616,36 @@
             </div>
           </div>
         </div>
-        <div class="srf-item">
+        <div class="srf-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleRoomModal()">查询</button>
+          <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleRoomModal()">重置</button>
+          <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+        </div>
+        <!-- 教室软件放在有效座位数左侧（展开行第 1 格） -->
+        <div class="srf-item" data-query-more="1">
+          <label>教室软件</label>
+          <select class="input input-sm srf-native-select" id="srf-software"></select>
+          <div class="clo-multiselect srf-approve-ms" id="srf-software-ms">
+            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleScheduleApproveRoomMs('software', event)">
+              <span class="clo-multiselect-display placeholder" id="srf-software-ms-display">全部</span>
+              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="clo-multiselect-dropdown" id="srf-software-ms-dropdown" hidden>
+              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-software-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('software', this.value)"></div>
+              <div class="clo-multiselect-options" id="srf-software-ms-options"></div>
+            </div>
+          </div>
+        </div>
+        <div class="srf-item srf-item-seats-select" data-query-more="1"><label>有效座位数</label><select class="input input-sm" id="srf-seats"></select></div>
+        <div class="srf-item srf-item-seats-range" data-query-more="1">
+          <label>有效座位数</label>
+          <div class="srf-seats-range-inputs">
+            <input class="input input-sm" id="srf-seats-min" type="number" min="0" placeholder="起">
+            <span class="srf-seats-range-sep">至</span>
+            <input class="input input-sm" id="srf-seats-max" type="number" min="0" placeholder="止">
+          </div>
+        </div>
+        <div class="srf-item" data-query-more="1">
           <label>Venue Type</label>
           <div class="clo-multiselect" id="srf-classroom-type-multiselect">
             <button type="button" class="clo-multiselect-trigger input input-sm" id="srf-classroom-type-btn" onclick="toggleScheduleRoomClassroomTypeFilterDropdown(event)">
@@ -10621,7 +10658,7 @@
             </div>
           </div>
         </div>
-        <div class="srf-item">
+        <div class="srf-item" data-query-more="1">
           <label>教室设备</label>
           <select class="input input-sm srf-native-select" id="srf-equip"></select>
           <div class="clo-multiselect srf-approve-ms" id="srf-equipment-ms">
@@ -10632,20 +10669,6 @@
             <div class="clo-multiselect-dropdown" id="srf-equipment-ms-dropdown" hidden>
               <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-equipment-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('equipment', this.value)"></div>
               <div class="clo-multiselect-options" id="srf-equipment-ms-options"></div>
-            </div>
-          </div>
-        </div>
-        <div class="srf-item">
-          <label>教室软件</label>
-          <select class="input input-sm srf-native-select" id="srf-software"></select>
-          <div class="clo-multiselect srf-approve-ms" id="srf-software-ms">
-            <button type="button" class="clo-multiselect-trigger input input-sm" onclick="toggleScheduleApproveRoomMs('software', event)">
-              <span class="clo-multiselect-display placeholder" id="srf-software-ms-display">全部</span>
-              <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
-            </button>
-            <div class="clo-multiselect-dropdown" id="srf-software-ms-dropdown" hidden>
-              <div class="srf-approve-ms-search"><input class="input input-sm" id="srf-software-ms-search" type="text" placeholder="搜索" autocomplete="off" onclick="event.stopPropagation()" oninput="onScheduleApproveRoomMsSearch('software', this.value)"></div>
-              <div class="clo-multiselect-options" id="srf-software-ms-options"></div>
             </div>
           </div>
         </div>
@@ -10670,6 +10693,12 @@
       </div>
     </div>
     <div class="modal-foot">
+      <!-- 默认关闭：过滤座位不足/类型不匹配；打开后列出全部教室（开关样式） -->
+      <label class="toggle-switch schedule-room-picker-show-all" id="schedule-room-picker-show-all-wrap" hidden>
+        <input type="checkbox" id="schedule-room-picker-show-all" onchange="onScheduleRoomPickerShowAllChange(this)">
+        <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label">显示全部教室（默认过滤座位、类型不匹配的教室）</span>
+      </label>
       <button class="btn btn-ghost adj-unspec-btn" type="button" id="schedule-room-picker-unspecified-btn" hidden onclick="clearAdjustmentApproveRoomSelection()">不指定教室</button>
       <button class="btn btn-ghost adj-unspec-btn" type="button" onclick="closeModal('modal-schedule-room-picker')">取消</button>
       <button class="btn btn-primary" type="button" onclick="confirmScheduleRoomSelection()">确定</button>
@@ -10747,7 +10776,8 @@
   <button type="button" class="schedule-ctx-item" data-sch-ctx="retakeDetect" role="menuitem">预重修检测</button>
   <div class="schedule-ctx-sep" role="separator"></div>
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoSlot" role="menuitem">撤销选中节次</button>
-  <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoCourse" role="menuitem">撤销本课程</button>
+  <!-- 弃用「撤销本课程」：原因联动组/共同授课是整体且课号不同，该项易歧义；只保留选中节次与全部课程 -->
+  <!-- <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoCourse" role="menuitem">撤销本课程</button> -->
   <button type="button" class="schedule-ctx-item is-danger" data-sch-ctx="undoAll" role="menuitem">撤销全部课程</button>
 </div>
 <!-- 排课表教室：教室格右键菜单（与时间侧菜单完全独立） -->

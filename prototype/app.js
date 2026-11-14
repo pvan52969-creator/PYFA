@@ -55010,18 +55010,74 @@ function editOfferingGroupStatusAssignRow(assignId) {
     alert('请先保存或取消当前正在编辑的安排。');
     return;
   }
-  confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => {
-    // 强制带上点击行的 id + edit 模式，避免草稿丢 id 后被当成「新增」叠在原行下方（同一条变两条）
-    const draft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
-    draft.id = wantId || String(row.id || '').trim();
-    draft.mode = 'edit';
-    offeringGroupStatusAssignDraft = draft;
-    renderOfferingGroupingGroupStatusPanel();
-    requestAnimationFrame(() => {
-      document.querySelector('.offering-group-status-assign-draft')?.scrollIntoView({ block: 'nearest' });
-      document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
-    });
+  // 弃用：点 ✎ 即弹「修改将作废授课确认」。原因：产品要求仅增删、或真正改动后点 ✓ 才提示
+  // confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => { ... });
+  // 强制带上点击行的 id + edit 模式，避免草稿丢 id 后被当成「新增」叠在原行下方（同一条变两条）
+  const draft = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
+  draft.id = wantId || String(row.id || '').trim();
+  draft.mode = 'edit';
+  offeringGroupStatusAssignDraft = draft;
+  renderOfferingGroupingGroupStatusPanel();
+  requestAnimationFrame(() => {
+    document.querySelector('.offering-group-status-assign-draft')?.scrollIntoView({ block: 'nearest' });
+    document.querySelector('.offering-group-status-assign-draft .clo-multiselect-trigger, .offering-group-status-assign-draft select, .offering-group-status-assign-draft input')?.focus();
   });
+}
+
+/**
+ * 安排详情草稿相对原行是否有实质改动（用于 ✓ 保存前是否弹作废确认）。
+ * 新增/复制一律视为有改动；编辑态字段与原行一致则视为未改。
+ * @param {object} sec
+ * @param {object} draft
+ * @returns {boolean}
+ */
+function isOfferingGroupStatusAssignDraftDirty(sec, draft) {
+  if (!draft) return false;
+  const mode = draft.mode || (String(draft.id || '').trim() ? 'edit' : 'add');
+  // 增/复制：落盘即变更，须提示
+  if (mode !== 'edit') return true;
+  const wantId = String(draft.id || '').trim();
+  const row = (sec?.groupAssignments || []).find(a => String(a?.id || '').trim() === wantId);
+  if (!row) return true;
+  const baseline = buildOfferingGroupStatusDraftFromAssignRow(sec, row);
+  const normIds = (ids) => [...new Set((ids || []).map(String).filter(Boolean))].sort().join('|');
+  const normTeachers = (list) => (list || [])
+    .map(t => `${String(t.staffId || '').trim()}|${String(t.role || '').trim()}`)
+    .filter(Boolean)
+    .sort()
+    .join(';');
+  const normPrefs = (d) => {
+    const n = normalizeClassroomPreferencesForAttribute(
+      d.classroomAttribute,
+      d.classroomPreferences || [],
+      d.classroomPreferenceOthersText
+    );
+    return `${(n.preferences || []).slice().sort().join(',')}|${String(n.othersText || '').trim()}`;
+  };
+  const normWeekly = (v) => {
+    if (v === '' || v == null) return '';
+    const n = Number(v);
+    return Number.isFinite(n) ? String(n) : String(v).trim();
+  };
+  const normWeek = (w) => normalizeGroupAssignWeekRange(
+    clampGroupAssignWeekRangeToSection(sec, w) || w || ''
+  );
+  const normSim = (d) => {
+    const multi = (d.groupIds || []).filter(id => id !== '__course__').length > 1;
+    if (!multi) return 'no';
+    return d.simultaneousGroups === true ? 'yes' : (d.simultaneousGroups === false ? 'no' : '');
+  };
+  return !(
+    normIds(draft.groupIds) === normIds(baseline.groupIds)
+    && String(draft.hourType || '') === String(baseline.hourType || '')
+    && normWeek(draft.weekRange) === normWeek(baseline.weekRange)
+    && normWeekly(draft.weeklyHours) === normWeekly(baseline.weeklyHours)
+    && normTeachers(draft.teachers) === normTeachers(baseline.teachers)
+    && normSim(draft) === normSim(baseline)
+    && String(normalizeClassroomAttribute(draft.classroomAttribute) || '')
+      === String(normalizeClassroomAttribute(baseline.classroomAttribute) || '')
+    && normPrefs(draft) === normPrefs(baseline)
+  );
 }
 
 /** 复制为新增草稿：预填源行字段，确认保存后才落盘；取消只丢草稿，不改动原安排 */
@@ -55426,7 +55482,14 @@ function saveOfferingGroupStatusAssignDraft() {
   const sec = getOfferingGroupingSection();
   const draft = offeringGroupStatusAssignDraft;
   if (!sec || !draft) return;
-  // 行内 ✓ 保存前再确认一次（与点 ✎ 时的第一次确认独立）
+  // 保存前同步「是否同时授课」下拉，避免 UI 已改但 draft 未写回导致误判未改动
+  syncOfferingGroupStatusDraftSimultaneousFromDom();
+  // 编辑态无实质改动：直接退出草稿，不弹「修改将作废授课确认」、不落盘
+  if (!isOfferingGroupStatusAssignDraftDirty(sec, draft)) {
+    cancelOfferingGroupStatusAssignDraft();
+    return;
+  }
+  // 有改动（或新增/复制）时才提示作废授课确认，再执行保存
   confirmTeacherConfirmVoidBeforeArrangeEdit(sec, () => saveOfferingGroupStatusAssignDraftAfterVoidConfirm());
 }
 

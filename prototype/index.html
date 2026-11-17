@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="9204d08">
+  <meta name="portal-build" content="bf7fe33">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -249,7 +249,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 9204d08">1114排课</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git bf7fe33">1117排课</div>
         </div>
       </div>
     </section>
@@ -2896,13 +2896,16 @@
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
                   <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 已排教室</label>
-                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" checked onchange="onScheduleViewSettingChange()"> 课程组</label>
+                  <!-- 弃用单一「课程组」勾选。原因：拆成简称/全称；都选→全称，都不选→不显示，默认简称 -->
+                  <!-- <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" checked onchange="onScheduleViewSettingChange()"> 课程组</label> -->
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group-short" checked onchange="onScheduleViewSettingChange()"> 课程组（简称）</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group-full" onchange="onScheduleViewSettingChange()"> 课程组（全称）</label>
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
                 </div>
               </div>
               <div class="schedule-detail-field schedule-time-top-chrome-weeks">
                 <label class="schedule-detail-field-label">排课周次</label>
-                <!-- 周次格子 + 右侧预重修检测入口；表单仍在下方 panel；教室/联合 clone 会 remove actions -->
+                <!-- 周次格子 + 右侧预重修/教室安排入口；表单仍在下方 panel；教室 clone 会 remove 整块 actions；联合仅去掉预重修按钮 -->
                 <div class="schedule-time-weeks-main">
                   <div class="schedule-week-grid" id="schedule-detail-week-grid"></div>
                   <div class="schedule-sidebar-time-actions" data-sch-phase-tab="time">
@@ -2910,7 +2913,7 @@
                       <!-- 弃用：「预重修检测」文案标签。原因：按钮已改为「预重修冲突查询」，标签冗余 -->
                       <!-- <span class="schedule-retake-detect-label">预重修检测</span> -->
                       <button class="btn btn-primary btn-sm" type="button" id="btn-schedule-retake-query" onclick="openScheduleRetakeDetectPanel()">预重修冲突查询</button>
-                      <!-- 顺序：预重修冲突查询 → 查看教室安排情况 → 刷新；教室/联合 clone 会 remove 整块 actions -->
+                      <!-- 顺序：预重修冲突查询 → 查看教室安排情况 → 刷新；联合页保留后两个，去掉预重修 -->
                       <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview" onclick="openScheduleTimeRoomPreview()">查看教室安排情况</button>
                       <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-time-room-preview-refresh" onclick="refreshScheduleTimeRoomPreview()" title="拉取其它已开排课页签的最新节次并刷新本页冲突；不打开教室安排抽屉">刷新</button>
                     </div>
@@ -2952,7 +2955,9 @@
                   <span class="form-hint schedule-room-pick-hint" id="schedule-detail-room-pick-hint">请先选择已排节次课程</span>
                 </div>
                 <span class="schedule-venue-actions-sep" id="schedule-venue-actions-sep" hidden aria-hidden="true"></span>
-                <button class="btn btn-danger-outline btn-sm" id="btn-schedule-slot-cancel" type="button" onclick="cancelSelectedScheduleSlot()" hidden>取消排该时段</button>
+                <!-- 取消选中：仅清橙框/选中集，不删节次；撤销该节次在右侧 -->
+                <button class="btn btn-outline btn-sm" id="btn-schedule-slot-deselect" type="button" onclick="clearScheduleSelectedSlotsFromUi(event)" hidden>取消选中</button>
+                <button class="btn btn-danger-outline btn-sm" id="btn-schedule-slot-cancel" type="button" onclick="cancelSelectedScheduleSlot()" hidden>撤销所选节次</button>
               </div>
               <!-- 弃用：预重修入口单独占顶 chrome 下一行。原因：改到「排课周次」行右侧 -->
               <!--

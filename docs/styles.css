@@ -14081,24 +14081,24 @@ code {
   display: none !important;
 }
 /*
- * 折叠轨：与确定/重置同一行居中。
- * 弃用：绝对贴 picker 下框线 / translate(100%) 探出框外。原因：产品要求与按钮同行。
+ * 折叠轨：在筛选栏底边框上方（框内），平面贴底边线，弧面朝上。
+ * 弃用：translateY(100%) 探出框外 + 弧面朝下。原因：产品要求放在线框上方、弧朝上。
+ * 弃用：与确定/重置同一行垂直居中。原因：应贴底边框。
  */
 .schedule-joint-picker-footer > .schedule-joint-chrome-rail,
 .schedule-joint-picker-bar > .schedule-joint-chrome-rail {
   position: absolute;
   left: 50%;
-  top: 50%;
-  bottom: auto;
+  top: auto;
+  bottom: -1px; /* 平面压住底边框线 */
   z-index: 2;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   margin: 0;
   align-self: center;
-  /* 同行半圆：开口朝下（贴在按钮行视觉中线） */
-  border-top: none;
-  border-bottom: 1px solid var(--border-light, var(--border));
-  border-radius: 0 0 12px 12px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--border-light, var(--border));
+  border-bottom: none; /* 平面贴框线，不要底边描边 */
+  border-radius: 12px 12px 0 0; /* 弧面朝上 */
+  box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.06);
 }
 /* 弃用：收起态条件摘要。原因：收起只留折叠轨，不保留摘要条 */
 .schedule-joint-chrome-summary,
@@ -14125,20 +14125,28 @@ code {
   min-height: 0;
   margin: 0;
 }
+/* 收起：筛选栏壳没了，轨改挂在原底边位置下方（弧仍朝上、平面朝下便于再点开） */
 .is-schedule-joint.is-joint-chrome-collapsed .schedule-joint-picker-bar .schedule-joint-chrome-rail,
 #page-schedule-joint-demo.is-joint-demo-chrome-collapsed .schedule-joint-picker-bar .schedule-joint-chrome-rail {
   top: 0;
-  transform: translate(-50%, 0);
+  bottom: auto;
+  transform: translateX(-50%);
+  border: 1px solid var(--border-light, var(--border));
   border-top: none;
   border-bottom: 1px solid var(--border-light, var(--border));
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 12px 12px; /* 收起后无框线可贴，半圆改朝下探出 */
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
-/* 收起态：底边轨箭头朝下，提示可展开（对齐课表顶栏轨） */
+/* 收起态：箭头朝下，提示可展开 */
 .is-schedule-joint.is-joint-chrome-collapsed .schedule-joint-chrome-rail .schedule-time-top-chrome-rail-icon,
 #page-schedule-joint-demo.is-joint-demo-chrome-collapsed .schedule-joint-chrome-rail .schedule-time-top-chrome-rail-icon {
   transform: rotate(-45deg);
   margin-top: -2px;
+}
+/* 展开态：弧朝上时箭头仍朝上（可收起）；覆盖基类朝上旋转即可 */
+.schedule-joint-picker-bar > .schedule-joint-chrome-rail .schedule-time-top-chrome-rail-icon {
+  transform: rotate(135deg);
+  margin-top: 2px;
 }
 .is-schedule-joint.is-joint-chrome-collapsed [data-joint-fold],
 .is-schedule-joint.is-joint-chrome-collapsed [data-joint-demo-fold],
@@ -14690,8 +14698,69 @@ code {
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-building {
   min-width: 56px;
 }
+/* 排教室课表隐藏「楼栋」列（筛选仍可用；完整楼栋见设备「查看」弹窗） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-building {
+  display: none;
+}
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-equip {
+  /* 弃用 max-width:64px + 过窄 min-width。原因：表头「教室设备」会被父级 ellipsis 截成「教室…」 */
+  /* min-width: 48px; */
+  /* max-width: 64px; */
+  /* 按四字表头完整展示定宽；单元格仅「查看」，不会被撑破 */
   min-width: 72px;
+  max-width: none;
+  font-size: 12px;
+  white-space: nowrap;
+  text-align: center;
+  overflow: visible;
+  text-overflow: clip;
+}
+#page-schedule-room-detail .sch-room-equip-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+/* 弃用设备摘要文案样式。原因：产品要求设备列不显示截断摘要，仅保留「查看」 */
+/* #page-schedule-room-detail .sch-room-equip-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-2, #475569);
+} */
+#page-schedule-room-detail .sch-room-equip-view {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue-600, #2563eb);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#page-schedule-room-detail .sch-room-equip-view:hover {
+  text-decoration: underline;
+}
+.sch-room-equip-detail-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 8px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  font-size: 13px;
+}
+.sch-room-equip-detail-row:last-child { border-bottom: 0; }
+.sch-room-equip-detail-k {
+  color: var(--text-3, #64748b);
+}
+.sch-room-equip-detail-v {
+  color: var(--text-1, #0f172a);
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .sch-room-meta-soft {
   min-width: 72px;
@@ -14726,12 +14795,147 @@ code {
   --sch-room-meta-bg: #f3f4f6;
   background: var(--sch-room-meta-bg);
 }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-pending {
-  background: #fefce8;
+/*
+ * 场地信息区（.sch-room-meta）默认黄底 #fefce8（见上方 --sch-room-meta-bg），
+ * 排课节次区保持白底，用以区分左右两块区域。
+ * 弃用：曾把普通行 meta 也刷成白底。原因：产品要求恢复黄底区分场地信息 / 排课区域。
+ */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tbody tr:not(.is-room-row-locked):not(.is-room-seat-short):not(.is-room-row-active) {
+  background: #fff;
 }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-pending .sch-room-meta {
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tbody tr:not(.is-room-row-locked):not(.is-room-seat-short):not(.is-room-row-active) .sch-room-meta {
   --sch-room-meta-bg: #fefce8;
   background: var(--sch-room-meta-bg);
+}
+/* 排教室课表：座位不足/类型不符整行浅红（对齐抽屉；压过选中蓝） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-seat-short {
+  background: #fef2f2;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-seat-short .sch-room-meta {
+  --sch-room-meta-bg: #fef2f2;
+  background: var(--sch-room-meta-bg);
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active.is-room-seat-short {
+  background: #fef2f2;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active.is-room-seat-short .sch-room-meta {
+  --sch-room-meta-bg: #fef2f2;
+  background: var(--sch-room-meta-bg);
+}
+/* 教室列：名 +「已排」/「偏好」标记横排（对齐抽屉） */
+#page-schedule-room-detail .sch-room-room-cell-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+#page-schedule-room-detail .sch-room-room-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#page-schedule-room-detail .sch-room-meta-room .srf-prefer-mark,
+#page-schedule-room-detail .sch-room-meta-room .srf-assigned-mark {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+#page-schedule-room-detail .sch-room-meta-room .srf-prefer-mark {
+  background: #16a34a;
+  color: #fff;
+}
+/* 已排：蓝底白字，与抽屉「当前」同形区分「偏好」绿标 */
+#page-schedule-room-detail .sch-room-meta-room .srf-assigned-mark {
+  background: #2563eb;
+  color: #fff;
+}
+/*
+ * 弃用：侧栏 #schedule-room-ac-prefer-panel 展示样式。
+ * 原因：偏好改走顶栏选择+保存；面板会从 DOM 移除。强制隐藏防旧页残留。
+ */
+#page-schedule-room-detail .schedule-room-ac-prefer-panel {
+  display: none !important;
+}
+#page-schedule-room-detail .srap-head {
+  font-weight: 700;
+  color: var(--text-1, #0f172a);
+  margin-bottom: 8px;
+}
+#page-schedule-room-detail .srap-other-k {
+  font-weight: 700;
+  margin-right: 4px;
+}
+#page-schedule-room-detail .srap-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow: auto;
+}
+#page-schedule-room-detail .srap-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  cursor: pointer;
+  line-height: 1.35;
+}
+/* 开课/排时间已带选项：禁用勾选，不可取消 */
+#page-schedule-room-detail .srap-check.is-locked {
+  opacity: 0.72;
+  cursor: default;
+}
+#page-schedule-room-detail .srap-check input {
+  margin-top: 2px;
+}
+#page-schedule-room-detail .srap-other-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+#page-schedule-room-detail .srap-other-field .input:disabled {
+  background: #f1f5f9;
+  color: var(--text-3, #94a3b8);
+}
+/*
+ * 已弃用：课卡/面板「学院设定 vs AC 补充」色块与角标。
+ * 原因：产品改为不在展示层区分来源，只在选择框禁用上游已选项。
+ * .srap-legend / .srap-badge / .srap-block.is-* / .sdc-prefer-* …
+ */
+/* 普通教室偏好弹层（排教室顶栏「选择教室偏好」） */
+#modal-schedule-lecture-prefer .srap-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow: auto;
+}
+#modal-schedule-lecture-prefer .srap-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  cursor: pointer;
+  line-height: 1.35;
+  font-size: 13px;
+}
+#modal-schedule-lecture-prefer .srap-check.is-locked {
+  opacity: 0.72;
+  cursor: default;
+}
+#modal-schedule-lecture-prefer .srap-check input {
+  margin-top: 2px;
+}
+#modal-schedule-lecture-prefer .srap-other-field .input:disabled {
+  background: #f1f5f9;
+  color: var(--text-3, #94a3b8);
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.sch-room-expand-row td {
   text-align: center;
@@ -14748,6 +14952,13 @@ code {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  /* 弃用：继承 .schedule-detail-field 的 margin-bottom:12px。原因：筛选下方留白偏多 */
+  margin-bottom: 0;
+}
+/* 顶栏内筛选格：去掉通用 grid 底边距，避免与下方 hold 行/折叠轨空隙过大 */
+#page-schedule-room-detail #schedule-detail-room-filter-panel .schedule-room-filter-grid {
+  /* margin-bottom: 14px; 弃用（来自 .schedule-room-filter-grid）。原因：筛选下方留白偏多 */
+  margin-bottom: 0;
 }
 .schedule-room-timetable-filter-grid {
   align-items: end;
@@ -14799,12 +15010,17 @@ code {
 .schedule-conflict-legend .sch-leg-item.is-room-locked::before {
   background: #9ca3af;
 }
+/*
+ * 待定图例：白底（课表格待定卡不再铺黄，仅左侧琥珀!标识）。
+ * 色点用琥珀与侧栏 is-hold 图标呼应；弃用黄底 #fcd34d。
+ */
 .schedule-conflict-legend .sch-leg-item.is-room-pending {
-  background: #fef9c3;
-  color: #854d0e;
+  background: #fff;
+  color: #374151;
+  border: 1px solid var(--border, #e5e7eb);
 }
 .schedule-conflict-legend .sch-leg-item.is-room-pending::before {
-  background: #eab308;
+  background: #ca8a04;
 }
 /* 排时间/排教室共用：壳层占满剩余高度，内部课表区才能出现上下滚动 */
 .schedule-detail-main .schedule-room-grid-shell {
@@ -14829,10 +15045,27 @@ code {
   position: sticky;
   bottom: 0;
   z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 16px;
   padding: 8px 12px;
   text-align: center;
   background: #fafafa;
   border-top: 1px dashed var(--border);
+}
+/* 排教室课表脚：「显示全部场地」钉左侧，展开钮仍居中观感 */
+#page-schedule-room-detail .schedule-room-grid-footer .schedule-room-tt-show-all {
+  margin-right: auto;
+  font-size: 13px;
+  color: var(--text-2, #475569);
+}
+#page-schedule-room-detail .schedule-room-grid-footer .schedule-room-tt-show-all[hidden] {
+  display: none;
+}
+#page-schedule-room-detail .schedule-room-grid-footer .sch-room-expand-btn[hidden] {
+  display: none;
 }
 .schedule-room-hold-bar {
   display: flex;
@@ -14883,11 +15116,12 @@ code {
   background: #6b7280;
 }
 .schedule-room-lock-legend .sch-leg-item.is-room-pending {
-  background: #fde68a;
-  color: #78350f;
+  background: #fff;
+  color: #374151;
+  border: 1px solid var(--border, #e5e7eb);
 }
 .schedule-room-lock-legend .sch-leg-item.is-room-pending::before {
-  background: #d97706;
+  background: #ca8a04;
 }
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-empty {
   cursor: pointer;
@@ -14901,14 +15135,59 @@ code {
   border-right-color: #c5d0de;
   border-bottom-color: #c5d0de;
 }
+/* 教室禁排时段（roomSlotProfiles.blockSlots）：与 outside-time 同灰，不可排 */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-slot-blocked {
+  background: #dbe3ee !important;
+  color: #64748b;
+  cursor: not-allowed;
+  border-right-color: #c5d0de;
+  border-bottom-color: #c5d0de;
+  outline: none !important;
+  box-shadow: none !important;
+}
+#page-schedule-room-detail .srpv-slot-block-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  background: color-mix(in srgb, #94a3b8 22%, #fff);
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/*
+ * 待定格：白底（与空/普通占用卡一致）。
+ * 弃用黄底 #fcd34d/#fde68a。原因：产品要求待定只靠左侧琥珀!标识，课表格卡不铺黄；锁定仍灰。
+ */
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending {
-  background: #fde68a;
+  background: #fff;
   cursor: not-allowed;
 }
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked {
   background: #e5e7eb;
   color: #374151;
   cursor: not-allowed;
+}
+/*
+ * 弃用：待定/锁定选中加蓝描边 0 0 0 2px #2563eb。
+ * 原因：对齐排时间——选中只铺淡蓝底 #dbeafe，外框留给售罄/超排；融合卡同款。
+ */
+/* #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-slot-selected {
+  box-shadow: 0 0 0 2px #2563eb;
+  cursor: pointer;
+} */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-slot-selected {
+  background: #dbeafe !important;
+  box-shadow: none;
+  cursor: pointer;
 }
 /* 联排节次合并卡片：跨多节次列显示为同一格 */
 .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-linked-span {
@@ -14958,8 +15237,17 @@ code {
   overflow-wrap: anywhere;
   max-width: 100%;
 }
-.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending .schedule-room-hold-block .schedule-grid-code {
+/* 弃用待定课号棕字 #78350f。原因：格已改白底，课号跟普通卡同色 */
+/* .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending .schedule-room-hold-block .schedule-grid-code {
   color: #78350f;
+} */
+.schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending .schedule-room-hold-block .schedule-grid-code {
+  color: #334155;
+}
+/* 选中后课号改排时间同色，避免待定棕盖住淡蓝选中态 */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected.is-room-cell-pending .schedule-room-hold-block .schedule-grid-code,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected.is-room-cell-pending .schedule-room-hold-block.is-slot-selected-block {
+  color: #334155 !important;
 }
 /* 排教室节次格：最小宽度保底；多组文案换行，不再随长串撑开列宽 */
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols td.schedule-grid-cell {
@@ -14987,6 +15275,126 @@ code {
   overflow: hidden;
   grid-template-columns: minmax(0, 1fr);
   justify-content: start;
+}
+/*
+ * 共同授课融合卡：多列 + 中缝虚线。
+ * 弃用白底 #fff。原因：盖住待定琥珀/锁定灰，卡与格颜色不一致；改为透出格底。
+ */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused {
+  grid-template-columns: repeat(var(--sch-cols, 2), minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid color-mix(in srgb, #6b7280 72%, #fff);
+  border-radius: 4px;
+  overflow: hidden;
+  background: transparent;
+}
+/* 待定/锁定格内融合卡显式跟格同色（避免个别规则把 multi 刷回白） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending .schedule-grid-multi.is-shared-link-fused {
+  background: #fff;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked .schedule-grid-multi.is-shared-link-fused {
+  background: #e5e7eb;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #334155 !important;
+  opacity: 1 !important;
+  font-weight: inherit;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-room-hold-block + .schedule-room-hold-block {
+  border-left: 1px dashed color-mix(in srgb, #6b7280 72%, #fff) !important;
+}
+/*
+ * 排教室选中融合卡：对齐排时间淡蓝底 + 中缝/描边 #6b7280（MEC911+MEC912 框选/点选同效）
+ */
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) {
+  outline: none;
+  box-shadow: none;
+  background: #dbeafe;
+  border-color: #6b7280;
+}
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block {
+  background: transparent !important;
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-room-hold-block + .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block {
+  border-left-color: #6b7280 !important;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-slot-selected-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-room-hold-block.is-slot-selected-block {
+  outline: none !important;
+  box-shadow: none !important;
+}
+/*
+ * 排教室普通选中卡：淡蓝底（非融合）。
+ * 融合卡半侧须保持 transparent，外框/中缝由 .is-shared-link-fused 负责，故 :not(.is-shared-link-fused *)。
+ */
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block:not(.is-shared-partner-block),
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected .schedule-room-hold-block.is-slot-selected-block:not(.is-shared-partner-block) {
+  background: #dbeafe !important;
+  opacity: 1 !important;
+  color: #334155 !important;
+  border-color: #6b7280 !important;
+}
+/* 非融合：待定/锁定选中格与卡铺淡蓝；融合卡走下方专规，避免半侧实心蓝拆掉中缝虚线 */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected .schedule-grid-multi:not(.is-shared-link-fused),
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-slot-selected .schedule-grid-multi:not(.is-shared-link-fused),
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected .schedule-grid-multi:not(.is-shared-link-fused) .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-slot-selected .schedule-grid-multi:not(.is-shared-link-fused) .schedule-room-hold-block {
+  background: #dbeafe !important;
+  color: #334155 !important;
+}
+/* 融合卡选中：整卡淡蓝 + 半侧透明 + 中缝虚线（压过上方普通选中实心蓝） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) {
+  background: #dbeafe !important;
+  border-color: #6b7280 !important;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) .schedule-grid-block {
+  background: transparent !important;
+  color: #334155 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-room-hold-block + .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) .schedule-room-hold-block + .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) .schedule-grid-block + .schedule-grid-block {
+  border-left: 1px dashed #6b7280 !important;
+}
+#page-schedule-room-detail .schedule-grid-block.is-slot-selected-block,
+#page-schedule-room-detail .schedule-room-hold-block.is-slot-selected-block {
+  outline: none;
+  box-shadow: none;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block {
+  background: transparent !important;
+  border: none !important;
+  border-left: 1px dashed color-mix(in srgb, #6b7280 72%, #fff) !important;
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-line {
+  color: inherit;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-shared-tag {
+  color: #fff;
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-room-hold-block,
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols .schedule-grid-multi .schedule-grid-block {
@@ -15217,7 +15625,10 @@ code {
   min-width: 0;
   gap: 0;
 }
-/* Row1：横排 — Day+卡片显示 | 售罄/超排 | 锁定/待定图例（操作钮已迁到周次行右） */
+/*
+ * Row1：整块对齐排时间 — 左勾选项 / 右冲突样式（售罄超排+锁定待定），行内垂直居中
+ * 弃用：无底色分行 + hold-bar 挂 merge-row。原因：产品要求与排时间同为浅蓝整块
+ */
 #page-schedule-room-detail .schedule-time-chrome-merge-row {
   display: flex;
   flex-wrap: wrap;
@@ -15225,27 +15636,90 @@ code {
   column-gap: 12px;
   row-gap: 6px;
   min-width: 0;
-  padding: 4px 0 4px;
+  padding: 8px 10px 6px;
+  border-radius: 6px;
+  background: #F0F5FF;
+  border: 1px solid rgba(57, 126, 240, 0.12);
 }
 #page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-shared-teaching-hint {
   display: none !important;
 }
+/*
+ * 左勾选：view-settings 现为 merge-row 直接子节点（Day 条弃用后不再包 view-settings-row）
+ * 必须压掉 .schedule-detail-view-settings 默认灰底/内边距，否则行高会到 ~64px（排时间约 41px）
+ */
+#page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-detail-view-settings,
 #page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-room-view-settings-row {
   order: 1;
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
+  margin-bottom: 0;
   padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  white-space: normal;
+}
+#page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-detail-view-settings::before,
+#page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-room-view-settings-row > #schedule-detail-view-settings::before {
+  content: none;
+  display: none;
+}
+#page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-room-view-settings-row > #schedule-detail-view-settings {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0;
+  margin-bottom: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+/* 排教室：去掉「课表卡片显示：」与固定 Course Code（对齐排时间） */
+#page-schedule-room-detail .schedule-time-chrome-merge-row .schedule-view-sep,
+#page-schedule-room-detail .schedule-time-chrome-merge-row .schedule-view-opt.is-required {
+  display: none !important;
 }
 #page-schedule-room-detail .schedule-time-chrome-merge-row > .schedule-conflict-legend {
   order: 2;
   margin: 0;
+  margin-left: auto;
   min-width: 0;
   flex: 0 1 auto;
+  display: inline-flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 10px;
+  align-self: center;
+}
+/* 去掉「冲突类型：」；仅保留色标（对齐排时间） */
+#page-schedule-room-detail .schedule-conflict-legend > .sch-leg-title {
+  display: none !important;
+}
+/* 锁定/待定并入 conflict-legend 后：与售罄/超排同一行右侧 */
+#page-schedule-room-detail .schedule-conflict-legend > .schedule-room-lock-legend {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: 0;
   gap: 6px 10px;
 }
+#page-schedule-room-detail .schedule-conflict-legend #schedule-lock-legend-title {
+  display: none !important;
+}
+/* 弃用：hold-bar 占 merge-row。原因：图例已并入 conflict-legend，操作钮在周次行 */
+#page-schedule-room-detail .schedule-time-top-chrome > #schedule-room-hold-bar[hidden],
 #page-schedule-room-detail .schedule-time-chrome-merge-row > #schedule-room-hold-bar {
+  display: none !important;
+}
+/* #page-schedule-room-detail .schedule-time-chrome-merge-row > #schedule-room-hold-bar {
   order: 3;
   flex: 0 1 auto;
   margin: 0;
@@ -15262,10 +15736,6 @@ code {
   content: none;
   display: none;
 }
-/* 去掉「冲突类型：」；仅保留色标（对齐排时间） */
-#page-schedule-room-detail .schedule-conflict-legend > .sch-leg-title {
-  display: none !important;
-}
 #page-schedule-room-detail #schedule-room-hold-bar #schedule-lock-legend-title {
   display: none !important;
 }
@@ -15273,14 +15743,15 @@ code {
   margin-left: 0;
   gap: 6px 10px;
 }
-/* 弃用：操作钮曾与图例同在 hold-bar。原因：改到周次行右侧 */
 #page-schedule-room-detail .schedule-time-chrome-merge-row > #schedule-room-hold-bar > #schedule-room-hold-actions {
   display: none;
-}
+} */
 /* Row2：教室筛选（与周次对调后进 chrome；藏「教室筛选」标签） */
 #page-schedule-room-detail .schedule-time-top-chrome > #schedule-detail-room-filter-panel {
   margin-top: 4px;
   padding-top: 8px;
+  /* 弃用：padding-bottom:0。原因：筛选格与下方虚线（操作行顶线/折叠轨）贴太近；对齐 merge-row 底内边距 6px */
+  padding-bottom: 6px;
   border-top: 1px dashed rgba(15, 23, 42, 0.08);
   position: relative;
 }
@@ -15291,7 +15762,7 @@ code {
 #page-schedule-room-detail #schedule-detail-room-filter-panel > .schedule-detail-field-label {
   display: none !important;
 }
-/* Row3：排课周次 + 右侧锁定/撤回/一键导入 */
+/* Row3：排课周次（仅「设置周次」；锁定/场地操作已迁筛选下方独立行） */
 #page-schedule-room-detail .schedule-time-top-chrome > .schedule-time-top-chrome-weeks {
   margin-top: 4px;
   padding-top: 8px;
@@ -15305,22 +15776,71 @@ code {
 #page-schedule-room-detail .schedule-time-top-chrome-weeks .schedule-time-weeks-main {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 12px;
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;
 }
+/* 周次格：按内容占位（可收缩）；操作组已迁出，不再与 hold-actions 抢宽 */
 #page-schedule-room-detail .schedule-time-top-chrome-weeks .schedule-week-grid {
   flex: 1 1 auto;
   min-width: 0;
 }
-#page-schedule-room-detail .schedule-time-top-chrome-weeks #schedule-room-hold-actions {
-  display: inline-flex;
-  flex-wrap: nowrap;
+/* 无周次格时不要被空 grid 撑开 */
+#page-schedule-room-detail .schedule-time-top-chrome-weeks .schedule-week-grid[hidden] {
+  display: none !important;
+  flex: 0 0 0;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+/* 未勾选「设置周次」时整行隐藏 */
+#page-schedule-room-detail .schedule-time-top-chrome-weeks .schedule-week-grid[hidden],
+#page-schedule-room-detail .schedule-time-top-chrome > .schedule-time-top-chrome-weeks[hidden] {
+  display: none !important;
+}
+/*
+ * Row4：场地类型/偏好 + 锁定操作 — 教室筛选正下方独立行（与「设置周次」分行）。
+ * 弃用：挂在 .schedule-time-weeks-main 内。原因：产品要求与周次分行、放筛选下方。
+ */
+/* #page-schedule-room-detail .schedule-time-top-chrome-weeks #schedule-room-hold-actions { ... } */
+#page-schedule-room-detail #schedule-time-top-chrome > #schedule-room-hold-actions {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  margin-left: auto;
+  /* gap: 6px 8px; 弃用。原因：保存/取消选中/锁定/撤回挨得过紧 */
+  gap: 8px 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 4px 0 0;
+  /* 弃用：padding:8px 0 0。原因：无底内边距，与 chrome 下框虚线贴得太近 */
+  padding: 8px 0 10px;
+  border-top: 1px dashed rgba(15, 23, 42, 0.08);
+}
+/* 无选中时隐藏；需压过上方 display:flex，否则 [hidden] 无效 */
+#page-schedule-room-detail #schedule-time-top-chrome > #schedule-room-hold-actions[hidden] {
+  display: none !important;
+}
+/* 「取消选中」在锁定左侧；文案较长时不换行挤破周次行 */
+#page-schedule-room-detail #btn-schedule-room-hold-deselect {
+  flex: 0 0 auto;
+}
+#page-schedule-room-detail #btn-schedule-room-hold-revoke {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  /* 红框红字：撤回已排场地为危险操作（对齐 btn-danger-outline） */
+  background: #fff;
+  color: var(--red, #dc2626);
+  border: 1px solid var(--red, #dc2626);
+}
+#page-schedule-room-detail #btn-schedule-room-hold-revoke:hover:not(:disabled) {
+  background: var(--red-bg, #fef2f2);
+  color: var(--red, #dc2626);
+  border-color: var(--red, #dc2626);
 }
 /*
  * 时间/联合顶栏：显示项与冲突图例合为一行（左显示项 / 右冲突色标；批次靠右中）
@@ -15464,6 +15984,7 @@ code {
   height: 20px;
   margin: 0 0 4px;
   border: none;
+  /* 默认实线兜底；时间/联合/教室页在下方覆盖为与筛选栏同款淡虚线 */
   border-top: 1px solid var(--border, #e2e8f0);
   border-radius: 0;
   background: transparent;
@@ -15498,6 +16019,12 @@ code {
   position: relative;
   z-index: 1;
 }
+/* 时间/联合/教室：顶 chrome 下框线对齐筛选栏/周次行上方淡虚线（教室侧原为实线，现与 #schedule-detail-room-filter-panel 同款） */
+#page-schedule-time-detail .schedule-detail-main .schedule-timetable-wrap > .schedule-time-top-chrome-rail,
+.is-schedule-joint .schedule-detail-main .schedule-timetable-wrap > .schedule-time-top-chrome-rail,
+#page-schedule-room-detail .schedule-detail-main .schedule-timetable-wrap > .schedule-time-top-chrome-rail {
+  border-top: 1px dashed rgba(15, 23, 42, 0.08);
+}
 .schedule-time-top-chrome-rail-icon {
   width: 8px;
   height: 8px;
@@ -15522,13 +16049,14 @@ code {
   transform: rotate(-45deg);
   margin-top: -2px;
 }
-/* 排教室：收起第1–3行（chrome 含 merge+周次+已并入的 hold；另藏筛选栏） */
+/* 排教室：收起顶 chrome（含 merge+周次+筛选+筛选下场地/锁定操作行） */
 #page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed .schedule-time-top-chrome,
 #page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed #schedule-detail-room-filter-panel {
   display: none !important;
 }
-/* 兼容：hold 若尚未归入 chrome，收起时仍隐藏 */
-#page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed #schedule-room-hold-bar {
+/* 兼容：hold-bar / hold-actions 若游离于 chrome 外，收起时仍隐藏 */
+#page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed #schedule-room-hold-bar,
+#page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed #schedule-room-hold-actions {
   display: none !important;
 }
 #page-schedule-room-detail .schedule-timetable-wrap.is-schedule-top-chrome-collapsed .schedule-time-top-chrome-rail-icon {
@@ -15536,8 +16064,139 @@ code {
   margin-top: -2px;
 }
 /* 弃用：教室侧强制隐藏顶栏折叠轨。原因：产品要求对齐排时间，收起 hold-bar 及往上区域 */
-/* 教室侧 clone 自时间页会带上场地栏：强制不展示（时间侧专用） */
-#page-schedule-room-detail .schedule-detail-venue-field {
+/*
+ * 弃用：教室侧强制隐藏场地栏。
+ * 原因：产品要求排教室顶栏也展示「场地类型 + 教室偏好 + 保存」（选中节次后）。
+ * #page-schedule-room-detail .schedule-detail-venue-field { display: none !important; }
+ */
+/*
+ * 弃用：排教室场地栏单独占周次下方一行。
+ * 原因：产品要求放到「取消选中」左侧，用 | 隔开。
+ * #page-schedule-room-detail .schedule-time-top-chrome > .schedule-detail-venue-field { ... }
+ */
+/* 排教室：场地类型/偏好/保存 嵌在 hold-actions，取消选中左侧；垂直居中 */
+#page-schedule-room-detail #schedule-room-hold-actions > #schedule-detail-venue-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  width: auto;
+  max-width: none;
+  /* 弃用：flex:0 1 auto。原因：教室偏好需占满取消选中左侧剩余宽度，才能真正自适应 */
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.2;
+}
+#page-schedule-room-detail #schedule-room-hold-actions > #schedule-detail-venue-field[hidden] {
+  display: none !important;
+}
+#page-schedule-room-detail #schedule-room-hold-actions > #schedule-detail-venue-field > .schedule-detail-field-label {
+  margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+}
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-venue-type-block {
+  display: flex;
+  align-items: center;
+  /* gap: 6px; 弃用。原因：保存与左侧偏好控件间距偏紧 */
+  gap: 8px 12px;
+  flex-wrap: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* 场地类型下拉按内容宽，剩余空间留给教室偏好 */
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-venue-types-multiselect {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-venue-types-btn,
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-prefer-rooms-btn,
+#page-schedule-room-detail #schedule-room-hold-actions #btn-schedule-venue-save,
+#page-schedule-room-detail #schedule-room-hold-actions > .btn {
+  height: 28px;
+  min-height: 28px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+}
+#page-schedule-room-detail #schedule-room-hold-actions #btn-schedule-venue-save,
+#page-schedule-room-detail #schedule-room-hold-actions > .btn {
+  flex: 0 0 auto;
+}
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-venue-remark-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+}
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-venue-remark-field .schedule-venue-remark-label {
+  line-height: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+/*
+ * 排教室顶栏「教室偏好」clo-multiselect：吃满 remark 字段剩余宽；文案与场地类型 display 一致。
+ * 弃用：纯按钮 #schedule-detail-prefer-rooms-btn 直接撑宽。原因：改为下拉多选，宽度挂在 wrap/trigger。
+ */
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-prefer-rooms-multiselect {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+}
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-prefer-rooms-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 400;
+  font-synthesis: none;
+  color: var(--text-1);
+}
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-prefer-rooms-display {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-1);
+}
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-prefer-rooms-display.placeholder,
+#page-schedule-room-detail #schedule-room-hold-actions #schedule-detail-prefer-rooms-btn.is-empty {
+  color: var(--text-3);
+  font-weight: 400;
+}
+#page-schedule-room-detail #schedule-room-hold-actions .schedule-room-venue-hold-sep {
+  flex-shrink: 0;
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  /* margin: 0 2px; 弃用。原因：| 两侧与保存/取消选中间距不足 */
+  margin: 0 6px;
+}
+#page-schedule-room-detail #schedule-room-hold-actions .schedule-room-venue-hold-sep[hidden] {
+  display: none !important;
+}
+/* 排教室场地栏不展示「锁定教室」（锁定改走周次行 hold-actions） */
+#page-schedule-room-detail .schedule-detail-venue-field #schedule-lock-room-field {
   display: none !important;
 }
 /* #page-schedule-room-detail .schedule-time-top-chrome-rail {
@@ -15561,6 +16220,16 @@ code {
   align-items: center;
   gap: 6px;
   margin-right: 2px;
+}
+/* 一键导入场地：仅排教室侧栏查询左侧展示；时间/联合隐藏（模板与时间页共用） */
+#page-schedule-time-detail #btn-schedule-room-one-click-import,
+.is-schedule-joint #btn-schedule-room-one-click-import {
+  display: none !important;
+}
+#page-schedule-room-detail .schedule-detail-course-search-actions #btn-schedule-room-one-click-import {
+  display: inline-flex;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 /* 排课周次行：整行撑满 chrome，周次在左、预重修入口贴最右 */
 #page-schedule-time-detail .schedule-time-top-chrome-weeks .schedule-time-weeks-main,
@@ -15697,6 +16366,12 @@ code {
  */
 /* .schedule-detail-course-item.is-done { opacity: .72; } */
 .schedule-detail-course-item.is-done { opacity: 1; }
+/* 选中优先于待定黄 / 锁定完成态底色（否则 is-active.is-hold 仍显 #fffbeb） */
+.schedule-detail-course-item.is-active.is-hold,
+.schedule-detail-course-item.is-active.is-done {
+  background: #dbeafe;
+  border-color: #60a5fa;
+}
 .schedule-detail-course-code {
   display: flex;
   align-items: center;
@@ -15749,7 +16424,8 @@ code {
 }
 .schedule-detail-course-code .sdc-hours-icon.is-hold {
   background: #ca8a04;
-  letter-spacing: -1px;
+  /* 弃用 letter-spacing:-1px。原因：文案已由 … 改为 !，无需挤字距 */
+  /* letter-spacing: -1px; */
 }
 .schedule-detail-course-code .sdc-hours-icon.is-done {
   background: #16a34a;
@@ -15757,9 +16433,17 @@ code {
 .schedule-detail-course-code .sdc-hours-icon.is-over {
   background: #dc2626;
 }
-.schedule-detail-course-item.is-hold {
+/*
+ * 弃用：排教室左侧待定卡整卡黄底 #fffbeb。
+ * 原因：产品只要课号旁琥珀感叹号表达待定，卡片本身与普通卡同底。
+ */
+/* .schedule-detail-course-item.is-hold:not(.is-active) {
   border-color: #fde68a;
   background: #fffbeb;
+} */
+#page-schedule-room-detail .schedule-detail-course-item.is-hold:not(.is-active) {
+  border-color: var(--border, #e5e7eb);
+  background: transparent;
 }
 /* ???????????? + ?????? */
 .schedule-detail-course-fields {
@@ -15826,7 +16510,11 @@ code {
 #page-schedule-room-detail .schedule-detail-course-fields .sdc-k {
   padding-top: 1px;
 }
-#page-schedule-room-detail .schedule-detail-course-fields .sdc-v {
+/* 排教室侧字段值：不加粗（与「课程组」同色 --text-1，不覆盖教师链接蓝）；不影响排时间侧 */
+#page-schedule-room-detail .schedule-detail-course-fields .sdc-v,
+#page-schedule-room-detail .schedule-detail-course-fields b.sdc-v {
+  font-weight: 400;
+  font-synthesis: none;
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
@@ -16186,7 +16874,12 @@ code {
 #page-schedule-room-detail .schedule-room-view-settings-row > #schedule-detail-view-settings::before {
   display: none;
 }
-#page-schedule-room-detail .schedule-room-view-settings-row > .schedule-room-day-banner {
+/* 弃用：课表上方 Day 条展示。原因：面包屑 #schedule-time-detail-title 已可切星期，避免重复 */
+#page-schedule-room-detail .schedule-room-view-settings-row > .schedule-room-day-banner,
+#page-schedule-room-detail #schedule-room-day-banner {
+  display: none !important;
+}
+/* #page-schedule-room-detail .schedule-room-view-settings-row > .schedule-room-day-banner {
   display: inline-flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -16200,7 +16893,7 @@ code {
 }
 #page-schedule-room-detail .schedule-room-day-banner[hidden] {
   display: none;
-}
+} */
 #page-schedule-room-detail .schedule-room-day-banner .schedule-room-day-banner-select {
   width: 8.5em !important;
   min-width: 8.5em !important;
@@ -16503,11 +17196,19 @@ code {
   min-width: 180px;
   max-width: 240px;
 }
+/* 教室偏好多选：不受场地类型 220 固定宽限制，占满 remark 字段 */
+.schedule-detail-venue-controls .clo-multiselect.schedule-prefer-rooms-ms {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
 .schedule-detail-venue-controls .clo-multiselect-dropdown {
   z-index: 9999;
 }
 /* 未选已排节次：场地类型 / 锁定教室 / 教室偏好同款置灰（空文案，无「请选择」类提示） */
 #schedule-detail-venue-types-multiselect.is-disabled .clo-multiselect-trigger,
+#schedule-detail-prefer-rooms-multiselect.is-disabled .clo-multiselect-trigger,
 #schedule-detail-venue-types-btn:disabled,
 #page-schedule-time-detail #schedule-detail-lock-room-btn:disabled,
 #page-schedule-time-detail #schedule-detail-prefer-rooms-btn:disabled,
@@ -16521,14 +17222,19 @@ code {
   box-shadow: none;
 }
 #schedule-detail-venue-types-multiselect.is-disabled .clo-multiselect-display,
-#schedule-detail-venue-types-btn:disabled .clo-multiselect-display {
+#schedule-detail-venue-types-btn:disabled .clo-multiselect-display,
+#schedule-detail-prefer-rooms-multiselect.is-disabled .clo-multiselect-display,
+#schedule-detail-prefer-rooms-btn:disabled .clo-multiselect-display {
   color: #334155;
 }
 #schedule-detail-venue-types-multiselect.is-disabled .clo-multiselect-display.placeholder,
-#schedule-detail-venue-types-btn:disabled .clo-multiselect-display.placeholder {
+#schedule-detail-venue-types-btn:disabled .clo-multiselect-display.placeholder,
+#schedule-detail-prefer-rooms-multiselect.is-disabled .clo-multiselect-display.placeholder,
+#schedule-detail-prefer-rooms-btn:disabled .clo-multiselect-display.placeholder {
   color: #475569;
 }
-#schedule-detail-venue-types-multiselect.is-disabled .clo-multiselect-arrow {
+#schedule-detail-venue-types-multiselect.is-disabled .clo-multiselect-arrow,
+#schedule-detail-prefer-rooms-multiselect.is-disabled .clo-multiselect-arrow {
   color: #64748b;
 }
 /* 弃用：未选时用 is-empty 浅灰提示色。原因：空文案置灰应与场地类型同色，避免像有占位词 */
@@ -16556,6 +17262,10 @@ code {
   background: #fff;
   flex: 0 0 auto;
 }
+/* 排教室：场地类型多选无「取消/确定」脚，勾选即回显；写入节次仍靠顶栏「保存」。不改时间侧脚按钮。 */
+#page-schedule-room-detail #schedule-detail-venue-types-dropdown .clo-multiselect-foot {
+  display: none !important;
+}
 .schedule-venue-remark-field {
   display: flex;
   align-items: center;
@@ -16565,14 +17275,145 @@ code {
   min-width: 0;
   max-width: none;
 }
-/* 教室偏好选择器：加宽吃掉锁定教室与右侧操作区之间的留白 */
+/*
+ * 教室偏好选择器：随场地栏可用宽度伸缩（侧栏收起/展开、窗口缩放）。
+ * 弃用：max-width:420 + min-width:220。原因：父级已更宽时按钮仍卡在 420，留白浪费；
+ * 侧栏展开/窄屏时又不易再缩。改为占满 remark 字段，文案过长靠 ellipsis。
+ * 弃用：纯按钮 font-weight:600。原因：与场地类型 clo-multiselect-display 字色/字重不一致。
+ */
+#page-schedule-time-detail #schedule-detail-prefer-rooms-multiselect,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-multiselect,
+.is-schedule-joint #schedule-detail-prefer-rooms-multiselect {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+}
 #page-schedule-time-detail #schedule-detail-prefer-rooms-btn,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-btn,
 .is-schedule-joint #schedule-detail-prefer-rooms-btn {
   flex: 1 1 auto;
-  min-width: 220px;
-  max-width: 420px;
-  width: auto;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  font-weight: 400;
+  font-synthesis: none;
 }
+/* 已选值字色深度与 #schedule-detail-venue-types-display 一致 */
+#page-schedule-time-detail #schedule-detail-prefer-rooms-display,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-display,
+.is-schedule-joint #schedule-detail-prefer-rooms-display {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-1);
+}
+#page-schedule-time-detail #schedule-detail-prefer-rooms-display.placeholder,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-display.placeholder,
+.is-schedule-joint #schedule-detail-prefer-rooms-display.placeholder {
+  color: var(--text-3);
+}
+#page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown.clo-multiselect-dropdown,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-dropdown.clo-multiselect-dropdown,
+.is-schedule-joint #schedule-detail-prefer-rooms-dropdown.clo-multiselect-dropdown {
+  max-height: none;
+  overflow: hidden;
+  padding: 0;
+}
+#page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown:not([hidden]),
+#page-schedule-room-detail #schedule-detail-prefer-rooms-dropdown:not([hidden]),
+.is-schedule-joint #schedule-detail-prefer-rooms-dropdown:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+#page-schedule-time-detail #schedule-prefer-rooms-options,
+#page-schedule-time-detail #schedule-prefer-lecture-options,
+#page-schedule-room-detail #schedule-prefer-rooms-options,
+#page-schedule-room-detail #schedule-prefer-lecture-options,
+.is-schedule-joint #schedule-prefer-rooms-options,
+.is-schedule-joint #schedule-prefer-lecture-options {
+  max-height: 180px;
+  overflow-y: auto;
+}
+/* 弃用：下拉脚「取消/确定」展示。原因：勾选即草稿，落库靠顶栏保存
+#page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-foot,
+.is-schedule-joint #schedule-detail-prefer-rooms-dropdown .clo-multiselect-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-light, #e2e8f0);
+  background: #fff;
+  flex: 0 0 auto;
+}
+*/
+#page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-foot,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-foot,
+.is-schedule-joint #schedule-detail-prefer-rooms-dropdown .clo-multiselect-foot {
+  display: none !important;
+}
+/* 弃用：教室偏好下拉分组标题样式。原因：产品去掉「说明偏好 / 教室号偏好」标题
+#page-schedule-time-detail .clo-multiselect-section-title,
+#page-schedule-room-detail .clo-multiselect-section-title,
+.is-schedule-joint .clo-multiselect-section-title {
+  padding: 8px 14px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+*/
+#page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-section-title,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-section-title,
+.is-schedule-joint #schedule-detail-prefer-rooms-dropdown .clo-multiselect-section-title {
+  display: none !important;
+}
+#page-schedule-time-detail .clo-multiselect-search-wrap,
+#page-schedule-room-detail .clo-multiselect-search-wrap,
+.is-schedule-joint .clo-multiselect-search-wrap {
+  padding: 6px 10px 4px;
+}
+#page-schedule-time-detail .clo-multiselect-search-wrap .input,
+#page-schedule-room-detail .clo-multiselect-search-wrap .input,
+.is-schedule-joint .clo-multiselect-search-wrap .input {
+  width: 100%;
+}
+#page-schedule-time-detail .schedule-prefer-other-field,
+#page-schedule-room-detail .schedule-prefer-other-field,
+.is-schedule-joint .schedule-prefer-other-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px 10px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+#page-schedule-time-detail .schedule-prefer-other-field .input,
+#page-schedule-room-detail .schedule-prefer-other-field .input,
+.is-schedule-joint .schedule-prefer-other-field .input {
+  width: 100%;
+}
+/* 弃用：上游已填选项整行灰显 is-disabled。原因：产品要求仍作普通选项展示，仅 checkbox disabled 不可改选
+#page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-option.is-disabled,
+#page-schedule-room-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-option.is-disabled,
+.is-schedule-joint #schedule-detail-prefer-rooms-dropdown .clo-multiselect-option.is-disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+*/
+#page-schedule-time-detail .schedule-prefer-room-sub,
+#page-schedule-room-detail .schedule-prefer-room-sub,
+.is-schedule-joint .schedule-prefer-room-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+/* 弃用：仅时间侧 Others/副文案样式重复块。原因：已并入上方含排教室的共用选择器 */
+/*
+#page-schedule-time-detail .schedule-prefer-other-field,
+.is-schedule-joint .schedule-prefer-other-field { ... }
+#page-schedule-time-detail .schedule-prefer-room-sub,
+.is-schedule-joint .schedule-prefer-room-sub { ... }
+*/
 .schedule-venue-remark-field[hidden] {
   display: none !important;
 }
@@ -16602,7 +17443,12 @@ code {
 .schedule-venue-remark-input::placeholder {
   color: var(--text-3);
 }
-.schedule-venue-remark-field #btn-schedule-venue-save {
+/* 弃用：.schedule-venue-remark-field #btn-schedule-venue-save。原因：保存已挪到锁定教室右侧，与偏好字段脱钩 */
+/* .schedule-venue-remark-field #btn-schedule-venue-save {
+  flex: 0 0 auto;
+  white-space: nowrap;
+} */
+#schedule-detail-venue-type-block > #btn-schedule-venue-save {
   flex: 0 0 auto;
   white-space: nowrap;
 }
@@ -16883,6 +17729,15 @@ code {
 #modal-schedule-room-picker.is-approve-room .srf-item-seats-select { display: none; }
 #modal-schedule-room-picker:not(.is-approve-room) .srf-item-room-input,
 #modal-schedule-room-picker:not(.is-approve-room) .srf-item-seats-range { display: none; }
+/* 专业/计算机教室偏好：Venue 用文本模糊搜（教室号/软件），不用下拉点选 Venue */
+#modal-schedule-room-picker.is-prefer-rooms .srf-item-room-select {
+  display: none !important;
+}
+#modal-schedule-room-picker.is-prefer-rooms .srf-item-room-input {
+  display: flex !important;
+  flex-direction: column;
+  gap: 4px;
+}
 .srf-seats-range-inputs {
   display: flex;
   align-items: center;
@@ -17235,8 +18090,22 @@ code {
   flex-shrink: 0;
   margin: 8px 0 0;
 }
-#page-schedule-room-detail .schedule-time-one-click-progress,
+/* 弃用：教室页强制隐藏进度条。原因：一键导入场地进行中需进度反馈（对齐排时间，点击后才出现） */
+/* #page-schedule-room-detail .schedule-time-one-click-progress,
 #page-schedule-room-detail .schedule-time-one-click-result-hint {
+  display: none !important;
+} */
+/* 弃用：教室页对进度/结果写 display:block。原因：会盖掉 [hidden]，未点击一键导入也固定露出「准备导入…」占位 */
+#page-schedule-room-detail .schedule-room-grid-shell > .schedule-time-one-click-progress {
+  flex-shrink: 0;
+  margin: 8px 0 0;
+}
+/* 与排时间一致：尊重 hidden，仅导入进行中由 JS 取消 hidden 后显示 */
+#page-schedule-room-detail .schedule-room-grid-shell > .schedule-time-one-click-progress[hidden] {
+  display: none !important;
+}
+/* 结果条 DOM 为克隆残留：排教室结果已改弹窗（showScheduleRoomOneClickResultHint），课表下方 result-hint 多余，常隐 */
+#page-schedule-room-detail .schedule-room-grid-shell > .schedule-time-one-click-result-hint {
   display: none !important;
 }
 .schedule-time-one-click-progress {
@@ -17437,7 +18306,7 @@ code {
 /*
  * 排时间 · 联动组/共同授课同格融合：
  * 本课 + 伙伴并排时共用外框，中间细线分隔，避免两张独立卡视觉割裂。
- * 仅 is-time-period-cols；教室侧不受影响。
+ * 教室侧锁定/待定格另见 #page-schedule-room-detail … is-shared-link-fused（对齐本样式）。
  */
 #page-schedule-time-detail .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused,
 .is-schedule-joint .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused {
@@ -18396,7 +19265,10 @@ code {
   box-shadow: inset 0 0 0 3px #dc2626;
   outline: none;
 }
-#page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-room-resource-sellout {
+/*
+ * 弃用：选中+售罄再叠蓝外框。原因：对齐排时间——选中淡蓝底，售罄只留红虚线。
+ */
+/* #page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-room-resource-sellout {
   background: transparent !important;
   box-shadow: 0 0 0 2px #2563eb;
   outline: 2px dashed #dc2626;
@@ -18406,12 +19278,47 @@ code {
   background: transparent !important;
   box-shadow: inset 0 0 0 3px #dc2626, 0 0 0 2px #2563eb;
   outline: none;
+} */
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-room-resource-sellout {
+  background: #dbeafe !important;
+  box-shadow: none;
+  outline: 2px dashed #dc2626;
+  outline-offset: -2px;
 }
-#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-sellout,
-#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-sellout,
-#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-over,
-#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-over {
-  background: transparent !important;
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-room-resource-over {
+  background: #dbeafe !important;
+  box-shadow: inset 0 0 0 3px #dc2626;
+  outline: none;
+}
+/* 待定/锁定选中优先于黄/灰底 + 售罄规则 */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected.is-room-resource-sellout,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected.is-room-resource-over,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-slot-selected.is-room-resource-sellout,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-slot-selected.is-room-resource-over {
+  background: #dbeafe !important;
+}
+/*
+ * 弃用：待定/锁定 + 售罄/超排 一律 transparent。
+ * 原因：透明会透出 tr.is-room-row-pending 行底 #fefce8，锁定格被误看成「待定黄」。
+ * 改为保留各自态底色，售罄/超排只靠描边表达。
+ */
+/*
+ * 框选预览 / 已选中 不套待定黄/锁定灰。
+ * 原因：原先仅排除 is-drag-preview，松手后 :not×2 仍压过选中淡蓝，卡片又变回黄。
+ * 同步排除 is-slot-selected，已选保持 #dbeafe。
+ */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-sellout:not(.is-drag-preview):not(.is-drag-deselect):not(.is-slot-selected),
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-over:not(.is-drag-preview):not(.is-drag-deselect):not(.is-slot-selected) {
+  background: #fff !important;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-sellout:not(.is-drag-preview):not(.is-drag-deselect):not(.is-slot-selected),
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-over:not(.is-drag-preview):not(.is-drag-deselect):not(.is-slot-selected) {
+  background: #e5e7eb !important;
+}
+/* 空格售罄/超排（NSO 等）：白底，避免透明透出行黄；禁排走 is-room-cell-slot-blocked 置灰，不进此规则 */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-resource-sellout:not(.is-room-cell-pending):not(.is-room-cell-locked):not(.is-room-cell-slot-blocked),
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-resource-over:not(.is-room-cell-pending):not(.is-room-cell-locked):not(.is-room-cell-slot-blocked) {
+  background: #fff !important;
 }
 /* 弃用：排教室图例「教室时间冲突」描边样式。原因：图例已改为售罄/超排（与排时间 resource 图例共用样式） */
 /* #page-schedule-room-detail .schedule-conflict-legend .sch-leg-item.is-room {
@@ -19059,11 +19966,64 @@ code {
 .is-schedule-joint .schedule-grid-cell.is-drag-preview,
 .is-schedule-joint .schedule-grid-cell.is-occupied.is-drag-preview,
 .is-schedule-joint .schedule-grid-cell.is-slot-selected.is-drag-deselect,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-drag-preview.is-drag-deselect {
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-drag-preview.is-drag-deselect,
+/* 排教室框选预览：与排时间同色 #93c5fd（深于已选 #dbeafe） */
+#page-schedule-room-detail .schedule-grid-cell.is-drag-preview,
+#page-schedule-room-detail .schedule-grid-cell.is-occupied.is-drag-preview,
+#page-schedule-room-detail .schedule-grid-cell.is-room-cell-pending.is-drag-preview,
+#page-schedule-room-detail .schedule-grid-cell.is-room-cell-locked.is-drag-preview,
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-drag-deselect,
+#page-schedule-room-detail .schedule-grid-cell.is-slot-selected.is-drag-preview.is-drag-deselect {
   background: #93c5fd !important;
   outline: none !important;
   box-shadow: none !important;
   z-index: 3;
+}
+/*
+ * 框选过程中格+卡片一律 #93c5fd。
+ * 须压过：待定白底 / 锁定灰 / 融合卡底、选中淡蓝。
+ */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-deselect,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-drag-deselect,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-sellout.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-over.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-sellout.is-drag-deselect,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-room-resource-over.is-drag-deselect,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-drag-deselect,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-sellout.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-locked.is-room-resource-over.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-slot-selected.is-drag-deselect,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected.is-drag-preview,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-pending.is-slot-selected.is-drag-deselect {
+  background: #93c5fd !important;
+  outline: none !important;
+  box-shadow: none !important;
+  z-index: 3;
+}
+/* 弃用：卡片 transparent 指望透出格蓝。原因：pending+sellout 格仍被黄 !important 盖住，卡片看起来不变色 */
+/* #page-schedule-room-detail .schedule-grid-cell.is-drag-preview .schedule-room-hold-block { background: transparent !important; } */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-preview .schedule-grid-multi,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-deselect .schedule-grid-multi,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-preview .schedule-grid-multi.is-shared-link-fused,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-deselect .schedule-grid-multi.is-shared-link-fused,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-preview .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-deselect .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-preview .schedule-grid-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-deselect .schedule-grid-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-preview .schedule-grid-block.schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-deselect .schedule-grid-block.schedule-room-hold-block {
+  background: #93c5fd !important;
+  color: #334155 !important;
+  opacity: 1 !important;
+  border-color: #6b7280;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-preview .schedule-room-hold-block .schedule-grid-code,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-drag-deselect .schedule-room-hold-block .schedule-grid-code {
+  color: #334155 !important;
 }
 .schedule-tt-no-schedule {
   margin-top: 14px;
@@ -19611,6 +20571,97 @@ code {
   cursor: pointer;
 } */
 .schedule-grid-cell.is-active-target:hover { background: #eff6ff; }
+/*
+ * 排教室排入「+」对齐排时间：
+ * - 空白可排格 → 格心 +
+ * - 排课待定/锁定可强排 → 卡片右侧留白 +（不因误带 is-srpv-occ 被挡）
+ * - 鼠标在卡片文案上 → 不显示 +
+ * - 非排课占用 is-srpv-occ（场地借用等）→ 仍显示 +，点击提示冲突且不可强排
+ */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target.is-room-cell-empty,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked) {
+  position: relative;
+  cursor: pointer;
+}
+/*
+ * 排课待定/锁定可强排格：仅最外层课卡容器右侧留约 22px 给「+」。
+ * 用 > 直系子元素，避免 multi 与内部 hold-block 双重 calc 把选中卡压成半宽。
+ */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked) > .schedule-grid-multi,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked) > .schedule-room-hold-block {
+  width: calc(100% - 22px);
+  max-width: calc(100% - 22px);
+  margin-right: 22px;
+  box-sizing: border-box;
+}
+/* 空白格 / 非排课占用格：+ 在格子正中（占用文案上叠 +；点击仍走冲突窗、不可强排） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target.is-room-cell-empty:hover::after {
+  content: '+';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+}
+/* 排课待定/锁定可强排：+ 在卡片右侧留白（right:4px） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked):hover::after {
+  content: '+';
+  position: absolute;
+  right: 4px;
+  left: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+}
+/* 已占格：卡片可悬停；移到文案上隐藏 +（只在右留白出 +） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked) .schedule-room-hold-block,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked) .schedule-grid-multi {
+  pointer-events: auto;
+  cursor: pointer;
+}
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked):hover:has(.schedule-room-hold-block:hover)::after,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked):hover:has(.schedule-grid-multi:hover)::after,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target:is(.is-room-cell-pending, .is-room-cell-locked):hover:has(.schedule-grid-block:hover)::after {
+  content: none;
+  display: none;
+}
+/* 空白格/非排课占用格无排课卡片：整格可点 */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-active-target.is-room-cell-empty .schedule-grid-multi {
+  pointer-events: none;
+}
+/* 弃用：非排课占用 not-allowed 且无 +。原因：产品要求仍出 +，点击提示冲突不可强排 */
+/* #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols.is-place-mode .schedule-grid-cell.is-srpv-occ:not(.is-room-cell-pending):not(.is-room-cell-locked) {
+  cursor: not-allowed;
+} */
 .schedule-grid-block {
   display: flex;
   align-items: center;

@@ -92477,12 +92477,13 @@ function setAdjustmentHolidayPageTab(tab) {
   const record = document.getElementById('adjustment-holiday-tab-record');
   if (manage) manage.classList.toggle('active', adjustmentHolidayPageTab === 'manage');
   if (record) record.classList.toggle('active', adjustmentHolidayPageTab === 'record');
-  const sub = document.getElementById('adjustment-holiday-subtitle');
-  if (sub) {
-    sub.textContent = adjustmentHolidayPageTab === 'record'
-      ? '按学期查看公假日批量停课的课节，以及任课教师是否已申请补课及审批状态'
-      : '维护公共假日并批量停课（无需审批）；确认后自动生成停课记录';
-  }
+  // 弃用副标题同步。原因：页头 page-header 已去掉，#adjustment-holiday-subtitle 不再渲染
+  // const sub = document.getElementById('adjustment-holiday-subtitle');
+  // if (sub) {
+  //   sub.textContent = adjustmentHolidayPageTab === 'record'
+  //     ? '按学期查看公假日批量停课的课节，以及任课教师是否已申请补课及审批状态'
+  //     : '维护公共假日并批量停课（无需审批）；确认后自动生成停课记录';
+  // }
   renderAdjustmentHolidayPage();
 }
 

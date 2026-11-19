@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="68ca8af">
+  <meta name="portal-build" content="e1cb8e1">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -249,7 +249,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 68ca8af">1119排课</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git e1cb8e1">1119排课2</div>
         </div>
       </div>
     </section>
@@ -5309,12 +5309,15 @@
 
     <!-- ═══ 调课管理 · 公假日停课 ═══ -->
     <section class="page-list page adjustment-page" id="page-adjustment-holiday">
+      <!-- 弃用 page-header（公假日停课标题+副标题）。原因：产品要求去掉页头，保留 Tab/列表 -->
+      <!--
       <div class="page-header">
         <div>
           <h1>公假日停课</h1>
           <p class="subtitle" id="adjustment-holiday-subtitle">维护公共假日并批量停课（无需审批）；确认后自动生成停课记录</p>
         </div>
       </div>
+      -->
       <div class="tab-bar" id="adjustment-holiday-tabs">
         <button type="button" class="tab active" data-holiday-tab="manage" onclick="setAdjustmentHolidayPageTab('manage')">公假日停课管理</button>
         <button type="button" class="tab" data-holiday-tab="record" onclick="setAdjustmentHolidayPageTab('record')">公假日停课记录</button>

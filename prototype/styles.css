@@ -9069,7 +9069,13 @@ input#group-assign-recorded-hours {
 .adj-holiday-chip button:hover { color: var(--red); }
 
 /* 调课详情 / 审批 · 调课信息表 */
-.adj-detail-info-scroll { overflow: auto; max-width: 100%; }
+.adj-detail-info-scroll {
+  overflow: auto;
+  max-width: 100%;
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #fff;
+}
 .adj-detail-info-table {
   width: max-content;
   min-width: 100%;
@@ -9083,6 +9089,17 @@ input#group-assign-recorded-hours {
   width: auto;
   max-width: none;
   box-sizing: border-box;
+  /* 表内完整线框（含外边） */
+  border: 1px solid var(--border);
+}
+/* 相邻单元格共用边，避免双边框叠加变粗 */
+.adj-detail-info-table th + th,
+.adj-detail-info-table td + td {
+  border-left-width: 0;
+}
+.adj-detail-info-table tbody tr td,
+.adj-detail-info-table thead tr + tr th {
+  border-top-width: 0;
 }
 .adj-detail-info-table th.adj-detail-group { font-weight: 700; }
 .adj-detail-info-table th.adj-detail-group-prev,
@@ -9100,7 +9117,18 @@ input#group-assign-recorded-hours {
   border-left: 1px solid var(--border);
 }
 .adj-detail-info-table td.adj-detail-cancel { color: var(--red); font-weight: 600; }
-.adj-detail-info-table td.adj-detail-changed { background: #fef3c7; color: #92400e; font-weight: 700; }
+/* 变更高亮：只铺底色，不改字色。弃用 #92400e。原因：字发黄、下拉里选项也跟着发黄 */
+.adj-detail-info-table td.adj-detail-changed {
+  background: #fef3c7;
+  color: inherit;
+  font-weight: inherit;
+}
+.adj-detail-info-table td.adj-detail-changed .input,
+.adj-detail-info-table td.adj-detail-changed select,
+.adj-detail-info-table td.adj-detail-changed .btn {
+  color: inherit;
+  font-weight: inherit;
+}
 .adj-detail-changed-note { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
 .adj-detail-changed-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: #fef3c7; border: 1px solid #fcd34d; }
 
@@ -9132,12 +9160,17 @@ input#group-assign-recorded-hours {
 }
 .adj-detail-info-table .adj-detail-freeze-3 {
   left: 172px;
-  width: 110px;
+  /* 组名尽量单行：列随内容变宽，横向滚动；弃用固定 110px 强制换行 */
+  width: max-content;
   min-width: 110px;
-  max-width: 110px;
-  white-space: normal;
-  word-break: break-word;
+  max-width: none;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
   box-shadow: 6px 0 8px -6px rgba(15, 52, 96, 0.22);
+}
+.adj-detail-info-table .adj-detail-freeze-3 .adj-makeup-group-line {
+  white-space: nowrap;
 }
 
 /* 是否冲突：最大 300px，内容自适应换行；表头与单元格居中 */
@@ -9166,12 +9199,29 @@ input#group-assign-recorded-hours {
   white-space: normal; word-break: break-word;
 }
 .adj-approve-period-cell { width: auto; min-width: 7em; vertical-align: middle; }
-.adj-approve-period-select {
+/* 弃用 .adj-approve-period-select。原因：审批改节次改为带冲突提示的自定义下拉 */
+/* .adj-approve-period-select {
   width: 100%;
   min-width: 7em;
   max-width: 12em;
   font-size: 12px;
   font-weight: 600;
+} */
+#modal-adjustment-detail .adj-approve-period-cell .adj-period-dd-wrap {
+  width: 100%;
+  min-width: 9em;
+  max-width: 14em;
+  margin: 0 auto;
+  text-align: left;
+}
+#modal-adjustment-detail .adj-approve-period-dd-foot {
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+}
+#modal-adjustment-detail .adj-approve-period-dd-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.35;
 }
 
 /* ?? ???? ? ??????????? / ???????? ?? */
@@ -9262,6 +9312,16 @@ input#group-assign-recorded-hours {
   border-spacing: 0;
 }
 .adjustment-table th, .adjustment-table td { white-space: nowrap; }
+/* Class Date 多日逐行：允许换行，避免被表级 nowrap 压成一行 */
+.adjustment-table td.adj-col-times {
+  white-space: normal;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+.adjustment-table td.adj-col-times .adj-leave-period-multi {
+  display: inline-block;
+  text-align: center;
+}
 /* 左侧冻结：序号 / 申请单号 / 调课类型 */
 .adjustment-table th:nth-child(-n+3),
 .adjustment-table td:nth-child(-n+3) {
@@ -9665,19 +9725,30 @@ input#group-assign-recorded-hours {
   max-width: calc(100vw - var(--sidebar-w));
 }
 #modal-adjustment-apply .adj-apply-modal-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+#modal-adjustment-apply .adj-apply-modal-head-top {
+  display: flex;
   align-items: flex-start;
   gap: 12px;
+  width: 100%;
 }
 #modal-adjustment-apply .adj-apply-modal-head-text {
   min-width: 0;
   flex: 1;
 }
 #modal-adjustment-apply .adj-apply-modal-head:not(:has(.adj-apply-modal-note:not([hidden]))) {
-  align-items: center;
+  align-items: stretch;
 }
 #modal-adjustment-apply .adj-apply-modal-note {
   margin: 8px 0 0;
   padding: 10px 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: #e8f2fc;
   border: 1px solid #b7d4f3;
   border-left: 4px solid var(--blue-500);
@@ -9690,14 +9761,98 @@ input#group-assign-recorded-hours {
 #modal-adjustment-apply .adj-apply-modal-note[hidden] {
   display: none !important;
 }
+/*
+ * 公共信息栏（头区）：单据式一行，标签紧贴数值，项间细竖线；
+ * 「显示课程组（简称）」在框内最右侧（margin-left:auto）。
+ * 弃用：等分 grid + 框外开关。原因：字段与值过远；开关应落在信息框内。
+ */
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta.adj-detail-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  margin: 8px 0 0;
+  /* 顶满头区可用宽度（勿用 fit-content 收短） */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  /* 浅蓝底：与白色 modal-head 区分；弃用未定义的 var(--bg-2)，否则无底色 */
+  background: var(--blue-100);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta .adj-detail-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 12px;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  min-width: 0;
+  width: auto;
+  flex: 0 0 auto;
+}
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta .adj-apply-meta-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  /* 框内最右：顶满后贴右缘 */
+  margin-left: auto;
+  padding: 8px 12px;
+  flex: 0 0 auto;
+  align-self: center;
+  white-space: nowrap;
+}
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta .adj-detail-k {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta .adj-detail-v {
+  flex: 0 0 auto;
+  min-width: 0;
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+/* 弃用：申请节数/共计几天单独白底+蓝字加重。原因：与「教师类型」等字段颜色不一致，统一走 .adj-detail-v */
+/* #modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta .adj-detail-field:has(#adj-apply-meta-slots),
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta .adj-detail-field:has(#adj-apply-meta-days) {
+  background: #fff;
+}
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta #adj-apply-meta-slots,
+#modal-adjustment-apply .adj-apply-modal-head .adj-apply-meta #adj-apply-meta-days {
+  font-weight: 600;
+  color: var(--blue-900, #0f2f5b);
+} */
+/* 打开调课申请时隐藏左侧导航，横向空间全部给抽屉 */
+.app.is-adjustment-apply-immersive .sidebar { display: none; }
+.app.is-adjustment-apply-immersive .main { width: 100%; }
+/* 调课申请：全屏遮罩（打开时配合 .is-adjustment-apply-immersive 隐藏侧栏以腾空间）
+ * 弃用：left: var(--sidebar-w) 让出侧栏。原因：产品改为隐藏导航、申请区占满视口。
+ */
 #modal-adjustment-apply.modal-drawer {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
   overflow: auto;
   overscroll-behavior: contain;
 }
 #modal-adjustment-apply.modal-drawer .modal.adj-apply-drawer-modal {
+  position: relative;
   display: flex;
   flex-direction: column;
-  width: calc(100% - var(--sidebar-w));
+  width: 100%;
   max-width: 100%;
   height: 100%;
   max-height: 100%;
@@ -9714,6 +9869,7 @@ input#group-assign-recorded-hours {
   min-height: 0;
   overflow: hidden;
   display: grid;
+  /* 左 40% / 右 60%：右侧字段更多 */
   grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   gap: 0;
   padding: 0;
@@ -9724,7 +9880,7 @@ input#group-assign-recorded-hours {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 16px 18px;
+  padding: 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -9732,6 +9888,15 @@ input#group-assign-recorded-hours {
 #modal-adjustment-apply .adj-apply-right {
   overflow-x: auto;
   z-index: 1;
+}
+/* 清单区吃满剩余高度；原因类型等贴在底部 */
+#modal-adjustment-apply .adj-apply-right-head,
+#modal-adjustment-apply .adj-apply-reason-type-item,
+#modal-adjustment-apply .adj-apply-leave-item,
+#modal-adjustment-apply .adj-apply-reason-item,
+#modal-adjustment-apply .adj-apply-files-item,
+#modal-adjustment-apply .adj-apply-conflict-wrap {
+  flex-shrink: 0;
 }
 .adj-apply-left {
   border-right: 1px solid var(--border);
@@ -9851,6 +10016,7 @@ input#group-assign-recorded-hours {
   gap: 4px;
   min-width: 0;
 }
+/* 组名开关已迁至头区，右侧标题区仅保留清单标题 */
 .adj-apply-group-short-opt {
   display: inline-flex;
   align-items: center;
@@ -9865,6 +10031,35 @@ input#group-assign-recorded-hours {
 .adj-apply-group-short-opt input {
   margin: 0;
   cursor: pointer;
+}
+/* 调课申请：节次门禁提示（未选教师/日期） */
+.adj-apply-gate-tip {
+  position: absolute;
+  left: 50%;
+  top: 72px;
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: min(420px, calc(100% - 48px));
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #b45309;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  pointer-events: none;
+}
+.adj-apply-gate-tip[hidden] {
+  display: none !important;
+}
+/* 批量操作：未勾选时置灰禁用（日期/节次/老师/教室偏好） */
+#adjustment-apply-batch-actions > button.btn:disabled,
+#adjustment-apply-batch-period-host > button.btn:disabled,
+#adjustment-apply-batch-actions > button.btn.is-locked,
+#adjustment-apply-batch-period-host > button.btn.is-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .adj-apply-batch-actions {
   display: flex;
@@ -9926,16 +10121,23 @@ input#group-assign-recorded-hours {
 .adj-apply-left-table-wrap {
   flex: 1;
   min-width: 0;
-  min-height: 220px;
+  min-height: 180px;
   max-height: none;
   overflow-x: auto;
+  /* 翻页后以分页为主，纵向仅必要时滚动 */
   overflow-y: auto;
+  /* 左侧节次列表外边框 */
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #fff;
 }
 #adjustment-apply-left-table,
 #adjustment-apply-left-table.is-addclass {
-  width: max-content;
-  max-width: none;
-  min-width: 100%;
+  /* 尽量铺满容器、少横向滚动（弃用 width:max-content 撑出滚动） */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   table-layout: auto;
 }
 #adjustment-apply-left-table th,
@@ -9943,60 +10145,90 @@ input#group-assign-recorded-hours {
 #adjustment-apply-left-table.is-addclass th,
 #adjustment-apply-left-table.is-addclass td {
   width: auto;
-  padding: 6px;
-  line-height: 1.45;
+  padding: 4px 6px;
+  line-height: 1.35;
   vertical-align: middle;
   border-right: 1px solid var(--border);
+  font-size: 12px;
 }
-#adjustment-apply-left-table tr > :first-child,
-#adjustment-apply-left-table.is-addclass tr > :first-child {
-  border-left: 1px solid var(--border);
+/* 外框已画左右边：仅去掉勾选列左边、操作列右边（勿用 :last-child，合并行省略操作格时 Venue 会误丢右边框） */
+#adjustment-apply-left-table tr > .srf-col-pick,
+#adjustment-apply-left-table.is-addclass tr > .srf-col-pick {
+  border-left: none;
 }
-#adjustment-apply-left-table th:not(.adj-col-course):not(.adj-col-group),
-#adjustment-apply-left-table.is-addclass th:not(.adj-col-course):not(.adj-col-group) {
+#adjustment-apply-left-table tr > .adj-slot-col-action,
+#adjustment-apply-left-table.is-addclass tr > .adj-slot-col-action {
+  border-right: none;
+}
+#adjustment-apply-left-table th:not(.adj-col-course):not(.adj-col-group):not(.adj-col-code),
+#adjustment-apply-left-table.is-addclass th:not(.adj-col-course):not(.adj-col-group):not(.adj-col-code),
+#adjustment-apply-left-table td:not(.adj-col-course):not(.adj-col-group):not(.adj-col-code),
+#adjustment-apply-left-table.is-addclass td:not(.adj-col-course):not(.adj-col-group):not(.adj-col-code) {
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
-  min-width: max-content;
+  min-width: 0;
+  width: 1%;
 }
-#adjustment-apply-left-table td:not(.adj-col-course):not(.adj-col-group),
-#adjustment-apply-left-table.is-addclass td:not(.adj-col-course):not(.adj-col-group) {
-  white-space: nowrap;
-  word-break: normal;
-  overflow-wrap: normal;
-  min-width: max-content;
-}
+#adjustment-apply-left-table th.adj-col-code,
+#adjustment-apply-left-table td.adj-col-code,
+#adjustment-apply-left-table.is-addclass th.adj-col-code,
+#adjustment-apply-left-table.is-addclass td.adj-col-code,
 #adjustment-apply-left-table th.adj-col-course,
 #adjustment-apply-left-table td.adj-col-course,
 #adjustment-apply-left-table.is-addclass th.adj-col-course,
 #adjustment-apply-left-table.is-addclass td.adj-col-course {
-  width: 100px;
-  min-width: 100px;
-  max-width: 100px;
+  width: 1%;
+  min-width: 72px;
+  /* 弃用 max-width:72px + ellipsis。原因：共同授课多课号被裁成省略 */
+  max-width: none;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+#adjustment-apply-left-table td.adj-col-code .adj-code-line,
+#adjustment-apply-left-table.is-addclass td.adj-col-code .adj-code-line {
+  display: block;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+/* 表头「Course / Code」两行叠放，单元格内容仍单行 */
+#adjustment-apply-left-table th.adj-col-code,
+#adjustment-apply-left-table.is-addclass th.adj-col-code {
   white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  line-height: 1.2;
+  overflow: visible;
+  text-overflow: clip;
+  text-align: center;
+  vertical-align: middle;
 }
 #adjustment-apply-left-table th.adj-col-group,
 #adjustment-apply-left-table td.adj-col-group,
 #adjustment-apply-left-table.is-addclass th.adj-col-group,
 #adjustment-apply-left-table.is-addclass td.adj-col-group {
-  width: 240px;
-  min-width: 220px;
-  max-width: 280px;
+  /* 组名列可收缩，减少横向滚动 */
+  width: auto;
+  min-width: 56px;
+  max-width: 140px;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
   line-height: 1.35;
   text-align: center;
 }
+/* 表头「Group / Name」两行叠放 */
+#adjustment-apply-left-table th.adj-col-group,
+#adjustment-apply-left-table.is-addclass th.adj-col-group {
+  line-height: 1.2;
+  vertical-align: middle;
+}
 #modal-adjustment-apply.is-group-name-short #adjustment-apply-left-table th.adj-col-group,
 #modal-adjustment-apply.is-group-name-short #adjustment-apply-left-table td.adj-col-group,
 #modal-adjustment-apply.is-group-name-short #adjustment-apply-left-table.is-addclass th.adj-col-group,
 #modal-adjustment-apply.is-group-name-short #adjustment-apply-left-table.is-addclass td.adj-col-group {
-  width: max-content;
-  min-width: max-content;
-  max-width: none;
+  width: 1%;
+  min-width: 0;
+  max-width: 120px;
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
@@ -10030,9 +10262,15 @@ input#group-assign-recorded-hours {
 .adj-addclass-slot-table { min-width: 0; width: 100%; max-width: 100%; }
 .adj-apply-detail-wrap { width: 100%; min-width: 0; overflow-x: auto; overflow-y: visible; }
 #modal-adjustment-apply .adj-apply-detail-wrap {
+  /* 未选原因类型时默认撑高（约半屏+），选类型后事由/附件出现再被压缩 */
   flex: 1 1 auto;
-  min-height: 280px;
+  min-height: 360px;
   overflow: auto;
+  /* 右侧调课清单外边框 */
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #fff;
 }
 .adj-apply-detail-table {
   width: 100%;
@@ -10072,6 +10310,30 @@ input#group-assign-recorded-hours {
   word-break: break-word;
   overflow-wrap: anywhere;
 }
+/* 右侧课号列：对齐左侧收窄；表头 Course/Code 两行叠放 */
+.adj-apply-detail-table th.adj-col-code,
+.adj-apply-detail-table td.adj-col-code,
+.adj-apply-detail-table.data-table.compact th.adj-col-code,
+.adj-apply-detail-table.data-table.compact td.adj-col-code {
+  width: 1%;
+  min-width: 72px;
+  /* 弃用 max-width:80px。原因：MEC911；MEC912 等合并课号被裁切省略 */
+  max-width: none;
+  white-space: nowrap;
+}
+.adj-apply-detail-table td.adj-col-code .adj-code-line,
+.adj-apply-detail-table.data-table.compact td.adj-col-code .adj-code-line {
+  display: block;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+.adj-apply-detail-table th.adj-col-code,
+.adj-apply-detail-table.data-table.compact th.adj-col-code {
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+  vertical-align: middle;
+}
 .adj-apply-detail-table th.adj-col-group,
 .adj-apply-detail-table td.adj-col-group,
 .adj-apply-detail-table.data-table.compact th.adj-col-group,
@@ -10085,6 +10347,11 @@ input#group-assign-recorded-hours {
   line-height: 1.35;
   text-align: center;
   vertical-align: middle;
+}
+/* 表头 Group/Name 两行叠放（单元格内容规则不变） */
+.adj-apply-detail-table th.adj-col-group,
+.adj-apply-detail-table.data-table.compact th.adj-col-group {
+  line-height: 1.2;
 }
 #modal-adjustment-apply.is-group-name-short .adj-apply-detail-table th.adj-col-group,
 #modal-adjustment-apply.is-group-name-short .adj-apply-detail-table td.adj-col-group,
@@ -10117,20 +10384,39 @@ input#group-assign-recorded-hours {
 .adj-apply-detail-table .adj-period-dd-wrap,
 .adj-apply-detail-table input.input,
 .adj-apply-detail-table select.input {
-  min-width: max-content;
-  width: auto;
-  max-width: none;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   white-space: nowrap;
 }
+/* 教师 / 日期 / Time：单元格仅留小内边距，控件铺满宽度 */
+.adj-apply-detail-table th.adj-apply-col-tight,
+.adj-apply-detail-table td.adj-apply-col-tight,
+.adj-apply-detail-table.data-table.compact th.adj-apply-col-tight,
+.adj-apply-detail-table.data-table.compact td.adj-apply-col-tight {
+  min-width: 0;
+  max-width: none;
+  white-space: nowrap;
+  padding-left: 4px;
+  padding-right: 4px;
+}
 .adj-apply-detail-table .adj-pick-btn,
-.adj-apply-detail-table td.adj-apply-col-merge .adj-pick-btn {
-  overflow: visible;
-  text-overflow: unset;
+.adj-apply-detail-table td.adj-apply-col-merge .adj-pick-btn,
+.adj-apply-detail-table td.adj-apply-col-tight .adj-pick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.45;
-  text-align: left;
+  text-align: center;
   height: auto;
   min-height: 32px;
+  vertical-align: middle;
 }
 .adj-apply-detail-table td.adj-col-course .adj-pick-btn,
 .adj-apply-detail-table td.adj-col-group .adj-pick-btn,
@@ -10152,6 +10438,77 @@ input#group-assign-recorded-hours {
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
+}
+/* Date 收窄，富余宽度让给 Time / Venue */
+#modal-adjustment-apply .adj-apply-detail-table th.adj-apply-col-date,
+#modal-adjustment-apply .adj-apply-detail-table td.adj-apply-col-date,
+#modal-adjustment-apply .adj-apply-detail-table.data-table.compact th.adj-apply-col-date,
+#modal-adjustment-apply .adj-apply-detail-table.data-table.compact td.adj-apply-col-date {
+  width: 88px;
+  min-width: 80px !important;
+  max-width: 96px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+/* 右侧 Time 列：下拉铺满单元格，文案完整不省略；吃掉 Date 让出的宽度 */
+#modal-adjustment-apply .adj-apply-detail-table th.adj-apply-col-time,
+#modal-adjustment-apply .adj-apply-detail-table td.adj-apply-col-time,
+#modal-adjustment-apply .adj-apply-detail-table.data-table.compact th.adj-apply-col-time,
+#modal-adjustment-apply .adj-apply-detail-table.data-table.compact td.adj-apply-col-time {
+  width: auto;
+  min-width: 168px !important;
+  max-width: none;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+#modal-adjustment-apply .adj-apply-detail-table th.adj-apply-col-venue,
+#modal-adjustment-apply .adj-apply-detail-table td.adj-apply-col-venue,
+#modal-adjustment-apply .adj-apply-detail-table.data-table.compact th.adj-apply-col-venue,
+#modal-adjustment-apply .adj-apply-detail-table.data-table.compact td.adj-apply-col-venue {
+  width: auto;
+  min-width: 200px !important;
+  max-width: none;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.adj-apply-detail-table td.adj-apply-col-time .adj-period-dd-wrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.adj-apply-detail-table td.adj-apply-col-time .adj-period-dd-btn {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  justify-content: center;
+  position: relative;
+  padding-left: 6px;
+  padding-right: 22px; /* 给右侧 ▾ 留位，文案视觉居中 */
+}
+.adj-apply-detail-table td.adj-apply-col-time .adj-period-dd-btn-text {
+  /* 居中展示时段；与 ⚠ 保留间距（勿用 inline，否则 gap 失效、贴住 PM） */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.adj-apply-detail-table td.adj-apply-col-time .adj-period-dd-btn-text .adj-period-dd-warn {
+  margin-left: 2px;
+}
+.adj-apply-detail-table td.adj-apply-col-time .adj-period-dd-caret {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .adj-apply-detail-table .adj-room-prefer-input,
 .adj-apply-detail-table input.input.adj-room-prefer-input {
@@ -10239,9 +10596,19 @@ input#group-assign-recorded-hours {
 .adj-apply-detail-stack td {
   border-right: 1px solid var(--border);
 }
+/* 外框已画左右边：按列类去掉边，避免 New 行缺合并列时误伤 Venue/Time */
+.adj-apply-detail-stack tr > .adj-apply-col-check:first-child,
 .adj-apply-detail-stack tr > :first-child {
-  border-left: 1px solid var(--border);
+  border-left: none;
 }
+.adj-apply-detail-stack tr > .adj-apply-col-action {
+  border-right: none;
+}
+/* 弃用：New 行 :last-child 去右边框。原因：Action 在 Previous 行 rowspan 下来，
+ * New 行最后一格是 Venue，去边后 Venue|Action 分隔线消失。外框右边由 Action 列处理。 */
+/* .adj-apply-detail-stack tr.adj-apply-to-row > :last-child {
+  border-right: none;
+} */
 .adj-apply-detail-stack .adj-apply-row-type {
   font-weight: 600;
   color: var(--text-2);
@@ -10303,7 +10670,117 @@ input#group-assign-recorded-hours {
   padding: 10px 12px;
   gap: 6px 16px;
   margin-bottom: 0;
+  box-sizing: border-box;
 }
+/* 信息栏「状态」行已下线，样式保留备查
+#modal-adjustment-apply .adj-apply-meta-status-row {
+  align-items: center;
+}
+#modal-adjustment-apply .adj-apply-meta-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-weight: 400;
+}
+*/
+#modal-adjustment-apply .adj-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+#modal-adjustment-apply .adj-meta-badge.is-type {
+  background: #e8eef8;
+  color: #1e3a5f;
+}
+#modal-adjustment-apply .adj-meta-badge.is-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+#modal-adjustment-apply .adj-meta-badge.is-warn {
+  background: #ffedd5;
+  color: #c2410c;
+}
+#modal-adjustment-apply .adj-meta-badge.is-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+#modal-adjustment-apply .adj-meta-badge.is-info {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+#modal-adjustment-apply .adj-meta-badge.is-muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+#modal-adjustment-apply .adj-slot-col-period {
+  white-space: nowrap;
+  font-size: 11px;
+  width: 1%;
+  max-width: 72px;
+  padding-left: 4px;
+  padding-right: 4px;
+  line-height: 1.2;
+}
+/* 起止钟点竖排：10:00 AM / | / 11:00 AM */
+#modal-adjustment-apply .adj-slot-period-text {
+  margin: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: none;
+  overflow: visible;
+  vertical-align: middle;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+#modal-adjustment-apply .adj-slot-period-sep {
+  color: var(--text-3);
+  font-size: 9px;
+  font-weight: 300;
+  line-height: 1;
+  opacity: 0.55;
+  transform: scale(0.75, 0.85);
+}
+/* 左侧列表「操作」列：拆分/合并与 Time 分离 */
+#modal-adjustment-apply .adj-slot-col-action {
+  width: 1%;
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
+  vertical-align: middle;
+}
+#modal-adjustment-apply .adj-slot-split-btn {
+  border: 0;
+  background: transparent;
+  color: var(--blue-700, #1d4ed8);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 2px;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+#modal-adjustment-apply .adj-slot-split-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+#modal-adjustment-apply .adj-slot-split-btn:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
+  opacity: 0.75;
+}
+/* 弃用：合并按钮灰色。原因：与「拆分」同色，统一操作列视觉
+#modal-adjustment-apply .adj-slot-split-btn.is-merge {
+  color: #64748b;
+}
+*/
 .adj-apply-reason-type-item { margin-bottom: 10px; }
 #adjustment-apply-reason-type[hidden],
 #adjustment-apply-reason-type-display[hidden] {
@@ -10561,6 +11038,14 @@ input#group-assign-recorded-hours {
   text-align: left; cursor: pointer; background: #fff;
 }
 .adj-period-dd-btn.is-placeholder { color: var(--text-3); }
+/* 未选教师/日期：节次锁定，提示先补齐再选时间 */
+.adj-period-dd-btn.is-locked,
+.adj-period-dd-wrap.is-locked .adj-period-dd-btn {
+  cursor: not-allowed;
+  opacity: 0.65;
+  background: var(--bg-1, #f5f7fa);
+  color: var(--text-3);
+}
 .adj-period-dd-btn-text {
   display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 1;
 }
@@ -10582,6 +11067,40 @@ input#group-assign-recorded-hours {
   flex-shrink: 0; color: #dc2626; font-size: 13px; line-height: 1;
   font-weight: 700;
 }
+/* 已撤回：学/师/场分色字标（用户要求恢复统一 ⚠）
+.adj-period-dd-warns {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.adj-period-dd-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  box-sizing: border-box;
+}
+.adj-period-dd-mark.is-student {
+  color: #9a3412;
+  background: #ffedd5;
+}
+.adj-period-dd-mark.is-teacher {
+  color: #991b1b;
+  background: #fee2e2;
+}
+.adj-period-dd-mark.is-venue {
+  color: #1e40af;
+  background: #dbeafe;
+}
+*/
 .adj-period-dd-opt:hover { background: var(--blue-50, #eff6ff); }
 .adj-period-dd-opt.is-on { background: var(--blue-50, #eff6ff); color: var(--blue-700, #1d4ed8); font-weight: 600; }
 .adj-period-dd-opt.is-conflict .adj-period-dd-opt-label { color: inherit; }
@@ -10611,10 +11130,23 @@ input#group-assign-recorded-hours {
   border-collapse: separate;
   border-spacing: 0;
 }
+/* 表内完整框线（separate 下用右+底边拼网格，首列/首行补左边与顶边，避免双边重叠） */
+.adj-density-table th,
+.adj-density-table td {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.adj-density-table thead tr > * {
+  border-top: 1px solid var(--border);
+}
+.adj-density-table tr > *:first-child {
+  border-left: 1px solid var(--border);
+}
 .adj-density-table th.adj-density-period-col,
 .adj-density-table td.adj-density-period-col,
 .adj-density-table .adj-density-period-col {
-  text-align: left; min-width: 140px; white-space: nowrap;
+  /* 原 text-align:left；表头/行头节次列统一居中 */
+  text-align: center; min-width: 140px; white-space: nowrap;
   position: sticky; left: 0; z-index: 2; background: #fff;
   border-right: 1px solid var(--border);
 }
@@ -10820,7 +11352,26 @@ input#group-assign-recorded-hours {
 
 /* ?? ???? ? ????????? / ?? / ??? ?? */
 .adj-slot-picker-filter { margin-bottom: 10px; }
+.adj-slot-picker-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
 .adj-slot-picker-count { margin-right: auto; font-size: 12px; color: var(--text-2); flex-shrink: 0; }
+#modal-adjustment-apply #adjustment-slot-picker-pagination.pagination {
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+#modal-adjustment-apply #adjustment-slot-picker-pagination .page-info {
+  flex: 1 1 auto;
+}
+#modal-adjustment-apply #adjustment-slot-picker-pagination .page-controls {
+  margin-left: 0;
+  flex-wrap: wrap;
+}
 .adj-slot-picker-reason-hint {
   flex: 0 0 auto;
   display: flex;
@@ -10857,9 +11408,10 @@ input#group-assign-recorded-hours {
   display: none !important;
 }
 .adj-slot-picker-table {
-  width: max-content;
-  max-width: none;
-  min-width: 100%;
+  /* 与 #adjustment-apply-left-table 一致：铺满容器，少横向滚动 */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   table-layout: auto;
   border-collapse: separate;
   border-spacing: 0;
@@ -10950,9 +11502,23 @@ input#group-assign-recorded-hours {
 .adj-log-who { min-width: 0; }
 .adj-log-note { font-size: 12px; color: var(--text-2); margin-top: 3px; background: var(--bg-2); border-radius: 5px; padding: 4px 8px; }
 
-/* 调课申请详情抽屉：图2 Staff Details 紧凑双列 + 英文字段 */
+/* Staff Details：整块模块区（与 Approval Log 同构：标题+内容包在边框底色里） */
+#modal-adjustment-detail .adj-detail-section-staff {
+  padding: 12px 14px 14px;
+  background: var(--bg-2, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+}
+#modal-adjustment-detail .adj-detail-section-staff .adj-detail-h {
+  margin-bottom: 10px;
+}
+/* 内层不再单独铺底，避免双层盒子；弃用 padding:10px 14px。原因：模块边框已由外层承担 */
 #modal-adjustment-detail .adj-detail-section-staff .adj-detail-info {
-  gap: 3px 28px; padding: 10px 14px; margin-bottom: 0;
+  gap: 3px 28px;
+  padding: 0;
+  margin-bottom: 0;
+  background: transparent;
+  border-radius: 0;
 }
 #modal-adjustment-detail .adj-detail-section-staff .adj-detail-field,
 #modal-adjustment-detail .adj-detail-log-summary .adj-detail-field {
@@ -11031,7 +11597,7 @@ input#group-assign-recorded-hours {
 #modal-adjustment-detail .adj-detail-file-link svg {
   display: block;
 }
-/* ???? ? ?????? */
+/* 调课冲突面板 */
 .adj-conflict-panel { display: flex; flex-direction: column; gap: 6px; }
 .adj-conflict-line {
   font-size: 12px; padding: 7px 10px; border-radius: 6px; border: 1px solid transparent;
@@ -11040,7 +11606,25 @@ input#group-assign-recorded-hours {
 .adj-conflict-ok { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
 .adj-conflict-bad { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
 .adj-conflict-skip { color: var(--text-2); background: var(--bg-2); border-color: var(--border); }
-.adj-conflict-detail { margin-top: 4px; padding-left: 4px; line-height: 1.6; color: #9a3412; }
+.adj-conflict-detail {
+  margin-top: 6px;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #9a3412;
+}
+/* 每条冲突尽量单行；过长可横向轻滚，避免整段挤换行 */
+.adj-conflict-detail-item {
+  white-space: nowrap;
+  overflow-x: auto;
+  line-height: 1.45;
+  padding: 2px 0;
+}
+#modal-adjustment-conflict .modal.adj-conflict-modal {
+  width: min(920px, 94vw);
+  max-width: 940px;
+}
 
 /* ???? ? ?? */
 .adj-file-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -17312,10 +17896,14 @@ code {
 .is-schedule-joint #schedule-detail-prefer-rooms-display.placeholder {
   color: var(--text-3);
 }
+/*
+ * 教室偏好下拉：整体不滚动；检索固定顶；选项区 #schedule-prefer-options-scroll 单独滚。
+ * 弃用：max-height:none 导致面板随内容撑高、或整块滚动。原因：产品要求只滚选项列表。
+ */
 #page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown.clo-multiselect-dropdown,
 #page-schedule-room-detail #schedule-detail-prefer-rooms-dropdown.clo-multiselect-dropdown,
 .is-schedule-joint #schedule-detail-prefer-rooms-dropdown.clo-multiselect-dropdown {
-  max-height: none;
+  max-height: min(360px, 70vh);
   overflow: hidden;
   padding: 0;
 }
@@ -17325,6 +17913,15 @@ code {
   display: flex;
   flex-direction: column;
 }
+#page-schedule-time-detail #schedule-prefer-options-scroll,
+#page-schedule-room-detail #schedule-prefer-options-scroll,
+.is-schedule-joint #schedule-prefer-options-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+/* 弃用：说明/教室号两组各自 max-height 滚动。原因：改为统一选项滚动容器
 #page-schedule-time-detail #schedule-prefer-rooms-options,
 #page-schedule-time-detail #schedule-prefer-lecture-options,
 #page-schedule-room-detail #schedule-prefer-rooms-options,
@@ -17333,6 +17930,16 @@ code {
 .is-schedule-joint #schedule-prefer-lecture-options {
   max-height: 180px;
   overflow-y: auto;
+}
+*/
+#page-schedule-time-detail #schedule-prefer-rooms-options,
+#page-schedule-time-detail #schedule-prefer-lecture-options,
+#page-schedule-room-detail #schedule-prefer-rooms-options,
+#page-schedule-room-detail #schedule-prefer-lecture-options,
+.is-schedule-joint #schedule-prefer-rooms-options,
+.is-schedule-joint #schedule-prefer-lecture-options {
+  max-height: none;
+  overflow: visible;
 }
 /* 弃用：下拉脚「取消/确定」展示。原因：勾选即草稿，落库靠顶栏保存
 #page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-foot,
@@ -17376,6 +17983,7 @@ code {
 .is-schedule-joint .clo-multiselect-search-wrap .input {
   width: 100%;
 }
+/* 弃用：常驻 Others 标签字段样式。原因：Others 改为勾选项，自定义输入仅勾选后出现
 #page-schedule-time-detail .schedule-prefer-other-field,
 #page-schedule-room-detail .schedule-prefer-other-field,
 .is-schedule-joint .schedule-prefer-other-field {
@@ -17386,10 +17994,26 @@ code {
   font-size: 12px;
   color: var(--text-2);
 }
-#page-schedule-time-detail .schedule-prefer-other-field .input,
-#page-schedule-room-detail .schedule-prefer-other-field .input,
-.is-schedule-joint .schedule-prefer-other-field .input {
+*/
+#page-schedule-time-detail .schedule-prefer-other-input-wrap,
+#page-schedule-room-detail .schedule-prefer-other-input-wrap,
+.is-schedule-joint .schedule-prefer-other-input-wrap {
+  padding: 4px 10px 10px 36px;
+}
+#page-schedule-time-detail .schedule-prefer-other-input-wrap[hidden],
+#page-schedule-room-detail .schedule-prefer-other-input-wrap[hidden],
+.is-schedule-joint .schedule-prefer-other-input-wrap[hidden] {
+  display: none !important;
+}
+#page-schedule-time-detail .schedule-prefer-other-input-wrap .input,
+#page-schedule-room-detail .schedule-prefer-other-input-wrap .input,
+.is-schedule-joint .schedule-prefer-other-input-wrap .input {
   width: 100%;
+}
+#page-schedule-time-detail #schedule-prefer-search-wrap,
+#page-schedule-room-detail #schedule-prefer-search-wrap,
+.is-schedule-joint #schedule-prefer-search-wrap {
+  flex: 0 0 auto;
 }
 /* 弃用：上游已填选项整行灰显 is-disabled。原因：产品要求仍作普通选项展示，仅 checkbox disabled 不可改选
 #page-schedule-time-detail #schedule-detail-prefer-rooms-dropdown .clo-multiselect-option.is-disabled,

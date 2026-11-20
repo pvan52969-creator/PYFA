@@ -5619,16 +5619,16 @@ input#group-assign-recorded-hours.group-assign-recorded-over {
 #modal-delete-confirm .delete-confirm-shared-room-item .dcsr-group-line {
   display: block;
 }
-/* 「单独排」取消钮：描边可见（与 ghost 透明边区分） */
+/* 「撤回」等 outline 取消钮：红字红框（与 ghost 透明边区分；弃用蓝描边） */
 #modal-delete-confirm #delete-confirm-cancel-btn.btn-outline {
-  border-color: var(--blue-500, #3b82f6);
-  color: var(--blue-700, #1d4ed8);
+  border-color: #dc2626;
+  color: #dc2626;
   background: #fff;
 }
 #modal-delete-confirm #delete-confirm-cancel-btn.btn-outline:hover {
-  border-color: var(--blue-700, #1d4ed8);
-  color: var(--blue-700, #1d4ed8);
-  background: #eff6ff;
+  border-color: #b91c1c;
+  color: #b91c1c;
+  background: #fef2f2;
 }
 .major-task-revert-view-body {
   margin-top: 10px;
@@ -15315,7 +15315,9 @@ code {
   text-overflow: ellipsis;
   color: var(--text-2, #475569);
 } */
-#page-schedule-room-detail .sch-room-equip-view {
+/* 设备「查看」：排教室主表与时间侧教室预览抽屉同款文字链（勿用默认按钮尺寸） */
+#page-schedule-room-detail .sch-room-equip-view,
+#modal-schedule-time-room-preview .sch-room-equip-view {
   flex: 0 0 auto;
   margin: 0;
   padding: 0;
@@ -15323,10 +15325,12 @@ code {
   background: none;
   color: var(--blue-600, #2563eb);
   font-size: 12px;
+  line-height: 1.2;
   cursor: pointer;
   white-space: nowrap;
 }
-#page-schedule-room-detail .sch-room-equip-view:hover {
+#page-schedule-room-detail .sch-room-equip-view:hover,
+#modal-schedule-time-room-preview .sch-room-equip-view:hover {
   text-decoration: underline;
 }
 .sch-room-equip-detail-row {
@@ -15719,8 +15723,9 @@ code {
   border-right-color: #c5d0de;
   border-bottom-color: #c5d0de;
 }
-/* 教室禁排时段（roomSlotProfiles.blockSlots）：与 outside-time 同灰，不可排 */
-#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-slot-blocked {
+/* 教室禁排时段：排教室主表 + 时间侧教室预览抽屉统一灰底灰芯片（与 outside-time 同灰） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-slot-blocked,
+#modal-schedule-time-room-preview .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-room-cell-slot-blocked {
   background: #dbe3ee !important;
   color: #64748b;
   cursor: not-allowed;
@@ -15729,7 +15734,8 @@ code {
   outline: none !important;
   box-shadow: none !important;
 }
-#page-schedule-room-detail .srpv-slot-block-chip {
+#page-schedule-room-detail .srpv-slot-block-chip,
+#modal-schedule-time-room-preview .srpv-slot-block-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -17176,7 +17182,11 @@ code {
 }
 .schedule-detail-course-check input { cursor: pointer; }
 .schedule-detail-course-li .schedule-detail-course-item { flex: 1; min-width: 0; }
-/* 排教室：同时段共同授课联动环（左括号贯穿 + 居中环扣压住两卡边界；单独排后不渲染） */
+/*
+ * 弃用：排教室侧栏共同授课联动环 / 左缘色条（is-shared-link-*、sdc-shared-link）。
+ * 原因：产品要求共同授课与联动组仅靠卡内「共同授课课号」「联动组」字段表达，不再渲染绑定环与左边特殊标记。
+ * 以下选择器保留以免旧 DOM 残留时样式丢失；侧栏渲染已不再输出对应 class。
+ */
 #page-schedule-room-detail .schedule-detail-course-li.is-shared-link-start {
   position: relative;
   z-index: 2;
@@ -17596,6 +17606,16 @@ code {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/*
+ * 非排课占用芯片优先于售罄白底+虚线：与预览抽屉「场地借用占用」同款粉底红字。
+ * 弃用：is-srpv-occ 再叠 is-room-resource-sellout 导致主表白底描边、预览粉芯片不一致。
+ */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-srpv-occ.is-room-resource-sellout,
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols .schedule-grid-cell.is-srpv-occ.is-room-resource-over {
+  background: #fef2f2 !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 .schedule-retake-detect-panel[hidden] {
   display: none !important;
@@ -18753,12 +18773,54 @@ code {
 .schedule-time-one-click-result-hint .sch-one-click-stuck-list li {
   margin: 2px 0;
 }
+/* 一键导入确认：策略单选 + 规则列表；略宽于默认 520，避免过宽；规则单行不换行 */
+#modal-delete-confirm:has(.sch-one-click-confirm-block) .modal {
+  width: min(94vw, 680px);
+  max-width: 680px;
+}
+#modal-delete-confirm:has(.sch-one-click-confirm-block) .modal-body {
+  overflow-x: auto;
+}
+#modal-delete-confirm .sch-one-click-confirm-block {
+  margin-top: 12px;
+}
+#modal-delete-confirm .sch-one-click-confirm-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3a5f;
+  margin-bottom: 6px;
+}
+#modal-delete-confirm .sch-one-click-strategy-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+#modal-delete-confirm .sch-one-click-rules-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #334155;
+}
+#modal-delete-confirm .sch-one-click-rules-list li {
+  margin: 2px 0;
+  white-space: nowrap;
+}
+/* 一键导入失败明细：弹窗略宽于默认 520，表内可横滚；弃用 1180 过宽 */
+#modal-delete-confirm:has(.sch-one-click-stuck-wrap) .modal {
+  width: min(94vw, 920px);
+  max-width: 920px;
+}
 /* 一键导入失败明细：弹窗内表格，默认前 10 行，显示更多展开 */
 #modal-delete-confirm .sch-one-click-stuck-wrap {
   margin-top: 10px;
 }
 #modal-delete-confirm .sch-one-click-stuck-scroll {
-  max-height: min(360px, 46vh);
+  max-height: min(420px, 52vh);
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -18766,17 +18828,54 @@ code {
 #modal-delete-confirm .sch-one-click-stuck-table {
   margin: 0;
   border-collapse: collapse;
+  /* 列宽收紧后表可略窄；仍可横滚 */
+  min-width: 860px;
+  width: 100%;
+  table-layout: fixed;
+  font-size: 12px;
+}
+/* 「失败原因」固定列宽，勿被 table 剩余宽度撑开 */
+#modal-delete-confirm .sch-one-click-stuck-table th.sch-stuck-reason-th,
+#modal-delete-confirm .sch-one-click-stuck-table td.sch-stuck-reason {
+  width: 128px;
+  max-width: 128px;
 }
 #modal-delete-confirm .sch-one-click-stuck-table th,
 #modal-delete-confirm .sch-one-click-stuck-table td {
-  padding: 6px 10px;
-  vertical-align: top;
-  /* 表内全框线，便于扫读课号 / 学时类型 / 原因 */
+  padding: 6px 8px;
+  /* 全表水平+垂直居中；批次多行仍整体居中 */
+  vertical-align: middle;
+  text-align: center;
+  /* 表内全框线，便于扫读课号 / 批次 / 组 / 原因 */
   border: 1px solid var(--border);
+}
+/* 上课批次：一行一个；单条批次码本身不折行 */
+#modal-delete-confirm .sch-one-click-stuck-table td.sch-stuck-batch {
+  white-space: normal;
+  line-height: 1.45;
+}
+#modal-delete-confirm .sch-one-click-stuck-table td.sch-stuck-batch .sch-stuck-batch-line {
+  display: block;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+/* 课程组 / 联动组：不换行，过长靠表横滚 */
+#modal-delete-confirm .sch-one-click-stuck-table td.sch-stuck-nowrap {
+  white-space: nowrap;
+  word-break: normal;
 }
 #modal-delete-confirm .sch-one-click-stuck-table thead th {
   border-bottom-color: var(--border);
 }
+/*
+ * 弃用：「失败原因」红底白字。
+ * 原因：与弹窗其它表头不协调；恢复与其它 th 同色。
+ */
+/* #modal-delete-confirm .sch-one-click-stuck-table thead th.sch-stuck-reason-th {
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+} */
 #modal-delete-confirm .sch-one-click-stuck-wrap:not(.is-stuck-more-open) .sch-one-click-stuck-row-more {
   display: none;
 }
@@ -18936,12 +19035,10 @@ code {
 .is-schedule-joint .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused {
   gap: 0;
   /*
-   * 弃用 #9ca3af / 实色 #6b7280。
-   * 原因：普通课块边框写的是 #6b7280，但块本身 opacity:.72，叠在白底上视觉更浅；
-   * 融合卡画在 opacity:1 的容器上，同色会明显更深。按 MEC902 等普通卡深度，
-   * 用 72% 混白与课块边框视觉对齐（约 #9499a4）。
+   * 弃用 color-mix(72%) 浅边。原因：与同格 MEC903 等普通卡 #6b7280 并排时深浅不一；
+   * 统一实色 #6b7280（冲突/多包场景以对齐普通课块为准）。
    */
-  border: 1px solid color-mix(in srgb, #6b7280 72%, #fff);
+  border: 1px solid #6b7280;
   border-radius: 4px;
   overflow: hidden;
   background: #fff;
@@ -18961,8 +19058,8 @@ code {
 }
 #page-schedule-time-detail .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
 .is-schedule-joint .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block {
-  /* 弃用 #cbd5e1。原因：中缝虚线需与融合卡外框同深度（课块 opacity:.72 等效色） */
-  border-left: 1px dashed color-mix(in srgb, #6b7280 72%, #fff) !important;
+  /* 中缝与外框同为 #6b7280，对齐普通课块 */
+  border-left: 1px dashed #6b7280 !important;
 }
 /* 伙伴半侧：与本课同为白底（仅保留中间虚线分隔 + 课号旁绿色「共同授课」标签） */
 /* 弃用：rgba(22,163,74,0.07) 淡绿底。原因：产品要求共同授课半侧也是白色 */
@@ -18971,8 +19068,7 @@ code {
 .is-schedule-joint .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block {
   background: transparent !important;
   border: none !important;
-  /* 弃用 #cbd5e1。原因：同上，中缝与外框同色深 */
-  border-left: 1px dashed color-mix(in srgb, #6b7280 72%, #fff) !important;
+  border-left: 1px dashed #6b7280 !important;
   color: #334155 !important;
   opacity: 1 !important;
   font-weight: inherit;
@@ -19035,45 +19131,72 @@ code {
   ...
 } */
 /*
- * 选中态：融合卡默认白底会盖住格的 #dbeafe；边框对齐普通选中卡 #6b7280（勿用 72% 混白，否则比 MBT 选中卡浅）。
- * 有冲突时仍由下方 is-conflict-* / is-slot-selected[is-conflict] 规则覆盖底色。
+ * 选中态融合卡：单包（格下直接 multi）或整包 is-pack-selected 才铺淡蓝。
+ * 弃用：凡 is-slot-selected 格内所有 fused 都淡蓝。
+ * 原因：同格 CST 融合包 + MEC903，点 MEC903 切换后 CST 仍被整格选中规则刷蓝，看起来像没切换。
  */
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused,
-#page-schedule-time-detail .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block),
-.is-schedule-joint .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) {
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected,
+#page-schedule-time-detail .schedule-detail-grid-table.is-time-period-cols > .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block),
+.is-schedule-joint .schedule-detail-grid-table.is-time-period-cols > .schedule-grid-multi.is-shared-link-fused:has(.is-slot-selected-block) {
   outline: none;
   box-shadow: none;
   background: #dbeafe;
   border-color: #6b7280;
 }
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block {
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block-rich,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block.is-shared-partner-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block.is-shared-partner-block {
   background: transparent !important;
   color: #334155 !important;
   opacity: 1 !important;
 }
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block {
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block + .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block.is-shared-partner-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block + .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused.is-pack-selected .schedule-grid-block.is-shared-partner-block {
   border-left-color: #6b7280 !important;
+}
+/* 多包未选中的融合旁包：保持白底，勿跟整格选中淡蓝 */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused:not(.is-pack-selected),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-shared-link-fused:not(.is-pack-selected) {
+  background: #fff !important;
 }
 #page-schedule-time-detail .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-slot-selected-block,
 .is-schedule-joint .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-slot-selected-block {
   outline: none !important;
   box-shadow: none !important;
 }
-/* 选中普通卡：字色/边框深度与参考卡一致（opacity:1 + #6b7280），避免比融合卡浅一档 */
+/* 选中普通卡：字色/边框深度与融合卡一致（opacity:1 + #6b7280 + 行字 inherit），避免 MEC902 与 CST 融合卡字色分叉 */
 #page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block,
 .is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block {
   opacity: 1 !important;
   color: #334155 !important;
   border-color: #6b7280 !important;
+}
+/* 选中后各行继承块色；!important 压过 hourtype #4f46e5，与融合卡 inherit 一致 */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block .schedule-grid-line,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block .schedule-grid-line,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block .schedule-grid-line,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-block.is-slot-selected-block .schedule-grid-line {
+  color: inherit !important;
 }
 /* 共同授课标记贴课号右侧；课号等课程信息与本课同色同粗（标签本身仍用绿底白字） */
 .schedule-grid-block.is-shared-partner-block .schedule-grid-code {
@@ -19782,6 +19905,109 @@ code {
   align-items: stretch;
   grid-template-columns: repeat(var(--sch-cols, 1), minmax(0, 1fr));
 }
+/*
+ * 同格多包：联动融合包与无关课单包并排。
+ * 示例：CST201+CST202 融合 | MEC903 单卡，避免整格不融时变成 CST201|MEC903|CST202。
+ */
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-cell-packs {
+  display: grid;
+  grid-template-columns: repeat(var(--sch-pack-cols, 1), minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-cell-packs > .schedule-grid-multi {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+}
+/*
+ * 多包同格选中：只给 .is-pack-selected 铺淡蓝，未选包保持冲突色/白底。
+ * 点 CST 融合包 → MEC903 不整格变蓝、也不 sibling 变淡；反之亦然。
+ */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected:has(> .schedule-grid-cell-packs):not([class*="is-conflict"]):not([class*="is-room-resource"]),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected:has(> .schedule-grid-cell-packs):not([class*="is-conflict"]):not([class*="is-room-resource"]) {
+  background: transparent !important;
+  box-shadow: none;
+}
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:has(> .schedule-grid-cell-packs),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:has(> .schedule-grid-cell-packs) {
+  /* 格上保留冲突底给未选包；选中蓝改由包级规则铺 */
+  box-shadow: none;
+}
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-pack-selected,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-pack-selected,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-pack-selected,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected > .schedule-grid-multi.is-pack-selected {
+  background: #dbeafe !important;
+  border-color: #6b7280;
+}
+/*
+ * 选中态字色对齐（含联合页 td>multi 单包，不只 packs 内）：
+ * 融合卡常年 opacity:1+#334155；普通 MEC902 若仍 0.72 或行上独立色，并排会一深一浅。
+ */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block-rich,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block-rich,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block-rich {
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-line,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-line,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-line,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-line,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-line,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-line,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-line,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-line {
+  color: inherit !important;
+}
+/* 选中包内块透出淡蓝底（与融合卡一致），避免普通卡自铺 #dbeafe/白底造成字深观感差 */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich {
+  background: transparent !important;
+}
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected.is-shared-link-fused .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected.is-shared-link-fused .schedule-grid-block {
+  background: transparent !important;
+}
+/* 绿标仍白字，不被上面 inherit 冲掉 */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs .schedule-grid-shared-tag,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-multi.is-pack-selected .schedule-grid-shared-tag,
+#page-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-shared-tag,
+#page-schedule-joint-demo .schedule-grid-cell.is-slot-selected .schedule-grid-shared-tag,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-shared-tag {
+  color: #fff !important;
+}
 .schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-multi .schedule-grid-block,
 .schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-block,
 .schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-block-rich {
@@ -20069,6 +20295,18 @@ code {
   border: 2px solid #dc2626;
 }
 .schedule-conflict-legend .sch-leg-item.is-room-resource-over::before { display: none; }
+.schedule-room-capacity-enroll {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-1, #334155);
+}
+.schedule-room-capacity-enroll strong {
+  font-size: 14px;
+  color: var(--text-0, #0f172a);
+}
+.schedule-room-capacity-enroll.is-muted {
+  color: var(--text-2, #64748b);
+}
 .schedule-room-capacity-table {
   width: 100%;
   border-collapse: collapse;
@@ -20460,26 +20698,79 @@ code {
  * 原因：产品要求显示优先级 选中淡蓝 > 教师冲突 > 学生冲突；选中时一律淡蓝。
  */
 /* #page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-teacher, ... */
-/* 时间/联合：选中优先于冲突色（冲突 class 仍保留供弹窗/逻辑；未选中时由 is-conflict-teacher/student 着色，且 paintPrimary 教师>学生） */
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"],
-.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] {
+/* 时间/联合：选中优先于冲突色（单包/无多包时整格淡蓝） */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) {
   background: #dbeafe !important;
   box-shadow: none;
   outline: none;
 }
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block,
-#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block.is-slot-selected-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block,
-.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block.is-slot-selected-block {
+/* 多包同格+冲突：格底保留冲突色，勿整格淡蓝（否则未选 CST 融合包也像被选中） */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-student:has(> .schedule-grid-cell-packs),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-student:has(> .schedule-grid-cell-packs) {
+  background: #d8b4fe !important;
+  box-shadow: none;
+  outline: none;
+}
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-teacher:has(> .schedule-grid-cell-packs),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-teacher:has(> .schedule-grid-cell-packs) {
+  background: #fef9c3 !important;
+  box-shadow: none;
+  outline: none;
+}
+/* 单包选中+冲突：块/融合卡淡蓝；多包仅 is-pack-selected 走下方包级规则 */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) .schedule-grid-block.is-slot-selected-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) > .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"]:not(:has(> .schedule-grid-cell-packs)) .schedule-grid-block.is-slot-selected-block {
   background: #dbeafe !important;
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+/*
+ * 多包同格：上面「选中+冲突整格淡蓝」不要盖住未选旁包。
+ * 未选包恢复学生紫/教师黄等冲突底；选中包保持淡蓝。
+ */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-student .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected),
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-student .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-student .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-student .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-student .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-student .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block-rich {
+  background: #d8b4fe !important;
+}
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-teacher .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected),
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-teacher .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected.is-conflict-teacher .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-teacher .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected),
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-teacher .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected.is-conflict-teacher .schedule-grid-cell-packs > .schedule-grid-multi:not(.is-pack-selected) .schedule-grid-block-rich {
+  background: #fef9c3 !important;
+}
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected .schedule-grid-block,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected .schedule-grid-cell-packs > .schedule-grid-multi.is-pack-selected .schedule-grid-block-rich {
+  background: #dbeafe !important;
+  color: #334155 !important;
+  opacity: 1 !important;
+}
+/* 选中+冲突：行字同样 inherit，与无冲突选中/融合卡对齐 */
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block .schedule-grid-line,
+#page-schedule-time-detail .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block-rich .schedule-grid-line,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block .schedule-grid-line,
+.is-schedule-joint .schedule-grid-cell.is-slot-selected[class*="is-conflict"] .schedule-grid-block-rich .schedule-grid-line {
+  color: inherit;
 }
 /* 已排课程卡片右键菜单（角标箭头指向目标卡片） */
 .schedule-ctx-menu {
@@ -21327,6 +21618,64 @@ code {
   pointer-events: none;
 }
 /*
+ * 排时间/联合 · 侧栏选课排入模式「+」：
+ * - 空白可落点 → 格心 +
+ * - 已占格（本课/他课/冲突着色，如 MEC901 学生冲突格）→ 右侧留白 +（可点排入并提示冲突）
+ * 对齐排教室 pending/locked 强排；卡片已 pointer-events:none，悬停整格均显 +。
+ */
+#page-schedule-time-detail .schedule-detail-grid-table.is-place-mode .schedule-grid-cell.is-active-target,
+.is-schedule-joint .schedule-detail-grid-table.is-place-mode .schedule-grid-cell.is-active-target {
+  cursor: pointer;
+}
+#page-schedule-time-detail .schedule-detail-grid-table.is-place-mode .schedule-grid-cell.is-active-target:not(.is-occupied):hover::after,
+.is-schedule-joint .schedule-detail-grid-table.is-place-mode .schedule-grid-cell.is-active-target:not(.is-occupied):hover::after {
+  content: '+';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+}
+#page-schedule-time-detail .schedule-detail-grid-table.is-place-mode .schedule-grid-cell.is-active-target.is-occupied:hover::after,
+.is-schedule-joint .schedule-detail-grid-table.is-place-mode .schedule-grid-cell.is-active-target.is-occupied:hover::after {
+  content: '+';
+  position: absolute;
+  right: 4px;
+  left: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+}
+/*
  * 已选已排节次（改格模式）— 格内可见「+」提示（不是系统鼠标 copy）：
  * - 移到卡片信息上 → 不显示 +（点=选中/取消）
  * - 移到卡片右留白 → 格内右侧出现 +
@@ -21339,9 +21688,9 @@ code {
 .is-schedule-joint .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell.is-occupied .schedule-grid-block {
   cursor: pointer;
 }
-/* 已占格：+ 在右留白区 */
+/* 已占格：+ 在右留白区（联合：排除他对象禁选行，避免 MBT 灰底行也出 +） */
 #page-schedule-time-detail .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell.is-occupied:not(.is-slot-selected):hover::after,
-.is-schedule-joint .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell.is-occupied:not(.is-slot-selected):hover::after {
+.is-schedule-joint .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell.is-occupied:not(.is-slot-selected):not(.is-joint-row-disabled):hover::after {
   content: '+';
   position: absolute;
   right: 4px;
@@ -21362,6 +21711,12 @@ code {
   background: #eff6ff;
   border: 1px solid #93c5fd;
   border-radius: 4px;
+}
+/* 联合：他对象行整行不出改格/排入 +（双保险，含未标 disabled 的旧格） */
+.is-schedule-joint .schedule-detail-grid-table.is-slot-selection-active tr.is-joint-inactive-object .schedule-grid-cell:hover::after,
+.is-schedule-joint .schedule-detail-grid-table.is-place-mode tr.is-joint-inactive-object .schedule-grid-cell:hover::after {
+  content: none !important;
+  display: none !important;
 }
 /* 空白格：+ 在格子正中 */
 #page-schedule-time-detail .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell:not(.is-occupied):not(.is-joint-row-disabled):not(.is-slot-selected):hover::after,
@@ -21390,7 +21745,7 @@ code {
 }
 /* 鼠标在卡片文案上：隐藏 +，只保留选中/取消语义 */
 #page-schedule-time-detail .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell.is-occupied:not(.is-slot-selected):hover:has(.schedule-grid-block:hover)::after,
-.is-schedule-joint .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell.is-occupied:not(.is-slot-selected):hover:has(.schedule-grid-block:hover)::after {
+.is-schedule-joint .schedule-detail-grid-table.is-slot-selection-active .schedule-grid-cell.is-occupied:not(.is-slot-selected):not(.is-joint-row-disabled):hover:has(.schedule-grid-block:hover)::after {
   content: none;
   display: none;
 }

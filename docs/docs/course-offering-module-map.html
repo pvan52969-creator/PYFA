@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>XMUM 开课管理 · 全模块功能地图（测试讲解稿）</title>
+<style>
+  :root {
+    --bg: #f4f7fb;
+    --card: #fff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --orange: #ea580c;
+    --cyan: #0891b2;
+    --violet: #7c3aed;
+    --red: #b91c1c;
+    --amber: #b45309;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow: auto;
+    padding: 18px 14px; background: #0f172a; color: #e2e8f0;
+  }
+  .toc h1 { margin: 0 0 4px; font-size: 15px; color: #fff; }
+  .toc .meta { font-size: 11px; color: #94a3b8; margin-bottom: 14px; }
+  .toc a {
+    display: block; color: #cbd5e1; text-decoration: none; font-size: 12px;
+    padding: 6px 8px; border-radius: 6px; margin-bottom: 2px;
+  }
+  .toc a:hover, .toc a:focus { background: #1e293b; color: #fff; }
+  .toc .g { margin: 12px 0 4px; font-size: 10px; letter-spacing: .04em; color: #94a3b8; text-transform: uppercase; }
+  .main { padding: 24px 28px 64px; max-width: 1100px; }
+  .hero {
+    background: linear-gradient(135deg, #eff6ff, #ecfeff 55%, #f0fdf4);
+    border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; margin-bottom: 22px;
+  }
+  .hero h2 { margin: 0 0 8px; font-size: 24px; }
+  .hero p { margin: 0; color: var(--muted); font-size: 14px; max-width: 820px; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; border: 1px solid var(--line); background: #fff; color: var(--muted);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  section.block { margin-bottom: 28px; }
+  section.block > h3 {
+    margin: 0 0 12px; font-size: 18px; padding-bottom: 8px; border-bottom: 2px solid var(--line);
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; margin-bottom: 12px;
+  }
+  .card h4 { margin: 0 0 6px; font-size: 15px; }
+  .card .sub { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 999px; margin-right: 6px; vertical-align: middle;
+  }
+  .tag-blue { background: #dbeafe; color: #1d4ed8; }
+  .tag-green { background: #dcfce7; color: #15803d; }
+  .tag-orange { background: #ffedd5; color: #c2410c; }
+  .tag-cyan { background: #cffafe; color: #0e7490; }
+  .tag-violet { background: #ede9fe; color: #6d28d9; }
+  .tag-gray { background: #f1f5f9; color: #475569; }
+  .flow {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0;
+  }
+  .flow .step {
+    background: #fff; border: 1px solid var(--line); border-left: 3px solid var(--blue);
+    border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 600;
+    min-width: 120px;
+  }
+  .flow .step small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .flow .arrow { color: #94a3b8; font-size: 18px; }
+  .lane {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;
+  }
+  .lane-box {
+    border-radius: 12px; border: 1px solid var(--line); padding: 14px; background: #fff;
+  }
+  .lane-box.major { background: #f0fdf4; border-color: #bbf7d0; }
+  .lane-box.elective { background: #fff7ed; border-color: #fed7aa; }
+  .lane-box h5 { margin: 0 0 10px; font-size: 14px; }
+  .lane-box ol { margin: 0; padding-left: 18px; font-size: 13px; }
+  .lane-box li { margin-bottom: 6px; }
+  ul.rules { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+  ul.rules li { margin-bottom: 5px; }
+  .callout {
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; margin: 10px 0;
+    border: 1px solid var(--line);
+  }
+  .callout.warn { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+  .callout.info { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+  .callout.ok { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
+  .callout strong { color: inherit; }
+  table.map {
+    width: 100%; border-collapse: collapse; font-size: 13px; background: #fff;
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  }
+  table.map th, table.map td {
+    border-bottom: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top;
+  }
+  table.map th { background: #f8fafc; font-size: 12px; color: var(--muted); font-weight: 600; }
+  table.map tr:last-child td { border-bottom: 0; }
+  .k { font-weight: 600; white-space: nowrap; }
+  .test-focus { color: var(--amber); font-size: 12px; }
+  .footer-note { margin-top: 28px; font-size: 12px; color: var(--muted); }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: relative; height: auto; }
+    .grid-2, .grid-3, .lane { grid-template-columns: 1fr; }
+  }
+  @media print {
+    .toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    .main { max-width: none; padding: 12px; }
+    .card, .hero, .lane-box { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="toc" aria-label="目录">
+    <h1>开课全模块地图</h1>
+    <div class="meta">测试讲解稿 · 对齐当前侧栏</div>
+    <div class="g">总览</div>
+    <a href="#overview">1. 整体定位</a>
+    <a href="#main-flow">2. 主流程线性指引</a>
+    <a href="#module-index">3. 侧栏模块索引</a>
+    <div class="g">开课设置</div>
+    <a href="#m-time">开课时间设置</a>
+    <a href="#m-elective-lib">校选课程管理</a>
+    <a href="#m-special">特殊课程设置</a>
+    <div class="g">专业 / 选修</div>
+    <a href="#m-major">专业开课三步</a>
+    <a href="#m-ge">选修开课三步</a>
+    <div class="g">关键规则（必讲）</div>
+    <a href="#rules-shared">共同授课 &amp; 联动组</a>
+    <a href="#rules-simul">同时授课</a>
+    <a href="#rules-effective">生效完整度 · Coordinator</a>
+    <a href="#rules-merge">合班 · 教师替换</a>
+    <a href="#rules-room">教室偏好</a>
+    <a href="#rules-support">Support 专业</a>
+    <a href="#rules-scope">可选范围（年级·专业）</a>
+    <a href="#rules-assign">一键分配名单</a>
+    <div class="g">课程班管理</div>
+    <a href="#m-class">课程班 · Load · 确认</a>
+    <a href="#m-replace">教师替换 · 排课计划</a>
+    <div class="g">测试</div>
+    <a href="#gates">关键门槛与易错点</a>
+    <a href="#checklist">讲解检查清单</a>
+  </nav>
+
+  <div class="main">
+    <div class="hero" id="overview">
+      <h2>XMUM 开课管理 · 全模块功能地图</h2>
+      <p>给测试讲清：侧栏四大块怎么串、每页干什么、生效/撤回/授课确认/停课各自规则；并单独展开共同授课/联动、同时授课、生效完整度与 Coordinator、合班与教师替换、教室偏好、Support、可选范围、一键分配等易漏细则。特殊开课<strong>不单独成侧栏</strong>，从专业开课计划页按钮进入，与专业开课同走安排与名单。</p>
+      <div class="badge-row">
+        <span class="badge"><span class="dot" style="background:var(--blue)"></span>开课设置</span>
+        <span class="badge"><span class="dot" style="background:var(--green)"></span>专业开课</span>
+        <span class="badge"><span class="dot" style="background:var(--orange)"></span>选修开课</span>
+        <span class="badge"><span class="dot" style="background:var(--cyan)"></span>课程班管理</span>
+        <span class="badge"><span class="dot" style="background:var(--violet)"></span>关键规则详解</span>
+      </div>
+    </div>
+
+    <!-- 主流程 -->
+    <section class="block" id="main-flow">
+      <h3>2. 主流程线性指引（讲故事用）</h3>
+      <div class="card">
+        <div class="flow">
+          <div class="step" style="border-left-color:var(--blue)">① 开课设置<small>时间窗 · 校选库 · 特殊课默认</small></div>
+          <span class="arrow">→</span>
+          <div class="step" style="border-left-color:var(--green)">② 开课计划<small>专业生成 / 选修配额</small></div>
+          <span class="arrow">→</span>
+          <div class="step" style="border-left-color:var(--green)">③ 开课安排<small>Course Setting · 师资 · 确认</small></div>
+          <span class="arrow">→</span>
+          <div class="step" style="border-left-color:var(--green)">④ 开课名单<small>分组名单 · 开放选课</small></div>
+          <span class="arrow">→</span>
+          <div class="step" style="border-left-color:var(--cyan)">⑤ 课程班 / 排课计划<small>汇总 · 停课 · 入排课池</small></div>
+        </div>
+        <div class="lane">
+          <div class="lane-box major">
+            <h5>专业开课泳道</h5>
+            <ol>
+              <li><strong>前置：</strong>培养方案执行计划已提交 + 开课时间设置有效</li>
+              <li><strong>开课计划：</strong>按学期/专业批次生成任务；可点「特殊开课」从课程库加行</li>
+              <li><strong>计划生效 → 开课安排：</strong>Course Setting → 师资安排；生效须授课确认齐套</li>
+              <li><strong>开课名单：</strong>按小组维护学生；教务退回 = 安排撤回效果</li>
+            </ol>
+          </div>
+          <div class="lane-box elective">
+            <h5>选修开课泳道</h5>
+            <ol>
+              <li><strong>前置：</strong>校选课程管理有库 + 开课时间设置有效</li>
+              <li><strong>选修开课计划：</strong>类型配额 / 组数标准（不是专业那种「生成任务再生效」）</li>
+              <li><strong>选修开课安排：</strong>加课、分组师资后生效</li>
+              <li><strong>选修开课名单：</strong>开放选课相关；退回保持确认状态</li>
+            </ol>
+          </div>
+        </div>
+        <div class="callout info">
+          <strong>并行支路：</strong>Teaching Load（学时统计）· 授课确认管理 / 教师端 · 授课教师替换 · 课程班统一停课。排课计划入池看<strong>安排已生效</strong>，不以确认齐套为门槛。
+        </div>
+        <div class="callout warn">
+          <strong>讲解时别跳过：</strong>共同授课/联动、同时授课、生效完整度与 Coordinator、合班与教师替换、教室偏好、Support、可选范围、一键分配 — 左侧目录「关键规则」，测细则以专节为准。
+        </div>
+      </div>
+    </section>
+
+    <!-- 索引表 -->
+    <section class="block" id="module-index">
+      <h3>3. 侧栏模块索引（当前入口）</h3>
+      <table class="map">
+        <thead>
+          <tr><th>分组</th><th>菜单</th><th>一句话</th><th>测试优先看</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="k"><span class="tag tag-blue">开课设置</span></td>
+            <td>操作流程图</td>
+            <td>开课主流程图（原型内嵌）</td>
+            <td class="test-focus">与本文地图对照，勿把已下线模块当入口</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>开课时间设置</td>
+            <td>学期开课窗口 + 授课确认截止日期</td>
+            <td class="test-focus">无有效学期时后续开课是否拦截</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>校选课程管理</td>
+            <td>GE/ME 课库；修读范围（类型/年级/专业）</td>
+            <td class="test-focus">年级语义随类型；GE/ME 初始化差异</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>特殊课程设置</td>
+            <td>课号默认教室偏好、Support 专业</td>
+            <td class="test-focus">带出/不回写；Support 历史由勾选推导</td>
+          </tr>
+          <tr>
+            <td class="k"><span class="tag tag-green">专业开课</span></td>
+            <td>开课计划</td>
+            <td>生成任务、特殊开课、合班、计划生效</td>
+            <td class="test-focus">一课一专业批次一条；特殊开课标记</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>开课安排</td>
+            <td>两步：Course Setting → 师资 / 确认 / 共同授课·联动</td>
+            <td class="test-focus">生效须齐套；共同授课/联动/教室偏好规则</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>开课名单</td>
+            <td>任务提交后维护小组名单；一键分配</td>
+            <td class="test-focus">退回=撤回；一键分配跳过手动添加</td>
+          </tr>
+          <tr>
+            <td class="k"><span class="tag tag-orange">选修开课</span></td>
+            <td>选修开课计划</td>
+            <td>类型配额、组数标准</td>
+            <td class="test-focus">与专业「生成任务」路径不同</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>选修开课安排</td>
+            <td>加课、分组师资、生效</td>
+            <td class="test-focus">加课规则、确认与生效门槛</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>选修开课名单</td>
+            <td>开放选课侧名单（无预置/无一键）</td>
+            <td class="test-focus">退回保持确认；禁抄专业一键分配</td>
+          </tr>
+          <tr>
+            <td class="k"><span class="tag tag-cyan">课程班管理</span></td>
+            <td>课程班</td>
+            <td>汇总已开出班；统一停课</td>
+            <td class="test-focus">草稿/已生效/停课；专业+选修+特殊</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>Teaching Load</td>
+            <td>教师学时统计、超限预警</td>
+            <td class="test-focus">与安排教师学时是否对齐</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>授课确认管理</td>
+            <td>发送、代确认；改安排可失效</td>
+            <td class="test-focus">何时变未确认（见下）</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>授课确认（教师端）</td>
+            <td>Pending · 确认 / 不同意</td>
+            <td class="test-focus">截止日期、信函 Notes</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>授课教师替换</td>
+            <td>已生效班替换教师（保生效）</td>
+            <td class="test-focus">确认可回退；共同授课不解绑</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>排课计划</td>
+            <td>入排课池视图</td>
+            <td class="test-focus">看已生效，不看确认齐套</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout warn" style="margin-top:12px">
+        <strong>已下线 / 勿测为独立入口：</strong>特殊开课侧栏分组、合分班管理页、开课明细安排页、共同授课维护独立页、开课名单变更日志页。合分班在专业开课操作列；特殊开课在计划页按钮。
+      </div>
+    </section>
+
+    <!-- 开课设置详情 -->
+    <section class="block" id="m-time">
+      <h3>开课设置 · 开课时间设置</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-blue">开课设置</span>配置「哪个学期可以开课」以及教师确认截止日期。</p>
+        <ul class="rules">
+          <li><strong>作用：</strong>维护各学期开课时间范围、教学周数、授课确认截止日期；可按单位展开细调。</li>
+          <li><strong>新增：</strong>仅列出尚未配置开课时间的学期；教学周数按学期类型固定。</li>
+          <li><strong>确认截止日期：</strong>只要日期即可；可设已过期日期；不随开课窗口是否截止而锁定；教师端确认信函 Notes 取自此设置。</li>
+          <li><strong>规则：</strong>无当前有效开课学期时，后续生成/安排应受阻（测试拦截提示）。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="m-elective-lib">
+      <h3>开课设置 · 校选课程管理</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-blue">开课设置</span>选修开课的课程库与分类；修读范围真源之一。</p>
+        <ul class="rules">
+          <li>按校选类型 Tab 管理课程（GE/ME、类别、修读范围等）。</li>
+          <li>选修开课计划 / 安排加课应引用本库，不混用专业课生成逻辑。</li>
+          <li>修读范围细则见 <a href="#rules-scope">可选范围（年级·专业）</a>；校选侧栈为「类型 → 年级 → 专业」（无可选批次行）。</li>
+          <li>测试：库内课程能否进入配额与安排；库外课号不可冒充选修。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="m-special">
+      <h3>开课设置 · 特殊课程设置</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-blue">开课设置</span>课号级默认教室偏好 / Support 专业，供新开课带出。</p>
+        <ul class="rules">
+          <li>从教务课程库手动纳入课号，维护四类学时教室偏好与<strong>默认 Support 专业</strong>（现行口径，非学院）。</li>
+          <li>Support 历史：有勾选默认 Support 专业 → Y，未勾选 → N；<strong>不可手改</strong>；未纳入清单课号下游视为 N。</li>
+          <li>专业开课安排<strong>新建</strong>或仍为系统默认的班会自动带出；班级覆盖不回写本页。</li>
+          <li><strong>已生成数据不随本页再改</strong>（改配置只影响后续新建；删除清单也不回滚已落班）。</li>
+          <li>细则见 <a href="#rules-room">教室偏好</a>、<a href="#rules-support">Support 专业</a>。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 专业开课 -->
+    <section class="block" id="m-major">
+      <h3>专业开课 · 计划 → 安排 → 名单</h3>
+      <div class="grid-3">
+        <div class="card">
+          <h4>开课计划</h4>
+          <p class="sub">生成学期开课任务</p>
+          <ul class="rules">
+            <li>一课 × 一专业批次 → 一条计划。</li>
+            <li>依赖已提交执行计划 + 开课时间。</li>
+            <li>「特殊开课」从课程库加行并标记，与专业开课并列进安排/名单。</li>
+            <li>合班副作用见 <a href="#rules-merge">合班 · 教师替换</a>；计划生效后进入安排。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>开课安排</h4>
+          <p class="sub">样式2 · 两步条</p>
+          <ul class="rules">
+            <li>Step1 Course Setting（含 Support / 教室默认带出）；Step2 师资 / 授课确认 / 共同授课。</li>
+            <li><strong>安排生效</strong>见 <a href="#rules-effective">生效完整度 · Coordinator</a>（确认齐套为硬门槛之一）。</li>
+            <li>学院「撤回」：已生效→草稿，分组教师保留，确认不变；已排课须先清排课。</li>
+            <li>安排页「退回」：未生效安排退回计划并清空分组教师（另一条规则）。</li>
+            <li>共同授课 / 同时授课 / 联动 / 教室偏好见「关键规则」专节。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>开课名单</h4>
+          <p class="sub">按小组维护学生</p>
+          <ul class="rules">
+            <li>任务安排提交（已生效）后维护名单。</li>
+            <li>教务「退回」效果同安排撤回：已生效→草稿，确认不变；名单只清分组归属。</li>
+            <li>有小组时可用预置名单 + <strong>一键分配</strong>（细则见专节）；可入名单学籍：Active + Normal。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout warn">
+        <strong>易混三点：</strong>① 计划「生效」≠ 安排「生效」；② 安排「退回计划」≠ 学院「撤回」≠ 名单「退回」；③ 撤回/名单退回<strong>不取消</strong>授课确认。
+      </div>
+    </section>
+
+    <!-- 选修 -->
+    <section class="block" id="m-ge">
+      <h3>选修开课 · 计划 → 安排 → 名单</h3>
+      <div class="grid-3">
+        <div class="card">
+          <h4>选修开课计划</h4>
+          <p class="sub">配额 / 组数标准</p>
+          <ul class="rules">
+            <li>按类型维护配额与组数，不是专业「生成任务再生效」。</li>
+            <li>依赖校选课程库。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>选修开课安排</h4>
+          <p class="sub">加课 · 修读范围 · 分组师资</p>
+          <ul class="rules">
+            <li>在安排页加课；Step1 可改修读范围 / Support；分组、排教师后生效。</li>
+            <li>修读范围相对校选<strong>多「可选批次」行</strong>；已生效后修读范围只读。</li>
+            <li>Support：不可选本课所属部门下专业；保存后共享给所选专业。</li>
+            <li>分组工作台：显示 GE 配额条；<strong>隐藏预置/一键分配</strong>。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>选修开课名单</h4>
+          <p class="sub">开放选课侧</p>
+          <ul class="rules">
+            <li>退回：生效→草稿，<strong>授课确认保持</strong>；选课应用名单不再保留，手动添加仍保留。</li>
+            <li><strong>无预置名单 / 无一键分配</strong>（与专业名单对照测）。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 关键规则专节 ========== -->
+    <section class="block" id="rules-shared">
+      <h3>关键规则 · 共同授课 &amp; 联动组</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-violet">安排 Step2</span> 两层概念：先「共同授课组」，再「联动安排」。不要混成一件事。</p>
+        <div class="grid-2">
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">A. 共同授课（一组模型）</h4>
+            <ul class="rules">
+              <li><strong>一组共用一个内部标记</strong>，不是两两独立配对；组内 ≥2 个不同教学班（可同课号）。</li>
+              <li>入口：安排列表「共同授课」；须<strong>未生效</strong>且已有任课教师；已生效不可再设。</li>
+              <li>添加条件：与<strong>入口课</strong>至少有一名相同任课教师；对方未在其他组（在他组须先移出）。</li>
+              <li>入口课已有组员时再添加 → 先确认「加入共同授课组」；两门都未成组可直接加。</li>
+              <li>移出：只离开本组；剩 ≥2 仍同组；仅剩 1 门则一并清标记。</li>
+              <li><strong>替换/移除教师不自动解绑</strong>；要拆只能在共同授课设置里手动移出。</li>
+              <li>本版<strong>不要求</strong>新课与组内每一门都有共同教师；组内已无共同教师仍不解绑。</li>
+              <li>排课时该共同教师可为组内这些班忽略时间冲突（排课侧语义）。</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">B. 联动组（同堂排课绑定）</h4>
+            <ul class="rules">
+              <li>在共同授课组内，把多班的<strong>学时安排行</strong>绑成联动组；入口：「配置共同授课 / 管理联动安排」。</li>
+              <li>建立条件：仅要求<strong>周次、周学时一致</strong>；组内至少 2 个教学班。</li>
+              <li>绑定后：排课将<strong>同时间同教室</strong>；开课侧<strong>不强制</strong>教室偏好相同。</li>
+              <li><strong>加入共同授课组不会自动建联动</strong>；同堂须手动绑定联动。</li>
+              <li>可点「查看」看联动组明细；排课计划里「联动组」与「同时授课」分两列展示。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout info" style="margin-top:10px">
+          <strong>一键同步共同授课（专业安排工具栏）：</strong>只按权限+当前筛选，给特殊课程已关联、课号不同、仍有共同任课教师、且<strong>尚未打标</strong>的班补绑定；不并已有组、不解绑；会把两个已有组连上的批次跳过。要拆仍只能手动移出。
+        </div>
+        <div class="callout warn">
+          <strong>与「同时授课」区分：</strong>同时授课细则见下一节；联动组 = 跨班共同授课后的排课同堂绑定。排课计划入池时，共同授课另须关联班均已生效且学时安排/联动组齐套。
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="rules-simul">
+      <h3>关键规则 · 同时授课（对照联动组）</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-violet">安排详情学时行</span> 同课多小组是否「合班上课计一次学时」——不要和跨班联动搞混。</p>
+        <ul class="rules">
+          <li>控件须<strong>手动选择「是 / 否」</strong>；新增安排行默认为空（未选不可糊弄过去）。</li>
+          <li>选<strong>多个小组 + 是</strong>：合班同时授课，Teaching Load / 学时<strong>只计一次</strong>。</li>
+          <li>选<strong>多个小组 + 否</strong>：保存后<strong>自动拆成</strong>每个小组一条（学时类型 / 周次 / 周学时 / 总学时 / 教师不变）。</li>
+          <li>与联动组：排课计划里「同时授课」「联动组」分两列；一个管同课多组计学时，一个管跨班同堂排课。</li>
+        </ul>
+        <table class="map" style="margin-top:10px">
+          <thead><tr><th></th><th>同时授课</th><th>联动组</th></tr></thead>
+          <tbody>
+            <tr><td class="k">范围</td><td>同一教学班内的多个小组</td><td>共同授课组内多个教学班的学时行</td></tr>
+            <tr><td class="k">建立条件</td><td>手动选是/否</td><td>周次 + 周学时一致；组≥2 班</td></tr>
+            <tr><td class="k">对排课</td><td>多组可同堂（计学时语义）</td><td>绑定后同时间同教室</td></tr>
+            <tr><td class="k">对 Load</td><td>「是」时学时只计一次</td><td>不改变「是否同时授课」计法本身</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block" id="rules-effective">
+      <h3>关键规则 · 安排生效完整度 + Course Coordinator</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-green">开课安排 · 确认生效</span> 测「为什么点不了生效 / 弹什么」时用本节。</p>
+        <h4 style="margin:0 0 8px;font-size:14px">A. 硬阻断（确认生效按钮禁用）</h4>
+        <ul class="rules">
+          <li>已停课 → 无法生效。</li>
+          <li>选修且计划总人数未填（空；<code>0</code> 算已填）→ 须先填。</li>
+          <li>有小组时：组名非空且不重复；每组上限 &gt;0；各组上限合计 ≤ 课程人数上限，且合计 ≥ 计划人数。</li>
+          <li>师资/学时不完整：计划学时 &gt;0 的类型须已安排教师；安排行须有教师、起止周、周学时；有安排行未选课程组不可生效；四学时全 0 仍须至少安排教师。</li>
+          <li>真实教师（排除 TBC）须全部「已确认」或「管理端代确认」；未下发 / 待确认 / 不同意 → 硬阻断。</li>
+          <li>有真实教师时 <strong>Course Coordinator 必填</strong>（见下）。</li>
+        </ul>
+        <h4 style="margin:12px 0 8px;font-size:14px">B. 二次确认仍可生效</h4>
+        <ul class="rules">
+          <li>欠学时（尚未录满）、超学时 → 弹窗警示后仍可提交，不硬阻断。</li>
+        </ul>
+        <h4 style="margin:12px 0 8px;font-size:14px">C. 生效成功副作用</h4>
+        <ul class="rules">
+          <li>锁定合分班、分组与教师安排。</li>
+          <li>必修可去开课名单维护；选修默认名单由选课应用生成，仍可维护。</li>
+        </ul>
+        <h4 style="margin:12px 0 8px;font-size:14px">D. Course Coordinator</h4>
+        <ul class="rules">
+          <li>有真实教师时：保存与生效均必填；仅一名真实教师 → 强制默认该人，无 ✎；多名 → 侧栏 ✎ 从本课真实教师中选（<strong>TBC 不可设</strong>）。</li>
+          <li>已生效后仍可改 Coordinator（不解锁分组/教师安排）。</li>
+          <li>更改<strong>不改变</strong>授课确认结果；确认管理/教师端信上的 Coordinator / Email <strong>刷新为新值</strong>。</li>
+          <li>已发送或已确认（含代确认/不同意）时改 Coordinator：二次确认；已发邮件正文不重写、不补发。</li>
+          <li><strong>仅改 Coordinator 不作废确认</strong>（与「改安排内容保存失效」区分）。</li>
+        </ul>
+        <div class="callout info">
+          <strong>例外并存：</strong>开课安排「确认生效」入口永远要求确认齐套。生效后经「授课教师替换」或改安排保存导致确认回退时，安排可<strong>保持已生效</strong>——那是替换菜单的特例，再生效仍须齐套。
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="rules-merge">
+      <h3>关键规则 · 合班副作用 + 授课教师替换</h3>
+      <div class="card">
+        <div class="grid-2">
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">合班（专业开课计划）</h4>
+            <ul class="rules">
+              <li>一致性：同课号 / 学分 / 总学时 / 起止周 / 选课类型；教学任务开关一致；<strong>任务已生效后不可合班</strong>。</li>
+              <li>人数：计划人数、预留名额、课程名额上限均<strong>累加</strong>。</li>
+              <li>副作用：清空相关班分组与教师；清教室偏好；任务安排重置<strong>草稿</strong>。</li>
+              <li>选修开课安排页<strong>无合班入口</strong>（勿按专业抄测）。</li>
+              <li>入口：专业开课计划操作列合/拆班（合分班独立页已下线）。</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">授课教师替换</h4>
+            <ul class="rules">
+              <li>面向<strong>已生效</strong>班；单行或一键（同课该原教师全部安排行）。</li>
+              <li>替换后：安排<strong>保持已生效</strong>，不得打回草稿，也不得要求再走安排「确认生效」。</li>
+              <li>受影响且仍有本课任务的教师须重新下发/确认；班级确认可变为部分确认/未确认。</li>
+              <li>「已生效 + 确认未齐套」并存<strong>仅本菜单允许</strong>；安排页再生效仍须齐套。</li>
+              <li>共同授课：只改当前课号被操作行；关联课不换人；绑定保留（即使已无共同教师）；要拆只能手动移出。</li>
+              <li>二次确认 tip 须分列：范围 / 不变 / 生效 / 确认；确认后邮件通知被替换教师。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout warn">
+          <strong>口播对照：</strong>合班 = 计划阶段合并班，清空安排重来；教师替换 = 已生效后换人，保生效、确认可回退。两者都不会自动拆共同授课。
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="rules-room">
+      <h3>关键规则 · 教室偏好</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-violet">特殊课程设置 → 安排学时行 → 排课计划</span></p>
+        <ul class="rules">
+          <li><strong>定位：</strong>仅作排课<strong>参考</strong>；最终教室以排课安排为准（开课侧不保证排到偏好教室）。</li>
+          <li><strong>控件：</strong>多选下拉（可搜教室号/软件名），禁止自由文本；空 = 无偏好。</li>
+          <li><strong>过滤：</strong>选项按该学时行「场地类型」过滤。</li>
+          <li><strong>课号默认：</strong>特殊课程设置可按理论/辅导/实践/其他维护默认偏好；新建/仍为系统默认的班带出；班上改过不回写课号配置。</li>
+          <li><strong>合班副作用：</strong>合班成功会清分组/教师/教室偏好，任务安排重置草稿（测合班后偏好是否被清）。</li>
+          <li><strong>下游：</strong>排课计划只读展示偏好；对外对接字段含场地偏好。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="rules-support">
+      <h3>关键规则 · Support 专业</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-violet">特殊课程设置默认 · 安排侧可覆盖</span> 现行对象是<strong>专业</strong>（Programmes），不是学院。</p>
+        <div class="grid-2">
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">课号默认（特殊课程设置）</h4>
+            <ul class="rules">
+              <li>维护「默认 Support 专业」多选。</li>
+              <li>Support 历史：勾选了默认专业 → Y，未勾选 → N；只读推导，不可手改。</li>
+              <li>未纳入特殊课程清单的课号：下游 Support 历史视为 N。</li>
+              <li>仅生成前已维护的设置会带出到新开课；已生成班不随本页再改。</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">开课安排 / 选修安排覆盖</h4>
+            <ul class="rules">
+              <li>班上可改 Support；覆盖<strong>不回写</strong>课号默认。</li>
+              <li>可选约束：不可选「本课所属部门 / 开课单位」下的专业（对齐「不可含本开课单位」）。</li>
+              <li>选修安排：保存后共享给所选专业；计划/抽屉里 Support 历史只读展示。</li>
+              <li>删除特殊课程清单项：已写入班上的 Support 值保留，以后新建不再带出。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout info">
+          <strong>讲解口播：</strong>Support = 这门课需要哪些外专业/外单位来「撑」师资或协作；历史 Y/N 告诉你这课号过去有没有走过 Support，不是手填开关。
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="rules-scope">
+      <h3>关键规则 · 可选范围（年级 · 专业）</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-orange">校选课程管理 · 选修开课安排</span> 专业开课一般不走此栈（按专业批次生成）。</p>
+        <h4 style="margin:0 0 8px;font-size:14px">1. 修读范围栈布局</h4>
+        <ul class="rules">
+          <li>栈外上方：可选学生类型。</li>
+          <li>栈内固定顺序：<strong>类型 → 年级 → 专业</strong>；选修安排相对校选<strong>多一行「可选批次」</strong>。</li>
+          <li>类型三态：<strong>可选 / 不可选 / 不限</strong>（都不选专业 = 全开放）。</li>
+        </ul>
+        <h4 style="margin:12px 0 8px;font-size:14px">2. 年级语义跟随「类型」</h4>
+        <table class="map">
+          <thead><tr><th>类型</th><th>勾选年级的含义</th><th>不勾任何年级</th></tr></thead>
+          <tbody>
+            <tr><td class="k">可选</td><td>勾选 = <strong>可修</strong>年级学期（存 eligibleYears）</td><td>不额外限制年级</td></tr>
+            <tr><td class="k">不可选</td><td>勾选 = <strong>不可修</strong>年级学期（存 excludedYears）</td><td>不限制年级</td></tr>
+            <tr><td class="k">不限</td><td>年级行<strong>禁用并清空</strong></td><td>不限制年级</td></tr>
+          </tbody>
+        </table>
+        <p class="sub" style="margin-top:8px">类型在可选 ↔ 不可选间切换时：保留勾选集合，只改变「可修/不可修」含义。</p>
+        <h4 style="margin:12px 0 8px;font-size:14px">3. 专业范围与「初始化」默认</h4>
+        <ul class="rules">
+          <li><strong>可选</strong>：白名单专业可修；<strong>不可选</strong>：黑名单不可修；专业与年级都不限 → 全开放。</li>
+          <li><strong>GE 初始化：</strong>Arts/Business/Science → 同大类专业设为<strong>不可选</strong>；Science 时 MAT 除外仍可选；「不限」类别 → 清空为全开放。</li>
+          <li><strong>ME 初始化：</strong>有开课专业 → 开课专业 + MAT 设为<strong>可选</strong>；无开课专业 → 所属部门下专业 + MAT 设为可选。</li>
+          <li>冲突课程 / 先修课程：修读范围抽屉可维护（校选侧）。</li>
+        </ul>
+        <h4 style="margin:12px 0 8px;font-size:14px">4. 选修安排「可选批次」</h4>
+        <ul class="rules">
+          <li>白名单；空存 = 范围内全选。</li>
+          <li>批次选择器：不在范围或受年级限制/无法折算的批次灰显；空草稿打开默认全选可选项。</li>
+          <li><strong>安排已生效后修读范围只读</strong>；选课端对批次的最终校验属下游（UC）。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="rules-assign">
+      <h3>关键规则 · 一键分配名单</h3>
+      <div class="card">
+        <p class="sub"><span class="tag tag-green">专业开课 · 开课名单工作台</span> 选修侧强制隐藏，勿按专业抄测。</p>
+        <div class="grid-2">
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">何时出现 / 谁不能用</h4>
+            <ul class="rules">
+              <li>专业名单：有小组（含唯一组）才显示；无小组学生在课程班上，不走一键分配。</li>
+              <li>选修 / 开放选课：预置名单与一键分配<strong>强制隐藏</strong>。</li>
+              <li>可入名单：Active + Normal；分配前课程名单人数不得超过各组人数上限合计。</li>
+            </ul>
+            <h4 style="margin:12px 0 8px;font-size:14px">规则弹窗（必测 tip）</h4>
+            <ul class="rules">
+              <li>维度（可多选）：国籍类型 · 专业 · 入学批次 · 性别。</li>
+              <li>每维模式：等比例 / 按顺序 / 唯一值。</li>
+              <li>优先级：1～已勾选数的连续正整数，<strong>越小越优先</strong>；改任一后其余自动重排。</li>
+              <li>未勾选维度不参与；至少选一个维度才能开始。</li>
+              <li>另有「按学号顺序」开关（默认 Y）。</li>
+              <li>成功后再打开回填上次规则。</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px;font-size:14px">执行副作用与边界</h4>
+            <ul class="rules">
+              <li><strong>跳过「手动添加」学生</strong>，不纳入自动分配。</li>
+              <li>遵守各组人数上限；满员无法入组须显式提示，不静默丢弃。</li>
+              <li>「重置分组」：撤销全部入组（不删平行分组），并清空本次规则勾选/模式/优先级。</li>
+              <li>与预置名单并存：预置也可按勾选学号分配，同样跳过手动添加。</li>
+              <li>名单列表「分配状态」：missing=无人或有人未进组；warn=已分配超名额上限；ok=全部分配且未超限（不是草稿/排课枚举）。</li>
+              <li>改分组人数上限：允许各组上限合计超过课程人数上限，保存后按差额抬高预留，计划人数不变。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout warn">
+          <strong>对照口播：</strong>专业 = 预置 + 一键分配帮老生班拆组；选修 = 选课应用推名单，工作台只做维护/手动添加，没有一键分配。
+        </div>
+      </div>
+    </section>
+
+    <!-- 课程班管理 -->
+    <section class="block" id="m-class">
+      <h3>课程班管理 · 课程班 / Teaching Load / 授课确认</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4>课程班</h4>
+          <ul class="rules">
+            <li>汇总专业开课（含特殊）+ 选修已开出 section（草稿/已生效/停课）。</li>
+            <li><strong>停课统一在本页</strong>：不可撤销；该组学时出 Load；同课其他组不受影响；全组停完才清整课排课。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Teaching Load</h4>
+          <ul class="rules">
+            <li>周学时×周次；多组且<strong>同时授课=是</strong>时学时只计一次。</li>
+            <li>超限阈值可空（空=不标红）；停课组学时不再计入。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>授课确认管理</h4>
+          <ul class="rules">
+            <li>管理端发送、代确认、跟踪状态；draft/disagreed 可发；pending 可代确认。</li>
+            <li>已确认安排被<strong>回头修改并保存且相对快照有变化</strong>→ 变未确认；仅改 Coordinator 不变确认。</li>
+            <li>未改动保存、撤回、名单退回 → <strong>不</strong>取消确认。</li>
+            <li>截止日解析：个人 &gt; 学院 &gt; 全校（学院/个人不得早于全校）。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>授课确认（教师端）</h4>
+          <ul class="rules">
+            <li>Pending 列表：确认 / 不同意（不同意必填意见）。</li>
+            <li>Notes 截止日取解析后的生效日（个人 &gt; 学院 &gt; 全校）。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="m-replace">
+      <h3>课程班管理 · 授课教师替换 / 排课计划</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4>授课教师替换</h4>
+          <ul class="rules">
+            <li>面向已生效班替换教师；细则见 <a href="#rules-merge">合班 · 教师替换</a>。</li>
+            <li>保生效、确认可回退；共同授课不解绑。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>排课计划</h4>
+          <ul class="rules">
+            <li>下游排课入池视图。</li>
+            <li><strong>门槛：安排已生效</strong>；不以授课确认齐套为入池条件（替换后未齐套仍入池）。</li>
+            <li>停课排除；共同授课另须关联班均已生效且学时/联动齐套。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 门槛 -->
+    <section class="block" id="gates">
+      <h3>关键门槛与易错点（必讲）</h3>
+      <div class="card">
+        <table class="map">
+          <thead><tr><th>主题</th><th>正确口径</th><th>常见误解</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="k">授课确认何时变未确认</td>
+              <td>已确认安排被修改并保存，且相对已确认快照有实质变化</td>
+              <td>以为撤回/名单退回/未改保存都会清确认</td>
+            </tr>
+            <tr>
+              <td class="k">安排生效</td>
+              <td>结构+师资学时完整+真实教师确认齐套+有教师时 Coordinator 必填；欠/超学时可警告仍生效</td>
+              <td>以为只填完教师就能生效；或欠学时被硬拦</td>
+            </tr>
+            <tr>
+              <td class="k">Course Coordinator</td>
+              <td>有真实教师必填；TBC 不可设；改 Coordinator 不废确认、已发邮件不重写</td>
+              <td>以为改 Coordinator 会作废确认或解锁安排</td>
+            </tr>
+            <tr>
+              <td class="k">合班</td>
+              <td>一致性校验后累加人数；清分组/教师/偏好；回草稿；已生效不可合；选修无合班</td>
+              <td>以为合班后安排原样保留</td>
+            </tr>
+            <tr>
+              <td class="k">教师替换</td>
+              <td>保生效、确认可回退；只换本课；共同授课不解绑</td>
+              <td>以为会打回草稿或自动拆共同授课</td>
+            </tr>
+            <tr>
+              <td class="k">排课计划入池</td>
+              <td>看安排已生效</td>
+              <td>以为必须确认齐套才能进排课</td>
+            </tr>
+            <tr>
+              <td class="k">撤回 / 名单退回</td>
+              <td>已生效→草稿；分组教师保留；确认不变；已排课先清排课</td>
+              <td>与「退回计划」（清空分组教师）搞混</td>
+            </tr>
+            <tr>
+              <td class="k">特殊开课</td>
+              <td>计划页按钮加行，走专业安排/名单；停课在课程班</td>
+              <td>找已下线的「特殊开课」侧栏</td>
+            </tr>
+            <tr>
+              <td class="k">特殊课程设置</td>
+              <td>默认带出给新建班；不回写已生成班；Support 历史由是否勾选默认专业推导</td>
+              <td>改设置期望历史班一起变；或手改 Support 历史 Y/N</td>
+            </tr>
+            <tr>
+              <td class="k">共同授课 vs 联动组</td>
+              <td>先打共同授课标记；联动须手动绑（周次+周学时）；加入组不自动联动；换教师不解绑</td>
+              <td>以为加共同授课就会同堂；或换教师自动拆组</td>
+            </tr>
+            <tr>
+              <td class="k">同时授课 vs 联动组</td>
+              <td>同时授课=同课多小组是否合班计学时；联动=跨班同堂排课绑定；排课计划分两列</td>
+              <td>揉成同一列/同一概念</td>
+            </tr>
+            <tr>
+              <td class="k">教室偏好</td>
+              <td>多选参考、按场地类型过滤、空=无偏好；排课以实排为准</td>
+              <td>当成强制排到该教室；或当自由文本填</td>
+            </tr>
+            <tr>
+              <td class="k">Support 对象</td>
+              <td>现行为 Support<strong>专业</strong>；不可选本课所属部门下专业</td>
+              <td>仍按旧「Support 学院」测；或可选本开课单位专业</td>
+            </tr>
+            <tr>
+              <td class="k">修读范围年级</td>
+              <td>语义跟随类型（可选=可修 / 不可选=不可修 / 不限=禁用）；切换类型保留勾选只改含义</td>
+              <td>年级永远当排除集；或不限时仍可勾年级</td>
+            </tr>
+            <tr>
+              <td class="k">一键分配</td>
+              <td>专业有组才有；跳过手动添加；优先级连续；选修强制无此按钮</td>
+              <td>选修也能一键分配；或把手动添加学生一并自动分</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout ok">
+        <strong>建议讲解顺序：</strong>主流程 5 步 → 专业泳道跑通 → 选修对比 → 关键规则（共同授课/联动 → <strong>同时授课</strong> → <strong>生效完整度·Coordinator</strong> → <strong>合班·替换</strong> → 教室偏好 → Support → 可选范围 → 一键分配）→ 课程班停课与排课入池 → 易错表收尾。
+      </div>
+    </section>
+
+    <section class="block" id="checklist">
+      <h3>讲解检查清单（可勾）</h3>
+      <div class="card">
+        <ul class="rules">
+          <li>□ 侧栏四大分组与当前原型一致（无特殊开课独立分组）</li>
+          <li>□ 画出专业 vs 选修两条泳道差异（计划形态不同）</li>
+          <li>□ 演示或口述：计划生效 → 安排两步 → 确认齐套 → 安排生效 → 名单</li>
+          <li>□ 说清三种「退/撤」：安排退回计划 / 学院撤回 / 名单退回</li>
+          <li>□ 生效硬阻断清单 + 欠/超学时仍可生效；Coordinator 必填且改之不废确认</li>
+          <li>□ 同时授课：是=学时计一次 / 否=拆行；与联动组对照表说清</li>
+          <li>□ 合班副作用（清安排回草稿）+ 教师替换保生效、确认可回退、不解绑共同授课</li>
+          <li>□ 说清确认失效主因 + 排课入池不看确认齐套</li>
+          <li>□ 共同授课一组模型 + 换教师不解绑 + 一键同步只补不拆</li>
+          <li>□ 联动组：周次/周学时一致、排课同堂、加入组不自动联动</li>
+          <li>□ 教室偏好=参考多选；空=无偏好；合班会清偏好</li>
+          <li>□ Support=专业；历史由勾选推导；不可选本部门专业；不回写课号默认</li>
+          <li>□ 修读范围：类型→年级→专业；年级语义随类型；GE/ME 初始化差异；选修多可选批次</li>
+          <li>□ 一键分配 tip 全条；跳过手动添加；选修无预置/无一键</li>
+          <li>□ 停课只在课程班且不可撤销；确认截止个人&gt;学院&gt;全校</li>
+          <li>□ 提醒已下线入口不要写进测试用例</li>
+        </ul>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      文件：<code>docs/course-offering-module-map.html</code> · 可浏览器直接打开或打印 PDF · 口径对齐侧栏、
+      <code>docs/course-offering-workflow.html</code> 与现行 PRD tip（开课安排 / 开课名单 / 校选 / 特殊课程 / 选修安排，2026-09～11）·
+      若原型 tip 变更请同步改「关键规则」专节。
+    </p>
+  </div>
+</div>
+</body>
+</html>

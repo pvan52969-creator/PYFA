@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="6b62e82">
+  <meta name="portal-build" content="7819683">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -149,6 +149,7 @@
       <div class="nav-group">操作流程图</div>
       <a href="#" class="nav-item" data-page="schedule-workflow">操作流程图</a>
       <div class="nav-group">排课基础设置</div>
+      <a href="#" class="nav-item" data-page="schedule-module-setting">排课模块设置</a>
       <a href="#" class="nav-item" data-page="schedule-period">课表节次维护</a>
       <a href="#" class="nav-item" data-page="schedule-time-setting">排课时间设置</a>
       <a href="#" class="nav-item" data-page="schedule-rule-setting">排课规则设置</a>
@@ -249,7 +250,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 6b62e82">1120排课</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 7819683">1123排课</div>
         </div>
       </div>
     </section>
@@ -2287,6 +2288,40 @@
       </div>
     </section>
 
+    <!-- ═══ 排课管理 · 排课模块设置 ═══ -->
+    <section class="page-list page schedule-page" id="page-schedule-module-setting">
+      <div class="page-header compact">
+        <div>
+          <h1>排课模块设置</h1>
+          <p class="subtitle">按学期勾选锁定侧栏排课模块；勾选禁用，取消勾选开放</p>
+        </div>
+        <div class="page-header-actions">
+          <span class="schedule-module-setting-demo-badge" title="勾选态仅作界面示意，不拦截各模块增删改">原型演示占位 · 不联动业务只读</span>
+        </div>
+      </div>
+      <div class="legend-bar" id="schedule-module-setting-summary"></div>
+      <div class="card schedule-card">
+        <div class="table-scroll">
+          <table class="data-table schedule-module-setting-table">
+            <thead>
+              <tr>
+                <th class="col-index" rowspan="2">序号</th>
+                <th class="col-center" rowspan="2">学期</th>
+                <th class="col-center schedule-module-lock-group" colspan="4">锁定资源</th>
+              </tr>
+              <tr>
+                <th class="col-center">排课表时间</th>
+                <th class="col-center">自动排课表时间</th>
+                <th class="col-center">排课表教室</th>
+                <th class="col-center">调课管理</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-module-setting-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ 排课管理 · 课表节次维护 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-period">
       <div class="page-header">
@@ -3069,8 +3104,30 @@
               <!-- 一行最多 4 条件；按钮组第 5 列；第 5 条件起默认收起，重置右侧半三角展开 -->
               <div class="schedule-room-filter-grid schedule-room-timetable-filter-grid">
                 <div class="srf-item"><label for="srtf-room">Venue</label><input class="input input-sm" id="srtf-room" type="text" placeholder="教室名称"></div>
-                <div class="srf-item"><label for="srtf-building">楼栋</label><select class="input input-sm" id="srtf-building"></select></div>
-                <div class="srf-item"><label for="srtf-room-type">Venue Type</label><select class="input input-sm" id="srtf-room-type"></select></div>
+                <div class="srf-item">
+                  <label>楼栋</label>
+                  <div class="clo-multiselect" id="srtf-building-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="srtf-building-btn" onclick="toggleScheduleRoomTimetableMsDropdown('building', event)">
+                      <span class="clo-multiselect-display placeholder" id="srtf-building-display">全部</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="srtf-building-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="srtf-building-options"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="srf-item">
+                  <label>Venue Type</label>
+                  <div class="clo-multiselect" id="srtf-room-type-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="srtf-room-type-btn" onclick="toggleScheduleRoomTimetableMsDropdown('roomType', event)">
+                      <span class="clo-multiselect-display placeholder" id="srtf-room-type-display">全部</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="srtf-room-type-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="srtf-room-type-options"></div>
+                    </div>
+                  </div>
+                </div>
                 <div class="srf-item">
                   <label>场地类型</label>
                   <div class="clo-multiselect" id="srtf-venue-type-multiselect">
@@ -3089,9 +3146,42 @@
                   <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
                 </div>
                 <div class="srf-item" data-query-more="1"><label for="srtf-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srtf-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srtf-seats-max" type="number" min="0" placeholder="最大"></div></div>
-                <div class="srf-item" data-query-more="1"><label for="srtf-equipment">教室设备</label><select class="input input-sm" id="srtf-equipment"></select></div>
-                <div class="srf-item" data-query-more="1"><label for="srtf-software">教室软件</label><select class="input input-sm" id="srtf-software"></select></div>
-                <div class="srf-item" data-query-more="1"><label for="srtf-remark">备注</label><select class="input input-sm" id="srtf-remark"></select></div>
+                <div class="srf-item" data-query-more="1">
+                  <label>教室设备</label>
+                  <div class="clo-multiselect" id="srtf-equipment-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="srtf-equipment-btn" onclick="toggleScheduleRoomTimetableMsDropdown('equipment', event)">
+                      <span class="clo-multiselect-display placeholder" id="srtf-equipment-display">全部</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="srtf-equipment-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="srtf-equipment-options"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="srf-item" data-query-more="1">
+                  <label>教室软件</label>
+                  <div class="clo-multiselect" id="srtf-software-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="srtf-software-btn" onclick="toggleScheduleRoomTimetableMsDropdown('software', event)">
+                      <span class="clo-multiselect-display placeholder" id="srtf-software-display">全部</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="srtf-software-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="srtf-software-options"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="srf-item" data-query-more="1">
+                  <label>备注</label>
+                  <div class="clo-multiselect" id="srtf-remark-multiselect">
+                    <button type="button" class="clo-multiselect-trigger input input-sm" id="srtf-remark-btn" onclick="toggleScheduleRoomTimetableMsDropdown('remark', event)">
+                      <span class="clo-multiselect-display placeholder" id="srtf-remark-display">全部</span>
+                      <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="clo-multiselect-dropdown" id="srtf-remark-dropdown" hidden>
+                      <div class="clo-multiselect-options" id="srtf-remark-options"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="schedule-detail-field schedule-room-hold-bar" id="schedule-room-hold-bar" hidden>
@@ -10619,8 +10709,30 @@
         <label class="schedule-detail-field-label">教室筛选</label>
         <div class="schedule-room-filter-grid schedule-room-timetable-filter-grid">
           <div class="srf-item"><label for="srpv-room">Venue</label><input class="input input-sm" id="srpv-room" type="text" placeholder="教室名称"></div>
-          <div class="srf-item"><label for="srpv-building">楼栋</label><select class="input input-sm" id="srpv-building"></select></div>
-          <div class="srf-item"><label for="srpv-room-type">Venue Type</label><select class="input input-sm" id="srpv-room-type"></select></div>
+          <div class="srf-item">
+            <label>楼栋</label>
+            <div class="clo-multiselect" id="srpv-building-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" id="srpv-building-btn" onclick="toggleScheduleTimeRoomPreviewMsDropdown('building', event)">
+                <span class="clo-multiselect-display placeholder" id="srpv-building-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" id="srpv-building-dropdown" hidden>
+                <div class="clo-multiselect-options" id="srpv-building-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="srf-item">
+            <label>Venue Type</label>
+            <div class="clo-multiselect" id="srpv-room-type-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" id="srpv-room-type-btn" onclick="toggleScheduleTimeRoomPreviewMsDropdown('roomType', event)">
+                <span class="clo-multiselect-display placeholder" id="srpv-room-type-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" id="srpv-room-type-dropdown" hidden>
+                <div class="clo-multiselect-options" id="srpv-room-type-options"></div>
+              </div>
+            </div>
+          </div>
           <div class="srf-item">
             <label>场地类型</label>
             <div class="clo-multiselect" id="srpv-venue-type-multiselect">
@@ -10633,13 +10745,47 @@
               </div>
             </div>
           </div>
-          <div class="srf-item"><label for="srpv-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srpv-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srpv-seats-max" type="number" min="0" placeholder="最大"></div></div>
-          <div class="srf-item"><label for="srpv-equipment">教室设备</label><select class="input input-sm" id="srpv-equipment"></select></div>
-          <div class="srf-item"><label for="srpv-software">教室软件</label><select class="input input-sm" id="srpv-software"></select></div>
-          <div class="srf-item"><label for="srpv-remark">备注</label><select class="input input-sm" id="srpv-remark"></select></div>
           <div class="srf-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleTimeRoomPreviewFilter()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleTimeRoomPreviewFilter()">重置</button>
+            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
+          </div>
+          <div class="srf-item" data-query-more="1"><label for="srpv-seats-min">有效座位数</label><div class="range-input-pair"><input class="input input-sm" id="srpv-seats-min" type="number" min="0" placeholder="最小"><span class="range-sep">-</span><input class="input input-sm" id="srpv-seats-max" type="number" min="0" placeholder="最大"></div></div>
+          <div class="srf-item" data-query-more="1">
+            <label>教室设备</label>
+            <div class="clo-multiselect" id="srpv-equipment-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" id="srpv-equipment-btn" onclick="toggleScheduleTimeRoomPreviewMsDropdown('equipment', event)">
+                <span class="clo-multiselect-display placeholder" id="srpv-equipment-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" id="srpv-equipment-dropdown" hidden>
+                <div class="clo-multiselect-options" id="srpv-equipment-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="srf-item" data-query-more="1">
+            <label>教室软件</label>
+            <div class="clo-multiselect" id="srpv-software-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" id="srpv-software-btn" onclick="toggleScheduleTimeRoomPreviewMsDropdown('software', event)">
+                <span class="clo-multiselect-display placeholder" id="srpv-software-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" id="srpv-software-dropdown" hidden>
+                <div class="clo-multiselect-options" id="srpv-software-options"></div>
+              </div>
+            </div>
+          </div>
+          <div class="srf-item" data-query-more="1">
+            <label>备注</label>
+            <div class="clo-multiselect" id="srpv-remark-multiselect">
+              <button type="button" class="clo-multiselect-trigger input input-sm" id="srpv-remark-btn" onclick="toggleScheduleTimeRoomPreviewMsDropdown('remark', event)">
+                <span class="clo-multiselect-display placeholder" id="srpv-remark-display">全部</span>
+                <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="clo-multiselect-dropdown" id="srpv-remark-dropdown" hidden>
+                <div class="clo-multiselect-options" id="srpv-remark-options"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

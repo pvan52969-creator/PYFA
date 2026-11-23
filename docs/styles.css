@@ -14365,6 +14365,78 @@ code {
   border-radius: 999px; padding: 2px 10px; font-size: 12px;
 }
 .schedule-period-save-hint.is-dirty { color: #b45309; font-weight: 500; }
+/* 排课模块设置：页头右侧演示占位徽章（不放副标题，避免淹没功能说明） */
+.schedule-module-setting-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* 排课模块设置：双行表头「锁定资源」；锁定格浅灰底 + 灰框白勾；表内网格线可见 */
+.schedule-module-setting-table th.col-center,
+.schedule-module-setting-table td.col-center { text-align: center; }
+.schedule-module-setting-table thead th.col-index,
+.schedule-module-setting-table thead th[rowspan] {
+  vertical-align: middle;
+}
+.schedule-module-setting-table th.schedule-module-lock-group {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+/*
+ * 表内线框：用比锁定灰底更深的边框色画满格，避免相邻锁定格之间 --border-light 与 #e8ecef 接近而「看不见线」。
+ * 选择器提高到压过 .schedule-page … border-right 仅半边的规则。
+ */
+.schedule-page .table-scroll .data-table.schedule-module-setting-table > thead > tr > th,
+.schedule-page .table-scroll .data-table.schedule-module-setting-table > tbody > tr > td {
+  border: 1px solid var(--border);
+}
+.schedule-module-setting-table td.schedule-module-lock-cell {
+  background: transparent;
+}
+/* 锁定格：浅灰底；线框仍走上方统一 border，不在此改掉 */
+.schedule-module-setting-table td.schedule-module-lock-cell.is-locked {
+  background: #e8ecef;
+}
+.schedule-module-setting-table td.col-center input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  cursor: pointer;
+  accent-color: var(--blue-600);
+}
+/*
+ * 勾选=锁定：自绘勾选框（灰底 + 白色勾），不用 accent-color——
+ * 系统灰 accent 常把勾画成黑/深色，对不上参考图的白勾。
+ */
+.schedule-module-setting-table td.schedule-module-lock-cell.is-locked input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid #9ca3af;
+  border-radius: 3px;
+  background-color: #b0b8c0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' d='M3.2 8.2l3.2 3.2 6.4-6.4'/%3E%3C/svg%3E");
+  background-size: 12px 12px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/* 原：accent-color 灰。原因：勾色非白，改为上方自绘白勾
+.schedule-module-setting-table td.schedule-module-lock-cell.is-locked input[type="checkbox"] {
+  accent-color: #9aa3ad;
+}
+*/
+
 .schedule-period-table .col-sort { width: 72px; }
 .schedule-period-sort-btns {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -15368,13 +15440,14 @@ code {
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols thead .sch-room-remark {
   background: #f1f5f9;
 }
-.schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active {
+/* 弃用：教室行 is-room-row-active 淡蓝。原因：排教室无选中教室概念 */
+/* .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active {
   background: #eff6ff;
 }
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active .sch-room-meta {
   --sch-room-meta-bg: #eff6ff;
   background: var(--sch-room-meta-bg);
-}
+} */
 .schedule-detail-main .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-locked {
   background: #f3f4f6;
   color: var(--text-2);
@@ -15387,15 +15460,23 @@ code {
  * 场地信息区（.sch-room-meta）默认黄底 #fefce8（见上方 --sch-room-meta-bg），
  * 排课节次区保持白底，用以区分左右两块区域。
  * 弃用：曾把普通行 meta 也刷成白底。原因：产品要求恢复黄底区分场地信息 / 排课区域。
+ * 弃用：选择器曾排除 .is-room-row-active。原因：行淡蓝高亮已去掉，普通行一律黄底 meta。
  */
-#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tbody tr:not(.is-room-row-locked):not(.is-room-seat-short):not(.is-room-row-active) {
+/* #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tbody tr:not(.is-room-row-locked):not(.is-room-seat-short):not(.is-room-row-active) {
   background: #fff;
 }
 #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tbody tr:not(.is-room-row-locked):not(.is-room-seat-short):not(.is-room-row-active) .sch-room-meta {
   --sch-room-meta-bg: #fefce8;
   background: var(--sch-room-meta-bg);
+} */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tbody tr:not(.is-room-row-locked):not(.is-room-seat-short) {
+  background: #fff;
 }
-/* 排教室课表：座位不足/类型不符整行浅红（对齐抽屉；压过选中蓝） */
+#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tbody tr:not(.is-room-row-locked):not(.is-room-seat-short) .sch-room-meta {
+  --sch-room-meta-bg: #fefce8;
+  background: var(--sch-room-meta-bg);
+}
+/* 排教室课表：座位不足/类型不符整行浅红（对齐抽屉） */
 #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-seat-short {
   background: #fef2f2;
 }
@@ -15403,13 +15484,14 @@ code {
   --sch-room-meta-bg: #fef2f2;
   background: var(--sch-room-meta-bg);
 }
-#page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active.is-room-seat-short {
+/* 弃用：选中蓝 + 座位不足红 叠加覆盖。原因：行淡蓝高亮已去掉 */
+/* #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active.is-room-seat-short {
   background: #fef2f2;
 }
 #page-schedule-room-detail .schedule-detail-grid-table.is-room-period-cols tr.is-room-row-active.is-room-seat-short .sch-room-meta {
   --sch-room-meta-bg: #fef2f2;
   background: var(--sch-room-meta-bg);
-}
+} */
 /* 教室列：名 +「已排」/「偏好」标记横排（对齐抽屉） */
 #page-schedule-room-detail .sch-room-room-cell-inner {
   display: inline-flex;
@@ -21306,11 +21388,27 @@ code {
   background: #f6f8fb;
   border-top: none;
 }
-.schedule-prog-time-panel {
+/*
+ * 外层 #page-schedule-time-setting .schedule-time-table 为 width:max-content + td{max-width:none}，
+ * 子表控件若 width:100% 会循环撑到十万级宽度，新增专业时间行错位。
+ * 以下选择器提高优先级，钉死子表面板与控件宽度。
+ */
+#page-schedule-time-setting .schedule-time-table .schedule-prog-time-expand-row > td {
+  white-space: normal;
+  max-width: none;
+}
+#page-schedule-time-setting .schedule-prog-time-panel {
   border: 1px solid var(--border-light, #e8eef5);
   border-radius: 8px;
   background: #fff;
   padding: 12px 14px 14px;
+  box-sizing: border-box;
+  width: min(1100px, calc(100vw - 280px));
+  max-width: min(1100px, calc(100vw - 280px));
+}
+#page-schedule-time-setting .schedule-prog-time-panel > .table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
 }
 .schedule-prog-time-panel-head {
   display: flex;
@@ -21322,9 +21420,10 @@ code {
   flex: 1;
   margin: 0;
 }
-.schedule-prog-time-table {
+#page-schedule-time-setting .schedule-prog-time-table {
   table-layout: fixed;
   width: 100%;
+  max-width: 100%;
 }
 .schedule-prog-time-table .col-index { width: 48px; }
 .schedule-prog-time-table .actions {
@@ -21334,11 +21433,20 @@ code {
 .schedule-prog-time-table .actions a + a {
   margin-left: 8px;
 }
-.schedule-prog-time-table select.input,
-.schedule-prog-time-table .schedule-prog-time-dt {
+#page-schedule-time-setting .schedule-prog-time-table select.input,
+#page-schedule-time-setting .schedule-prog-time-table .schedule-prog-time-dt,
+#page-schedule-time-setting .schedule-prog-time-table .ss-wrap,
+#page-schedule-time-setting .schedule-prog-time-table .ss-input {
   width: 100%;
+  max-width: 160px;
   min-width: 0;
+  box-sizing: border-box;
   font-size: 12px;
+}
+#page-schedule-time-setting .schedule-prog-time-table td {
+  overflow: hidden;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 .schedule-prog-time-empty {
   text-align: center;

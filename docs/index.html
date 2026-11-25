@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="7819683">
+  <meta name="portal-build" content="a6a1e22">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -150,6 +150,8 @@
       <a href="#" class="nav-item" data-page="schedule-workflow">操作流程图</a>
       <div class="nav-group">排课基础设置</div>
       <a href="#" class="nav-item" data-page="schedule-module-setting">排课模块设置</a>
+      <!-- 弃用：侧栏独立「场地区间控制」。原因：改为排课时间设置·学期新增/修改弹窗内「区间设置」抽屉 -->
+      <!-- <a href="#" class="nav-item" data-page="schedule-venue-band">场地区间控制</a> -->
       <a href="#" class="nav-item" data-page="schedule-period">课表节次维护</a>
       <a href="#" class="nav-item" data-page="schedule-time-setting">排课时间设置</a>
       <a href="#" class="nav-item" data-page="schedule-rule-setting">排课规则设置</a>
@@ -250,7 +252,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 7819683">1123排课</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git a6a1e22">1125排课</div>
         </div>
       </div>
     </section>
@@ -2292,14 +2294,31 @@
     <section class="page-list page schedule-page" id="page-schedule-module-setting">
       <div class="page-header compact">
         <div>
-          <h1>排课模块设置</h1>
-          <p class="subtitle">按学期勾选锁定侧栏排课模块；勾选禁用，取消勾选开放</p>
+          <div class="schedule-module-setting-title-row">
+            <h1>排课模块设置</h1>
+            <!-- 规则说明收入感叹号悬停气泡；弃用副标题长文案与下方学期统计 legend -->
+            <div class="slt-info-tip schedule-module-setting-tip">
+              <button type="button" class="slt-info-btn" aria-label="规则说明" title="规则说明">!</button>
+              <div class="slt-info-popover schedule-module-setting-tip-popover" role="note">
+                <p class="slt-info-item"><strong>勾选 = 禁用</strong>，取消勾选 = 开放。下表勾选会按规则联动；侧栏业务读写仍不拦截。</p>
+                <p class="slt-info-item"><strong>【1】时间权限（时间设置）</strong></p>
+                <p class="slt-info-formula">勾选禁用：忽略时间限制，以排课权限为准。<br>不勾选：优先按时段/教室约束；排课权限默认开放，调课权限禁用。</p>
+                <p class="slt-info-item"><strong>【2】排课权限</strong></p>
+                <p class="slt-info-formula">禁用勾选时：板块1时间权限也被禁用。<br>不勾选时：不能开放板块3调课权限。</p>
+                <p class="slt-info-item"><strong>【3】调课权限</strong></p>
+                <p class="slt-info-formula">禁用勾选时：可以设置板块1&amp;2。<br>不勾选时：开放老师申请调课的板块，板块1&amp;2自动禁用。</p>
+              </div>
+            </div>
+          </div>
+          <!-- 弃用：副标题「按学期勾选…」。原因：规则说明改由标题旁感叹号气泡展示 -->
+          <!-- <p class="subtitle">按学期勾选锁定侧栏排课模块；勾选禁用，取消勾选开放</p> -->
         </div>
         <div class="page-header-actions">
           <span class="schedule-module-setting-demo-badge" title="勾选态仅作界面示意，不拦截各模块增删改">原型演示占位 · 不联动业务只读</span>
         </div>
       </div>
-      <div class="legend-bar" id="schedule-module-setting-summary"></div>
+      <!-- 弃用：学期统计 legend-bar。原因：产品要求去掉「N 个学期仍有模块开放」摘要 -->
+      <!-- <div class="legend-bar" id="schedule-module-setting-summary"></div> -->
       <div class="card schedule-card">
         <div class="table-scroll">
           <table class="data-table schedule-module-setting-table">
@@ -2307,11 +2326,18 @@
               <tr>
                 <th class="col-index" rowspan="2">序号</th>
                 <th class="col-center" rowspan="2">学期</th>
-                <th class="col-center schedule-module-lock-group" colspan="4">锁定资源</th>
+                <!-- 弃用：单组「锁定资源」colspan=4。原因：产品改为时间权限 / 排课权限 / 调课权限三组 -->
+                <!-- <th class="col-center schedule-module-lock-group" colspan="4">锁定资源</th> -->
+                <th class="col-center schedule-module-lock-group schedule-module-group-time" colspan="1">时间权限</th>
+                <!-- 排课权限本次仅两列；弃用 colspan=3（含自动排课表时间）。原因：本次不涉及自动排课表时间 -->
+                <th class="col-center schedule-module-lock-group schedule-module-group-schedule" colspan="2">排课权限</th>
+                <th class="col-center schedule-module-lock-group schedule-module-group-adjustment" colspan="1">调课权限</th>
               </tr>
               <tr>
+                <th class="col-center">时间设置</th>
                 <th class="col-center">排课表时间</th>
-                <th class="col-center">自动排课表时间</th>
+                <!-- 弃用：自动排课表时间列。原因：本次不涉及，表头先去掉 -->
+                <!-- <th class="col-center">自动排课表时间</th> -->
                 <th class="col-center">排课表教室</th>
                 <th class="col-center">调课管理</th>
               </tr>
@@ -2323,6 +2349,23 @@
     </section>
 
     <!-- ═══ 排课管理 · 课表节次维护 ═══ -->
+    <!-- 弃用：独立页「场地区间控制」。原因：改为学期排课时间弹窗内「区间设置」抽屉（见 modal-schedule-venue-band）
+    <section class="page-list page schedule-page" id="page-schedule-venue-band">
+      <div class="page-header">
+        <div>
+          <h1>场地区间控制</h1>
+          <p class="subtitle">按学期维护排教室容量第 1–6 档人数上下限；保存后用于排教室匹配</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-ghost" type="button" onclick="goPage('schedule-workflow')">返回</button>
+        </div>
+      </div>
+      <div class="card schedule-query-card">...</div>
+      <div class="legend-bar" id="schedule-venue-band-summary-legacy"></div>
+      <div class="card schedule-card">...</div>
+    </section>
+    -->
+
     <section class="page-list page schedule-page" id="page-schedule-period">
       <div class="page-header">
         <div>
@@ -2361,7 +2404,8 @@
                 <th class="col-center">开始时间</th>
                 <th class="col-center">结束时间</th>
                 <th class="col-center">排序</th>
-                <th>节次备注</th>
+                <!-- 原「节次备注」改为「节次类型」（早班/晚班等） -->
+                <th class="col-center">节次类型</th>
                 <th class="col-center">操作</th>
               </tr>
             </thead>
@@ -2373,12 +2417,15 @@
 
     <!-- ═══ 排课管理 · 排课时间设置 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-time-setting">
+      <!-- 已去掉页头：标题与说明由侧栏入口表达即可 -->
+      <!--
       <div class="page-header">
         <div>
           <h1>排课时间设置</h1>
           <p class="subtitle">维护每学期排课窗口、师生课表查看时间，以及不排课、选修课占位、教师与教室排课时段</p>
         </div>
       </div>
+      -->
       <div class="tab-bar" id="schedule-time-setting-tabs">
         <button type="button" class="tab active" data-schedule-time-tab="term" onclick="activateScheduleTimeSettingTab('term')">学期排课时间</button>
         <button type="button" class="tab" data-schedule-time-tab="blackout" onclick="activateScheduleTimeSettingTab('blackout')">课表不排课时间</button>
@@ -2393,6 +2440,7 @@
               <div class="schedule-query-field">
                 <label for="schedule-time-setting-term-term">学年学期</label>
                 <div class="clearable-select-wrap">
+                  <!-- 空值=全选（展示全部学期）；默认不筛选 -->
                   <select class="input input-sm" id="schedule-time-setting-term-term" data-schedule-time-tab="term" onchange="onScheduleTimeSettingTermChange('term')"></select>
                   <button type="button" class="clearable-select-clear" id="schedule-time-setting-term-term-clear" title="清除，查看全部学期" hidden onclick="clearScheduleTimeSettingTerm('term')">×</button>
                 </div>
@@ -2407,16 +2455,23 @@
         <div class="card schedule-card">
           <div class="panel-toolbar">
             <button class="btn btn-primary btn-sm" type="button" onclick="openScheduleTimeTermModal()">新增</button>
-            <span class="hint">排课起止控制排时间侧「排课」；排教室起止控制排教室侧「排教室」；点展开图标查看专业时间，点「新增专业时间」可覆盖学期默认</span>
+            <!-- 已去掉工具栏说明文案，避免与列表操作重复提示 -->
+            <!-- <span class="hint">排课起止控制排时间侧「排课」；排教室起止控制排教室侧「排教室」；点展开图标查看专业时间，点「新增专业时间」可覆盖学期默认</span> -->
           </div>
           <div class="table-scroll">
             <table class="data-table schedule-time-table">
               <thead><tr>
                 <th class="col-expand"></th>
-                <th class="col-index">序号</th><th>学年学期</th>
-                <th>排课开始</th><th>排课结束</th>
-                <th>排教室开始</th><th>排教室结束</th>
-                <th class="col-center">是否默认查询学期</th><th>教师查看开始</th><th>学生查看开始</th><th class="col-center">操作</th>
+                <!-- 已去掉序号列；「是否默认查询学期」紧跟学年学期右侧 -->
+                <!-- <th class="col-index">序号</th> -->
+                <th>学年学期</th>
+                <th class="col-center">是否默认查询学期</th>
+                <!-- 起止与增删改弹窗一致，合并为单一区间列 -->
+                <!-- <th>排课开始</th><th>排课结束</th> -->
+                <!-- <th>排教室开始</th><th>排教室结束</th> -->
+                <th>排课起止时间</th>
+                <th>排教室起止时间</th>
+                <th>教师使用开放时间</th><th>学生查看开放时间</th><th class="col-center">操作</th>
               </tr></thead>
               <tbody id="schedule-time-term-body"></tbody>
             </table>
@@ -2799,6 +2854,23 @@
           </div>
           <div class="schedule-room-course-search" id="schedule-room-course-search">
             <div class="schedule-detail-course-search-rows">
+              <!-- 排教室专用筛选行：节次类型（大节次/小节次）；对齐 Course Code 行；时间侧 data-sch-phase-tab 隐藏 -->
+              <!-- 弃用独立开关条 / 双 Tab。原因：产品要求做成筛选栏字段放在 Course Code 上方 -->
+              <div class="schedule-detail-course-search-row schedule-room-period-grain-switcher" id="schedule-room-period-grain-switcher" data-sch-phase-tab="room" role="radiogroup" aria-label="节次类型">
+                <span class="schedule-room-period-grain-label">节次类型</span>
+                <div class="schedule-room-period-grain-options">
+                  <label class="schedule-room-period-grain-option">
+                    <input type="radio" name="schedule-room-period-grain" id="schedule-room-period-grain-large" value="large" checked
+                      onchange="setScheduleRoomPeriodGrainMode('large')">
+                    <span>大节次</span>
+                  </label>
+                  <label class="schedule-room-period-grain-option">
+                    <input type="radio" name="schedule-room-period-grain" id="schedule-room-period-grain-small" value="small"
+                      onchange="setScheduleRoomPeriodGrainMode('small')">
+                    <span>小节次</span>
+                  </label>
+                </div>
+              </div>
               <div class="schedule-detail-course-search-row">
                 <label for="schedule-course-search-course-code">Course Code</label>
                 <input class="input input-sm" id="schedule-course-search-course-code" type="text" placeholder="请输入 Course Code"
@@ -2974,10 +3046,13 @@
                     </button>
                     <div class="clo-multiselect-dropdown" id="schedule-detail-venue-types-dropdown" hidden>
                       <div class="clo-multiselect-options" id="schedule-detail-venue-types-options"></div>
+                      <!-- 弃用：取消/确定脚。原因：排时间勾选只回显，点顶栏「保存」才写入草稿/节次；排教室同无脚、勾选即回显 -->
+                      <!--
                       <div class="clo-multiselect-foot">
                         <button type="button" class="btn btn-ghost btn-sm" onclick="cancelScheduleVenueTypeDropdown(event)">取消</button>
                         <button type="button" class="btn btn-primary btn-sm" onclick="confirmScheduleVenueTypeDropdown(event)">确定</button>
                       </div>
+                      -->
                     </div>
                   </div>
                   <!-- 弃用：锁定教室放在场地类型后（标签+「选择锁定教室」选择器）。原因：改为「锁定教室」按钮，跟在教室偏好右侧 -->
@@ -3229,11 +3304,12 @@
             </div>
             <div id="schedule-time-one-click-result-hint" class="schedule-detail-op-hint schedule-time-one-click-result-hint" hidden role="status" aria-live="polite"></div>
             <div class="schedule-room-grid-footer" id="schedule-room-grid-footer" hidden>
-              <!-- 默认关：过滤座位不足 + 类型不匹配；打开后展示全部（对齐选教室抽屉文案） -->
+              <!-- 默认开：展示全部场地；关闭后才过滤座位/类型不匹配（教室侧 footer 使用） -->
               <label class="toggle-switch schedule-room-tt-show-all" id="schedule-room-tt-show-all-wrap" hidden>
-                <input type="checkbox" id="schedule-room-tt-show-all" onchange="onScheduleRoomTimetableShowAllChange(this)">
+                <input type="checkbox" id="schedule-room-tt-show-all" checked onchange="onScheduleRoomTimetableShowAllChange(this)">
                 <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
-                <span class="toggle-label">显示全部场地（默认过滤座位、类型不匹配的教室）</span>
+                <!-- 弃用：「默认过滤…」。原因：开关改为默认开启 -->
+                <span class="toggle-label">显示全部场地（关闭则过滤座位、类型不匹配的教室）</span>
               </label>
               <button type="button" class="btn btn-ghost btn-sm sch-room-expand-btn" id="btn-schedule-room-grid-expand" onclick="toggleScheduleRoomTimetableExpand()">展开更多教室</button>
             </div>
@@ -4744,7 +4820,11 @@
           <p class="adj-teacher-intro-note">* Public Holiday does not require Management approval; other reasons require approval from School/Department Management or the Academic Affairs Office.</p>
         </div>
         <div class="adj-approval-tabs" id="adjustment-teacher-replacement-subtabs">
-          <button type="button" class="adj-approval-tab is-active" data-replacement-subtab="pending" onclick="setAdjustmentTeacherReplacementSubTab('pending')">Pending Replacement</button>
+          <button type="button" class="adj-approval-tab is-active" data-replacement-subtab="pending" onclick="setAdjustmentTeacherReplacementSubTab('pending')">
+            Pending Replacement
+            <!-- 待补课堂数量角标：挂在页签文案右侧（按大节次） -->
+            <span class="adj-makeup-pending-badge" id="adj-makeup-pending-badge" hidden aria-live="polite">0</span>
+          </button>
           <button type="button" class="adj-approval-tab" data-replacement-subtab="new" onclick="setAdjustmentTeacherReplacementSubTab('new')">New Replacement</button>
           <button type="button" class="adj-approval-tab" data-replacement-subtab="history" onclick="setAdjustmentTeacherReplacementSubTab('history')">All History</button>
         </div>
@@ -4800,6 +4880,8 @@
             <div class="schedule-tt-export-actions schedule-tt-export-bar adjustment-apply-actions adj-makeup-cancel-toolbar">
               <div class="adj-apply-title-item">
                 <button class="btn btn-primary btn-sm" type="button" onclick="applyAdjustmentTeacherMakeupFromCancels()" aria-describedby="adj-apply-makeup-tip">Apply</button>
+                <!-- 弃用：Apply 旁角标。原因：产品改挂到 Pending Replacement 页签右侧 -->
+                <!-- <span class="adj-makeup-pending-badge" id="adj-makeup-pending-badge" hidden aria-live="polite">0</span> -->
                 <div class="slt-info-popover" id="adj-apply-makeup-tip">
                   <p>Reschedule the approved cancelled class to another session.</p>
                 </div>
@@ -7172,6 +7254,17 @@
     <button type="button" class="cuot-picker-action is-confirm" onmousedown="confirmCuotDatePicker(event)">确定</button>
   </div>
   <div class="cuot-date-picker-body">
+    <!-- 起止范围：只读回显；日历点第一次=开始、第二次=结束 -->
+    <div class="cuot-date-picker-range-tabs" id="cuot-date-picker-range-tabs" hidden>
+      <div class="cuot-range-tab is-summary" id="cuot-range-tab-start">
+        <span class="cuot-range-tab-label">开始日期</span>
+        <span class="cuot-range-tab-value" id="cuot-range-start-display">点击选择</span>
+      </div>
+      <div class="cuot-range-tab is-summary" id="cuot-range-tab-end">
+        <span class="cuot-range-tab-label">结束日期</span>
+        <span class="cuot-range-tab-value" id="cuot-range-end-display">点击选择</span>
+      </div>
+    </div>
     <div id="cuot-date-picker-date-panel">
       <div class="cuot-date-picker-month-bar">
         <div class="cuot-date-picker-month-nav">
@@ -7196,18 +7289,35 @@
       </div>
       <!-- <div class="cuot-date-picker-ym-panel" id="cuot-date-picker-ym-panel" hidden onclick="event.stopPropagation()"></div> --> <!-- 原点击年/月展开选择面板，改只读展示后不再使用 -->
       <div class="cuot-date-picker-ym-panel" id="cuot-date-picker-ym-panel" hidden></div>
-      <div class="cuot-date-picker-weekdays" aria-hidden="true">
-        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      <!-- 表头由 renderCuotDatePickerWeekdayHeads 按是否显示教学周重写；默认 Mon 起始 + 周次列 -->
+      <div class="cuot-date-picker-weekdays" id="cuot-date-picker-weekdays" aria-hidden="true">
+        <span class="cuot-date-picker-wk-head">教学周</span>
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
       </div>
       <div class="cuot-date-picker-grid" id="cuot-date-picker-grid"></div>
     </div>
     <div id="cuot-date-picker-time-panel" hidden>
-      <button type="button" class="cuot-date-picker-time-row" onclick="toggleCuotTimeWheel(event)">
+      <!-- 单点 datetime：一个时间 -->
+      <button type="button" class="cuot-date-picker-time-row" id="cuot-date-picker-time-row-single" onclick="toggleCuotTimeWheel(event)">
         <span class="cuot-date-picker-time-row-label">时间</span>
         <span class="cuot-date-picker-time-row-value" id="cuot-date-picker-time-display">08:00</span>
         <span class="cuot-date-picker-time-chevron" id="cuot-date-picker-time-chevron" aria-hidden="true">›</span>
       </button>
+      <!-- 范围模式：开始时间 / 结束时间，默认均为 08:00 -->
+      <div class="cuot-date-picker-range-time-rows" id="cuot-date-picker-range-time-rows" hidden>
+        <button type="button" class="cuot-date-picker-time-row" id="cuot-range-time-row-start" onclick="toggleCuotRangeTimeWheel('start', event)">
+          <span class="cuot-date-picker-time-row-label">开始时间</span>
+          <span class="cuot-date-picker-time-row-value" id="cuot-range-start-time-display">08:00 AM</span>
+          <span class="cuot-date-picker-time-chevron" id="cuot-range-start-time-chevron" aria-hidden="true">›</span>
+        </button>
+        <button type="button" class="cuot-date-picker-time-row" id="cuot-range-time-row-end" onclick="toggleCuotRangeTimeWheel('end', event)">
+          <span class="cuot-date-picker-time-row-label">结束时间</span>
+          <span class="cuot-date-picker-time-row-value" id="cuot-range-end-time-display">08:00 AM</span>
+          <span class="cuot-date-picker-time-chevron" id="cuot-range-end-time-chevron" aria-hidden="true">›</span>
+        </button>
+      </div>
       <div id="cuot-date-picker-time-wheel" class="cuot-date-picker-time-wheel">
+        <!-- 12 时制：时 : 分 + AM/PM；内部仍存 24h HH:mm -->
         <div class="cuot-time-wheel-wrap">
           <div class="cuot-time-wheel-viewport">
             <div class="cuot-time-wheel-list" id="cuot-hour-wheel"></div>
@@ -7215,6 +7325,9 @@
           <span class="cuot-time-wheel-colon">:</span>
           <div class="cuot-time-wheel-viewport">
             <div class="cuot-time-wheel-list" id="cuot-minute-wheel"></div>
+          </div>
+          <div class="cuot-time-wheel-viewport cuot-time-wheel-ampm-viewport">
+            <div class="cuot-time-wheel-list" id="cuot-ampm-wheel"></div>
           </div>
         </div>
       </div>
@@ -9170,6 +9283,28 @@
   </div>
 </div>
 
+<!-- 弃用：独立「场地区间」抽屉。原因：区间表已内嵌到学期排课时间抽屉下半部，不再二次跳转
+<div class="modal-overlay modal-drawer modal-nested" id="modal-schedule-venue-band-legacy">...</div>
+-->
+
+<!-- 复制场地区间：叠于学期抽屉之上 -->
+<div class="modal-overlay modal-nested" id="modal-schedule-venue-band-copy">
+  <div class="modal modal-md">
+    <div class="modal-head"><h3>复制场地区间</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-venue-band-copy')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-item"><label class="req">复制源学期</label><select class="input" id="schedule-venue-band-copy-source"></select></div>
+        <div class="form-item"><label>目标学期</label><input type="text" class="input readonly" id="schedule-venue-band-copy-target" readonly></div>
+      </div>
+      <p class="form-hint">将把源学期的容量第 1–6 档人数上下限复制到当前设置学期，并覆盖目标学期已有配置。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-venue-band-copy')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveScheduleVenueBandCopyModal()">确认复制</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-schedule-slot-copy">
   <div class="modal modal-md">
     <div class="modal-head"><h3 id="modal-schedule-slot-copy-title">复制时间安排</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-slot-copy')">×</button></div>
@@ -9187,32 +9322,115 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-schedule-time-term">
-  <div class="modal modal-md">
-    <div class="modal-head"><h3 id="modal-schedule-time-term-title">学期排课时间</h3><button class="modal-close" type="button" onclick="closeModal('modal-schedule-time-term')">×</button></div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="form-item full"><label class="req">学年学期</label><select class="input" id="schedule-modal-term-term"></select></div>
-        <div class="form-item"><label class="req">排课开始</label><input type="datetime-local" class="input" id="schedule-modal-term-start"></div>
-        <div class="form-item"><label class="req">排课结束</label><input type="datetime-local" class="input" id="schedule-modal-term-end"></div>
-        <div class="form-item"><label class="req">排教室开始</label><input type="datetime-local" class="input" id="schedule-modal-term-room-start"></div>
-        <div class="form-item"><label class="req">排教室结束</label><input type="datetime-local" class="input" id="schedule-modal-term-room-end"></div>
-        <div class="form-item full">
-          <label>是否默认查询学期</label>
-          <label class="table-bool-switch schedule-modal-bool-switch">
-            <input type="checkbox" id="schedule-modal-term-is-current" onchange="syncScheduleModalCurrentTermSwitch(this.checked)">
-            <span class="table-bool-track is-off" id="schedule-modal-term-is-current-track">
-              <span class="table-bool-thumb"></span>
-              <span class="table-bool-text" id="schedule-modal-term-is-current-text">否</span>
-            </span>
-          </label>
+<!-- 学期排课时间 + 场地区间：右侧抽屉，上半时间表单、下半区间表 -->
+<div class="modal-overlay modal-drawer" id="modal-schedule-time-term">
+  <div class="modal modal-schedule-time-term-drawer">
+    <div class="modal-head"><h3 id="modal-schedule-time-term-title">学期排课时间</h3><button class="modal-close" type="button" onclick="closeScheduleTimeTermModal()">×</button></div>
+    <div class="modal-body schedule-time-term-drawer-body">
+      <section class="schedule-time-term-section">
+        <h4 class="schedule-time-term-section-title">排课时间</h4>
+        <div class="form-grid">
+          <!-- 学年学期半宽，右侧同排「是否默认查询学期」；切换学期时刷新下半场地区间 -->
+          <div class="form-item"><label class="req">学年学期</label><select class="input" id="schedule-modal-term-term" onchange="onScheduleModalTermTermChange()"></select></div>
+          <div class="form-item">
+            <label>是否默认查询学期</label>
+            <label class="table-bool-switch schedule-modal-bool-switch">
+              <input type="checkbox" id="schedule-modal-term-is-current" onchange="syncScheduleModalCurrentTermSwitch(this.checked)">
+              <span class="table-bool-track is-off" id="schedule-modal-term-is-current-track">
+                <span class="table-bool-thumb"></span>
+                <span class="table-bool-text" id="schedule-modal-term-is-current-text">否</span>
+              </span>
+            </label>
+          </div>
+          <!-- 排课 / 排教室起止：半宽并排；框内开始靠左、结束靠右 -->
+          <!-- 原单行 input 文案左对齐导致右侧留白，改为左右分栏按钮 -->
+          <div class="form-item">
+            <label class="req">排课起止时间</label>
+            <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
+              id="schedule-modal-term-range" aria-label="排课起止时间" data-picker-title="排课起止"
+              data-range-start="schedule-modal-term-start" data-range-end="schedule-modal-term-end"
+              onclick="openScheduleTermRangePicker(this, event)">
+              <span class="schedule-term-range-start">开始</span>
+              <span class="schedule-term-range-sep" aria-hidden="true">~</span>
+              <span class="schedule-term-range-end">结束</span>
+            </button>
+            <input type="hidden" id="schedule-modal-term-start" value="" data-iso-value="" data-hm-value="">
+            <input type="hidden" id="schedule-modal-term-end" value="" data-iso-value="" data-hm-value="">
+          </div>
+          <div class="form-item">
+            <label class="req">排教室起止时间</label>
+            <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
+              id="schedule-modal-term-room-range" aria-label="排教室起止时间" data-picker-title="排教室起止"
+              data-range-start="schedule-modal-term-room-start" data-range-end="schedule-modal-term-room-end"
+              onclick="openScheduleTermRangePicker(this, event)">
+              <span class="schedule-term-range-start">开始</span>
+              <span class="schedule-term-range-sep" aria-hidden="true">~</span>
+              <span class="schedule-term-range-end">结束</span>
+            </button>
+            <input type="hidden" id="schedule-modal-term-room-start" value="" data-iso-value="" data-hm-value="">
+            <input type="hidden" id="schedule-modal-term-room-end" value="" data-iso-value="" data-hm-value="">
+          </div>
+          <!-- 教师 / 学生开放：半宽并排；原 datetime-local 单字段已弃用 -->
+          <div class="form-item">
+            <label>教师使用开放时间</label>
+            <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
+              id="schedule-modal-term-teacher-range" aria-label="教师使用开放时间" data-picker-title="教师使用开放"
+              data-range-start="schedule-modal-term-teacher-start" data-range-end="schedule-modal-term-teacher-end"
+              onclick="openScheduleTermRangePicker(this, event)">
+              <span class="schedule-term-range-start">开始</span>
+              <span class="schedule-term-range-sep" aria-hidden="true">~</span>
+              <span class="schedule-term-range-end">结束</span>
+            </button>
+            <input type="hidden" id="schedule-modal-term-teacher-start" value="" data-iso-value="" data-hm-value="">
+            <input type="hidden" id="schedule-modal-term-teacher-end" value="" data-iso-value="" data-hm-value="">
+          </div>
+          <div class="form-item">
+            <label>学生查看开放时间</label>
+            <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
+              id="schedule-modal-term-student-range" aria-label="学生查看开放时间" data-picker-title="学生查看开放"
+              data-range-start="schedule-modal-term-student-start" data-range-end="schedule-modal-term-student-end"
+              onclick="openScheduleTermRangePicker(this, event)">
+              <span class="schedule-term-range-start">开始</span>
+              <span class="schedule-term-range-sep" aria-hidden="true">~</span>
+              <span class="schedule-term-range-end">结束</span>
+            </button>
+            <input type="hidden" id="schedule-modal-term-student-start" value="" data-iso-value="" data-hm-value="">
+            <input type="hidden" id="schedule-modal-term-student-end" value="" data-iso-value="" data-hm-value="">
+          </div>
         </div>
-        <div class="form-item"><label>教师查看开始</label><input type="datetime-local" class="input" id="schedule-modal-term-teacher-view"></div>
-        <div class="form-item"><label>学生查看开始</label><input type="datetime-local" class="input" id="schedule-modal-term-student-view"></div>
-      </div>
+      </section>
+      <!-- 下半：场地区间默认只读；点「编辑」后可改；本学期已有排课数据则锁定 -->
+      <section class="schedule-time-term-section schedule-time-term-venue-section" id="schedule-time-term-venue-section">
+        <div class="schedule-time-term-section-head">
+          <h4 class="schedule-time-term-section-title">场地区间设置</h4>
+          <div class="schedule-time-term-section-actions">
+            <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-venue-band-edit"
+              onclick="toggleScheduleVenueBandEditMode()">编辑</button>
+            <button class="btn btn-outline btn-sm" type="button" id="btn-schedule-venue-band-copy"
+              onclick="openScheduleVenueBandCopyModal()" hidden>复制其他学期</button>
+          </div>
+        </div>
+        <input type="hidden" id="schedule-venue-band-term" value="">
+        <!-- 已去掉：冗余「当前学期 · 共 N 档 · 只读」摘要条，状态由标题旁「编辑」按钮表达 -->
+        <!-- <div class="legend-bar" id="schedule-venue-band-summary"></div> -->
+        <div class="table-scroll">
+          <table class="data-table schedule-venue-band-table">
+            <thead>
+              <tr>
+                <!-- 已去掉序号列：区间标签已能区分档位 -->
+                <!-- <th class="col-index">序号</th> -->
+                <th class="col-center">区间</th>
+                <th class="col-center">人数下限</th>
+                <th class="col-center">人数上限</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-venue-band-body"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-schedule-time-term')">取消</button>
+      <button class="btn btn-ghost" type="button" onclick="closeScheduleTimeTermModal()">取消</button>
       <button class="btn btn-primary" type="button" onclick="saveScheduleTimeTermModal()">保存</button>
     </div>
   </div>
@@ -9815,6 +10033,48 @@
 <!-- 原嵌套节次选择抽屉已迁入申请弹窗左栏；保留空壳避免历史引用报错 -->
 <div class="modal-overlay modal-drawer modal-nested" id="modal-adjustment-slot-picker" hidden aria-hidden="true" style="display:none!important">
   <div class="modal"><div class="modal-head"><h3 id="adjustment-slot-picker-title">选择上课节次</h3></div></div>
+</div>
+
+<!-- 弹窗：调课申请管理 · 代发起前选择教师（与「调后教师」选择器分离） -->
+<div class="modal-overlay" id="modal-adjustment-admin-proxy-teacher">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="adjustment-admin-proxy-teacher-title">选择代申请教师</h3>
+      <button class="modal-close" type="button" onclick="closeModal('modal-adjustment-admin-proxy-teacher')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="schedule-room-filter-grid">
+        <div class="srf-item">
+          <label for="aap-teacher-id">教师工号</label>
+          <input class="input input-sm" id="aap-teacher-id" type="text" placeholder="模糊匹配工号">
+        </div>
+        <div class="srf-item">
+          <label for="aap-teacher-name">教师姓名</label>
+          <input class="input input-sm" id="aap-teacher-name" type="text" placeholder="模糊匹配姓名">
+        </div>
+        <div class="srf-actions">
+          <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentAdminProxyTeacherPicker()">查询</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="resetAdjustmentAdminProxyTeacherPicker()">重置</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table compact adj-sub-picker-table">
+          <thead><tr>
+            <th class="col-center srf-col-pick">选择</th>
+            <th>教师工号</th>
+            <th>教师姓名</th>
+            <th>所在单位</th>
+            <th>教职工类型</th>
+          </tr></thead>
+          <tbody id="adjustment-admin-proxy-teacher-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeModal('modal-adjustment-admin-proxy-teacher')">取消</button>
+      <button class="btn btn-primary" type="button" onclick="confirmAdjustmentAdminProxyTeacherPicker()">确定</button>
+    </div>
+  </div>
 </div>
 
 <!-- 抽屉：调后教师选择 -->
@@ -10942,8 +11202,8 @@
         <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
         <span class="toggle-label">显示全部教室（默认过滤座位、类型不匹配的教室）</span>
       </label>
-      <!-- TBC = 原「不指定教室」：明确场地暂空待定 -->
-      <button class="btn btn-ghost adj-unspec-btn" type="button" id="schedule-room-picker-unspecified-btn" hidden onclick="clearAdjustmentApproveRoomSelection()">TBC</button>
+      <!-- 不设定 = 场地为空（原 TBC / 不指定教室） -->
+      <button class="btn btn-ghost adj-unspec-btn" type="button" id="schedule-room-picker-unspecified-btn" hidden onclick="clearAdjustmentApproveRoomSelection()">不设定</button>
       <button class="btn btn-ghost adj-unspec-btn" type="button" onclick="closeModal('modal-schedule-room-picker')">取消</button>
       <button class="btn btn-primary" type="button" onclick="confirmScheduleRoomSelection()">确定</button>
     </div>
@@ -10957,6 +11217,7 @@
     <button class="modal-close" type="button" onclick="closeEntityChangeLogDrawer()" aria-label="关闭">×</button>
   </div>
   <div class="drawer-body">
+    <!-- 保留 schedule-query-card 布局类；抽屉内用 CSS 去掉 card 底框 -->
     <div class="card schedule-query-card drawer-entity-change-log-query">
       <div class="schedule-query-row">
         <div class="schedule-query-fields">

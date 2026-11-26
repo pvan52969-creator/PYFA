@@ -20483,7 +20483,12 @@ let sharedTeachingSetupSelectedKeys = new Set();
 /** 从任务安排等入口打开时锁定学期；关闭弹窗后清空 */
 let sharedTeachingSetupContextTermCode = '';
 let sharedTeachingSetupSeedSectionId = '';
-/** ??????????????????????? */
+/**
+ * 开课名单等入口：仅允许「管理联动安排」，禁止添加/移出共同授课成员。
+ * true 时隐藏右侧选课班列表，左侧「移出」禁用。
+ */
+let sharedTeachingSetupLinkOnlyMode = false;
+/** 弹窗查询条件缓存 */
 let sharedTeachingSetupAppliedCode = '';
 let sharedTeachingSetupAppliedName = '';
 
@@ -21749,6 +21754,11 @@ function applySharedTeachingSetupAdd(seed, peer, all) {
 }
 
 function addSharedTeachingSetupRow(sectionId) {
+  // 开课名单仅联动模式：禁止添加成员
+  if (sharedTeachingSetupLinkOnlyMode) {
+    alert('开课名单入口仅可管理联动安排，不可添加共同授课课程班。');
+    return;
+  }
   const seedId = String(sharedTeachingSetupSeedSectionId || '').trim();
   if (!seedId) {
     alert('请从开课安排入口打开本弹窗后再添加共同授课课程。');
@@ -21998,6 +22008,11 @@ function formatSharedTeachingSetupLeaveHint(remainingRows = [], opts = {}) {
 }
 
 function removeSharedTeachingSetupConfiguredRow(sectionId) {
+  // 开课名单仅联动模式：禁止移出成员
+  if (sharedTeachingSetupLinkOnlyMode) {
+    alert('开课名单入口仅可管理联动安排，不可移出共同授课课程班。');
+    return;
+  }
   const id = String(sectionId || '').trim();
   if (!id) return;
   const all = getSharedTeachingSetupManifestRows();
@@ -22076,13 +22091,22 @@ function renderSharedTeachingSetupConfiguredTable() {
         <td class="col-center"><code>${escapeHtml(row.offeringProgramme || '—')}</code></td>
         <td>${formatSharedTeachingSetupTeachersHtml(row.teachers)}</td>
         <td class="col-nowrap">${formatSharedTeachingSetupProgrammeBatchHtml(row)}</td>
-        <td class="actions col-center col-sticky-actions">
-          <a href="#" onclick='event.preventDefault();removeSharedTeachingSetupConfiguredRow(${JSON.stringify(String(row.sectionId || ''))});return false'>移出</a>
-        </td>
+        <td class="actions col-center col-sticky-actions">${
+          // 名单「仅联动」模式：禁止移出共同授课成员
+          sharedTeachingSetupLinkOnlyMode
+            ? (typeof renderDisabledAction === 'function'
+              ? renderDisabledAction('移出', '开课名单入口仅可管理联动安排，不可移出共同授课课程班。')
+              : '<span class="action-disabled" aria-disabled="true">移出</span>')
+            : `<a href="#" onclick='event.preventDefault();removeSharedTeachingSetupConfiguredRow(${JSON.stringify(String(row.sectionId || ''))});return false'>移出</a>`
+        }</td>
       </tr>`;
       }).join('')
     : `<tr><td colspan="7" class="text-muted" style="text-align:center;padding:16px">${
-        seedId ? '本课尚未设置共同授课，请在右侧添加' : '本学期暂无已设置共同授课的课程'
+        seedId
+          ? (sharedTeachingSetupLinkOnlyMode
+            ? '本课尚未设置共同授课，无法管理联动安排'
+            : '本课尚未设置共同授课，请在右侧添加')
+          : '本学期暂无已设置共同授课的课程'
       }</td></tr>`;
   const seed = getSharedTeachingSetupSeedRow();
   const manageBtn = document.getElementById('btn-shared-teaching-setup-slot-link');
@@ -22220,9 +22244,12 @@ function renderSharedTeachingSetupModalTable() {
         const marked = Boolean((row.sharedTeachingCode || '').trim());
         const blocked = isSharedTeachingSetupRowInOtherGroup(row, seedMark);
         const blockReason = blocked ? formatSharedTeachingSetupOtherGroupBlockReason(row, allRows) : '';
-        const actionHtml = blocked
-          ? renderDisabledAction('添加', blockReason)
-          : `<a href="#" onclick='event.preventDefault();addSharedTeachingSetupRow(${JSON.stringify(String(row.sectionId || ''))});return false'>添加</a>`;
+        // 仅联动模式或他组占用：添加禁用
+        const actionHtml = sharedTeachingSetupLinkOnlyMode
+          ? renderDisabledAction('添加', '开课名单入口仅可管理联动安排，不可添加共同授课课程班。')
+          : (blocked
+            ? renderDisabledAction('添加', blockReason)
+            : `<a href="#" onclick='event.preventDefault();addSharedTeachingSetupRow(${JSON.stringify(String(row.sectionId || ''))});return false'>添加</a>`);
         return `<tr class="${marked ? 'is-shared-teaching-marked' : ''}"${blockReason ? ` title="${escapeHtml(blockReason)}"` : ''}>
           <td class="col-center"><strong>${escapeHtml(row.code)}</strong></td>
           <td class="col-nowrap">${escapeHtml(row.courseName || row.className || '—')}</td>
@@ -22251,6 +22278,25 @@ function formatSharedTeachingSetupTermHintHtml(termCode, seedSectionId) {
   return `<span class="shared-teaching-setup-term-emphasis" title="当前开课学期">开课学期 <strong class="shared-teaching-setup-term-value">${term}</strong></span><span class="shared-teaching-setup-term-desc">${escapeHtml(desc)}</span>`;
 }
 
+/**
+ * 同步共同授课设置弹窗的「仅联动」外观（隐藏右侧、改标题提示）。
+ * @param {boolean} linkOnly 是否仅管理联动安排
+ */
+function syncSharedTeachingSetupLinkOnlyChrome(linkOnly) {
+  const overlay = document.getElementById('modal-shared-teaching-setup');
+  const modal = overlay?.querySelector('.shared-teaching-setup-modal');
+  const titleEl = overlay?.querySelector('.modal-head h3');
+  const on = !!linkOnly;
+  if (overlay) overlay.classList.toggle('is-link-only', on);
+  if (modal) {
+    modal.classList.toggle('is-link-only', on);
+    // 仅联动时去掉 xl 加宽标记，避免与 1560 宽样式纠缠
+    modal.classList.toggle('modal-xl', !on);
+    modal.classList.toggle('modal-md', on);
+  }
+  if (titleEl) titleEl.textContent = on ? '共同授课 · 联动安排' : '设置共同授课';
+}
+
 function openSharedTeachingSetupModal(opts = {}) {
   const seedSectionId = String(opts.sectionId || '').trim();
   const seedSec = seedSectionId
@@ -22262,6 +22308,8 @@ function openSharedTeachingSetupModal(opts = {}) {
     alert('请先在「开课时间设置」中维护学年学期。');
     return;
   }
+  // 名单入口：只调联动组，不改共同授课成员
+  sharedTeachingSetupLinkOnlyMode = !!opts.linkOnly;
   sharedTeachingSetupContextTermCode = termCode;
   sharedTeachingSetupSeedSectionId = seedSectionId;
   syncCourseOfferingPlanStoreFromTerm(termCode);
@@ -22290,8 +22338,16 @@ function openSharedTeachingSetupModal(opts = {}) {
   // if (codeInput) { codeInput.value = ''; codeInput.dataset.userEdited = ''; }
   const termHint = document.getElementById('shared-teaching-setup-term-hint');
   if (termHint) {
-    termHint.innerHTML = formatSharedTeachingSetupTermHintHtml(termCode, seedSectionId);
+    if (sharedTeachingSetupLinkOnlyMode) {
+      // 仅联动模式：不引导右侧添加
+      const term = escapeHtml(formatCourseTermDisplay(termCode) || termCode);
+      termHint.innerHTML = `<span class="shared-teaching-setup-term-emphasis" title="当前开课学期">开课学期 <strong class="shared-teaching-setup-term-value">${term}</strong></span>`
+        + `<span class="shared-teaching-setup-term-desc">本页仅可「管理联动安排」；不可添加或移出共同授课课程班。</span>`;
+    } else {
+      termHint.innerHTML = formatSharedTeachingSetupTermHintHtml(termCode, seedSectionId);
+    }
   }
+  syncSharedTeachingSetupLinkOnlyChrome(sharedTeachingSetupLinkOnlyMode);
   // const teacherHint = document.getElementById('shared-teaching-setup-teacher-hint');
   // if (teacherHint) teacherHint.textContent = '';
   renderSharedTeachingSetupModalTable();
@@ -22332,6 +22388,8 @@ function closeSharedTeachingSetupModal(opts = {}) {
   sharedTeachingSetupSeedSectionId = '';
   sharedTeachingSetupAppliedCode = '';
   sharedTeachingSetupAppliedName = '';
+  sharedTeachingSetupLinkOnlyMode = false;
+  syncSharedTeachingSetupLinkOnlyChrome(false);
 }
 
 // function confirmSharedTeachingSetup() { ... } // 原勾选后底部确定，改 addSharedTeachingSetupRow
@@ -44625,12 +44683,36 @@ function renderMajorOfferingRosterRowActions(sec) {
   } else {
     parts.push(renderDisabledAction('管理名单', getMajorOfferingRosterManageLockedMessage()));
   }
+  // 已有共同授课课号：开放「共同授课」仅用于管理联动安排（不可增删成员）
+  if (typeof isSectionSharedTeaching === 'function' && isSectionSharedTeaching(sec)) {
+    parts.push(`<a href="#" onclick="event.preventDefault();openSharedTeachingSetupFromMajorRoster('${sec.id}');return false" title="查看共同授课组并管理联动安排">共同授课</a>`);
+  }
   // if (isMajorOfferingOpenEnrollment(sec)) {
   //   parts.push('<span class="text-muted" title="开放选课课程名单由选课应用生成">选课应用</span>');
   // } else {
   //   parts.push(`<a href="#" onclick="event.preventDefault();openMajorOfferingGroupRosterManage('${sec.id}');return false">管理名单</a>`);
   // } // 原开放选课仅展示「选课应用」，改仍可手动管理名单
   return parts.join(' · ');
+}
+
+/**
+ * 开课名单：打开共同授课弹窗（仅联动安排模式）。
+ * @param {string} sectionId 开课任务 id
+ */
+function openSharedTeachingSetupFromMajorRoster(sectionId) {
+  const sec = (COURSE_OFFERING_PLAN_STORE?.sections || []).find(s => s.id === sectionId)
+    || Object.values(COURSE_OFFERING_PLAN_BY_TERM || {}).flatMap(st => st?.sections || []).find(s => s.id === sectionId);
+  if (!sec) {
+    alert('未找到开课任务。');
+    return;
+  }
+  if (!isSectionSharedTeaching(sec)) {
+    alert('该课程尚未设置共同授课，无法管理联动安排。');
+    return;
+  }
+  ensureSectionOfferingFields(sec);
+  const termCode = sec.termCode || COURSE_OFFERING_PLAN_STORE?.termCode || getDefaultOfferingTermCode();
+  openSharedTeachingSetupModal({ sectionId: sec.id, termCode, linkOnly: true });
 }
 
 function getMajorOfferingTaskPendingSelection() {

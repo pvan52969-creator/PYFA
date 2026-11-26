@@ -1387,6 +1387,52 @@ body {
     overflow: auto;
   }
 }
+/* 开课名单「仅联动」：宽度适中；高度随内容撑开，列表尽量不出现纵向滚动 */
+#modal-shared-teaching-setup.is-link-only .shared-teaching-setup-modal,
+#modal-shared-teaching-setup .shared-teaching-setup-modal.is-link-only {
+  width: min(94vw, 960px) !important;
+  max-width: 960px !important;
+  max-height: min(92vh, 820px) !important;
+  height: auto !important;
+}
+#modal-shared-teaching-setup.is-link-only .shared-teaching-setup-body,
+#modal-shared-teaching-setup .shared-teaching-setup-modal.is-link-only .shared-teaching-setup-body {
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+#modal-shared-teaching-setup.is-link-only .shared-teaching-setup-split,
+#modal-shared-teaching-setup .shared-teaching-setup-modal.is-link-only .shared-teaching-setup-split {
+  grid-template-columns: minmax(0, 1fr) !important;
+  flex: 0 0 auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+}
+#modal-shared-teaching-setup.is-link-only .shared-teaching-setup-pane-right,
+#modal-shared-teaching-setup .shared-teaching-setup-modal.is-link-only .shared-teaching-setup-pane-right {
+  display: none !important;
+}
+#modal-shared-teaching-setup.is-link-only .shared-teaching-setup-pane-left,
+#modal-shared-teaching-setup .shared-teaching-setup-modal.is-link-only .shared-teaching-setup-pane-left {
+  padding-right: 0 !important;
+  border-right: none !important;
+  max-width: none;
+  overflow: visible !important;
+}
+#modal-shared-teaching-setup.is-link-only .shared-teaching-setup-configured-wrap,
+#modal-shared-teaching-setup .shared-teaching-setup-modal.is-link-only .shared-teaching-setup-configured-wrap {
+  min-height: 0 !important;
+  max-height: none !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+/* 仅联动：隐藏已设置表「操作」列（不可移出） */
+#modal-shared-teaching-setup.is-link-only .shared-teaching-setup-configured-wrap .col-sticky-actions,
+#modal-shared-teaching-setup .shared-teaching-setup-modal.is-link-only .shared-teaching-setup-configured-wrap .col-sticky-actions {
+  display: none !important;
+}
 #modal-shared-teaching-slot-link .shared-teaching-slot-link-modal.modal-xl {
   width: min(96vw, 1280px);
   max-width: 1280px;

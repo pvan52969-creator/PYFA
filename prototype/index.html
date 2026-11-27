@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="6cd651d">
+  <meta name="portal-build" content="0bed78c">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -252,7 +252,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 6cd651d">1126排课2</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 0bed78c">1127排课</div>
         </div>
       </div>
     </section>
@@ -9404,20 +9404,7 @@
               id="schedule-modal-term-teacher-range" ...></button>
           </div>
           -->
-          <!-- 教师查看课表：复用原 teacher-range DOM id，避免大范围改 picker 绑定 -->
-          <div class="form-item">
-            <label>教师查看课表时间</label>
-            <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
-              id="schedule-modal-term-teacher-range" aria-label="教师查看课表时间" data-picker-title="教师查看课表"
-              data-range-start="schedule-modal-term-teacher-start" data-range-end="schedule-modal-term-teacher-end"
-              onclick="openScheduleTermRangePicker(this, event)">
-              <span class="schedule-term-range-start">开始</span>
-              <span class="schedule-term-range-sep" aria-hidden="true">~</span>
-              <span class="schedule-term-range-end">结束</span>
-            </button>
-            <input type="hidden" id="schedule-modal-term-teacher-start" value="" data-iso-value="" data-hm-value="">
-            <input type="hidden" id="schedule-modal-term-teacher-end" value="" data-iso-value="" data-hm-value="">
-          </div>
+          <!-- 顺序：教师调课开放 → 教师查看课表（与原先对调） -->
           <div class="form-item">
             <label>教师调课开放时间</label>
             <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
@@ -9434,6 +9421,7 @@
           <div class="form-item">
             <!-- 产品：仅选日期，不选时刻；隐藏域仍存日起 00:00 / 日末 23:59 以兼容原校验 -->
             <!-- 原：调/补/加课可选时间范围；改为日期范围以匹配仅选日期 -->
+            <!-- 顺序：与「教师查看课表时间」对调，紧挨教师调课开放 -->
             <label>调/补/加课可选日期范围</label>
             <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
               id="schedule-modal-term-adj-select-range" aria-label="调/补/加课可选日期范围" data-picker-title="调/补/加课可选范围"
@@ -9446,6 +9434,20 @@
             </button>
             <input type="hidden" id="schedule-modal-term-adj-select-start" value="" data-iso-value="" data-hm-value="">
             <input type="hidden" id="schedule-modal-term-adj-select-end" value="" data-iso-value="" data-hm-value="">
+          </div>
+          <!-- 教师查看课表：复用原 teacher-range DOM id，避免大范围改 picker 绑定 -->
+          <div class="form-item">
+            <label>教师查看课表时间</label>
+            <button type="button" class="input course-datetime-input schedule-term-range-input is-empty"
+              id="schedule-modal-term-teacher-range" aria-label="教师查看课表时间" data-picker-title="教师查看课表"
+              data-range-start="schedule-modal-term-teacher-start" data-range-end="schedule-modal-term-teacher-end"
+              onclick="openScheduleTermRangePicker(this, event)">
+              <span class="schedule-term-range-start">开始</span>
+              <span class="schedule-term-range-sep" aria-hidden="true">~</span>
+              <span class="schedule-term-range-end">结束</span>
+            </button>
+            <input type="hidden" id="schedule-modal-term-teacher-start" value="" data-iso-value="" data-hm-value="">
+            <input type="hidden" id="schedule-modal-term-teacher-end" value="" data-iso-value="" data-hm-value="">
           </div>
           <div class="form-item">
             <label>学生查看课表时间</label>

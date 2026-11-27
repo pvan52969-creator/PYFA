@@ -22955,13 +22955,14 @@ code {
   overflow: hidden;
   vertical-align: middle;
 }
-/* 操作列：图标按钮 +「修改记录」文案；横向滚动时 sticky 贴右可见 */
+/* 操作列：与学期行同款文字链；横向滚动时 sticky 贴右可见 */
 #page-schedule-time-setting .schedule-prog-time-table th.actions,
 #page-schedule-time-setting .schedule-prog-time-table td.actions {
-  /* 铅笔 + 复制 + 删除 +「修改记录」 */
-  width: 200px;
-  min-width: 200px;
-  max-width: 200px;
+  /* 弃用：图标列宽 200px。原因：改回文字链后需更宽 */
+  /* width: 200px; min-width: 200px; max-width: 200px; */
+  width: 260px;
+  min-width: 240px;
+  max-width: 300px;
   white-space: nowrap;
   position: sticky;
   right: 0;
@@ -22973,8 +22974,13 @@ code {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: nowrap;
+}
+/* 专业时间操作：文字链（对齐学期行） */
+.schedule-prog-time-actions a {
+  font-size: 12px;
+  white-space: nowrap;
 }
 .schedule-prog-time-icon-btn {
   display: inline-flex;

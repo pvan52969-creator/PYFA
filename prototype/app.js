@@ -34558,30 +34558,29 @@ function buildScheduleProgrammeTimeActionsHtml(term, row) {
   const t = escapeHtml(term);
   const id = escapeHtml(row.id);
   if (isScheduleProgrammeTimeRowEditing(row)) {
-    // 原文字链「保存 / 取消」改为打勾 / 叉叉图标
-    // return `<a href="#" ...>保存</a><a href="#" ...>取消</a>`;
+    // 弃用：编辑态打勾/叉叉图标。原因：产品要求操作列与学期行一致改为文字链
+    // return `<span class="schedule-prog-time-actions">
+    //   <button type="button" class="schedule-prog-time-icon-btn is-save" ...>${SCHEDULE_PROG_TIME_ICON_SAVE}</button>
+    //   <button type="button" class="schedule-prog-time-icon-btn is-cancel" ...>${SCHEDULE_PROG_TIME_ICON_CANCEL}</button>
+    // </span>`;
     return `<span class="schedule-prog-time-actions">
-      <button type="button" class="schedule-prog-time-icon-btn is-save" title="保存" aria-label="保存"
-        onclick="saveScheduleProgrammeTime('${t}','${id}')">${SCHEDULE_PROG_TIME_ICON_SAVE}</button>
-      <button type="button" class="schedule-prog-time-icon-btn is-cancel" title="取消" aria-label="取消"
-        onclick="cancelScheduleProgrammeTime('${t}','${id}')">${SCHEDULE_PROG_TIME_ICON_CANCEL}</button>
+      <a href="#" onclick="saveScheduleProgrammeTime('${t}','${id}');return false">保存</a>
+      <a href="#" onclick="cancelScheduleProgrammeTime('${t}','${id}');return false">取消</a>
     </span>`;
   }
   const label = getScheduleProgrammeLabel(row.programmeKey) || row.programmeKey || '';
-  const logType = escapeHtml('schedule-unit-time');
-  const logId = escapeHtml(String(row.id ?? ''));
-  const logLabel = escapeHtml(label);
-  // 修改 / 复制 / 删除 / 修改记录 全部图标；无边框
-  // 原：${entityChangeLogLink('schedule-unit-time', row.id, label)}
+  // 弃用：修改/复制/删除/修改记录全部图标。原因：产品要求与学期行「修改 删除 修改记录」同款文字链
+  // return `<span class="schedule-prog-time-actions">
+  //   <button ... onclick="editScheduleProgrammeTime(...)">${SCHEDULE_PROG_TIME_ICON_EDIT}</button>
+  //   <button ... onclick="copyScheduleProgrammeTime(...)">${SCHEDULE_PROG_TIME_ICON_COPY}</button>
+  //   <button ... onclick="deleteScheduleProgrammeTime(...)">${SCHEDULE_PROG_TIME_ICON_DELETE}</button>
+  //   <button ... onclick="openEntityChangeLogDrawer(...)">${SCHEDULE_PROG_TIME_ICON_LOG}</button>
+  // </span>`;
   return `<span class="schedule-prog-time-actions">
-    <button type="button" class="schedule-prog-time-icon-btn" title="修改" aria-label="修改"
-      onclick="editScheduleProgrammeTime('${t}','${id}')">${SCHEDULE_PROG_TIME_ICON_EDIT}</button>
-    <button type="button" class="schedule-prog-time-icon-btn" title="复制到其他专业" aria-label="复制"
-      onclick="copyScheduleProgrammeTime('${t}','${id}')">${SCHEDULE_PROG_TIME_ICON_COPY}</button>
-    <button type="button" class="schedule-prog-time-icon-btn is-danger" title="删除" aria-label="删除"
-      onclick="deleteScheduleProgrammeTime('${t}','${id}')">${SCHEDULE_PROG_TIME_ICON_DELETE}</button>
-    <button type="button" class="schedule-prog-time-icon-btn" title="修改记录" aria-label="修改记录"
-      onclick="openEntityChangeLogDrawer('${logType}','${logId}','${logLabel}')">${SCHEDULE_PROG_TIME_ICON_LOG}</button>
+    <a href="#" onclick="editScheduleProgrammeTime('${t}','${id}');return false">修改</a>
+    <a href="#" onclick="copyScheduleProgrammeTime('${t}','${id}');return false">复制</a>
+    <a href="#" class="schedule-time-term-delete-link" onclick="deleteScheduleProgrammeTime('${t}','${id}');return false">删除</a>
+    ${entityChangeLogLink('schedule-unit-time', row.id, label)}
   </span>`;
 }
 

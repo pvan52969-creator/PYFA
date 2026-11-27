@@ -436,7 +436,14 @@ const LIST_PAGE_REFRESH = {
   // 调课申请左侧节次列表翻页
   adjustmentSlotPicker: () => renderAdjustmentSlotPickerRows(),
   // 教务代发起：选择代申请教师
-  adjustmentAdminProxyTeacher: () => renderAdjustmentAdminProxyTeacherPicker()
+  adjustmentAdminProxyTeacher: () => renderAdjustmentAdminProxyTeacherPicker(),
+  // 排课表时间列表分页
+  scheduleTime: () => { if (typeof renderScheduleTimePage === 'function') renderScheduleTimePage(); },
+  scheduleTeacher: () => { if (typeof renderScheduleTeacherPage === 'function') renderScheduleTeacherPage(); },
+  scheduleCourse: () => { if (typeof renderScheduleCoursePage === 'function') renderScheduleCoursePage(); },
+  // 课表 / 场地冲突查询分页
+  scheduleTimeConflict: () => { if (typeof renderScheduleTimeConflictPage === 'function') renderScheduleTimeConflictPage(); },
+  scheduleRoomConflict: () => { if (typeof renderScheduleRoomConflictPage === 'function') renderScheduleRoomConflictPage(); }
 };
 
 function goListPage(listKey, page) {
@@ -460,7 +467,9 @@ function renderListPagination(containerId, listKey, total) {
   const page = Math.min(getListPage(listKey), totalPages);
   listPageIndex[listKey] = page;
 
-  let html = `<span class="page-info">每页${pageSize}条记录 , 共${total}条记录</span>`;
+  // 原因：数字与「条」之间留空，逗号改中文顿开，避免分页文案挤在一起
+  // let html = `<span class="page-info">每页${pageSize}条记录 , 共${total}条记录</span>`;
+  let html = `<span class="page-info">每页 ${pageSize} 条记录，共 ${total} 条记录</span>`;
   html += `<div class="page-controls">`;
   html += `<button type="button" class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="goListPage('${listKey}', ${page - 1})">«</button>`;
 
@@ -30323,7 +30332,26 @@ let scheduleCardFieldsByPhase = {
   time: { ...SCHEDULE_CARD_FIELDS_DEFAULT_TIME },
   room: { ...SCHEDULE_CARD_FIELDS_DEFAULT_ROOM }
 };
+/**
+ * 课表查询页独立「显示周末 / 课表卡片显示」状态（与排课详情互不干扰）。
+ * 默认对齐排时间侧默认值。
+ */
+let scheduleQueryShowWeekend = false;
+let scheduleQueryCardFields = { ...SCHEDULE_CARD_FIELDS_DEFAULT_TIME };
+/** 查询格子渲染中：getScheduleCardFields 走查询独立记忆 */
+let scheduleQueryGridRenderActive = false;
 function getScheduleCardFields() {
+  // 课表查询只读格子：用查询页独立字段勾选
+  if (scheduleQueryGridRenderActive) {
+    const q = scheduleQueryCardFields || {};
+    return {
+      ...SCHEDULE_CARD_FIELDS_DEFAULT_TIME,
+      ...q,
+      code: true,
+      groupShort: q.groupShort != null ? !!q.groupShort : !!q.group,
+      groupFull: q.groupFull != null ? !!q.groupFull : false
+    };
+  }
   const fields = scheduleCardFieldsByPhase[scheduleDetailPhase === 'room' ? 'room' : 'time'];
   // 兼容旧记忆仅有 group：视为简称开、全称关
   const normalized = {
@@ -32491,8 +32519,9 @@ function rebuildScheduleTermSelects() {
       syncSearchableSelectLabel(timeSel, true);
     }
   });
+  // schedule-teacher-filter-term 已改为可切换 select，不再写入只读展示文案
   // ['schedule-time-filter-term', 'schedule-teacher-filter-term', 'schedule-room-filter-term', 'schedule-publish-filter-term'].forEach(id => {
-  ['schedule-teacher-filter-term', 'schedule-room-filter-term', 'schedule-publish-filter-term'].forEach(id => {
+  ['schedule-room-filter-term', 'schedule-publish-filter-term'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = termLabel;
   });
@@ -32502,6 +32531,9 @@ function resetSchedulePeriodQuery() {
   const offering = getActiveOfferingTermSetting();
   const sel = document.getElementById('schedule-period-term');
   if (sel && offering?.termCode) sel.value = offering.termCode;
+  // 重置节次类型为全部
+  const typeSel = document.getElementById('schedule-period-filter-type');
+  if (typeSel) typeSel.value = '';
   renderSchedulePeriodPage();
 }
 
@@ -32552,11 +32584,83 @@ function resetScheduleTimeSettingQuery(tab) {
   queryScheduleTimeSettingTab(t);
 }
 
+/**
+ * 排课列表：课号/课程班名称模糊匹配（大小写不敏感）。
+ * @param {object} task 排课任务
+ * @param {string} keyword 关键字
+ * @returns {boolean}
+ */
+function scheduleTaskMatchesCourseKeyword(task, keyword) {
+  const q = String(keyword || '').trim().toLowerCase();
+  if (!q) return true;
+  const code = String(task?.code || '').toLowerCase();
+  const formatted = (typeof formatScheduleCourseCode === 'function'
+    ? String(formatScheduleCourseCode(task?.code) || '')
+    : '').toLowerCase();
+  const name = String(task?.name || '').toLowerCase();
+  return code.includes(q) || formatted.includes(q) || name.includes(q);
+}
+
+/**
+ * 排课列表：教师工号/姓名模糊匹配。
+ * @param {object} task 排课任务
+ * @param {string} keyword 关键字
+ * @returns {boolean}
+ */
+function scheduleTaskMatchesTeacherKeyword(task, keyword) {
+  const q = String(keyword || '').trim().toLowerCase();
+  if (!q) return true;
+  const entries = typeof getScheduleTaskTeacherEntries === 'function'
+    ? getScheduleTaskTeacherEntries(task)
+    : [];
+  if (entries.some(entry =>
+    String(entry.staffId || '').toLowerCase().includes(q)
+    || String(entry.name || '').toLowerCase().includes(q)
+  )) return true;
+  return String(task?.teachers || '').toLowerCase().includes(q)
+    || String(task?.teacherId || '').toLowerCase().includes(q);
+}
+
+/**
+ * 任务集合是否命中课号与教师关键字（桶内任一任务同时满足有值条件）。
+ * @param {object[]} tasks 任务列表
+ * @param {string} courseKeyword 课号/班名
+ * @param {string} teacherKeyword 教师
+ * @returns {boolean}
+ */
+function scheduleTasksMatchCourseAndTeacherKeywords(tasks, courseKeyword, teacherKeyword) {
+  const courseQ = String(courseKeyword || '').trim();
+  const teacherQ = String(teacherKeyword || '').trim();
+  if (!courseQ && !teacherQ) return true;
+  return (tasks || []).some(task =>
+    scheduleTaskMatchesCourseKeyword(task, courseQ)
+    && scheduleTaskMatchesTeacherKeyword(task, teacherQ)
+  );
+}
+
+/**
+ * 排课列表查询：回到第 1 页再渲染（按入学批次 / 教师 / 课程）。
+ * @param {'time'|'teacher'|'course'} page 列表页
+ */
+function queryScheduleArrangeList(page) {
+  const keyMap = { time: 'scheduleTime', teacher: 'scheduleTeacher', course: 'scheduleCourse' };
+  const listKey = keyMap[page];
+  if (listKey && typeof resetListPage === 'function') resetListPage(listKey);
+  if (page === 'time') renderScheduleTimePage();
+  else if (page === 'teacher') renderScheduleTeacherPage();
+  else if (page === 'course') renderScheduleCoursePage();
+}
+
 function resetScheduleArrangeQuery(page) {
   const map = {
-    // time: ['schedule-time-filter-course', 'schedule-time-filter-status'], // 已改为专业批次维度筛选
-    time: ['schedule-time-filter-school', 'schedule-time-filter-prog', 'schedule-time-filter-intake', 'schedule-time-filter-status'],
-    teacher: ['schedule-teacher-filter-id', 'schedule-teacher-filter-name', 'schedule-teacher-filter-dept', 'schedule-teacher-filter-status'],
+    // 批次列表：是否已排完；学院/专业/入学批次/专业批次已改多选，见 clearScheduleListMs
+    // time: [..., 'schedule-time-filter-course', ...] // 弃用课号：表头无课号列
+    // time: ['schedule-time-filter-school', 'schedule-time-filter-prog', 'schedule-time-filter-intake', 'schedule-time-filter-programme-batch', 'schedule-time-filter-status'],
+    time: ['schedule-time-filter-status'],
+    // 原因：表头新增所属专业；所在单位/所属专业/教职工类型已改多选，见下方 clearScheduleListMs
+    // teacher: [..., 'schedule-teacher-filter-staff-type', ...]
+    teacher: ['schedule-teacher-filter-id', 'schedule-teacher-filter-name', 'schedule-teacher-filter-status'],
+    // 'schedule-teacher-filter-dept', 'schedule-teacher-filter-programme' 已改多选，见下方 clearScheduleListMs
     room: ['schedule-room-filter-course', 'schedule-room-filter-status']
   };
   (map[page] || []).forEach(id => {
@@ -32566,10 +32670,27 @@ function resetScheduleArrangeQuery(page) {
     else el.value = '';
   });
   if (page === 'time') {
+    // 学期重置为当前开课学期；多选筛选项清空
+    [
+      'schedule-time-filter-school',
+      'schedule-time-filter-prog',
+      'schedule-time-filter-intake',
+      'schedule-time-filter-programme-batch'
+    ].forEach(clearScheduleListMs);
+    ensureScheduleTimeTermFilterSelect(true);
     rebuildScheduleBatchFilterOptions();
+    // 重置后回第 1 页
+    if (typeof resetListPage === 'function') resetListPage('scheduleTime');
     renderScheduleTimePage();
   }
-  if (page === 'teacher') renderScheduleTeacherPage();
+  if (page === 'teacher') {
+    // 多选筛选项清空（key 与 toggleScheduleListMs 一致，不含 -ms 后缀）
+    ['schedule-teacher-filter-dept', 'schedule-teacher-filter-programme', 'schedule-teacher-filter-staff-type']
+      .forEach(clearScheduleListMs);
+    ensureScheduleTeacherTermFilterSelect(true);
+    if (typeof resetListPage === 'function') resetListPage('scheduleTeacher');
+    renderScheduleTeacherPage();
+  }
   if (page === 'room') renderScheduleRoomPage();
 }
 
@@ -32585,17 +32706,160 @@ function resetSchedulePublishQuery() {
   renderSchedulePublishPage();
 }
 
+/** 排课列表筛选项多选状态：key → { options, selected } */
+const SCHEDULE_LIST_MS_STATE = {};
+
+/**
+ * 取多选状态对象。
+ * @param {string} key 筛选项 id（如 schedule-time-filter-school）
+ */
+function getScheduleListMsState(key) {
+  if (!SCHEDULE_LIST_MS_STATE[key]) {
+    SCHEDULE_LIST_MS_STATE[key] = { options: [], selected: [] };
+  }
+  return SCHEDULE_LIST_MS_STATE[key];
+}
+
+/** @param {string} key @returns {string[]} 已选值 */
+function getScheduleListMsSelected(key) {
+  return (getScheduleListMsState(key).selected || []).slice();
+}
+
+/**
+ * 写入已选并刷新展示/选项勾选。
+ * @param {string} key
+ * @param {string[]} values
+ */
+function setScheduleListMsSelected(key, values) {
+  const state = getScheduleListMsState(key);
+  state.selected = (values || []).map(v => String(v || '').trim()).filter(Boolean);
+  syncScheduleListMsDisplay(key);
+  renderScheduleListMsOptions(key);
+}
+
+/** 清空某一多选 */
+function clearScheduleListMs(key) {
+  setScheduleListMsSelected(key, []);
+}
+
+/**
+ * 填充选项；默认剔除已不在候选项中的已选值。
+ * @param {string} key
+ * @param {{ value: string, label: string }[]} options
+ * @param {{ prune?: boolean }} [opts]
+ */
+function fillScheduleListMs(key, options, opts = {}) {
+  const state = getScheduleListMsState(key);
+  state.options = (options || []).map(it => ({
+    value: String(it.value),
+    label: String(it.label != null ? it.label : it.value)
+  }));
+  const allow = new Set(state.options.map(it => it.value));
+  // prune 默认 true：级联收窄后去掉失效已选
+  if (opts.prune !== false) {
+    state.selected = (state.selected || []).filter(v => allow.has(String(v)));
+  }
+  syncScheduleListMsDisplay(key);
+  renderScheduleListMsOptions(key);
+}
+
+/** 同步触发器文案：未选显示「全部」 */
+function syncScheduleListMsDisplay(key) {
+  const display = document.getElementById(`${key}-display`);
+  if (!display) return;
+  const state = getScheduleListMsState(key);
+  const labels = (state.selected || []).map(v =>
+    (state.options || []).find(it => String(it.value) === String(v))?.label || v
+  );
+  if (!labels.length) {
+    display.textContent = '全部';
+    display.classList.add('placeholder');
+    return;
+  }
+  display.classList.remove('placeholder');
+  display.textContent = labels.length <= 2 ? labels.join('、') : `已选 ${labels.length} 项`;
+}
+
+/** 渲染勾选列表 */
+function renderScheduleListMsOptions(key) {
+  const box = document.getElementById(`${key}-options`);
+  if (!box) return;
+  const state = getScheduleListMsState(key);
+  const selected = new Set((state.selected || []).map(String));
+  const options = state.options || [];
+  if (!options.length) {
+    box.innerHTML = '<div class="clo-multiselect-empty">暂无选项</div>';
+    return;
+  }
+  box.innerHTML = options.map(it => `
+    <label class="clo-multiselect-option" onclick="event.stopPropagation()">
+      <input type="checkbox" value="${escapeHtml(it.value)}" ${selected.has(String(it.value)) ? 'checked' : ''}
+        onchange="onScheduleListMsCheck('${key}', this.value, this.checked)">
+      <span>${escapeHtml(it.label)}</span>
+    </label>`).join('');
+}
+
+/** 展开/收起下拉 */
+function toggleScheduleListMs(key, event) {
+  if (event) event.stopPropagation();
+  const dd = document.getElementById(`${key}-dropdown`);
+  if (!dd) return;
+  const willOpen = dd.hidden;
+  closeScheduleListMsDropdowns(key);
+  dd.hidden = !willOpen;
+}
+
+/** 关闭其它（或全部）列表筛多选下拉 */
+function closeScheduleListMsDropdowns(exceptKey) {
+  document.querySelectorAll('.schedule-list-ms .clo-multiselect-dropdown').forEach(dd => {
+    if (exceptKey && dd.id === `${exceptKey}-dropdown`) return;
+    dd.hidden = true;
+  });
+}
+
+/** 勾选变更 */
+function onScheduleListMsCheck(key, value, checked) {
+  const next = new Set(getScheduleListMsSelected(key));
+  if (checked) next.add(String(value));
+  else next.delete(String(value));
+  setScheduleListMsSelected(key, [...next]);
+  // 按入学批次：学院/专业/入学批次变更后级联重填下游选项
+  if (key === 'schedule-time-filter-school'
+    || key === 'schedule-time-filter-prog'
+    || key === 'schedule-time-filter-intake') {
+    rebuildScheduleBatchFilterOptions();
+  }
+}
+
+// 点击页外关闭多选下拉（只绑一次）
+if (typeof document !== 'undefined' && !window.__scheduleListMsDocCloseBound) {
+  document.addEventListener('click', () => closeScheduleListMsDropdowns());
+  window.__scheduleListMsDocCloseBound = true;
+}
+
 function filterScheduleBatchSummaryRows(rows) {
-  const school = document.getElementById('schedule-time-filter-school')?.value || '';
-  const prog = document.getElementById('schedule-time-filter-prog')?.value || '';
-  const intake = document.getElementById('schedule-time-filter-intake')?.value || '';
-  const progKeysForCode = prog
-    ? Object.entries(PROGRAMMES).filter(([, p]) => p.code === prog).map(([k]) => k)
-    : [];
+  const term = document.getElementById('schedule-time-filter-term')?.value || '';
+  // 原因：学院/专业/入学批次/专业批次改为多选
+  // const school = document.getElementById('schedule-time-filter-school')?.value || '';
+  // const prog = document.getElementById('schedule-time-filter-prog')?.value || '';
+  // const intake = document.getElementById('schedule-time-filter-intake')?.value || '';
+  // const programmeBatch = document.getElementById('schedule-time-filter-programme-batch')?.value || '';
+  const schools = getScheduleListMsSelected('schedule-time-filter-school');
+  const progs = getScheduleListMsSelected('schedule-time-filter-prog');
+  const intakes = getScheduleListMsSelected('schedule-time-filter-intake');
+  const programmeBatches = getScheduleListMsSelected('schedule-time-filter-programme-batch');
+  // 弃用课号过滤：批次汇总列表表头无课号列
+  // const courseQ = (document.getElementById('schedule-time-filter-course')?.value || '').trim();
   return rows.filter(r => {
-    if (school && r.schoolCode !== school) return false;
-    if (prog && !progKeysForCode.includes(r.programmeKey)) return false;
-    if (intake && r.intake !== intake) return false;
+    if (term && String(r.termCode || '') !== String(term)) return false;
+    if (schools.length && !schools.includes(r.schoolCode)) return false;
+    const programmeCode = getProgrammeCode(r.programmeKey) || r.programmeCode || '';
+    if (progs.length && !progs.includes(programmeCode)) return false;
+    if (intakes.length && !intakes.includes(String(r.intake))) return false;
+    // 专业批次：option value = programmeKey|intake
+    const batchKey = String(r.batchKey || `${r.programmeKey}|${r.intake}`);
+    if (programmeBatches.length && !programmeBatches.includes(batchKey)) return false;
+    // if (courseQ) { ... } // 弃用：见上
     return true;
   });
 }
@@ -32617,31 +32881,111 @@ function getScheduleBatchFilterItems() {
   return items;
 }
 
+/**
+ * 填充「按入学批次排」学期下拉（默认当前开课学期）。
+ * @param {boolean} forceDefault 是否强制回到开课学期
+ */
+/**
+ * 填充「按入学批次排」学期单选：无「全部」，必须选中某一个学期（默认当前开课学期）。
+ * @param {boolean} forceDefault 是否强制回到开课学期
+ */
+function ensureScheduleTimeTermFilterSelect(forceDefault = false) {
+  const sel = document.getElementById('schedule-time-filter-term');
+  if (!sel) return;
+  const terms = typeof getScheduleTermCodes === 'function' ? getScheduleTermCodes() : [];
+  const offering = getActiveOfferingTermSetting()?.termCode || '';
+  const keep = forceDefault ? offering : (sel.value || offering);
+  // 原因：学期不存在「全部」，只能单选具体学期
+  // sel.innerHTML = '<option value="">全部</option>'
+  //   + terms.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(formatCourseTermDisplay(t))}</option>`).join('');
+  sel.innerHTML = terms.map(t =>
+    `<option value="${escapeHtml(t)}">${escapeHtml(formatCourseTermDisplay(t))}</option>`
+  ).join('');
+  if (keep && terms.includes(keep)) sel.value = keep;
+  else if (offering && terms.includes(offering)) sel.value = offering;
+  else sel.value = terms[0] || '';
+}
+
+/**
+ * 按当前学院/专业/入学批次（多选）级联，重建专业批次多选选项。
+ */
+function rebuildScheduleTimeProgrammeBatchFilterOptions() {
+  // 弃用：单选 select 填充。原因：专业批次改为多选 clo-multiselect
+  // const sel = document.getElementById('schedule-time-filter-programme-batch');
+  if (!document.getElementById('schedule-time-filter-programme-batch-ms')) return;
+  const schools = getScheduleListMsSelected('schedule-time-filter-school');
+  const progs = getScheduleListMsSelected('schedule-time-filter-prog');
+  const intakes = getScheduleListMsSelected('schedule-time-filter-intake');
+  const items = getScheduleBatchFilterItems().filter(item => {
+    const schoolCode = getProgrammeSchoolCode(item.programmeKey);
+    const programmeCode = getProgrammeCode(item.programmeKey);
+    if (schools.length && !schools.includes(schoolCode)) return false;
+    if (progs.length && !progs.includes(programmeCode)) return false;
+    if (intakes.length && !intakes.includes(String(item.intake))) return false;
+    return true;
+  });
+  // 去重并按展示码排序
+  const opts = items.map(item => ({
+    value: `${item.programmeKey}|${item.intake}`,
+    label: formatProgrammeIntakeCode(item.programmeKey, item.intake)
+  })).sort((a, b) => String(a.label).localeCompare(String(b.label), 'zh-CN'));
+  fillScheduleListMs('schedule-time-filter-programme-batch', opts);
+}
+
+/**
+ * 重建按入学批次排：学院/专业/入学批次/专业批次多选候选项（级联收窄）。
+ */
 function rebuildScheduleBatchFilterOptions() {
-  if (!document.getElementById('schedule-time-filter-school')) return;
-  rebuildCascadeFilterSelects({
-    schoolSelectId: 'schedule-time-filter-school',
-    programmeSelectId: 'schedule-time-filter-prog',
-    intakeSelectId: 'schedule-time-filter-intake',
-    items: getScheduleBatchFilterItems(),
-    getProgrammeKey: item => item.programmeKey,
-    getIntake: item => item.intake
-  });
+  // 多选 DOM 未就绪时跳过（兼容旧缓存页）
+  if (!document.getElementById('schedule-time-filter-school-ms')) return;
+  ensureScheduleTimeTermFilterSelect(false);
+  // 弃用：单选级联 rebuildCascadeFilterSelects。原因：学院/专业/入学批次改为多选
+  // rebuildCascadeFilterSelects({ schoolSelectId: 'schedule-time-filter-school', ... });
+  const items = getScheduleBatchFilterItems();
+  const schoolCodes = [...new Set(
+    items.map(item => getProgrammeSchoolCode(item.programmeKey)).filter(c => c && c !== '—')
+  )].sort();
+  fillScheduleListMs('schedule-time-filter-school', schoolCodes.map(c => ({ value: c, label: c })));
+
+  const schools = getScheduleListMsSelected('schedule-time-filter-school');
+  const progCodes = [...new Set(
+    items
+      .filter(item => !schools.length || schools.includes(getProgrammeSchoolCode(item.programmeKey)))
+      .map(item => getProgrammeCode(item.programmeKey))
+      .filter(Boolean)
+  )].sort();
+  fillScheduleListMs('schedule-time-filter-prog', progCodes.map(c => ({ value: c, label: c })));
+
+  const progs = getScheduleListMsSelected('schedule-time-filter-prog');
+  const intakes = [...new Set(
+    items.filter(item => {
+      const schoolCode = getProgrammeSchoolCode(item.programmeKey);
+      const programmeCode = getProgrammeCode(item.programmeKey);
+      if (schools.length && !schools.includes(schoolCode)) return false;
+      if (progs.length && !progs.includes(programmeCode)) return false;
+      return !!item.intake;
+    }).map(item => String(item.intake))
+  )].sort();
+  fillScheduleListMs(
+    'schedule-time-filter-intake',
+    intakes.map(code => ({ value: code, label: formatIntakeDisplay(code) }))
+  );
+
+  rebuildScheduleTimeProgrammeBatchFilterOptions();
 }
 
+/**
+ * @deprecated 学院已改多选，onchange 由 onScheduleListMsCheck 触发级联。
+ */
 function onScheduleBatchFilterSchoolChange() {
-  onCascadeFilterSchoolChange({
-    programmeSelectId: 'schedule-time-filter-prog',
-    intakeSelectId: 'schedule-time-filter-intake',
-    refresh: rebuildScheduleBatchFilterOptions
-  });
+  rebuildScheduleBatchFilterOptions();
 }
 
+/**
+ * @deprecated 专业已改多选，onchange 由 onScheduleListMsCheck 触发级联。
+ */
 function onScheduleBatchFilterProgrammeChange() {
-  onCascadeFilterProgrammeChange({
-    intakeSelectId: 'schedule-time-filter-intake',
-    refresh: rebuildScheduleBatchFilterOptions
-  });
+  rebuildScheduleBatchFilterOptions();
 }
 
 function onScheduleRoomIntakeFilterSchoolChange() {
@@ -32870,16 +33214,41 @@ function buildScheduleRoomIntakeSummaries() {
   return buildScheduleRoomWeekdaySummaries();
 }
 
+/**
+ * 填充「按时间排」Day 多选候选项（周一～周日）。
+ */
+function ensureScheduleRoomWeekdayListMsOptions() {
+  fillScheduleListMs(
+    'schedule-room-intake-filter-weekday',
+    SCHEDULE_WEEKDAYS.map(w => ({ value: String(w.value), label: w.label })),
+    { prune: true }
+  );
+}
+
 function filterScheduleRoomWeekdaySummaryRows(rows) {
-  const weekday = document.getElementById('schedule-room-intake-filter-weekday')?.value || '';
-  if (!weekday) return rows;
-  return rows.filter(row => String(row.weekday) === String(weekday));
+  // 原因：Day 改为多选
+  // const weekday = document.getElementById('schedule-room-intake-filter-weekday')?.value || '';
+  const weekdays = getScheduleListMsSelected('schedule-room-intake-filter-weekday');
+  // 弃用课号/教师：Day 汇总列表表头无对应列
+  // const courseQ = (document.getElementById('schedule-room-intake-filter-course')?.value || '').trim();
+  // const teacherQ = (document.getElementById('schedule-room-intake-filter-teacher')?.value || '').trim();
+  return rows.filter(row => {
+    if (weekdays.length && !weekdays.includes(String(row.weekday))) return false;
+    // if (!scheduleTasksMatchCourseAndTeacherKeywords(row.tasks || [], courseQ, teacherQ)) return false;
+    return true;
+  });
 }
 
 function filterScheduleRoomVenueTypeSummaryRows(rows) {
   const venue = document.getElementById('schedule-room-teacher-filter-venue')?.value || '';
-  if (!venue) return rows;
-  return rows.filter(row => row.venueType === venue);
+  // 弃用课号/教师：场地类型汇总列表表头无对应列
+  // const courseQ = (document.getElementById('schedule-room-teacher-filter-course')?.value || '').trim();
+  // const teacherQ = (document.getElementById('schedule-room-teacher-filter-teacher')?.value || '').trim();
+  return rows.filter(row => {
+    if (venue && row.venueType !== venue) return false;
+    // if (!scheduleTasksMatchCourseAndTeacherKeywords(row.tasks || [], courseQ, teacherQ)) return false;
+    return true;
+  });
 }
 
 function filterScheduleRoomIntakeSummaryRows(rows) {
@@ -32888,10 +33257,11 @@ function filterScheduleRoomIntakeSummaryRows(rows) {
 
 function resetScheduleRoomArrangeQuery(kind) {
   if (kind === 'week' || kind === 'intake') {
-    ['schedule-room-intake-filter-weekday', 'schedule-room-intake-filter-status'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
+    // 课号/教师筛已弃用；Day 已改多选，重置清多选 + 排教室状态
+    // ['schedule-room-intake-filter-weekday', 'schedule-room-intake-filter-status'].forEach(...)
+    const statusEl = document.getElementById('schedule-room-intake-filter-status');
+    if (statusEl) statusEl.value = '';
+    clearScheduleListMs('schedule-room-intake-filter-weekday');
     renderScheduleRoomWeekPage();
     return;
   }
@@ -36873,17 +37243,21 @@ function renderSchedulePeriodPage() {
   const term = getSelectedSchedulePeriodTerm();
   if (termSel && !termSel.dataset.lastValue) termSel.dataset.lastValue = term;
   let periods = cloneSchedulePeriodList(ensureSchedulePeriods(term));
+  // 节次类型筛选（与列表列对齐）
+  const typeQ = document.getElementById('schedule-period-filter-type')?.value || '';
+  if (typeQ) periods = periods.filter(p => String(p.remark || '') === typeQ);
   sortSchedulePeriodList(periods);
   periods = sortListWithState(periods, 'schedulePeriod', SCHEDULE_PERIOD_SORT_COLUMNS);
   const tbody = document.getElementById('schedule-period-body');
   renderSchedulePeriodListThead(tbody);
-  const summary = document.getElementById('schedule-period-summary');
-  if (summary) {
-    summary.innerHTML = `<span class="legend-item">${formatCourseTermDisplay(term)} · 共 <strong>${periods.length}</strong> 个节次</span>`;
-  }
+  // 弃用：产品要求去掉节次列表上方统计条（原 #schedule-period-summary）
+  // const summary = document.getElementById('schedule-period-summary');
+  // if (summary) {
+  //   summary.innerHTML = `<span class="legend-item">${formatCourseTermDisplay(term)} · 共 <strong>${periods.length}</strong> 个节次</span>`;
+  // }
   if (!tbody) return;
   if (!periods.length) {
-    renderScheduleEmptyRow(tbody, 7, '暂无节次，请点击「新增节次」');
+    renderScheduleEmptyRow(tbody, 7, typeQ ? '暂无匹配记录' : '暂无节次，请点击「新增节次」');
     return;
   }
   tbody.innerHTML = periods.map(p => `<tr class="schedule-period-row" data-period-id="${p.id}">
@@ -37006,12 +37380,14 @@ function renderScheduleBlackoutTable() {
   if (!tbody) return;
   const rows = collectScheduleBlackoutRows();
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 6, '暂无不排课节次，请点击「新增」');
+    // colspan：勾选+序号+学年学期+Day+节次+备注+操作
+    renderScheduleEmptyRow(tbody, 7, '暂无不排课节次，请点击「新增」');
     return;
   }
   tbody.innerHTML = rows.map((row, idx) => `<tr>
     <td class="col-check"><input type="checkbox" onchange="toggleScheduleBlackoutCheck('${row.id}', this.checked)"${scheduleBlackoutSelectedIds.has(row.id) ? ' checked' : ''}></td>
     <td class="col-index">${idx + 1}</td>
+    <td class="col-center">${escapeHtml(formatCourseTermDisplay(row.termCode))}</td>
     <td class="col-center">${escapeHtml(getScheduleWeekdayLabel(row.weekday))}</td>
     <td class="col-center">${escapeHtml(formatScheduleBlackoutPeriods(row))}</td>
     <td>${escapeHtml(row.remark || '—')}</td>
@@ -37212,12 +37588,14 @@ function renderScheduleElectiveSlotTable() {
   if (!tbody) return;
   const rows = collectScheduleElectiveSlotRows();
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 6, '暂无选修课占位节次，请点击「新增」');
+    // colspan：勾选+序号+学年学期+Day+节次+备注+操作
+    renderScheduleEmptyRow(tbody, 7, '暂无选修课占位节次，请点击「新增」');
     return;
   }
   tbody.innerHTML = rows.map((row, idx) => `<tr>
     <td class="col-check"><input type="checkbox" onchange="toggleScheduleElectiveCheck('${row.id}', this.checked)"${scheduleElectiveSelectedIds.has(row.id) ? ' checked' : ''}></td>
     <td class="col-index">${idx + 1}</td>
+    <td class="col-center">${escapeHtml(formatCourseTermDisplay(row.termCode))}</td>
     <td class="col-center">${escapeHtml(getScheduleWeekdayLabel(row.weekday))}</td>
     <td class="col-center">${escapeHtml(formatScheduleBlackoutPeriods(row))}</td>
     <td>${escapeHtml(row.remark || SCHEDULE_ELECTIVE_DEFAULT_REMARK)}</td>
@@ -53110,6 +53488,167 @@ function formatScheduleTaskClassBatchLinksHtml(task) {
 }
 
 /**
+ * 是否选修课类型（GE / ME）：列表「专业批次」取可选专业批次。
+ * @param {string} courseType 课程类型码
+ * @returns {boolean}
+ */
+function isScheduleCourseElectiveType(courseType) {
+  const key = String(courseType || '').trim().toUpperCase();
+  return key === 'GE' || key === 'ME';
+}
+
+/**
+ * 选修课可选专业批次：开课挂线批次，或校选范围（未排除专业 × 当前可排批次）。
+ * @param {object} row 按课程班聚合行（含 tasks / courseType）
+ * @returns {string}
+ */
+function formatScheduleCourseOptionalProgrammeBatchLabel(row) {
+  const tasks = row?.tasks || [];
+  // 1) 开课 section 挂线批次（ME 等多专业可选时常有 lineIds）
+  const fromLines = [];
+  tasks.forEach(task => {
+    const sec = typeof getScheduleOfferingSection === 'function' ? getScheduleOfferingSection(task) : null;
+    if (!sec || typeof getSectionMergedBatchLabelDisplayFull !== 'function') return;
+    const label = getSectionMergedBatchLabelDisplayFull(sec);
+    if (label && label !== '—') fromLines.push(label);
+  });
+  if (fromLines.length) {
+    const flat = [...new Set(fromLines.join('、').split('、').map(s => s.trim()).filter(Boolean))];
+    return flat.length ? (typeof joinUniqueLabelsFull === 'function' ? joinUniqueLabelsFull(flat) : flat.join('、')) : '—';
+  }
+  // 2) 校选 / GE section 排除专业 → 可选专业 × 当前专业批次池
+  let excluded = [];
+  const sample = tasks[0];
+  const sec = sample && typeof getScheduleOfferingSection === 'function'
+    ? getScheduleOfferingSection(sample)
+    : null;
+  if (Array.isArray(sec?.excludedProgrammeKeys)) {
+    excluded = sec.excludedProgrammeKeys.map(k => String(k || '').toLowerCase());
+  } else {
+    const line = (COURSE_OFFERING_PLAN_STORE?.lines || []).find(l =>
+      l.offeringType === 'ge'
+      && (l.sectionId === sec?.id || String(l.code || '').replace(/\*$/, '') === String(row?.code || sample?.code || '').replace(/\*$/, ''))
+    );
+    const course = typeof findSchoolElectiveCourseForGeLine === 'function'
+      ? findSchoolElectiveCourseForGeLine(line || { code: row?.code || sample?.code })
+      : null;
+    if (course && typeof getSchoolElectiveExcludedProgrammeKeys === 'function') {
+      excluded = getSchoolElectiveExcludedProgrammeKeys(course).map(k => String(k || '').toLowerCase());
+    }
+  }
+  const items = typeof getScheduleBatchFilterItems === 'function' ? getScheduleBatchFilterItems() : [];
+  const labels = [...new Set(
+    items
+      .filter(item => {
+        const pk = String(item.programmeKey || '').toLowerCase();
+        if (!pk || pk === '__ge__') return false;
+        if (excluded.length && excluded.includes(pk)) return false;
+        return true;
+      })
+      .map(item => (typeof formatProgrammeIntakeCode === 'function'
+        ? formatProgrammeIntakeCode(item.programmeKey, item.intake)
+        : ''))
+      .filter(label => label && label !== '—')
+  )].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  // 原因：超过 5 个由单元格省略 + 悬停全文，此处保留完整顿号串
+  // if (!excluded.length && labels.length > 8) return '全部';
+  // return typeof joinUniqueLabels === 'function' ? joinUniqueLabels(labels, 4) : labels.slice(0, 4).join('、');
+  if (!labels.length) return '—';
+  return typeof joinUniqueLabelsFull === 'function' ? joinUniqueLabelsFull(labels) : labels.join('、');
+}
+
+/**
+ * 按课程班列表「专业批次」：必修=上课专业批次；选修=可选专业批次。
+ * @param {object} row 课程班汇总行
+ * @returns {string}
+ */
+function formatScheduleCourseProgrammeBatchLabel(row) {
+  const courseType = row?.courseType || (typeof getScheduleCourseGroupTypeCode === 'function'
+    ? getScheduleCourseGroupTypeCode(row)
+    : '');
+  if (isScheduleCourseElectiveType(courseType)) {
+    return formatScheduleCourseOptionalProgrammeBatchLabel(row);
+  }
+  // 必修：上课专业批次（与侧栏上课批次同口径）
+  const labels = (row?.tasks || [])
+    .map(task => (typeof formatScheduleTaskClassBatchLabel === 'function'
+      ? formatScheduleTaskClassBatchLabel(task)
+      : ''))
+    .filter(label => label && label !== '—');
+  if (!labels.length) return '—';
+  const flat = [...new Set(labels.join('、').split('、').map(s => s.trim()).filter(Boolean))];
+  return flat.length ? flat.join('、') : '—';
+}
+
+/**
+ * 选课方式：选修类型（GE/ME）为「选修」，其余为「必修」。
+ * @param {object|string} rowOrType 课程班行或课程类型码
+ * @returns {string}
+ */
+function formatScheduleCourseEnrolModeLabel(rowOrType) {
+  const courseType = typeof rowOrType === 'string'
+    ? rowOrType
+    : (rowOrType?.courseType || (typeof getScheduleCourseGroupTypeCode === 'function'
+      ? getScheduleCourseGroupTypeCode(rowOrType)
+      : ''));
+  return isScheduleCourseElectiveType(courseType) ? '选修' : '必修';
+}
+
+/** 按课程班列表专业批次：单元格最多展示行数，超出省略悬停看全文 */
+const SCHEDULE_COURSE_BATCH_CELL_MAX = 5;
+
+/**
+ * 专业批次单元格 HTML：一个批次一行；超过 5 个省略，移入显示全部。
+ * @param {string} label 顿号连接的完整批次文案
+ * @returns {string}
+ */
+function renderScheduleCourseProgrammeBatchCellHtml(label) {
+  const raw = String(label || '—').trim() || '—';
+  if (raw === '—' || raw === '全部') return escapeHtml(raw);
+  // 按顿号/逗号拆成批次列表
+  const parts = raw.split(/[、,，]/).map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return '—';
+  if (parts.length <= 1) return escapeHtml(parts[0] || raw);
+  const max = SCHEDULE_COURSE_BATCH_CELL_MAX;
+  const shown = parts.length > max ? parts.slice(0, max) : parts;
+  const stack = shown.map(p => `<span class="sch-course-batch-line">${escapeHtml(p)}</span>`).join('');
+  // 原因：产品不要「共 N 个」说明，超出仅用省略号
+  // const omit = parts.length > max ? `<span class="sch-course-batch-omit">…共 ${parts.length} 个</span>` : '';
+  const omit = parts.length > max ? `<span class="sch-course-batch-omit">…</span>` : '';
+  const inner = `<span class="sch-course-batch-stack">${stack}${omit}</span>`;
+  // 超出上限：挂 data-tip，悬停用 cell-float-tip 看全量（顿号全文）
+  if (parts.length > max) {
+    const tip = escapeHtml(parts.join('、'));
+    return `<span class="sch-course-batch-tip cell-ellipsis-tip" data-tip="${tip}" tabindex="0">${inner}</span>`;
+  }
+  return inner;
+}
+
+/**
+ * 「专业批次」可排序表头 + 感叹号规则说明。
+ * @param {string} listKey 列表排序键
+ * @returns {string}
+ */
+function renderScheduleCourseProgrammeBatchSortTh(listKey) {
+  const state = getListSortState(listKey);
+  const cls = ['col-center', 'th-sortable', state.key === 'programmeBatch' ? 'is-sorted' : '']
+    .filter(Boolean).join(' ');
+  return `<th class="${cls}" role="button" tabindex="0" ` +
+    `onclick="toggleListSort('${listKey}','programmeBatch')" ` +
+    `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleListSort('${listKey}','programmeBatch')}">` +
+    `<span class="schedule-module-col-head sch-course-batch-col-head">` +
+    `专业批次` +
+    `<span class="slt-info-tip schedule-module-col-tip" onclick="event.stopPropagation()">` +
+    `<button type="button" class="slt-info-btn" aria-label="专业批次说明" title="专业批次说明">!</button>` +
+    `<div class="slt-info-popover schedule-module-col-tip-popover sch-course-batch-tip-popover" role="note">` +
+    `<p class="slt-info-formula"><strong>必修</strong>（Major Core 等）：取上课专业批次</p>` +
+    `<p class="slt-info-formula"><strong>选修</strong>（GE / ME）：取可选专业批次</p>` +
+    `</div></span>` +
+    `<span class="th-sort" aria-hidden="true">${listSortToggleIcon(state, 'programmeBatch')}</span>` +
+    `</span></th>`;
+}
+
+/**
  * 学时单元 key → 开课安排 hourType 文案（用于匹配 groupAssignments）。
  * @param {object} task
  * @param {string} unitKey
@@ -54766,7 +55305,9 @@ function renderScheduleOfferingHint(elId) {
   hint.innerHTML = `<span class="legend-item">当前查看 <strong>${escapeHtml(viewLabel)}</strong>`
     + (viewLabel !== termLabel ? ` · 开课学期 <strong>${escapeHtml(termLabel)}</strong>` : '')
     + ` · 计划行 ${s.lines.length} 条 · 课程 ${new Set((s.sections || []).map(x => x.code)).size} 门</span>`
-    + '<span class="legend-item text-muted"> · 候选行来自开课管理中本学期已经<strong>提交授课确认</strong>的开课任务</span>';
+    // 原因：产品要求去掉「提交授课确认」说明，改为标注来源开课生效数据
+    // + '<span class="legend-item text-muted"> · 候选行来自开课管理中本学期已经<strong>提交授课确认</strong>的开课任务</span>';
+    + '<span class="legend-item text-muted"> · 来源开课生效数据</span>';
 }
 
 function getSectionGroupLabel(sec) {
@@ -56522,6 +57063,8 @@ function isScheduleBatchScopeExcludedTask(task) {
 
 function buildScheduleBatchSummaries() {
   ensureScheduleTasksFromOffering();
+  // 列表「学期」列：当前开课学期（与筛选栏学期同口径）
+  const termCode = getActiveOfferingTermSetting()?.termCode || '';
   const map = new Map();
   getScheduleTaskRows().forEach(task => {
     // GE 不挂专业批次，不参与批次汇总
@@ -56535,6 +57078,7 @@ function buildScheduleBatchSummaries() {
           batchKey: key,
           programmeKey,
           intake,
+          termCode: task.termCode || termCode,
           schoolCode: getProgrammeSchoolCode(programmeKey),
           programmeName: m?.nameZh || programmeKey,
           programmeCode: m?.code || getProgrammeCode(programmeKey)
@@ -63700,8 +64244,36 @@ function buildScheduleJointDemoLaunchUrl() {
   return buildScheduleJointLaunchUrl();
 }
 
+/**
+ * 填充联合排课模式弹窗内的学年学期下拉（与页内 draftTerm 同步）。
+ */
+function fillScheduleJointModeTermSelect() {
+  const sel = document.getElementById('schedule-joint-mode-term');
+  if (!sel) return;
+  const terms = typeof getScheduleTermCodes === 'function' ? getScheduleTermCodes() : [];
+  if (!scheduleJointDraftTerm) scheduleJointDraftTerm = getDefaultScheduleJointTerm();
+  const cur = scheduleJointDraftTerm;
+  sel.innerHTML = terms.map(code =>
+    `<option value="${escapeHtml(code)}">${escapeHtml(formatCourseTermDisplay(code))}</option>`
+  ).join('');
+  if (cur && terms.includes(cur)) sel.value = cur;
+  else if (terms.length) {
+    sel.value = getDefaultScheduleJointTerm() || terms[0];
+    scheduleJointDraftTerm = sel.value;
+  }
+  if (typeof syncSearchableSelectLabel === 'function') syncSearchableSelectLabel(sel, true);
+}
+
+/** 模式弹窗内切换学期：写入联合排课草稿学期 */
+function onScheduleJointModeTermChange() {
+  const sel = document.getElementById('schedule-joint-mode-term');
+  scheduleJointDraftTerm = sel?.value || getDefaultScheduleJointTerm();
+}
+
 /** 打开联合排课对象类型弹窗 */
 function openScheduleJointModeModal() {
+  // 打开前填好学期选项，便于先选学期再选对象类型
+  fillScheduleJointModeTermSelect();
   openModal('modal-schedule-joint-mode');
 }
 
@@ -63717,12 +64289,14 @@ function closeScheduleJointModeModal() {
 function confirmScheduleJointModeChoice(mode) {
   const next = normalizeScheduleJointObjectMode(mode);
   if (!next) return false;
+  // 确认前再读一次弹窗学期，避免未触发 change 时丢失
+  onScheduleJointModeTermChange();
+  if (!scheduleJointDraftTerm) scheduleJointDraftTerm = getDefaultScheduleJointTerm();
   closeScheduleJointModeModal();
   const onJointPage = !!document.getElementById('page-schedule-joint')?.classList.contains('active')
     && scheduleBatchDetailContext?.type === 'joint';
   scheduleJointObjectMode = next;
   clearScheduleJointModeSelections();
-  if (!scheduleJointDraftTerm) scheduleJointDraftTerm = getDefaultScheduleJointTerm();
   if (onJointPage) {
     applyScheduleJointQueryContext();
     const jointPage = getScheduleJointPageEl();
@@ -64074,41 +64648,52 @@ function buildScheduleGridBlockLines(task, slot, roomName) {
 
 function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, gridOpts) {
   const preview = !!(gridOpts && gridOpts.preview);
-  if (!preview && isScheduleJointContext()) {
+  // 课表查询：指定 mount，只读对齐排时间详情格子（与详情状态隔离）
+  const queryMountId = gridOpts?.queryMountId ? String(gridOpts.queryMountId) : '';
+  const isQuery = !!queryMountId;
+  if (!preview && !isQuery && isScheduleJointContext()) {
     renderScheduleJointTimetableGrid(term, tasks, activeTaskId, weekFilter);
     return;
   }
-  const mount = preview
-    ? document.getElementById('schedule-time-room-preview-grid')
-    : scheduleDetailEl('schedule-timetable-grid');
+  const mount = queryMountId
+    ? document.getElementById(queryMountId)
+    : (preview
+      ? document.getElementById('schedule-time-room-preview-grid')
+      : scheduleDetailEl('schedule-timetable-grid'));
   if (!mount) return;
   const periods = ensureSchedulePeriods(term);
   if (!periods.length) {
     mount.innerHTML = '<p class="text-muted" style="padding:16px">请先在「课表节次维护」中配置节次</p>';
     return;
   }
+  // 查询渲染期间课卡字段走 scheduleQueryCardFields
+  if (isQuery) scheduleQueryGridRenderActive = true;
   const filterWeeks = weekFilter !== undefined ? weekFilter : getScheduleDetailTimetableWeekFilter();
   const roomScopeCtx = scheduleBatchDetailContext;
-  const roomScopedMenu = !preview && scheduleDetailPhase === 'room'
+  const roomScopedMenu = !preview && !isQuery && scheduleDetailPhase === 'room'
     && roomScopeCtx
     && (roomScopeCtx.type === 'weekday' || roomScopeCtx.type === 'venueType');
-  // 按时间/场地类型排教室详情固定显示七天，便于周末行落地
-  const weekdays = (roomScopedMenu || scheduleShowWeekend)
-    ? SCHEDULE_WEEKDAYS
-    : SCHEDULE_WEEKDAYS.filter(w => w.value <= 5);
+  // 按时间/场地类型排教室详情固定显示七天，便于周末行落地；查询页用独立「显示周末」
+  const weekdays = isQuery
+    ? (scheduleQueryShowWeekend ? SCHEDULE_WEEKDAYS : SCHEDULE_WEEKDAYS.filter(w => w.value <= 5))
+    : ((roomScopedMenu || scheduleShowWeekend)
+      ? SCHEDULE_WEEKDAYS
+      : SCHEDULE_WEEKDAYS.filter(w => w.value <= 5));
   // 排教室侧：仅左侧课程列表选中时按课程（及学时类型）过滤；仅点节次选中时仍显示周次内全部课程
-  const filterByCourseList = !preview && scheduleDetailPhase === 'room' && activeTaskId && scheduleActiveFromCourseList;
+  const filterByCourseList = !preview && !isQuery && scheduleDetailPhase === 'room' && activeTaskId && scheduleActiveFromCourseList;
   const displayTasks = filterByCourseList
     ? tasks.filter(t => t.id === activeTaskId)
     : tasks;
   const activeHourKeyForGrid = filterByCourseList
     ? normalizeScheduleHourKey(scheduleActiveHourType || getScheduleActiveHourKey() || '')
     : '';
-  const isRoomGrid = preview || scheduleDetailPhase === 'room';
+  // 查询页一律按「星期×节次」时间表（非教室行表）
+  const isRoomGrid = preview || (!isQuery && scheduleDetailPhase === 'room');
   const previewWeekday = preview ? Number(document.getElementById('srpv-weekday')?.value) || 0 : 0;
   if (preview) scheduleTimeRoomPreviewRender = true;
   // 排时间：渲染前补齐联动组同格缺失伙伴，避免已选 CST201 格上看不见 CST202 卡片
-  if (!preview && !isRoomGrid && scheduleDetailPhase === 'time'
+  // 查询只读不改写任务 slot
+  if (!preview && !isQuery && !isRoomGrid && scheduleDetailPhase === 'time'
     && typeof ensureScheduleLinkGroupPeerSlotsSynced === 'function') {
     ensureScheduleLinkGroupPeerSlotsSynced(displayTasks);
   }
@@ -64153,13 +64738,14 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
     });
   });
   const activeTask = tasks.find(t => t.id === activeTaskId) || null;
-  const conflictKeys = preview ? new Map() : getScheduleConflictCellKeys(tasks, activeTask);
+  // 查询只读：不叠冲突/资源描边（避免受详情相位残留状态影响）
+  const conflictKeys = (preview || isQuery) ? new Map() : getScheduleConflictCellKeys(tasks, activeTask);
   // 教室资源描边：与冲突着色同课（左侧选课或点选已排节次回退课）；教室侧不叠
   // 弃用：仅 activeTask && phase===time。原因：点已排任务会清 activeTaskId，售罄/超排整层消失
-  const resourcePaintTask = (!preview && !isRoomGrid && scheduleDetailPhase !== 'room'
+  const resourcePaintTask = (!preview && !isQuery && !isRoomGrid && scheduleDetailPhase !== 'room'
     && typeof getScheduleConflictPaintTask === 'function')
     ? getScheduleConflictPaintTask(activeTask)
-    : ((!preview && !isRoomGrid && scheduleDetailPhase !== 'room') ? activeTask : null);
+    : ((!preview && !isQuery && !isRoomGrid && scheduleDetailPhase !== 'room') ? activeTask : null);
   const resourceKeys = (resourcePaintTask && typeof getScheduleRoomResourceCellStates === 'function')
     ? getScheduleRoomResourceCellStates(tasks, resourcePaintTask)
     : new Map();
@@ -64167,7 +64753,8 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
   // 已选课：叠该课全部共同授课伙伴已排格；同时保留本页已排课「同格」合排伙伴（如选 MEC902 时 CST201 格上的 CST202 不能消失）
   // 未选课：仅叠与本批课「同格」的共同授课/联动伙伴，避免看不见合排
   let partnerHints = [];
-  if (!preview && !isRoomGrid) {
+  // 查询只读：不叠共同授课伙伴/冲突选中交互，仅展示本任务占用
+  if (!preview && !isQuery && !isRoomGrid) {
     // 同格伙伴：始终按 displayTasks 收集，保证选中他课后其它课的合排卡片仍可见
     const coLocatedHints = typeof getScheduleTimeCoLocatedPartnerSlotHints === 'function'
       ? getScheduleTimeCoLocatedPartnerSlotHints(displayTasks, filterWeeks)
@@ -64451,7 +65038,8 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
       }
       // 弃用：resState==='ok' 也加 is-room-resource-ok。原因：产品要求有余量不显示描边
     }
-    const clickHandler = isRoomGrid && roomName
+    // 查询只读：不挂落课点击
+    const clickHandler = (isQuery || (isRoomGrid && roomName))
       ? ''
       : `onScheduleGridCellClick(${weekday},${periodNo},event)`;
     const colspanAttr = colspan > 1 ? ` colspan="${colspan}"` : '';
@@ -64789,15 +65377,20 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
     // Day 列表头内嵌全屏图标（替代顶栏「课表全屏」按钮）
     // 左侧已选课=排入模式：卡片不接收点击，整格（含原卡片区域）都走排入，避免只能点右留白
     // 时间窗外只读时不挂 is-place-mode，避免仍显「+」却无法单击/框选排入
-    const placeModeCls = (!isRoomGrid && !preview && scheduleActiveFromCourseList
+    const placeModeCls = (!isQuery && !isRoomGrid && !preview && scheduleActiveFromCourseList
       && typeof isScheduleDetailReadonly === 'function' && !isScheduleDetailReadonly())
       ? ' is-place-mode'
       : '';
     // 已选已排节次：格内卡片=选中/取消，卡片外留白=改格（CSS is-slot-selection-active 悬停显格内可见 +）
-    const slotSelCls = (!isRoomGrid && !preview && !scheduleActiveFromCourseList && scheduleSelectedSlotIds.size)
+    const slotSelCls = (!isQuery && !isRoomGrid && !preview && !scheduleActiveFromCourseList && scheduleSelectedSlotIds.size)
       ? ' is-slot-selection-active'
       : '';
-    html = `<table class="schedule-grid-table schedule-detail-grid-table is-time-period-cols${placeModeCls}${slotSelCls}" style="--sch-day-count:${periods.length}"><thead><tr>${buildScheduleTtFullscreenCornerThHtml('time')}`;
+    // 查询页不挂课表全屏角标，角格仅作 Day 表头
+    const cornerTh = isQuery
+      ? '<th class="schedule-grid-weekday-col">Day</th>'
+      : buildScheduleTtFullscreenCornerThHtml('time');
+    const queryCls = isQuery ? ' is-schedule-query-grid' : '';
+    html = `<table class="schedule-grid-table schedule-detail-grid-table is-time-period-cols${placeModeCls}${slotSelCls}${queryCls}" style="--sch-day-count:${periods.length}"><thead><tr>${cornerTh}`;
     periods.forEach(p => {
       html += `<th style="--sch-cols:${axisMaxCols[p.periodNo]}"><span>${p.periodNo}</span><small>${formatSchedulePeriodAxisClockHtml(p)}</small></th>`;
     });
@@ -64818,7 +65411,7 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
     html += '</tbody></table>';
   }
   mount.innerHTML = html;
-  if (!preview) bindScheduleTimetableContextMenu(mount);
+  if (!preview && !isQuery) bindScheduleTimetableContextMenu(mount);
   if (isRoomGrid) {
     if (!preview) bindScheduleRoomGridCellClicks(mount);
     requestAnimationFrame(() => {
@@ -64836,15 +65429,17 @@ function renderScheduleTimetableGrid(term, tasks, activeTaskId, weekFilter, grid
       });
     });
   }
-  if (!preview) initScheduleGridDragSelect();
+  if (!preview && !isQuery) initScheduleGridDragSelect();
   // 排时间：课表重绘后同步共同授课通知横幅（含仅改显示设置、不走 ModeUi 的路径；同课同文案去重）
-  if (!preview && !isRoomGrid && typeof renderScheduleSharedTeachingGuide === 'function') {
+  if (!preview && !isQuery && !isRoomGrid && typeof renderScheduleSharedTeachingGuide === 'function') {
     const guideTask = activeTaskId
       ? (tasks.find(t => t.id === activeTaskId) || null)
       : null;
     renderScheduleSharedTeachingGuide(guideTask);
   }
   if (preview) scheduleTimeRoomPreviewRender = false;
+  // 查询渲染结束：恢复课卡字段读取详情记忆
+  if (isQuery) scheduleQueryGridRenderActive = false;
 }
 
 /** 联合排课课表：每行=一个对象×一个星期，星期文案逐行重复，右侧冻结对象列 */
@@ -71746,6 +72341,10 @@ function getScheduleRoomArrangeStatusSortLabel(row) {
 }
 
 const SCHEDULE_TIME_SORT_COLUMNS = {
+  // 弃用：产品要求隐藏列表「学期」列，排序键暂保留无入口
+  // term: { get: r => r.termCode || getActiveOfferingTermSetting()?.termCode || '' },
+  // 专业批次 = 专业代码-入学批次展示码
+  programmeBatch: { get: r => formatProgrammeIntakeCode(r.programmeKey, r.intake) },
   intake: { get: r => r.intake || '', type: 'intake' },
   programmeCode: { get: r => r.programmeCode || getProgrammeCode(r.programmeKey) || '' },
   programmeName: { get: r => r.programmeName || '' },
@@ -71764,6 +72363,9 @@ function renderScheduleTimeListThead(tbody) {
   const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
   tr.innerHTML = [
     '<th class="col-index">序号</th>',
+    // 原因：产品要求隐藏按入学批次排列表「学期」列（筛选项仍保留）
+    // th('学期', 'term', true),
+    th('专业批次', 'programmeBatch', true),
     th('入学批次', 'intake', true),
     th('专业代码', 'programmeCode', true),
     th('专业名称', 'programmeName', true),
@@ -71777,10 +72379,20 @@ function renderScheduleTimeListThead(tbody) {
   ].join('');
 }
 
+/** 排课入口列表「学期」列展示文案（当前开课学期） */
+function getScheduleArrangeListTermDisplay(row) {
+  const code = row?.termCode || getActiveOfferingTermSetting()?.termCode || '';
+  return code ? formatCourseTermDisplay(code) : '—';
+}
+
 const SCHEDULE_TEACHER_SORT_COLUMNS = {
+  // 弃用：产品要求隐藏列表「学期」列，排序键暂保留无入口
+  // term: { get: r => r.termCode || getActiveOfferingTermSetting()?.termCode || '' },
   teacherId: { get: r => r.teacherId || '' },
   name: { get: r => r.name || '' },
   dept: { get: r => r.dept || '' },
+  // 原因：所在单位右侧新增所属专业列
+  belongProgramme: { get: r => r.belongProgramme || '' },
   staffType: { get: r => r.staffType || '' },
   courseCount: { get: r => Number(r.courseCount) || 0, type: 'number' },
   groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
@@ -71796,9 +72408,13 @@ function renderScheduleTeacherListThead(tbody) {
   const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
   tr.innerHTML = [
     '<th class="col-index">序号</th>',
+    // 原因：产品要求隐藏按教师排列表「学期」列（筛选项仍保留）
+    // th('学期', 'term', true),
     th('教师工号', 'teacherId', true),
     th('教师姓名', 'name', true),
     th('所在单位', 'dept', true),
+    // 原因：产品要求所在单位右侧增加所属专业
+    th('所属专业', 'belongProgramme', true),
     th('教职工类型', 'staffType', true),
     th('课程数', 'courseCount', true),
     th('小组数', 'groupCount', true),
@@ -71810,10 +72426,21 @@ function renderScheduleTeacherListThead(tbody) {
 }
 
 const SCHEDULE_COURSE_SORT_COLUMNS = {
+  // 弃用：产品要求隐藏列表「学期」列，排序键暂保留无入口
+  // term: { get: r => r.termCode || getActiveOfferingTermSetting()?.termCode || '' },
   code: { get: r => formatScheduleCourseCode(r.code) || r.code || '' },
   name: { get: r => r.name || '' },
+  // 专业批次：必修=上课批次，选修=可选批次
+  programmeBatch: { get: r => r.programmeBatchLabel || formatScheduleCourseProgrammeBatchLabel(r) || '' },
+  // 选课方式：必修 / 选修
+  enrolMode: { get: r => r.enrolModeLabel || formatScheduleCourseEnrolModeLabel(r) || '' },
   courseType: { get: r => formatScheduleCourseTypeLabel(r.courseType) },
-  dept: { get: r => r.dept || '' },
+  // 原因：开课单位拆列后按新字段排序；dept 保留兼容旧缓存排序键
+  // dept: { get: r => r.dept || '' },
+  geType: { get: r => r.geTypeLabel || '' },
+  belongSchool: { get: r => r.belongSchool || r.schoolCode || r.dept || '' },
+  belongProgramme: { get: r => r.belongProgramme || '' },
+  offeringProgramme: { get: r => r.offeringProgramme || '' },
   groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
   doneUnits: { get: r => Number(r.doneUnits) || 0, type: 'number' },
   pendingUnits: { get: r => Number(r.pendingUnits) || 0, type: 'number' },
@@ -71824,22 +72451,39 @@ function renderScheduleCourseListThead(tbody) {
   const tr = tbody?.closest('table')?.querySelector('thead tr');
   if (!tr) return;
   const listKey = 'scheduleCourse';
-  const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
+  // center / extraClass：右冻排课状态、操作列
+  const th = (label, key, center, extraClass) =>
+    renderListSortTh(listKey, label, key, { center, extraClass: extraClass || '' });
   tr.innerHTML = [
     '<th class="col-index">序号</th>',
+    // 原因：产品要求隐藏按课程排列表「学期」列（筛选项仍保留）
+    // th('学期', 'term', true),
     th('Course Code', 'code', true),
     th('课程班名称', 'name'),
+    // 原因：产品要求课程类型左侧增加专业批次（必修=上课批次，选修=可选批次）；表头感叹号说明取值规则
+    // th('专业批次', 'programmeBatch', true),
+    renderScheduleCourseProgrammeBatchSortTh(listKey),
+    // 原因：产品要求课程类型左侧增加选课方式（必修/选修）
+    th('选课方式', 'enrolMode', true),
     th('课程类型', 'courseType', true),
-    th('开课单位', 'dept', true),
+    // 原因：产品要求课程类型右侧增加校选课类别；开课单位改为所属学院/所属专业/开课专业
+    th('校选课类别', 'geType', true),
+    th('所属学院', 'belongSchool', true),
+    th('所属专业', 'belongProgramme', true),
+    th('开课专业', 'offeringProgramme', true),
+    // th('开课单位', 'dept', true),
     th('小组数', 'groupCount', true),
     th('已排完', 'doneUnits', true),
     th('未排完', 'pendingUnits', true),
-    th('排课状态', 'status', true),
-    '<th class="col-center">操作</th>'
+    // 原因：产品要求横向滚动时右侧冻结排课状态与操作
+    th('排课状态', 'status', true, 'sch-course-freeze sch-course-freeze-status'),
+    '<th class="col-center sch-course-freeze sch-course-freeze-ops">操作</th>'
   ].join('');
 }
 
 const SCHEDULE_ROOM_WEEK_SORT_COLUMNS = {
+  // 弃用：产品要求隐藏列表「学期」列，排序键暂保留无入口
+  // term: { get: r => r.termCode || getActiveOfferingTermSetting()?.termCode || '' },
   weekday: { get: r => Number(r.weekday) || 0, type: 'number' },
   courseCount: { get: r => Number(r.courseCount) || 0, type: 'number' },
   groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
@@ -71855,6 +72499,8 @@ function renderScheduleRoomWeekListThead(tbody) {
   const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
   tr.innerHTML = [
     '<th class="col-index">序号</th>',
+    // 原因：产品要求隐藏按时间排教室列表「学期」列
+    // th('学期', 'term', true),
     th('Day', 'weekday', true),
     th('课程数', 'courseCount', true),
     th('小组数', 'groupCount', true),
@@ -71866,6 +72512,8 @@ function renderScheduleRoomWeekListThead(tbody) {
 }
 
 const SCHEDULE_ROOM_CATEGORY_SORT_COLUMNS = {
+  // 弃用：产品要求隐藏列表「学期」列，排序键暂保留无入口
+  // term: { get: r => r.termCode || getActiveOfferingTermSetting()?.termCode || '' },
   venueType: { get: r => r.venueTypeLabel || getScheduleVenueTypeLabel(r.venueType) || r.venueType || '' },
   courseCount: { get: r => Number(r.courseCount) || 0, type: 'number' },
   groupCount: { get: r => Number(r.groupCount) || 0, type: 'number' },
@@ -71881,6 +72529,8 @@ function renderScheduleRoomCategoryListThead(tbody) {
   const th = (label, key, center) => renderListSortTh(listKey, label, key, { center });
   tr.innerHTML = [
     '<th class="col-index">序号</th>',
+    // 原因：产品要求隐藏按场地类型排列表「学期」列
+    // th('学期', 'term', true),
     th('场地类型', 'venueType', true),
     th('课程数', 'courseCount', true),
     th('小组数', 'groupCount', true),
@@ -71895,10 +72545,16 @@ function renderScheduleTimePage() {
   const tbody = document.getElementById('schedule-time-body');
   renderScheduleTimeListThead(tbody);
   rebuildScheduleTermSelects();
+  // 原因：产品要求查询区下方恢复与按教师排一致的当前查看统计 hint 条
+  // 弃用记录：曾去掉顶部统计 hint
   renderScheduleOfferingHint('schedule-time-hint');
   rebuildScheduleBatchFilterOptions();
+  // 列表列：序号 + 专业批次 + 原 10 列（已隐藏学期）
+  // const scheduleTimeColCount = 13;
+  const scheduleTimeColCount = 12;
   if (!ensureCourseOfferingPlan()) {
-    renderScheduleEmptyRow(tbody, 11, '请先在「开课计划生成」中生成当前学期开课计划');
+    renderScheduleEmptyRow(tbody, scheduleTimeColCount, '请先在「开课计划生成」中生成当前学期开课计划');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-time-pagination', 'scheduleTime', 0);
     return;
   }
   ensureScheduleGlobalDemo();
@@ -71908,14 +72564,30 @@ function renderScheduleTimePage() {
   rows = filterScheduleArrangeRowsByStatus(rows, status);
   rows = sortListWithState(rows, 'scheduleTime', SCHEDULE_TIME_SORT_COLUMNS);
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 11, status ? '暂无匹配记录' : '暂无专业批次数据，请先在开课管理中完成合分班');
+    const filtered = !!(status
+      || document.getElementById('schedule-time-filter-term')?.value
+      || getScheduleListMsSelected('schedule-time-filter-school').length
+      || getScheduleListMsSelected('schedule-time-filter-prog').length
+      || getScheduleListMsSelected('schedule-time-filter-intake').length
+      || getScheduleListMsSelected('schedule-time-filter-programme-batch').length);
+    renderScheduleEmptyRow(tbody, scheduleTimeColCount, filtered ? '暂无匹配记录' : '暂无专业批次数据，请先在开课管理中完成合分班');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-time-pagination', 'scheduleTime', 0);
     return;
   }
-  tbody.innerHTML = rows.map((row, idx) => {
+  // 分页：过滤排序后切片
+  const paged = paginateListItems(rows, 'scheduleTime');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.map((row, idx) => {
     const canArrange = canScheduleArrangeAction('time', row.programmeKey);
     const programmeCode = row.programmeCode || getProgrammeCode(row.programmeKey) || '—';
+    // 专业批次：专业代码-入学批次（与执行计划列表同口径）
+    const programmeBatch = formatProgrammeIntakeCode(row.programmeKey, row.intake);
+    // 原因：产品要求隐藏「学期」列；原：
+    // const termDisplay = row.termCode ? formatCourseTermDisplay(row.termCode) : '—';
+    // <td class="col-center">…termDisplay…</td>
     return `<tr>
-    <td class="col-index">${idx + 1}</td>
+    <td class="col-index">${rowOffset + idx + 1}</td>
+    <td class="col-center"><code>${escapeHtml(programmeBatch)}</code></td>
     <td class="col-center"><code>${formatIntakeDisplay(row.intake)}</code></td>
     <td class="col-center"><code>${escapeHtml(programmeCode)}</code></td>
     <td class="col-center">${escapeHtml(row.programmeName)}</td>
@@ -71931,6 +72603,9 @@ function renderScheduleTimePage() {
     </td>
   </tr>`;
   }).join('');
+  if (typeof renderListPagination === 'function') {
+    renderListPagination('schedule-time-pagination', 'scheduleTime', paged.total);
+  }
 }
 
 /*
@@ -72282,8 +72957,50 @@ function countScheduleRoomPendingSlots(tasks) {
 }
 
 /** 按教师聚合的排课行 */
+/**
+ * 解析教师「所属专业」（唯一）。教师不会属于多个专业。
+ * 优先教师档案 / 人选池；否则取授课任务中出现次数最多的专业代码。
+ * @param {{ meta?: object, poolPick?: object, tasks?: object[] }} opts
+ * @returns {string}
+ */
+function resolveScheduleTeacherBelongProgrammeCode(opts) {
+  const meta = opts?.meta || {};
+  const poolPick = opts?.poolPick || {};
+  // 档案已维护所属专业时直接用
+  if (meta.programmeCode) return String(meta.programmeCode).trim().toUpperCase();
+  if (meta.programmeKey && typeof getProgrammeCode === 'function') {
+    return getProgrammeCode(meta.programmeKey) || String(meta.programmeKey).toUpperCase();
+  }
+  if (poolPick.programmeCode) return String(poolPick.programmeCode).trim().toUpperCase();
+  if (poolPick.programmeKey && typeof getProgrammeCode === 'function') {
+    return getProgrammeCode(poolPick.programmeKey) || String(poolPick.programmeKey).toUpperCase();
+  }
+  // 无档案时：按任务专业频次取唯一主专业（平票取字典序靠前）
+  const counts = new Map();
+  (opts?.tasks || []).forEach(task => {
+    const programmeKey = String(task?.programmeKey || '').trim();
+    if (!programmeKey || programmeKey === '__ge__') return;
+    const code = (typeof getProgrammeCode === 'function' ? getProgrammeCode(programmeKey) : '')
+      || programmeKey.toUpperCase();
+    if (!code) return;
+    counts.set(code, (counts.get(code) || 0) + 1);
+  });
+  let best = '';
+  let bestCount = -1;
+  [...counts.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], 'zh-CN'))
+    .forEach(([code, count]) => {
+      if (count > bestCount) {
+        best = code;
+        bestCount = count;
+      }
+    });
+  return best;
+}
+
 function getScheduleTeacherGroupRows() {
   const map = new Map();
+  const fallbackTerm = getActiveOfferingTermSetting()?.termCode || '';
   getScheduleTaskRows().forEach(t => {
     // lean：仅统计旅程批次 / GE 任务，并限制教师池
     if (typeof isScheduleLeanDemoJourneyTask === 'function' && !isScheduleLeanDemoJourneyTask(t)) return;
@@ -72305,14 +73022,24 @@ function getScheduleTeacherGroupRows() {
       || tasks[0]?.schoolCode
       || getProgrammeSchoolCode(tasks[0]?.programmeKey)
       || '';
+    // 学期：任务自带 termCode，缺省回落到当前开课学期
+    const termCode = tasks.map(t => t.termCode).find(Boolean) || fallbackTerm;
+    // 所属专业：教师只属于一个专业（档案优先；否则取授课任务中出现最多的专业代码）
+    const belongProgramme = resolveScheduleTeacherBelongProgrammeCode({
+      meta,
+      poolPick,
+      tasks
+    });
     return {
       teacherId: g.teacherId,
       name: resolveScheduleTeacherName(g.teacherId, meta.name || poolPick?.name || g.name),
       dept: meta.dept || poolPick?.departmentCode || '—',
+      belongProgramme: belongProgramme || '—',
       staffType: meta.staffType || poolPick?.teacherType || '—',
       gender: poolPick?.gender || meta.gender || (typeof resolveScheduleTeacherDemoGender === 'function'
         ? resolveScheduleTeacherDemoGender(g.teacherId) : ''),
       schoolCode,
+      termCode,
       tasks, courseLabel, courseCount: stats.courseCount,
       groupCount: stats.groupCount,
       doneUnits: stats.doneUnits,
@@ -72320,6 +73047,25 @@ function getScheduleTeacherGroupRows() {
       pendingUnits: stats.pendingUnits
     };
   });
+}
+
+/**
+ * 填充「按教师排」学年学期单选（可切换；默认当前开课学期）。
+ * @param {boolean} forceDefault 是否强制回到开课学期
+ */
+function ensureScheduleTeacherTermFilterSelect(forceDefault = false) {
+  const sel = document.getElementById('schedule-teacher-filter-term');
+  if (!sel || sel.tagName !== 'SELECT') return;
+  const terms = typeof getScheduleTermCodes === 'function' ? getScheduleTermCodes() : [];
+  const offering = getActiveOfferingTermSetting()?.termCode || '';
+  const keep = forceDefault ? offering : (sel.value || offering);
+  sel.innerHTML = terms.map(t =>
+    `<option value="${escapeHtml(t)}">${escapeHtml(formatCourseTermDisplay(t))}</option>`
+  ).join('');
+  if (keep && terms.includes(keep)) sel.value = keep;
+  else if (offering && terms.includes(offering)) sel.value = offering;
+  else sel.value = terms[0] || '';
+  if (typeof syncSearchableSelectLabel === 'function') syncSearchableSelectLabel(sel, true);
 }
 
 function filterScheduleArrangeRowsByStatus(rows, status) {
@@ -72345,40 +73091,98 @@ function renderScheduleArrangeStatusBadge(row) {
   return '<span class="badge badge-gray">未排完</span>';
 }
 
+/**
+ * 填充「按教师排」所在单位 / 所属专业 / 教职工类型多选候选项。
+ * @param {object[]} rows 教师汇总行
+ */
+function rebuildScheduleTeacherListMsOptions(rows) {
+  const list = rows || [];
+  const depts = [...new Set(list.map(r => String(r.dept || '').trim()).filter(t => t && t !== '—'))]
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  fillScheduleListMs('schedule-teacher-filter-dept', depts.map(t => ({ value: t, label: t })));
+  const programmes = [...new Set(list.map(r => String(r.belongProgramme || '').trim()).filter(t => t && t !== '—'))]
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  fillScheduleListMs('schedule-teacher-filter-programme', programmes.map(t => ({ value: t, label: t })));
+  const types = [...new Set(list.map(r => String(r.staffType || '').trim()).filter(t => t && t !== '—'))]
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  fillScheduleListMs('schedule-teacher-filter-staff-type', types.map(t => ({ value: t, label: t })));
+}
+
+/**
+ * @deprecated 教职工类型已改多选，见 rebuildScheduleTeacherListMsOptions。
+ * @param {object[]} rows 教师汇总行
+ */
+function rebuildScheduleTeacherStaffTypeFilterOptions(rows) {
+  rebuildScheduleTeacherListMsOptions(rows);
+}
+
 function renderScheduleTeacherPage() {
   const tbody = document.getElementById('schedule-teacher-body');
   renderScheduleTeacherListThead(tbody);
   rebuildScheduleTermSelects();
-  const termEl = document.getElementById('schedule-teacher-filter-term');
-  if (termEl) { const term = getActiveOfferingTermSetting(); termEl.value = term ? formatCourseTermDisplay(term.termCode) : ''; }
+  // 学年学期：单选可切换（不再只读回填展示文案）
+  ensureScheduleTeacherTermFilterSelect(false);
   renderScheduleOfferingHint('schedule-teacher-hint');
   ensureScheduleGlobalDemo();
   ensureScheduleChangeLogDemo();
+  // 序号+原列 + 所属专业（已隐藏学期）
+  // const teacherColCount = 12;
+  // const teacherColCount = 13;
+  const teacherColCount = 12;
   if (!ensureScheduleTasksFromOffering()) {
-    renderScheduleEmptyRow(tbody, 11, '暂无课程数据，请先在开课管理中完成开课计划');
+    renderScheduleEmptyRow(tbody, teacherColCount, '暂无课程数据，请先在开课管理中完成开课计划');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-teacher-pagination', 'scheduleTeacher', 0);
     return;
   }
   let rows = getScheduleTeacherGroupRows();
+  // 选项来自未按类型过滤前的全集，避免自锁
+  rebuildScheduleTeacherListMsOptions(rows);
+  const termQ = document.getElementById('schedule-teacher-filter-term')?.value || '';
   const idQ = (document.getElementById('schedule-teacher-filter-id')?.value || '').trim().toLowerCase();
   const nameQ = (document.getElementById('schedule-teacher-filter-name')?.value || '').trim().toLowerCase();
-  const deptQ = (document.getElementById('schedule-teacher-filter-dept')?.value || '').trim().toLowerCase();
+  // 原因：所在单位/所属专业/教职工类型改为多选
+  // const deptQ = (document.getElementById('schedule-teacher-filter-dept')?.value || '').trim().toLowerCase();
+  // const programmeQ = (document.getElementById('schedule-teacher-filter-programme')?.value || '').trim().toLowerCase();
+  // const staffType = document.getElementById('schedule-teacher-filter-staff-type')?.value || '';
+  const depts = getScheduleListMsSelected('schedule-teacher-filter-dept');
+  const programmes = getScheduleListMsSelected('schedule-teacher-filter-programme');
+  const staffTypes = getScheduleListMsSelected('schedule-teacher-filter-staff-type');
   const status = document.getElementById('schedule-teacher-filter-status')?.value || '';
+  // 按所选学年学期过滤
+  if (termQ) {
+    rows = rows.filter(r => {
+      const codes = (r.tasks || []).map(t => String(t.termCode || '').trim()).filter(Boolean);
+      if (codes.length) return codes.some(c => c === termQ);
+      return String(r.termCode || '') === termQ;
+    });
+  }
   if (idQ) rows = rows.filter(r => r.teacherId.toLowerCase().includes(idQ));
   if (nameQ) rows = rows.filter(r => (r.name || '').toLowerCase().includes(nameQ));
-  if (deptQ) rows = rows.filter(r => (r.dept || '').toLowerCase().includes(deptQ));
+  if (depts.length) rows = rows.filter(r => depts.includes(String(r.dept || '')));
+  if (programmes.length) rows = rows.filter(r => programmes.includes(String(r.belongProgramme || '')));
+  if (staffTypes.length) rows = rows.filter(r => staffTypes.includes(String(r.staffType || '')));
   rows = filterScheduleArrangeRowsByStatus(rows, status);
   rows = sortListWithState(rows, 'scheduleTeacher', SCHEDULE_TEACHER_SORT_COLUMNS);
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 11, status ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
+    const filtered = !!(termQ || status || idQ || nameQ || depts.length || programmes.length || staffTypes.length);
+    renderScheduleEmptyRow(tbody, teacherColCount, filtered ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-teacher-pagination', 'scheduleTeacher', 0);
     return;
   }
-  tbody.innerHTML = rows.map((r, idx) => {
+  // 分页：过滤排序后切片
+  const paged = paginateListItems(rows, 'scheduleTeacher');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.map((r, idx) => {
     const canArrange = canScheduleArrangeActionAny('time', (r.tasks || []).map(t => t.programmeKey));
+    // 原因：产品要求隐藏「学期」列；原：
+    // const termDisplay = termQ ? formatCourseTermDisplay(termQ) : getScheduleArrangeListTermDisplay(r);
+    // <td class="col-center">…termDisplay…</td>
     return `<tr>
-    <td class="col-index">${idx + 1}</td>
+    <td class="col-index">${rowOffset + idx + 1}</td>
     <td class="col-center"><code>${escapeHtml(r.teacherId)}</code></td>
     <td class="col-center">${escapeHtml(r.name)}</td>
     <td class="col-center">${escapeHtml(r.dept)}</td>
+    <td class="col-center">${escapeHtml(r.belongProgramme || '—')}</td>
     <td class="col-center">${escapeHtml(r.staffType)}</td>
     <td class="col-center">${r.courseCount}</td>
     <td class="col-center">${r.groupCount || 0}</td>
@@ -72388,12 +73192,21 @@ function renderScheduleTeacherPage() {
     <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'teacher', teacherId: r.teacherId }, 'time', canArrange ? '排课' : '查看')}${entityChangeLogLink('schedule-arrange-teacher', r.teacherId, `${r.name}（${r.teacherId}）`)}</td>
   </tr>`;
   }).join('');
+  if (typeof renderListPagination === 'function') {
+    renderListPagination('schedule-teacher-pagination', 'scheduleTeacher', paged.total);
+  }
 }
 
 function resetScheduleTeacherQuery() {
-  ['schedule-teacher-filter-id', 'schedule-teacher-filter-name', 'schedule-teacher-filter-dept', 'schedule-teacher-filter-status'].forEach(id => {
+  ['schedule-teacher-filter-id', 'schedule-teacher-filter-name', 'schedule-teacher-filter-status'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  // 多选筛选项清空
+  ['schedule-teacher-filter-dept', 'schedule-teacher-filter-programme', 'schedule-teacher-filter-staff-type']
+    .forEach(clearScheduleListMs);
+  // 学年学期重置为当前开课学期
+  ensureScheduleTeacherTermFilterSelect(true);
+  if (typeof resetListPage === 'function') resetListPage('scheduleTeacher');
   renderScheduleTeacherPage();
 }
 
@@ -72553,8 +73366,176 @@ function getScheduleCourseGroupTypeCode(row) {
   return resolveScheduleCourseTypeCode(row?.code || task?.code, catalogId, task);
 }
 
+/**
+ * 从排课任务收集专业代码（排除校选占位 __ge__）。
+ * @param {object[]} tasks 开课任务列表
+ * @returns {string[]}
+ */
+function collectScheduleCourseProgrammeCodes(tasks) {
+  const out = [];
+  (tasks || []).forEach(task => {
+    const programmeKey = String(task?.programmeKey || '').trim();
+    // 校选占位不计入专业列
+    if (!programmeKey || programmeKey === '__ge__') return;
+    const code = typeof getProgrammeCode === 'function' ? getProgrammeCode(programmeKey) : '';
+    const label = code || programmeKey;
+    if (label && !out.includes(label)) out.push(label);
+  });
+  return out.sort((a, b) => a.localeCompare(b, 'zh-CN'));
+}
+
+/**
+ * 按课号从全量任务收集关联专业代码（含借用本课作 ME 的专业；不受 consolidate 单任务影响）。
+ * @param {string} courseCode 课程号
+ * @returns {string[]}
+ */
+function collectScheduleCourseRelatedProgrammeCodes(courseCode) {
+  const codeNorm = String(courseCode || '').replace(/\*$/, '').trim().toUpperCase();
+  if (!codeNorm) return [];
+  const matched = (typeof getScheduleTaskRows === 'function' ? getScheduleTaskRows() : []).filter(task => {
+    const raw = String(task?.code || '').replace(/\*$/, '').trim().toUpperCase();
+    return raw === codeNorm;
+  });
+  return collectScheduleCourseProgrammeCodes(matched);
+}
+
+/**
+ * @deprecated 命名易误解为「开课专业可多选」。开课专业仅一个，请用 resolveScheduleCourseOfferingProgrammeCode；
+ * 多专业关联请用 collectScheduleCourseRelatedProgrammeCodes。
+ * @param {string} courseCode 课程号
+ * @returns {string[]}
+ */
+function collectScheduleCourseOfferingProgrammeCodes(courseCode) {
+  return collectScheduleCourseRelatedProgrammeCodes(courseCode);
+}
+
+/**
+ * 从课号前缀解析专业代码（课程库所属专业的原型近似；正式应以课程库字段为准）。
+ * 例：PHY101→PHY；MAT201→MAT。
+ * @param {string} courseCode 课程号
+ * @returns {string}
+ */
+function resolveScheduleCourseProgrammeCodeFromCourseCode(courseCode) {
+  const raw = String(
+    typeof formatScheduleCourseCode === 'function'
+      ? formatScheduleCourseCode(courseCode)
+      : (courseCode || '')
+  ).replace(/\*$/, '').trim().toUpperCase();
+  if (!raw) return '';
+  // 专业代码按长度降序，避免短码误匹配（如 MA 抢在 MAT 前）
+  const programmeCodes = Object.values(typeof PROGRAMMES !== 'undefined' ? PROGRAMMES : {})
+    .map(item => String(item?.code || '').trim().toUpperCase())
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length || a.localeCompare(b));
+  const hit = programmeCodes.find(code => raw.startsWith(code));
+  return hit || '';
+}
+
+/**
+ * 解析课程库「所属专业」（唯一）。优先读课程库 programmeCode / programmeKey，否则用课号前缀。
+ * @param {string} courseCode 课程号
+ * @param {string} [catalogId] 课程库 id
+ * @returns {string}
+ */
+function resolveScheduleCourseBelongProgrammeCode(courseCode, catalogId) {
+  const catalog = (typeof COURSE_CATALOG !== 'undefined' ? COURSE_CATALOG : []).find(item =>
+    (catalogId && item.id === catalogId)
+    || (courseCode && String(item.code || '').replace(/\*$/, '') === String(courseCode).replace(/\*$/, ''))
+  );
+  // 课程库若已维护所属专业，直接用
+  if (catalog?.programmeCode) return String(catalog.programmeCode).trim().toUpperCase();
+  if (catalog?.programmeKey && typeof getProgrammeCode === 'function') {
+    return getProgrammeCode(catalog.programmeKey) || String(catalog.programmeKey).toUpperCase();
+  }
+  return resolveScheduleCourseProgrammeCodeFromCourseCode(courseCode || catalog?.code);
+}
+
+/**
+ * @deprecated 请改用 resolveScheduleCourseBelongProgrammeCode / resolveScheduleCourseOfferingProgrammeCode。
+ * 原因：原函数名把「课号前缀」误称为开课专业。
+ * @param {string} courseCode 课程号
+ * @returns {string}
+ */
+function resolveScheduleCourseOfferingProgrammeCode(courseCode) {
+  return resolveScheduleCourseProgrammeCodeFromCourseCode(courseCode);
+}
+
+/** 借必修作 ME 时，可能出现「所属专业 ≠ 开课专业」的专业代码（PHY / MAT / CHS） */
+const SCHEDULE_COURSE_ME_BORROW_PROGRAMME_CODES = ['PHY', 'MAT', 'CHS'];
+
+/**
+ * 解析排课列表「开课专业」（唯一）。
+ * 默认与所属专业相同；仅少量 PHY/MAT/CHS 相关 ME 借用课（挂靠专业 ≠ 课程库所属专业）时才分开。
+ * @param {object} opts
+ * @param {object[]} opts.tasks 本课聚合任务
+ * @param {string} opts.belongProgrammeCode 课程库所属专业
+ * @param {string} [opts.courseType] 课程类型代码（ME 时才考虑借用分歧）
+ * @returns {string}
+ */
+function resolveScheduleCourseRowOfferingProgrammeCode(opts) {
+  const belong = String(opts?.belongProgrammeCode || '').trim().toUpperCase();
+  const taskProgramme = (collectScheduleCourseProgrammeCodes(opts?.tasks || [])[0] || '').toUpperCase();
+  // 默认：开课专业 = 所属专业
+  if (!belong) return taskProgramme || '';
+  if (!taskProgramme || taskProgramme === belong) return belong;
+  const borrowSet = new Set(SCHEDULE_COURSE_ME_BORROW_PROGRAMME_CODES);
+  const courseType = String(opts?.courseType || '').trim().toUpperCase();
+  // 仅 ME，且涉及 PHY/MAT/CHS 时允许与所属专业不一致（挂靠方为开课专业）
+  const isMe = courseType === 'ME'
+    || (opts?.tasks || []).some(task => {
+      const nature = String(task?.nature || task?.courseType || task?.category || '').toUpperCase();
+      return nature === 'ME' || /MAJOR\s*ELECTIVE|专业选修/i.test(String(task?.nature || task?.category || ''));
+    });
+  if (isMe && (borrowSet.has(belong) || borrowSet.has(taskProgramme))) {
+    return taskProgramme;
+  }
+  return belong;
+}
+
+/**
+ * 校选课类别展示文案（G01–G04）；非 GE 为 —。
+ * @param {object} row 按课程聚合行
+ * @returns {string}
+ */
+function formatScheduleCourseGeTypeLabel(row) {
+  const tasks = row?.tasks || [];
+  const isGe = row?.courseType === 'GE'
+    || tasks.some(task => typeof isScheduleJointGeCourse === 'function' && isScheduleJointGeCourse(task));
+  if (!isGe) return '—';
+  const streams = [...new Set(tasks
+    .map(task => (typeof resolveScheduleJointGeStream === 'function' ? resolveScheduleJointGeStream(task) : ''))
+    .filter(Boolean))];
+  // 有 GE 但无文商理流 → G04 不限
+  if (!streams.length) {
+    const opt = (typeof SCHEDULE_JOINT_GE_TYPE_OPTIONS !== 'undefined'
+      ? SCHEDULE_JOINT_GE_TYPE_OPTIONS.find(item => item.id === 'G04')
+      : null);
+    return opt?.label || 'G04（不限）';
+  }
+  return streams.map(stream => {
+    const opt = (typeof SCHEDULE_JOINT_GE_TYPE_OPTIONS !== 'undefined' ? SCHEDULE_JOINT_GE_TYPE_OPTIONS : [])
+      .find(item => (typeof SCHEDULE_JOINT_GE_TYPE_STREAM !== 'undefined'
+        ? SCHEDULE_JOINT_GE_TYPE_STREAM[item.id]
+        : null) === stream);
+    return opt?.label || stream;
+  }).join('、');
+}
+
+/**
+ * 解析按课程行的校选课类别筛选键（G01–G04 / none）。
+ * @param {object} row 按课程聚合行
+ * @returns {string}
+ */
+function getScheduleCourseGeTypeFilterKey(row) {
+  const label = String(row?.geTypeLabel || formatScheduleCourseGeTypeLabel(row) || '').trim();
+  if (!label || label === '—') return 'none';
+  const match = label.match(/\b(G0[1-4])\b/i);
+  return match ? match[1].toUpperCase() : 'none';
+}
+
 function getScheduleCourseGroupRows() {
   const map = new Map();
+  const fallbackTerm = getActiveOfferingTermSetting()?.termCode || '';
   consolidateScheduleTasksByCourse(getScheduleTaskRows()).forEach(t => {
     // lean：课程列表对齐旅程批次 + GE，去掉垫片课
     if (typeof isScheduleLeanDemoJourneyTask === 'function' && !isScheduleLeanDemoJourneyTask(t)) return;
@@ -72566,10 +73547,47 @@ function getScheduleCourseGroupRows() {
     const dept = SCHEDULE_COURSE_DEPT[g.code]
       || (SCHEDULE_TEACHER_META[getScheduleTaskTeacherId(g.tasks[0])]?.dept)
       || '—';
-    const schoolCode = g.tasks[0]?.schoolCode || getProgrammeSchoolCode(g.tasks[0]?.programmeKey) || '';
+    const catalogId = typeof getScheduleTaskCatalogId === 'function'
+      ? getScheduleTaskCatalogId(g.tasks[0])
+      : (g.tasks[0]?.catalogId || '');
+    // 所属学院：优先开课单位代码，其次任务/专业学院
+    const belongSchool = (typeof getCatalogOfferingUnitAbbr === 'function'
+      ? getCatalogOfferingUnitAbbr(catalogId, g.code)
+      : '')
+      || g.tasks[0]?.schoolCode
+      || getProgrammeSchoolCode(g.tasks[0]?.programmeKey)
+      || '';
+    const schoolCode = belongSchool || g.tasks[0]?.schoolCode || getProgrammeSchoolCode(g.tasks[0]?.programmeKey) || '';
+    // 所属专业：课程库维护的唯一归属专业
+    const belongProgrammeCode = resolveScheduleCourseBelongProgrammeCode(g.code, catalogId);
+    const courseType = getScheduleCourseGroupTypeCode({ code: g.code, tasks: g.tasks });
+    // 开课专业：默认=所属专业；仅 PHY/MAT/CHS 的 ME 借用课可不同
+    const offeringProgrammeCode = resolveScheduleCourseRowOfferingProgrammeCode({
+      tasks: g.tasks,
+      belongProgrammeCode,
+      courseType
+    });
+    const geTypeLabel = formatScheduleCourseGeTypeLabel({ courseType, tasks: g.tasks });
+    // 学期：任务自带 termCode，缺省回落到当前开课学期
+    const termCode = g.tasks.map(t => t.termCode).find(Boolean) || fallbackTerm;
+    // 专业批次：必修取上课批次，选修取可选批次
+    const programmeBatchLabel = formatScheduleCourseProgrammeBatchLabel({
+      code: g.code,
+      courseType,
+      tasks: g.tasks
+    });
+    // 选课方式：GE/ME→选修，其余→必修
+    const enrolModeLabel = formatScheduleCourseEnrolModeLabel(courseType);
     return {
       code: g.code, name: g.name, dept, schoolCode, tasks: g.tasks,
-      courseType: getScheduleCourseGroupTypeCode({ code: g.code, tasks: g.tasks }),
+      termCode,
+      courseType,
+      geTypeLabel,
+      programmeBatchLabel,
+      enrolModeLabel,
+      belongSchool: belongSchool || (dept !== '—' ? dept : ''),
+      belongProgramme: belongProgrammeCode || '—',
+      offeringProgramme: offeringProgrammeCode || '—',
       groupCount: stats.groupCount,
       doneUnits: stats.doneUnits,
       totalUnits: stats.groupCount,
@@ -72578,61 +73596,174 @@ function getScheduleCourseGroupRows() {
   });
 }
 
+/**
+ * 填充「按课程排」学年学期单选（可切换；默认当前开课学期）。
+ * @param {boolean} forceDefault 是否强制回到开课学期
+ */
+function ensureScheduleCourseTermFilterSelect(forceDefault = false) {
+  const sel = document.getElementById('schedule-course-filter-term');
+  if (!sel || sel.tagName !== 'SELECT') return;
+  const terms = typeof getScheduleTermCodes === 'function' ? getScheduleTermCodes() : [];
+  const offering = getActiveOfferingTermSetting()?.termCode || '';
+  const keep = forceDefault ? offering : (sel.value || offering);
+  sel.innerHTML = terms.map(t =>
+    `<option value="${escapeHtml(t)}">${escapeHtml(formatCourseTermDisplay(t))}</option>`
+  ).join('');
+  if (keep && terms.includes(keep)) sel.value = keep;
+  else if (offering && terms.includes(offering)) sel.value = offering;
+  else sel.value = terms[0] || '';
+  if (typeof syncSearchableSelectLabel === 'function') syncSearchableSelectLabel(sel, true);
+}
+
+/**
+ * 填充「按课程排」所属学院 / 所属专业 / 开课专业 / 校选课类别多选候选项。
+ * @param {object[]} rows 课程汇总行
+ */
+function rebuildScheduleCourseListMsOptions(rows) {
+  const list = rows || [];
+  // 所属学院：与列表展示字段一致
+  const schools = [...new Set(list.map(r => String(r.belongSchool || r.schoolCode || r.dept || '').trim()).filter(t => t && t !== '—'))]
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  fillScheduleListMs('schedule-course-filter-school', schools.map(t => ({ value: t, label: t })));
+  const belongProgrammes = [...new Set(list.map(r => String(r.belongProgramme || '').trim()).filter(t => t && t !== '—'))]
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  fillScheduleListMs('schedule-course-filter-belong-programme', belongProgrammes.map(t => ({ value: t, label: t })));
+  const offeringProgrammes = [...new Set(list.map(r => String(r.offeringProgramme || '').trim()).filter(t => t && t !== '—'))]
+    .sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  fillScheduleListMs('schedule-course-filter-offering-programme', offeringProgrammes.map(t => ({ value: t, label: t })));
+  // 校选课类别：固定 G01–G04 + 非校选（与原下拉一致）
+  fillScheduleListMs('schedule-course-filter-ge-type', [
+    ...SCHEDULE_JOINT_GE_TYPE_OPTIONS.map(it => ({ value: it.id, label: it.label })),
+    { value: 'none', label: '非校选' }
+  ], { prune: true });
+}
+
 function renderScheduleCoursePage() {
   const tbody = document.getElementById('schedule-course-body');
   renderScheduleCourseListThead(tbody);
   rebuildScheduleTermSelects();
   ensureScheduleCourseTypeFilterMultiselect();
-  const termEl = document.getElementById('schedule-course-filter-term');
-  if (termEl) { const term = getActiveOfferingTermSetting(); termEl.value = term ? formatCourseTermDisplay(term.termCode) : ''; }
+  // 学年学期：单选可切换（不再只读回填展示文案）
+  ensureScheduleCourseTermFilterSelect(false);
   renderScheduleOfferingHint('schedule-course-hint');
   ensureScheduleGlobalDemo();
   ensureScheduleChangeLogDemo();
+  // 序号+课号+班名+专业批次+选课方式+课程类型+校选+学院+两专业+原统计列（已隐藏学期）→ 15 列
+  // const courseColCount = 11; // 原：开课单位单列
+  // const courseColCount = 14; // 原：未含专业批次
+  // const courseColCount = 15; // 原：未含选课方式
+  // const courseColCount = 16;
+  const courseColCount = 15;
   if (!ensureScheduleTasksFromOffering()) {
-    renderScheduleEmptyRow(tbody, 10, '暂无课程数据，请先在开课管理中完成开课计划');
+    renderScheduleEmptyRow(tbody, courseColCount, '暂无课程数据，请先在开课管理中完成开课计划');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-course-pagination', 'scheduleCourse', 0);
     return;
   }
   let rows = getScheduleCourseGroupRows();
+  // 所属学院/专业/校选课类别多选候选项（过滤前全集，避免自锁）
+  rebuildScheduleCourseListMsOptions(rows);
+  const termQ = document.getElementById('schedule-course-filter-term')?.value || '';
   const codeQ = (document.getElementById('schedule-course-filter-code')?.value || '').trim().toLowerCase();
   const nameQ = (document.getElementById('schedule-course-filter-name')?.value || '').trim().toLowerCase();
-  const deptQ = (document.getElementById('schedule-course-filter-dept')?.value || '').trim().toLowerCase();
+  // 原因：开课单位筛选项改为所属学院等；旧 dept 输入已注释
+  // const deptQ = (document.getElementById('schedule-course-filter-dept')?.value || '').trim().toLowerCase();
+  // 原因：所属学院/所属专业/开课专业/校选课类别改为多选
+  // const schoolQ = (document.getElementById('schedule-course-filter-school')?.value || '').trim().toLowerCase();
+  // const belongProgQ = (document.getElementById('schedule-course-filter-belong-programme')?.value || '').trim().toLowerCase();
+  // const offeringProgQ = (document.getElementById('schedule-course-filter-offering-programme')?.value || '').trim().toLowerCase();
+  // const geTypeQ = document.getElementById('schedule-course-filter-ge-type')?.value || '';
+  const schools = getScheduleListMsSelected('schedule-course-filter-school');
+  const belongProgs = getScheduleListMsSelected('schedule-course-filter-belong-programme');
+  const offeringProgs = getScheduleListMsSelected('schedule-course-filter-offering-programme');
+  const geTypes = getScheduleListMsSelected('schedule-course-filter-ge-type');
+  // 弃用教师关键字：按课程列表表头无教师列
+  // const teacherQ = (document.getElementById('schedule-course-filter-teacher')?.value || '').trim();
   const typeQ = getScheduleCourseTypeFilterSelected();
   const status = document.getElementById('schedule-course-filter-status')?.value || '';
+  // 按所选学年学期过滤（任务无 termCode 时按行上 termCode / 开课学期比对）
+  if (termQ) {
+    rows = rows.filter(r => {
+      const codes = (r.tasks || []).map(t => String(t.termCode || '').trim()).filter(Boolean);
+      if (codes.length) return codes.some(c => c === termQ);
+      return String(r.termCode || '') === termQ;
+    });
+  }
   if (codeQ) rows = rows.filter(r =>
     r.code.toLowerCase().includes(codeQ) || formatScheduleCourseCode(r.code).toLowerCase().includes(codeQ));
   if (nameQ) rows = rows.filter(r => (r.name || '').toLowerCase().includes(nameQ));
-  if (deptQ) rows = rows.filter(r => (r.dept || '').toLowerCase().includes(deptQ));
+  // if (deptQ) rows = rows.filter(r => (r.dept || '').toLowerCase().includes(deptQ));
+  if (schools.length) {
+    rows = rows.filter(r => schools.includes(String(r.belongSchool || r.schoolCode || r.dept || '')));
+  }
+  if (belongProgs.length) {
+    rows = rows.filter(r => belongProgs.includes(String(r.belongProgramme || '')));
+  }
+  if (offeringProgs.length) {
+    rows = rows.filter(r => offeringProgs.includes(String(r.offeringProgramme || '')));
+  }
+  if (geTypes.length) {
+    rows = rows.filter(r => geTypes.includes(getScheduleCourseGeTypeFilterKey(r)));
+  }
+  // if (teacherQ) { rows = rows.filter(r => scheduleTasksMatchCourseAndTeacherKeywords(r.tasks || [], '', teacherQ)); }
   if (typeQ.length) rows = rows.filter(r => typeQ.includes(r.courseType));
   rows = filterScheduleArrangeRowsByStatus(rows, status);
   rows = sortListWithState(rows, 'scheduleCourse', SCHEDULE_COURSE_SORT_COLUMNS);
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 10, status || typeQ.length || codeQ || nameQ || deptQ ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
+    const filtered = !!(termQ || status || typeQ.length || codeQ || nameQ
+      || schools.length || belongProgs.length || offeringProgs.length || geTypes.length);
+    renderScheduleEmptyRow(tbody, courseColCount, filtered ? '暂无匹配记录' : '暂无课程数据，请先在开课管理中完成开课计划');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-course-pagination', 'scheduleCourse', 0);
     return;
   }
-  tbody.innerHTML = rows.map((r, idx) => {
+  // 分页：过滤排序后切片
+  const paged = paginateListItems(rows, 'scheduleCourse');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.map((r, idx) => {
     const canArrange = canScheduleArrangeActionAny('time', (r.tasks || []).map(t => t.programmeKey));
+    // 原因：产品要求隐藏「学期」列；原：
+    // const termDisplay = termQ ? formatCourseTermDisplay(termQ) : getScheduleArrangeListTermDisplay(r);
+    // <td class="col-center">…termDisplay…</td>
     return `<tr>
-    <td class="col-index">${idx + 1}</td>
+    <td class="col-index">${rowOffset + idx + 1}</td>
     <td class="col-center"><strong>${escapeHtml(formatScheduleCourseCode(r.code))}</strong></td>
     <td>${escapeHtml(r.name)}</td>
+    <td class="col-center sch-course-batch-cell">${renderScheduleCourseProgrammeBatchCellHtml(r.programmeBatchLabel || formatScheduleCourseProgrammeBatchLabel(r) || '—')}</td>
+    <td class="col-center">${escapeHtml(r.enrolModeLabel || formatScheduleCourseEnrolModeLabel(r) || '—')}</td>
     <td class="col-center">${escapeHtml(formatScheduleCourseTypeLabel(r.courseType))}</td>
-    <td class="col-center">${escapeHtml(r.dept)}</td>
+    <td class="col-center">${escapeHtml(r.geTypeLabel || '—')}</td>
+    <td class="col-center">${escapeHtml(r.belongSchool || r.schoolCode || r.dept || '—')}</td>
+    <td class="col-center">${escapeHtml(r.belongProgramme || '—')}</td>
+    <td class="col-center">${escapeHtml(r.offeringProgramme || '—')}</td>
+    <!-- <td class="col-center">${escapeHtml(r.dept)}</td> -->
     <td class="col-center">${r.groupCount || 0}</td>
     <td class="col-center">${r.doneUnits}</td>
     <td class="col-center">${r.pendingUnits ? `<span class="status draft">${r.pendingUnits}</span>` : '0'}</td>
-    <td class="col-center">${renderScheduleArrangeStatusBadge(r)}</td>
-    <td class="col-center actions">${renderScheduleDetailLaunchLink({ type: 'course', courseCode: r.code }, 'time', canArrange ? '排课' : '查看')}${entityChangeLogLink('schedule-arrange-course', r.code, `${formatScheduleCourseCode(r.code)} ${r.name}`)}</td>
+    <td class="col-center sch-course-freeze sch-course-freeze-status">${renderScheduleArrangeStatusBadge(r)}</td>
+    <td class="col-center actions sch-course-freeze sch-course-freeze-ops">${renderScheduleDetailLaunchLink({ type: 'course', courseCode: r.code }, 'time', canArrange ? '排课' : '查看')}${entityChangeLogLink('schedule-arrange-course', r.code, `${formatScheduleCourseCode(r.code)} ${r.name}`)}</td>
   </tr>`;
   }).join('');
+  // 专业批次超过 5 个时悬停看全文
+  if (typeof bindCellFloatTips === 'function') {
+    bindCellFloatTips(tbody, '.sch-course-batch-tip[data-tip]', { alwaysShow: true });
+  }
+  if (typeof renderListPagination === 'function') {
+    renderListPagination('schedule-course-pagination', 'scheduleCourse', paged.total);
+  }
 }
 
 function renderScheduleRoomWeekPage() {
   const tbody = document.getElementById('schedule-room-intake-body');
   renderScheduleRoomWeekListThead(tbody);
   rebuildScheduleTermSelects();
-  renderScheduleOfferingHint('schedule-room-intake-hint');
+  // Day 多选候选项（周一～周日）
+  ensureScheduleRoomWeekdayListMsOptions();
+  // 原因：产品要求去掉排教室按 Day 列表顶部提示条，DOM 已注释，不再渲染
+  // renderScheduleOfferingHint('schedule-room-intake-hint');
+  // 序号+原 7 列（已隐藏学期）
+  // const roomWeekColCount = 9;
+  const roomWeekColCount = 8;
   if (!ensureCourseOfferingPlan()) {
-    renderScheduleEmptyRow(tbody, 8, '请先在「开课计划生成」中生成当前学期开课计划');
+    renderScheduleEmptyRow(tbody, roomWeekColCount, '请先在「开课计划生成」中生成当前学期开课计划');
     return;
   }
   ensureScheduleGlobalDemo();
@@ -72642,11 +73773,14 @@ function renderScheduleRoomWeekPage() {
   rows = filterScheduleRoomRowsByStatus(rows, status);
   rows = sortListWithState(rows, 'scheduleRoomWeek', SCHEDULE_ROOM_WEEK_SORT_COLUMNS);
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 8, status ? '暂无匹配记录' : '暂无已排时间数据，请先完成排课表时间');
+    const weekdaySelected = getScheduleListMsSelected('schedule-room-intake-filter-weekday');
+    const filtered = !!(status || weekdaySelected.length);
+    renderScheduleEmptyRow(tbody, roomWeekColCount, filtered ? '暂无匹配记录' : '暂无已排时间数据，请先完成排课表时间');
     return;
   }
   tbody.innerHTML = rows.map((row, idx) => {
     const canArrange = canScheduleArrangeActionAny('room', (row.tasks || []).map(t => t.programmeKey));
+    // 原因：产品要求隐藏「学期」列；原：…getScheduleArrangeListTermDisplay(row)…
     return `<tr>
     <td class="col-index">${idx + 1}</td>
     <td class="col-center">${escapeHtml(row.weekdayLabel)}</td>
@@ -72670,8 +73804,11 @@ function renderScheduleRoomCategoryPage() {
   renderScheduleOfferingHint('schedule-room-teacher-hint');
   ensureScheduleGlobalDemo();
   ensureScheduleChangeLogDemo();
+  // 序号+原 7 列（已隐藏学期）
+  // const roomCategoryColCount = 9;
+  const roomCategoryColCount = 8;
   if (!ensureScheduleTasksFromOffering()) {
-    renderScheduleEmptyRow(tbody, 8, '暂无课程数据');
+    renderScheduleEmptyRow(tbody, roomCategoryColCount, '暂无课程数据');
     return;
   }
   let rows = filterScheduleRoomVenueTypeSummaryRows(buildScheduleRoomVenueTypeSummaries());
@@ -72679,11 +73816,13 @@ function renderScheduleRoomCategoryPage() {
   rows = filterScheduleRoomRowsByStatus(rows, status);
   rows = sortListWithState(rows, 'scheduleRoomCategory', SCHEDULE_ROOM_CATEGORY_SORT_COLUMNS);
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 8, status ? '暂无匹配记录' : '暂无已排时间数据，请先完成排课表时间');
+    const filtered = !!(status || document.getElementById('schedule-room-teacher-filter-venue')?.value);
+    renderScheduleEmptyRow(tbody, roomCategoryColCount, filtered ? '暂无匹配记录' : '暂无已排时间数据，请先完成排课表时间');
     return;
   }
   tbody.innerHTML = rows.map((r, idx) => {
     const canArrange = canScheduleArrangeActionAny('room', (r.tasks || []).map(t => t.programmeKey));
+    // 原因：产品要求隐藏「学期」列；原：<td class="col-center">…getScheduleArrangeListTermDisplay(r)…</td>
     return `<tr>
     <td class="col-index">${idx + 1}</td>
     <td class="col-center">${escapeHtml(r.venueTypeLabel)}</td>
@@ -73377,6 +74516,9 @@ function fillScheduleRoomConflictPeriodOptions() {
 function readScheduleRoomConflictFilters() {
   return {
     type: document.getElementById('schedule-room-conflict-filter-type')?.value || '',
+    school: document.getElementById('schedule-room-conflict-filter-school')?.value || '',
+    programme: document.getElementById('schedule-room-conflict-filter-prog')?.value || '',
+    intake: document.getElementById('schedule-room-conflict-filter-intake')?.value || '',
     date: document.getElementById('schedule-room-conflict-filter-date')?.value || '',
     week: Number(document.getElementById('schedule-room-conflict-filter-week')?.value || 0) || 0,
     weekday: document.getElementById('schedule-room-conflict-filter-weekday')?.value || '',
@@ -73385,6 +74527,34 @@ function readScheduleRoomConflictFilters() {
     teacher: (document.getElementById('schedule-room-conflict-filter-teacher')?.value || '').trim().toLowerCase(),
     room: (document.getElementById('schedule-room-conflict-filter-room')?.value || '').trim().toLowerCase()
   };
+}
+
+/** 场地冲突：学院/专业/入学批次级联（与课表冲突同口径） */
+function rebuildScheduleRoomConflictBatchFilters() {
+  if (!document.getElementById('schedule-room-conflict-filter-school')) return;
+  rebuildCascadeFilterSelects({
+    schoolSelectId: 'schedule-room-conflict-filter-school',
+    programmeSelectId: 'schedule-room-conflict-filter-prog',
+    intakeSelectId: 'schedule-room-conflict-filter-intake',
+    items: getScheduleBatchFilterItems(),
+    getProgrammeKey: item => item.programmeKey,
+    getIntake: item => item.intake
+  });
+}
+
+function onScheduleRoomConflictSchoolChange() {
+  onCascadeFilterSchoolChange({
+    programmeSelectId: 'schedule-room-conflict-filter-prog',
+    intakeSelectId: 'schedule-room-conflict-filter-intake',
+    refresh: rebuildScheduleRoomConflictBatchFilters
+  });
+}
+
+function onScheduleRoomConflictProgrammeChange() {
+  onCascadeFilterProgrammeChange({
+    intakeSelectId: 'schedule-room-conflict-filter-intake',
+    refresh: rebuildScheduleRoomConflictBatchFilters
+  });
 }
 
 function onScheduleRoomConflictDateChange() {
@@ -73419,6 +74589,30 @@ function filterScheduleRoomConflictRows(rows, f) {
   return (rows || []).filter(row => {
     if (f.term && row.termCode && row.termCode !== f.term) return false;
     if (f.type && row.conflictType !== f.type) return false;
+    if (f.school) {
+      const ok = (row.entries || []).some(e => String(e.schoolCode || '') === f.school)
+        || String(row.schoolCodeLabel || '').split('\n').includes(f.school);
+      if (!ok) return false;
+    }
+    if (f.programme) {
+      const ok = (row.entries || []).some(e => {
+        const code = e.programmeCode
+          || (typeof getProgrammeCode === 'function' ? getProgrammeCode(e.programmeKey) : '')
+          || '';
+        return String(code) === f.programme;
+      });
+      if (!ok) return false;
+    }
+    if (f.intake) {
+      const ok = (row.entries || []).some(e => {
+        const raw = String(e.intake || '').trim();
+        const label = String(e.intakeLabel || '').trim();
+        return raw === String(f.intake)
+          || label === String(f.intake)
+          || (typeof formatIntakeDisplay === 'function' && label === formatIntakeDisplay(f.intake));
+      });
+      if (!ok) return false;
+    }
     if (f.date) {
       const hit = getScheduleWeekAndWeekdayFromDate(getScheduleTermStartDate(f.term), f.date, f.term);
       if (!hit) return false;
@@ -73560,7 +74754,8 @@ function openScheduleRoomConflictDetail(idx) {
 }
 
 const SCHEDULE_ROOM_CONFLICT_SORT_COLUMNS = {
-  term: { get: r => r.termLabel || '' },
+  // 弃用：产品要求隐藏列表「学期」列，排序键暂保留无入口
+  // term: { get: r => r.termLabel || '' },
   date: { get: r => r.date || '' },
   week: { get: r => Number(r.weeks?.[0] || r.weekNo) || 0, type: 'number' },
   weekday: { get: r => Number(r.weekday) || 0, type: 'number' },
@@ -73585,7 +74780,8 @@ function renderScheduleRoomConflictListThead(tbody) {
   tr.innerHTML = [
     '<th class="col-check"><input type="checkbox" id="schedule-room-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll(\'schedule-room-conflict-body\', this.checked)"></th>',
     '<th class="col-index">序号</th>',
-    th('学期', 'term'),
+    // 原因：产品要求隐藏场地冲突查询列表「学期」列（筛选项仍保留）
+    // th('学期', 'term'),
     th('Date', 'date'),
     th('Week', 'week'),
     th('Day', 'weekday'),
@@ -73596,7 +74792,9 @@ function renderScheduleRoomConflictListThead(tbody) {
     th('课程组（人数）', 'group'),
     th('学院', 'school'),
     th('专业', 'programme'),
-    th('入学批次', 'intake', { center: true }),
+    // 原因：产品要求场地冲突列表表头由「入学批次」改为「上课专业批次」
+    // th('入学批次', 'intake', { center: true }),
+    th('上课专业批次', 'intake', { center: true }),
     th('Venue', 'room'),
     th('共同授课状态', 'joint', { center: true }),
     th('冲突类型', 'conflictType', { extraClass: 'sch-conflict-freeze sch-conflict-freeze-type' }),
@@ -73651,6 +74849,7 @@ function renderScheduleRoomConflictPage() {
   if (!tbody) return;
   renderScheduleRoomConflictListThead(tbody);
   rebuildScheduleTermSelects();
+  rebuildScheduleRoomConflictBatchFilters();
   const termEl = document.getElementById('schedule-room-conflict-filter-term');
   const term = getActiveOfferingTermSetting();
   if (termEl) termEl.value = term ? formatCourseTermDisplay(term.termCode) : '';
@@ -73665,29 +74864,36 @@ function renderScheduleRoomConflictPage() {
   const exportBtn = document.getElementById('btn-schedule-room-conflict-export');
   if (!ensureCourseOfferingPlan() || !ensureScheduleTasksFromOffering()) {
     scheduleRoomConflictFilteredRows = [];
-    renderScheduleEmptyRow(tbody, 18, '暂无课程数据，请先完成开课与排课');
+    // 原 18 列含学期；隐藏学期后为空行占位 17 列
+    renderScheduleEmptyRow(tbody, 17, '暂无课程数据，请先完成开课与排课');
     // 弃用：顶部 hint 条已去掉，不再调用 renderScheduleRoomConflictHint
     // renderScheduleRoomConflictHint([]);
     resetListExportCheckAll('schedule-room-conflict-check-all');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-room-conflict-pagination', 'scheduleRoomConflict', 0);
     return;
   }
   let rows = filterScheduleRoomConflictRows(getScheduleRoomConflictQueryRows(true), readScheduleRoomConflictFilters());
   rows = sortListWithState(rows, 'scheduleRoomConflict', SCHEDULE_ROOM_CONFLICT_SORT_COLUMNS);
+  // 全量过滤结果保留：详情 / 导出按全局下标，不受分页切片影响
   scheduleRoomConflictFilteredRows = rows;
   // 弃用：顶部 hint 条已去掉，不再调用 renderScheduleRoomConflictHint
   // renderScheduleRoomConflictHint(rows);
   resetListExportCheckAll('schedule-room-conflict-check-all');
   if (!rows.length) {
-    renderScheduleEmptyRow(tbody, 18, '暂无匹配冲突记录');
+    renderScheduleEmptyRow(tbody, 17, '暂无匹配冲突记录');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-room-conflict-pagination', 'scheduleRoomConflict', 0);
     return;
   }
-  tbody.innerHTML = rows.map((row, idx) => {
+  const paged = paginateListItems(rows, 'scheduleRoomConflict');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.map((row, idx) => {
+    const globalIdx = rowOffset + idx;
     const jointCls = row.jointTeachingStatus === 'Y' ? 'is-joint-y' : 'is-joint-n';
+    // 原因：产品要求隐藏「学期」列；原：<td>…row.termLabel…</td>
     return `<tr>
       <!-- 场地冲突：勾选/序号不冻结（仅表头已解冻不够，tbody 也不加 freeze 类）；右侧仍冻冲突类型+操作 -->
-      <td class="col-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
-      <td class="col-index">${idx + 1}</td>
-      <td>${escapeHtml(row.termLabel || '—')}</td>
+      <td class="col-check"><input type="checkbox" class="list-export-check" value="${globalIdx}" aria-label="选择第${globalIdx + 1}行"></td>
+      <td class="col-index">${globalIdx + 1}</td>
       <td class="sch-conflict-multiline">${escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>')}</td>
       <td>${escapeHtml(row.weekdayLabel || '—')}</td>
@@ -73703,19 +74909,27 @@ function renderScheduleRoomConflictPage() {
       <td class="col-center"><span class="sch-joint-badge ${jointCls}">${escapeHtml(row.jointTeachingStatus || 'N')}</span></td>
       <td class="sch-conflict-type-cell sch-conflict-freeze sch-conflict-freeze-type">${renderScheduleRoomConflictTypeTag(row)}</td>
       <td class="col-center actions sch-conflict-freeze sch-conflict-freeze-ops">
-        <a href="#" onclick="openScheduleRoomConflictDetail(${idx});return false">详情</a>
+        <a href="#" onclick="openScheduleRoomConflictDetail(${globalIdx});return false">详情</a>
       </td>
     </tr>`;
   }).join('');
+  if (typeof renderListPagination === 'function') {
+    renderListPagination('schedule-room-conflict-pagination', 'scheduleRoomConflict', paged.total);
+  }
 }
 
 function queryScheduleRoomConflicts() {
+  // 查询回到第 1 页
+  if (typeof resetListPage === 'function') resetListPage('scheduleRoomConflict');
   renderScheduleRoomConflictPage();
 }
 
 function resetScheduleRoomConflictFilters() {
   [
     'schedule-room-conflict-filter-type',
+    'schedule-room-conflict-filter-school',
+    'schedule-room-conflict-filter-prog',
+    'schedule-room-conflict-filter-intake',
     'schedule-room-conflict-filter-date',
     'schedule-room-conflict-filter-week',
     'schedule-room-conflict-filter-weekday',
@@ -73728,6 +74942,8 @@ function resetScheduleRoomConflictFilters() {
     if (el) el.value = '';
   });
   if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn('schedule-room-conflict-filter-date');
+  rebuildScheduleRoomConflictBatchFilters();
+  if (typeof resetListPage === 'function') resetListPage('scheduleRoomConflict');
   renderScheduleRoomConflictPage();
 }
 
@@ -74233,20 +75449,27 @@ function renderScheduleTimeConflictPage() {
     renderScheduleEmptyRow(tbody, 16, '暂无课程数据，请先完成开课与排课');
     renderScheduleTimeConflictHint([]);
     resetListExportCheckAll('schedule-time-conflict-check-all');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-time-conflict-pagination', 'scheduleTimeConflict', 0);
     return;
   }
   let rows = filterScheduleTimeConflictRows(getScheduleTimeConflictQueryRows(true), readScheduleTimeConflictFilters());
   rows = sortListWithState(rows, 'scheduleTimeConflict', SCHEDULE_TIME_CONFLICT_SORT_COLUMNS);
+  // 全量过滤结果保留：详情 / 导出按全局下标，不受分页切片影响
   scheduleTimeConflictFilteredRows = rows;
   renderScheduleTimeConflictHint(rows);
   resetListExportCheckAll('schedule-time-conflict-check-all');
   if (!rows.length) {
     renderScheduleEmptyRow(tbody, 16, '暂无匹配冲突记录');
+    if (typeof renderListPagination === 'function') renderListPagination('schedule-time-conflict-pagination', 'scheduleTimeConflict', 0);
     return;
   }
-  tbody.innerHTML = rows.map((row, idx) => `<tr>
-      <td class="col-check"><input type="checkbox" class="list-export-check" value="${idx}" aria-label="选择第${idx + 1}行"></td>
-      <td class="col-index">${idx + 1}</td>
+  const paged = paginateListItems(rows, 'scheduleTimeConflict');
+  const rowOffset = (paged.page - 1) * paged.pageSize;
+  tbody.innerHTML = paged.items.map((row, idx) => {
+    const globalIdx = rowOffset + idx;
+    return `<tr>
+      <td class="col-check"><input type="checkbox" class="list-export-check" value="${globalIdx}" aria-label="选择第${globalIdx + 1}行"></td>
+      <td class="col-index">${globalIdx + 1}</td>
       <td>${escapeHtml(row.termLabel || '—')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(formatAdjustmentDateDisplay(row.date) || '—').replace(/\n/g, '<br>')}</td>
       <td class="sch-conflict-multiline">${escapeHtml(row.weekLabel || '—').replace(/\n/g, '<br>')}</td>
@@ -74261,12 +75484,18 @@ function renderScheduleTimeConflictPage() {
       <td>${escapeHtml(row.intakeLabel || '—')}</td>
       <td class="sch-conflict-type-cell sch-conflict-freeze sch-conflict-freeze-type">${renderScheduleTimeConflictTypeTags(row)}</td>
       <td class="col-center actions sch-conflict-freeze sch-conflict-freeze-ops">
-        <a href="#" onclick="openScheduleTimeConflictDetail(${idx});return false">详情</a>
+        <a href="#" onclick="openScheduleTimeConflictDetail(${globalIdx});return false">详情</a>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+  if (typeof renderListPagination === 'function') {
+    renderListPagination('schedule-time-conflict-pagination', 'scheduleTimeConflict', paged.total);
+  }
 }
 
 function queryScheduleTimeConflicts() {
+  // 查询回到第 1 页
+  if (typeof resetListPage === 'function') resetListPage('scheduleTimeConflict');
   renderScheduleTimeConflictPage();
 }
 
@@ -74288,6 +75517,7 @@ function resetScheduleTimeConflictFilters() {
   });
   if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn('schedule-time-conflict-filter-date');
   rebuildScheduleTimeConflictBatchFilters();
+  if (typeof resetListPage === 'function') resetListPage('scheduleTimeConflict');
   renderScheduleTimeConflictPage();
 }
 
@@ -74386,11 +75616,32 @@ function renderScheduleRoomCoursePage() {
 }
 
 function resetScheduleCourseQuery() {
-  ['schedule-course-filter-code', 'schedule-course-filter-name', 'schedule-course-filter-dept', 'schedule-course-filter-status'].forEach(id => {
+  // schedule-course-filter-teacher 已弃用（表头无教师列）
+  // schedule-course-filter-dept 已改为所属学院等字段
+  // 所属学院/所属专业/开课专业/校选课类别已改多选，见 clearScheduleListMs
+  [
+    'schedule-course-filter-code',
+    'schedule-course-filter-name',
+    // 'schedule-course-filter-dept',
+    // 'schedule-course-filter-school',
+    // 'schedule-course-filter-belong-programme',
+    // 'schedule-course-filter-offering-programme',
+    // 'schedule-course-filter-ge-type',
+    'schedule-course-filter-status'
+  ].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  [
+    'schedule-course-filter-school',
+    'schedule-course-filter-belong-programme',
+    'schedule-course-filter-offering-programme',
+    'schedule-course-filter-ge-type'
+  ].forEach(clearScheduleListMs);
+  // 学年学期重置为当前开课学期
+  ensureScheduleCourseTermFilterSelect(true);
   setScheduleCourseTypeFilterSelected([]);
   closeScheduleCourseTypeFilterDropdown();
+  if (typeof resetListPage === 'function') resetListPage('scheduleCourse');
   renderScheduleCoursePage();
 }
 
@@ -74863,36 +76114,93 @@ function renderScheduleTimetableBlock(entry, opts = {}) {
   return '<div class="' + cls + '" title="' + escapeHtml(title.trim()) + '">' + inner + '</div>';
 }
 
+/**
+ * 课表查询字段条：对齐排时间详情「显示周末 / 课表卡片显示」。
+ * 状态写入 scheduleQuery*（与详情独立）。
+ * @param {string} containerId 如 schedule-intake-tt-fields
+ */
 function renderScheduleTimetableFieldBar(containerId) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  scheduleTimetableFields.code = true;
-  const boxes = SCHEDULE_TT_FIELD_DEFS.map(def => {
-    const isRequired = !!def.required;
-    const checked = isRequired || scheduleTimetableFields[def.key];
-    const disabled = isRequired ? ' disabled' : '';
-    const cls = isRequired ? ' schedule-tt-field is-required' : ' schedule-tt-field';
-    return `
-    <label class="${cls}">
-      <input type="checkbox" ${checked ? 'checked' : ''}${disabled}
-        onchange="toggleScheduleTimetableField('${def.key}', this.checked)">
-      <span>${escapeHtml(def.label)}</span>
-    </label>`;
-  }).join('');
-  // 弃用：展示栏「连续相同课堂合并为大节次」勾选。原因：改为强制合并，不再提供开关
-  // const mergeBox = `... schedule-tt-merge-opt ...`;
-  // el.innerHTML = ... + sep + mergeBox;
-  el.innerHTML = `<span class="schedule-tt-field-title">展示字段</span>${boxes}`;
+  // 弃用旧「展示字段」勾选条（Course Code/课程组/教师工号…）。原因：产品要求对齐详情课表卡片显示
+  // scheduleTimetableFields.code = true;
+  // const boxes = SCHEDULE_TT_FIELD_DEFS.map(...)
+  // el.innerHTML = `<span class="schedule-tt-field-title">展示字段</span>${boxes}`;
+  const f = scheduleQueryCardFields || { ...SCHEDULE_CARD_FIELDS_DEFAULT_TIME };
+  const on = (key, fallback) => (f[key] != null ? !!f[key] : !!fallback) ? ' checked' : '';
+  el.classList.add('schedule-query-view-settings');
+  el.innerHTML = `
+    <div class="schedule-detail-view-settings schedule-query-view-settings-inner">
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="weekend"${scheduleQueryShowWeekend ? ' checked' : ''} onchange="onScheduleQueryViewSettingChange(event)"> 显示周末</label>
+      <span class="schedule-view-sep">课表卡片显示：</span>
+      <label class="schedule-view-opt is-required"><input type="checkbox" checked disabled> Course Code</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="name"${on('name', false)} onchange="onScheduleQueryViewSettingChange(event)"> 课程班名称</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="weeks"${on('weeks', true)} onchange="onScheduleQueryViewSettingChange(event)"> 排课周次</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="teacher"${on('teacherId', false)} onchange="onScheduleQueryViewSettingChange(event)"> 上课教师</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="room"${on('room', true)} onchange="onScheduleQueryViewSettingChange(event)"> 场地类型</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="venueRemark"${on('venueRemark', true)} onchange="onScheduleQueryViewSettingChange(event)"> 已排教室</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="groupShort"${on('groupShort', true)} onchange="onScheduleQueryViewSettingChange(event)"> 课程组（简称）</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="groupFull"${on('groupFull', false)} onchange="onScheduleQueryViewSettingChange(event)"> 课程组（全称）</label>
+      <label class="schedule-view-opt"><input type="checkbox" data-sch-query-opt="hourType"${on('hourType', false)} onchange="onScheduleQueryViewSettingChange(event)"> 学时类型</label>
+    </div>`;
 }
 
+/**
+ * 查询页「显示周末 / 课表卡片显示」变更：写独立状态并刷新当前各 Tab 格子。
+ * @param {Event} [ev]
+ */
+function onScheduleQueryViewSettingChange(ev) {
+  const root = ev?.target?.closest?.('.schedule-query-view-settings-inner')
+    || document.querySelector('#page-schedule-timetable-query .tab-panel.active .schedule-query-view-settings-inner');
+  if (!root) return;
+  const checked = (key) => !!root.querySelector(`[data-sch-query-opt="${key}"]`)?.checked;
+  scheduleQueryShowWeekend = checked('weekend');
+  scheduleQueryCardFields = {
+    code: true,
+    name: checked('name'),
+    weeks: checked('weeks'),
+    teacherId: checked('teacher'),
+    room: checked('room'),
+    venueRemark: checked('venueRemark'),
+    groupShort: checked('groupShort'),
+    groupFull: checked('groupFull'),
+    hourType: checked('hourType'),
+    hours: false
+  };
+  // 同步其它 Tab 字段条勾选（共用一份查询记忆）
+  [
+    'schedule-intake-tt-fields',
+    'schedule-teacher-tt-fields',
+    'schedule-student-tt-fields',
+    'schedule-course-tt-fields',
+    'schedule-room-tt-fields'
+  ].forEach(id => {
+    if (id === root.closest?.('.schedule-tt-fieldbar')?.id) return;
+    renderScheduleTimetableFieldBar(id);
+  });
+  if (typeof renderScheduleIntakeTimetableGrid === 'function') renderScheduleIntakeTimetableGrid();
+  if (typeof renderScheduleTeacherTimetableGrid === 'function') renderScheduleTeacherTimetableGrid();
+  if (typeof renderScheduleStudentTimetableGrid === 'function') renderScheduleStudentTimetableGrid();
+  if (typeof renderScheduleCourseTimetableGrid === 'function') renderScheduleCourseTimetableGrid();
+  if (typeof renderScheduleRoomTimetableGrid === 'function') renderScheduleRoomTimetableGrid();
+}
+
+/**
+ * @deprecated 旧查询「展示字段」勾选。原因：已改为详情同款课表卡片显示（onScheduleQueryViewSettingChange）
+ * @param {string} key
+ * @param {boolean} checked
+ */
 function toggleScheduleTimetableField(key, checked) {
+  // if (key === 'code') return;
+  // scheduleTimetableFields[key] = !!checked;
+  // renderScheduleIntakeTimetableGrid();
+  // ...
   if (key === 'code') return;
-  scheduleTimetableFields[key] = !!checked;
-  renderScheduleIntakeTimetableGrid();
-  renderScheduleTeacherTimetableGrid();
-  renderScheduleStudentTimetableGrid();
-  renderScheduleCourseTimetableGrid();
-  renderScheduleRoomTimetableGrid();
+  // 兼容残留 onchange：映射到查询独立字段后刷新
+  if (Object.prototype.hasOwnProperty.call(scheduleTimetableFields, key)) {
+    scheduleTimetableFields[key] = !!checked;
+  }
+  onScheduleQueryViewSettingChange();
 }
 
 /**
@@ -74991,10 +76299,12 @@ function getScheduleQueryTerm() {
 }
 
 /**
- * 课表查询渲染：
- * - 单条 slot 连排（periodFrom–periodTo）合并为一张卡片（rowspan）
- * - 相同场地、时间、教师、小组且节次相邻的多条 slot 强制拼成大节次
- * - 同一节次存在不同周次课程时，当天拆成多列分别显示
+ * 课表查询渲染：对齐排时间详情格子（只读）。
+ * 弃用原 schedule-tt-multicol rowspan 表。原因：产品要求参考详情 .schedule-timetable-scroll 改造。
+ * @param {string} mountId 如 schedule-intake-tt-grid
+ * @param {string} term 学期码
+ * @param {object[]} tasks 已排任务
+ * @param {{ week?: string, context?: string }} [opts]
  */
 function renderScheduleTimetableView(mountId, term, tasks, opts = {}) {
   const mount = document.getElementById(mountId);
@@ -75003,6 +76313,15 @@ function renderScheduleTimetableView(mountId, term, tasks, opts = {}) {
   else if (mountId && mountId.includes('student')) scheduleTimetableCardContext = 'student';
   else if (mountId && mountId.includes('teacher')) scheduleTimetableCardContext = 'teacher';
   else if (mountId) scheduleTimetableCardContext = '';
+  // 排课周次筛选：查询输入为单周号 → 传给详情格子 weekFilter
+  const weekRaw = String(opts.week || '').trim();
+  const weekNo = Number(weekRaw);
+  const weekFilter = (weekRaw && Number.isFinite(weekNo) && weekNo > 0) ? [weekNo] : [];
+  if (typeof renderScheduleTimetableGrid === 'function') {
+    renderScheduleTimetableGrid(term, tasks || [], null, weekFilter, { queryMountId: mountId });
+    return;
+  }
+  // 以下为旧多列表格回退（正常不应走到）
   const periods = ensureSchedulePeriods(term);
   if (!periods.length) {
     mount.innerHTML = '<p class="text-muted" style="padding:16px">请先在「课表节次维护」中配置节次</p>';
@@ -75151,13 +76470,16 @@ function rebuildScheduleIntakeTimetableBatchSelect() {
   if (!sel) return;
   const rows = buildScheduleBatchSummaries();
   if (!rows.length) {
-    sel.innerHTML = '<option value="">暂无入学批次</option>';
+    // 原因：筛选项实际为专业批次（专业名 · 入学批次）
+    // sel.innerHTML = '<option value="">暂无入学批次</option>';
+    sel.innerHTML = '<option value="">暂无专业批次</option>';
     scheduleIntakeTimetableKey = '';
     return;
   }
   const keys = rows.map(r => r.batchKey);
   if (scheduleIntakeTimetableKey && !keys.includes(scheduleIntakeTimetableKey)) scheduleIntakeTimetableKey = '';
-  sel.innerHTML = `<option value="">请选择入学批次</option>${rows.map(r =>
+  // sel.innerHTML = `<option value="">请选择入学批次</option>${...}
+  sel.innerHTML = `<option value="">请选择专业批次</option>${rows.map(r =>
     `<option value="${escapeHtml(r.batchKey)}"${r.batchKey === scheduleIntakeTimetableKey ? ' selected' : ''}>${escapeHtml(r.programmeName)} · ${escapeHtml(formatIntakeDisplay(r.intake))}</option>`
   ).join('')}`;
 }
@@ -75176,7 +76498,9 @@ function renderScheduleIntakeTimetableGrid() {
   const hint = document.getElementById('schedule-intake-tt-hint');
   const week = getScheduleTimetableWeekFilter('schedule-intake-tt-week');
   if (!scheduleIntakeTimetableKey) {
-    if (hint) hint.innerHTML = '<span class="legend-item text-muted">请选择入学批次</span>';
+    // 原因：筛选项实际为专业批次
+    // if (hint) hint.innerHTML = '<span class="legend-item text-muted">请选择入学批次</span>';
+    if (hint) hint.innerHTML = '<span class="legend-item text-muted">请选择专业批次</span>';
     renderScheduleTimetableView('schedule-intake-tt-grid', getScheduleQueryTerm(), []);
     renderScheduleIntakeNoScheduleList('', '');
     return;
@@ -75218,7 +76542,9 @@ function renderScheduleIntakeTimetablePage() {
   if (scheduleIntakeTimetableKey) renderScheduleIntakeTimetableGrid();
   else {
     const hint = document.getElementById('schedule-intake-tt-hint');
-    if (hint) hint.innerHTML = '<span class="legend-item text-muted">请选择入学批次并点击查询</span>';
+    // 原因：筛选项实际为专业批次
+    // if (hint) hint.innerHTML = '<span class="legend-item text-muted">请选择入学批次并点击查询</span>';
+    if (hint) hint.innerHTML = '<span class="legend-item text-muted">请选择专业批次并点击查询</span>';
     renderScheduleTimetableView('schedule-intake-tt-grid', getScheduleQueryTerm(), []);
     renderScheduleIntakeNoScheduleList('', '');
   }
@@ -76553,7 +77879,9 @@ function resetScheduleTimetableQuery(kind) {
     return;
   }
   const cfg = {
-    intake: ['schedule-intake-tt-batch', 'schedule-intake-tt-week', 'schedule-intake-tt-hint', 'schedule-intake-tt-grid', '请选择入学批次并点击查询'],
+    // 原因：筛选项实际为专业批次（专业名 · 入学批次）
+    // intake: [..., '请选择入学批次并点击查询'],
+    intake: ['schedule-intake-tt-batch', 'schedule-intake-tt-week', 'schedule-intake-tt-hint', 'schedule-intake-tt-grid', '请选择专业批次并点击查询'],
     teacher: ['schedule-teacher-tt-teacher', 'schedule-teacher-tt-week', 'schedule-teacher-tt-hint', 'schedule-teacher-tt-grid', '请选择教师并点击查询'],
     student: ['schedule-student-tt-student', 'schedule-student-tt-week', 'schedule-student-tt-hint', 'schedule-student-tt-grid', '请选择学生并点击查询'],
     course: ['schedule-course-tt-course', 'schedule-course-tt-week', 'schedule-course-tt-hint', 'schedule-course-tt-grid', '请选择课程并点击查询'],
@@ -92414,10 +93742,12 @@ function extractAdjustmentGroupShortLabel(label) {
 }
 
 /**
- * 取某小组人数（对齐排时间：优先名单 studentCount，否则 capacityLimit）。
- * 示例：A组 → 40；找不到组时返回 null。
+ * 从单个开课任务取某小组人数（优先名单 studentCount，否则 capacityLimit）。
+ * @param {object} task 排课任务
+ * @param {string} shortName 小组短名，如 A组
+ * @returns {number|null}
  */
-function getAdjustmentGroupMemberCount(task, shortName) {
+function getAdjustmentGroupMemberCountFromTask(task, shortName) {
   const short = String(shortName || '').trim();
   if (!task || !short) return null;
   const sec = typeof getScheduleOfferingSection === 'function'
@@ -92431,6 +93761,50 @@ function getAdjustmentGroupMemberCount(task, shortName) {
   if (Number.isFinite(roster) && roster > 0) return Math.floor(roster);
   if (Number.isFinite(cap) && cap > 0) return Math.floor(cap);
   return null;
+}
+
+/**
+ * 取某小组人数；支持单任务或任务列表（联动并块时组在伙伴课上）。
+ * 示例：锚定 MEC913 仅有 A组，B/C 在 MEC921 → 传入两课任务后 B/C 也能取到人数。
+ * @param {object|object[]|null} taskOrTasks 排课任务或任务列表
+ * @param {string} shortName 小组短名
+ * @returns {number|null}
+ */
+function getAdjustmentGroupMemberCount(taskOrTasks, shortName) {
+  const short = String(shortName || '').trim();
+  if (!short) return null;
+  // 兼容旧调用：第二个参数前也可只传单个 task
+  const list = Array.isArray(taskOrTasks)
+    ? taskOrTasks
+    : (taskOrTasks ? [taskOrTasks] : []);
+  for (let i = 0; i < list.length; i++) {
+    const n = getAdjustmentGroupMemberCountFromTask(list[i], short);
+    if (n != null) return n;
+  }
+  return null;
+}
+
+/**
+ * 收集调课左侧行关联任务（本课 + 联动组成员），供按组取人数。
+ * @param {object} row 左侧课节行
+ * @returns {object[]}
+ */
+function collectAdjustmentRowTasksForGroupCount(row) {
+  const out = [];
+  const seen = new Set();
+  const pushByTaskId = (taskId) => {
+    const id = String(taskId || '').trim();
+    if (!id || seen.has(id)) return;
+    const task = typeof getScheduleTaskRows === 'function'
+      ? getScheduleTaskRows().find(t => t.id === id)
+      : null;
+    if (!task) return;
+    seen.add(id);
+    out.push(task);
+  };
+  pushByTaskId(row?.taskId);
+  (row?.linkBundleMembers || []).forEach(member => pushByTaskId(member?.taskId));
+  return out;
 }
 
 /**
@@ -94579,6 +95953,7 @@ function ensureAdjustmentTeacherTermSelect() {
 
 function ensureAdjustmentTeacherAdditionTermSelect() {
   fillAdjustmentTermSelect('adjustment-teacher-addition-term', { includeAll: false });
+  fillAdjustmentCategoryFilterSelect('adjustment-teacher-addition-category');
 }
 
 function fillAdjustmentCategoryFilterSelect(selId) {
@@ -94784,6 +96159,11 @@ function matchAdjustmentTeacherExtraFilters(r, prefix, idSuffix = '') {
   const dateFrom = document.getElementById(`${prefix}date-from${suf}`)?.value || '';
   const dateTo = document.getElementById(`${prefix}date-to${suf}`)?.value || '';
   const weekQ = Number(document.getElementById(`${prefix}week${suf}`)?.value) || 0;
+  // 调课类型 / 审批状态（筛选项存在时才约束）
+  const typeQ = document.getElementById(`${prefix}type${suf}`)?.value || '';
+  const statusQ = document.getElementById(`${prefix}status${suf}`)?.value || '';
+  if (typeQ && r.type !== typeQ) return false;
+  if (statusQ && !matchAdjustmentTeacherStatusFilter(r.status, statusQ)) return false;
   if (cat) {
     const code = String(r.reasonTypeCode || '').trim();
     const name = String(r.reasonType || getAdjustmentReasonTypeDisplay(r) || '').trim();
@@ -94821,7 +96201,8 @@ function matchAdjustmentTeacherExtraFilters(r, prefix, idSuffix = '') {
 
 function resetAdjustmentTeacherQuery() {
   ['adjustment-teacher-category', 'adjustment-teacher-course-code', 'adjustment-teacher-course-name',
-    'adjustment-teacher-date-from', 'adjustment-teacher-date-to', 'adjustment-teacher-week'].forEach(id => {
+    'adjustment-teacher-date-from', 'adjustment-teacher-date-to', 'adjustment-teacher-week',
+    'adjustment-teacher-type', 'adjustment-teacher-status'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -94833,8 +96214,17 @@ function resetAdjustmentTeacherQuery() {
 }
 
 function resetAdjustmentTeacherAdditionQuery() {
-  const statusSel = document.getElementById('adjustment-teacher-addition-status');
-  if (statusSel) statusSel.value = '';
+  ['adjustment-teacher-addition-status', 'adjustment-teacher-addition-category',
+    'adjustment-teacher-addition-course-code', 'adjustment-teacher-addition-course-name',
+    'adjustment-teacher-addition-date-from', 'adjustment-teacher-addition-date-to',
+    'adjustment-teacher-addition-week'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  if (typeof syncAdjFilterDateBtn === 'function') {
+    syncAdjFilterDateBtn('adjustment-teacher-addition-date-from');
+    syncAdjFilterDateBtn('adjustment-teacher-addition-date-to');
+  }
   const termSel = document.getElementById('adjustment-teacher-addition-term');
   if (termSel) termSel.value = getActiveOfferingTermSetting()?.termCode || '';
   renderAdjustmentTeacherAdditionPage();
@@ -94874,6 +96264,10 @@ function resetAdjustmentAdminQuery() {
   if (typeSel) typeSel.value = '';
   const statusSel = document.getElementById('adjustment-admin-status');
   if (statusSel) statusSel.value = '';
+  ['adjustment-admin-course', 'adjustment-admin-keyword'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   ensureAdjustmentAdminSelects();
   renderAdjustmentAdminPage();
 }
@@ -94883,6 +96277,8 @@ function getAdjustmentAdminFilteredRows() {
   const teacherId = document.getElementById('adjustment-admin-teacher')?.value || '';
   const type = document.getElementById('adjustment-admin-type')?.value || '';
   const status = document.getElementById('adjustment-admin-status')?.value || '';
+  const courseQ = (document.getElementById('adjustment-admin-course')?.value || '').trim().toLowerCase();
+  const keyword = (document.getElementById('adjustment-admin-keyword')?.value || '').trim().toLowerCase();
   // 管理页演示：优先展示代申请；每个类型只保留一条
   let rows = ADJUSTMENT_STORE.requests.filter(r => isAdjustmentApplicationListRow(r, 'admin'));
   if (!rows.length) rows = ADJUSTMENT_STORE.requests.filter(r =>
@@ -94892,6 +96288,19 @@ function getAdjustmentAdminFilteredRows() {
   if (teacherId) rows = rows.filter(r => r.teacherId === teacherId);
   if (type) rows = rows.filter(r => r.type === type);
   if (status) rows = rows.filter(r => matchAdjustmentTeacherStatusFilter(r.status, status));
+  if (courseQ) {
+    rows = rows.filter(r => {
+      // 对齐列表 Affected Classes / 课号相关字段
+      const hay = `${r.code || ''} ${r.courseName || ''} ${r.courseLabel || ''} ${r.affectedClasses || ''} ${r.groupName || ''}`.toLowerCase();
+      return hay.includes(courseQ);
+    });
+  }
+  if (keyword) {
+    rows = rows.filter(r => {
+      const hay = `${r.teacherId || ''} ${r.teacherName || ''} ${r.applicant || ''}`.toLowerCase();
+      return hay.includes(keyword);
+    });
+  }
   return sortListWithState(rows, 'adjustmentAdmin', ADJUSTMENT_REQUEST_SORT_COLUMNS, defaultAdjustmentRequestListCompare);
 }
 
@@ -94973,7 +96382,8 @@ function openAdjustmentAdminApplyModal(type) {
 }
 
 /**
- * 打开「选择代申请教师」弹窗（不改动查询区「代申请教师」）。
+ * 打开「选择代申请教师」抽屉（不改动查询区「代申请教师」）。
+ * 原因：原居中弹窗改为右侧抽屉，与调后教师选择器同壳。
  * @param {string} type 即将代发起的申请类型
  */
 function openAdjustmentAdminProxyTeacherPicker(type) {
@@ -95293,6 +96703,8 @@ function renderAdjustmentTeacherAdditionPage() {
     termId: 'adjustment-teacher-addition-term',
     statusId: 'adjustment-teacher-addition-status',
     onlyType: 'addclass',
+    // 与 New Replacement 同口径：Category / Course / Date / Week
+    filterPrefix: 'adjustment-teacher-addition-',
     sortListKey: 'adjustmentTeacherAddition'
   });
   fillAdjustmentTeacherListTable(
@@ -98231,17 +99643,21 @@ function renderAdjustmentSlotPickerRows() {
       const liveTask = (r.taskId && typeof getScheduleTaskRows === 'function')
         ? getScheduleTaskRows().find(t => t.id === r.taskId)
         : null;
+      // 联动并块：组名可能来自伙伴课（如 MEC921 的 B/C），人数须跨关联任务查
+      const groupCountTasks = typeof collectAdjustmentRowTasksForGroupCount === 'function'
+        ? collectAdjustmentRowTasksForGroupCount(r)
+        : (liveTask ? [liveTask] : []);
       const groupField = typeof resolveAdjustmentSlotGroupField === 'function'
         ? resolveAdjustmentSlotGroupField(liveTask, r.group)
         : (r.group || r.groupWithCount || '—');
-      // 每组各自缀人数；传入 liveTask 以便按组取 studentCount/capacityLimit
+      // 每组各自缀人数；传入关联任务列表以便按组取 studentCount/capacityLimit
       const groupHtml = typeof formatAdjustmentCourseGroupLabelHtml === 'function'
         ? formatAdjustmentCourseGroupLabelHtml(
           r.courseName,
           groupField,
           r.studentCount,
           adjustmentApplyGroupNameShort,
-          liveTask
+          groupCountTasks
         )
         : escapeHtml(r.groupWithCount || r.group || '—');
       if (isAdd) {
@@ -100771,6 +102187,9 @@ function resetAdjustmentHolidayQuery() {
   if (kw) kw.value = '';
   const wd = document.getElementById('adjustment-holiday-weekday');
   if (wd) wd.value = '';
+  const dateEl = document.getElementById('adjustment-holiday-date');
+  if (dateEl) dateEl.value = '';
+  if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn('adjustment-holiday-date');
   renderAdjustmentHolidayManagePage();
 }
 
@@ -100784,9 +102203,22 @@ function renderAdjustmentHolidayPage() {
 function getAdjustmentHolidayManageFilteredRows() {
   const kw = (document.getElementById('adjustment-holiday-keyword')?.value || '').trim().toLowerCase();
   const wd = document.getElementById('adjustment-holiday-weekday')?.value || '';
+  const dateQ = document.getElementById('adjustment-holiday-date')?.value || '';
   let rows = ADJUSTMENT_STORE.holidays || [];
   if (kw) rows = rows.filter(h => `${h.name} ${h.reason || ''}`.toLowerCase().includes(kw));
   if (wd) rows = rows.filter(h => (h.weekdays || [h.weekday]).some(x => Number(x) === Number(wd)));
+  if (dateQ) {
+    rows = rows.filter(h => {
+      const start = h.dateStart || h.date || '';
+      const end = h.dateEnd || start;
+      const label = String(h.dateLabel || '');
+      return start === dateQ || end === dateQ
+        || (start && end && dateQ >= start && dateQ <= end)
+        || label.includes(dateQ)
+        || (typeof formatAdjustmentDateDisplay === 'function'
+          && String(formatAdjustmentDateDisplay(start) || '').includes(dateQ));
+    });
+  }
   return sortListWithState(rows, 'adjustmentHolidayManage', ADJUSTMENT_HOLIDAY_MANAGE_SORT_COLUMNS);
 }
 
@@ -105210,15 +106642,36 @@ function resetAdjustmentBatchQuery() {
   ensureAdjustmentBatchTermSelect(false);
   const kindSel = document.getElementById('adjustment-batch-filter-kind');
   if (kindSel) kindSel.value = '';
+  const courseEl = document.getElementById('adjustment-batch-filter-course');
+  if (courseEl) courseEl.value = '';
+  const dateEl = document.getElementById('adjustment-batch-filter-date');
+  if (dateEl) dateEl.value = '';
+  if (typeof syncAdjFilterDateBtn === 'function') syncAdjFilterDateBtn('adjustment-batch-filter-date');
   renderAdjustmentBatchRecords();
 }
 
 function getAdjustmentBatchRecordFilteredRows() {
   const termCode = document.getElementById('adjustment-batch-filter-term')?.value || '';
   const kind = document.getElementById('adjustment-batch-filter-kind')?.value || '';
+  const courseQ = (document.getElementById('adjustment-batch-filter-course')?.value || '').trim().toLowerCase();
+  const dateQ = document.getElementById('adjustment-batch-filter-date')?.value || '';
   let rows = ADJUSTMENT_STORE.batchRecords || [];
   if (termCode) rows = rows.filter(r => (r.termCode || getDefaultOfferingTermCode()) === termCode);
   if (kind) rows = rows.filter(r => r.kind === kind);
+  if (courseQ) {
+    rows = rows.filter(r => {
+      const hay = `${r.courseCodes || ''} ${r.courseNames || ''} ${r.affectedClasses || ''} ${r.summary || ''}`.toLowerCase();
+      return hay.includes(courseQ);
+    });
+  }
+  if (dateQ) {
+    rows = rows.filter(r => {
+      const start = r.sourceRange?.start || r.sourceDate || '';
+      const end = r.sourceRange?.end || start;
+      return start === dateQ || end === dateQ
+        || (start && end && dateQ >= start && dateQ <= end);
+    });
+  }
   return sortListWithState(
     rows,
     'adjustmentBatchRecord',
@@ -105868,6 +107321,7 @@ function readScheduleAutoTimeDraftQuery() {
     category: document.getElementById('sat-filter-category')?.value || '',
     nature: document.getElementById('sat-filter-nature')?.value || '',
     teacherKw: (document.getElementById('sat-filter-teacher')?.value || '').trim().toLowerCase(),
+    status: document.getElementById('sat-filter-status')?.value || '',
     courseCodes: scheduleAutoTimeSelectedCourseCodes.slice()
   };
 }
@@ -106493,6 +107947,7 @@ function getScheduleAutoTimeFilteredUnits() {
   const category = q.category || '';
   const nature = q.nature || '';
   const teacherKw = q.teacherKw || '';
+  const status = q.status || '';
   const courseCodeSet = new Set(
     (q.courseCodes || []).map(c => normalizeScheduleAutoTimeCourseCode(c).toLowerCase()).filter(Boolean)
   );
@@ -106523,6 +107978,9 @@ function getScheduleAutoTimeFilteredUnits() {
         || (getScheduleTaskTeacherNames(u.task) || []).join(' ').toLowerCase();
       if (!hay.includes(teacherKw)) return false;
     }
+    // 排课状态：pending=未排完 / done=已排完
+    if (status === 'pending' && u.status !== 'pending') return false;
+    if (status === 'done' && u.status === 'pending') return false;
     return true;
   });
 }
@@ -106943,7 +108401,7 @@ function renderScheduleAutoTimePage(opts = {}) {
 function resetScheduleAutoTimeQuery() {
   ensureScheduleAutoTimeTermSelect(false);
   // 学院/专业已改为多选状态，不再写原生 select value
-  ['sat-filter-intake', 'sat-filter-category', 'sat-filter-nature', 'sat-filter-teacher'].forEach(id => {
+  ['sat-filter-intake', 'sat-filter-category', 'sat-filter-nature', 'sat-filter-teacher', 'sat-filter-status'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -107293,6 +108751,8 @@ function getScheduleAutoRoomFilteredUnits() {
   const category = document.getElementById('sar-filter-category')?.value || '';
   const nature = document.getElementById('sar-filter-nature')?.value || '';
   const teacherKw = (document.getElementById('sar-filter-teacher')?.value || '').trim().toLowerCase();
+  // 排教室状态：unset=未派教室 / locked=已派教室
+  const status = document.getElementById('sar-filter-status')?.value || '';
   const courseCodeSet = new Set(
     scheduleAutoRoomSelectedCourseCodes.map(c => normalizeScheduleAutoTimeCourseCode(c).toLowerCase()).filter(Boolean)
   );
@@ -107316,6 +108776,8 @@ function getScheduleAutoRoomFilteredUnits() {
         || String(u.teachers || '').toLowerCase();
       if (!hay.includes(teacherKw)) return false;
     }
+    if (status === 'unset' && u.status !== 'unset') return false;
+    if (status === 'locked' && u.status === 'unset') return false;
     return true;
   });
 }
@@ -107585,7 +109047,7 @@ function renderScheduleAutoRoomPage() {
 
 function resetScheduleAutoRoomQuery() {
   ensureScheduleAutoRoomTermSelect(false);
-  ['sar-filter-school', 'sar-filter-prog', 'sar-filter-intake', 'sar-filter-category', 'sar-filter-nature', 'sar-filter-teacher'].forEach(id => {
+  ['sar-filter-school', 'sar-filter-prog', 'sar-filter-intake', 'sar-filter-category', 'sar-filter-nature', 'sar-filter-teacher', 'sar-filter-status'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });

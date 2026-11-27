@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="0bed78c">
+  <meta name="portal-build" content="88eaf69">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -180,7 +180,8 @@
       <div class="nav-group">课表查询</div>
       <a href="#" class="nav-item" data-page="schedule-timetable-query">课表查询</a>
       <a href="#" class="nav-item" data-page="schedule-density-query">课表密度查询</a>
-      <a href="#" class="nav-item" data-page="schedule-term-export">学期安排导出</a>
+      <!-- 先隐藏：学期安排导出侧栏入口；页面与导出逻辑保留，需要时再放开 -->
+      <!-- <a href="#" class="nav-item" data-page="schedule-term-export">学期安排导出</a> -->
       <div class="nav-group">调课管理</div>
       <a href="#" class="nav-item" data-page="adjustment-room-open">教室开放时间设置</a>
       <a href="#" class="nav-item" data-page="adjustment-reason-type">调课原因类型</a>
@@ -252,7 +253,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 0bed78c">1127排课</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 88eaf69">1127排课2</div>
         </div>
       </div>
     </section>
@@ -2317,7 +2318,7 @@
                 <p class="slt-info-item"><strong>【2】排课权限</strong></p>
                 <p class="slt-info-formula">排课表时间 / 排课表教室。<br>勾选禁用任一列时：排课时间设置一并禁用。<br>与调课管理<strong>不互斥</strong>，可同时开放。</p>
                 <p class="slt-info-item"><strong>【3】调课权限 · 调课管理</strong></p>
-                <p class="slt-info-formula">模块总开/关，与排课权限可同时开放。<br><strong>勾选禁用（关闭）</strong>：调课模块强行不可用。<br><strong>不勾选（开放）</strong>：按「排课时间设置」页的教师调课开放时间、调/补/加可选时间范围等窗口控制能否发起；未到窗口则不可用，无需再单独「调课时间设置」列。</p>
+                <p class="slt-info-formula">控制申请调/停/补/加按钮是否可用（教师端 Replace/Cancel/Apply/Additional；管理端代发起调/停/补/加），与排课权限可同时开放。<br><strong>勾选禁用（关闭）</strong>：上述按钮强行不可用。<br><strong>不勾选（开放）</strong>：再按「排课时间设置」页的教师调课开放时间、调/补/加可选日期范围等窗口控制能否发起；未到窗口则不可用，无需再单独「调课时间设置」列。</p>
               </div>
             </div>
           </div>
@@ -2355,7 +2356,19 @@
                 <th class="col-center">排课表教室</th>
                 <!-- 弃用：调课时间设置列。原因：调课管理开着按配置时间生效，关则不可用 -->
                 <!-- <th class="col-center">调课时间设置</th> -->
-                <th class="col-center">调课管理</th>
+                <!-- 列头感叹号：说明本列控制申请调/停/补/加按钮是否可用 -->
+                <th class="col-center">
+                  <span class="schedule-module-col-head">
+                    调课管理
+                    <span class="slt-info-tip schedule-module-col-tip">
+                      <button type="button" class="slt-info-btn" aria-label="调课管理说明" title="调课管理说明">!</button>
+                      <div class="slt-info-popover schedule-module-col-tip-popover" role="note">
+                        <p class="slt-info-formula">控制教师端 / 管理端「申请调 / 停 / 补 / 加」类按钮是否可用（如 Replace Class、Cancel Class、Apply 补课、Additional Class、代发起调/停/补/加）。</p>
+                        <p class="slt-info-formula"><strong>勾选禁用</strong>：上述按钮不可用。<br><strong>不勾选开放</strong>：再按学期「教师调课开放时间」「调/补/加可选日期范围」等窗口判断能否发起。</p>
+                      </div>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody id="schedule-module-setting-body"></tbody>
@@ -2396,6 +2409,15 @@
               <label for="schedule-period-term">学年学期</label>
               <select class="input input-sm" id="schedule-period-term" onchange="onSchedulePeriodTermChange()"></select>
             </div>
+            <!-- 与列表「节次类型」列对齐 -->
+            <div class="schedule-query-field">
+              <label for="schedule-period-filter-type">节次类型</label>
+              <select class="input input-sm" id="schedule-period-filter-type">
+                <option value="">全部</option>
+                <option value="morning">早班授课</option>
+                <option value="evening">晚班授课</option>
+              </select>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderSchedulePeriodPage()">查询</button>
@@ -2403,7 +2425,8 @@
           </div>
         </div>
       </div>
-      <div class="legend-bar" id="schedule-period-summary"></div>
+      <!-- 弃用：产品要求去掉节次列表上方「学期 · 共 N 个节次」统计条 -->
+      <!-- <div class="legend-bar" id="schedule-period-summary"></div> -->
       <div class="card schedule-card">
         <div class="panel-toolbar schedule-period-toolbar">
           <button class="btn btn-primary btn-sm" type="button" onclick="openSchedulePeriodModal()">新增节次</button>
@@ -2532,6 +2555,7 @@
                 <tr>
                   <th class="col-check"><input type="checkbox" id="schedule-blackout-check-all" onchange="toggleScheduleBlackoutCheckAll(this.checked)"></th>
                   <th class="col-index">序号</th>
+                  <th class="col-center">学年学期</th>
                   <th class="col-center">Day</th>
                   <th class="col-center">节次</th>
                   <th>不排课备注</th>
@@ -2571,6 +2595,7 @@
                 <tr>
                   <th class="col-check"><input type="checkbox" id="schedule-elective-check-all" onchange="toggleScheduleElectiveCheckAll(this.checked)"></th>
                   <th class="col-index">序号</th>
+                  <th class="col-center">学年学期</th>
                   <th class="col-center">Day</th>
                   <th class="col-center">节次</th>
                   <th>占位备注</th>
@@ -2768,12 +2793,23 @@
 
     <!-- ═══ 排课管理 · 排课表时间 · 按入学批次排 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-time">
+      <!-- 原因：产品要求去掉列表页顶部 page-header 标题区 -->
+      <!--
       <div class="page-header">
         <div><h1>按入学批次排</h1><p class="subtitle">排课表时间 · 在排课起止时间内按学院、专业与入学批次安排上课时间（公共选修无固定批次，请用按教师 / 按课程 / 联合排课）</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
+            <!-- 第一行固定 4：学期 / 学院 / 专业 / 专业批次；学院起允许多选 -->
+            <!-- 原因：产品要求「专业批次」与「入学批次」对调——专业批次上第一行，入学批次进展开行 -->
+            <div class="schedule-query-field">
+              <label for="schedule-time-filter-term">学期</label>
+              <select class="input input-sm" id="schedule-time-filter-term"></select>
+            </div>
+            <!-- 原因：产品要求学院/专业/入学批次/专业批次允许多选 -->
+            <!--
             <div class="schedule-query-field">
               <label for="schedule-time-filter-school">学院</label>
               <select class="input input-sm" id="schedule-time-filter-school" onchange="onScheduleBatchFilterSchoolChange()">
@@ -2788,13 +2824,84 @@
             </div>
             <div class="schedule-query-field">
               <label for="schedule-time-filter-intake">入学批次</label>
-              <select class="input input-sm" id="schedule-time-filter-intake">
+              <select class="input input-sm" id="schedule-time-filter-intake" onchange="rebuildScheduleTimeProgrammeBatchFilterOptions()">
                 <option value="">全部入学批次</option>
               </select>
             </div>
-            <div class="schedule-query-more">
+            -->
             <div class="schedule-query-field">
-              <label for="schedule-time-filter-status">排课状态</label>
+              <label>学院</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-time-filter-school-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-time-filter-school-btn" onclick="toggleScheduleListMs('schedule-time-filter-school', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-time-filter-school-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-time-filter-school-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-time-filter-school-options"></div>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-query-field">
+              <label>专业</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-time-filter-prog-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-time-filter-prog-btn" onclick="toggleScheduleListMs('schedule-time-filter-prog', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-time-filter-prog-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-time-filter-prog-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-time-filter-prog-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- 原第一行第 4 位为入学批次；与展开行专业批次对调 -->
+            <!--
+            <div class="schedule-query-field">
+              <label>入学批次</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-time-filter-intake-ms">...</div>
+            </div>
+            -->
+            <div class="schedule-query-field">
+              <label>专业批次</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-time-filter-programme-batch-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-time-filter-programme-batch-btn" onclick="toggleScheduleListMs('schedule-time-filter-programme-batch', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-time-filter-programme-batch-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-time-filter-programme-batch-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-time-filter-programme-batch-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- 弃用：课号筛选。原因：按入学批次列表为批次汇总行，表头无课号列，筛选项应对齐表头 -->
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-time-filter-course">课号 / 课程班名称</label>
+              <input class="input input-sm" id="schedule-time-filter-course" placeholder="课号 / 课程班名称" type="text">
+            </div>
+            -->
+            <div class="schedule-query-more">
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-time-filter-programme-batch">专业批次</label>
+              <select class="input input-sm" id="schedule-time-filter-programme-batch">
+                <option value="">全部</option>
+              </select>
+            </div>
+            -->
+            <div class="schedule-query-field">
+              <label>入学批次</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-time-filter-intake-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-time-filter-intake-btn" onclick="toggleScheduleListMs('schedule-time-filter-intake', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-time-filter-intake-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-time-filter-intake-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-time-filter-intake-options"></div>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-time-filter-status">是否已排完</label>
               <select class="input input-sm" id="schedule-time-filter-status">
                 <option value="">全部</option>
                 <option value="done">已排完</option>
@@ -2804,22 +2911,27 @@
             </div>
           </div>
           <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleTimePage()">查询</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleArrangeList('time')">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleArrangeQuery('time')">重置</button>
             <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
+      <!-- 原因：产品要求查询区下方恢复与按教师排一致的当前查看统计 hint 条 -->
+      <!-- 弃用记录：曾去掉按入学批次排顶部统计 hint 条 -->
       <div class="legend-bar" id="schedule-time-hint"></div>
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
-          <th class="col-index">序号</th><th class="col-center">入学批次</th><th class="col-center">专业代码</th><th class="col-center">专业名称</th><th class="col-center">学院</th>
+          <!-- 原因：产品要求隐藏列表「学期」列（筛选项仍保留） -->
+          <th class="col-index">序号</th><!-- <th class="col-center">学期</th> --><th class="col-center">专业批次</th><th class="col-center">入学批次</th><th class="col-center">专业代码</th><th class="col-center">专业名称</th><th class="col-center">学院</th>
           <th class="col-center">课程数</th><th class="col-center">小组数</th><th class="col-center">已排完</th><th class="col-center">未排完</th>
           <th class="col-center">排课状态</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-time-body"></tbody>
-      </table></div></div>
+      </table></div>
+        <div class="pagination" id="schedule-time-pagination"></div>
+      </div>
     </section>
 
     <!-- ═══ 排课管理 · 排课表时间 · 排课详情 ═══ -->
@@ -3355,15 +3467,19 @@
 
     <!-- ═══ 排课管理 · 排课表时间 · 按教师排 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-teacher">
+      <!-- 原因：产品要求去掉列表页顶部 page-header 标题区 -->
+      <!--
       <div class="page-header">
         <div><h1>按教师排</h1><p class="subtitle">排课表时间 · 在排课起止时间内按教师维度安排上课时间</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
             <div class="schedule-query-field">
               <label for="schedule-teacher-filter-term">学年学期</label>
-              <input class="input input-sm" id="schedule-teacher-filter-term" readonly placeholder="—">
+              <!-- 原 readonly 只读展示；改为单选可切换学期 -->
+              <select class="input input-sm" id="schedule-teacher-filter-term" onchange="queryScheduleArrangeList('teacher')"></select>
             </div>
             <div class="schedule-query-field">
               <label for="schedule-teacher-filter-id">教工号</label>
@@ -3373,10 +3489,61 @@
               <label for="schedule-teacher-filter-name">教师姓名</label>
               <input class="input input-sm" id="schedule-teacher-filter-name" placeholder="教师姓名">
             </div>
-            <div class="schedule-query-more">
+            <!-- 原因：所在单位/所属专业/教职工类型改为多选 -->
+            <!--
             <div class="schedule-query-field">
               <label for="schedule-teacher-filter-dept">所在单位</label>
               <input class="input input-sm" id="schedule-teacher-filter-dept" placeholder="所在单位">
+            </div>
+            -->
+            <div class="schedule-query-field">
+              <label>所在单位</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-teacher-filter-dept-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-teacher-filter-dept-btn" onclick="toggleScheduleListMs('schedule-teacher-filter-dept', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-teacher-filter-dept-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-teacher-filter-dept-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-teacher-filter-dept-options"></div>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-query-more">
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-teacher-filter-programme">所属专业</label>
+              <input class="input input-sm" id="schedule-teacher-filter-programme" placeholder="所属专业">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-teacher-filter-staff-type">教职工类型</label>
+              <select class="input input-sm" id="schedule-teacher-filter-staff-type">
+                <option value="">全部</option>
+              </select>
+            </div>
+            -->
+            <div class="schedule-query-field">
+              <label>所属专业</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-teacher-filter-programme-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-teacher-filter-programme-btn" onclick="toggleScheduleListMs('schedule-teacher-filter-programme', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-teacher-filter-programme-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-teacher-filter-programme-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-teacher-filter-programme-options"></div>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-query-field">
+              <label>教职工类型</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-teacher-filter-staff-type-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-teacher-filter-staff-type-btn" onclick="toggleScheduleListMs('schedule-teacher-filter-staff-type', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-teacher-filter-staff-type-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-teacher-filter-staff-type-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-teacher-filter-staff-type-options"></div>
+                </div>
+              </div>
             </div>
             <div class="schedule-query-field">
               <label for="schedule-teacher-filter-status">排课状态</label>
@@ -3389,7 +3556,7 @@
             </div>
           </div>
           <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleTeacherPage()">查询</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleArrangeList('teacher')">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleArrangeQuery('teacher')">重置</button>
             <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
@@ -3399,25 +3566,34 @@
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
-          <th class="col-index">序号</th><th class="col-center">教师工号</th><th class="col-center">教师姓名</th><th class="col-center">所在单位</th>
+          <!-- 原因：产品要求隐藏列表「学期」列（筛选项仍保留） -->
+          <th class="col-index">序号</th><!-- <th class="col-center">学期</th> --><th class="col-center">教师工号</th><th class="col-center">教师姓名</th><th class="col-center">所在单位</th>
+          <!-- 原因：产品要求所在单位右侧增加所属专业 -->
+          <th class="col-center">所属专业</th>
           <th class="col-center">教职工类型</th><th class="col-center">课程数</th><th class="col-center">小组数</th><th class="col-center">已排完</th>
           <th class="col-center">未排完</th><th class="col-center">排课状态</th><th class="col-center">操作</th>
         </tr></thead>
         <tbody id="schedule-teacher-body"></tbody>
-      </table></div></div>
+      </table></div>
+        <div class="pagination" id="schedule-teacher-pagination"></div>
+      </div>
     </section>
 
     <!-- ═══ 排课管理 · 排课表时间 · 按课程排 ═══ -->
     <section class="page-list page schedule-page" id="page-schedule-course">
+      <!-- 原因：产品要求去掉列表页顶部 page-header 标题区 -->
+      <!--
       <div class="page-header">
         <div><h1>按课程排</h1><p class="subtitle">排课表时间 · 在排课起止时间内按课程维度安排上课时间</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
             <div class="schedule-query-field">
               <label for="schedule-course-filter-term">学年学期</label>
-              <input class="input input-sm" id="schedule-course-filter-term" readonly placeholder="—">
+              <!-- 原 readonly 只读展示；改为单选可切换学期 -->
+              <select class="input input-sm" id="schedule-course-filter-term" onchange="queryScheduleArrangeList('course')"></select>
             </div>
             <div class="schedule-query-field">
               <label for="schedule-course-filter-code">Course Code</label>
@@ -3427,10 +3603,66 @@
               <label for="schedule-course-filter-name">课程班名称</label>
               <input class="input input-sm" id="schedule-course-filter-name" placeholder="课程班名称">
             </div>
-            <div class="schedule-query-more">
+            <!-- 原因：表头「开课单位」改为所属学院/所属专业/开课专业，筛选项对齐第一行所属学院 -->
+            <!--
             <div class="schedule-query-field">
               <label for="schedule-course-filter-dept">开课单位</label>
               <input class="input input-sm" id="schedule-course-filter-dept" placeholder="开课单位">
+            </div>
+            -->
+            <!-- 原因：所属学院/所属专业/开课专业/校选课类别改为多选 -->
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-course-filter-school">所属学院</label>
+              <input class="input input-sm" id="schedule-course-filter-school" placeholder="所属学院">
+            </div>
+            -->
+            <div class="schedule-query-field">
+              <label>所属学院</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-course-filter-school-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-filter-school-btn" onclick="toggleScheduleListMs('schedule-course-filter-school', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-course-filter-school-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-course-filter-school-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-course-filter-school-options"></div>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-query-more">
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-course-filter-belong-programme">所属专业</label>
+              <input class="input input-sm" id="schedule-course-filter-belong-programme" placeholder="所属专业">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-course-filter-offering-programme">开课专业</label>
+              <input class="input input-sm" id="schedule-course-filter-offering-programme" placeholder="开课专业">
+            </div>
+            -->
+            <div class="schedule-query-field">
+              <label>所属专业</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-course-filter-belong-programme-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-filter-belong-programme-btn" onclick="toggleScheduleListMs('schedule-course-filter-belong-programme', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-course-filter-belong-programme-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-course-filter-belong-programme-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-course-filter-belong-programme-options"></div>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-query-field">
+              <label>开课专业</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-course-filter-offering-programme-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-filter-offering-programme-btn" onclick="toggleScheduleListMs('schedule-course-filter-offering-programme', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-course-filter-offering-programme-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-course-filter-offering-programme-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-course-filter-offering-programme-options"></div>
+                </div>
+              </div>
             </div>
             <div class="schedule-query-field">
               <label>课程类型</label>
@@ -3444,6 +3676,38 @@
                 </div>
               </div>
             </div>
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-course-filter-ge-type">校选课类别</label>
+              <select class="input input-sm" id="schedule-course-filter-ge-type">
+                <option value="">全部</option>
+                <option value="G01">G01（Arts）</option>
+                <option value="G02">G02（Business）</option>
+                <option value="G03">G03（Science）</option>
+                <option value="G04">G04（不限）</option>
+                <option value="none">非校选</option>
+              </select>
+            </div>
+            -->
+            <div class="schedule-query-field">
+              <label>校选课类别</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-course-filter-ge-type-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-course-filter-ge-type-btn" onclick="toggleScheduleListMs('schedule-course-filter-ge-type', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-course-filter-ge-type-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-course-filter-ge-type-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-course-filter-ge-type-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- 弃用：教师关键字。原因：按课程列表表头无教师列，筛选项应对齐表头 -->
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-course-filter-teacher">教师工号 / 姓名</label>
+              <input class="input input-sm" id="schedule-course-filter-teacher" placeholder="教师工号 / 姓名" type="text">
+            </div>
+            -->
             <div class="schedule-query-field">
               <label for="schedule-course-filter-status">排课状态</label>
               <select class="input input-sm" id="schedule-course-filter-status">
@@ -3455,7 +3719,7 @@
             </div>
           </div>
           <div class="schedule-query-actions">
-            <button class="btn btn-primary btn-sm" type="button" onclick="renderScheduleCoursePage()">查询</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="queryScheduleArrangeList('course')">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetScheduleCourseQuery()">重置</button>
             <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
@@ -3463,14 +3727,23 @@
       </div>
       <div class="legend-bar" id="schedule-course-hint"></div>
       <div class="card schedule-card">
-        <div class="table-scroll"><table class="data-table">
+        <!-- 列多时横向滚动；右侧冻结排课状态+操作 -->
+        <div class="table-scroll schedule-course-table-wrap">
+          <table class="data-table schedule-course-table">
         <thead><tr>
-          <th class="col-index">序号</th><th class="col-center">Course Code</th><th>课程班名称</th><th class="col-center">课程类型</th><th class="col-center">开课单位</th>
+          <!-- 原因：开课单位拆为所属学院/所属专业/开课专业；课程类型左侧补专业批次+选课方式、右侧补校选课类别 -->
+          <!-- 原因：产品要求隐藏列表「学期」列（筛选项仍保留） -->
+          <th class="col-index">序号</th><!-- <th class="col-center">学期</th> --><th class="col-center">Course Code</th><th>课程班名称</th><th class="col-center">专业批次</th><th class="col-center">选课方式</th><th class="col-center">课程类型</th><th class="col-center">校选课类别</th><th class="col-center">所属学院</th><th class="col-center">所属专业</th><th class="col-center">开课专业</th>
+          <!-- <th class="col-center">开课单位</th> -->
           <th class="col-center">小组数</th><th class="col-center">已排完</th>
-          <th class="col-center">未排完</th><th class="col-center">排课状态</th><th class="col-center">操作</th>
+          <th class="col-center">未排完</th>
+          <th class="col-center sch-course-freeze sch-course-freeze-status">排课状态</th>
+          <th class="col-center sch-course-freeze sch-course-freeze-ops">操作</th>
         </tr></thead>
         <tbody id="schedule-course-body"></tbody>
-      </table></div></div>
+      </table></div>
+        <div class="pagination" id="schedule-course-pagination"></div>
+      </div>
     </section>
 
     <!-- ═══ 排课管理 · 排课表时间 · 课表冲突查询 ═══ -->
@@ -3511,13 +3784,13 @@
                 <option value="">全部学院</option>
               </select>
             </div>
-            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-time-conflict-filter-prog">专业</label>
               <select class="input input-sm" id="schedule-time-conflict-filter-prog" onchange="onScheduleTimeConflictProgrammeChange()">
                 <option value="">全部专业</option>
               </select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-time-conflict-filter-intake">入学批次</label>
               <select class="input input-sm" id="schedule-time-conflict-filter-intake">
@@ -3605,6 +3878,7 @@
             <tbody id="schedule-time-conflict-body"></tbody>
           </table>
         </div>
+        <div class="pagination" id="schedule-time-conflict-pagination"></div>
       </div>
     </section>
 
@@ -3711,6 +3985,14 @@
               <label for="sat-filter-teacher">教师</label>
               <input class="input input-sm" id="sat-filter-teacher" placeholder="教师工号 / 姓名" oninput="onScheduleAutoTimeDraftFilterChange()">
             </div>
+            <div class="schedule-query-field">
+              <label for="sat-filter-status">排课状态</label>
+              <select class="input input-sm" id="sat-filter-status" onchange="onScheduleAutoTimeDraftFilterChange()">
+                <option value="">全部</option>
+                <option value="pending">未排完</option>
+                <option value="done">已排完</option>
+              </select>
+            </div>
             </div>
           </div>
           <div class="schedule-auto-run-actions">
@@ -3815,6 +4097,8 @@
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
+            <!-- 原因：Day 允许多选 -->
+            <!--
             <div class="schedule-query-field">
               <label for="schedule-room-intake-filter-weekday">Day</label>
               <select class="input input-sm" id="schedule-room-intake-filter-weekday">
@@ -3828,6 +4112,30 @@
                 <option value="7">周日</option>
               </select>
             </div>
+            -->
+            <div class="schedule-query-field">
+              <label>Day</label>
+              <div class="clo-multiselect schedule-list-ms" id="schedule-room-intake-filter-weekday-ms">
+                <button type="button" class="clo-multiselect-trigger input input-sm" id="schedule-room-intake-filter-weekday-btn" onclick="toggleScheduleListMs('schedule-room-intake-filter-weekday', event)">
+                  <span class="clo-multiselect-display placeholder" id="schedule-room-intake-filter-weekday-display">全部</span>
+                  <span class="clo-multiselect-arrow" aria-hidden="true">▾</span>
+                </button>
+                <div class="clo-multiselect-dropdown" id="schedule-room-intake-filter-weekday-dropdown" hidden>
+                  <div class="clo-multiselect-options" id="schedule-room-intake-filter-weekday-options"></div>
+                </div>
+              </div>
+            </div>
+            <!-- 弃用：课号/教师。原因：按时间排教室列表为 Day 汇总行，表头无课号/教师列 -->
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-room-intake-filter-course">课号 / 课程班名称</label>
+              <input class="input input-sm" id="schedule-room-intake-filter-course" placeholder="课号 / 课程班名称" type="text">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-intake-filter-teacher">教师工号 / 姓名</label>
+              <input class="input input-sm" id="schedule-room-intake-filter-teacher" placeholder="教师工号 / 姓名" type="text">
+            </div>
+            -->
             <div class="schedule-query-field">
               <label for="schedule-room-intake-filter-status">排教室状态</label>
               <select class="input input-sm" id="schedule-room-intake-filter-status">
@@ -3843,11 +4151,14 @@
           </div>
         </div>
       </div>
-      <div class="legend-bar" id="schedule-room-intake-hint"></div>
+      <!-- 原因：产品要求去掉排教室按 Day 列表顶部「当前查看」提示条 -->
+      <!-- <div class="legend-bar" id="schedule-room-intake-hint"></div> -->
       <div class="card schedule-card">
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
           <th class="col-index">序号</th>
+          <!-- 原因：产品要求隐藏列表「学期」列 -->
+          <!-- <th class="col-center">学期</th> -->
           <th class="col-center">Day</th>
           <th class="col-center">课程数</th>
           <th class="col-center">小组数</th>
@@ -3877,6 +4188,17 @@
                 <option value="computer">计算机教室</option>
               </select>
             </div>
+            <!-- 弃用：课号/教师。原因：按场地类型列表为类型汇总行，表头无课号/教师列 -->
+            <!--
+            <div class="schedule-query-field">
+              <label for="schedule-room-teacher-filter-course">课号 / 课程班名称</label>
+              <input class="input input-sm" id="schedule-room-teacher-filter-course" placeholder="课号 / 课程班名称" type="text">
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-teacher-filter-teacher">教师工号 / 姓名</label>
+              <input class="input input-sm" id="schedule-room-teacher-filter-teacher" placeholder="教师工号 / 姓名" type="text">
+            </div>
+            -->
             <div class="schedule-query-field">
               <label for="schedule-room-teacher-filter-status">排教室状态</label>
               <select class="input input-sm" id="schedule-room-teacher-filter-status">
@@ -3897,6 +4219,8 @@
         <div class="table-scroll"><table class="data-table">
         <thead><tr>
           <th class="col-index">序号</th>
+          <!-- 原因：产品要求隐藏列表「学期」列 -->
+          <!-- <th class="col-center">学期</th> -->
           <th class="col-center">场地类型</th>
           <th class="col-center">课程数</th>
           <th class="col-center">小组数</th>
@@ -3934,11 +4258,29 @@
               </select>
             </div>
             <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-school">学院</label>
+              <select class="input input-sm" id="schedule-room-conflict-filter-school" onchange="onScheduleRoomConflictSchoolChange()">
+                <option value="">全部学院</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-prog">专业</label>
+              <select class="input input-sm" id="schedule-room-conflict-filter-prog" onchange="onScheduleRoomConflictProgrammeChange()">
+                <option value="">全部专业</option>
+              </select>
+            </div>
+            <div class="schedule-query-more">
+            <div class="schedule-query-field">
+              <label for="schedule-room-conflict-filter-intake">入学批次</label>
+              <select class="input input-sm" id="schedule-room-conflict-filter-intake">
+                <option value="">全部入学批次</option>
+              </select>
+            </div>
+            <div class="schedule-query-field">
               <label for="schedule-room-conflict-filter-date">Date</label>
               <input type="hidden" id="schedule-room-conflict-filter-date" value="">
               <button type="button" class="input input-sm adj-pick-btn is-empty" id="schedule-room-conflict-filter-date-btn" onclick="openAdjFilterDatePicker('schedule-room-conflict-filter-date', event, 'onScheduleRoomConflictDateChange')">选择日期</button>
             </div>
-            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="schedule-room-conflict-filter-week">Week</label>
               <input class="input input-sm" id="schedule-room-conflict-filter-week" type="number" min="1" placeholder="如 5" onchange="onScheduleRoomConflictWeekWeekdayChange()">
@@ -4001,7 +4343,8 @@
               <tr>
                 <th class="col-check"><input type="checkbox" id="schedule-room-conflict-check-all" aria-label="全选" onchange="toggleListExportCheckAll('schedule-room-conflict-body', this.checked)"></th>
                 <th class="col-index">序号</th>
-                <th>学期</th>
+                <!-- 原因：产品要求隐藏列表「学期」列（筛选项仍保留） -->
+                <!-- <th>学期</th> -->
                 <th>Date</th>
                 <th>Week</th>
                 <th>Day</th>
@@ -4012,7 +4355,9 @@
                 <th>课程组（人数）</th>
                 <th>学院</th>
                 <th>专业</th>
-                <th class="col-center">入学批次</th>
+                <!-- 原因：产品要求场地冲突列表表头由「入学批次」改为「上课专业批次」 -->
+                <!-- <th class="col-center">入学批次</th> -->
+                <th class="col-center">上课专业批次</th>
                 <th>Venue</th>
                 <th class="col-center">共同授课状态</th>
                 <th class="sch-conflict-freeze sch-conflict-freeze-type">冲突类型</th>
@@ -4022,6 +4367,7 @@
             <tbody id="schedule-room-conflict-body"></tbody>
           </table>
         </div>
+        <div class="pagination" id="schedule-room-conflict-pagination"></div>
       </div>
     </section>
 
@@ -4105,6 +4451,14 @@
             <div class="schedule-query-field">
               <label for="sar-filter-teacher">教师</label>
               <input class="input input-sm" id="sar-filter-teacher" placeholder="教师工号 / 姓名" oninput="renderScheduleAutoRoomPage()">
+            </div>
+            <div class="schedule-query-field">
+              <label for="sar-filter-status">排教室状态</label>
+              <select class="input input-sm" id="sar-filter-status" onchange="renderScheduleAutoRoomPage()">
+                <option value="">全部</option>
+                <option value="unset">未排完</option>
+                <option value="locked">已排完</option>
+              </select>
             </div>
             </div>
           </div>
@@ -4296,9 +4650,12 @@
 
     <!-- ═══ 排课管理 · 课表查询（分 Tab） ═══ -->
     <section class="page schedule-page schedule-tt-query-page" id="page-schedule-timetable-query">
+      <!-- 原因：产品要求去掉课表查询页顶栏标题区（Tab 已标明入口） -->
+      <!--
       <div class="page-header">
         <div><h1>课表查询</h1><p class="subtitle">入学批次 / 教师 / 学生 / 课程 / 教室 / 时间课表统一查询入口</p></div>
       </div>
+      -->
       <div class="tab-bar" id="schedule-tt-query-tabs">
         <button type="button" class="tab active" data-tt-tab="intake" onclick="switchScheduleTimetableQueryTab('intake')">入学批次课表</button>
         <button type="button" class="tab" data-tt-tab="teacher" onclick="switchScheduleTimetableQueryTab('teacher')">教师课表</button>
@@ -4308,9 +4665,12 @@
         <button type="button" class="tab" data-tt-tab="time" onclick="switchScheduleTimetableQueryTab('time')">时间课表</button>
       </div>
       <div class="tab-panel active" id="tab-schedule-intake-timetable" data-tt-tab="intake">
+      <!-- 原因：产品要求去掉入学批次课表 Tab 内重复标题区（上方 Tab 已标明） -->
+      <!--
       <div class="page-header">
         <div><h1>入学批次课表</h1><p class="subtitle">选择入学批次查看该批次学期课表（图形化展示）</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
@@ -4319,7 +4679,9 @@
               <input class="input input-sm" id="schedule-intake-tt-term" readonly placeholder="—">
             </div>
             <div class="schedule-query-field">
-              <label for="schedule-intake-tt-batch">入学批次</label>
+              <!-- 原因：选项为「专业名 · 入学批次」，实际选的是专业批次，非纯入学批次 -->
+              <!-- <label for="schedule-intake-tt-batch">入学批次</label> -->
+              <label for="schedule-intake-tt-batch">专业批次</label>
               <select class="input input-sm" id="schedule-intake-tt-batch"></select>
             </div>
             <div class="schedule-query-field">
@@ -4362,9 +4724,12 @@
       </div>
       </div>
       <div class="tab-panel" id="tab-schedule-teacher-timetable" data-tt-tab="teacher">
+      <!-- 原因：产品要求去掉 Tab 内重复标题区（上方 Tab 已标明） -->
+      <!--
       <div class="page-header">
         <div><h1>教师课表</h1><p class="subtitle">选择教师查看该教师学期课表（图形化展示）</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
@@ -4399,9 +4764,12 @@
       </div>
       </div>
       <div class="tab-panel" id="tab-schedule-student-timetable" data-tt-tab="student">
+      <!-- 原因：产品要求去掉 Tab 内重复标题区（上方 Tab 已标明） -->
+      <!--
       <div class="page-header">
         <div><h1>学生课表</h1><p class="subtitle">选择学生查看该学生学期课表（图形化展示）</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
@@ -4437,9 +4805,12 @@
       </div>
       </div>
       <div class="tab-panel" id="tab-schedule-course-timetable" data-tt-tab="course">
+      <!-- 原因：产品要求去掉 Tab 内重复标题区（上方 Tab 已标明） -->
+      <!--
       <div class="page-header">
         <div><h1>课程课表</h1><p class="subtitle">选择课程查看该课程学期课表（图形化展示）</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
@@ -4474,9 +4845,12 @@
       </div>
       </div>
       <div class="tab-panel" id="tab-schedule-room-timetable" data-tt-tab="room">
+      <!-- 原因：产品要求去掉 Tab 内重复标题区（上方 Tab 已标明） -->
+      <!--
       <div class="page-header">
         <div><h1>教室课表</h1><p class="subtitle">选择教室查看该教室学期课表（图形化展示）</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields">
@@ -4511,9 +4885,12 @@
       </div>
       </div>
       <div class="tab-panel" id="tab-schedule-time-timetable" data-tt-tab="time">
+      <!-- 原因：产品要求去掉 Tab 内重复标题区（上方 Tab 已标明） -->
+      <!--
       <div class="page-header">
         <div><h1>时间课表</h1><p class="subtitle">按多维条件查询全校排课明细，以表格形式逐时段展示</p></div>
       </div>
+      -->
       <div class="card schedule-query-card">
         <div class="schedule-query-row">
           <div class="schedule-query-fields schedule-query-fields-wide">
@@ -4985,6 +5362,26 @@
                   <label for="adjustment-teacher-week">Week</label>
                   <input class="input input-sm" id="adjustment-teacher-week" type="number" min="1" placeholder="Week">
                 </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-type">Adjustment Type</label>
+                  <select class="input input-sm" id="adjustment-teacher-type">
+                    <option value="">全部</option>
+                    <option value="reschedule">Replace Class</option>
+                    <option value="cancel">Cancel Class</option>
+                    <option value="makeup">Reschedule Class</option>
+                  </select>
+                </div>
+                <div class="schedule-query-field">
+                  <label for="adjustment-teacher-status">Status</label>
+                  <select class="input input-sm" id="adjustment-teacher-status">
+                    <option value="">全部</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="returned">Update Required</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -5135,10 +5532,43 @@
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-addition-category">Category</label>
+                <select class="input input-sm" id="adjustment-teacher-addition-category">
+                  <option value="">全部</option>
+                </select>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-addition-course-code">Course Code</label>
+                <input class="input input-sm" id="adjustment-teacher-addition-course-code" type="text" placeholder="Course Code">
+              </div>
             </div>
             <div class="schedule-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentTeacherAdditionPage()">查询</button>
               <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentTeacherAdditionQuery()">重置</button>
+              <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)">
+                <span class="schedule-query-fold-caret" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="schedule-query-more">
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-addition-course-name">Course Name</label>
+                <input class="input input-sm" id="adjustment-teacher-addition-course-name" type="text" placeholder="Course Name">
+              </div>
+              <div class="schedule-query-field">
+                <label>Class Date</label>
+                <div class="adj-apply-date-range-inputs">
+                  <input type="hidden" id="adjustment-teacher-addition-date-from" value="">
+                  <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-addition-date-from-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-addition-date-from', event)">选择日期</button>
+                  <span class="adj-apply-date-sep">~</span>
+                  <input type="hidden" id="adjustment-teacher-addition-date-to" value="">
+                  <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-teacher-addition-date-to-btn" onclick="openAdjFilterDatePicker('adjustment-teacher-addition-date-to', event)">选择日期</button>
+                </div>
+              </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-teacher-addition-week">Week</label>
+                <input class="input input-sm" id="adjustment-teacher-addition-week" type="number" min="1" placeholder="Week">
+              </div>
             </div>
           </div>
         </div>
@@ -5203,13 +5633,13 @@
               <label for="adjustment-room-open-name">Venue Name</label>
               <input class="input input-sm" id="adjustment-room-open-name" placeholder="教室名称关键字">
             </div>
-            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="adjustment-room-open-building">楼栋</label>
               <select class="input input-sm" id="adjustment-room-open-building" onchange="onAdjustmentRoomOpenBuildingChange()">
                 <option value="">全部</option>
               </select>
             </div>
+            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="adjustment-room-open-floor">楼层</label>
               <select class="input input-sm" id="adjustment-room-open-floor">
@@ -5334,7 +5764,6 @@
                 <option value="addclass">加课</option>
               </select>
             </div>
-            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="adjustment-admin-status">审批状态</label>
               <select class="input input-sm" id="adjustment-admin-status">
@@ -5345,6 +5774,16 @@
                 <option value="returned">Update Required</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+            </div>
+            <div class="schedule-query-more">
+            <!-- 列表无独立课号列；保留申请人关键字与 Affected Classes 相关检索 -->
+            <div class="schedule-query-field">
+              <label for="adjustment-admin-course">Affected Classes / 课号</label>
+              <input class="input input-sm" id="adjustment-admin-course" type="text" placeholder="Affected Classes / 课号">
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-admin-keyword">申请人 / 教师</label>
+              <input class="input input-sm" id="adjustment-admin-keyword" type="text" placeholder="工号 / 姓名">
             </div>
             </div>
           </div>
@@ -5543,6 +5982,11 @@
                   <option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="7">周日</option>
                 </select>
               </div>
+              <div class="schedule-query-field">
+                <label for="adjustment-holiday-date">Date</label>
+                <input type="hidden" id="adjustment-holiday-date" value="">
+                <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-holiday-date-btn" onclick="openAdjFilterDatePicker('adjustment-holiday-date', event)">选择日期</button>
+              </div>
             </div>
             <div class="schedule-query-actions">
               <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentHolidayManagePage()">查询</button>
@@ -5662,6 +6106,15 @@
                 <option value="time">调时间</option>
               </select>
             </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-batch-filter-course">Affected Classes / 课号</label>
+              <input class="input input-sm" id="adjustment-batch-filter-course" type="text" placeholder="课号 / 课程名">
+            </div>
+            <div class="schedule-query-field">
+              <label for="adjustment-batch-filter-date">原日期</label>
+              <input type="hidden" id="adjustment-batch-filter-date" value="">
+              <button type="button" class="input input-sm adj-pick-btn is-empty" id="adjustment-batch-filter-date-btn" onclick="openAdjFilterDatePicker('adjustment-batch-filter-date', event)">选择日期</button>
+            </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentBatchRecords()">查询</button>
@@ -5750,17 +6203,14 @@
                 <option value="admin">调课申请管理</option>
               </select>
             </div>
-            <div class="schedule-query-more">
             <div class="schedule-query-field">
               <label for="adjustment-record-keyword">教师 / 课程</label>
               <input class="input input-sm" id="adjustment-record-keyword" placeholder="工号 / 姓名 / 课程">
-            </div>
             </div>
           </div>
           <div class="schedule-query-actions">
             <button class="btn btn-primary btn-sm" type="button" onclick="renderAdjustmentRecordPage()">查询</button>
             <button class="btn btn-outline btn-sm" type="button" onclick="resetAdjustmentRecordQuery()">重置</button>
-            <button class="schedule-query-fold-toggle" type="button" aria-expanded="false" aria-label="展开筛选" onclick="toggleScheduleQueryMore(this)"><span class="schedule-query-fold-caret" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -9753,7 +10203,13 @@
       <button class="modal-close" type="button" onclick="closeScheduleJointModeModal()">×</button>
     </div>
     <div class="modal-body">
-      <p class="form-hint" style="margin-top:0">请选择本次联合排课的对象类型；进入后仅可选择该类型下的对象，页内仍可切换类型。</p>
+      <!-- 原因：产品要求去掉联合排课模式弹窗顶部说明文案 -->
+      <!-- <p class="form-hint" style="margin-top:0">请选择本次联合排课的学年学期与对象类型；进入后仅可选择该类型下的对象，页内仍可切换类型与学期。</p> -->
+      <!-- 进入联合排课前先选定学期，与页内 #schedule-joint-term 同步 -->
+      <div class="form-item schedule-joint-mode-term-field">
+        <label class="req" for="schedule-joint-mode-term">学年学期</label>
+        <select class="input input-sm" id="schedule-joint-mode-term" onchange="onScheduleJointModeTermChange()"></select>
+      </div>
       <div class="schedule-joint-mode-choices" role="list">
         <button type="button" class="schedule-joint-mode-choice" role="listitem" onclick="confirmScheduleJointModeChoice('batch')">
           <strong>按入学批次</strong>
@@ -10100,9 +10556,9 @@
   <div class="modal"><div class="modal-head"><h3 id="adjustment-slot-picker-title">选择上课节次</h3></div></div>
 </div>
 
-<!-- 弹窗：调课申请管理 · 代发起前选择教师（与「调后教师」选择器分离） -->
-<div class="modal-overlay" id="modal-adjustment-admin-proxy-teacher">
-  <div class="modal modal-lg">
+<!-- 抽屉：调课申请管理 · 代发起前选择教师（与「调后教师」选择器分离；原居中弹窗改为右侧抽屉） -->
+<div class="modal-overlay modal-drawer" id="modal-adjustment-admin-proxy-teacher">
+  <div class="modal modal-lg adj-picker-drawer-modal">
     <div class="modal-head">
       <h3 id="adjustment-admin-proxy-teacher-title">选择代申请教师</h3>
       <button class="modal-close" type="button" onclick="closeModal('modal-adjustment-admin-proxy-teacher')">×</button>

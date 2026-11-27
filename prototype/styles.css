@@ -10554,8 +10554,9 @@ input#group-assign-recorded-hours {
   max-width: 100%;
   min-width: 0;
   table-layout: auto;
-  border-collapse: separate;
-  border-spacing: 0;
+  /* 弃用 separate。原因：产品要求右侧明细表内框线，collapse 更易画满格线 */
+  /* border-collapse: separate; border-spacing: 0; */
+  border-collapse: collapse;
 }
 .adj-apply-detail-table th,
 .adj-apply-detail-table td,
@@ -10565,6 +10566,8 @@ input#group-assign-recorded-hours {
   padding: 6px;
   line-height: 1.45;
   vertical-align: middle;
+  /* 表内框线（含加课 adj-addclass-slot-table；原先仅 stack 有右边框） */
+  border: 1px solid var(--border);
 }
 .adj-apply-detail-table th:not(.adj-col-course):not(.adj-col-group),
 .adj-apply-detail-table.data-table.compact th:not(.adj-col-course):not(.adj-col-group),
@@ -11244,7 +11247,8 @@ input#group-assign-recorded-hours {
   flex-direction: column;
 }
 #modal-schedule-room-picker.is-approve-room .modal,
-#modal-adjustment-teacher-picker.modal-drawer .modal {
+#modal-adjustment-teacher-picker.modal-drawer .modal,
+#modal-adjustment-admin-proxy-teacher.modal-drawer .modal {
   display: flex;
   flex-direction: column;
 }
@@ -11254,6 +11258,7 @@ input#group-assign-recorded-hours {
 }
 .modal-overlay.modal-drawer .modal.adj-picker-drawer-modal .modal-body,
 #modal-adjustment-teacher-picker.modal-drawer .modal-body,
+#modal-adjustment-admin-proxy-teacher.modal-drawer .modal-body,
 #modal-schedule-auto-time-course-picker.modal-drawer .modal-body,
 #modal-schedule-room-picker.modal-drawer .modal-body {
   flex: 1;
@@ -11269,6 +11274,7 @@ input#group-assign-recorded-hours {
 }
 .modal-overlay.modal-drawer .modal.adj-picker-drawer-modal .table-scroll,
 #modal-adjustment-teacher-picker.modal-drawer .table-scroll,
+#modal-adjustment-admin-proxy-teacher.modal-drawer .table-scroll,
 #modal-schedule-auto-time-course-picker.modal-drawer .table-scroll,
 #modal-schedule-room-picker.modal-drawer .table-scroll {
   flex: 1;
@@ -14421,6 +14427,27 @@ code {
   padding-right: 16px;
   padding-bottom: 12px;
 }
+/* 查询字段条：对齐详情「课表卡片显示」样式 */
+.main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-fieldbar.schedule-query-view-settings {
+  padding: 8px 16px;
+  /* 压过全局 .schedule-tt-fieldbar 的 border-bottom，避免与课表顶边双线重合 */
+  border-bottom: none;
+  background: #fff;
+}
+.main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-fieldbar .schedule-query-view-settings-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 0;
+  margin: 0;
+  /* 压过全局 .schedule-detail-view-settings 灰底描边盒 */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+  font-size: 12px;
+}
 .main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-timetable-scroll,
 .main .page.schedule-tt-query-page.active > .tab-panel.active .table-scroll {
   flex: 1;
@@ -14431,6 +14458,154 @@ code {
   container-name: sch-tt;
   /* 独立层叠，避免课表卡片溢出到展示字段栏下方缝隙 */
   isolation: isolate;
+  /* 对齐详情课表滚动区：白底圆角；不与字段条再叠顶边线 */
+  border-radius: var(--radius);
+  background: #fff;
+  border-top: none;
+  margin: 0 12px 12px;
+  box-sizing: border-box;
+}
+/* 查询页详情同款格子：补齐 .schedule-detail-main 作用域下的表头/左轴/节次样式 */
+.main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-timetable-grid {
+  min-height: 100%;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid {
+  --sch-period-w: 72px;
+  --sch-day-count: 10;
+  --sch-day-col-w: max(100px, calc((100cqw - var(--sch-period-w)) / var(--sch-day-count)));
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid th,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid td {
+  border: none;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid tr > :first-child {
+  border-left: 1px solid var(--border);
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid thead th {
+  /* 顶边改由 .schedule-timetable-scroll 的 border-top 承担，避免与字段条/滚动区双线 */
+  border-top: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f1f5f9;
+  padding: 8px 4px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+/* 左轴 Day / Mon…：灰底冻结 */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-weekday-col,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-period-col {
+  width: var(--sch-period-w);
+  min-width: var(--sch-period-w);
+  max-width: var(--sch-period-w);
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #f1f5f9;
+  box-shadow: 1px 0 0 var(--border);
+  text-align: center;
+  font-weight: 600;
+  vertical-align: middle;
+  padding: 6px 4px;
+  color: var(--text-2);
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid thead .schedule-grid-weekday-col,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid thead .schedule-grid-period-col {
+  z-index: 5;
+}
+/* 节次表头：序号在上、时间在下，避免挤成一行 */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid.is-time-period-cols thead th:not(.schedule-grid-weekday-col) {
+  width: auto;
+  min-width: calc(var(--sch-day-col-w) * var(--sch-cols, 1));
+  vertical-align: bottom;
+  text-align: center;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid.is-time-period-cols thead th:not(.schedule-grid-weekday-col) span {
+  display: block;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid.is-time-period-cols thead th:not(.schedule-grid-weekday-col) small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-3);
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid td.schedule-grid-cell {
+  width: auto;
+  min-width: calc(var(--sch-day-col-w) * var(--sch-day-cols, var(--sch-cols, 1)));
+  max-width: none;
+  height: 68px;
+  min-height: 68px;
+  padding: 3px 26px 3px 3px;
+  overflow: hidden;
+  vertical-align: top;
+  text-align: left;
+  cursor: default;
+  background: #fff;
+  box-sizing: border-box;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid td.schedule-grid-cell:empty::before {
+  content: '';
+  display: block;
+  height: 62px;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi {
+  display: grid;
+  grid-template-columns: repeat(var(--sch-cols, 1), minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  align-items: stretch;
+  gap: 2px;
+  box-sizing: border-box;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-cell-packs {
+  display: grid;
+  grid-template-columns: repeat(var(--sch-pack-cols, 1), minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi .schedule-grid-block,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block-rich {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block .schedule-grid-line,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block-rich .schedule-grid-line {
+  text-align: center;
+  width: 100%;
 }
 /* 图形课表：日列最小宽度铺满，卡片按内容加宽，超出横向滚动
  * sticky 表头在 border-collapse:collapse 下会在缝隙透出下层滚动内容（表头上方溢出），改 separate */
@@ -14820,6 +14995,41 @@ code {
   left: 10px;
   transform: rotate(45deg);
 }
+/* 「调课管理」列头：名称 + 感叹号；气泡左开避免贴右裁切 */
+.schedule-module-col-head {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.schedule-module-col-tip .slt-info-btn {
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+  font-style: normal;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1;
+}
+.schedule-module-col-tip-popover {
+  left: auto;
+  right: 0;
+  transform: none;
+  width: min(360px, 70vw);
+  text-align: left;
+  white-space: normal;
+  font-weight: 400;
+  z-index: 20;
+}
+.schedule-module-col-tip-popover::before {
+  left: auto;
+  right: 10px;
+  transform: rotate(45deg);
+}
+.schedule-module-col-tip-popover .slt-info-formula + .slt-info-formula {
+  margin-top: 8px;
+}
 
 /* 排课模块设置：双行表头「时间权限 / 排课权限 / 调课权限」；锁定格浅灰底 + 灰框白勾；表内网格线可见 */
 /* 弃用：单组「锁定资源」表头注释。原因：产品改为三组权限表头 */
@@ -14970,6 +15180,18 @@ code {
   display: none !important;
 }
 /* 联合排课 · 对象类型选择弹窗 */
+.schedule-joint-mode-modal .schedule-joint-mode-term-field {
+  margin: 0 0 14px;
+}
+.schedule-joint-mode-modal .schedule-joint-mode-term-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.schedule-joint-mode-modal .schedule-joint-mode-term-field select {
+  width: 100%;
+}
 .schedule-joint-mode-modal .schedule-joint-mode-choices {
   display: flex;
   flex-direction: column;
@@ -19450,9 +19672,55 @@ code {
 .ss-wrap .ss-input {
   width: 100%;
   box-sizing: border-box;
+  /* 右侧为下拉三角留空 */
+  padding-right: 26px;
+  cursor: pointer;
+}
+/* 全局可搜索下拉：统一右侧下拉符号 */
+.ss-wrap::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 10px;
+  height: 7px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 10px 7px;
+  z-index: 1;
+}
+.ss-wrap.is-open::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+.ss-wrap.is-clearable::after {
+  right: 28px;
 }
 .ss-wrap.is-clearable .ss-input {
-  padding-right: 28px;
+  /* 清除钮 + 下拉三角 */
+  padding-right: 44px;
+}
+.ss-wrap:has(select:disabled)::after {
+  opacity: 0.45;
+}
+.ss-wrap:has(select:disabled) > .ss-input {
+  cursor: default;
+}
+/* 原生 select.input：未增强为 ss-wrap 时也显示下拉符号 */
+select.input:not(.ss-native) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 26px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px 7px;
+}
+select.input:not(.ss-native):disabled {
+  cursor: default;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23cbd5e1' d='M1.2 1.5L6 6.3l4.8-4.8L12 2.7 6 8.7 0 2.7z'/%3E%3C/svg%3E");
 }
 .ss-wrap > .ss-clear {
   position: absolute;
@@ -24459,6 +24727,31 @@ code {
   width: calc(100% - 24px);
   box-sizing: border-box;
 }
+/* 原因：冲突列表卡片 padding:0，分页易贴边且控件过挤；与表格左右 12px 对齐并拉开内部间距 */
+/* 课表冲突 / 场地冲突同口径（含 id 选择器，避免被其它 .pagination 覆盖） */
+#page-schedule-time-conflict > .schedule-card > .pagination,
+#page-schedule-room-conflict > .schedule-card > .pagination,
+#schedule-time-conflict-pagination.pagination,
+#schedule-room-conflict-pagination.pagination {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  gap: 16px;
+  box-sizing: border-box;
+}
+#page-schedule-time-conflict > .schedule-card > .pagination .page-controls,
+#page-schedule-room-conflict > .schedule-card > .pagination .page-controls,
+#schedule-time-conflict-pagination .page-controls,
+#schedule-room-conflict-pagination .page-controls {
+  /* gap: 4px; 原过紧 */
+  gap: 8px;
+}
+#page-schedule-time-conflict > .schedule-card > .pagination .page-size-picker,
+#page-schedule-room-conflict > .schedule-card > .pagination .page-size-picker,
+#schedule-time-conflict-pagination .page-size-picker,
+#schedule-room-conflict-pagination .page-size-picker {
+  /* margin-left: 8px; 原与页码按钮过近 */
+  margin-left: 12px;
+}
 
 /* 课表/场地冲突查询：横向滚动仅右冻「冲突类型」「操作」；勾选/序号随内容滚动不冻结 */
 .schedule-room-conflict-filters,
@@ -24525,6 +24818,101 @@ code {
   min-width: var(--sch-conflict-freeze-ops-w);
   box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22);
 }
+/* 按课程排：列多时横向滚动；右侧冻结排课状态 + 操作（仅时间侧本页） */
+#page-schedule-course .schedule-course-table-wrap {
+  overflow: auto;
+}
+#page-schedule-course .schedule-course-table {
+  /* 操作列需容纳「排课 + 修改记录」；须与 status 的 right 偏移一致，否则两列之间漏缝 */
+  --sch-course-freeze-ops-w: 128px;
+  --sch-course-freeze-status-w: 88px;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+}
+#page-schedule-course .schedule-course-table th,
+#page-schedule-course .schedule-course-table td {
+  white-space: nowrap;
+}
+/* 专业批次：多个批次时一个批次一行（覆盖表级 nowrap）；>5 省略悬停全文 */
+#page-schedule-course .schedule-course-table td.sch-course-batch-cell {
+  white-space: normal;
+  vertical-align: middle;
+}
+#page-schedule-course .schedule-course-table .sch-course-batch-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.35;
+}
+#page-schedule-course .schedule-course-table .sch-course-batch-line {
+  display: block;
+  white-space: nowrap;
+}
+#page-schedule-course .schedule-course-table .sch-course-batch-omit {
+  display: block;
+  font-size: 12px;
+  color: var(--text-3, #94a3b8);
+  white-space: nowrap;
+}
+#page-schedule-course .schedule-course-table .sch-course-batch-tip {
+  display: inline-block;
+  cursor: default;
+}
+/* 表头「专业批次」感叹号说明气泡 */
+#page-schedule-course .sch-course-batch-col-head {
+  gap: 4px;
+}
+#page-schedule-course .sch-course-batch-tip-popover {
+  width: min(320px, 70vw);
+  text-align: left;
+  white-space: normal;
+}
+#page-schedule-course .schedule-course-table .sch-course-freeze {
+  position: sticky;
+  background: #fff;
+  box-sizing: border-box;
+}
+/* 操作在最右；状态紧贴其左，共用一块冻结阴影（只打在状态左缘） */
+#page-schedule-course .schedule-course-table .sch-course-freeze-ops {
+  right: 0;
+  z-index: 4;
+  width: var(--sch-course-freeze-ops-w);
+  min-width: var(--sch-course-freeze-ops-w);
+  max-width: var(--sch-course-freeze-ops-w);
+  /* 原因：两列中间阴影会造成「没一起冻」的割裂感 */
+  /* box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22); */
+  box-shadow: none;
+}
+#page-schedule-course .schedule-course-table .sch-course-freeze-status {
+  right: var(--sch-course-freeze-ops-w);
+  z-index: 3;
+  width: var(--sch-course-freeze-status-w);
+  min-width: var(--sch-course-freeze-status-w);
+  max-width: var(--sch-course-freeze-status-w);
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22);
+}
+.main .page.page-list.active #page-schedule-course .schedule-course-table thead th.sch-course-freeze,
+#page-schedule-course .schedule-course-table thead th.sch-course-freeze {
+  position: sticky;
+  top: 0;
+  background: var(--table-head-bg, #f1f5f9);
+}
+.main .page.page-list.active #page-schedule-course .schedule-course-table thead th.sch-course-freeze-ops,
+#page-schedule-course .schedule-course-table thead th.sch-course-freeze-ops {
+  z-index: 7;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.main .page.page-list.active #page-schedule-course .schedule-course-table thead th.sch-course-freeze-status,
+#page-schedule-course .schedule-course-table thead th.sch-course-freeze-status {
+  z-index: 6;
+  box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.22), inset 0 -1px 0 var(--border);
+}
+#page-schedule-course .schedule-course-table tbody tr:hover .sch-course-freeze {
+  background: #fafbfc;
+}
 .sch-conflict-query-table .sch-conflict-freeze-type {
   right: var(--sch-conflict-freeze-ops-w);
   min-width: var(--sch-conflict-freeze-type-w);
@@ -24569,7 +24957,9 @@ code {
 .sch-conflict-query-table .sch-conflict-multiline {
   white-space: nowrap;
   line-height: 1.45;
-  vertical-align: top;
+  /* 原因：产品要求冲突查询多行单元格内容垂直居中，不再顶对齐 */
+  /* vertical-align: top; */
+  vertical-align: middle;
   max-width: none;
 }
 .sch-conflict-query-table .sch-conflict-type-cell {

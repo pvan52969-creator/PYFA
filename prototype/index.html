@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
-  <meta name="portal-build" content="88eaf69">
+  <meta name="portal-build" content="2f67a7e">
 </head>
 <body>
 <div id="sch-detail-boot-loading" class="sch-detail-boot-loading" aria-live="polite" aria-busy="true">
@@ -253,7 +253,7 @@
               <div class="portal-app-grid" id="portal-app-grid"></div>
             </div> --> <!-- 原单区块展示全部应用，改 Basic Service / 教学运行 分组 -->
           </div>
-          <div class="portal-build-version" aria-label="原型版本" title="git 88eaf69">1127排课2</div>
+          <div class="portal-build-version" aria-label="原型版本" title="git 2f67a7e">1128排课</div>
         </div>
       </div>
     </section>
@@ -3140,17 +3140,24 @@
                 <div class="schedule-detail-view-settings" id="schedule-detail-view-settings">
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-show-weekend" onchange="onScheduleViewSettingChange()"> 显示周末</label>
                   <span class="schedule-view-sep">课表卡片显示：</span>
+                  <!-- 勾选条顺序对齐课表查询：课号 → 名称 → 学时类型 → 课程组 → 教师 →（场地类型）→ 已排教室 → 周次 -->
                   <label class="schedule-view-opt is-required"><input type="checkbox" id="sch-card-code" checked disabled> Course Code</label>
-                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-name" onchange="onScheduleViewSettingChange()"> 课程班名称</label>
-                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label>
-                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label>
-                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
-                  <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 已排教室</label>
+                  <!-- 文案缩短：课程班名称→课程班；上课教师→教师；已排教室→教室；排课周次→周次 -->
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-name" onchange="onScheduleViewSettingChange()"> 课程班</label>
+                  <!-- 弃用：排课周次/上课教师/场地类型/已排教室原插在名称后。原因：与查询课卡顺序不一致 -->
+                  <!-- <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 排课周次</label> -->
+                  <!-- <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 上课教师</label> -->
+                  <!-- <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label> -->
+                  <!-- <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 已排教室</label> -->
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
                   <!-- 弃用单一「课程组」勾选。原因：拆成简称/全称；都选→全称，都不选→不显示，默认简称 -->
                   <!-- <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group" checked onchange="onScheduleViewSettingChange()"> 课程组</label> -->
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group-short" checked onchange="onScheduleViewSettingChange()"> 课程组（简称）</label>
                   <label class="schedule-view-opt"><input type="checkbox" id="sch-card-group-full" onchange="onScheduleViewSettingChange()"> 课程组（全称）</label>
-                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-hourtype" onchange="onScheduleViewSettingChange()"> 学时类型</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-teacher" onchange="onScheduleViewSettingChange()"> 教师</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-room" onchange="onScheduleViewSettingChange()"> <span id="sch-card-room-label">场地类型</span></label>
+                  <label class="schedule-view-opt" id="sch-card-venue-remark-opt"><input type="checkbox" id="sch-card-venue-remark" onchange="onScheduleViewSettingChange()"> 教室</label>
+                  <label class="schedule-view-opt"><input type="checkbox" id="sch-card-weeks" onchange="onScheduleViewSettingChange()"> 周次</label>
                 </div>
               </div>
               <div class="schedule-detail-field schedule-time-top-chrome-weeks">
@@ -11797,7 +11804,7 @@
       <!-- 不设定 = 场地为空（原 TBC / 不指定教室） -->
       <button class="btn btn-ghost adj-unspec-btn" type="button" id="schedule-room-picker-unspecified-btn" hidden onclick="clearAdjustmentApproveRoomSelection()">不设定</button>
       <button class="btn btn-ghost adj-unspec-btn" type="button" onclick="closeModal('modal-schedule-room-picker')">取消</button>
-      <button class="btn btn-primary" type="button" onclick="confirmScheduleRoomSelection()">确定</button>
+      <button class="btn btn-primary" type="button" onclick="confirmScheduleRoomSelection()">保存</button>
     </div>
   </div>
 </div>

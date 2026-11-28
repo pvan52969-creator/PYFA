@@ -14464,6 +14464,8 @@ code {
   border-top: none;
   margin: 0 12px 12px;
   box-sizing: border-box;
+  /* 右侧多留一点，避免末节次课卡贴滚动边被视觉裁切 */
+  padding-right: 8px;
 }
 /* 查询页详情同款格子：补齐 .schedule-detail-main 作用域下的表头/左轴/节次样式 */
 .main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-timetable-grid {
@@ -14472,7 +14474,8 @@ code {
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid {
   --sch-period-w: 72px;
   --sch-day-count: 10;
-  --sch-day-col-w: max(100px, calc((100cqw - var(--sch-period-w)) / var(--sch-day-count)));
+  /* 查询课卡加宽：单卡铺满节次格，避免右侧留白（原 max 100px 偏窄） */
+  --sch-day-col-w: max(148px, calc((100cqw - var(--sch-period-w)) / var(--sch-day-count)));
   width: max-content;
   min-width: 100%;
   table-layout: fixed;
@@ -14546,33 +14549,138 @@ code {
   width: auto;
   min-width: calc(var(--sch-day-col-w) * var(--sch-day-cols, var(--sch-cols, 1)));
   max-width: none;
-  height: 68px;
-  min-height: 68px;
-  padding: 3px 26px 3px 3px;
-  overflow: hidden;
-  vertical-align: top;
+  /* 行高随卡片内容增高，避免多卡被压进固定高度导致文字重叠 */
+  height: auto;
+  min-height: 76px;
+  padding: 4px;
+  overflow: visible;
+  /* 弃用 vertical-align: top。原因：普通格顶对齐、跨节格 middle，同行课卡 top 错位约 6px，无教室短卡下方留白偏大 */
+  /* vertical-align: top; */
+  vertical-align: middle;
   text-align: left;
   cursor: default;
   background: #fff;
   box-sizing: border-box;
 }
+/*
+ * 查询 · 同时间多卡拆成多行（每行一条车道）：星期列 rowspan 居中；
+ * 行间用普通格线分隔（不再在格内画中线）。
+ */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid tr.is-query-day-lane-row > td.schedule-grid-weekday-col {
+  vertical-align: middle;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid tr.is-query-day-lane-row > td.schedule-grid-cell {
+  min-height: 76px;
+}
+/* 查询 · 大节次 colspan：整格一体，卡片铺满合并后的节次宽 */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid td.schedule-grid-cell.is-query-linked-span {
+  vertical-align: middle;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid td.schedule-grid-cell.is-query-linked-span .schedule-grid-multi,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid td.schedule-grid-cell.is-query-linked-span .schedule-grid-block {
+  min-height: 68px;
+  height: 100% !important;
+}
+/*
+ * 查询 · 有旁卡时的首/中/尾连卡：同色条带跨格，仅首格有文案（合二为一，不挡旁卡）。
+ * 负 margin 吃掉格 padding，两半贴齐像一张宽卡。
+ */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block.is-query-span-start {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right-color: transparent !important;
+  margin-right: -4px;
+  width: calc(100% + 4px) !important;
+  max-width: none !important;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block.is-query-span-mid,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block.is-query-span-shell.is-query-span-mid {
+  border-radius: 0 !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  margin-left: -4px;
+  margin-right: -4px;
+  width: calc(100% + 8px) !important;
+  max-width: none !important;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block.is-query-span-end,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block.is-query-span-shell.is-query-span-end {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-top-right-radius: 4px !important;
+  border-bottom-right-radius: 4px !important;
+  border-left-color: transparent !important;
+  margin-left: -4px;
+  width: calc(100% + 4px) !important;
+  max-width: none !important;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block.is-query-span-shell {
+  min-height: 68px;
+  height: 68px !important;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .is-shared-link-fused.is-query-span-start {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: -4px;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .is-shared-link-fused.is-query-span-end,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .is-shared-link-fused.is-query-span-shell {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -4px;
+  min-height: 68px;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .is-shared-link-fused.is-query-span-shell {
+  min-height: 68px;
+}
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid td.schedule-grid-cell:empty::before {
   content: '';
   display: block;
-  height: 62px;
+  height: 68px;
 }
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi {
   display: grid;
   grid-template-columns: repeat(var(--sch-cols, 1), minmax(0, 1fr));
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  height: 100%;
-  min-height: 100%;
-  overflow: hidden;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto;
+  min-height: 68px;
+  /* 弃用 overflow:hidden。原因：子卡换行增高后被父级裁切 */
+  /* overflow: hidden; */
+  overflow: visible;
   align-items: stretch;
+  justify-content: stretch;
+  margin: 0 !important;
   gap: 2px;
   box-sizing: border-box;
+}
+/* 查询 · 多卡纵向叠放：每张卡保持完整高度；卡与中间格线留出与格边相同的间距 */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-query-lane-stack {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  height: auto;
+  min-height: 0;
+  /* 8px：上下卡各离中间分割线约 4px，对齐格 padding */
+  gap: 8px;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-query-lane-stack > .schedule-grid-block,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-query-lane-stack > .schedule-grid-multi {
+  flex: 0 0 auto;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 68px;
+  height: auto !important;
+  /* 弃用贴线直角。原因：卡与分割线脱开后恢复独立圆角 */
+  border-radius: 4px;
+}
+/* 弃用卡间 border-top。原因：分割线改由格子 ::after 绘制，卡边不再贴线 */
+/* .schedule-grid-multi.is-query-lane-stack > .schedule-grid-block + .schedule-grid-block { border-top: ... } */
+/* 当日拆行：单卡也不贴中间线，底部留出与格边相同间距 */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid tr.is-query-day-lanes > td.schedule-grid-cell.is-query-day-lane-split.is-occupied:not(.is-query-multi-stack) > .schedule-grid-multi {
+  margin-bottom: 4px;
 }
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-cell-packs {
   display: grid;
@@ -14589,24 +14697,82 @@ code {
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi .schedule-grid-block,
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block,
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block-rich {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  /* 单卡铺满节次格宽度；高度随文案，避免被父级压扁重叠 */
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 68px;
+  /* 弃用 overflow:hidden。原因：长课程名/课程组换行后底部或右侧仍被裁切，看起来「看不到」 */
+  /* overflow: hidden; */
+  overflow: visible;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
+  margin: 0;
+  padding: 4px 6px;
+  /* 查询页沿用旧版蓝色课卡；!important 压过全局 is-c / is-shared-partner 透明边 */
+  background: #dbeafe !important;
+  border: 1px solid #93c5fd !important;
+  border-radius: 4px;
+  color: #1e3a5f !important;
+  opacity: 1 !important;
 }
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block .schedule-grid-line,
 .main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-block-rich .schedule-grid-line {
   text-align: center;
   width: 100%;
+  color: inherit;
+  /* 弃用全局 nowrap+ellipsis。原因：查询融合卡半格/右缘列长文案被裁成「e Chemistry」，显示不全 */
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
 }
+/* 弃用：仅放开 course name。原因：课程组全称同为长英文，须一并换行 */
+/* .main .page... .schedule-grid-line.schedule-grid-name { white-space: normal; ... } */
+/*
+ * 查询 · 共同授课/联动融合：外框一体 + 虚线中缝（对齐排时间详情），底色仍用查询蓝卡。
+ */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-shared-link-fused {
+  gap: 0 !important;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  /* 弃用 overflow:hidden。原因：半格长文换行后仍被裁切 */
+  /* overflow: hidden; */
+  overflow: visible;
+  background: #dbeafe;
+  min-height: 68px;
+  height: auto !important;
+  width: 100% !important;
+  /* 每半列至少一节次宽，避免 minmax(0,1fr) 把伙伴卡压到读不清 */
+  grid-template-columns: repeat(var(--sch-cols, 1), minmax(var(--sch-day-col-w), 1fr));
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-shared-link-fused .schedule-grid-block,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-shared-link-fused .schedule-grid-block-rich,
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-shared-link-fused .schedule-grid-block.is-shared-partner-block {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #1e3a5f !important;
+  opacity: 1 !important;
+  min-height: 68px;
+  height: auto !important;
+}
+/* 仅第二块起加虚线中缝；查询页两侧都可能带 is-shared-partner-block，不能整侧加左边框 */
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-shared-link-fused .schedule-grid-block + .schedule-grid-block {
+  border-left: 1px dashed #6b7280 !important;
+}
+.main .page.schedule-tt-query-page.active .schedule-grid-table.is-schedule-query-grid .schedule-grid-multi.is-shared-link-fused .schedule-grid-shared-tag {
+  color: #fff;
+}
+/* 弃用：跨节连卡 / 空车道占位样式。原因：续节藏字 + 负 margin + 压高度导致叠卡文字重叠、布局错乱 */
 /* 图形课表：日列最小宽度铺满，卡片按内容加宽，超出横向滚动
  * sticky 表头在 border-collapse:collapse 下会在缝隙透出下层滚动内容（表头上方溢出），改 separate */
 .main .page.schedule-tt-query-page.active > .tab-panel.active .schedule-tt-table.schedule-tt-multicol {
@@ -19039,6 +19205,40 @@ code {
 #modal-schedule-time-room-preview .srf-occ-course-card .schedule-grid-code {
   font-weight: 600;
 }
+/*
+ * 排教室主表：lookup 回退课程卡布局兜底（正常路径已改 hold 同款卡）。
+ * 原因：仅预览/锁定抽屉有 .srf-occ-cards 样式时，主表多课会竖叠宽窄乱。
+ * 仅 #page-schedule-room-detail，不动排时间侧。
+ */
+#page-schedule-room-detail .srf-occ-cards {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#page-schedule-room-detail .srf-occ-course-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: left;
+  box-sizing: border-box;
+  background: transparent;
+  border: 1px solid #6b7280;
+  border-radius: 4px;
+  color: #334155;
+}
+#page-schedule-room-detail .srf-occ-course-card .schedule-grid-code {
+  font-weight: 600;
+}
 /* 排教室主表：同步容量售罄/超排演示占用芯片样式（与预览抽屉一致；仅教室页作用域） */
 #page-schedule-room-detail .schedule-grid-cell.is-srpv-occ {
   background: #fef2f2;
@@ -21137,10 +21337,16 @@ select.input:not(.ss-native):disabled {
   color: #64748b;
   border: 1px solid #c5d0de;
 }
-#modal-schedule-room-picker .schedule-room-modal-table .srf-occ-cell.is-off-period.is-busy {
-  /* 禁选格若有占用，仍保留红底，框线用同套深灰 */
+/* 弃用：非本时段占用仍红底。原因：产品要求非目标时段与空闲同灰底，占用卡仍显示 */
+/* #modal-schedule-room-picker .schedule-room-modal-table .srf-occ-cell.is-off-period.is-busy {
   background: #fee2e2;
   color: #991b1b;
+  border: 1px solid #c5d0de;
+} */
+/* 非目标时段有占用时：格子灰底（与空闲一致），卡片内容照常渲染 */
+#modal-schedule-room-picker .schedule-room-modal-table .srf-occ-cell.is-off-period.is-busy {
+  background: #dbe3ee;
+  color: #64748b;
   border: 1px solid #c5d0de;
 }
 .schedule-room-modal-table .srf-occ-cell.is-target {
@@ -21370,17 +21576,50 @@ select.input:not(.ss-native):disabled {
 /* .schedule-room-modal-table tr.is-room-seat-short .srf-col-room {
   color: #c2410c;
 } */
-/* 人数不足（本组+联动组）：整行浅红底；冻结列及 ::before 垫层须同步，防止滚动透底 */
+/*
+ * 人数不足 / 场地类型不符：整行浅红（教室、座位、场地类型、Venue Type、设备等均覆盖）。
+ * 冻结列默认白底会压过 tr>td，须连 seats/venue 与 ::before 一并钉红；
+ * 勾选 is-current-room / hover 也不改回白底。
+ */
 .schedule-room-modal-table tr.is-room-seat-short > td {
   background-color: #fef2f2;
 }
-.schedule-room-modal-table tr.is-room-seat-short .srf-col-pick,
-.schedule-room-modal-table tr.is-room-seat-short .srf-col-room,
-.schedule-room-modal-table tr.is-room-seat-short .srf-col-pick::before,
-.schedule-room-modal-table tr.is-room-seat-short .srf-col-room::before {
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-pick,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-room,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-seats,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-venue,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-pick::before,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-room::before,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-seats::before,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short .srf-col-venue::before,
+#modal-schedule-room-picker.is-lock-room .schedule-room-modal-table tr.is-room-seat-short .srf-col-seats,
+#modal-schedule-room-picker.is-lock-room .schedule-room-modal-table tr.is-room-seat-short .srf-col-venue,
+#modal-schedule-room-picker.is-lock-room .schedule-room-modal-table tr.is-room-seat-short .srf-col-seats::before,
+#modal-schedule-room-picker.is-lock-room .schedule-room-modal-table tr.is-room-seat-short .srf-col-venue::before {
   background-color: #fef2f2;
 }
-/* 弃用：座位不足行勾选后更深红。原因：取消行选中高亮，勾选后仍用同一浅红 */
+/* 悬停 / 勾选：不匹配行保持浅红，取消变白 */
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover > td,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-pick,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-room,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-seats,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-venue,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-pick::before,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-room::before,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-seats::before,
+#modal-schedule-room-picker .schedule-room-modal-table tbody tr.is-room-seat-short:hover .srf-col-venue::before,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room > td,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-pick,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-room,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-seats,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-venue,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-pick::before,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-room::before,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-seats::before,
+#modal-schedule-room-picker .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-venue::before {
+  background-color: #fef2f2;
+}
+/* 弃用：座位不足行勾选后更深红。原因：产品要求勾选后仍同一浅红、不改白 */
 /* .schedule-room-modal-table tr.is-room-seat-short.is-current-room > td,
 .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-pick,
 .schedule-room-modal-table tr.is-room-seat-short.is-current-room .srf-col-room,
@@ -21632,6 +21871,12 @@ select.input:not(.ss-native):disabled {
   vertical-align: top;
   box-sizing: border-box;
 }
+/* 同格多包上下叠：行高随包数增高，避免两包挤进 68px 文字重叠 */
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols td.schedule-grid-cell:has(> .schedule-grid-cell-packs) {
+  height: auto;
+  min-height: 68px;
+  overflow: visible;
+}
 /* 空格无内容时再垫一层，避免个别引擎仍按 padding 塌缩 */
 .schedule-detail-main .schedule-detail-grid-table.is-time-period-cols td.schedule-grid-cell:empty::before {
   content: '';
@@ -21650,17 +21895,19 @@ select.input:not(.ss-native):disabled {
   grid-template-columns: repeat(var(--sch-cols, 1), minmax(0, 1fr));
 }
 /*
- * 同格多包：联动融合包与无关课单包并排。
- * 示例：CST201+CST202 融合 | MEC903 单卡，避免整格不融时变成 CST201|MEC903|CST202。
+ * 同格多包：上下叠放（产品：两任务卡不要左右并排）。
+ * 示例：上 CST201+CST202 融合，下 MEC902；包内共同授课仍左右虚线。
+ * 弃用 grid-template-columns 横排。原因：同格双卡左右挤、难读。
  */
 .schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-cell-packs {
-  display: grid;
-  grid-template-columns: repeat(var(--sch-pack-cols, 1), minmax(0, 1fr));
-  gap: 2px;
+  display: flex;
+  flex-direction: column;
+  /* 弃用：grid-template-columns: repeat(var(--sch-pack-cols, 1), minmax(0, 1fr)); */
+  gap: 4px;
   width: 100%;
   max-width: 100%;
-  height: 100%;
-  min-height: 100%;
+  height: auto;
+  min-height: 0;
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
@@ -21668,8 +21915,15 @@ select.input:not(.ss-native):disabled {
 .schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-cell-packs > .schedule-grid-multi {
   width: 100%;
   min-width: 0;
-  height: 100%;
-  min-height: 0;
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 56px;
+}
+/* 叠包内课块按内容撑高，避免 height:100% 相对 auto 父级塌缩 */
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block,
+.schedule-detail-main .schedule-detail-grid-table.is-time-period-cols .schedule-grid-cell-packs > .schedule-grid-multi .schedule-grid-block-rich {
+  height: auto;
+  min-height: 52px;
 }
 /*
  * 多包同格选中：只给 .is-pack-selected 铺淡蓝，未选包保持冲突色/白底。
